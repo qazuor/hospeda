@@ -1,6 +1,6 @@
 # Actor System
 
-Authentication and authorization system using Clerk and the Actor pattern.
+Authentication and authorization system using Better Auth and the Actor pattern.
 
 ---
 
@@ -11,7 +11,7 @@ The Actor System provides a unified way to handle authentication and authorizati
 **Key Concepts:**
 
 - **Actor** - Represents the current user/requester
-- **Authentication** - Who is the user? (via Clerk JWT)
+- **Authentication** - Who is the user? (via Better Auth JWT)
 - **Authorization** - What can the user do? (via roles & permissions)
 
 ---
@@ -25,7 +25,7 @@ The actor object contains information about the current requester.
 ```typescript
 {
   isAuthenticated: true,
-  userId: string,           // Clerk user ID
+  userId: string,           // Better Auth user ID
   email: string,            // User's email
   role: string,             // User's role (e.g., 'admin', 'user')
   permissions: string[]     // User's permissions
@@ -85,12 +85,12 @@ if (actor.isAuthenticated) {
 
 ## Authentication
 
-Authentication is handled by Clerk middleware.
+Authentication is handled by Better Auth middleware.
 
 ### How it Works
 
 1. Client includes JWT token in `Authorization` header
-2. Clerk middleware validates token
+2. Better Auth middleware validates token
 3. Actor middleware extracts user info
 4. Actor is available in route handler
 
@@ -287,9 +287,9 @@ Permissions follow the format: `resource:action`
 - `user:write` - Create/update users
 - `user:delete` - Delete users
 
-### Setting Roles in Clerk
+### Setting Roles in Better Auth
 
-1. Go to Clerk Dashboard
+1. Go to Better Auth Dashboard
 2. Select user
 3. Edit "Public metadata"
 4. Add role and permissions:
@@ -547,9 +547,9 @@ logger.info('User deleted', {
 
 ### Permissions not working
 
-**Cause**: Permissions not set in Clerk
+**Cause**: Permissions not set in Better Auth
 
-**Solution**: Update user's public metadata in Clerk Dashboard
+**Solution**: Update user's public metadata in Better Auth Dashboard
 
 ---
 

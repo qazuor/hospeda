@@ -17,7 +17,7 @@ Documentation for consuming the Hospeda API from external applications.
 
 ### Getting Started
 
-- **[Authentication](authentication.md)** - How to authenticate with Clerk JWT tokens
+- **[Authentication](authentication.md)** - How to authenticate with Better Auth JWT tokens
 - **[Request/Response Format](request-response.md)** - Standard request and response structures
 - **[OpenAPI Documentation](openapi.md)** - Interactive API documentation
 
@@ -45,7 +45,7 @@ Documentation for consuming the Hospeda API from external applications.
 ```typescript
 const response = await fetch('https://api.hospeda.com/api/v1/accommodations', {
   headers: {
-    'Authorization': `Bearer ${clerkToken}`,
+    'Authorization': `Bearer ${authToken}`,
     'Content-Type': 'application/json'
   }
 })
@@ -129,10 +129,10 @@ Response:
 
 ## 🔐 Authentication Overview
 
-The Hospeda API uses **Clerk** for authentication. You need:
+The Hospeda API uses **Better Auth** for authentication. You need:
 
-1. **Clerk Account** - Sign up at [clerk.com](https://clerk.com)
-2. **JWT Token** - Obtained via Clerk SDK
+1. **Better Auth Account** - Sign up at [better-auth.com](https://better-auth.com)
+2. **JWT Token** - Obtained via Better Auth SDK
 3. **Bearer Token** - Include in `Authorization` header
 
 [Complete authentication guide →](authentication.md)

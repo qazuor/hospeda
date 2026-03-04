@@ -31,7 +31,7 @@ pnpm dev --filter=api
 
 **Using the API from external applications:**
 
-- [Authentication](usage/authentication.md) - How to authenticate with Clerk
+- [Authentication](usage/authentication.md) - How to authenticate with Better Auth
 - [Endpoints Reference](usage/endpoints-reference.md) - All available endpoints
 - [Request/Response Format](usage/request-response.md) - Standard formats and pagination
 - [Error Handling](usage/errors.md) - Error codes and handling
@@ -64,7 +64,7 @@ pnpm dev --filter=api
 - [Response Standardization](development/responses.md) - Response factories
 - [OpenAPI Documentation](development/openapi.md) - Documenting endpoints
 - [Performance](development/performance.md) - Optimization techniques
-- [Deployment](development/deployment.md) - Deploy to Fly.io
+- [Deployment](development/deployment.md) - Deploy to Vercel
 
 #### Examples
 
@@ -100,7 +100,7 @@ Quick answers to common questions:
 │  • Security Headers         │
 │  • CORS                     │
 │  • Rate Limiting            │
-│  • Authentication (Clerk)   │
+│  • Authentication (Better Auth)   │
 │  • Actor Resolution         │
 │  • Validation               │
 └──────────┬──────────────────┘
@@ -183,11 +183,11 @@ See [Testing Guide](development/testing.md) for detailed testing strategies.
 
 ## 🚀 Deployment
 
-The API is deployed to **Fly.io** with:
+The API is deployed to **Vercel** (serverless functions) with:
 
-- **Zero-downtime deployments**
-- **Health check monitoring**
-- **Automatic rollbacks** on failure
+- **Atomic deployments** (immutable, instant cutover)
+- **Health check monitoring** (via external uptime monitor at `GET /health`)
+- **Instant rollbacks** via Vercel dashboard or CLI
 - **Metrics collection** via `/metrics` endpoint
 
 See [Deployment Guide](development/deployment.md) for deployment procedures.
@@ -198,7 +198,7 @@ See [Deployment Guide](development/deployment.md) for deployment procedures.
 
 - **Framework**: [Hono](https://hono.dev) - Fast, lightweight, edge-ready
 - **Database**: PostgreSQL with [Drizzle ORM](https://orm.drizzle.team)
-- **Authentication**: [Clerk](https://clerk.com)
+- **Authentication**: [Better Auth](https://better-auth.com)
 - **Validation**: [Zod](https://zod.dev)
 - **Testing**: [Vitest](https://vitest.dev)
 - **Documentation**: OpenAPI 3.1 with Scalar & Swagger UI

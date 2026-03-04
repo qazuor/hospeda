@@ -55,7 +55,7 @@ Raw OpenAPI specification:
 ## Using Swagger UI
 
 1. Visit <http://localhost:3001/ui>
-2. Authorize with your Clerk token (click "Authorize" button)
+2. Authorize with your auth token (click "Authorize" button)
 3. Try any endpoint:
    - Select endpoint
    - Click "Try it out"

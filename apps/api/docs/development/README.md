@@ -30,7 +30,7 @@ New to API development? Start here:
 - **[Response Factory](response-factory.md)** - Standardized response patterns
 - **[Debugging](debugging.md)** - Troubleshooting and debugging techniques
 - **[Performance](performance.md)** - Optimization tips and best practices
-- **[Deployment](deployment.md)** - Deploying to Fly.io
+- **[Deployment](deployment.md)** - Deploying to Vercel
 
 ---
 
@@ -145,7 +145,7 @@ Database
 3. Logger
 4. Metrics
 5. Rate Limiter
-6. Authentication (Clerk)
+6. Authentication (Better Auth)
 7. Actor Resolution
 8. Validation
 
@@ -223,7 +223,7 @@ pnpm db:fresh
 
 - **Hono** - Web framework
 - **@hono/zod-openapi** - OpenAPI + Zod validation
-- **@hono/clerk-auth** - Clerk authentication
+- **@repo/auth-ui** - Better Auth authentication
 - **@repo/service-core** - Business logic services
 - **@repo/schemas** - Zod validation schemas
 - **@repo/db** - Database models and Drizzle ORM
@@ -268,7 +268,7 @@ pnpm db:fresh
 
 ### Testing Standards
 
-- Write tests first (TDD)
+- Write tests for all code (test-informed development)
 - Test all endpoint variants (success, errors, auth)
 - Mock external dependencies
 - Achieve 90% coverage minimum

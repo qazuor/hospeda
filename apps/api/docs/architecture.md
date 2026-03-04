@@ -21,7 +21,7 @@ The Hospeda API follows a **layered architecture** with clear separation of conc
 │  • Logger                           │
 │  • Metrics                          │
 │  • Rate Limiter                     │
-│  • Authentication (Clerk)           │
+│  • Authentication (Better Auth)           │
 │  • Actor Resolution                 │
 │  • Validation                       │
 └────────────┬────────────────────────┘
@@ -96,7 +96,7 @@ metricsMiddleware() // Collects request metrics
 rateLimitMiddleware() // Enforces rate limits per IP
 
 // 6. Authentication (if required)
-clerkMiddleware() // Validates JWT token, loads user session
+authMiddleware() // Validates JWT token, loads user session
 
 // 7. Actor Resolution (if authenticated)
 actorMiddleware() // Creates Actor object from session
@@ -215,7 +215,7 @@ options: {
 }
 ```
 
-### 6. Authentication (Clerk)
+### 6. Authentication (Better Auth)
 
 **Purpose:** Validate JWT tokens
 
@@ -225,7 +225,7 @@ options: {
 
 - Optional by default (routes can skip with `skipAuth: true`)
 - Validates JWT from `Authorization: Bearer <token>` header
-- Loads user session from Clerk
+- Loads user session from Better Auth
 - Injects session into context
 
 ### 7. Actor Resolution
@@ -434,7 +434,7 @@ The **Actor System** provides unified authentication and authorization.
 
 ### Actor Object
 
-Created by `actorMiddleware` from Clerk session:
+Created by `actorMiddleware` from Better Auth session:
 
 ```typescript
 interface Actor {
@@ -735,7 +735,7 @@ Monitor performance via `/metrics` endpoint.
 
 ### 1. Authentication
 
-- JWT validation via Clerk
+- JWT validation via Better Auth
 - Secure token storage (HTTP-only cookies)
 
 ### 2. Authorization

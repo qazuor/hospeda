@@ -41,7 +41,7 @@ Middleware executes in this order:
 3. **Logger** - Logs requests and responses
 4. **Metrics** - Collects performance metrics
 5. **Rate Limiter** - Enforces rate limits
-6. **Authentication** - Validates Clerk JWT tokens
+6. **Authentication** - Validates Better Auth JWT tokens
 7. **Actor Resolution** - Extracts user info from token
 8. **Validation** - Validates request schema
 
@@ -181,14 +181,14 @@ export const rateLimitMiddleware = rateLimiter({
 
 **File**: `src/middlewares/auth.ts`
 
-Validates Clerk JWT tokens.
+Validates Better Auth JWT tokens.
 
 ```typescript
-import { clerkMiddleware } from '@hono/clerk-auth';
+import { authMiddleware } from '@repo/auth-ui';
 
-export const authMiddleware = clerkMiddleware({
-  publishableKey: env.CLERK_PUBLISHABLE_KEY,
-  secretKey: env.CLERK_SECRET_KEY
+export const authMiddleware = authMiddleware({
+  publishableKey: env.HOSPEDA_BETTER_AUTH_URL,
+  secretKey: env.HOSPEDA_BETTER_AUTH_SECRET
 });
 ```
 
@@ -209,7 +209,7 @@ export const actorMiddleware = async (c: Context, next: Next) => {
   const auth = getAuth(c);
   
   if (auth?.userId) {
-    const user = await clerkClient.users.getUser(auth.userId);
+    const user = await authClient.users.getUser(auth.userId);
     
     c.set('actor', {
       isAuthenticated: true,

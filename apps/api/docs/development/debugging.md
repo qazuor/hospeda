@@ -87,7 +87,7 @@ http://localhost:3001/ui
 Authorization: Bearer <token>
 
 # Verify token is valid
-# Get fresh token from Clerk
+# Get fresh token from Better Auth
 ```
 
 ### 4. Database Connection Error

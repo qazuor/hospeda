@@ -25,16 +25,16 @@ This document lists all environment variables used by the Hospeda API, organized
 | `API_LOG_TRUNCATE_LONG_TEXT_AT` | `number` | `1000` | Truncate text at N characters |
 | `API_LOG_STRINGIFY_OBJECTS` | `boolean` | `false` | Stringify objects in logs |
 
-## 🌐 CORS Configuration
+## CORS Configuration
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `CORS_ORIGINS` | `string` | `http://localhost:3000,http://localhost:5173,http://localhost:4173` | Allowed origins (comma-separated) |
-| `CORS_ALLOW_CREDENTIALS` | `boolean` | `true` | Allow credentials in CORS requests |
-| `CORS_MAX_AGE` | `number` | `86400` | CORS preflight cache duration (seconds) |
-| `CORS_ALLOW_METHODS` | `string` | `GET,POST,PUT,DELETE,PATCH,OPTIONS` | Allowed HTTP methods |
-| `CORS_ALLOW_HEADERS` | `string` | `Content-Type,Authorization,X-Requested-With` | Allowed headers |
-| `CORS_EXPOSE_HEADERS` | `string` | `Content-Length,X-Request-ID` | Exposed headers |
+| `API_CORS_ORIGINS` | `string` | `http://localhost:3000,http://localhost:4321` | Allowed origins (comma-separated) |
+| `API_CORS_ALLOW_CREDENTIALS` | `boolean` | `true` | Allow credentials in CORS requests |
+| `API_CORS_MAX_AGE` | `number` | `86400` | CORS preflight cache duration (seconds) |
+| `API_CORS_ALLOW_METHODS` | `string` | `GET,POST,PUT,DELETE,PATCH,OPTIONS` | Allowed HTTP methods |
+| `API_CORS_ALLOW_HEADERS` | `string` | `Content-Type,Authorization,X-Requested-With` | Allowed headers |
+| `API_CORS_EXPOSE_HEADERS` | `string` | `Content-Length,X-Request-ID` | Exposed headers |
 
 ## 💾 Cache Configuration
 
@@ -100,12 +100,11 @@ This document lists all environment variables used by the Hospeda API, organized
 
 | Variable | Type | Default | Description |
 |----------|------|---------|-------------|
-| `CLERK_PUBLISHABLE_KEY` | `string` | - | Clerk publishable key |
-| `CLERK_SECRET_KEY` | `string` | - | Clerk secret key |
-| `CLERK_WEBHOOK_SECRET` | `string` | - | Clerk webhook secret |
-| `SEED_AUTH_PROVIDER` | `'CLERK' \| 'AUTH0' \| 'CUSTOM'` | `CLERK` | Primary auth provider used by seeds to link Super Admin |
+| `HOSPEDA_BETTER_AUTH_URL` | `string` | - | Better Auth URL |
+| `HOSPEDA_BETTER_AUTH_SECRET` | `string` | - | Better Auth secret key |
+| `SEED_AUTH_PROVIDER` | `'BETTER_AUTH' \| 'AUTH0' \| 'CUSTOM'` | `BETTER_AUTH` | Primary auth provider used by seeds to link Super Admin |
 | `SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID` | `string` | - | Provider user id to link Super Admin in DB |
-| `SEED_AUTH_PROVIDER` | `'CLERK' \| 'AUTH0' \| 'CUSTOM'` | `CLERK` | Primary auth provider used by seeds to link Super Admin |
+| `SEED_AUTH_PROVIDER` | `'BETTER_AUTH' \| 'AUTH0' \| 'CUSTOM'` | `BETTER_AUTH` | Primary auth provider used by seeds to link Super Admin |
 | `SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID` | `string` | - | Provider user id to link Super Admin in DB |
 
 ## 🗄️ Database Configuration
@@ -209,8 +208,7 @@ All environment variables are:
 
 Never commit these to version control:
 
-- `CLERK_SECRET_KEY`
-- `CLERK_WEBHOOK_SECRET`
+- `HOSPEDA_BETTER_AUTH_SECRET`
 - `DATABASE_URL`
 - Any production secrets
 
@@ -222,4 +220,4 @@ Never commit these to version control:
 
 ---
 
-*Environment configuration is automatically validated on startup. Invalid configurations will prevent the API from starting. Last updated: 2024-12-19*
+Environment configuration is automatically validated on startup. Invalid configurations will prevent the API from starting.

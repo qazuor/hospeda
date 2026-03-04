@@ -473,9 +473,9 @@ cat results.json | jq -r '.metrics | to_entries[] | "\(.key): \(.value)"'
 **Solutions**:
 
 1. Update `AUTH_TOKEN` environment variable
-2. Generate new Clerk JWT token
+2. Generate new auth JWT token
 3. Check token expiration
-4. Verify Clerk configuration in API
+4. Verify Better Auth configuration in API
 
 ### Memory Issues
 

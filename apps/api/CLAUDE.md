@@ -391,14 +391,14 @@ API_PORT=3001
 NODE_ENV=development
 
 # Database
-DATABASE_URL=postgresql://...
+HOSPEDA_DATABASE_URL=postgresql://...
 
 # Better Auth
 HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # CORS
-CORS_ORIGIN=http://localhost:4321,http://localhost:3000
+API_CORS_ORIGINS=http://localhost:4321,http://localhost:3000
 
 # Rate Limiting
 RATE_LIMIT_WINDOW_MS=60000
@@ -522,6 +522,20 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 8. **Handle errors gracefully** with try-catch
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
+
+## Common Gotchas
+
+- `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
+- Billing endpoints from qzpay-hono (`/api/v1/billing/plans`, `/api/v1/billing/addons`) DO accept `limit` natively
+- Always use `PermissionEnum` for auth checks, never check roles directly
+- `ResponseFactory` must be used for all responses - no raw `c.json()`
+
+## Related Documentation
+
+- [Adding API Routes](docs/development/creating-endpoints.md)
+- [Authentication Guide](../../docs/security/authentication.md)
+- [Dependency Policy](../../docs/guides/dependency-policy.md)
+- [API Design Standards](../../.claude/docs/api-design-standards.md)
 
 <claude-mem-context>
 # Recent Activity

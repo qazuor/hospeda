@@ -119,10 +119,9 @@ NODE_ENV=development
 # Database
 DATABASE_URL=postgresql://user:password@localhost:5432/hospeda_dev
 
-# Clerk Authentication
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
-CLERK_WEBHOOK_SECRET=whsec_...
+# Better Auth Authentication
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
 
 # CORS (comma-separated origins)
 CORS_ORIGIN=http://localhost:4321,http://localhost:3000
@@ -135,18 +134,13 @@ RATE_LIMIT_MAX_REQUESTS=100
 LOG_LEVEL=debug
 ```
 
-### Getting Clerk Keys
+### Getting Better Auth Keys
 
-1. Create account at [Clerk](https://clerk.com)
-2. Create new application
-3. Go to **API Keys** section
-4. Copy:
-   - **Publishable Key** → `CLERK_PUBLISHABLE_KEY`
-   - **Secret Key** → `CLERK_SECRET_KEY`
-5. For webhooks (optional):
-   - Go to **Webhooks** section
-   - Create endpoint (e.g., `http://localhost:3001/webhooks/clerk`)
-   - Copy signing secret → `CLERK_WEBHOOK_SECRET`
+Better Auth is self-hosted. Configuration is done via environment variables:
+
+1. Set `HOSPEDA_BETTER_AUTH_URL` to your API's auth endpoint
+2. Generate a secret key for `HOSPEDA_BETTER_AUTH_SECRET`
+3. See [Better Auth docs](https://www.better-auth.com) for detailed setup
 
 ---
 
@@ -346,16 +340,16 @@ If port 3001 is already in use:
 - Verify username and password in `DATABASE_URL`
 - Check `pg_hba.conf` for connection permissions
 
-### Clerk Authentication Errors
+### Authentication Errors
 
 **Error:** `Invalid publishable key`
 
-- Verify `CLERK_PUBLISHABLE_KEY` is correct
-- Ensure key starts with `pk_test_` (dev) or `pk_live_` (production)
+- Verify `HOSPEDA_BETTER_AUTH_URL` is correct
+- Ensure the auth server is running
 
-**Error:** `Clerk session not found`
+**Error:** `Session not found`
 
-- Make sure Clerk middleware is configured
+- Make sure auth middleware is configured
 - Check frontend is sending auth token
 
 ### Migration Errors

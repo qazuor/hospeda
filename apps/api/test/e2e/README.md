@@ -251,7 +251,7 @@ See `.env.test` for required configuration:
 
 - `TEST_DB_URL` or individual `TEST_DB_*` variables
 - `NODE_ENV=test`
-- `API_VALIDATION_CLERK_AUTH_ENABLED=false`
+- `API_VALIDATION_AUTH_ENABLED=false`
 
 ## Best Practices
 

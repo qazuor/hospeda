@@ -1,17 +1,17 @@
 # Authentication
 
-How to authenticate with the Hospeda API using Clerk.
+How to authenticate with the Hospeda API using Better Auth.
 
 ---
 
 ## Overview
 
-The Hospeda API uses **Clerk** for authentication with **JWT (JSON Web Tokens)**.
+The Hospeda API uses **Better Auth** for authentication with **JWT (JSON Web Tokens)**.
 
 **Authentication Flow:**
 
-1. User signs in via Clerk (web/admin app)
-2. Clerk issues a JWT token
+1. User signs in via Better Auth (web/admin app)
+2. Better Auth issues a JWT token
 3. Client includes token in `Authorization` header
 4. API validates token and extracts user info
 
@@ -19,18 +19,18 @@ The Hospeda API uses **Clerk** for authentication with **JWT (JSON Web Tokens)**
 
 ## Quick Start
 
-### 1. Get a Clerk Token
+### 1. Get a Better Auth Token
 
 From your frontend application:
 
 ```typescript
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '@repo/auth-ui'
 
 function MyComponent() {
   const { getToken } = useAuth()
 
   const fetchData = async () => {
-    // Get token from Clerk
+    // Get token from Better Auth
     const token = await getToken()
 
     // Make authenticated request
@@ -70,22 +70,22 @@ const response = await fetch('https://api.hospeda.com/api/v1/accommodations', {
 
 ### React Application
 
-Install Clerk React SDK:
+Install Better Auth React SDK:
 
 ```bash
-pnpm add @clerk/clerk-react
+pnpm add @repo/auth-ui
 ```
 
-Wrap your app with `ClerkProvider`:
+Wrap your app with `Better AuthProvider`:
 
 ```tsx
-import { ClerkProvider } from '@clerk/clerk-react'
+import { Better AuthProvider } from '@repo/auth-ui'
 
 function App() {
   return (
-    <ClerkProvider publishableKey={process.env.CLERK_PUBLISHABLE_KEY}>
+    <Better AuthProvider publishableKey={process.env.HOSPEDA_BETTER_AUTH_URL}>
       <YourApp />
-    </ClerkProvider>
+    </Better AuthProvider>
   )
 }
 ```
@@ -93,7 +93,7 @@ function App() {
 Use `useAuth` hook to get tokens:
 
 ```tsx
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '@repo/auth-ui'
 
 function ProtectedComponent() {
   const { getToken, isSignedIn } = useAuth()
@@ -113,24 +113,24 @@ function ProtectedComponent() {
 
 ### Next.js Application
 
-Install Clerk Next.js SDK:
+Install Better Auth Next.js SDK:
 
 ```bash
-pnpm add @clerk/nextjs
+pnpm add @repo/auth-ui
 ```
 
 Configure in `app/layout.tsx`:
 
 ```tsx
-import { ClerkProvider } from '@clerk/nextjs'
+import { Better AuthProvider } from '@repo/auth-ui'
 
 export default function RootLayout({ children }) {
   return (
-    <ClerkProvider>
+    <Better AuthProvider>
       <html>
         <body>{children}</body>
       </html>
-    </ClerkProvider>
+    </Better AuthProvider>
   )
 }
 ```
@@ -138,7 +138,7 @@ export default function RootLayout({ children }) {
 Get token in Server Component:
 
 ```tsx
-import { auth } from '@clerk/nextjs/server'
+import { auth } from '@repo/auth-ui/server'
 
 export default async function ServerComponent() {
   const { getToken } = auth()
@@ -244,7 +244,7 @@ const data = await response.json()
 
 ## Token Refresh
 
-Clerk automatically handles token refresh. The `getToken()` method:
+Better Auth automatically handles token refresh. The `getToken()` method:
 
 - Returns cached token if valid
 - Refreshes token if expired
@@ -258,7 +258,7 @@ const token = await getToken()
 **Token Expiration:**
 
 - Default: 60 minutes
-- Automatically refreshed by Clerk SDK
+- Automatically refreshed by Better Auth SDK
 - No manual refresh needed
 
 ---
@@ -405,11 +405,11 @@ const response = await fetch('https://api.hospeda.com/api/v1/users/123', {
 
 ### Token Expired
 
-Clerk automatically refreshes tokens. If you encounter expired token errors:
+Better Auth automatically refreshes tokens. If you encounter expired token errors:
 
 1. Ensure you're using `getToken()` (not caching tokens manually)
 2. Check network connectivity
-3. Verify Clerk configuration
+3. Verify Better Auth configuration
 
 ### CORS Errors
 
@@ -450,7 +450,7 @@ const token = await getToken()
 
 ```typescript
 // lib/api.ts
-import { useAuth } from '@clerk/clerk-react'
+import { useAuth } from '@repo/auth-ui'
 
 export async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const { getToken } = useAuth()

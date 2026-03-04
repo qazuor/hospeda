@@ -545,6 +545,169 @@ const result = await model.create(body);
 
 ---
 
+## Response Format
+
+All routes automatically return a standardized response format via `ResponseFactory`.
+
+### Success Response
+
+```typescript
+{
+  success: true,
+  data: {
+    // Handler's return value
+  },
+  metadata: {
+    timestamp: "2026-01-01T00:00:00.000Z",
+    requestId: "req_12345",
+    cached: false,
+    responseTime: 45
+  }
+}
+```
+
+### Error Response
+
+```typescript
+{
+  success: false,
+  error: {
+    code: "VALIDATION_ERROR",
+    message: "Request validation failed",
+    details: [
+      {
+        field: "email",
+        message: "Invalid email format",
+        userFriendlyMessage: "Please enter a valid email address",
+        suggestion: "Use format: name@domain.com"
+      }
+    ]
+  },
+  metadata: {
+    timestamp: "2026-01-01T00:00:00.000Z",
+    requestId: "req_12345"
+  }
+}
+```
+
+---
+
+## Testing Routes
+
+### Testing Simple Routes
+
+```typescript
+describe('Health Route', () => {
+  it('should return health status', async () => {
+    const app = createTestApp(healthRoute);
+
+    const response = await app.request('/health');
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.data.status).toBe('healthy');
+  });
+});
+```
+
+### Testing with Authentication
+
+```typescript
+describe('User CRUD Route', () => {
+  it('should require authentication', async () => {
+    const app = createTestApp(userCrudRoute);
+
+    const response = await app.request('/users/123');
+
+    expect(response.status).toBe(401);
+  });
+
+  it('should return user data for authenticated request', async () => {
+    const app = createTestApp(userCrudRoute);
+    const mockActor = createMockUserActor();
+
+    const response = await app.request('/users/123', {
+      headers: { 'x-test-actor': JSON.stringify(mockActor) }
+    });
+
+    expect(response.status).toBe(200);
+  });
+});
+```
+
+### Testing Validation
+
+```typescript
+describe('Create User Route', () => {
+  it('should validate email format', async () => {
+    const app = createTestApp(createUserRoute);
+
+    const response = await app.request('/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'invalid-email',
+        name: 'Test User'
+      })
+    });
+
+    const data = await response.json();
+    expect(response.status).toBe(400);
+    expect(data.error.code).toBe('VALIDATION_ERROR');
+    expect(data.error.details[0].field).toBe('email');
+  });
+});
+```
+
+---
+
+## Migration Guide
+
+### From Old Pattern
+
+```typescript
+// Old pattern (lots of boilerplate)
+app.openapi(
+  createRoute({
+    method: 'get',
+    path: '/users',
+    request: { query: UserQuerySchema },
+    responses: {
+      200: {
+        content: { 'application/json': { schema: UserListResponseSchema } }
+      }
+    }
+  }),
+  async (c) => {
+    const query = c.req.valid('query');
+    // ... handler logic
+    return c.json({
+      success: true,
+      data: users,
+      metadata: { timestamp: new Date().toISOString(), requestId: c.get('requestId') }
+    });
+  }
+);
+```
+
+### To New Pattern
+
+```typescript
+// New pattern (clean and type-safe)
+export const userListRoute = createListRoute({
+  path: '/users',
+  requestQuery: UserQuerySchema,
+  responseSchema: UserListResponseSchema,
+  handler: async (ctx, params, body, query) => {
+    // ... handler logic
+    return users; // Response formatting is automatic
+  }
+});
+```
+
+---
+
 ## Next Steps
 
 - [Creating Endpoints](creating-endpoints.md) - Full endpoint tutorial
@@ -553,4 +716,4 @@ const result = await model.create(body);
 
 ---
 
-⬅️ Back to [Development Guide](README.md)
+Back to [Development Guide](README.md)

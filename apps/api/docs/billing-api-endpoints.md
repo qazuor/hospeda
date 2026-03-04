@@ -27,12 +27,12 @@ The billing system provides subscription management, payment processing, add-on 
 
 ## Authentication
 
-All billing endpoints require **Clerk authentication** unless explicitly noted as public.
+All billing endpoints require **Better Auth authentication** unless explicitly noted as public.
 
 **Authentication header:**
 
 ```http
-Authorization: Bearer <clerk-jwt-token>
+Authorization: Bearer <auth-jwt-token>
 ```
 
 **Exceptions:**

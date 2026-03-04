@@ -4,16 +4,16 @@ Modern REST API built with Hono, TypeScript, and PostgreSQL for the Hospeda tour
 
 ## Overview
 
-Production-ready backend service providing comprehensive endpoints for accommodations, destinations, events, posts, and user management. Features include Clerk authentication, rate limiting, metrics collection, OpenAPI documentation, and standardized error handling.
+Production-ready backend service providing comprehensive endpoints for accommodations, destinations, events, posts, and user management. Features include Better Auth authentication, rate limiting, metrics collection, OpenAPI documentation, and standardized error handling.
 
 **Tech Stack:**
 
 - **Framework**: Hono (fast, lightweight, edge-ready)
 - **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: Clerk
+- **Authentication**: Better Auth
 - **Validation**: Zod schemas
 - **Testing**: Vitest (>90% coverage)
-- **Deployment**: Fly.io
+- **Deployment**: Vercel (serverless)
 
 ## Quick Start
 
@@ -38,7 +38,7 @@ The API will be available at `http://localhost:3001`
 
 ## Key Features
 
-- 🔐 **Authentication**: Clerk-based JWT authentication
+- 🔐 **Authentication**: Better Auth session-based authentication
 - 🛡️ **Security**: Rate limiting, CORS, security headers
 - 📊 **Monitoring**: Built-in metrics and logging
 - 📚 **Documentation**: OpenAPI/Swagger at `/docs`
@@ -89,9 +89,9 @@ NODE_ENV=development
 # Database
 DATABASE_URL=postgresql://...
 
-# Clerk Authentication
-CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
+# Better Auth
+HOSPEDA_BETTER_AUTH_SECRET=<min-32-char-secret>
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001
 
 # CORS (comma-separated origins)
 CORS_ORIGIN=http://localhost:4321,http://localhost:3000
@@ -134,6 +134,13 @@ src/
 ├── utils/             # Route factories, response helpers
 └── schemas/           # API-specific schemas
 ```
+
+---
+
+## Related Documentation
+
+- [Adding API Routes Guide](../../docs/guides/adding-api-routes.md)
+- [Authentication Guide](../../docs/guides/authentication.md)
 
 ---
 

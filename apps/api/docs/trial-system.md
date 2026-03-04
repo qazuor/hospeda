@@ -243,7 +243,7 @@ curl -X POST http://localhost:3001/api/v1/billing/trial/check-expiry \
 
 When a new owner or complex user registers:
 
-1. Clerk auth creates user
+1. Better Auth creates user
 2. Auth sync creates DB user record
 3. Billing customer sync creates billing customer
 4. **Trial service auto-starts 14-day trial**
@@ -367,6 +367,38 @@ Check:
 - Billing service configured?
 - Admin authentication on endpoint
 - Subscription status in database
+
+## Design Decisions
+
+### Trial Auto-Start: HOST Role Only
+
+Trial auto-start is restricted to `HOST` role users only. This is a **conscious product decision**, not a missing implementation.
+
+**Context**: SPEC-021 task T-019 originally specified extending trial auto-start to a `COMPLEX` user role. During implementation, it was determined that the `COMPLEX` role does not exist in the system. All accommodation owners register as `HOST`, regardless of whether they manage simple or complex accommodations.
+
+**Current Implementation** (`apps/api/src/lib/auth.ts`, line 331):
+
+```typescript
+if (customerId && user.role === 'HOST') {
+    const trialService = new TrialService(billing);
+    await trialService.startTrial({ customerId });
+}
+```
+
+**Rationale**:
+
+1. **No COMPLEX role exists**: The platform does not differentiate user roles by accommodation complexity. All owners are `HOST`.
+2. **Complex features are plan-based**: Simple vs. complex accommodation features are controlled by the billing plan tier (`owner-basico`, `owner-pro`, `owner-premium`, `complex-basico`, etc.), not by user role.
+3. **Other roles do not need trials**:
+   - `GUEST`: End users browsing accommodations. No subscription needed.
+   - `ADMIN`: Platform administrators. No billing relationship.
+   - `EDITOR`: Content editors. No subscription needed.
+   - `SPONSOR`: Sponsors have a separate payment flow (sponsorship purchases), not subscription-based trials.
+4. **Single trial plan**: All HOST users start on the `owner-basico` 14-day free trial, as documented in `v1-launch-strategy.md`.
+
+**When to revisit**: This decision should be revisited if a new role is introduced that requires subscription-based access (e.g., a `PROPERTY_MANAGER` role for multi-property management companies), if the SPONSOR role is migrated to a subscription model, or if the platform introduces tiered access for content editors that requires billing.
+
+---
 
 ## Future Enhancements
 

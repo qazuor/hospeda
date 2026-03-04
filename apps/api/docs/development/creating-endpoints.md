@@ -8,8 +8,26 @@ Step-by-step tutorial for creating new API endpoints.
 
 This guide walks you through creating a complete CRUD endpoint for a new entity, following Hospeda's architecture patterns.
 
-**Time**: ~30 minutes  
+**Time**: ~30 minutes
 **Prerequisites**: Local environment setup
+
+---
+
+## Route Tiers
+
+The API uses a three-tier route architecture:
+
+| Tier | URL Pattern | Auth | Consumer |
+|------|-------------|------|----------|
+| **Public** | `/api/v1/public/*` | None | Web app (public pages) |
+| **Protected** | `/api/v1/protected/*` | User session | Web app (user features) |
+| **Admin** | `/api/v1/admin/*` | Admin + permissions | Admin panel |
+
+### Rules
+
+- Web app (`apps/web`): Uses only `/public/` and `/protected/` endpoints. **Never** `/admin/`.
+- Admin panel (`apps/admin`): Uses only `/admin/` endpoints. Exception: `/api/v1/public/auth/me`.
+- Never expose admin functionality through public or protected routes.
 
 ---
 
@@ -17,19 +35,19 @@ This guide walks you through creating a complete CRUD endpoint for a new entity,
 
 ```text
 1. Define Zod Schema (@repo/schemas)
-   ↓
+   |
 2. Create Database Schema (@repo/db/schemas)
-   ↓
+   |
 3. Generate & Run Migration
-   ↓
+   |
 4. Create Model (@repo/db/models)
-   ↓
+   |
 5. Create Service (@repo/service-core)
-   ↓
+   |
 6. Create Routes (apps/api/routes)
-   ↓
+   |
 7. Register Routes
-   ↓
+   |
 8. Test Endpoints
 ```
 
@@ -158,7 +176,7 @@ export class ProductModel extends BaseModel<typeof products> {
     maxPrice: number;
   }): Promise<Product[]> {
     const { minPrice, maxPrice } = params;
-    
+
     return this.db
       .select()
       .from(this.table)
@@ -217,13 +235,13 @@ export class ProductService extends BaseCrudService<
   }): Promise<ServiceResult<Product>> {
     try {
       const product = await this.findById({ id: params.id });
-      
+
       if (!product.success) {
         return product;
       }
 
       const newStock = product.data.stock + params.quantity;
-      
+
       if (newStock < 0) {
         return {
           success: false,
@@ -513,6 +531,23 @@ curl -X DELETE http://localhost:3001/api/v1/products/PRODUCT_ID \
 
 ---
 
+## Route Factory Functions
+
+For common patterns, use the factory functions:
+
+| Factory | Use Case |
+|---------|----------|
+| `createSimpleRoute` | Basic GET endpoint |
+| `createOpenApiRoute` | Route with OpenAPI spec |
+| `createListRoute` | Paginated list with filters |
+| `createAdminListRoute` | Admin list (auto-merges PaginationQuerySchema) |
+
+### Important: createAdminListRoute
+
+`createAdminListRoute` automatically merges `PaginationQuerySchema` into your query schema. It uses `page` + `pageSize` params (NOT `limit`). It rejects unknown query parameters.
+
+---
+
 ## Common Patterns
 
 ### Making an Endpoint Public
@@ -547,6 +582,128 @@ options: {
 options: {
   cacheTTL: 300 // 5 minutes
 }
+```
+
+---
+
+## Response Format
+
+Always use `ResponseFactory`:
+
+```typescript
+ResponseFactory.success(c, data)        // 200
+ResponseFactory.created(c, data)        // 201
+ResponseFactory.noContent(c)            // 204
+ResponseFactory.badRequest(c, message)  // 400
+ResponseFactory.unauthorized(c)         // 401
+ResponseFactory.forbidden(c)            // 403
+ResponseFactory.notFound(c, message)    // 404
+ResponseFactory.error(c, error)         // 500
+```
+
+---
+
+## Middleware Chain
+
+Routes go through middleware in this order:
+
+1. CORS (configured per environment)
+2. Rate limiting (Redis-based)
+3. Authentication (session validation)
+4. Permission check (`requirePermission`)
+5. Request validation (zValidator)
+6. Route handler
+7. Response formatting
+
+---
+
+## Permission System
+
+**Always use PermissionEnum, never check roles directly:**
+
+```typescript
+// CORRECT
+requirePermission(PermissionEnum.ACCOMMODATION_CREATE)
+
+// WRONG - never do this
+if (user.role === 'ADMIN') { ... }
+```
+
+---
+
+## Alternative: Simplified Admin CRUD Route
+
+For simpler admin routes that do not use the factory functions, you can use Hono directly:
+
+```typescript
+// apps/api/src/routes/my-entity/admin.routes.ts
+import { Hono } from 'hono';
+import { zValidator } from '@hono/zod-validator';
+import { CreateMyEntitySchema, UpdateMyEntitySchema } from '@repo/schemas';
+import { ResponseFactory } from '../../utils/response-factory';
+import { MyEntityService } from '@repo/service-core';
+import { requirePermission } from '../../middlewares/auth';
+import { PermissionEnum } from '@repo/schemas';
+
+const app = new Hono();
+const service = new MyEntityService();
+
+// GET /api/v1/admin/my-entity
+app.get('/', requirePermission(PermissionEnum.MY_ENTITY_READ), async (c) => {
+  const query = c.req.query();
+  const result = await service.findAll(query);
+  return ResponseFactory.success(c, result);
+});
+
+// POST /api/v1/admin/my-entity
+app.post(
+  '/',
+  requirePermission(PermissionEnum.MY_ENTITY_CREATE),
+  zValidator('json', CreateMyEntitySchema),
+  async (c) => {
+    const data = c.req.valid('json');
+    const result = await service.create({ data });
+    return ResponseFactory.created(c, result.data);
+  }
+);
+
+export { app as myEntityAdminRoutes };
+```
+
+Register in the admin router:
+
+```typescript
+// apps/api/src/routes/admin/index.ts
+import { myEntityAdminRoutes } from '../my-entity/admin.routes';
+
+adminRouter.route('/my-entity', myEntityAdminRoutes);
+```
+
+---
+
+## Testing Routes
+
+```typescript
+// apps/api/test/routes/my-entity.test.ts
+import { describe, it, expect } from 'vitest';
+import { app } from '../../src/app';
+
+describe('GET /api/v1/admin/my-entity', () => {
+  it('should return 401 without auth', async () => {
+    const res = await app.request('/api/v1/admin/my-entity');
+    expect(res.status).toBe(401);
+  });
+
+  it('should return paginated list for admin', async () => {
+    const res = await app.request('/api/v1/admin/my-entity', {
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.data).toBeDefined();
+    expect(body.pagination).toBeDefined();
+  });
+});
 ```
 
 ---
@@ -586,6 +743,20 @@ pnpm build
 
 ---
 
+## Checklist
+
+- [ ] Schema defined in `@repo/schemas`
+- [ ] Service created extending `BaseCrudService`
+- [ ] Route uses correct tier (public/protected/admin)
+- [ ] Zod validation on all inputs (body, params, query)
+- [ ] Permission checks use `PermissionEnum`
+- [ ] Responses use `ResponseFactory`
+- [ ] Route registered in tier router
+- [ ] Tests cover auth, validation, happy path, and error cases
+- [ ] No business logic in route handlers (delegate to service)
+
+---
+
 ## Next Steps
 
 - [Route Factories Guide](route-factories.md) - Learn factory patterns in depth
@@ -595,4 +766,4 @@ pnpm build
 
 ---
 
-⬅️ Back to [Development Guide](README.md)
+Back to [Development Guide](README.md)
