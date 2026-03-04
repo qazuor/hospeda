@@ -1,7 +1,15 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { UserNav } from '../../../src/components/auth/UserNav.client';
 import type { UserNavProps } from '../../../src/components/auth/UserNav.client';
+
+vi.mock('../../../src/lib/auth-client', () => ({
+    signOut: vi.fn().mockResolvedValue(undefined),
+    signIn: vi.fn(),
+    signUp: vi.fn(),
+    useSession: vi.fn().mockReturnValue({ data: null, isPending: false }),
+    authClient: {}
+}));
 
 describe('UserNav.client.tsx', () => {
     const mockUser: UserNavProps['user'] = {
@@ -651,7 +659,7 @@ describe('UserNav.client.tsx', () => {
             );
             const button = screen.getByRole('button', { name: /user menu/i });
             expect(button.className).toContain('rounded-lg');
-            expect(button.className).toContain('hover:bg-gray-100');
+            expect(button.className).toContain('hover:bg-surface-alt');
             expect(button.className).toContain('transition-colors');
         });
 
@@ -669,7 +677,7 @@ describe('UserNav.client.tsx', () => {
             expect(menu.className).toContain('rounded-lg');
             expect(menu.className).toContain('border');
             expect(menu.className).toContain('shadow-lg');
-            expect(menu.className).toContain('bg-white');
+            expect(menu.className).toContain('bg-surface-elevated');
         });
 
         it('should rotate chevron icon when menu is open', () => {
@@ -703,7 +711,7 @@ describe('UserNav.client.tsx', () => {
             fireEvent.click(button);
 
             const menuItem = screen.getByRole('menuitem', { name: 'Mi Cuenta' });
-            expect(menuItem.className).toContain('hover:bg-gray-100');
+            expect(menuItem.className).toContain('hover:bg-surface-alt');
             expect(menuItem.className).toContain('transition-colors');
         });
 
@@ -718,8 +726,8 @@ describe('UserNav.client.tsx', () => {
             fireEvent.click(button);
 
             const signOutButton = screen.getByRole('menuitem', { name: 'Cerrar sesión' });
-            expect(signOutButton.className).toContain('text-red-600');
-            expect(signOutButton.className).toContain('hover:bg-red-50');
+            expect(signOutButton.className).toContain('text-error');
+            expect(signOutButton.className).toContain('hover:bg-error/10');
         });
     });
 

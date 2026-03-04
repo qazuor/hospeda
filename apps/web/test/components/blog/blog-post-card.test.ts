@@ -70,24 +70,24 @@ describe('BlogPostCard.astro', () => {
             expect(content).toContain('categoryColorMap');
         });
 
-        it('should map TIPS to green-500', () => {
-            expect(content).toContain('bg-green-500');
+        it('should map TIPS to theme green token', () => {
+            expect(content).toContain("TIPS: 'bg-green");
         });
 
-        it('should map FOOD/GASTRONOMY to orange-500', () => {
-            expect(content).toContain('bg-orange-500');
+        it('should map FOOD/GASTRONOMY to theme secondary token', () => {
+            expect(content).toContain("GASTRONOMY: 'bg-secondary");
         });
 
-        it('should map CARNIVAL to pink-500', () => {
-            expect(content).toContain('bg-pink-500');
+        it('should map CARNIVAL to theme terracotta token', () => {
+            expect(content).toContain("CARNIVAL: 'bg-terracotta");
         });
 
-        it('should map CULTURE to purple-500', () => {
-            expect(content).toContain('bg-purple-500');
+        it('should map CULTURE to theme info token', () => {
+            expect(content).toContain("CULTURE: 'bg-info");
         });
 
-        it('should map BEACH to teal-500', () => {
-            expect(content).toContain('bg-teal-500');
+        it('should map BEACH to theme primary token', () => {
+            expect(content).toContain("BEACH: 'bg-primary");
         });
 
         it('should fallback to bg-primary for unknown categories', () => {

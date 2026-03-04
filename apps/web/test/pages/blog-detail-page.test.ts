@@ -95,8 +95,10 @@ describe('Blog Detail Page ([slug].astro)', () => {
     });
 
     describe('TipTap Content Rendering', () => {
-        it('should call renderTiptapContent', () => {
-            expect(content).toContain('const renderedContent = renderTiptapContent({ content:');
+        it('should call renderTiptapContent wrapped in sanitizeHtml', () => {
+            expect(content).toContain(
+                'const renderedContent = sanitizeHtml({ html: renderTiptapContent({ content:'
+            );
         });
 
         it('should render content with set:html', () => {
@@ -292,11 +294,10 @@ describe('Blog Detail Page ([slug].astro)', () => {
             expect(content).toContain("i18nT({ locale, namespace: 'blog', key: 'detail.home' })");
         });
 
-        it('should format date according to locale', () => {
-            expect(content).toContain('publishDate.toLocaleDateString');
-            expect(content).toContain("'es-AR'");
-            expect(content).toContain("'pt-BR'");
-            expect(content).toContain("'en-US'");
+        it('should format date according to locale using formatDate from @repo/i18n', () => {
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('formatDate({');
         });
     });
 

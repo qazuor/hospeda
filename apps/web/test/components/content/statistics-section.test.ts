@@ -180,8 +180,10 @@ describe('CounterAnimation.client.tsx', () => {
             expect(counterContent).toContain('label');
         });
 
-        it('should format number with es-AR locale', () => {
-            expect(counterContent).toContain("toLocaleString('es-AR')");
+        it('should format number with es-AR locale using formatNumber from @repo/i18n', () => {
+            expect(counterContent).toContain('formatNumber');
+            expect(counterContent).toContain("from '@repo/i18n'");
+            expect(counterContent).toContain('locale: bcp47');
         });
     });
 });

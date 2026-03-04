@@ -84,7 +84,7 @@ describe('HeroImage Component', () => {
 
     it('has blur placeholder div', () => {
         expect(source).toContain('Blur placeholder background');
-        expect(source).toContain('bg-gray-200');
+        expect(source).toContain('bg-surface-alt');
     });
 
     it('has animate-pulse class on placeholder', () => {

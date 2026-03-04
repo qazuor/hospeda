@@ -315,18 +315,17 @@ describe('Design Tokens - global.css', () => {
         });
     });
 
-    describe('Z-index tokens', () => {
-        const zIndexTokens = [
-            '--z-base',
-            '--z-dropdown',
-            '--z-sticky',
-            '--z-modal-backdrop',
-            '--z-modal',
-            '--z-toast'
-        ];
+    describe('Z-index approach', () => {
+        it('should document Tailwind z-scale approach instead of custom CSS variables', () => {
+            expect(globalCss).toContain('Tailwind z-scale');
+        });
 
-        it.each(zIndexTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        it('should reference z-10, z-20, z-30, z-40, z-50 in documentation comment', () => {
+            expect(globalCss).toContain('z-10');
+            expect(globalCss).toContain('z-20');
+            expect(globalCss).toContain('z-30');
+            expect(globalCss).toContain('z-40');
+            expect(globalCss).toContain('z-50');
         });
     });
 

@@ -222,7 +222,7 @@ describe('ViewToggle.client.tsx', () => {
             );
             const mapButton = screen.getByLabelText('Map view');
             expect(mapButton.className).toContain('bg-transparent');
-            expect(mapButton.className).toContain('text-gray-700');
+            expect(mapButton.className).toContain('text-text');
         });
 
         it('should have hover styles on inactive buttons', () => {
@@ -233,7 +233,7 @@ describe('ViewToggle.client.tsx', () => {
                 />
             );
             const mapButton = screen.getByLabelText('Map view');
-            expect(mapButton.className).toContain('hover:bg-gray-100');
+            expect(mapButton.className).toContain('hover:bg-surface-alt');
         });
 
         it('should have transition styles on buttons', () => {

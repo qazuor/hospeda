@@ -502,7 +502,7 @@ describe('AccordionFAQ.client.tsx', () => {
             );
             const detailsElements = container.querySelectorAll('details');
             for (const details of Array.from(detailsElements)) {
-                expect(details.className).toContain('hover:border-gray-300');
+                expect(details.className).toContain('hover:border-border');
             }
         });
 
@@ -515,7 +515,7 @@ describe('AccordionFAQ.client.tsx', () => {
             );
             const summaries = container.querySelectorAll('summary');
             for (const summary of Array.from(summaries)) {
-                expect(summary.className).toContain('hover:bg-gray-50');
+                expect(summary.className).toContain('hover:bg-surface-alt');
             }
         });
 

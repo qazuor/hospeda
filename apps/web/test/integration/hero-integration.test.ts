@@ -79,9 +79,9 @@ describe('Hero Integration Tests', () => {
             expect(heroSection).toContain('overflow-hidden');
         });
 
-        it('HeroSection should import HeroSearchBar with client:load', () => {
+        it('HeroSection should import HeroSearchBar with client:idle', () => {
             expect(heroSection).toContain('HeroSearchBar');
-            expect(heroSection).toContain('client:load');
+            expect(heroSection).toContain('client:idle');
         });
 
         it('HeroSection should use shape divider with CSS mask', () => {

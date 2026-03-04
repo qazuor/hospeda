@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock toast store BEFORE importing component
@@ -317,10 +317,11 @@ describe('ContactForm.client.tsx', () => {
 
     describe('Form Submission - Loading State', () => {
         it('should disable all fields during submission', async () => {
+            let resolveFetch!: (value: unknown) => void;
             mockFetch.mockImplementation(
                 () =>
                     new Promise((resolve) => {
-                        setTimeout(() => resolve({ ok: true, json: () => ({}) }), 100);
+                        resolveFetch = resolve;
                     })
             );
 
@@ -351,13 +352,19 @@ describe('ContactForm.client.tsx', () => {
                 expect(screen.getByLabelText('Asunto')).toBeDisabled();
                 expect(screen.getByLabelText('Mensaje')).toBeDisabled();
             });
+
+            // Resolve the pending fetch so the component cleans up before teardown
+            await act(async () => {
+                resolveFetch({ ok: true, json: async () => ({}) });
+            });
         });
 
         it('should show loading text on submit button during submission', async () => {
+            let resolveFetch!: (value: unknown) => void;
             mockFetch.mockImplementation(
                 () =>
                     new Promise((resolve) => {
-                        setTimeout(() => resolve({ ok: true, json: () => ({}) }), 100);
+                        resolveFetch = resolve;
                     })
             );
 
@@ -384,6 +391,11 @@ describe('ContactForm.client.tsx', () => {
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: 'Enviando...' })).toBeInTheDocument();
+            });
+
+            // Resolve the pending fetch so the component cleans up before teardown
+            await act(async () => {
+                resolveFetch({ ok: true, json: async () => ({}) });
             });
         });
     });
@@ -723,10 +735,11 @@ describe('ContactForm.client.tsx', () => {
         });
 
         it('should display English loading text when locale is "en"', async () => {
+            let resolveFetch!: (value: unknown) => void;
             mockFetch.mockImplementation(
                 () =>
                     new Promise((resolve) => {
-                        setTimeout(() => resolve({ ok: true, json: () => ({}) }), 100);
+                        resolveFetch = resolve;
                     })
             );
 
@@ -753,6 +766,11 @@ describe('ContactForm.client.tsx', () => {
 
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: 'Sending...' })).toBeInTheDocument();
+            });
+
+            // Resolve the pending fetch so the component cleans up before teardown
+            await act(async () => {
+                resolveFetch({ ok: true, json: async () => ({}) });
             });
         });
 
@@ -905,7 +923,7 @@ describe('ContactForm.client.tsx', () => {
             render(<ContactForm />);
 
             const nameInput = screen.getByLabelText('Nombre');
-            expect(nameInput.className).toContain('border-gray-300');
+            expect(nameInput.className).toContain('border-border');
         });
     });
 });

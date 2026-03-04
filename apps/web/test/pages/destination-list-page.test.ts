@@ -188,7 +188,7 @@ describe('destinos/index.astro', () => {
         it('should have search bar section with DestinationFilters island', () => {
             expect(content).toContain('id="search-bar"');
             expect(content).toContain('<DestinationFilters');
-            expect(content).toContain('client:load');
+            expect(content).toContain('client:visible');
         });
 
         it('should have featured destinations section', () => {

@@ -171,8 +171,8 @@ describe('TestimonialCarousel.client.tsx', () => {
             expect(carouselContent).toContain('bg-primary');
         });
 
-        it('should use gray for inactive dots', () => {
-            expect(carouselContent).toContain('bg-gray-300');
+        it('should use border token for inactive dots', () => {
+            expect(carouselContent).toContain('bg-border');
         });
     });
 
@@ -191,8 +191,9 @@ describe('TestimonialCarousel.client.tsx', () => {
             expect(carouselContent).toContain('\\u2606');
         });
 
-        it('should use amber-400 for star colors', () => {
-            expect(carouselContent).toContain('text-amber-400');
+        it('should use design token classes for star colors', () => {
+            expect(carouselContent).toContain('text-star');
+            expect(carouselContent).toContain('text-star-empty');
         });
 
         it('should display location when provided', () => {

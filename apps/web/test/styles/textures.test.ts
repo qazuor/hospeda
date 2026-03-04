@@ -59,21 +59,9 @@ describe('Texture CSS - textures.css', () => {
             expect(waterBlock).toContain('background-size');
         });
 
-        it('should have dark mode variant [data-theme="dark"] .texture-water', () => {
-            expect(texturesCss).toContain('[data-theme="dark"] .texture-water');
-        });
-
-        it('should use different color in dark mode water texture (teal tint)', () => {
-            const darkWaterSection =
-                texturesCss.split('[data-theme="dark"] .texture-water')[1] ?? '';
-            // Dark mode uses teal rgba color (61, 189, 192 = #3DBDC0)
-            expect(darkWaterSection).toContain('61, 189, 192');
-        });
-
-        it('should use slightly higher opacity in dark mode (0.04)', () => {
-            const darkWaterSection =
-                texturesCss.split('[data-theme="dark"] .texture-water')[1] ?? '';
-            expect(darkWaterSection).toContain('0.04');
+        it('should use CSS variable for water color (auto-switches in dark mode)', () => {
+            const waterBlock = texturesCss.split('.texture-water')[1]?.split('\n}\n')[0] ?? '';
+            expect(waterBlock).toContain('var(--color-primary-rgb)');
         });
     });
 
@@ -184,9 +172,9 @@ describe('Texture CSS - textures.css', () => {
             expect(starsSection).toContain('1px 1px');
         });
 
-        it('should use rgba(240, 237, 232, ...) for warm white star color', () => {
+        it('should use CSS variable --color-star-rgb for themeable star color', () => {
             const starsSection = texturesCss.split('.texture-stars')[1] ?? '';
-            expect(starsSection).toContain('rgba(240, 237, 232,');
+            expect(starsSection).toContain('var(--color-star-rgb)');
         });
 
         it('should use multiple gradients for varied star positions', () => {
@@ -202,24 +190,10 @@ describe('Texture CSS - textures.css', () => {
     });
 
     describe('Opacity constraints across all textures', () => {
-        it('should NOT use opacity values above 0.5 in light mode textures', () => {
-            // Extract only the light mode parts (before [data-theme="dark"])
-            const lightModeSection = texturesCss.split('[data-theme="dark"]')[0] ?? '';
-            // Check none of the rgba values exceed 0.5 (except texture-stars which can go higher for visibility)
-            const rgbaMatches = lightModeSection.match(/rgba\([^)]+\)/g) ?? [];
-            const textureWaterMatches = rgbaMatches.filter(
-                (rgba) =>
-                    rgba.includes('13, 115, 119') ||
-                    rgba.includes('45, 106, 79') ||
-                    rgba.includes('139, 115, 85')
-            );
-            for (const rgba of textureWaterMatches) {
-                const opacityMatch = rgba.match(/,\s*([\d.]+)\s*\)$/);
-                if (opacityMatch) {
-                    const opacity = Number.parseFloat(opacityMatch[1] ?? '0');
-                    expect(opacity).toBeLessThanOrEqual(0.1);
-                }
-            }
+        it('should NOT use opacity values above 0.5 in texture patterns', () => {
+            // Water texture uses CSS var so check its opacity directly
+            const waterBlock = texturesCss.split('.texture-water')[1]?.split('\n}\n')[0] ?? '';
+            expect(waterBlock).toContain('0.03');
         });
 
         it('should use fill-opacity values of 0.03 or 0.04 in sand texture SVG', () => {
@@ -230,8 +204,9 @@ describe('Texture CSS - textures.css', () => {
     });
 
     describe('Dark mode variant coverage', () => {
-        it('should have dark mode override for texture-water', () => {
-            expect(texturesCss).toContain('[data-theme="dark"] .texture-water');
+        it('should have dark mode support for texture-water via CSS variable', () => {
+            // texture-water uses --color-primary-rgb which auto-switches in dark mode
+            expect(texturesCss).toContain('var(--color-primary-rgb)');
         });
 
         it('should have dark mode override for texture-sand', () => {

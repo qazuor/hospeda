@@ -52,8 +52,9 @@ describe('animations.css - Stagger and Glassmorphism utilities', () => {
             expect(content).toContain('@supports (backdrop-filter: blur(1px))');
         });
 
-        it('should have dark mode variant', () => {
-            expect(content).toContain('[data-theme="dark"] .glass-bar');
+        it('should use CSS variable tokens for themeable glass colors', () => {
+            expect(content).toContain('var(--glass-bg-rgb)');
+            expect(content).toContain('var(--glass-border-rgb)');
         });
 
         it('should have mobile fallback without blur', () => {

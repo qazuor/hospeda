@@ -84,8 +84,8 @@ describe('HeroSection.astro', () => {
             expect(content).toContain('HeroCarouselWithPhrases');
         });
 
-        it('should use client:load for carousel hydration', () => {
-            expect(content).toContain('client:load');
+        it('should use client:idle for carousel hydration', () => {
+            expect(content).toContain('client:idle');
         });
 
         it('should enable parallax', () => {

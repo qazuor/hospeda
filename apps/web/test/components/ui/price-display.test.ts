@@ -68,24 +68,14 @@ describe('PriceDisplay.astro', () => {
     });
 
     describe('Currency Formatters', () => {
-        it('should define ARS formatter with es-AR locale', () => {
-            expect(astroContent).toContain("'es-AR'");
-            expect(astroContent).toContain("currency: 'ARS'");
+        it('should use toBcp47Locale for locale resolution', () => {
+            expect(astroContent).toContain('toBcp47Locale(locale)');
+            expect(astroContent).toContain('currency: resolvedCurrency');
         });
 
-        it('should define USD formatter with en-US locale', () => {
-            expect(astroContent).toContain("'en-US'");
-            expect(astroContent).toContain("currency: 'USD'");
-        });
-
-        it('should define BRL formatter with pt-BR locale', () => {
-            expect(astroContent).toContain("'pt-BR'");
-            expect(astroContent).toContain("currency: 'BRL'");
-        });
-
-        it('should use Intl.NumberFormat for formatting', () => {
-            expect(astroContent).toContain('Intl.NumberFormat');
-            expect(astroContent).toContain("style: 'currency'");
+        it('should use formatCurrency from @repo/i18n for formatting', () => {
+            expect(astroContent).toContain('formatCurrency');
+            expect(astroContent).toContain('formatCurrency({');
         });
     });
 
@@ -144,7 +134,7 @@ describe('PriceDisplay.astro', () => {
         });
 
         it('should have disclaimer with gray color', () => {
-            expect(astroContent).toContain('text-gray-500');
+            expect(astroContent).toContain('text-text-tertiary');
         });
 
         it('should have disclaimer as block element', () => {
@@ -264,14 +254,14 @@ describe('PriceDisplay.client.tsx', () => {
     });
 
     describe('Currency Formatters', () => {
-        it('should define formatters for all currencies', () => {
-            expect(reactContent).toContain("ARS: new Intl.NumberFormat('es-AR'");
-            expect(reactContent).toContain("USD: new Intl.NumberFormat('en-US'");
-            expect(reactContent).toContain("BRL: new Intl.NumberFormat('pt-BR'");
+        it('should use toBcp47Locale for locale resolution', () => {
+            expect(reactContent).toContain('toBcp47Locale(locale)');
+            expect(reactContent).toContain('formatCurrency');
         });
 
-        it('should use currency style', () => {
-            expect(reactContent).toContain("style: 'currency'");
+        it('should use currency style via formatCurrency from @repo/i18n', () => {
+            expect(reactContent).toContain('formatCurrency({');
+            expect(reactContent).toContain('currency: resolvedCurrency');
         });
     });
 
@@ -349,7 +339,7 @@ describe('PriceDisplay.client.tsx', () => {
         });
 
         it('should have disclaimer with gray color', () => {
-            expect(reactContent).toContain('text-gray-500');
+            expect(reactContent).toContain('text-text-tertiary');
         });
     });
 });

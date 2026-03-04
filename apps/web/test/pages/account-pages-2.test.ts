@@ -387,23 +387,19 @@ describe('suscripcion.astro', () => {
             expect(suscripcionContent).toContain('<Breadcrumb');
         });
 
-        it('should import SubscriptionCard from account components', () => {
+        it('should import SubscriptionDashboard from account components', () => {
             expect(suscripcionContent).toContain(
-                "import { SubscriptionCard } from '../../../components/account/SubscriptionCard.client'"
+                "import { SubscriptionDashboard } from '../../../components/account/SubscriptionDashboard.client'"
             );
         });
 
-        it('should use SubscriptionCard with client:load directive', () => {
-            expect(suscripcionContent).toContain('<SubscriptionCard');
-            expect(suscripcionContent).toContain('client:load');
+        it('should use SubscriptionDashboard with client:idle directive', () => {
+            expect(suscripcionContent).toContain('<SubscriptionDashboard');
+            expect(suscripcionContent).toContain('client:idle');
         });
 
-        it('should pass locale prop to SubscriptionCard', () => {
+        it('should pass locale prop to SubscriptionDashboard', () => {
             expect(suscripcionContent).toContain('locale={locale}');
-        });
-
-        it('should pass upgradeHref prop to SubscriptionCard', () => {
-            expect(suscripcionContent).toContain('upgradeHref={`/${locale}/precios/turistas/`}');
         });
     });
 
@@ -512,16 +508,15 @@ describe('suscripcion.astro', () => {
         });
     });
 
-    describe('Content delegation to SubscriptionCard', () => {
+    describe('Content delegation to SubscriptionDashboard', () => {
         it('should not contain hardcoded "Plan Gratuito" literal in HTML template', () => {
-            // Plan name is now rendered by SubscriptionCard React component
-            // Remove frontmatter block to check only the HTML template section
+            // Plan name is now rendered by SubscriptionDashboard React component
             const htmlTemplate = suscripcionContent.split('---').slice(2).join('---');
             expect(htmlTemplate).not.toContain('Plan Gratuito');
         });
 
         it('should not contain hardcoded "Free Plan" literal in HTML template', () => {
-            // Plan name is now rendered by SubscriptionCard React component
+            // Plan name is now rendered by SubscriptionDashboard React component
             const htmlTemplate = suscripcionContent.split('---').slice(2).join('---');
             expect(htmlTemplate).not.toContain('Free Plan');
         });

@@ -221,7 +221,7 @@ describe('Visual Identity Integration (SPEC-015)', () => {
         });
 
         it('should define .glassmorphism-card with semi-transparent background', () => {
-            expect(statisticsSection).toContain('rgba(255, 255, 255, 0.08)');
+            expect(statisticsSection).toContain('rgb(255 255 255 / 0.08)');
         });
 
         it('should use @supports for progressive enhancement of backdrop-filter', () => {

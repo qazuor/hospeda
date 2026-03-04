@@ -231,9 +231,9 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('className="sr-only"');
         });
 
-        it('should color filled stars yellow and empty stars gray', () => {
-            expect(content).toContain('text-yellow-500');
-            expect(content).toContain('text-gray-300');
+        it('should color filled stars yellow and empty stars with muted token', () => {
+            expect(content).toContain('text-star');
+            expect(content).toContain('text-text-tertiary');
         });
 
         it('should use star character entity', () => {
@@ -373,8 +373,10 @@ describe('UserReviewsList.client.tsx', () => {
             expect(content).toContain('{review.content}');
         });
 
-        it('should render review date formatted', () => {
-            expect(content).toContain('new Date(review.createdAt).toLocaleDateString(');
+        it('should render review date formatted using formatDate from @repo/i18n', () => {
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('date: review.createdAt');
         });
 
         it('should use StarRating component for each review', () => {
@@ -831,7 +833,7 @@ describe('ReviewEditForm.client.tsx', () => {
         });
 
         it('should color selected stars yellow', () => {
-            expect(editFormContent).toContain('text-yellow-500');
+            expect(editFormContent).toContain('text-star');
         });
     });
 

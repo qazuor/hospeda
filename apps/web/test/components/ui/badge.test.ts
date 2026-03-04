@@ -58,12 +58,12 @@ describe('Badge.astro', () => {
     });
 
     describe('Type Variant', () => {
-        it('should have white/90% background', () => {
-            expect(content).toContain('bg-white/90');
+        it('should have surface/90% background', () => {
+            expect(content).toContain('bg-surface/90');
         });
 
-        it('should use gray-800 text', () => {
-            expect(content).toContain('text-gray-800');
+        it('should use text token', () => {
+            expect(content).toContain('text-text');
         });
 
         it('should use rounded-full', () => {
@@ -120,12 +120,12 @@ describe('Badge.astro', () => {
     });
 
     describe('Tag Variant', () => {
-        it('should use gray-100 background', () => {
-            expect(content).toContain('bg-gray-100');
+        it('should use surface-alt background', () => {
+            expect(content).toContain('bg-surface-alt');
         });
 
-        it('should use gray-600 text', () => {
-            expect(content).toContain('text-gray-600');
+        it('should use text-secondary token', () => {
+            expect(content).toContain('text-text-secondary');
         });
 
         it('should use caption size (text-xs)', () => {

@@ -545,7 +545,7 @@ describe('SearchBar.client.tsx', () => {
                 />
             );
             const clearButton = screen.getByRole('button', { name: 'Clear search' });
-            expect(clearButton.className).toContain('hover:bg-gray-400');
+            expect(clearButton.className).toContain('hover:bg-border');
         });
 
         it('should have disabled styles on search button', () => {
@@ -558,7 +558,7 @@ describe('SearchBar.client.tsx', () => {
             }
 
             expect(searchButton.className).toContain('disabled:cursor-not-allowed');
-            expect(searchButton.className).toContain('disabled:bg-gray-300');
+            expect(searchButton.className).toContain('disabled:bg-surface-alt');
         });
 
         it('should forward className to wrapper', () => {

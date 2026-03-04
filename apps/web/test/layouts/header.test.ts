@@ -162,7 +162,7 @@ describe('Header.astro', () => {
         });
 
         it('should use relative positioning for non-hero pages', () => {
-            expect(content).toContain('relative bg-gray-900');
+            expect(content).toContain('relative bg-bg');
         });
     });
 

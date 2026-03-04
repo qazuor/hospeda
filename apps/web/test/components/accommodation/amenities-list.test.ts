@@ -102,8 +102,8 @@ describe('AmenitiesList.astro', () => {
             expect(content).toContain('amenity.name');
         });
 
-        it('should map over amenities array', () => {
-            expect(content).toContain('amenities.map');
+        it('should iterate over sorted amenities array', () => {
+            expect(content).toContain('sortedAmenities.map');
         });
     });
 
@@ -119,6 +119,33 @@ describe('AmenitiesList.astro', () => {
 
         it('should hide decorative icons from assistive tech', () => {
             expect(content).toContain('aria-hidden="true"');
+        });
+    });
+
+    describe('Display Weight sorting', () => {
+        it('should include displayWeight as optional field in AmenityItem', () => {
+            expect(content).toContain('displayWeight?: number');
+        });
+
+        it('should sort amenities by displayWeight DESC before rendering', () => {
+            expect(content).toContain(
+                '.sort(\n  (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)\n)'
+            );
+        });
+
+        it('should use sorted array for rendering, not the original', () => {
+            expect(content).toContain('sortedAmenities.map');
+            expect(content).not.toMatch(/\bamenities\.map\b/);
+        });
+
+        it('should create a new array to avoid mutating props', () => {
+            expect(content).toContain('[...amenities].sort');
+        });
+
+        it('should default to weight 50 when displayWeight is absent', () => {
+            expect(content).toMatch(
+                /b\.displayWeight\s*\?\?\s*50\)\s*-\s*\(a\.displayWeight\s*\?\?\s*50/
+            );
         });
     });
 

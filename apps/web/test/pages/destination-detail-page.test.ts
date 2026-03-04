@@ -92,7 +92,9 @@ describe('Destination Detail Page', () => {
         });
 
         it('should import t from i18n lib', () => {
-            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
+            expect(content).toContain(
+                "import { t as i18nT, tPlural as i18nTPlural } from '../../../lib/i18n'"
+            );
         });
 
         it('should import TipTap renderer', () => {
@@ -217,15 +219,15 @@ describe('Destination Detail Page', () => {
             expect(content).toContain('const howToGetThereContent = destination.howToGetThere');
         });
 
-        it('should render description with renderTiptapContent', () => {
+        it('should render description with renderTiptapContent wrapped in sanitizeHtml', () => {
             expect(content).toContain(
-                'const renderedDescription = renderTiptapContent({ content: descriptionContent })'
+                'const renderedDescription = sanitizeHtml({ html: renderTiptapContent({ content: descriptionContent }) })'
             );
         });
 
-        it('should render howToGetThere with renderTiptapContent', () => {
+        it('should render howToGetThere with renderTiptapContent wrapped in sanitizeHtml', () => {
             expect(content).toContain(
-                'const renderedHowToGetThere = renderTiptapContent({ content: howToGetThereContent })'
+                'const renderedHowToGetThere = sanitizeHtml({ html: renderTiptapContent({ content: howToGetThereContent }) })'
             );
         });
 
@@ -479,7 +481,9 @@ describe('Destination Detail Page', () => {
 
     describe('Localization', () => {
         it('should import i18n t function', () => {
-            expect(content).toContain("import { t as i18nT } from '../../../lib/i18n'");
+            expect(content).toContain(
+                "import { t as i18nT, tPlural as i18nTPlural } from '../../../lib/i18n'"
+            );
         });
 
         it('should define tDetail helper using i18n', () => {

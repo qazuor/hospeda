@@ -59,15 +59,13 @@ describe('beneficios.astro', () => {
 
     describe('Localization', () => {
         it('should use t() for localized titles', () => {
-            expect(content).toContain(
-                "const title = t({ locale, namespace: 'benefits', key: 'page.title' })"
-            );
+            expect(content).toContain("namespace: 'benefits'");
+            expect(content).toContain("'page.title'");
         });
 
         it('should use t() for localized descriptions', () => {
-            expect(content).toContain(
-                "const description = t({ locale, namespace: 'benefits', key: 'page.description' })"
-            );
+            expect(content).toContain("namespace: 'benefits'");
+            expect(content).toContain("'page.description'");
         });
 
         it('should import HOME_BREADCRUMB from page-helpers', () => {
@@ -113,90 +111,88 @@ describe('beneficios.astro', () => {
     describe('Content sections', () => {
         it('should have hero section', () => {
             expect(content).toContain('id="hero"');
-            expect(content).toContain(
-                'Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios'
-            );
+            expect(content).toContain("'hero.description'");
         });
 
         it('should have tourist benefits section', () => {
             expect(content).toContain('id="tourist-benefits"');
-            expect(content).toContain('Beneficios para Turistas');
+            expect(content).toContain("'tourists.heading'");
         });
 
         it('should have owner benefits section', () => {
             expect(content).toContain('id="owner-benefits"');
-            expect(content).toContain('Beneficios para Propietarios');
+            expect(content).toContain("'owners.heading'");
         });
 
         it('should have CTA section', () => {
             expect(content).toContain('id="cta-section"');
-            expect(content).toContain('Descubre Nuestros Planes');
+            expect(content).toContain("'plans.heading'");
         });
     });
 
     describe('Tourist benefits', () => {
         it('should have wide selection benefit', () => {
-            expect(content).toContain('Amplia Selección Verificada');
-            expect(content).toContain('alojamientos verificados y de calidad');
+            expect(content).toContain("'tourists.wideSelection.title'");
+            expect(content).toContain("'tourists.wideSelection.description'");
         });
 
         it('should have secure booking benefit', () => {
-            expect(content).toContain('Reservas y Pagos Seguros');
-            expect(content).toContain('MercadoPago');
+            expect(content).toContain("'tourists.secureBooking.title'");
+            expect(content).toContain("'tourists.secureBooking.description'");
         });
 
         it('should have authentic experiences benefit', () => {
-            expect(content).toContain('Experiencias Locales Auténticas');
-            expect(content).toContain('cultura y hospitalidad local');
+            expect(content).toContain("'tourists.authenticExperiences.title'");
+            expect(content).toContain("'tourists.authenticExperiences.description'");
         });
 
         it('should have real reviews benefit', () => {
-            expect(content).toContain('Reseñas Reales de Viajeros');
-            expect(content).toContain('opiniones auténticas');
+            expect(content).toContain("'tourists.realReviews.title'");
+            expect(content).toContain("'tourists.realReviews.description'");
         });
 
         it('should have customer support benefit', () => {
-            expect(content).toContain('Soporte al Cliente');
-            expect(content).toContain('Equipo de soporte dedicado');
+            expect(content).toContain("'tourists.customerSupport.title'");
+            expect(content).toContain("'tourists.customerSupport.description'");
         });
     });
 
     describe('Owner benefits', () => {
         it('should have increased visibility benefit', () => {
-            expect(content).toContain('Mayor Visibilidad');
-            expect(content).toContain('miles de viajeros');
+            expect(content).toContain("'owners.increasedVisibility.title'");
+            expect(content).toContain("'owners.increasedVisibility.description'");
         });
 
         it('should have easy management benefit', () => {
-            expect(content).toContain('Gestión Fácil de Propiedades');
-            expect(content).toContain('Panel de administración intuitivo');
+            expect(content).toContain("'owners.easyManagement.title'");
+            expect(content).toContain("'owners.easyManagement.description'");
         });
 
         it('should have secure payments benefit', () => {
-            expect(content).toContain('Pagos Seguros vía MercadoPago');
-            expect(content).toContain('Integración directa con MercadoPago');
+            expect(content).toContain("'owners.securePayments.title'");
+            expect(content).toContain("'owners.securePayments.description'");
         });
 
         it('should have analytics benefit', () => {
-            expect(content).toContain('Análisis e Informes');
-            expect(content).toContain('métricas detalladas');
+            expect(content).toContain("'owners.analytics.title'");
+            expect(content).toContain("'owners.analytics.description'");
         });
 
         it('should have growing community benefit', () => {
-            expect(content).toContain('Comunidad en Crecimiento');
-            expect(content).toContain('red en expansión');
+            expect(content).toContain("'owners.growingCommunity.title'");
+            expect(content).toContain("'owners.growingCommunity.description'");
         });
     });
 
     describe('Call to Action links', () => {
         it('should have tourist pricing link', () => {
             expect(content).toContain('href={`/${locale}/precios-turistas/`}');
-            expect(content).toContain('Ver precios para turistas');
+            expect(content).toContain("'plans.touristPricing'");
         });
 
         it('should have owner pricing link', () => {
             expect(content).toContain('href={`/${locale}/precios-propietarios/`}');
-            expect(content).toContain('Ver precios para propietarios');
+            expect(content).toContain("'plans.ownerPricing'");
         });
     });
 

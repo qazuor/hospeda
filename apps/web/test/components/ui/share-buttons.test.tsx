@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ShareButtons } from '../../../src/components/ui/ShareButtons.client';
 import type { ShareButtonsProps } from '../../../src/components/ui/ShareButtons.client';
 
+const { webLoggerErrorMock } = vi.hoisted(() => ({
+    webLoggerErrorMock: vi.fn()
+}));
+
+vi.mock('../../../src/lib/logger', () => ({
+    webLogger: {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: webLoggerErrorMock,
+        debug: vi.fn()
+    }
+}));
+
 describe('ShareButtons.client.tsx', () => {
     const defaultProps: ShareButtonsProps = {
         url: 'https://example.com/page',
@@ -433,8 +447,6 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should handle clipboard write failure gracefully', async () => {
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
             // Override clipboard for this specific test
             const originalClipboard = navigator.clipboard;
             const writeTextMock = vi.fn().mockRejectedValue(new Error('Clipboard error'));
@@ -464,10 +476,13 @@ describe('ShareButtons.client.tsx', () => {
                 expect(writeTextMock).toHaveBeenCalled();
             });
 
-            // Give a small delay for console.error to be called
+            // Give a small delay for webLogger.error to be called
             await vi.waitFor(
                 () => {
-                    expect(consoleErrorSpy).toHaveBeenCalledWith('Copy failed:', expect.any(Error));
+                    expect(webLoggerErrorMock).toHaveBeenCalledWith(
+                        'Copy failed:',
+                        expect.any(Error)
+                    );
                 },
                 { timeout: 100 }
             );
@@ -478,7 +493,6 @@ describe('ShareButtons.client.tsx', () => {
                 configurable: true,
                 value: originalClipboard
             });
-            consoleErrorSpy.mockRestore();
         });
     });
 
@@ -536,8 +550,6 @@ describe('ShareButtons.client.tsx', () => {
         });
 
         it('should handle share cancellation gracefully', async () => {
-            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
             // Override share for this specific test
             const shareMock = vi.fn().mockRejectedValue(new Error('Share cancelled'));
 
@@ -564,18 +576,16 @@ describe('ShareButtons.client.tsx', () => {
                 expect(shareMock).toHaveBeenCalled();
             });
 
-            // Give a small delay for console.error to be called
+            // Give a small delay for webLogger.error to be called
             await vi.waitFor(
                 () => {
-                    expect(consoleErrorSpy).toHaveBeenCalledWith(
+                    expect(webLoggerErrorMock).toHaveBeenCalledWith(
                         'Share failed:',
                         expect.any(Error)
                     );
                 },
                 { timeout: 100 }
             );
-
-            consoleErrorSpy.mockRestore();
         });
     });
 

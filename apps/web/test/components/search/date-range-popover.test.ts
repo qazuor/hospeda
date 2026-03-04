@@ -78,8 +78,9 @@ describe('DateRangePopover.client.tsx', () => {
     });
 
     describe('Date formatting', () => {
-        it('should use Intl.DateTimeFormat for short date display', () => {
-            expect(content).toContain('Intl.DateTimeFormat');
+        it('should use formatDate from @repo/i18n for short date display', () => {
+            expect(content).toContain("import { formatDate } from '@repo/i18n'");
+            expect(content).toContain('formatDate({');
         });
     });
 

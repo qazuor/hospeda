@@ -117,9 +117,10 @@ describe('TestimonialCard - File content', () => {
             expect(content).toContain('rounded-full');
         });
 
-        it('should add white ring border to avatar', () => {
+        it('should add ring border to avatar with dark mode variant', () => {
             expect(content).toContain('ring-2');
             expect(content).toContain('ring-white');
+            expect(content).toContain('dark:ring-gray-700');
         });
 
         it('should use object-cover for image', () => {
@@ -141,8 +142,9 @@ describe('TestimonialCard - File content', () => {
             expect(content).toContain('rating');
         });
 
-        it('should use amber-400 color for filled stars', () => {
-            expect(content).toContain('text-amber-400');
+        it('should use design token classes for star colors', () => {
+            expect(content).toContain('text-star');
+            expect(content).toContain('text-star-empty');
         });
 
         it('should render 5 stars total', () => {

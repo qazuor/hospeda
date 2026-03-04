@@ -350,8 +350,12 @@ describe('NewsletterCTA.client.tsx', () => {
             });
         });
 
-        // TODO: Re-enable once the real newsletter API endpoint is implemented
-        it('should not call fetch (stub implementation)', async () => {
+        it('should call the newsletter toggle API endpoint', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true, data: { subscribed: true } })
+            });
+
             render(
                 <NewsletterCTA
                     isAuthenticated={true}
@@ -362,9 +366,11 @@ describe('NewsletterCTA.client.tsx', () => {
             const checkbox = screen.getByRole('checkbox');
             fireEvent.click(checkbox);
 
-            // The stub does not call fetch
             await waitFor(() => {
-                expect(mockFetch).not.toHaveBeenCalled();
+                expect(mockFetch).toHaveBeenCalledWith(
+                    expect.stringContaining('/api/v1/protected/users/me/newsletter/toggle'),
+                    expect.objectContaining({ method: 'POST', credentials: 'include' })
+                );
             });
         });
 
@@ -373,7 +379,7 @@ describe('NewsletterCTA.client.tsx', () => {
 
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ success: true })
+                json: async () => ({ success: true, data: { subscribed: true } })
             });
 
             render(
@@ -399,7 +405,7 @@ describe('NewsletterCTA.client.tsx', () => {
 
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ success: true })
+                json: async () => ({ success: true, data: { subscribed: true } })
             });
 
             render(
@@ -426,7 +432,7 @@ describe('NewsletterCTA.client.tsx', () => {
 
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ success: true })
+                json: async () => ({ success: true, data: { subscribed: false } })
             });
 
             render(
@@ -447,11 +453,12 @@ describe('NewsletterCTA.client.tsx', () => {
             });
         });
 
-        // TODO: Re-enable these tests once the real newsletter API endpoint is implemented.
-        // Currently the toggle function is a stub that always succeeds,
-        // so API failure / disabled-during-call scenarios don't apply.
+        it('should use server-confirmed state after toggle', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true, data: { subscribed: true } })
+            });
 
-        it('should keep toggled state since stub always succeeds', async () => {
             render(
                 <NewsletterCTA
                     isAuthenticated={true}
@@ -464,9 +471,29 @@ describe('NewsletterCTA.client.tsx', () => {
 
             fireEvent.click(checkbox);
 
-            // Should stay checked (stub always returns success)
             await waitFor(() => {
                 expect(checkbox).toBeChecked();
+            });
+        });
+
+        it('should revert state on API error', async () => {
+            mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+            render(
+                <NewsletterCTA
+                    isAuthenticated={true}
+                    isSubscribed={false}
+                />
+            );
+
+            const checkbox = screen.getByRole('checkbox');
+            expect(checkbox).not.toBeChecked();
+
+            fireEvent.click(checkbox);
+
+            // Should revert to unchecked after error
+            await waitFor(() => {
+                expect(checkbox).not.toBeChecked();
             });
         });
     });
@@ -521,7 +548,7 @@ describe('NewsletterCTA.client.tsx', () => {
             const wrapper = container.firstChild;
             expect(wrapper).toHaveClass('rounded-lg');
             expect(wrapper).toHaveClass('shadow-md');
-            expect(wrapper).toHaveClass('bg-white');
+            expect(wrapper).toHaveClass('bg-surface');
         });
 
         it('should have padding on container', () => {

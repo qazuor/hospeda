@@ -49,21 +49,20 @@ describe('404.astro', () => {
             expect(page404Content).toContain('type="website"');
         });
 
-        it('should set locale to es', () => {
-            expect(page404Content).toContain("const locale = 'es'");
+        it('should detect locale dynamically', () => {
+            expect(page404Content).toContain("let locale: SupportedLocale = 'es'");
             expect(page404Content).toContain('locale={locale}');
         });
     });
 
     describe('Content', () => {
-        it('should have title "Pagina no encontrada"', () => {
-            expect(page404Content).toContain("const title = 'Pagina no encontrada'");
+        it('should use t() for title translation', () => {
+            expect(page404Content).toContain("namespace: 'error'");
+            expect(page404Content).toContain("'404.title'");
         });
 
-        it('should have descriptive error message', () => {
-            expect(page404Content).toContain(
-                'Lo sentimos, la pagina que buscas no existe o fue movida'
-            );
+        it('should use t() for message translation', () => {
+            expect(page404Content).toContain("'404.message'");
         });
 
         it('should display 404 text', () => {
@@ -73,14 +72,14 @@ describe('404.astro', () => {
             expect(page404Content).toContain('>404</span>');
         });
 
-        it('should have heading "Pagina no encontrada"', () => {
-            expect(page404Content).toContain('<h1 class="text-4xl font-bold');
-            expect(page404Content).toContain('>Pagina no encontrada</h1>');
+        it('should have h1 heading with translated content', () => {
+            expect(page404Content).toContain('<h1 class="mb-4 text-4xl font-bold');
+            expect(page404Content).toContain('{heading}');
         });
 
-        it('should have home link', () => {
-            expect(page404Content).toContain('href="/es/"');
-            expect(page404Content).toContain('Volver al inicio');
+        it('should have home link with dynamic locale', () => {
+            expect(page404Content).toContain('href={`/${locale}/`}');
+            expect(page404Content).toContain('{goHomeLabel}');
         });
     });
 
@@ -154,19 +153,20 @@ describe('500.astro', () => {
             expect(page500Content).toContain('type="website"');
         });
 
-        it('should set locale to es', () => {
-            expect(page500Content).toContain("const locale = 'es'");
+        it('should detect locale dynamically', () => {
+            expect(page500Content).toContain("let locale: SupportedLocale = 'es'");
             expect(page500Content).toContain('locale={locale}');
         });
     });
 
     describe('Content', () => {
-        it('should have title "Error del servidor"', () => {
-            expect(page500Content).toContain("const title = 'Error del servidor'");
+        it('should use t() for title translation', () => {
+            expect(page500Content).toContain("namespace: 'error'");
+            expect(page500Content).toContain("'500.title'");
         });
 
-        it('should have descriptive error message', () => {
-            expect(page500Content).toContain('Lo sentimos, algo salio mal');
+        it('should use t() for message translation', () => {
+            expect(page500Content).toContain("'500.message'");
         });
 
         it('should display 500 text', () => {
@@ -176,19 +176,19 @@ describe('500.astro', () => {
             expect(page500Content).toContain('>500</span>');
         });
 
-        it('should have heading "Error del servidor"', () => {
-            expect(page500Content).toContain('<h1 class="text-4xl font-bold');
-            expect(page500Content).toContain('>Error del servidor</h1>');
+        it('should have h1 heading with translated content', () => {
+            expect(page500Content).toContain('<h1 class="mb-4 text-4xl font-bold');
+            expect(page500Content).toContain('{heading}');
         });
 
         it('should have retry button', () => {
             expect(page500Content).toContain('onclick="window.location.reload()"');
-            expect(page500Content).toContain('Reintentar');
+            expect(page500Content).toContain('{retryLabel}');
         });
 
-        it('should have home link', () => {
-            expect(page500Content).toContain('href="/es/"');
-            expect(page500Content).toContain('Volver al inicio');
+        it('should have home link with dynamic locale', () => {
+            expect(page500Content).toContain('href={`/${locale}/`}');
+            expect(page500Content).toContain('{goHomeLabel}');
         });
     });
 
@@ -212,7 +212,8 @@ describe('500.astro', () => {
         });
 
         it('should have responsive button layout', () => {
-            expect(page500Content).toContain('flex-col sm:flex-row');
+            expect(page500Content).toContain('flex-col');
+            expect(page500Content).toContain('sm:flex-row');
         });
     });
 

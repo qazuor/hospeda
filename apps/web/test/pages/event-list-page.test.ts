@@ -120,17 +120,17 @@ describe('Event List Page', () => {
 
     describe('Localization', () => {
         it('should use t() for page title', () => {
-            expect(content).toContain("t({ locale, namespace: 'event', key: 'listPage.title' })");
+            expect(content).toContain("t({ locale, namespace: 'events', key: 'listPage.title' })");
         });
 
         it('should use t() for page description', () => {
             expect(content).toContain(
-                "t({ locale, namespace: 'event', key: 'listPage.description' })"
+                "t({ locale, namespace: 'events', key: 'listPage.description' })"
             );
         });
 
         it('should use t() for home label', () => {
-            expect(content).toContain("t({ locale, namespace: 'event', key: 'listPage.home' })");
+            expect(content).toContain("t({ locale, namespace: 'events', key: 'listPage.home' })");
         });
 
         it('should use t() for category labels', () => {
@@ -373,7 +373,7 @@ describe('Event List Page', () => {
         });
 
         it('should use t() function for all user-facing strings', () => {
-            expect(content).toContain("namespace: 'event'");
+            expect(content).toContain("namespace: 'events'");
         });
 
         it('should be under 500 lines', () => {

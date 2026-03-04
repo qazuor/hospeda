@@ -141,11 +141,12 @@ describe('ReviewForm.client.tsx', () => {
             const thirdStar = screen.getByLabelText('Calificar 3 estrella(s)');
             fireEvent.click(thirdStar);
 
-            // Stars should be filled up to the clicked one (check for yellow color class)
+            // Stars should be filled up to the clicked one (check for filled star token class)
             const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('class')?.includes('text-yellow-400');
+                const cls = svg?.getAttribute('class') ?? '';
+                return cls.includes('text-star') && !cls.includes('text-star-empty');
             });
             expect(filledStars).toHaveLength(3);
         });
@@ -162,7 +163,8 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('class')?.includes('text-yellow-400');
+                const cls = svg?.getAttribute('class') ?? '';
+                return cls.includes('text-star') && !cls.includes('text-star-empty');
             });
             expect(filledStars).toHaveLength(5);
         });
@@ -176,7 +178,8 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const hoveredStars = stars.filter((star, index) => {
                 const svg = star.querySelector('svg');
-                return index < 4 && svg?.getAttribute('class')?.includes('text-yellow-400');
+                const cls = svg?.getAttribute('class') ?? '';
+                return index < 4 && cls.includes('text-star') && !cls.includes('text-star-empty');
             });
             expect(hoveredStars).toHaveLength(4);
         });
@@ -191,7 +194,8 @@ describe('ReviewForm.client.tsx', () => {
             const stars = screen.getAllByLabelText(/Calificar \d estrella/);
             const filledStars = stars.filter((star) => {
                 const svg = star.querySelector('svg');
-                return svg?.getAttribute('class')?.includes('text-yellow-400');
+                const cls = svg?.getAttribute('class') ?? '';
+                return cls.includes('text-star') && !cls.includes('text-star-empty');
             });
             expect(filledStars).toHaveLength(0);
         });

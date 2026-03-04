@@ -175,7 +175,9 @@ describe('terminos-condiciones.astro', () => {
 
         it('should display last update date', () => {
             expect(terminosContent).toContain('Última actualización');
-            expect(terminosContent).toContain('new Date().toLocaleDateString(locale)');
+            expect(terminosContent).toContain('formatDate');
+            expect(terminosContent).toContain("from '@repo/i18n'");
+            expect(terminosContent).toContain('formatDate({');
         });
     });
 });
@@ -342,7 +344,9 @@ describe('privacidad.astro', () => {
 
         it('should display last update date', () => {
             expect(privacidadContent).toContain('Última actualización');
-            expect(privacidadContent).toContain('new Date().toLocaleDateString(locale)');
+            expect(privacidadContent).toContain('formatDate');
+            expect(privacidadContent).toContain("from '@repo/i18n'");
+            expect(privacidadContent).toContain('formatDate({');
         });
     });
 });

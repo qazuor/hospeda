@@ -118,12 +118,12 @@ describe('[slug].astro (Event Detail)', () => {
 
         it('should use t() for events breadcrumb label', () => {
             expect(content).toContain(
-                "const eventsLabel = t({ locale, namespace: 'event', key: 'breadcrumb.events' })"
+                "const eventsLabel = t({ locale, namespace: 'events', key: 'breadcrumb.events' })"
             );
         });
 
         it('should use t() for section labels', () => {
-            expect(content).toContain("namespace: 'event'");
+            expect(content).toContain("namespace: 'events'");
             expect(content).toContain("key: 'detail.category'");
             expect(content).toContain("key: 'detail.description'");
             expect(content).toContain("key: 'detail.agenda'");
@@ -245,14 +245,17 @@ describe('[slug].astro (Event Detail)', () => {
             expect(content).toContain('{event.location.name}');
         });
 
-        it('should have date formatting function', () => {
+        it('should have date formatting function using @repo/i18n', () => {
             expect(content).toContain('const formatDate = (dateString: string)');
-            expect(content).toContain('toLocaleDateString');
+            expect(content).toContain('formatDate as i18nFormatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('i18nFormatDate({');
         });
 
-        it('should have time formatting function', () => {
+        it('should have time formatting function using @repo/i18n', () => {
             expect(content).toContain('const formatTime = (dateString: string)');
-            expect(content).toContain('toLocaleTimeString');
+            expect(content).toContain("hour: '2-digit'");
+            expect(content).toContain("minute: '2-digit'");
         });
     });
 

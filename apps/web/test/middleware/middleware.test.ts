@@ -529,7 +529,8 @@ describe('parseSessionUser', () => {
 
             expect(result).toBeNull();
             expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to validate session')
+                expect.stringContaining('Failed to validate session'),
+                expect.any(String)
             );
             warnSpy.mockRestore();
         });

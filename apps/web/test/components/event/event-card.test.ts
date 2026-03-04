@@ -93,10 +93,10 @@ describe('EventCard.astro', () => {
     });
 
     describe('Date-panel variant', () => {
-        it('should compute date panel accent color based on index', () => {
-            expect(content).toContain('bg-blue-500');
-            expect(content).toContain('bg-green-500');
-            expect(content).toContain('bg-sky-500');
+        it('should compute date panel accent color based on index using theme tokens', () => {
+            expect(content).toContain('bg-primary');
+            expect(content).toContain('bg-green');
+            expect(content).toContain('bg-info');
         });
 
         it('should use index modulo 3 for color rotation', () => {
@@ -174,7 +174,7 @@ describe('EventCard.astro', () => {
 
         it('should define tCard helper for event card translations', () => {
             expect(content).toContain('tCard');
-            expect(content).toContain("namespace: 'event'");
+            expect(content).toContain("namespace: 'events'");
         });
 
         it('should use i18n for favorite button aria-label', () => {

@@ -136,8 +136,8 @@ describe('animations.css', () => {
             expect(content).toContain('animation: ripple');
         });
 
-        it('should have dark mode variant for ripple color', () => {
-            expect(content).toContain('[data-theme="dark"] .ripple-btn::after {');
+        it('should use CSS variable for ripple color (themeable for dark mode)', () => {
+            expect(content).toContain('rgba(var(--color-primary-rgb)');
         });
     });
 
@@ -156,9 +156,9 @@ describe('animations.css', () => {
             expect(content).toContain('[data-theme="dark"] .btn-glow:hover {');
         });
 
-        it('should use teal color for glow (rgba with 3DBDC0 channel)', () => {
-            // teal: rgba(61, 189, 192, ...) - the dark mode teal color
-            expect(content).toContain('rgba(61, 189, 192,');
+        it('should use CSS variable for glow color (themeable)', () => {
+            // Glow effects use --color-primary-rgb CSS variable for theming
+            expect(content).toContain('rgba(var(--color-primary-rgb)');
         });
 
         it('should define dark mode card-tilt hover glow effect', () => {

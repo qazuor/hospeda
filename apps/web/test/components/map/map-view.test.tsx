@@ -48,7 +48,7 @@ describe('MapView.client.tsx', () => {
                     center={[-32.4833, -58.2333]}
                 />
             );
-            const centerText = container.querySelector('.text-xs.text-gray-500');
+            const centerText = container.querySelector('.text-xs.text-text-tertiary');
             expect(centerText?.textContent).toContain('-32.4833');
             expect(centerText?.textContent).toContain('-58.2333');
         });
@@ -60,7 +60,7 @@ describe('MapView.client.tsx', () => {
                     markers={mockMarkers}
                 />
             );
-            const centerText = container.querySelector('.text-xs.text-gray-500');
+            const centerText = container.querySelector('.text-xs.text-text-tertiary');
             expect(centerText?.textContent).toContain('0.0000');
         });
 
@@ -72,7 +72,7 @@ describe('MapView.client.tsx', () => {
                     zoom={15}
                 />
             );
-            const zoomText = container.querySelector('.text-xs.text-gray-500');
+            const zoomText = container.querySelector('.text-xs.text-text-tertiary');
             expect(zoomText?.textContent).toContain('Zoom: 15');
         });
 
@@ -83,7 +83,7 @@ describe('MapView.client.tsx', () => {
                     markers={mockMarkers}
                 />
             );
-            const zoomText = container.querySelector('.text-xs.text-gray-500');
+            const zoomText = container.querySelector('.text-xs.text-text-tertiary');
             expect(zoomText?.textContent).toContain('Zoom: 13');
         });
 
@@ -189,7 +189,7 @@ describe('MapView.client.tsx', () => {
                 />
             );
             const cabanaItem = screen.getByText('Cabaña Example').closest('li');
-            const popupElement = cabanaItem?.querySelector('.text-xs.text-gray-600');
+            const popupElement = cabanaItem?.querySelector('.text-xs.text-text-secondary');
             expect(popupElement).not.toBeInTheDocument();
         });
 
@@ -376,7 +376,7 @@ describe('MapView.client.tsx', () => {
             );
             const markerItems = container.querySelectorAll('section li');
             for (const item of Array.from(markerItems)) {
-                expect(item.className).toContain('hover:bg-gray-100');
+                expect(item.className).toContain('hover:bg-surface-elevated');
             }
         });
 

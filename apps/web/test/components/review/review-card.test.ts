@@ -103,9 +103,11 @@ describe('ReviewCard.astro', () => {
     });
 
     describe('Date display', () => {
-        it('should format createdAt date', () => {
+        it('should format createdAt date using formatDate from @repo/i18n', () => {
             expect(content).toContain('review.createdAt');
-            expect(content).toContain('toLocaleDateString');
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('formatDate({');
         });
 
         it('should use time element with datetime attribute', () => {

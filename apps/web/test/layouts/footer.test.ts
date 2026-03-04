@@ -73,7 +73,7 @@ describe('Footer.astro', () => {
     describe('Regional identity', () => {
         it('should use teal-to-night gradient background', () => {
             expect(content).toContain('from-primary-900');
-            expect(content).toContain('0F1A2E');
+            expect(content).toContain('footer-gradient-end');
         });
 
         it('should use Caveat font for mate tagline via i18n', () => {

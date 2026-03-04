@@ -511,7 +511,7 @@ describe('Modal.client.tsx', () => {
                 </Modal>
             );
             const closeButton = screen.getByLabelText('Close modal');
-            expect(closeButton.className).toContain('hover:bg-gray-100');
+            expect(closeButton.className).toContain('hover:bg-surface-alt');
         });
 
         it('should have transition on close button', () => {

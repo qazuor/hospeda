@@ -952,10 +952,10 @@ describe('CalendarView.client.tsx', () => {
                 />
             );
 
-            // Days from other months should have text-gray-400
+            // Days from other months should have text-text-tertiary semantic token
             const cells = container.querySelectorAll('[data-calendar-cell]');
             const mutedCells = Array.from(cells).filter((cell) =>
-                cell.className.includes('text-gray-400')
+                cell.className.includes('text-text-tertiary')
             );
             expect(mutedCells.length).toBeGreaterThan(0);
 
@@ -1082,7 +1082,7 @@ describe('CalendarView.client.tsx', () => {
             );
             const cell15 = screen.getByLabelText(/15 de febrero de 2026/i);
 
-            expect(cell15.className).toContain('hover:bg-gray-50');
+            expect(cell15.className).toContain('hover:bg-surface-alt');
 
             vi.useRealTimers();
         });

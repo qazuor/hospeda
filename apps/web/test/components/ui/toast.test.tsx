@@ -78,9 +78,9 @@ describe('Toast.client.tsx', () => {
             });
 
             const toast = screen.getByRole('alert');
-            expect(toast.className).toContain('bg-green-50');
-            expect(toast.className).toContain('text-green-800');
-            expect(toast.className).toContain('border-green-200');
+            expect(toast.className).toContain('bg-success/10');
+            expect(toast.className).toContain('text-success');
+            expect(toast.className).toContain('border-success/30');
         });
 
         it('should render error toast with red styling', () => {
@@ -91,9 +91,9 @@ describe('Toast.client.tsx', () => {
             });
 
             const toast = screen.getByRole('alert');
-            expect(toast.className).toContain('bg-red-50');
-            expect(toast.className).toContain('text-red-800');
-            expect(toast.className).toContain('border-red-200');
+            expect(toast.className).toContain('bg-error/10');
+            expect(toast.className).toContain('text-error');
+            expect(toast.className).toContain('border-error/30');
         });
 
         it('should render warning toast with yellow styling', () => {
@@ -104,9 +104,9 @@ describe('Toast.client.tsx', () => {
             });
 
             const toast = screen.getByRole('alert');
-            expect(toast.className).toContain('bg-yellow-50');
-            expect(toast.className).toContain('text-yellow-800');
-            expect(toast.className).toContain('border-yellow-200');
+            expect(toast.className).toContain('bg-warning/10');
+            expect(toast.className).toContain('text-warning');
+            expect(toast.className).toContain('border-warning/30');
         });
 
         it('should render info toast with blue styling', () => {
@@ -117,9 +117,9 @@ describe('Toast.client.tsx', () => {
             });
 
             const toast = screen.getByRole('alert');
-            expect(toast.className).toContain('bg-blue-50');
-            expect(toast.className).toContain('text-blue-800');
-            expect(toast.className).toContain('border-blue-200');
+            expect(toast.className).toContain('bg-info/10');
+            expect(toast.className).toContain('text-info');
+            expect(toast.className).toContain('border-info/30');
         });
 
         it('should render appropriate icon for success toast', () => {

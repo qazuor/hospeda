@@ -151,10 +151,10 @@ describe('CategoryIconsSection.astro', () => {
             expect(content).toContain('rounded');
         });
 
-        it('should define color for each category', () => {
-            expect(content).toContain('bg-blue-500');
-            expect(content).toContain('bg-green-600');
-            expect(content).toContain('bg-amber-600');
+        it('should define color for each category using theme tokens', () => {
+            expect(content).toContain('bg-primary');
+            expect(content).toContain('bg-green');
+            expect(content).toContain('bg-secondary');
         });
     });
 });

@@ -188,7 +188,7 @@ describe('eventos/categoria/[category]/index.astro', () => {
     describe('Localized Category Names', () => {
         it('should use t() for category name', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.name` })"
+                "t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.name` })"
             );
         });
     });
@@ -196,7 +196,7 @@ describe('eventos/categoria/[category]/index.astro', () => {
     describe('Localized Category Descriptions', () => {
         it('should use t() for category description', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.description` })"
+                "t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.description` })"
             );
         });
     });
@@ -204,7 +204,7 @@ describe('eventos/categoria/[category]/index.astro', () => {
     describe('Localized Page Titles', () => {
         it('should use t() for page title', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: `categoryPage.categories.${eventCategory}.pageTitle` })"
+                "t({ locale, namespace: 'events', key: `categoryPage.categories.${eventCategory}.pageTitle` })"
             );
         });
     });
@@ -212,19 +212,19 @@ describe('eventos/categoria/[category]/index.astro', () => {
     describe('Localized Common Labels', () => {
         it('should use t() for breadcrumb home', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbHome' })"
+                "t({ locale, namespace: 'events', key: 'categoryPage.labels.breadcrumbHome' })"
             );
         });
 
         it('should use t() for breadcrumb events', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: 'categoryPage.labels.breadcrumbEvents' })"
+                "t({ locale, namespace: 'events', key: 'categoryPage.labels.breadcrumbEvents' })"
             );
         });
 
         it('should use t() for empty title with category interpolation', () => {
             expect(indexContent).toContain(
-                "t({ locale, namespace: 'event', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } })"
+                "t({ locale, namespace: 'events', key: 'categoryPage.labels.emptyTitle', params: { category: categoryName.toLowerCase() } })"
             );
         });
     });

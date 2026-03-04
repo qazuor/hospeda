@@ -366,7 +366,7 @@ describe('Tabs.client.tsx', () => {
                 />
             );
             const tab2 = screen.getByRole('tab', { name: 'Tab 2' });
-            expect(tab2.className).toContain('text-gray-600');
+            expect(tab2.className).toContain('text-text-secondary');
             expect(tab2.className).toContain('border-transparent');
         });
 
@@ -378,8 +378,8 @@ describe('Tabs.client.tsx', () => {
                 />
             );
             const tab2 = screen.getByRole('tab', { name: 'Tab 2' });
-            expect(tab2.className).toContain('hover:text-gray-800');
-            expect(tab2.className).toContain('hover:border-gray-300');
+            expect(tab2.className).toContain('hover:text-text');
+            expect(tab2.className).toContain('hover:border-border');
         });
 
         it('should have transition styles on buttons', () => {

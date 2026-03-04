@@ -73,13 +73,13 @@ describe('DestinationCard.astro', () => {
         });
 
         it('should use i18n for accommodation counter text', () => {
-            expect(typesContent).toContain('featured.card.accommodationSingular');
-            expect(typesContent).toContain('featured.card.accommodationPlural');
+            expect(typesContent).toContain("'featured.card.accommodation'");
+            expect(typesContent).toContain('tPlural');
         });
 
         it('should use i18n for event counter text', () => {
-            expect(typesContent).toContain('featured.card.eventSingular');
-            expect(typesContent).toContain('featured.card.eventPlural');
+            expect(typesContent).toContain("'featured.card.event'");
+            expect(typesContent).toContain('tPlural');
         });
     });
 

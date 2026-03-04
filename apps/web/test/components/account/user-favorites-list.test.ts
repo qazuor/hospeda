@@ -1,7 +1,7 @@
 /**
  * Tests for UserFavoritesList.client.tsx
  *
- * Verifies component structure, exports, props interface, localization,
+ * Verifies component structure, exports, props interface, i18n integration,
  * accessibility attributes, API integration, tab navigation, and deletion patterns.
  */
 import { readFileSync } from 'node:fs';
@@ -54,6 +54,95 @@ describe('UserFavoritesList.client.tsx', () => {
         it('should import addToast from toast store', () => {
             expect(content).toContain("import { addToast } from '../../store/toast-store'");
         });
+
+        it('should import useTranslation hook', () => {
+            expect(content).toContain(
+                "import { useTranslation } from '../../hooks/useTranslation'"
+            );
+        });
+
+        it('should import formatDate from @repo/i18n', () => {
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+        });
+    });
+
+    describe('i18n integration', () => {
+        it('should use useTranslation with account namespace', () => {
+            expect(content).toContain("namespace: 'account'");
+        });
+
+        it('should destructure t from useTranslation', () => {
+            expect(content).toContain('const { t } = useTranslation(');
+        });
+
+        it('should use t() for accommodation tab label', () => {
+            expect(content).toContain("'favorites.tabs.accommodation'");
+        });
+
+        it('should use t() for destination tab label', () => {
+            expect(content).toContain("'favorites.tabs.destination'");
+        });
+
+        it('should use t() for event tab label', () => {
+            expect(content).toContain("'favorites.tabs.event'");
+        });
+
+        it('should use t() for post tab label', () => {
+            expect(content).toContain("'favorites.tabs.post'");
+        });
+
+        it('should use t() for empty state message', () => {
+            expect(content).toContain("t('favorites.empty')");
+        });
+
+        it('should use t() for empty action message', () => {
+            expect(content).toContain("t('favorites.emptyAction')");
+        });
+
+        it('should use t() for delete button text', () => {
+            expect(content).toContain("t('favorites.delete')");
+        });
+
+        it('should use t() for delete success message', () => {
+            expect(content).toContain("t('favorites.deleteSuccess')");
+        });
+
+        it('should use t() for delete error message', () => {
+            expect(content).toContain("t('favorites.deleteError')");
+        });
+
+        it('should use t() for load more button text', () => {
+            expect(content).toContain("t('favorites.loadMore')");
+        });
+
+        it('should use t() for loading text', () => {
+            expect(content).toContain("t('favorites.loading')");
+        });
+
+        it('should use t() for fetch error message', () => {
+            expect(content).toContain("t('favorites.fetchError')");
+        });
+
+        it('should define TAB_LABEL_KEYS mapping entity types to i18n keys', () => {
+            expect(content).toContain('TAB_LABEL_KEYS');
+        });
+
+        it('should not contain hardcoded Spanish localization strings', () => {
+            expect(content).not.toContain('No tienes favoritos en esta categoría');
+            expect(content).not.toContain('Favorito eliminado correctamente');
+            expect(content).not.toContain('Error al eliminar el favorito');
+        });
+
+        it('should not contain hardcoded English localization strings', () => {
+            expect(content).not.toContain('You have no favorites in this category');
+            expect(content).not.toContain('Favorite deleted successfully');
+        });
+
+        it('should not contain hardcoded Portuguese localization strings', () => {
+            expect(content).not.toContain('Você não tem favoritos nesta categoria');
+            expect(content).not.toContain('Favorito excluído com sucesso');
+        });
     });
 
     describe('Internal types', () => {
@@ -92,116 +181,6 @@ describe('UserFavoritesList.client.tsx', () => {
         });
     });
 
-    describe('Localization - Spanish (es)', () => {
-        it('should have Spanish Accommodations tab label', () => {
-            expect(content).toContain('Alojamientos');
-        });
-
-        it('should have Spanish Destinations tab label', () => {
-            expect(content).toContain("DESTINATION: 'Destinos'");
-        });
-
-        it('should have Spanish Events tab label', () => {
-            expect(content).toContain("EVENT: 'Eventos'");
-        });
-
-        it('should have Spanish Blog tab label', () => {
-            expect(content).toContain("POST: 'Blog'");
-        });
-
-        it('should have Spanish empty state message', () => {
-            expect(content).toContain('No tienes favoritos en esta categoría');
-        });
-
-        it('should have Spanish empty action message', () => {
-            expect(content).toContain('Comienza explorando contenido para guardar tus favoritos');
-        });
-
-        it('should have Spanish delete button text', () => {
-            expect(content).toContain("delete: 'Eliminar'");
-        });
-
-        it('should have Spanish delete success message', () => {
-            expect(content).toContain('Favorito eliminado correctamente');
-        });
-
-        it('should have Spanish delete error message', () => {
-            expect(content).toContain('Error al eliminar el favorito');
-        });
-
-        it('should have Spanish load more button text', () => {
-            expect(content).toContain("loadMore: 'Cargar más'");
-        });
-
-        it('should have Spanish loading text', () => {
-            expect(content).toContain("loading: 'Cargando...'");
-        });
-
-        it('should have Spanish fetch error message', () => {
-            expect(content).toContain('Error al cargar los favoritos');
-        });
-    });
-
-    describe('Localization - English (en)', () => {
-        it('should have English Accommodations tab label', () => {
-            expect(content).toContain("ACCOMMODATION: 'Accommodations'");
-        });
-
-        it('should have English Destinations tab label', () => {
-            expect(content).toContain("DESTINATION: 'Destinations'");
-        });
-
-        it('should have English Events tab label', () => {
-            expect(content).toContain("EVENT: 'Events'");
-        });
-
-        it('should have English empty state message', () => {
-            expect(content).toContain('You have no favorites in this category');
-        });
-
-        it('should have English delete button text', () => {
-            expect(content).toContain("delete: 'Delete'");
-        });
-
-        it('should have English delete success message', () => {
-            expect(content).toContain('Favorite deleted successfully');
-        });
-
-        it('should have English load more text', () => {
-            expect(content).toContain("loadMore: 'Load more'");
-        });
-
-        it('should have English fetch error message', () => {
-            expect(content).toContain('Error loading favorites');
-        });
-    });
-
-    describe('Localization - Portuguese (pt)', () => {
-        it('should have Portuguese Accommodations tab label', () => {
-            expect(content).toContain("ACCOMMODATION: 'Acomodações'");
-        });
-
-        it('should have Portuguese empty state message', () => {
-            expect(content).toContain('Você não tem favoritos nesta categoria');
-        });
-
-        it('should have Portuguese delete button text', () => {
-            expect(content).toContain("delete: 'Excluir'");
-        });
-
-        it('should have Portuguese delete success message', () => {
-            expect(content).toContain('Favorito excluído com sucesso');
-        });
-
-        it('should have Portuguese load more text', () => {
-            expect(content).toContain("loadMore: 'Carregar mais'");
-        });
-
-        it('should have Portuguese fetch error message', () => {
-            expect(content).toContain('Erro ao carregar favoritos');
-        });
-    });
-
     describe('Tab navigation', () => {
         it('should initialize activeTab to ACCOMMODATION', () => {
             expect(content).toContain("useState<EntityType>('ACCOMMODATION')");
@@ -237,7 +216,7 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('role="tablist"');
         });
 
-        it('should have aria-label on tablist nav', () => {
+        it('should have aria-label on tablist nav using t()', () => {
             expect(content).toContain("aria-label={t('accessibility.favoriteCategories')}");
         });
 
@@ -261,8 +240,9 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('aria-labelledby={`tab-${activeTab}`}');
         });
 
-        it('should have aria-label on delete buttons', () => {
-            expect(content).toContain('aria-label={`${messages.delete} ${bookmark.name');
+        it('should have aria-label on delete buttons using t()', () => {
+            expect(content).toContain("t('favorites.delete')");
+            expect(content).toContain('aria-label={`');
         });
     });
 
@@ -291,8 +271,8 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('const fetchBookmarks = async');
         });
 
-        it('should handle fetch error with toast', () => {
-            expect(content).toContain('messages.fetchError');
+        it('should handle fetch error with toast using t()', () => {
+            expect(content).toContain("t('favorites.fetchError')");
         });
     });
 
@@ -321,12 +301,12 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('setTotal((prev) => prev + 1)');
         });
 
-        it('should show success toast on delete success', () => {
-            expect(content).toContain('messages.deleteSuccess');
+        it('should show success toast on delete success using t()', () => {
+            expect(content).toContain("t('favorites.deleteSuccess')");
         });
 
-        it('should show error toast on delete failure', () => {
-            expect(content).toContain('messages.deleteError');
+        it('should show error toast on delete failure using t()', () => {
+            expect(content).toContain("t('favorites.deleteError')");
         });
     });
 
@@ -365,20 +345,20 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('<FavoriteIcon');
         });
 
-        it('should show empty message text', () => {
-            expect(content).toContain('{messages.empty}');
+        it('should show empty message text using t()', () => {
+            expect(content).toContain("t('favorites.empty')");
         });
 
-        it('should show empty action text', () => {
-            expect(content).toContain('{messages.emptyAction}');
+        it('should show empty action text using t()', () => {
+            expect(content).toContain("t('favorites.emptyAction')");
         });
 
         it('should show loading spinner animation', () => {
             expect(content).toContain('animate-spin');
         });
 
-        it('should show loading text during initial load', () => {
-            expect(content).toContain('{messages.loading}');
+        it('should show loading text during initial load using t()', () => {
+            expect(content).toContain("t('favorites.loading')");
         });
 
         it('should show inline loading indicator when loading more', () => {
@@ -395,8 +375,10 @@ describe('UserFavoritesList.client.tsx', () => {
             expect(content).toContain('bookmark.description');
         });
 
-        it('should render formatted createdAt date', () => {
-            expect(content).toContain('new Date(bookmark.createdAt).toLocaleDateString(');
+        it('should render formatted createdAt date using formatDate from @repo/i18n', () => {
+            expect(content).toContain('formatDate');
+            expect(content).toContain("from '@repo/i18n'");
+            expect(content).toContain('date: bookmark.createdAt');
         });
 
         it('should use bookmark.id as key', () => {

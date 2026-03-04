@@ -74,7 +74,7 @@ describe('FavoriteButton.client.tsx', () => {
             );
 
             const svg = screen.getByRole('button').querySelector('svg');
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
         });
 
         it('should render with filled heart when initialFavorited is true', () => {
@@ -267,7 +267,7 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited (outline heart)
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
 
             // Click to favorite
             fireEvent.click(button);
@@ -404,13 +404,13 @@ describe('FavoriteButton.client.tsx', () => {
             const svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
 
             // Click without authentication
             fireEvent.click(button);
 
             // State should not change
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
         });
 
         it('should use English locale in AuthRequiredPopover when locale is en', () => {
@@ -454,7 +454,7 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
 
             // Click to favorite
             fireEvent.click(button);
@@ -470,7 +470,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             await waitFor(() => {
                 svg = button.querySelector('svg');
-                expect(svg?.getAttribute('class')).toContain('text-gray-600');
+                expect(svg?.getAttribute('class')).toContain('text-text-secondary');
             });
         });
 
@@ -562,7 +562,7 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // Initially not favorited
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
 
             // Click to favorite
             fireEvent.click(button);
@@ -578,7 +578,7 @@ describe('FavoriteButton.client.tsx', () => {
 
             await waitFor(() => {
                 svg = button.querySelector('svg');
-                expect(svg?.getAttribute('class')).toContain('text-gray-600');
+                expect(svg?.getAttribute('class')).toContain('text-text-secondary');
             });
         });
     });
@@ -701,7 +701,7 @@ describe('FavoriteButton.client.tsx', () => {
             );
 
             const button = screen.getByRole('button');
-            expect(button.className).toContain('hover:bg-gray-100');
+            expect(button.className).toContain('hover:bg-surface-alt');
         });
 
         it('should have transition classes', () => {
@@ -757,7 +757,7 @@ describe('FavoriteButton.client.tsx', () => {
             let svg = button.querySelector('svg');
 
             // First toggle (favorite)
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
             fireEvent.click(button);
             svg = button.querySelector('svg');
             expect(svg?.getAttribute('class')).toContain('text-red-500');
@@ -771,7 +771,7 @@ describe('FavoriteButton.client.tsx', () => {
             svg = button.querySelector('svg');
             fireEvent.click(button);
             svg = button.querySelector('svg');
-            expect(svg?.getAttribute('class')).toContain('text-gray-600');
+            expect(svg?.getAttribute('class')).toContain('text-text-secondary');
 
             await waitFor(() => {
                 // check + two toggles = 3 calls
