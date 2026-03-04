@@ -151,7 +151,8 @@ export default defineConfig({
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/icons': resolve(__dirname, '../../packages/icons/src')
+            '@repo/icons': resolve(__dirname, '../../packages/icons/src'),
+            '@repo/i18n': resolve(__dirname, '../../packages/i18n/src')
         },
         dedupe: ['react', 'react-dom']
     },
@@ -165,7 +166,8 @@ export default defineConfig({
             '@repo/utils',
             '@repo/config',
             '@repo/service-core',
-            '@repo/icons'
+            '@repo/icons',
+            '@repo/i18n'
         ]
     },
     server: {

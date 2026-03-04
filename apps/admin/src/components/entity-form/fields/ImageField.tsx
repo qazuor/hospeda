@@ -4,6 +4,7 @@ import type {
     ImageFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
@@ -67,6 +68,8 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
         },
         _ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -232,7 +235,7 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                         <div className="relative inline-block">
                             <img
                                 src={value.url}
-                                alt={value.alt || 'Uploaded image'}
+                                alt={value.alt || t('admin-entities.fields.image.uploadedAlt')}
                                 className={cn(
                                     'h-auto max-w-full rounded-lg border',
                                     maxWidth && `max-w-[${maxWidth}px]`,
@@ -263,13 +266,15 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     htmlFor={`${fieldId}-alt`}
                                     className="text-xs"
                                 >
-                                    Alt Text
+                                    {t('admin-entities.fields.image.altTextLabel')}
                                 </Label>
                                 <Input
                                     id={`${fieldId}-alt`}
                                     value={value.alt || ''}
                                     onChange={(e) => handleAltChange(e.target.value)}
-                                    placeholder="Describe the image for accessibility"
+                                    placeholder={t(
+                                        'admin-entities.fields.image.altTextPlaceholder'
+                                    )}
                                     disabled={disabled}
                                     className="text-sm"
                                 />
@@ -280,13 +285,15 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     htmlFor={`${fieldId}-caption`}
                                     className="text-xs"
                                 >
-                                    Caption
+                                    {t('admin-entities.fields.image.captionLabel')}
                                 </Label>
                                 <Input
                                     id={`${fieldId}-caption`}
                                     value={value.caption || ''}
                                     onChange={(e) => handleCaptionChange(e.target.value)}
-                                    placeholder="Image caption"
+                                    placeholder={t(
+                                        'admin-entities.fields.image.captionPlaceholder'
+                                    )}
                                     disabled={disabled}
                                     className="text-sm"
                                 />
@@ -297,13 +304,15 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                                     htmlFor={`${fieldId}-description`}
                                     className="text-xs"
                                 >
-                                    Description
+                                    {t('admin-entities.fields.image.descriptionLabel')}
                                 </Label>
                                 <Input
                                     id={`${fieldId}-description`}
                                     value={value.description || ''}
                                     onChange={(e) => handleDescriptionChange(e.target.value)}
-                                    placeholder="Detailed description"
+                                    placeholder={t(
+                                        'admin-entities.fields.image.descriptionPlaceholder'
+                                    )}
                                     disabled={disabled}
                                     className="text-sm"
                                 />
@@ -326,28 +335,33 @@ export const ImageField = React.forwardRef<HTMLInputElement, ImageFieldProps>(
                         onDragLeave={handleDragLeave}
                         onClick={() => !disabled && fileInputRef.current?.click()}
                         disabled={disabled}
-                        aria-label="Upload image"
+                        aria-label={t('admin-entities.fields.image.uploadAriaLabel')}
                     >
                         {isUploading ? (
                             <div className="flex flex-col items-center gap-2">
                                 <LoaderIcon className="h-8 w-8 animate-spin text-primary" />
-                                <p className="text-muted-foreground text-sm">Uploading...</p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('admin-entities.fields.image.uploading')}
+                                </p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2">
                                 <ImageIcon className="h-12 w-12 text-muted-foreground" />
                                 <div className="space-y-1">
                                     <p className="font-medium text-sm">
-                                        Drop an image here, or click to select
+                                        {t('admin-entities.fields.image.dropText')}
                                     </p>
                                     <p className="text-muted-foreground text-xs">
-                                        {allowedTypes.join(', ')} up to {formatFileSize(maxSize)}
+                                        {t('admin-entities.fields.image.fileConstraints', {
+                                            types: allowedTypes.join(', '),
+                                            maxSize: formatFileSize(maxSize)
+                                        })}
                                     </p>
                                 </div>
                                 {/* biome-ignore lint/nursery/useSortedClasses: Button-like styling */}
-                                <span className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                <span className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-accent">
                                     <UploadIcon className="mr-2 h-4 w-4" />
-                                    Select Image
+                                    {t('admin-entities.fields.image.selectButton')}
                                 </span>
                             </div>
                         )}

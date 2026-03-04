@@ -1,16 +1,21 @@
+import { useTranslations } from '@/hooks/use-translations';
+import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import type { ReactNode } from 'react';
 
 type DateCellProps = {
     readonly value: unknown;
+    readonly locale?: string;
 };
 
 /**
  * DateCell component for rendering date values in table cells.
- * Formats dates using locale-specific formatting.
+ * Formats dates using locale-specific formatting via @repo/i18n formatDate.
  */
-export const DateCell = ({ value }: DateCellProps): ReactNode => {
+export const DateCell = ({ value, locale = defaultIntlLocale }: DateCellProps): ReactNode => {
+    const { t } = useTranslations();
+
     if (value === null || value === undefined || value === '' || value === 0 || value === '0') {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     let date: Date;
@@ -23,25 +28,45 @@ export const DateCell = ({ value }: DateCellProps): ReactNode => {
         }
 
         if (Number.isNaN(date.getTime())) {
-            return <span className="text-gray-400 dark:text-gray-500">Invalid date</span>;
+            return (
+                <span className="text-muted-foreground">
+                    {t('admin-common.tableCells.invalidDate')}
+                </span>
+            );
         }
 
-        const formattedDate = date.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+        const formattedDate = formatDate({
+            date,
+            locale,
+            options: { year: 'numeric', month: 'short', day: 'numeric' }
+        });
+
+        const formattedFull = formatDate({
+            date,
+            locale,
+            options: {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }
         });
 
         return (
             <time
                 dateTime={date.toISOString()}
-                className="text-gray-900 dark:text-gray-100"
-                title={date.toLocaleString()}
+                className="text-foreground"
+                title={formattedFull}
             >
                 {formattedDate}
             </time>
         );
     } catch {
-        return <span className="text-gray-400 dark:text-gray-500">Invalid date</span>;
+        return (
+            <span className="text-muted-foreground">
+                {t('admin-common.tableCells.invalidDate')}
+            </span>
+        );
     }
 };

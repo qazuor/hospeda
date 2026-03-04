@@ -1,8 +1,11 @@
+import { useTranslations } from '@/hooks/use-translations';
+import { defaultIntlLocale, formatNumber } from '@repo/i18n';
 import type { PriceCurrencyEnum, PriceType } from '@repo/schemas';
 import type { ReactNode } from 'react';
 
 type PriceCellProps = {
     readonly value: unknown;
+    readonly locale?: string;
 };
 
 /**
@@ -10,21 +13,23 @@ type PriceCellProps = {
  * Expects a PriceType object with price and currency properties.
  * Handles various currency formats and provides fallbacks for missing data.
  */
-export const PriceCell = ({ value }: PriceCellProps): ReactNode => {
+export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps): ReactNode => {
+    const { t } = useTranslations();
+
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     // Handle non-object values
     if (typeof value !== 'object') {
-        return <span className="text-gray-900 dark:text-gray-100">{String(value)}</span>;
+        return <span className="text-foreground">{String(value)}</span>;
     }
 
     const priceData = value as PriceType;
 
     // Handle missing price
     if (priceData.price === null || priceData.price === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">No price</span>;
+        return <span className="text-muted-foreground">{t('admin-common.states.noPrice')}</span>;
     }
 
     const price = Number(priceData.price);
@@ -32,51 +37,56 @@ export const PriceCell = ({ value }: PriceCellProps): ReactNode => {
 
     // Handle invalid price numbers
     if (Number.isNaN(price)) {
-        return <span className="text-gray-400 dark:text-gray-500">Invalid price</span>;
+        return (
+            <span className="text-muted-foreground">{t('admin-common.states.invalidPrice')}</span>
+        );
     }
 
     // Format the price based on currency
-    const formattedPrice = formatPrice(price, currency);
+    const formattedPrice = formatPrice(price, currency, locale);
 
     return (
         <div className="flex items-center gap-1">
-            <span className="font-medium text-gray-900 dark:text-gray-100">{formattedPrice}</span>
+            <span className="font-medium text-foreground">{formattedPrice}</span>
             {currency && (
-                <span className="text-gray-500 text-xs uppercase dark:text-gray-400">
-                    {currency}
-                </span>
+                <span className="text-muted-foreground text-xs uppercase">{currency}</span>
             )}
         </div>
     );
 };
 
 /**
- * Formats a price number based on the currency type.
+ * Formats a price number based on the currency type and locale.
+ *
+ * @param price - Numeric price value
+ * @param currency - Currency code (ARS, USD, etc.)
+ * @param locale - BCP 47 locale string for formatting
  */
-function formatPrice(price: number, currency?: PriceCurrencyEnum): string {
+function formatPrice(
+    price: number,
+    currency: PriceCurrencyEnum | undefined,
+    locale: string
+): string {
     switch (currency) {
         case 'ARS':
-            // Argentine Peso formatting
-            return new Intl.NumberFormat('es-AR', {
-                style: 'decimal',
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0
-            }).format(price);
+            return formatNumber({
+                value: price,
+                locale,
+                options: { style: 'decimal', minimumFractionDigits: 0, maximumFractionDigits: 0 }
+            });
 
         case 'USD':
-            // US Dollar formatting
-            return new Intl.NumberFormat('en-US', {
-                style: 'decimal',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(price);
+            return formatNumber({
+                value: price,
+                locale,
+                options: { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            });
 
         default:
-            // Default formatting for unknown currencies
-            return new Intl.NumberFormat('en-US', {
-                style: 'decimal',
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            }).format(price);
+            return formatNumber({
+                value: price,
+                locale,
+                options: { style: 'decimal', minimumFractionDigits: 2, maximumFractionDigits: 2 }
+            });
     }
 }

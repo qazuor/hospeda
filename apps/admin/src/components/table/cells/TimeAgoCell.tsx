@@ -1,7 +1,10 @@
+import { useTranslations } from '@/hooks/use-translations';
+import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import type { ReactNode } from 'react';
 
 type TimeAgoCellProps = {
     readonly value: unknown;
+    readonly locale?: string;
 };
 
 /**
@@ -11,9 +14,11 @@ type TimeAgoCellProps = {
  *
  * Based on: https://github.com/github/relative-time-element#readme
  */
-export const TimeAgoCell = ({ value }: TimeAgoCellProps): ReactNode => {
+export const TimeAgoCell = ({ value, locale = defaultIntlLocale }: TimeAgoCellProps): ReactNode => {
+    const { t } = useTranslations();
+
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     let date: Date;
@@ -26,34 +31,54 @@ export const TimeAgoCell = ({ value }: TimeAgoCellProps): ReactNode => {
         }
 
         if (Number.isNaN(date.getTime())) {
-            return <span className="text-gray-400 dark:text-gray-500">Invalid date</span>;
+            return (
+                <span className="text-muted-foreground">
+                    {t('admin-common.tableCells.invalidDate')}
+                </span>
+            );
         }
 
         const isoString = date.toISOString();
 
-        const formattedDate = date.toLocaleDateString(undefined, {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric'
+        const formattedDate = formatDate({
+            date,
+            locale,
+            options: { year: 'numeric', month: 'short', day: 'numeric' }
+        });
+
+        const formattedFull = formatDate({
+            date,
+            locale,
+            options: {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }
         });
 
         return (
             <div className="flex flex-col">
                 <span
-                    className="text-gray-900 dark:text-gray-100"
-                    title={date.toLocaleString()}
+                    className="text-foreground"
+                    title={formattedFull}
                 >
                     {formattedDate}
                 </span>
                 <time
                     dateTime={isoString}
-                    className="text-gray-500 text-xss dark:text-gray-400"
+                    className="text-muted-foreground text-xss"
                 >
                     {formattedDate}
                 </time>
             </div>
         );
     } catch {
-        return <span className="text-gray-400 dark:text-gray-500">Invalid date</span>;
+        return (
+            <span className="text-muted-foreground">
+                {t('admin-common.tableCells.invalidDate')}
+            </span>
+        );
     }
 };

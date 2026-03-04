@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
     DownloadIcon,
@@ -63,6 +64,8 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
         },
         ref
     ) => {
+        const { t, tPlural } = useTranslations();
+
         const {
             config,
             values,
@@ -146,14 +149,14 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                             {isLoading && (
                                 <div className="flex items-center gap-2 text-muted-foreground text-sm">
                                     <LoaderIcon className="h-4 w-4 animate-spin" />
-                                    Loading...
+                                    {t('admin-common.states.loading')}
                                 </div>
                             )}
 
                             {/* Data Status */}
                             {isEmpty && !isLoading && (
-                                <div className="rounded-full bg-gray-100 px-2 py-1 text-gray-800 text-xs dark:bg-gray-800 dark:text-gray-200">
-                                    No data
+                                <div className="rounded-full bg-muted px-2 py-1 text-foreground text-xs">
+                                    {t('admin-common.states.noDataAvailable')}
                                 </div>
                             )}
                         </div>
@@ -205,7 +208,9 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 ) : (
                                     <EyeIcon className="mr-2 h-4 w-4" />
                                 )}
-                                {showEmptyFields ? 'Hide Empty' : 'Show Empty'}
+                                {showEmptyFields
+                                    ? t('admin-common.entityView.hideEmpty')
+                                    : t('admin-common.entityView.showEmpty')}
                             </Button>
 
                             {/* Edit Controls Toggle */}
@@ -217,7 +222,9 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     onClick={toggleShowEditControls}
                                 >
                                     <SettingsIcon className="mr-2 h-4 w-4" />
-                                    {showEditControls ? 'Hide Controls' : 'Show Controls'}
+                                    {showEditControls
+                                        ? t('admin-common.entityView.hideControls')
+                                        : t('admin-common.entityView.showControls')}
                                 </Button>
                             )}
 
@@ -232,7 +239,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 <RefreshIcon
                                     className={cn('mr-2 h-4 w-4', isLoading && 'animate-spin')}
                                 />
-                                Refresh
+                                {t('admin-common.entityView.refresh')}
                             </Button>
 
                             <Button
@@ -242,7 +249,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 onClick={printView}
                             >
                                 <PrintIcon className="mr-2 h-4 w-4" />
-                                Print
+                                {t('admin-common.entityView.print')}
                             </Button>
 
                             <Button
@@ -253,7 +260,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 disabled={isEmpty}
                             >
                                 <DownloadIcon className="mr-2 h-4 w-4" />
-                                Export
+                                {t('admin-common.entityView.export')}
                             </Button>
 
                             {/* Edit Mode */}
@@ -264,7 +271,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                     onClick={onEditMode}
                                 >
                                     <EditIcon className="mr-2 h-4 w-4" />
-                                    Edit
+                                    {t('admin-common.entityView.edit')}
                                 </Button>
                             )}
                         </div>
@@ -279,9 +286,11 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                 return (
                     <div className="flex flex-1 items-center justify-center p-8">
                         <div className="text-center">
-                            <h3 className="font-medium text-lg">No data available</h3>
+                            <h3 className="font-medium text-lg">
+                                {t('admin-common.states.noDataAvailable')}
+                            </h3>
                             <p className="text-muted-foreground text-sm">
-                                This entity doesn't have any data to display.
+                                {t('admin-common.states.noDataToDisplay')}
                             </p>
                             <Button
                                 type="button"
@@ -291,7 +300,7 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                                 className="mt-4"
                             >
                                 <RefreshIcon className="mr-2 h-4 w-4" />
-                                Refresh
+                                {t('admin-common.entityView.refresh')}
                             </Button>
                         </div>
                     </div>
@@ -302,9 +311,11 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                 return (
                     <div className="flex flex-1 items-center justify-center p-8">
                         <div className="text-center">
-                            <h3 className="font-medium text-lg">No accessible sections</h3>
+                            <h3 className="font-medium text-lg">
+                                {t('admin-common.states.noAccessibleSections')}
+                            </h3>
                             <p className="text-muted-foreground text-sm">
-                                You don't have permission to view any sections of this entity.
+                                {t('admin-common.states.noAccessibleFields')}
                             </p>
                         </div>
                     </div>
@@ -376,24 +387,30 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
                             {isLoading && (
                                 <div className="flex items-center gap-2">
                                     <LoaderIcon className="h-4 w-4 animate-spin" />
-                                    Loading...
+                                    {t('admin-common.states.loading')}
                                 </div>
                             )}
 
                             {/* Data Information */}
                             {hasData && (
                                 <div>
-                                    {Object.keys(values).length} field
-                                    {Object.keys(values).length !== 1 ? 's' : ''} available
+                                    {tPlural(
+                                        'admin-common.entityView.fieldsAvailable',
+                                        Object.keys(values).length
+                                    )}
                                 </div>
                             )}
 
                             {/* Section Information */}
                             {visibleSections.length > 1 && activeSectionId && (
                                 <div>
-                                    Section{' '}
-                                    {visibleSections.findIndex((s) => s.id === activeSectionId) + 1}{' '}
-                                    of {visibleSections.length}
+                                    {t('admin-common.entityView.sectionOf', {
+                                        current:
+                                            visibleSections.findIndex(
+                                                (s) => s.id === activeSectionId
+                                            ) + 1,
+                                        total: visibleSections.length
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -404,7 +421,9 @@ export const EntityViewLayout = React.forwardRef<HTMLDivElement, EntityViewLayou
 
                             {/* Display Mode Info */}
                             <div className="text-muted-foreground text-sm">
-                                {displayMode.charAt(0).toUpperCase() + displayMode.slice(1)} view
+                                {t('admin-common.entityView.viewMode', {
+                                    mode: displayMode.charAt(0).toUpperCase() + displayMode.slice(1)
+                                })}
                             </div>
                         </div>
                     </div>

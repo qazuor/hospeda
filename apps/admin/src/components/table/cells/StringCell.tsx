@@ -13,5 +13,5 @@ export const StringCell = ({ value }: StringCellProps): ReactNode => {
         return null;
     }
 
-    return <span className="text-gray-900 dark:text-gray-100">{String(value)}</span>;
+    return <span className="text-foreground">{String(value)}</span>;
 };

@@ -1,5 +1,6 @@
 import type { FieldConfig } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
 import { CheckIcon, CloseIcon } from '@repo/icons';
@@ -40,6 +41,8 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -55,10 +58,14 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                             variant={value ? 'default' : 'secondary'}
                             className={cn(
                                 'text-xs',
-                                value ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                                value
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                    : 'bg-muted text-muted-foreground'
                             )}
                         >
-                            {value ? 'Yes' : 'No'}
+                            {value
+                                ? t('admin-entities.viewFields.boolean.yes')
+                                : t('admin-entities.viewFields.boolean.no')}
                         </Badge>
                     );
 
@@ -66,25 +73,38 @@ export const BooleanViewField = React.forwardRef<HTMLDivElement, BooleanViewFiel
                     return (
                         <div className="flex items-center gap-2">
                             {value ? (
-                                <CheckIcon className="h-4 w-4 text-green-600" />
+                                <CheckIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
                             ) : (
-                                <CloseIcon className="h-4 w-4 text-gray-400" />
+                                <CloseIcon className="h-4 w-4 text-muted-foreground" />
                             )}
                             <span
                                 className={cn(
                                     'text-sm',
-                                    value ? 'text-green-700' : 'text-gray-500'
+                                    value
+                                        ? 'text-green-700 dark:text-green-300'
+                                        : 'text-muted-foreground'
                                 )}
                             >
-                                {value ? 'Enabled' : 'Disabled'}
+                                {value
+                                    ? t('admin-entities.viewFields.boolean.enabled')
+                                    : t('admin-entities.viewFields.boolean.disabled')}
                             </span>
                         </div>
                     );
 
                 default:
                     return (
-                        <span className={cn('text-sm', value ? 'text-green-700' : 'text-gray-500')}>
-                            {value ? 'True' : 'False'}
+                        <span
+                            className={cn(
+                                'text-sm',
+                                value
+                                    ? 'text-green-700 dark:text-green-300'
+                                    : 'text-muted-foreground'
+                            )}
+                        >
+                            {value
+                                ? t('admin-entities.viewFields.boolean.true')
+                                : t('admin-entities.viewFields.boolean.false')}
                         </span>
                     );
             }

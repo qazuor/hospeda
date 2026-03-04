@@ -143,7 +143,9 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
         const renderEmptyState = () => (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed bg-muted/30 py-12">
                 <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                <span className="mt-2 text-muted-foreground text-sm">No images in gallery</span>
+                <span className="mt-2 text-muted-foreground text-sm">
+                    {t('admin-common.states.noImagesInGallery')}
+                </span>
             </div>
         );
 
@@ -154,7 +156,10 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
             >
                 <img
                     src={image.url}
-                    alt={image.alt || `Gallery image ${index + 1}`}
+                    alt={
+                        image.alt ||
+                        `${t('admin-entities.viewFields.gallery.imageAlt')} ${index + 1}`
+                    }
                     className={cn(
                         'w-full rounded-lg border object-cover',
                         sizeConfig[imageSize],
@@ -170,7 +175,9 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                     tabIndex={clickable ? 0 : -1}
                     role={clickable ? 'button' : undefined}
                     aria-label={
-                        clickable ? `Preview ${image.alt || `image ${index + 1}`}` : undefined
+                        clickable
+                            ? `${t('admin-entities.viewFields.gallery.preview')} ${image.alt || `${t('admin-entities.viewFields.gallery.imageAlt')} ${index + 1}`}`
+                            : undefined
                     }
                     loading="lazy"
                 />
@@ -282,7 +289,10 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                                 variant="outline"
                                 className="text-xs"
                             >
-                                {value.length} image{value.length !== 1 ? 's' : ''}
+                                {value.length}{' '}
+                                {value.length !== 1
+                                    ? t('admin-entities.viewFields.gallery.imagesPlural')
+                                    : t('admin-entities.viewFields.gallery.imageSingular')}
                             </Badge>
                         )}
                     </div>
@@ -324,9 +334,15 @@ export const GalleryViewField = React.forwardRef<HTMLDivElement, GalleryViewFiel
                 {/* Gallery Info */}
                 {value.length > 0 && (
                     <div className="flex items-center gap-4 text-muted-foreground text-xs">
-                        <span>Layout: {layout}</span>
-                        {clickable && <span>Click images to preview</span>}
-                        {galleryConfig?.sortable && <span>Sortable gallery</span>}
+                        <span>
+                            {t('admin-entities.viewFields.gallery.layout')}: {layout}
+                        </span>
+                        {clickable && (
+                            <span>{t('admin-entities.viewFields.gallery.clickToPreview')}</span>
+                        )}
+                        {galleryConfig?.sortable && (
+                            <span>{t('admin-entities.viewFields.gallery.sortable')}</span>
+                        )}
                     </div>
                 )}
             </div>

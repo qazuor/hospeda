@@ -320,7 +320,7 @@ export const WrappedComponentsExample = () => {
                                                 name={iconName}
                                                 size="lg"
                                             />
-                                            <span className="text-gray-500 text-xs">
+                                            <span className="text-muted-foreground text-xs">
                                                 {iconName}
                                             </span>
                                         </div>

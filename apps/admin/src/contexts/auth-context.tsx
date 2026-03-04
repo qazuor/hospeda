@@ -10,6 +10,7 @@
 
 import { fetchApi } from '@/lib/api/client';
 import { signOut as authSignOut, useSession } from '@/lib/auth-client';
+import type { AuthState as ServerAuthState } from '@/lib/auth-session';
 import { type ReactNode, createContext, useCallback, useEffect, useState } from 'react';
 import { adminLogger } from '../utils/logger';
 
@@ -23,6 +24,7 @@ interface UserSession {
     displayName?: string;
     email?: string;
     avatar?: string;
+    emailVerified?: boolean;
 }
 
 /**
@@ -42,6 +44,7 @@ export interface AuthContextValue extends AuthState {
     refreshSession: () => Promise<void>;
     clearSession: () => void;
     signOut: () => Promise<void>;
+    impersonatedBy?: string;
 }
 
 const HospedaAuthContext = createContext<AuthContextValue | null>(null);
@@ -183,12 +186,33 @@ async function fetchUserSession(): Promise<UserSession | null> {
  */
 interface AuthProviderProps {
     children: ReactNode;
+    /** Server-side auth state from beforeLoad for zero-flash hydration */
+    initialAuthState?: ServerAuthState;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function AuthProvider({ children, initialAuthState }: AuthProviderProps) {
     const { data: session, isPending: isSessionLoading } = useSession();
+    const [impersonatedBy, setImpersonatedBy] = useState<string | undefined>();
 
     const [authState, setAuthState] = useState<AuthState>(() => {
+        // When server auth state is provided and authenticated, hydrate immediately (zero-flash)
+        if (initialAuthState?.isAuthenticated && initialAuthState.userId) {
+            return {
+                isLoading: false,
+                isAuthenticated: true,
+                user: {
+                    id: initialAuthState.userId,
+                    role: initialAuthState.role ?? '',
+                    permissions: [...initialAuthState.permissions],
+                    displayName: initialAuthState.displayName ?? undefined,
+                    email: initialAuthState.email ?? undefined,
+                    avatar: initialAuthState.avatar ?? undefined,
+                    emailVerified: initialAuthState.emailVerified
+                },
+                error: null
+            };
+        }
+
         if (typeof window === 'undefined') {
             return {
                 isLoading: true,
@@ -276,6 +300,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     /**
+     * Persist server-hydrated session to sessionStorage on mount.
+     * This ensures subsequent navigations find a warm cache even
+     * if they don't receive initialAuthState.
+     */
+    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally runs once on mount with initial server data
+    useEffect(() => {
+        if (initialAuthState?.isAuthenticated && authState.user) {
+            storeSession(authState.user);
+        }
+    }, []);
+
+    /**
      * Sync with Better Auth session state
      */
     useEffect(() => {
@@ -283,7 +319,35 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         const isSignedIn = !!session?.user;
 
-        if (isSignedIn && !authState.user) {
+        // Capture impersonation state from Better Auth session
+        const sessionImpersonatedBy = (session?.session as { impersonatedBy?: string } | undefined)
+            ?.impersonatedBy;
+        if (sessionImpersonatedBy) {
+            setImpersonatedBy(sessionImpersonatedBy);
+        }
+
+        if (isSignedIn && authState.user) {
+            // Already hydrated from server.. enrich with Better Auth display data if missing
+            const needsEnrich =
+                !authState.user.displayName && !authState.user.email && !authState.user.avatar;
+            if (needsEnrich && session?.user) {
+                const enrichedUser: UserSession = {
+                    ...authState.user,
+                    displayName: session.user.name || authState.user.displayName,
+                    email: session.user.email || authState.user.email,
+                    avatar: session.user.image || authState.user.avatar
+                };
+                storeSession(enrichedUser);
+                setAuthState((prev) => ({
+                    ...prev,
+                    isLoading: false,
+                    user: enrichedUser
+                }));
+            } else {
+                storeSession(authState.user);
+                setAuthState((prev) => ({ ...prev, isLoading: false }));
+            }
+        } else if (isSignedIn && !authState.user) {
             const stored = getStoredSession();
             if (stored.isValid && stored.user) {
                 setAuthState((prev) => ({
@@ -330,7 +394,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         ...authState,
         refreshSession,
         clearSession,
-        signOut: handleSignOut
+        signOut: handleSignOut,
+        impersonatedBy
     };
 
     return (

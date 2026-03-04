@@ -24,9 +24,6 @@ export type { SidebarPageLayoutProps } from './SidebarPageLayout';
 // Navigation components
 export { Breadcrumbs } from './Breadcrumbs';
 
-export { Topbar } from './Topbar';
-export type { TopbarProps } from './Topbar';
-
 // Level 3: Page Tabs
 export { PageTabs } from './PageTabs';
 export type { PageTabsProps } from './PageTabs';

@@ -1,7 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { useAdvancedCache } from '@/lib/cache/hooks/useAdvancedCache';
 import { cn } from '@/lib/utils';
+import { formatDate } from '@repo/i18n';
 import { DeleteIcon, RefreshIcon, StatisticsIcon } from '@repo/icons';
 import type React from 'react';
 import { useEffect, useState } from 'react';
@@ -41,6 +43,7 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
     className,
     realTime = false
 }) => {
+    const { t, locale } = useTranslations();
     const { analytics, cleanup, clearAnalytics, isMonitoring, startMonitoring, stopMonitoring } =
         useAdvancedCache({
             autoStart: true,
@@ -86,7 +89,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
         return (
             <Card className={cn('w-full', className)}>
                 <CardContent className="flex items-center justify-center p-6">
-                    <p className="text-gray-500 text-sm">Cache analytics not available</p>
+                    <p className="text-muted-foreground text-sm">
+                        {t('admin-pages.cacheMonitor.notAvailable')}
+                    </p>
                 </CardContent>
             </Card>
         );
@@ -102,9 +107,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
     );
 
     const getHealthColor = (score: number) => {
-        if (score >= 80) return 'text-green-600';
-        if (score >= 60) return 'text-yellow-600';
-        return 'text-red-600';
+        if (score >= 80) return 'text-green-600 dark:text-green-400';
+        if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-red-600 dark:text-red-400';
     };
 
     // Removed unused formatBytes function
@@ -119,7 +124,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
         <div className={cn('space-y-4', className)}>
             {/* Header with controls */}
             <div className="flex items-center justify-between">
-                <h2 className="font-semibold text-gray-900 text-lg">Cache Monitor</h2>
+                <h2 className="font-semibold text-foreground text-lg">
+                    {t('admin-pages.cacheMonitor.title')}
+                </h2>
                 <div className="flex items-center space-x-2">
                     <Button
                         variant="outline"
@@ -128,7 +135,7 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                         disabled={isRefreshing}
                     >
                         <RefreshIcon className={cn('h-4 w-4', isRefreshing && 'animate-spin')} />
-                        Refresh
+                        {t('admin-pages.cacheMonitor.refresh')}
                     </Button>
                     <Button
                         variant="outline"
@@ -136,7 +143,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                         onClick={isMonitoring ? stopMonitoring : startMonitoring}
                     >
                         <StatisticsIcon className="h-4 w-4" />
-                        {isMonitoring ? 'Stop' : 'Start'} Monitoring
+                        {isMonitoring
+                            ? t('admin-pages.cacheMonitor.stopMonitoring')
+                            : t('admin-pages.cacheMonitor.startMonitoring')}
                     </Button>
                 </div>
             </div>
@@ -148,7 +157,9 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-gray-600 text-sm">Health Score</p>
+                                <p className="font-medium text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.healthScore')}
+                                </p>
                                 <p
                                     className={cn(
                                         'font-bold text-2xl',
@@ -170,17 +181,20 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-gray-600 text-sm">Cache Size</p>
-                                <p className="font-bold text-2xl text-blue-600">
+                                <p className="font-medium text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.cacheSize')}
+                                </p>
+                                <p className="font-bold text-2xl text-blue-600 dark:text-blue-400">
                                     {cacheStats.estimatedSizeMB.toFixed(1)}MB
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-gray-500 text-xs">
-                                    {cacheStats.totalQueries} queries
+                                <p className="text-muted-foreground text-xs">
+                                    {cacheStats.totalQueries}{' '}
+                                    {t('admin-pages.cacheMonitor.queries')}
                                 </p>
-                                <p className="text-gray-500 text-xs">
-                                    {cacheStats.staleQueries} stale
+                                <p className="text-muted-foreground text-xs">
+                                    {cacheStats.staleQueries} {t('admin-pages.cacheMonitor.stale')}
                                 </p>
                             </div>
                         </div>
@@ -192,29 +206,31 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-gray-600 text-sm">Memory Pressure</p>
+                                <p className="font-medium text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.memoryPressure')}
+                                </p>
                                 <p
                                     className={cn(
                                         'font-bold text-2xl',
                                         cacheStats.memoryPressure > 0.8
-                                            ? 'text-red-600'
+                                            ? 'text-red-600 dark:text-red-400'
                                             : cacheStats.memoryPressure > 0.6
-                                              ? 'text-yellow-600'
-                                              : 'text-green-600'
+                                              ? 'text-yellow-600 dark:text-yellow-400'
+                                              : 'text-green-600 dark:text-green-400'
                                     )}
                                 >
                                     {(cacheStats.memoryPressure * 100).toFixed(0)}%
                                 </p>
                             </div>
-                            <div className="h-2 w-16 rounded-full bg-gray-200">
+                            <div className="h-2 w-16 rounded-full bg-muted">
                                 <div
                                     className={cn(
                                         'h-full rounded-full transition-all',
                                         cacheStats.memoryPressure > 0.8
-                                            ? 'bg-red-500'
+                                            ? 'bg-red-500 dark:bg-red-400'
                                             : cacheStats.memoryPressure > 0.6
-                                              ? 'bg-yellow-500'
-                                              : 'bg-green-500'
+                                              ? 'bg-yellow-500 dark:bg-yellow-400'
+                                              : 'bg-green-500 dark:bg-green-400'
                                     )}
                                     style={{
                                         width: `${Math.min(100, cacheStats.memoryPressure * 100)}%`
@@ -230,24 +246,25 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-gray-600 text-sm">
-                                    Total Operations
+                                <p className="font-medium text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.totalOperations')}
                                 </p>
-                                <p className="font-bold text-2xl text-purple-600">
+                                <p className="font-bold text-2xl text-purple-600 dark:text-purple-400">
                                     {invalidation.totalInvalidations +
                                         warming.totalWarmings +
                                         memory.totalCleanups}
                                 </p>
                             </div>
                             <div className="text-right">
-                                <p className="text-gray-500 text-xs">
-                                    {invalidation.totalInvalidations} invalidations
+                                <p className="text-muted-foreground text-xs">
+                                    {invalidation.totalInvalidations}{' '}
+                                    {t('admin-pages.cacheMonitor.invalidations')}
                                 </p>
-                                <p className="text-gray-500 text-xs">
-                                    {warming.totalWarmings} warmings
+                                <p className="text-muted-foreground text-xs">
+                                    {warming.totalWarmings} {t('admin-pages.cacheMonitor.warmings')}
                                 </p>
-                                <p className="text-gray-500 text-xs">
-                                    {memory.totalCleanups} cleanups
+                                <p className="text-muted-foreground text-xs">
+                                    {memory.totalCleanups} {t('admin-pages.cacheMonitor.cleanups')}
                                 </p>
                             </div>
                         </div>
@@ -261,29 +278,39 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     {/* Invalidation Analytics */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Smart Invalidation</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-pages.cacheMonitor.smartInvalidation')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Success Rate</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.successRate')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {invalidation.successRate.toFixed(1)}%
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Avg Execution</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.avgExecution')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {formatDuration(invalidation.averageExecutionTime)}
                                 </span>
                             </div>
                             <div className="space-y-1">
-                                <p className="font-medium text-gray-700 text-sm">Top Strategies</p>
+                                <p className="font-medium text-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.topStrategies')}
+                                </p>
                                 {invalidation.topStrategies.slice(0, 3).map((strategy) => (
                                     <div
                                         key={strategy.strategy}
                                         className="flex justify-between text-xs"
                                     >
-                                        <span className="text-gray-600">{strategy.strategy}</span>
+                                        <span className="text-muted-foreground">
+                                            {strategy.strategy}
+                                        </span>
                                         <span className="font-medium">{strategy.count}</span>
                                     </div>
                                 ))}
@@ -294,29 +321,39 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     {/* Cache Warming Analytics */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Cache Warming</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-pages.cacheMonitor.cacheWarming')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Success Rate</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.successRate')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {warming.successRate.toFixed(1)}%
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Avg Execution</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.avgExecution')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {formatDuration(warming.averageExecutionTime)}
                                 </span>
                             </div>
                             <div className="space-y-1">
-                                <p className="font-medium text-gray-700 text-sm">Top Strategies</p>
+                                <p className="font-medium text-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.topStrategies')}
+                                </p>
                                 {warming.topStrategies.slice(0, 3).map((strategy) => (
                                     <div
                                         key={strategy.strategy}
                                         className="flex justify-between text-xs"
                                     >
-                                        <span className="text-gray-600">{strategy.strategy}</span>
+                                        <span className="text-muted-foreground">
+                                            {strategy.strategy}
+                                        </span>
                                         <span className="font-medium">{strategy.count}</span>
                                     </div>
                                 ))}
@@ -327,24 +364,30 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                     {/* Memory Analytics */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Memory Management</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-pages.cacheMonitor.memoryManagement')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Queries Removed</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.queriesRemoved')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {memory.totalQueriesRemoved}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-gray-600 text-sm">Memory Freed</span>
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.memoryFreed')}
+                                </span>
                                 <span className="font-medium text-sm">
                                     {memory.totalMemoryFreedMB.toFixed(1)}MB
                                 </span>
                             </div>
                             <div className="space-y-1">
-                                <p className="font-medium text-gray-700 text-sm">
-                                    Cleanup Triggers
+                                <p className="font-medium text-foreground text-sm">
+                                    {t('admin-pages.cacheMonitor.cleanupTriggers')}
                                 </p>
                                 {Object.entries(memory.cleanupsByTrigger)
                                     .slice(0, 3)
@@ -353,7 +396,7 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                                             key={trigger}
                                             className="flex justify-between text-xs"
                                         >
-                                            <span className="text-gray-600">{trigger}</span>
+                                            <span className="text-muted-foreground">{trigger}</span>
                                             <span className="font-medium">{count}</span>
                                         </div>
                                     ))}
@@ -364,11 +407,18 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
             )}
 
             {/* Action buttons */}
-            <div className="flex items-center justify-between rounded-lg border bg-gray-50 p-4">
+            <div className="flex items-center justify-between rounded-lg border bg-muted p-4">
                 <div>
-                    <p className="font-medium text-gray-900 text-sm">Cache Management</p>
-                    <p className="text-gray-600 text-xs">
-                        Last updated: {new Date(lastRefresh).toLocaleTimeString()}
+                    <p className="font-medium text-foreground text-sm">
+                        {t('admin-pages.cacheMonitor.cacheManagement')}
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                        {t('admin-pages.cacheMonitor.lastUpdated')}{' '}
+                        {formatDate({
+                            date: lastRefresh,
+                            locale,
+                            options: { timeStyle: 'medium' }
+                        })}
                     </p>
                 </div>
                 <div className="flex space-x-2">
@@ -378,21 +428,21 @@ export const CacheMonitor: React.FC<CacheMonitorProps> = ({
                         onClick={handleCleanup}
                     >
                         <DeleteIcon className="h-4 w-4" />
-                        Clean Cache
+                        {t('admin-pages.cacheMonitor.cleanCache')}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={handleForceCleanup}
                     >
-                        Force Clean
+                        {t('admin-pages.cacheMonitor.forceClean')}
                     </Button>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={clearAnalytics}
                     >
-                        Clear Analytics
+                        {t('admin-pages.cacheMonitor.clearAnalytics')}
                     </Button>
                 </div>
             </div>

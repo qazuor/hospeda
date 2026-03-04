@@ -48,6 +48,7 @@ export type {
 // Sidebar helpers
 export {
     filterByPermissions,
+    filterSectionsByPermissions,
     findActiveItem,
     getAllHrefs,
     isGroupActive,

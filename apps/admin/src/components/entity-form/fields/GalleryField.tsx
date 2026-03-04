@@ -4,6 +4,7 @@ import type {
     GalleryFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Button, Input, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
 
@@ -76,6 +77,8 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
         },
         _ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -296,7 +299,12 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     {/* Image */}
                                     <img
                                         src={image.url}
-                                        alt={image.alt || `Gallery image ${index + 1}`}
+                                        alt={
+                                            image.alt ||
+                                            t('admin-entities.fields.gallery.imageAlt', {
+                                                index: String(index + 1)
+                                            })
+                                        }
                                         className={cn(
                                             'h-32 w-full object-cover',
                                             maxWidth && `max-w-[${maxWidth}px]`,
@@ -334,7 +342,9 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                                     caption: e.target.value
                                                 })
                                             }
-                                            placeholder="Caption"
+                                            placeholder={t(
+                                                'admin-entities.fields.gallery.captionPlaceholder'
+                                            )}
                                             disabled={disabled}
                                             className="h-7 text-xs"
                                         />
@@ -343,7 +353,9 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                             onChange={(e) =>
                                                 handleUpdateImage(image.id, { alt: e.target.value })
                                             }
-                                            placeholder="Alt text"
+                                            placeholder={t(
+                                                'admin-entities.fields.gallery.altTextPlaceholder'
+                                            )}
                                             disabled={disabled}
                                             className="h-7 text-xs"
                                         />
@@ -369,12 +381,14 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                         onDragLeave={handleDragLeave}
                         onClick={() => !disabled && fileInputRef.current?.click()}
                         disabled={disabled}
-                        aria-label="Upload images"
+                        aria-label={t('admin-entities.fields.gallery.uploadAriaLabel')}
                     >
                         {isUploading ? (
                             <div className="flex flex-col items-center gap-2">
                                 <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
-                                <p className="text-muted-foreground text-sm">Uploading...</p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('admin-entities.fields.gallery.uploading')}
+                                </p>
                             </div>
                         ) : (
                             <div className="flex flex-col items-center gap-2">
@@ -382,16 +396,21 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                 <div className="space-y-1">
                                     <p className="font-medium text-sm">
                                         <AddIcon className="mr-1 inline h-4 w-4" />
-                                        Add images ({value.length}/{maxImages})
+                                        {t('admin-entities.fields.gallery.addImages', {
+                                            current: String(value.length),
+                                            max: String(maxImages)
+                                        })}
                                     </p>
                                     <p className="text-muted-foreground text-xs">
-                                        {allowedTypes.join(', ')} up to {formatFileSize(maxSize)}{' '}
-                                        each
+                                        {t('admin-entities.fields.gallery.fileConstraints', {
+                                            types: allowedTypes.join(', '),
+                                            maxSize: formatFileSize(maxSize)
+                                        })}
                                     </p>
                                 </div>
                                 <span className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-input bg-background px-3 font-medium text-xs ring-offset-background hover:bg-accent hover:text-accent-foreground">
                                     <UploadIcon className="h-4 w-4" />
-                                    Select Images
+                                    {t('admin-entities.fields.gallery.selectButton')}
                                 </span>
                             </div>
                         )}

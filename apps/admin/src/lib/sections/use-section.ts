@@ -34,8 +34,8 @@ export function useCurrentSection(): SectionConfig | undefined {
 /**
  * Sync the sidebar configuration with the current route
  *
- * This hook should be called in pages that need contextual sidebar navigation.
- * It automatically updates the sidebar content when the route changes.
+ * @deprecated Use `useCurrentSidebarConfig()` instead. Sidebar now reads config
+ * synchronously via useMemo, eliminating the flash caused by async useEffect.
  *
  * @example
  * ```tsx

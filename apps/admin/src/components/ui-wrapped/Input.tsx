@@ -85,16 +85,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 {label && (
                     <label
                         htmlFor={inputId}
-                        className="mb-1 block font-medium text-gray-700 text-sm"
+                        className="mb-1 block font-medium text-foreground text-sm"
                     >
                         {label}
-                        {required && <span className="ml-1 text-red-500">*</span>}
+                        {required && <span className="ml-1 text-destructive">*</span>}
                     </label>
                 )}
 
                 <div className="relative">
                     {leftIcon && (
-                        <div className="-translate-y-1/2 absolute top-1/2 left-3 text-gray-400">
+                        <div className="-translate-y-1/2 absolute top-1/2 left-3 text-muted-foreground">
                             {leftIcon}
                         </div>
                     )}
@@ -109,8 +109,9 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                             leftIcon && 'pl-10',
                             rightIcon && 'pr-10',
                             // State styles
-                            hasError && 'border-red-500 focus-visible:ring-red-500',
-                            success && 'border-green-500 focus-visible:ring-green-500',
+                            hasError && 'border-destructive focus-visible:ring-destructive',
+                            success &&
+                                'border-green-500 focus-visible:ring-green-500 dark:border-green-400',
                             !hasError && !success && 'border-input',
                             loading && 'opacity-60',
                             className
@@ -121,7 +122,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                     />
 
                     {(rightIcon || loading) && (
-                        <div className="-translate-y-1/2 absolute top-1/2 right-3 text-gray-400">
+                        <div className="-translate-y-1/2 absolute top-1/2 right-3 text-muted-foreground">
                             {loading ? (
                                 <LoaderIcon className="h-4 w-4 animate-spin text-current" />
                             ) : (
@@ -132,10 +133,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
                 </div>
 
                 {hasError && errorMessage && (
-                    <p className="mt-1 text-red-600 text-sm">{errorMessage}</p>
+                    <p className="mt-1 text-destructive text-sm">{errorMessage}</p>
                 )}
 
-                {showHelperText && <p className="mt-1 text-gray-500 text-sm">{helperText}</p>}
+                {showHelperText && (
+                    <p className="mt-1 text-muted-foreground text-sm">{helperText}</p>
+                )}
             </div>
         );
     }

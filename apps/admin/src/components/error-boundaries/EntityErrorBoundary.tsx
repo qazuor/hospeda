@@ -179,7 +179,7 @@ export class EntityErrorBoundary extends Component<
 
             return (
                 <div className="flex min-h-[400px] flex-col items-center justify-center p-8 text-center">
-                    <div className="mb-6 rounded-full bg-red-100 p-4">
+                    <div className="mb-6 rounded-full bg-destructive/10 p-4">
                         <Icon
                             name="alert-triangle"
                             size="xl"
@@ -188,9 +188,9 @@ export class EntityErrorBoundary extends Component<
                         />
                     </div>
 
-                    <h2 className="mb-2 font-semibold text-gray-900 text-xl">{title}</h2>
+                    <h2 className="mb-2 font-semibold text-foreground text-xl">{title}</h2>
 
-                    <p className="mb-6 max-w-md text-gray-600">{message}</p>
+                    <p className="mb-6 max-w-md text-muted-foreground">{message}</p>
 
                     <div className="flex gap-3">
                         {canRetry && (
@@ -227,10 +227,10 @@ export class EntityErrorBoundary extends Component<
 
                     {this.props.showDetails && this.state.error && (
                         <details className="mt-6 max-w-2xl">
-                            <summary className="cursor-pointer text-gray-500 text-sm hover:text-gray-700">
+                            <summary className="cursor-pointer text-muted-foreground text-sm hover:text-foreground">
                                 {t('error.boundary.entity.showErrorDetails')}
                             </summary>
-                            <pre className="mt-2 overflow-auto rounded bg-gray-100 p-4 text-left text-gray-800 text-xs">
+                            <pre className="mt-2 overflow-auto rounded bg-muted p-4 text-left text-foreground text-xs">
                                 {this.state.error.stack}
                             </pre>
                         </details>

@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import {
     type CrossFieldRule,
@@ -118,7 +119,7 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
     onSubmit,
     validateOnChange = true,
     preventInvalidSubmission = true,
-    submitText = 'Submit',
+    submitText,
     showSubmitButton = true,
     submitDisabled = false,
     children,
@@ -130,6 +131,8 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
     onReset,
     formProps
 }: ValidatedFormProps<TFormData>) => {
+    const { t, tPlural } = useTranslations();
+
     // Form submission state
     const [submissionState, setSubmissionState] = useState<FormSubmissionState>({
         isSubmitting: false,
@@ -170,7 +173,7 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
             if (preventInvalidSubmission && isInvalid) {
                 setSubmissionState((prev) => ({
                     ...prev,
-                    submitError: 'Please fix the errors above before submitting.'
+                    submitError: t('admin-common.validatedForm.fixErrorsBeforeSubmitting')
                 }));
                 return;
             }
@@ -212,7 +215,8 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
             preventInvalidSubmission,
             onSubmit,
             resetOnSuccess,
-            onReset
+            onReset,
+            t
         ]
     );
 
@@ -249,17 +253,17 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
 
             {/* Global form errors */}
             {validationState.globalErrors.length > 0 && (
-                <div className="rounded-md border border-red-200 bg-red-50 p-4">
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
                     <div className="flex">
                         <AlertTriangleIcon
-                            className="h-5 w-5 text-red-400"
+                            className="h-5 w-5 text-destructive"
                             aria-label="Error"
                         />
                         <div className="ml-3">
-                            <h3 className="font-medium text-red-800 text-sm">
-                                Form Validation Errors
+                            <h3 className="font-medium text-destructive text-sm">
+                                {t('admin-common.validatedForm.validationErrors')}
                             </h3>
-                            <div className="mt-2 text-red-700 text-sm">
+                            <div className="mt-2 text-destructive text-sm">
                                 <ul className="list-disc space-y-1 pl-5">
                                     {validationState.globalErrors.map((error) => (
                                         <li key={error}>{error}</li>
@@ -273,14 +277,16 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
 
             {/* Submission error */}
             {submissionState.submitError && (
-                <div className="rounded-md border border-red-200 bg-red-50 p-4">
+                <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
                     <div className="flex">
                         <AlertCircleIcon
-                            className="h-5 w-5 text-red-400"
+                            className="h-5 w-5 text-destructive"
                             aria-label="Submission Error"
                         />
                         <div className="ml-3">
-                            <p className="text-red-700 text-sm">{submissionState.submitError}</p>
+                            <p className="text-destructive text-sm">
+                                {submissionState.submitError}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -288,14 +294,16 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
 
             {/* Success message */}
             {submissionState.submitSuccess && successMessage && (
-                <div className="rounded-md border border-green-200 bg-green-50 p-4">
+                <div className="rounded-md border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950">
                     <div className="flex">
                         <CheckIcon
-                            className="h-5 w-5 text-green-400"
+                            className="h-5 w-5 text-green-400 dark:text-green-300"
                             aria-label="Success"
                         />
                         <div className="ml-3">
-                            <p className="text-green-700 text-sm">{successMessage}</p>
+                            <p className="text-green-700 text-sm dark:text-green-300">
+                                {successMessage}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -317,10 +325,10 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                                 type="submit"
                                 disabled={isSubmitDisabled}
                                 className={cn(
-                                    'inline-flex items-center rounded-md border border-transparent px-4 py-2 font-medium text-sm text-white shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
+                                    'inline-flex items-center rounded-md border border-transparent px-4 py-2 font-medium text-primary-foreground text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2',
                                     isSubmitDisabled
-                                        ? 'cursor-not-allowed bg-gray-400'
-                                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500',
+                                        ? 'cursor-not-allowed bg-muted-foreground/50'
+                                        : 'bg-primary hover:bg-primary/90 focus:ring-primary',
                                     submitButtonClassName
                                 )}
                             >
@@ -330,7 +338,9 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                                         aria-label="Loading"
                                     />
                                 )}
-                                {submissionState.isSubmitting ? 'Submitting...' : submitText}
+                                {submissionState.isSubmitting
+                                    ? t('admin-common.validatedForm.submitting')
+                                    : (submitText ?? t('admin-common.validatedForm.submit'))}
                             </button>
                         )}
 
@@ -339,21 +349,26 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                                 type="button"
                                 onClick={handleReset}
                                 disabled={submissionState.isSubmitting}
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="inline-flex items-center rounded-md border border-border bg-background px-4 py-2 font-medium text-foreground text-sm shadow-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
-                                Reset
+                                {t('admin-common.validatedForm.reset')}
                             </button>
                         )}
                     </div>
 
                     {/* Form validation summary */}
                     {validationState.hasValidated && (
-                        <div className="text-gray-500 text-sm">
+                        <div className="text-muted-foreground text-sm">
                             {isValid ? (
-                                <span className="text-green-600">✓ Form is valid</span>
+                                <span className="text-green-600 dark:text-green-400">
+                                    ✓ {t('admin-common.validatedForm.formIsValid')}
+                                </span>
                             ) : (
-                                <span className="text-red-600">
-                                    {allErrors.length} error{allErrors.length !== 1 ? 's' : ''}
+                                <span className="text-destructive">
+                                    {tPlural(
+                                        'admin-common.validatedForm.errorCount',
+                                        allErrors.length
+                                    )}
                                 </span>
                             )}
                         </div>
@@ -367,11 +382,14 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                 aria-live="polite"
                 aria-atomic="true"
             >
-                {submissionState.isSubmitting && 'Form is being submitted...'}
-                {submissionState.submitSuccess && 'Form submitted successfully'}
+                {submissionState.isSubmitting && t('admin-common.validatedForm.srSubmitting')}
+                {submissionState.submitSuccess && t('admin-common.validatedForm.srSuccess')}
                 {submissionState.submitError &&
-                    `Form submission failed: ${submissionState.submitError}`}
-                {isInvalid && `Form has ${allErrors.length} validation errors`}
+                    t('admin-common.validatedForm.srFailed', {
+                        error: submissionState.submitError
+                    })}
+                {isInvalid &&
+                    t('admin-common.validatedForm.srHasErrors', { count: allErrors.length })}
             </div>
         </form>
     );

@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router';
 
-import ClerkHeader from '../integrations/clerk/header-user.tsx';
+import { HeaderUser as ClerkHeader } from '../integrations/clerk/header-user.tsx';
 
-export default function Header() {
+export function Header() {
     return (
-        <header className="flex justify-between gap-2 bg-white p-2 text-black">
+        <header className="flex justify-between gap-2 bg-card p-2 text-foreground">
             <nav className="flex flex-row">
                 <div className="px-2 font-bold">
                     <Link to="/">Home</Link>

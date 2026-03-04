@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { EyeIcon, LoaderIcon, RotateCcwIcon, SaveIcon } from '@repo/icons';
 import * as React from 'react';
@@ -66,6 +67,7 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
             setActiveSection,
             hasUnsavedChanges
         } = useEntityForm();
+        const { t } = useTranslations();
 
         const visibleSections = getVisibleSections();
 
@@ -192,9 +194,11 @@ export const EntityFormLayout = React.forwardRef<HTMLDivElement, EntityFormLayou
                 return (
                     <div className="flex flex-1 items-center justify-center p-8">
                         <div className="text-center">
-                            <h3 className="font-medium text-lg">No accessible sections</h3>
+                            <h3 className="font-medium text-lg">
+                                {t('admin-common.entityForm.noAccessibleSections')}
+                            </h3>
                             <p className="text-muted-foreground text-sm">
-                                You don't have permission to view any sections of this entity.
+                                {t('admin-common.entityForm.noPermission')}
                             </p>
                         </div>
                     </div>

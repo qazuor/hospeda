@@ -29,13 +29,13 @@ export const EntityCell = <TData,>({
     entityOptions
 }: EntityCellProps<TData>): ReactNode => {
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const stringValue = String(value);
 
     if (!entityOptions || !linkHandler) {
-        return <span className="text-gray-900 dark:text-gray-100">{stringValue}</span>;
+        return <span className="text-foreground">{stringValue}</span>;
     }
 
     const handleClick = (event: React.MouseEvent) => {
@@ -105,11 +105,11 @@ function getEntityIcon(entityType: EntityType) {
 function getEntityColorClasses(color: BadgeColor): string {
     switch (color) {
         case BadgeColor.DEFAULT:
-            return 'bg-gray-50 text-gray-700 ring-gray-600/20 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/30 dark:hover:bg-gray-700';
+            return 'bg-muted text-foreground ring-border hover:bg-accent';
         case BadgeColor.PRIMARY:
             return 'bg-blue-50 text-blue-700 ring-blue-700/20 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-900/30';
         case BadgeColor.SECONDARY:
-            return 'bg-gray-50 text-gray-700 ring-gray-600/20 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/30 dark:hover:bg-gray-700';
+            return 'bg-muted text-foreground ring-border hover:bg-accent';
         case BadgeColor.SUCCESS:
             return 'bg-green-50 text-green-700 ring-green-600/20 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30 dark:hover:bg-green-900/30';
         case BadgeColor.WARNING:
@@ -137,10 +137,10 @@ function getEntityColorClasses(color: BadgeColor): string {
         case BadgeColor.ORANGE:
             return 'bg-orange-50 text-orange-700 ring-orange-700/20 hover:bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400 dark:ring-orange-400/30 dark:hover:bg-orange-900/30';
         case BadgeColor.GRAY:
-            return 'bg-gray-50 text-gray-700 ring-gray-600/20 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/30 dark:hover:bg-gray-700';
+            return 'bg-muted text-foreground ring-border hover:bg-accent';
         case BadgeColor.SLATE:
-            return 'bg-slate-50 text-slate-700 ring-slate-600/20 hover:bg-slate-100 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-400/30 dark:hover:bg-slate-700';
+            return 'bg-muted text-foreground ring-border hover:bg-accent';
         default:
-            return 'bg-blue-50 text-blue-700 ring-blue-700/20 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-900/30';
+            return 'bg-blue-50 text-blue-700 ring-blue-700/20 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30 dark:hover:bg-blue-900/30'; // Intentional: color badges
     }
 }

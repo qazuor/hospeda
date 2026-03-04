@@ -17,6 +17,7 @@
  */
 
 import { adminLogger } from '@/utils/logger';
+import { defaultLocale, trans } from '@repo/i18n';
 import {
     type ApiError,
     isAbortError,
@@ -25,6 +26,15 @@ import {
     isTimeoutError
 } from './api-error';
 import { reportError } from './error-reporter';
+
+/**
+ * Get a translation string from admin-common namespace.
+ * Used in non-React contexts where hooks are not available.
+ */
+function tt(key: string): string {
+    const fullKey = `admin-common.toastErrors.${key}`;
+    return trans[defaultLocale]?.[fullKey] ?? `[MISSING: ${fullKey}]`;
+}
 
 /**
  * Toast notification function type (provided by ToastProvider)
@@ -77,24 +87,24 @@ function getErrorMessage(error: unknown, action?: string): { title: string; desc
     // Handle abort errors (user cancelled)
     if (isAbortError(error)) {
         return {
-            title: 'Cancelled',
-            description: 'The operation was cancelled.'
+            title: tt('cancelled.title'),
+            description: tt('cancelled.description')
         };
     }
 
     // Handle timeout errors
     if (isTimeoutError(error)) {
         return {
-            title: 'Timeout',
-            description: `The request timed out${actionContext}. Please try again.`
+            title: tt('timeout.title'),
+            description: tt('timeout.description')
         };
     }
 
     // Handle network errors
     if (isNetworkError(error)) {
         return {
-            title: 'Connection Error',
-            description: 'Unable to connect to the server. Please check your internet connection.'
+            title: tt('connectionError.title'),
+            description: tt('connectionError.description')
         };
     }
 
@@ -106,15 +116,15 @@ function getErrorMessage(error: unknown, action?: string): { title: string; desc
     // Handle generic errors
     if (error instanceof Error) {
         return {
-            title: 'Error',
-            description: error.message || `An error occurred${actionContext}.`
+            title: tt('generic.title'),
+            description: error.message || tt('generic.description')
         };
     }
 
     // Unknown error type
     return {
-        title: 'Error',
-        description: `An unexpected error occurred${actionContext}.`
+        title: tt('generic.title'),
+        description: tt('generic.description')
     };
 }
 
@@ -123,37 +133,37 @@ function getErrorMessage(error: unknown, action?: string): { title: string; desc
  */
 function getApiErrorMessage(
     error: ApiError,
-    actionContext: string
+    _actionContext: string
 ): { title: string; description: string } {
     switch (error.status) {
         case 400:
             return {
-                title: 'Invalid Request',
-                description: error.message || `The request was invalid${actionContext}.`
+                title: tt('generic.title'),
+                description: error.message || tt('api.badRequest')
             };
 
         case 401:
             return {
-                title: 'Authentication Required',
-                description: 'Please sign in to continue.'
+                title: tt('generic.title'),
+                description: tt('api.unauthorized')
             };
 
         case 403:
             return {
-                title: 'Access Denied',
-                description: 'You do not have permission to perform this action.'
+                title: tt('generic.title'),
+                description: tt('api.forbidden')
             };
 
         case 404:
             return {
-                title: 'Not Found',
-                description: error.message || 'The requested resource was not found.'
+                title: tt('generic.title'),
+                description: error.message || tt('api.notFound')
             };
 
         case 409:
             return {
-                title: 'Conflict',
-                description: error.message || 'This operation conflicts with existing data.'
+                title: tt('generic.title'),
+                description: error.message || tt('api.conflict')
             };
 
         case 422: {
@@ -164,20 +174,20 @@ function getApiErrorMessage(
                     .map(([field, errors]) => `${field}: ${errors.join(', ')}`)
                     .join('; ');
                 return {
-                    title: 'Validation Error',
-                    description: fieldErrors || 'Please correct the highlighted fields.'
+                    title: tt('generic.title'),
+                    description: fieldErrors || tt('api.validation')
                 };
             }
             return {
-                title: 'Validation Error',
-                description: error.message || 'Please check your input and try again.'
+                title: tt('generic.title'),
+                description: error.message || tt('api.validation')
             };
         }
 
         case 429:
             return {
-                title: 'Too Many Requests',
-                description: 'Please wait a moment before trying again.'
+                title: tt('generic.title'),
+                description: tt('api.tooManyRequests')
             };
 
         case 500:
@@ -185,14 +195,14 @@ function getApiErrorMessage(
         case 503:
         case 504:
             return {
-                title: 'Server Error',
-                description: 'Something went wrong on our end. Please try again later.'
+                title: tt('generic.title'),
+                description: tt('api.serverError')
             };
 
         default:
             return {
-                title: 'Error',
-                description: error.message || `An error occurred${actionContext}.`
+                title: tt('generic.title'),
+                description: error.message || tt('generic.description')
             };
     }
 }

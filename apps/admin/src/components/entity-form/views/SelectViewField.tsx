@@ -1,5 +1,6 @@
 import type { FieldConfig, SelectOption } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
 import * as React from 'react';
@@ -42,6 +43,8 @@ export const SelectViewField = React.forwardRef<HTMLDivElement, SelectViewFieldP
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -60,7 +63,11 @@ export const SelectViewField = React.forwardRef<HTMLDivElement, SelectViewFieldP
 
         const renderValue = () => {
             if (selectedOptions.length === 0) {
-                return <span className="text-muted-foreground italic">No selection</span>;
+                return (
+                    <span className="text-muted-foreground italic">
+                        {t('admin-common.states.noSelection')}
+                    </span>
+                );
             }
 
             if (showAsBadges || isMultiple) {

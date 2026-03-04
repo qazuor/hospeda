@@ -4,6 +4,7 @@
  * Specialized select component for choosing accommodation owners (users).
  * Uses the generic ApiSelect component with user-specific configuration.
  */
+import { useTranslations } from '@/hooks/use-translations';
 import type { FC } from 'react';
 import { ApiSelect, type ApiSelectOption } from '../ui/ApiSelect';
 
@@ -106,13 +107,15 @@ export const OwnerSelect: FC<OwnerSelectProps> = ({
     className = '',
     limit = 100
 }) => {
+    const { t } = useTranslations();
+
     return (
         <ApiSelect
             endpoint="/api/v1/admin/users"
             queryKey={['users', 'list']}
             value={value}
             onValueChange={onValueChange}
-            placeholder="Select an owner..."
+            placeholder={t('admin-entities.selects.owner.placeholder')}
             disabled={disabled}
             required={required}
             error={error}

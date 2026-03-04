@@ -133,7 +133,9 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                         )}
                     >
                         <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                        <span className="mt-1 text-muted-foreground text-xs">No image</span>
+                        <span className="mt-1 text-muted-foreground text-xs">
+                            {t('admin-common.states.noImage')}
+                        </span>
                     </div>
                 );
             }
@@ -202,21 +204,27 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                 <div className="space-y-1 text-sm">
                     {value.caption && (
                         <div>
-                            <span className="font-medium">Caption:</span>
+                            <span className="font-medium">
+                                {t('admin-entities.viewFields.image.caption')}:
+                            </span>
                             <span className="ml-2">{value.caption}</span>
                         </div>
                     )}
 
                     {value.description && (
                         <div>
-                            <span className="font-medium">Description:</span>
+                            <span className="font-medium">
+                                {t('admin-entities.viewFields.image.description')}:
+                            </span>
                             <span className="ml-2 text-muted-foreground">{value.description}</span>
                         </div>
                     )}
 
                     {value.alt && (
                         <div>
-                            <span className="font-medium">Alt text:</span>
+                            <span className="font-medium">
+                                {t('admin-entities.viewFields.image.altText')}:
+                            </span>
                             <span className="ml-2 text-muted-foreground text-xs">{value.alt}</span>
                         </div>
                     )}
@@ -256,9 +264,11 @@ export const ImageViewField = React.forwardRef<HTMLDivElement, ImageViewFieldPro
                                 variant="outline"
                                 className="text-xs"
                             >
-                                Image
+                                {t('admin-entities.viewFields.image.badge')}
                             </Badge>
-                            {clickable && <span>Click to preview</span>}
+                            {clickable && (
+                                <span>{t('admin-entities.viewFields.image.clickToPreview')}</span>
+                            )}
                         </div>
                     )}
                 </div>

@@ -13,6 +13,7 @@ export const analyticsSection = createSection({
     label: 'Analíticas',
     labelKey: 'admin-menu.analytics.title',
     icon: <AnalyticsIcon className="h-5 w-5" />,
+    permissions: [PermissionEnum.ANALYTICS_VIEW, PermissionEnum.DEBUG_TOOLS_ACCESS],
     routes: ['/analytics', '/analytics/**'],
     defaultRoute: '/analytics/usage',
     sidebar: {

@@ -150,7 +150,7 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
     return (
         <div className={`space-y-6 ${className || ''}`}>
             {/* Smart Breadcrumbs */}
-            <div className="sticky top-0 z-20 border-gray-200 border-b bg-white pb-4">
+            <div className="sticky top-0 z-20 border-border border-b bg-background pb-4">
                 <SmartBreadcrumbs
                     sections={sectionProgress}
                     activeSectionId={activeSection}
@@ -181,7 +181,7 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                 <div className="min-w-0 flex-1">
                     {/* Performance metrics (development only - hidden by default) */}
                     {import.meta.env.DEV && import.meta.env.VITE_DEBUG_LAZY_SECTIONS === 'true' && (
-                        <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                        <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
                             Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
                             sections loaded
                         </div>

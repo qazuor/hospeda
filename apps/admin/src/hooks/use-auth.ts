@@ -20,9 +20,9 @@ export { useAuthContext, useHasAnyRole, useHasPermission, useHasRole };
 export const PERMISSIONS = {
     // User management - migrated to use PermissionEnum values
     USER_CREATE: PermissionEnum.USER_CREATE,
-    USER_UPDATE: 'user.update', // TODO: Map to appropriate PermissionEnum
+    USER_UPDATE: PermissionEnum.USER_UPDATE_PROFILE,
     USER_DELETE: PermissionEnum.USER_DELETE,
-    USER_LIST: 'user.list', // TODO: Map to appropriate PermissionEnum
+    USER_LIST: PermissionEnum.USER_READ_ALL,
 
     // Admin access - migrated to use PermissionEnum values
     ADMIN_ACCESS: PermissionEnum.ACCESS_PANEL_ADMIN,

@@ -19,6 +19,7 @@
  */
 
 import { Button } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon, PreviousIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 
@@ -28,8 +29,8 @@ import type { ReactNode } from 'react';
 const ERROR_STYLES = {
     container: 'flex min-h-[400px] flex-col items-center justify-center space-y-4',
     content: 'text-center',
-    title: 'font-semibold text-2xl text-gray-900',
-    message: 'mt-2 text-gray-600',
+    title: 'font-semibold text-2xl text-foreground',
+    message: 'mt-2 text-muted-foreground',
     icon: 'mr-2 h-4 w-4'
 } as const;
 
@@ -38,7 +39,7 @@ const ERROR_STYLES = {
  */
 const PENDING_STYLES = {
     container: 'flex min-h-[400px] items-center justify-center',
-    spinner: 'h-8 w-8 animate-spin text-blue-600'
+    spinner: 'h-8 w-8 animate-spin text-primary'
 } as const;
 
 /**
@@ -57,10 +58,13 @@ const PENDING_STYLES = {
  */
 export function createErrorComponent(displayName: string): (props: { error: Error }) => ReactNode {
     return function EntityErrorComponent({ error }: { error: Error }) {
+        const { t } = useTranslations();
         return (
             <div className={ERROR_STYLES.container}>
                 <div className={ERROR_STYLES.content}>
-                    <h2 className={ERROR_STYLES.title}>Error Loading {displayName}</h2>
+                    <h2 className={ERROR_STYLES.title}>
+                        {t('admin-common.errors.errorLoadingPage')} {displayName}
+                    </h2>
                     <p className={ERROR_STYLES.message}>
                         {error.message || 'An unexpected error occurred'}
                     </p>
@@ -106,23 +110,28 @@ export function createPendingComponent(): () => ReactNode {
  */
 export const RouteComponents = {
     /** Generic error component */
-    Error: ({ error }: { error: Error }) => (
-        <div className={ERROR_STYLES.container}>
-            <div className={ERROR_STYLES.content}>
-                <h2 className={ERROR_STYLES.title}>Error Loading Page</h2>
-                <p className={ERROR_STYLES.message}>
-                    {error.message || 'An unexpected error occurred'}
-                </p>
+    Error: ({ error }: { error: Error }) => {
+        const { t } = useTranslations();
+        return (
+            <div className={ERROR_STYLES.container}>
+                <div className={ERROR_STYLES.content}>
+                    <h2 className={ERROR_STYLES.title}>
+                        {t('admin-common.errors.errorLoadingPage')}
+                    </h2>
+                    <p className={ERROR_STYLES.message}>
+                        {error.message || 'An unexpected error occurred'}
+                    </p>
+                </div>
+                <Button
+                    variant="outline"
+                    onClick={() => window.history.back()}
+                >
+                    <PreviousIcon className={ERROR_STYLES.icon} />
+                    Go Back
+                </Button>
             </div>
-            <Button
-                variant="outline"
-                onClick={() => window.history.back()}
-            >
-                <PreviousIcon className={ERROR_STYLES.icon} />
-                Go Back
-            </Button>
-        </div>
-    ),
+        );
+    },
 
     /** Generic pending/loading component */
     Pending: () => (

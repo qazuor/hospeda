@@ -126,10 +126,10 @@ export const ApiSelect: FC<ApiSelectProps> = ({
             {label && (
                 <label
                     htmlFor={selectId}
-                    className="block font-medium text-gray-700 text-sm"
+                    className="block font-medium text-foreground text-sm"
                 >
                     {label}
-                    {required && <span className="ml-1 text-red-500">*</span>}
+                    {required && <span className="ml-1 text-destructive">*</span>}
                 </label>
             )}
 
@@ -140,7 +140,7 @@ export const ApiSelect: FC<ApiSelectProps> = ({
                     onChange={(e) => onValueChange(e.target.value)}
                     disabled={disabled || isLoading}
                     required={required}
-                    className={`w-full rounded-md border px-3 py-2 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-gray-50 disabled:text-gray-500 ${hasError ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'} ${className}`}
+                    className={`w-full rounded-md border bg-background px-3 py-2 shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground ${hasError ? 'border-destructive/30 focus:border-destructive focus:ring-destructive' : 'border-border focus:border-primary focus:ring-primary'} ${className}`}
                 >
                     <option value="">{isLoading ? 'Loading...' : placeholder}</option>
 
@@ -165,12 +165,12 @@ export const ApiSelect: FC<ApiSelectProps> = ({
 
                 {isLoading && (
                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-                        <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />
+                        <LoaderIcon className="h-4 w-4 animate-spin text-muted-foreground" />
                     </div>
                 )}
             </div>
 
-            {hasError && <p className="text-red-600 text-sm">{errorMessage}</p>}
+            {hasError && <p className="text-destructive text-sm">{errorMessage}</p>}
         </div>
     );
 };

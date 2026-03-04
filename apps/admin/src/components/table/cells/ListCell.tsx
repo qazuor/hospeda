@@ -1,4 +1,5 @@
 import { ListOrientation } from '@/components/table/DataTable';
+import { useTranslations } from '@/hooks/use-translations';
 import type { ReactNode } from 'react';
 
 type ListCellProps = {
@@ -20,25 +21,29 @@ export const ListCell = ({
     maxItems = 3,
     orientation = ListOrientation.ROW
 }: ListCellProps): ReactNode => {
+    const { t } = useTranslations();
+
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     // Handle non-array values
     if (!Array.isArray(value)) {
-        return <span className="text-gray-900 dark:text-gray-100">{String(value)}</span>;
+        return <span className="text-foreground">{String(value)}</span>;
     }
 
     // Handle empty arrays
     if (value.length === 0) {
-        return <span className="text-gray-300 dark:text-gray-500">Empty</span>;
+        return (
+            <span className="text-muted-foreground/50">{t('admin-common.tableCells.empty')}</span>
+        );
     }
 
     // Convert all items to strings and filter out empty ones
     const items = value.map((item) => String(item)).filter((item) => item.trim() !== '');
 
     if (items.length === 0) {
-        return <span className="text-gray-400 dark:text-gray-500">Empty</span>;
+        return <span className="text-muted-foreground">{t('admin-common.tableCells.empty')}</span>;
     }
 
     // Determine if we need truncation
@@ -49,18 +54,14 @@ export const ListCell = ({
     // Handle row (horizontal) orientation
     if (orientation === ListOrientation.ROW) {
         if (!needsTruncation) {
-            return (
-                <span className="text-gray-900 dark:text-gray-100">{items.join(separator)}</span>
-            );
+            return <span className="text-foreground">{items.join(separator)}</span>;
         }
 
         return (
             <div className="flex flex-col gap-1">
-                <span className="text-gray-900 dark:text-gray-100">
-                    {visibleItems.join(separator)}
-                </span>
-                <span className="text-gray-500 text-xs dark:text-gray-400">
-                    and {remainingCount} more
+                <span className="text-foreground">{visibleItems.join(separator)}</span>
+                <span className="text-muted-foreground text-xs">
+                    {t('admin-common.tableCells.andMore', { count: String(remainingCount) })}
                 </span>
             </div>
         );
@@ -75,15 +76,15 @@ export const ListCell = ({
                     return (
                         <span
                             key={uniqueKey}
-                            className="text-gray-900 dark:text-gray-100"
+                            className="text-foreground"
                         >
                             {item}
                         </span>
                     );
                 })}
                 {needsTruncation && (
-                    <span className="text-gray-500 text-xs dark:text-gray-400">
-                        and {remainingCount} more
+                    <span className="text-muted-foreground text-xs">
+                        {t('admin-common.tableCells.andMore', { count: String(remainingCount) })}
                     </span>
                 )}
             </div>
@@ -91,5 +92,5 @@ export const ListCell = ({
     }
 
     // Fallback to row orientation
-    return <span className="text-gray-900 dark:text-gray-100">{items.join(separator)}</span>;
+    return <span className="text-foreground">{items.join(separator)}</span>;
 };

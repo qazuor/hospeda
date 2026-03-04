@@ -10,21 +10,27 @@
  */
 
 import { CommandPalette } from '@/components/search/CommandPalette';
-import { headerNavItems } from '@/config/sections';
+import { getHeaderNavItems } from '@/config/sections';
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useTranslations } from '@/hooks/use-translations';
-import ClerkHeader from '@/integrations/clerk/header-user';
+import { HeaderUser as ClerkHeader } from '@/integrations/clerk/header-user';
 import { useCurrentSectionId } from '@/lib/sections';
 import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
 import { Link, useRouter } from '@tanstack/react-router';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { HeaderNavItem } from './HeaderNavItem';
 import { MobileMenu } from './MobileMenu';
 
+interface HeaderProps {
+    /** User permissions for filtering visible header sections */
+    readonly userPermissions?: string[];
+}
+
 /**
  * Header renders the main navigation bar.
+ * Filters visible sections based on user permissions.
  */
-export function Header() {
+export function Header({ userPermissions }: HeaderProps) {
     const { t } = useTranslations();
     const router = useRouter();
     const { openMobile, closeMobile, isMobileOpen } = useSidebarContext();
@@ -52,8 +58,14 @@ export function Header() {
         return () => window.removeEventListener('pointerdown', onPointerDown, true);
     }, [showNotifications]);
 
+    // Filter header nav items by user permissions
+    const filteredNavItems = useMemo(
+        () => getHeaderNavItems({ userPermissions }),
+        [userPermissions]
+    );
+
     // Prepare mobile menu items with active state
-    const mobileItems = headerNavItems.map((item) => ({
+    const mobileItems = filteredNavItems.map((item) => ({
         ...item,
         isActive: currentSectionId === item.id
     }));
@@ -85,7 +97,7 @@ export function Header() {
                         className="ml-6 hidden items-center gap-1 md:flex"
                         aria-label="Main navigation"
                     >
-                        {headerNavItems.map((item) => (
+                        {filteredNavItems.map((item) => (
                             <HeaderNavItem
                                 key={item.id}
                                 {...item}

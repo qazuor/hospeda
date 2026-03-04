@@ -5,6 +5,11 @@
  * via database hooks, eliminating the need for a separate sync step.
  * This hook provides session state for auth pages (signin/signup).
  *
+ * @note This hook intentionally uses `useSession()` from Better Auth directly
+ * instead of `useAuthContext()`. It runs on auth pages (signin/signup) which
+ * are OUTSIDE the `_authed` layout and therefore have no `AuthProvider` in
+ * the component tree. Do NOT migrate this to `useAuthContext()`.
+ *
  * @module use-auth-sync
  */
 
@@ -13,9 +18,9 @@ import { useSession } from '@/lib/auth-client';
 /**
  * Hook that provides auth state for sign-in/sign-up pages.
  *
- * With Better Auth, there is no separate sync step needed since
- * authentication is handled directly by the API. This hook wraps
- * the session check to provide a consistent interface.
+ * Used exclusively by routes outside `_authed` layout (signin, signup)
+ * where AuthProvider is not available. For authenticated routes, use
+ * `useAuthContext()` from `@/hooks/use-auth-context` instead.
  *
  * @returns Auth state for conditional rendering of auth forms
  */

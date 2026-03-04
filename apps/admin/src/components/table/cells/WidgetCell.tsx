@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import type { ReactNode } from 'react';
 
@@ -12,9 +13,15 @@ type WidgetCellProps<TData> = {
  * Provides fallback handling when no renderer is provided.
  */
 export const WidgetCell = <TData,>({ row, widgetRenderer }: WidgetCellProps<TData>): ReactNode => {
+    const { t } = useTranslations();
+
     // If no widget renderer is provided, show a placeholder
     if (!widgetRenderer) {
-        return <span className="text-gray-400 italic dark:text-gray-500">No widget renderer</span>;
+        return (
+            <span className="text-muted-foreground italic">
+                {t('admin-common.states.noWidgetRenderer')}
+            </span>
+        );
     }
 
     try {
@@ -23,13 +30,17 @@ export const WidgetCell = <TData,>({ row, widgetRenderer }: WidgetCellProps<TDat
 
         // Handle null/undefined results
         if (renderedWidget === null || renderedWidget === undefined) {
-            return <span className="text-gray-400 dark:text-gray-500">—</span>;
+            return <span className="text-muted-foreground">—</span>;
         }
 
         return <div className="widget-cell-container">{renderedWidget}</div>;
     } catch (error) {
         // Handle rendering errors gracefully
         adminLogger.error('Widget renderer error', error);
-        return <span className="text-red-500 text-sm dark:text-red-400">Widget error</span>;
+        return (
+            <span className="text-red-500 text-sm dark:text-red-400">
+                {t('admin-common.tableCells.widgetError')}
+            </span>
+        );
     }
 };

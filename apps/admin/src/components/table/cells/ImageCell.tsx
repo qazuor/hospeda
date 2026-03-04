@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import type { ReactNode } from 'react';
 
 type ImageCellProps = {
@@ -11,15 +12,13 @@ type ImageCellProps = {
  * Expects either a string URL or an object with url property.
  * Provides fallback handling for missing or broken images.
  */
-export const ImageCell = ({
-    value,
-    size = 'md',
-    fallbackText = 'No image'
-}: ImageCellProps): ReactNode => {
+export const ImageCell = ({ value, size = 'md', fallbackText }: ImageCellProps): ReactNode => {
+    const { t } = useTranslations();
+    const resolvedFallbackText = fallbackText ?? t('admin-common.states.noImage');
     if (value === null || value === undefined) {
         return (
-            <div className="flex items-center justify-center rounded-md bg-gray-100 text-gray-500 text-xs dark:bg-gray-800 dark:text-gray-400">
-                <span>{fallbackText}</span>
+            <div className="flex items-center justify-center rounded-md bg-muted text-muted-foreground text-xs">
+                <span>{resolvedFallbackText}</span>
             </div>
         );
     }
@@ -39,7 +38,7 @@ export const ImageCell = ({
     if (!imageUrl) {
         return (
             <div className={getSizeClasses(size, true)}>
-                <span className="text-gray-500 text-xs dark:text-gray-400">{fallbackText}</span>
+                <span className="text-muted-foreground text-xs">{resolvedFallbackText}</span>
             </div>
         );
     }
@@ -63,7 +62,9 @@ export const ImageCell = ({
                 className={`${getSizeClasses(size, true)} hidden`}
                 style={{ display: 'none' }}
             >
-                <span className="text-gray-500 text-xs dark:text-gray-400">Failed to load</span>
+                <span className="text-muted-foreground text-xs">
+                    {t('admin-common.states.failedToLoad')}
+                </span>
             </div>
         </div>
     );
@@ -74,7 +75,7 @@ export const ImageCell = ({
  */
 function getSizeClasses(size: 'sm' | 'md' | 'lg', isFallback: boolean): string {
     const baseClasses = isFallback
-        ? 'flex items-center justify-center rounded-md bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+        ? 'flex items-center justify-center rounded-md bg-muted text-muted-foreground'
         : 'rounded-md object-cover';
 
     switch (size) {

@@ -15,7 +15,7 @@
  */
 
 import type { ReactNode } from 'react';
-import type { SidebarConfig, SidebarItem } from './types';
+import type { SectionConfig, SidebarConfig, SidebarItem } from './types';
 
 /**
  * Create a link sidebar item
@@ -109,6 +109,26 @@ export const sidebar = {
     action,
     config
 } as const;
+
+/**
+ * Filter section configs by user permissions.
+ * A section is visible if it has no permissions defined (empty array)
+ * or the user has at least one of the listed permissions (OR logic).
+ */
+export function filterSectionsByPermissions({
+    sectionConfigs,
+    userPermissions
+}: {
+    readonly sectionConfigs: readonly SectionConfig[];
+    readonly userPermissions: string[] | undefined;
+}): SectionConfig[] {
+    if (!userPermissions) return [...sectionConfigs];
+
+    return sectionConfigs.filter((section) => {
+        if (!section.permissions || section.permissions.length === 0) return true;
+        return section.permissions.some((p) => userPermissions.includes(p));
+    });
+}
 
 /**
  * Filter sidebar items by user permissions

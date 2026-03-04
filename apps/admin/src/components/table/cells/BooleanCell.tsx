@@ -11,7 +11,7 @@ type BooleanCellProps = {
  */
 export const BooleanCell = ({ value }: BooleanCellProps): ReactNode => {
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const boolValue = Boolean(value);

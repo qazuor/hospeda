@@ -204,10 +204,10 @@ export class RouteErrorBoundary extends Component<
             const { title, message, icon, primaryAction, secondaryAction } = this.getErrorContent();
 
             return (
-                <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-8 text-center">
+                <div className="flex min-h-screen flex-col items-center justify-center bg-background p-8 text-center">
                     <div className="w-full max-w-md">
                         <div className="mb-6 flex justify-center">
-                            <div className="rounded-full bg-red-100 p-4">
+                            <div className="rounded-full bg-destructive/10 p-4">
                                 <Icon
                                     name={icon}
                                     size="xl"
@@ -217,9 +217,9 @@ export class RouteErrorBoundary extends Component<
                             </div>
                         </div>
 
-                        <h1 className="mb-4 font-bold text-2xl text-gray-900">{title}</h1>
+                        <h1 className="mb-4 font-bold text-2xl text-foreground">{title}</h1>
 
-                        <p className="mb-8 text-gray-600">{message}</p>
+                        <p className="mb-8 text-muted-foreground">{message}</p>
 
                         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
                             <Button
@@ -240,21 +240,21 @@ export class RouteErrorBoundary extends Component<
 
                         {this.props.showDetails && this.state.error && (
                             <details className="mt-8 text-left">
-                                <summary className="cursor-pointer text-gray-500 text-sm hover:text-gray-700">
+                                <summary className="cursor-pointer text-muted-foreground text-sm hover:text-foreground">
                                     {t('error.boundary.route.showTechnicalDetails')}
                                 </summary>
-                                <div className="mt-4 rounded bg-gray-100 p-4">
-                                    <h3 className="mb-2 font-medium text-gray-900">
+                                <div className="mt-4 rounded bg-muted p-4">
+                                    <h3 className="mb-2 font-medium text-foreground">
                                         {t('error.boundary.route.errorMessage')}
                                     </h3>
-                                    <p className="mb-4 text-gray-700 text-sm">
+                                    <p className="mb-4 text-foreground text-sm">
                                         {this.state.error.message}
                                     </p>
 
-                                    <h3 className="mb-2 font-medium text-gray-900">
+                                    <h3 className="mb-2 font-medium text-foreground">
                                         {t('error.boundary.route.stackTrace')}
                                     </h3>
-                                    <pre className="overflow-auto text-gray-600 text-xs">
+                                    <pre className="overflow-auto text-muted-foreground text-xs">
                                         {this.state.error.stack}
                                     </pre>
                                 </div>

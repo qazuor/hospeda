@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
+import { defaultIntlLocale, formatDate } from '@repo/i18n';
 import { DeleteIcon, EditIcon, ViewAllIcon } from '@repo/icons';
 import { Link } from '@tanstack/react-router';
 import type React from 'react';
@@ -74,10 +75,10 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="flex-1">
-                        <CardTitle className="font-semibold text-base text-gray-900">
+                        <CardTitle className="font-semibold text-base text-foreground">
                             {entity.title}
                         </CardTitle>
-                        <p className="mt-1 line-clamp-2 text-gray-600 text-sm">
+                        <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
                             {entity.description}
                         </p>
                     </div>
@@ -85,10 +86,10 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                         <span
                             className={`inline-flex rounded-full px-2 py-1 font-medium text-xs ${
                                 entity.status === 'active'
-                                    ? 'bg-green-100 text-green-800'
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                                     : entity.status === 'inactive'
-                                      ? 'bg-red-100 text-red-800'
-                                      : 'bg-yellow-100 text-yellow-800'
+                                      ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
                             }`}
                         >
                             {entity.status}
@@ -98,9 +99,9 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
             </CardHeader>
             <CardContent className="pt-0">
                 <div className="flex items-center justify-between">
-                    <div className="text-gray-500 text-xs">
+                    <div className="text-muted-foreground text-xs">
                         Item #{index + 1} • Created{' '}
-                        {new Date(entity.createdAt).toLocaleDateString()}
+                        {formatDate({ date: entity.createdAt, locale: defaultIntlLocale })}
                     </div>
                     <div className="flex items-center gap-1">
                         {/* View button */}
@@ -141,7 +142,7 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                         <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                             title={t('ui.actions.delete')}
                             onClick={() => {
                                 if (confirm('Are you sure you want to delete this item?')) {
@@ -159,7 +160,7 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
 
     // Custom empty state
     const emptyState = (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <svg
                 className="mb-4 h-16 w-16"
                 fill="none"
@@ -174,7 +175,7 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                 />
             </svg>
-            <h3 className="mb-2 font-medium text-gray-900 text-lg">No {entityName} found</h3>
+            <h3 className="mb-2 font-medium text-foreground text-lg">No {entityName} found</h3>
             <p className="text-sm">Try adjusting your search or filters</p>
         </div>
     );
@@ -183,10 +184,10 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
     const header = (
         <div className="flex items-center justify-between">
             <div>
-                <h2 className="font-bold text-2xl text-gray-900">
+                <h2 className="font-bold text-2xl text-foreground">
                     Virtualized {entityName.charAt(0).toUpperCase() + entityName.slice(1)} List
                 </h2>
-                <p className="mt-1 text-gray-600 text-sm">
+                <p className="mt-1 text-muted-foreground text-sm">
                     High-performance list with infinite loading and virtualization
                 </p>
             </div>
@@ -222,9 +223,9 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
     return (
         <div className="space-y-6">
             {/* Configuration info */}
-            <div className="rounded-lg border bg-blue-50 p-4">
-                <h3 className="font-medium text-blue-900">Configuration</h3>
-                <div className="mt-2 grid grid-cols-2 gap-4 text-blue-800 text-sm md:grid-cols-4">
+            <div className="rounded-lg border bg-blue-50 p-4 dark:bg-blue-950">
+                <h3 className="font-medium text-blue-900 dark:text-blue-100">Configuration</h3>
+                <div className="mt-2 grid grid-cols-2 gap-4 text-blue-800 text-sm md:grid-cols-4 dark:text-blue-200">
                     <div>
                         <span className="font-medium">Preset:</span> {preset}
                     </div>
@@ -259,7 +260,7 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
             {/* Simple version example */}
             <div className="mt-8">
                 <h3 className="mb-4 font-semibold text-lg">Simple Version</h3>
-                <p className="mb-4 text-gray-600 text-sm">
+                <p className="mb-4 text-muted-foreground text-sm">
                     Using SimpleVirtualizedList for basic use cases:
                 </p>
 
@@ -268,17 +269,19 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
                         entityName={entityName}
                         endpoint={endpoint}
                         renderItem={(entity: ExampleEntity, index) => (
-                            <div className="border-b p-4 hover:bg-gray-50">
+                            <div className="border-b p-4 hover:bg-accent">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <h4 className="font-medium">{entity.title}</h4>
-                                        <p className="text-gray-600 text-sm">Item #{index + 1}</p>
+                                        <p className="text-muted-foreground text-sm">
+                                            Item #{index + 1}
+                                        </p>
                                     </div>
                                     <span
                                         className={`rounded px-2 py-1 text-xs ${
                                             entity.status === 'active'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-800'
+                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                                                : 'bg-muted text-foreground'
                                         }`}
                                     >
                                         {entity.status}
@@ -294,9 +297,11 @@ export const VirtualizedEntityListExample: React.FC<VirtualizedEntityListExample
             </div>
 
             {/* Performance tips */}
-            <div className="rounded-lg border bg-yellow-50 p-4">
-                <h3 className="font-medium text-yellow-900">Performance Tips</h3>
-                <ul className="mt-2 space-y-1 text-sm text-yellow-800">
+            <div className="rounded-lg border bg-yellow-50 p-4 dark:bg-yellow-950">
+                <h3 className="font-medium text-yellow-900 dark:text-yellow-100">
+                    Performance Tips
+                </h3>
+                <ul className="mt-2 space-y-1 text-sm text-yellow-800 dark:text-yellow-200">
                     <li>
                         • Use appropriate <code>estimateSize</code> for your items
                     </li>

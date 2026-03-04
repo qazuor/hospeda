@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { reportComponentError } from '@/lib/errors';
 import { showErrorToast, showInfoToast } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
@@ -13,6 +14,8 @@ interface GlobalErrorFallbackProps {
 }
 
 const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetErrorBoundary }) => {
+    const { t } = useTranslations();
+
     /**
      * Reload the entire application
      */
@@ -62,27 +65,26 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
+        <div className="flex min-h-screen items-center justify-center bg-background p-6">
             <div className="w-full max-w-lg text-center">
                 {/* Error Icon */}
-                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-red-100">
+                <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
                     <AlertTriangleIcon
                         size={40}
                         weight="bold"
-                        className="text-red-600"
+                        className="text-destructive"
                         aria-label="Global error icon"
                     />
                 </div>
 
                 {/* Error Title */}
-                <h1 className="mb-4 font-bold text-2xl text-gray-900">
-                    Oops! Something went wrong
+                <h1 className="mb-4 font-bold text-2xl text-foreground">
+                    {t('admin-common.errorBoundary.global.title')}
                 </h1>
 
                 {/* Error Message */}
-                <p className="mb-6 text-gray-600">
-                    We're sorry, but something unexpected happened. Our team has been notified and
-                    is working to fix the issue.
+                <p className="mb-6 text-muted-foreground">
+                    {t('admin-common.errorBoundary.global.description')}
                 </p>
 
                 {/* Action Buttons */}
@@ -90,55 +92,57 @@ const GlobalErrorFallback: React.FC<GlobalErrorFallbackProps> = ({ error, resetE
                     <button
                         type="button"
                         onClick={resetErrorBoundary}
-                        className="w-full rounded-md bg-blue-600 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="w-full rounded-md bg-primary px-4 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                        Try Again
+                        {t('admin-common.errorBoundary.actions.tryAgain')}
                     </button>
 
                     <button
                         type="button"
                         onClick={handleReload}
-                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="w-full rounded-md border border-border bg-background px-4 py-3 font-medium text-foreground transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                        Reload Page
+                        {t('admin-common.errorBoundary.actions.reloadPage')}
                     </button>
 
                     <button
                         type="button"
                         onClick={handleGoHome}
-                        className="w-full text-blue-600 transition-colors hover:text-blue-800"
+                        className="w-full text-primary transition-colors hover:text-primary/80"
                     >
-                        Go to Dashboard
+                        {t('admin-common.errorBoundary.actions.returnToDashboard')}
                     </button>
                 </div>
 
                 {/* Report Error Button */}
-                <div className="mt-8 border-gray-200 border-t pt-6">
+                <div className="mt-8 border-border border-t pt-6">
                     <button
                         type="button"
                         onClick={handleReportError}
-                        className="text-gray-500 text-sm transition-colors hover:text-gray-700"
+                        className="text-muted-foreground text-sm transition-colors hover:text-foreground"
                     >
-                        Report this error to support
+                        {t('admin-common.errorBoundary.actions.reportError')}
                     </button>
                 </div>
 
                 {/* Development Error Details */}
                 {process.env.NODE_ENV === 'development' && (
                     <details className="mt-6 text-left">
-                        <summary className="cursor-pointer text-gray-500 text-sm">
-                            Error Details (Development Only)
+                        <summary className="cursor-pointer text-muted-foreground text-sm">
+                            {t('admin-common.errorBoundary.devOnly.title')}
                         </summary>
-                        <div className="mt-4 rounded-md bg-gray-100 p-4">
-                            <h4 className="font-medium text-gray-900 text-sm">Error Message:</h4>
-                            <p className="mt-1 text-red-600 text-sm">{error.message}</p>
+                        <div className="mt-4 rounded-md bg-muted p-4">
+                            <h4 className="font-medium text-foreground text-sm">
+                                {t('admin-common.errorBoundary.devOnly.errorMessage')}:
+                            </h4>
+                            <p className="mt-1 text-destructive text-sm">{error.message}</p>
 
                             {error.stack && (
                                 <>
-                                    <h4 className="mt-4 font-medium text-gray-900 text-sm">
-                                        Stack Trace:
+                                    <h4 className="mt-4 font-medium text-foreground text-sm">
+                                        {t('admin-common.errorBoundary.devOnly.stackTrace')}:
                                     </h4>
-                                    <pre className="mt-1 overflow-auto text-red-600 text-xs">
+                                    <pre className="mt-1 overflow-auto text-destructive text-xs">
                                         {error.stack}
                                     </pre>
                                 </>

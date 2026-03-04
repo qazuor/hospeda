@@ -26,6 +26,15 @@ export const contentSection = createSection({
     label: 'Contenido',
     labelKey: 'admin-menu.content.title',
     icon: <ContentIcon className="h-5 w-5" />,
+    permissions: [
+        PermissionEnum.ACCOMMODATION_VIEW_ALL,
+        PermissionEnum.DESTINATION_VIEW_ALL,
+        PermissionEnum.POST_VIEW_ALL,
+        PermissionEnum.EVENT_VIEW_ALL,
+        PermissionEnum.ATTRACTION_VIEW,
+        PermissionEnum.AMENITY_VIEW,
+        PermissionEnum.FEATURE_VIEW
+    ],
     routes: [
         '/accommodations',
         '/accommodations/**',

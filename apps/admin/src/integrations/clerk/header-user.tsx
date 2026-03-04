@@ -2,31 +2,26 @@
  * Header user menu component.
  *
  * Displays the current user's avatar with a dropdown menu for
- * profile access and sign-out. Uses Better Auth session state.
+ * profile access and sign-out. Uses AuthContext for user state.
  *
  * @note This file is kept at the original path to minimize import
  * changes across existing components. Will be moved to a proper
  * location in the cleanup phase.
  */
 
-import { signOut, useSession } from '@/lib/auth-client';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { signOut } from '@/lib/auth-client';
 import { useRouter } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 
 /**
  * HeaderUser renders a user avatar button with a dropdown menu
  */
-export default function HeaderUser() {
-    const { data: session, isPending } = useSession();
+export function HeaderUser() {
+    const { user, isLoading } = useAuthContext();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
-    const [hasMounted, setHasMounted] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-
-    // Track client-side mount to avoid hydration mismatch
-    useEffect(() => {
-        setHasMounted(true);
-    }, []);
 
     // Close menu on outside click
     useEffect(() => {
@@ -50,16 +45,17 @@ export default function HeaderUser() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen]);
 
-    if (!hasMounted || isPending) {
-        return <div className="h-8 w-8 animate-pulse rounded-full bg-gray-200" />;
+    if (isLoading) {
+        // Static placeholder (no animation) to reserve space without visual distraction.
+        // With server hydration, isLoading is typically false from the first render.
+        return <div className="h-8 w-8 rounded-full bg-muted/50" />;
     }
 
-    if (!session?.user) {
+    if (!user) {
         return null;
     }
 
-    const user = session.user;
-    const initials = (user.name || user.email || '?')
+    const initials = (user.displayName || user.email || '?')
         .split(' ')
         .map((part) => part[0])
         .slice(0, 2)
@@ -82,13 +78,13 @@ export default function HeaderUser() {
             <button
                 type="button"
                 onClick={() => setIsOpen((v) => !v)}
-                className="flex h-8 w-8 items-center justify-center rounded-full bg-cyan-600 font-medium text-sm text-white hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2"
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-primary font-medium text-primary-foreground text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                 aria-label="User menu"
             >
-                {user.image ? (
+                {user.avatar ? (
                     <img
-                        src={user.image}
-                        alt={user.name || 'User'}
+                        src={user.avatar}
+                        alt={user.displayName || 'User'}
                         className="h-8 w-8 rounded-full object-cover"
                     />
                 ) : (
@@ -99,7 +95,7 @@ export default function HeaderUser() {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-md border bg-popover shadow-lg">
                     <div className="border-b px-4 py-3">
-                        <p className="font-medium text-sm">{user.name || 'User'}</p>
+                        <p className="font-medium text-sm">{user.displayName || 'User'}</p>
                         <p className="truncate text-muted-foreground text-xs">{user.email}</p>
                     </div>
                     <div className="py-1">
@@ -127,7 +123,7 @@ export default function HeaderUser() {
                         <button
                             type="button"
                             onClick={handleSignOut}
-                            className="block w-full px-4 py-2 text-left text-red-600 text-sm hover:bg-accent"
+                            className="block w-full px-4 py-2 text-left text-destructive text-sm hover:bg-accent"
                         >
                             Sign out
                         </button>

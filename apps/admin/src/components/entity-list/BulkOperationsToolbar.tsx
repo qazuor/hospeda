@@ -1,5 +1,6 @@
 import { BulkOperationFeedback } from '@/components/ui/OptimisticFeedback';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from '@/hooks/use-translations';
 import { CheckInIcon, CloseIcon, DeleteIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 
@@ -36,6 +37,8 @@ export const BulkOperationsToolbar = ({
     customActions,
     className
 }: BulkOperationsToolbarProps) => {
+    const { t, tPlural } = useTranslations();
+
     if (!isSelecting && selectedCount === 0) {
         return (
             <div className={`flex items-center justify-between ${className || ''}`}>
@@ -46,7 +49,7 @@ export const BulkOperationsToolbar = ({
                         onClick={onToggleSelectMode}
                     >
                         <CheckInIcon className="mr-2 h-4 w-4" />
-                        Select Items
+                        {t('admin-common.bulkToolbar.selectItems')}
                     </Button>
                 </div>
                 {customActions}
@@ -57,13 +60,13 @@ export const BulkOperationsToolbar = ({
     return (
         <>
             <div
-                className={`flex items-center justify-between rounded-lg border bg-blue-50 p-4 ${className || ''}`}
+                className={`flex items-center justify-between rounded-lg border bg-primary/5 p-4 ${className || ''}`}
             >
                 <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                        <CheckInIcon className="h-5 w-5 text-blue-600" />
-                        <span className="font-medium text-blue-900">
-                            {selectedCount} item{selectedCount !== 1 ? 's' : ''} selected
+                        <CheckInIcon className="h-5 w-5 text-primary" />
+                        <span className="font-medium text-primary">
+                            {tPlural('admin-common.bulkToolbar.itemsSelected', selectedCount)}
                         </span>
                     </div>
 
@@ -75,7 +78,7 @@ export const BulkOperationsToolbar = ({
                                 onClick={onBulkUpdate}
                                 disabled={isOperationPending}
                             >
-                                Update Selected
+                                {t('admin-common.bulkToolbar.updateSelected')}
                             </Button>
                         )}
 
@@ -85,10 +88,10 @@ export const BulkOperationsToolbar = ({
                                 size="sm"
                                 onClick={onBulkDelete}
                                 disabled={isOperationPending}
-                                className="border-red-200 text-red-700 hover:bg-red-50"
+                                className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
                             >
                                 <DeleteIcon className="mr-2 h-4 w-4" />
-                                Delete Selected
+                                {t('admin-common.bulkToolbar.deleteSelected')}
                             </Button>
                         )}
 
@@ -104,7 +107,7 @@ export const BulkOperationsToolbar = ({
                         disabled={isOperationPending}
                     >
                         <CloseIcon className="mr-2 h-4 w-4" />
-                        Clear Selection
+                        {t('admin-common.bulkToolbar.clearSelection')}
                     </Button>
 
                     <Button
@@ -113,7 +116,7 @@ export const BulkOperationsToolbar = ({
                         onClick={onToggleSelectMode}
                         disabled={isOperationPending}
                     >
-                        Exit Select Mode
+                        {t('admin-common.bulkToolbar.exitSelectMode')}
                     </Button>
                 </div>
             </div>
@@ -140,6 +143,7 @@ type SelectionCheckboxProps = {
     readonly onToggle: (id: string) => void;
     readonly disabled?: boolean;
     readonly className?: string;
+    readonly ariaLabel?: string;
 };
 
 export const SelectionCheckbox = ({
@@ -148,7 +152,8 @@ export const SelectionCheckbox = ({
     isSelecting,
     onToggle,
     disabled = false,
-    className
+    className,
+    ariaLabel
 }: SelectionCheckboxProps) => {
     if (!isSelecting) return null;
 
@@ -159,8 +164,8 @@ export const SelectionCheckbox = ({
                 checked={isSelected}
                 onChange={() => onToggle(id)}
                 disabled={disabled}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                aria-label={`Select item ${id}`}
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                aria-label={ariaLabel ?? `Select item ${id}`}
             />
         </div>
     );
@@ -177,6 +182,7 @@ type SelectAllCheckboxProps = {
     readonly onClearSelection: () => void;
     readonly disabled?: boolean;
     readonly className?: string;
+    readonly ariaLabel?: string;
 };
 
 export const SelectAllCheckbox = ({
@@ -186,7 +192,8 @@ export const SelectAllCheckbox = ({
     onSelectAll,
     onClearSelection,
     disabled = false,
-    className
+    className,
+    ariaLabel
 }: SelectAllCheckboxProps) => {
     if (!isSelecting) return null;
 
@@ -212,8 +219,8 @@ export const SelectAllCheckbox = ({
                 }}
                 onChange={handleChange}
                 disabled={disabled || allIds.length === 0}
-                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                aria-label="Select all items"
+                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                aria-label={ariaLabel ?? 'Select all items'}
             />
         </div>
     );

@@ -291,7 +291,7 @@ export const VirtualizedDataTable = <TData,>({
         <div className="space-y-3">
             {/* Virtualization debug info */}
             {showVirtualizationDebug && process.env.NODE_ENV === 'development' && (
-                <div className="rounded border bg-blue-50 px-3 py-2 text-blue-800 text-xs">
+                <div className="rounded border bg-primary/5 px-3 py-2 text-primary text-xs">
                     <span className="font-medium">Virtualization:</span>{' '}
                     {useVirtualRendering ? 'Active' : 'Disabled'}
                     {useVirtualRendering && (
@@ -310,7 +310,7 @@ export const VirtualizedDataTable = <TData,>({
                 <div
                     ref={containerRef}
                     style={containerStyles}
-                    className="scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400 rounded-md border"
+                    className="scrollbar-thin scrollbar-track-muted scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/40 rounded-md border"
                 >
                     <table className="w-full table-auto text-left text-sm">
                         {renderHeader()}
@@ -355,7 +355,7 @@ export const VirtualizedDataTable = <TData,>({
                 <div className="text-muted-foreground text-sm">
                     {t('ui.table.pageInfo', { page, pageCount })}
                     {useVirtualRendering && (
-                        <span className="ml-2 text-blue-600">(virtualized)</span>
+                        <span className="ml-2 text-primary">(virtualized)</span>
                     )}
                 </div>
                 <div className="flex items-center gap-2">

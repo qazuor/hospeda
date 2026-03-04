@@ -20,6 +20,7 @@ import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import { GridLayout } from '@/components/entity-form/layouts';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { EntitlementGate, LimitGate } from '@qazuor/qzpay-react';
 import * as React from 'react';
@@ -71,6 +72,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         },
         ref
     ) => {
+        const { t } = useTranslations();
         // Use title and description directly from config (they are i18n keys)
         const title = config.title;
         const description = config.description;
@@ -329,10 +331,10 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
 
                     case FieldTypeEnum.FILE:
                         return (
-                            <div className="space-y-2 rounded-md border border-gray-300 border-dashed p-4">
+                            <div className="space-y-2 rounded-md border border-dashed p-4">
                                 <div className="font-medium text-sm">{field.label || field.id}</div>
                                 <div className="text-muted-foreground text-xs">
-                                    File upload not yet implemented
+                                    {t('admin-entities.fields.fileUploadNotImplemented')}
                                 </div>
                             </div>
                         );
@@ -340,10 +342,12 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                     default:
                         // Fallback for unknown field types
                         return (
-                            <div className="space-y-2 border border-gray-300 p-4">
+                            <div className="space-y-2 border p-4">
                                 <div className="font-medium text-sm">{field.id}</div>
                                 <div className="text-muted-foreground text-xs">
-                                    Unknown field type: {field.type}
+                                    {t('admin-entities.fields.unknownFieldType', {
+                                        type: field.type
+                                    })}
                                 </div>
                             </div>
                         );
@@ -360,12 +364,16 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             entitlementKey={field.entitlementKey}
                             fallback={
                                 <div className="space-y-2">
-                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-                                        <p className="font-medium text-amber-900 text-sm">
-                                            {field.label || field.id} - Premium
+                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+                                        <p className="font-medium text-amber-900 text-sm dark:text-amber-100">
+                                            {t('admin-entities.entitlementGate.fieldPremium', {
+                                                field: field.label || field.id
+                                            })}
                                         </p>
-                                        <p className="text-amber-800 text-xs">
-                                            Esta funcionalidad está disponible en planes superiores
+                                        <p className="text-amber-800 text-xs dark:text-amber-200">
+                                            {t(
+                                                'admin-entities.entitlementGate.fieldPremiumDescription'
+                                            )}
                                         </p>
                                     </div>
                                 </div>
@@ -384,12 +392,14 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                             limitKey={field.limitKey}
                             fallback={
                                 <div className="space-y-2">
-                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
-                                        <p className="font-medium text-amber-900 text-sm">
-                                            {field.label || field.id} - Límite alcanzado
+                                    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-800 dark:bg-amber-950">
+                                        <p className="font-medium text-amber-900 text-sm dark:text-amber-100">
+                                            {t('admin-entities.limitGate.fieldLimitReached', {
+                                                field: field.label || field.id
+                                            })}
                                         </p>
-                                        <p className="text-amber-800 text-xs">
-                                            Has alcanzado el límite de tu plan actual
+                                        <p className="text-amber-800 text-xs dark:text-amber-200">
+                                            {t('admin-entities.limitGate.description')}
                                         </p>
                                     </div>
                                 </div>
@@ -436,12 +446,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
             }
         };
 
-        // console.log('🔍 [EntityFormSection] isVisible:', isVisible);
-        // console.log('🔍 [EntityFormSection] hasViewPermission:', hasViewPermission);
-        // console.log('🔍 [EntityFormSection] visibleFields.length:', visibleFields.length);
-
         if (!isVisible) {
-            // console.log('🔍 [EntityFormSection] Section not visible, returning null');
             return null;
         }
 
@@ -471,7 +476,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 {/* Section Footer Info */}
                 {visibleFields.length === 0 && (
                     <div className="py-8 text-center text-muted-foreground text-sm">
-                        No accessible fields in this section
+                        {t('admin-common.entityForm.noAccessibleFields')}
                     </div>
                 )}
             </div>

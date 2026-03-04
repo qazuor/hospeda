@@ -4,6 +4,7 @@ import type {
     RichTextFieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import DOMPurify from 'dompurify';
 
@@ -50,6 +51,8 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -106,7 +109,11 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
 
         const renderContent = () => {
             if (!value.trim()) {
-                return <span className="text-muted-foreground italic">No content</span>;
+                return (
+                    <span className="text-muted-foreground italic">
+                        {t('admin-common.states.noContent')}
+                    </span>
+                );
             }
 
             if (renderAsHtml) {
@@ -114,11 +121,12 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
                 return (
                     <div
                         className={cn(
-                            'prose prose-sm max-w-none',
+                            'prose prose-sm dark:prose-invert max-w-none',
                             'prose-headings:text-foreground',
                             'prose-p:text-foreground prose-p:leading-relaxed',
                             'prose-strong:font-semibold prose-strong:text-foreground',
                             'prose-em:text-foreground',
+                            'prose-a:text-primary',
                             'prose-ol:text-foreground prose-ul:text-foreground',
                             'prose-li:text-foreground',
                             maxHeight && 'overflow-y-auto'
@@ -180,7 +188,9 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
                 {/* Character Count */}
                 {showCharCount && value && (
                     <div className="flex justify-between text-muted-foreground text-xs">
-                        <span>{value.length} characters</span>
+                        <span>
+                            {value.length} {t('admin-entities.viewFields.richText.characters')}
+                        </span>
                         {maxLength && (
                             <span className={cn(value.length > maxLength && 'text-destructive')}>
                                 {value.length}/{maxLength}
@@ -192,7 +202,9 @@ export const RichTextViewField = React.forwardRef<HTMLDivElement, RichTextViewFi
                 {/* Content Preview Info */}
                 {value && (
                     <div className="text-muted-foreground text-xs">
-                        {renderAsHtml ? 'Formatted content' : 'Plain text'}
+                        {renderAsHtml
+                            ? t('admin-entities.viewFields.richText.formattedContent')
+                            : t('admin-entities.viewFields.richText.plainText')}
                         {value.split('\n').length > 1 && ` • ${value.split('\n').length} lines`}
                         {value.split(' ').length > 1 && ` • ${value.split(' ').length} words`}
                     </div>

@@ -7,7 +7,7 @@
 
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useTranslations } from '@/hooks/use-translations';
-import { filterByPermissions } from '@/lib/sections';
+import { filterByPermissions, useCurrentSidebarConfig } from '@/lib/sections';
 import { cn } from '@/lib/utils';
 import type { TranslationKey } from '@repo/i18n';
 import { CloseIcon } from '@repo/icons';
@@ -27,10 +27,11 @@ export interface SidebarProps {
  */
 export function Sidebar({ userPermissions, className }: SidebarProps) {
     const { t } = useTranslations();
-    const { config, isContextual, isMobileOpen, closeMobile, isCollapsed } = useSidebarContext();
+    const { isMobileOpen, closeMobile, isCollapsed } = useSidebarContext();
+    const config = useCurrentSidebarConfig();
 
-    // Don't render if not contextual or no config
-    if (!isContextual || !config) {
+    // Don't render if no config for current route
+    if (!config) {
         return null;
     }
 

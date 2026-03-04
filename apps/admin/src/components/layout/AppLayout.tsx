@@ -12,7 +12,6 @@
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 import { SidebarProvider } from '@/contexts/sidebar-context';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
-import { useSectionSidebarSync } from '@/lib/sections';
 import type { ReactNode } from 'react';
 import { Header } from './header';
 import { Sidebar } from './sidebar';
@@ -28,9 +27,6 @@ export type AppLayoutProps = {
  * Internal layout component that uses sidebar context
  */
 function AppLayoutInner({ children }: AppLayoutProps) {
-    // Sync sidebar configuration with current route
-    useSectionSidebarSync();
-
     // Get real user permissions from AuthContext
     const userPermissions = useUserPermissions();
 
@@ -40,7 +36,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
             <ImpersonationBanner />
 
             {/* Level 1: Header with section navigation */}
-            <Header />
+            <Header userPermissions={userPermissions} />
 
             <div className="flex min-h-[calc(100vh-3.5rem)]">
                 {/* Level 2: Contextual sidebar with real permissions */}

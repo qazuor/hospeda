@@ -76,7 +76,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
         },
         ref
     ) => {
-        const { t } = useTranslations();
+        const { t, tPlural } = useTranslations();
 
         // Use title and description directly from config (they are i18n keys)
         const title = config.title;
@@ -362,7 +362,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                                     <div className="text-sm">
                                         {String(fieldValue) || (
                                             <span className="text-muted-foreground italic">
-                                                No value
+                                                {t('admin-common.entityView.noValue')}
                                             </span>
                                         )}
                                     </div>
@@ -481,17 +481,16 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 {visibleFields.length === 0 && (
                     <div className="py-8 text-center text-muted-foreground text-sm">
                         {showEmptyFields
-                            ? 'No accessible fields in this section'
-                            : 'No data to display in this section'}
+                            ? t('admin-common.entityForm.noAccessibleFields')
+                            : t('admin-common.entityForm.noDataToDisplay')}
                     </div>
                 )}
 
                 {/* Section Stats */}
                 {mode === 'card' && visibleFields.length > 0 && (
                     <div className="border-t pt-2 text-muted-foreground text-xs">
-                        {visibleFields.length} field{visibleFields.length !== 1 ? 's' : ''}{' '}
-                        displayed
-                        {hasEditPermission && ' • Editable'}
+                        {tPlural('admin-common.entityView.fieldsDisplayed', visibleFields.length)}
+                        {hasEditPermission && ` • ${t('admin-common.entityView.editable')}`}
                     </div>
                 )}
             </div>

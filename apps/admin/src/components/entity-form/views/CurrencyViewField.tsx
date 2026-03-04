@@ -5,7 +5,9 @@ import type {
     FieldConfig
 } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
+import { formatNumber } from '@repo/i18n';
 
 import * as React from 'react';
 
@@ -47,6 +49,9 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
         },
         ref
     ) => {
+        // Use locale from translations hook
+        const { locale, t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -79,20 +84,17 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
             MXN: '$'
         };
 
-        // Currency names mapping
-        const currencyNames: Record<string, string> = {
-            USD: 'US Dollar',
-            EUR: 'Euro',
-            GBP: 'British Pound',
-            JPY: 'Japanese Yen',
-            ARS: 'Argentine Peso',
-            BRL: 'Brazilian Real',
-            CAD: 'Canadian Dollar',
-            AUD: 'Australian Dollar',
-            CHF: 'Swiss Franc',
-            CNY: 'Chinese Yuan',
-            INR: 'Indian Rupee',
-            MXN: 'Mexican Peso'
+        /**
+         * Get localized currency display name using Intl.DisplayNames.
+         * Falls back to the currency code if the API is unavailable.
+         */
+        const getCurrencyName = (code: string): string => {
+            try {
+                const displayNames = new Intl.DisplayNames([locale], { type: 'currency' });
+                return displayNames.of(code) ?? code;
+            } catch {
+                return code;
+            }
         };
 
         const formatAmount = (amount: number | string): string => {
@@ -100,10 +102,14 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
             const numAmount = typeof amount === 'string' ? Number.parseFloat(amount) : amount;
             if (Number.isNaN(numAmount)) return '0';
 
-            return new Intl.NumberFormat('en-US', {
-                minimumFractionDigits: precision,
-                maximumFractionDigits: precision
-            }).format(numAmount);
+            return formatNumber({
+                value: numAmount,
+                locale,
+                options: {
+                    minimumFractionDigits: precision,
+                    maximumFractionDigits: precision
+                }
+            });
         };
 
         const renderValue = () => {
@@ -113,12 +119,16 @@ export const CurrencyViewField = React.forwardRef<HTMLDivElement, CurrencyViewFi
                 value.amount === null ||
                 value.amount === undefined
             ) {
-                return <span className="text-muted-foreground italic">No amount</span>;
+                return (
+                    <span className="text-muted-foreground italic">
+                        {t('admin-entities.viewFields.currency.noAmount')}
+                    </span>
+                );
             }
 
             const currency = value.currency || 'USD';
             const symbol = currencySymbols[currency] || currency;
-            const currencyName = currencyNames[currency] || currency;
+            const currencyName = getCurrencyName(currency);
             const formattedAmount = formatAmount(value.amount);
 
             let displayText: string;

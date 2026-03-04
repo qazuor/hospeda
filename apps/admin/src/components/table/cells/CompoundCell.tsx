@@ -1,4 +1,5 @@
 import type { CompoundOption } from '@/components/table/DataTable';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import type { ReactNode } from 'react';
 import { BadgeCell } from './BadgeCell';
@@ -23,8 +24,14 @@ export const CompoundCell = <TData,>({
     row,
     compoundOptions
 }: CompoundCellProps<TData>): ReactNode => {
+    const { t } = useTranslations();
+
     if (!compoundOptions || !compoundOptions.columns || compoundOptions.columns.length === 0) {
-        return <span className="text-gray-400 dark:text-gray-500">No compound config</span>;
+        return (
+            <span className="text-muted-foreground">
+                {t('admin-common.states.noCompoundConfig')}
+            </span>
+        );
     }
 
     const { columns, layout, separator = layout === 'horizontal' ? ' • ' : '' } = compoundOptions;
@@ -59,7 +66,7 @@ export const CompoundCell = <TData,>({
                 itemsWithSeparators.push(
                     <span
                         key={`h-sep-${columns[index]?.id || index}`}
-                        className="text-gray-400 dark:text-gray-500"
+                        className="text-muted-foreground"
                     >
                         {separator}
                     </span>
@@ -79,7 +86,7 @@ export const CompoundCell = <TData,>({
                 itemsWithSeparators.push(
                     <div
                         key={`v-sep-${columns[index]?.id || index}`}
-                        className="text-center text-gray-400 text-xs dark:text-gray-500"
+                        className="text-center text-muted-foreground text-xs"
                     >
                         {separator}
                     </div>

@@ -51,22 +51,22 @@ const getSectionIcon = (status: SectionProgress['status']) => {
  */
 const getBreadcrumbColors = (status: SectionProgress['status'], isActive: boolean) => {
     if (isActive) {
-        return 'text-blue-600 font-semibold';
+        return 'text-primary font-semibold';
     }
 
     switch (status) {
         case 'complete':
-            return 'text-green-600 hover:text-green-700';
+            return 'text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300';
         case 'error':
-            return 'text-red-600 hover:text-red-700';
+            return 'text-destructive hover:text-destructive/80';
         case 'partial':
-            return 'text-amber-600 hover:text-amber-700';
+            return 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300';
         case 'empty':
-            return 'text-gray-500 hover:text-gray-600';
+            return 'text-muted-foreground hover:text-foreground';
         case 'disabled':
-            return 'text-gray-400 cursor-not-allowed';
+            return 'text-muted-foreground/50 cursor-not-allowed';
         default:
-            return 'text-gray-600 hover:text-gray-700';
+            return 'text-muted-foreground hover:text-foreground';
     }
 };
 
@@ -97,7 +97,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
     separator = (
         <Icon
             name="next"
-            className="h-4 w-4 text-gray-400"
+            className="h-4 w-4 text-muted-foreground"
         />
     )
 }) => {
@@ -138,7 +138,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                             <button
                                 type="button"
                                 onClick={() => onSectionSelect(visibleSections[0].id)}
-                                className="flex items-center space-x-1 text-gray-500 hover:text-gray-700"
+                                className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
                             >
                                 {showIcons && (
                                     <Icon
@@ -152,7 +152,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                             </button>
                         </li>
                         <li className="flex items-center">
-                            <span className="text-gray-400">...</span>
+                            <span className="text-muted-foreground">...</span>
                         </li>
                         <li className="flex items-center">{separator}</li>
                     </>
@@ -188,7 +188,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                                     <span className="max-w-[150px] truncate">{section.title}</span>
 
                                     {showProgress && section.totalFields > 0 && (
-                                        <span className="ml-1 text-gray-500 text-xs">
+                                        <span className="ml-1 text-muted-foreground text-xs">
                                             ({section.completedFields}/{section.totalFields})
                                         </span>
                                     )}
@@ -196,14 +196,14 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                                     {section.hasErrors && (
                                         <Icon
                                             name="alert-triangle"
-                                            className="h-3 w-3 flex-shrink-0 text-red-500"
+                                            className="h-3 w-3 flex-shrink-0 text-destructive"
                                         />
                                     )}
 
                                     {section.isRequired && (
                                         <Icon
                                             name="alert-triangle"
-                                            className="h-2 w-2 flex-shrink-0 text-red-400"
+                                            className="h-2 w-2 flex-shrink-0 text-destructive"
                                         />
                                     )}
                                 </button>
@@ -221,7 +221,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                         <>
                             <li className="flex items-center">{separator}</li>
                             <li className="flex items-center">
-                                <span className="text-gray-400">...</span>
+                                <span className="text-muted-foreground">...</span>
                             </li>
                             <li>
                                 <button
@@ -231,7 +231,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                                             visibleSections[visibleSections.length - 1].id
                                         )
                                     }
-                                    className="flex items-center space-x-1 text-gray-500 hover:text-gray-700"
+                                    className="flex items-center space-x-1 text-muted-foreground hover:text-foreground"
                                 >
                                     {showIcons && (
                                         <Icon
@@ -252,7 +252,7 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
 
             {/* Overall progress indicator - uses average completionPercentage (BUG-003/007) */}
             {showProgress && visibleSections.length > 0 && (
-                <div className="ml-4 flex items-center space-x-2 text-gray-500 text-xs">
+                <div className="ml-4 flex items-center space-x-2 text-muted-foreground text-xs">
                     <span>{t('ui.breadcrumbs.progress')}:</span>
                     <div className="flex items-center space-x-1">
                         {(() => {
@@ -264,9 +264,9 @@ export const SmartBreadcrumbs: React.FC<SmartBreadcrumbsProps> = ({
                             );
                             return (
                                 <>
-                                    <div className="h-2 w-16 rounded-full bg-gray-200">
+                                    <div className="h-2 w-16 rounded-full bg-muted">
                                         <div
-                                            className="h-2 rounded-full bg-blue-500 transition-all duration-300"
+                                            className="h-2 rounded-full bg-blue-500 transition-all duration-300 dark:bg-blue-400"
                                             style={{ width: `${avgPercentage}%` }}
                                         />
                                     </div>

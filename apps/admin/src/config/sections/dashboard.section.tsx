@@ -20,6 +20,7 @@ export const dashboardSection = createSection({
     icon: <DashboardIcon className="h-5 w-5" />,
     routes: ['/dashboard', '/dashboard/**', '/me/**', '/notifications'],
     defaultRoute: '/dashboard',
+    permissions: [],
     sidebar: {
         title: 'Dashboard',
         titleKey: 'admin-menu.dashboard',

@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 import { CheckInIcon, CloseIcon, LoaderIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
@@ -35,21 +36,21 @@ export const OptimisticFeedback = ({
             case 'pending':
                 return {
                     container: 'opacity-70 pointer-events-none',
-                    indicator: 'bg-blue-500 text-white',
+                    indicator: 'bg-primary text-white',
                     icon: LoaderIcon,
                     message: pendingMessage || 'Saving...'
                 };
             case 'success':
                 return {
                     container: 'transition-all duration-300 ease-in-out',
-                    indicator: 'bg-green-500 text-white',
+                    indicator: 'bg-green-500 dark:bg-green-400 text-white',
                     icon: CheckInIcon,
                     message: successMessage || 'Saved!'
                 };
             case 'error':
                 return {
-                    container: 'border-red-200 bg-red-50',
-                    indicator: 'bg-red-500 text-white',
+                    container: 'border-destructive/30 bg-destructive/5',
+                    indicator: 'bg-destructive text-white',
                     icon: CloseIcon,
                     message: errorMessage || 'Error'
                 };
@@ -178,8 +179,9 @@ export const OptimisticListItem = ({
             className={cn(
                 'rounded-lg border transition-all duration-200',
                 isDeleting && 'scale-95 opacity-50',
-                isOptimistic && 'border-green-200 bg-green-50',
-                hasError && 'border-red-200 bg-red-50',
+                isOptimistic &&
+                    'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
+                hasError && 'border-destructive/30 bg-destructive/5',
                 className
             )}
             pendingMessage={getMessage()}
@@ -210,32 +212,40 @@ export const BulkOperationFeedback = ({
     isError,
     className
 }: BulkOperationFeedbackProps) => {
+    const { t } = useTranslations();
+
     if (!operation || selectedCount === 0) return null;
 
     const getMessage = () => {
         const action = operation === 'delete' ? 'Deleting' : 'Updating';
-        const items = selectedCount === 1 ? 'item' : 'items';
+        const itemKey =
+            selectedCount === 1
+                ? 'admin-common.bulk.itemCount_one'
+                : 'admin-common.bulk.itemCount_other';
+        const items = t(itemKey, { count: selectedCount });
 
-        if (isPending) return `${action} ${selectedCount} ${items}...`;
-        if (isSuccess) return `Successfully ${operation}d ${selectedCount} ${items}`;
-        if (isError) return `Failed to ${operation} ${selectedCount} ${items}`;
+        if (isPending) return `${action} ${items}...`;
+        if (isSuccess) return `Successfully ${operation}d ${items}`;
+        if (isError) return `Failed to ${operation} ${items}`;
         return '';
     };
 
     return (
         <div
             className={cn(
-                'fixed right-4 bottom-4 z-50 rounded-lg border bg-white p-4 shadow-lg',
-                isPending && 'border-blue-200 bg-blue-50',
-                isSuccess && 'border-green-200 bg-green-50',
-                isError && 'border-red-200 bg-red-50',
+                'fixed right-4 bottom-4 z-50 rounded-lg border bg-card p-4 shadow-lg',
+                isPending && 'border-primary/20 bg-primary/5',
+                isSuccess && 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950',
+                isError && 'border-destructive/30 bg-destructive/5',
                 className
             )}
         >
             <div className="flex items-center space-x-3">
-                {isPending && <LoaderIcon className="h-5 w-5 animate-spin text-blue-600" />}
-                {isSuccess && <CheckInIcon className="h-5 w-5 text-green-600" />}
-                {isError && <CloseIcon className="h-5 w-5 text-red-600" />}
+                {isPending && <LoaderIcon className="h-5 w-5 animate-spin text-primary" />}
+                {isSuccess && (
+                    <CheckInIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                )}
+                {isError && <CloseIcon className="h-5 w-5 text-destructive" />}
                 <span className="font-medium text-sm">{getMessage()}</span>
             </div>
         </div>

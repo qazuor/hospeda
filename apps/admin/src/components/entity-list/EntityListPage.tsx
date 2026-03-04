@@ -418,11 +418,7 @@ export const createEntityListPage = <TData extends { id: string }>(
         component: EntityListPageComponent
     });
 
-    // TODO: Add pagination controls to improve performance
-
-    // TODO: Implement user authentication for admin access #security
-    // TODO: Add data export functionality for reports #feature
-    // TODO: Implement enhanced role-based permissions #security
+    // NOTE: Data export feature not yet implemented
 
     return {
         component: EntityListPageComponent,

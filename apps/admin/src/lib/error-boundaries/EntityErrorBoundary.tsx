@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { reportComponentError } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -21,6 +22,7 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
     entityName = 'item',
     entityId
 }) => {
+    const { t } = useTranslations();
     const queryClient = useQueryClient();
     const router = useRouter();
 
@@ -59,31 +61,31 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
 
         if (errorMessage.includes('404') || errorMessage.includes('not found')) {
             return {
-                title: `${entityName.charAt(0).toUpperCase() + entityName.slice(1)} Not Found`,
-                message: `The ${entityName} you're looking for doesn't exist or may have been deleted.`,
+                title: t('admin-common.errorBoundary.notFound.title'),
+                message: t('admin-common.errorBoundary.notFound.description'),
                 type: 'not-found' as const
             };
         }
 
         if (errorMessage.includes('403') || errorMessage.includes('forbidden')) {
             return {
-                title: 'Access Denied',
-                message: `You don't have permission to view this ${entityName}.`,
+                title: t('admin-common.errorBoundary.accessDenied.title'),
+                message: t('admin-common.errorBoundary.accessDenied.description'),
                 type: 'forbidden' as const
             };
         }
 
         if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
             return {
-                title: 'Connection Error',
-                message: 'Unable to connect to the server. Please check your internet connection.',
+                title: t('admin-common.errorBoundary.connectionError.title'),
+                message: t('admin-common.errorBoundary.connectionError.description'),
                 type: 'network' as const
             };
         }
 
         return {
-            title: 'Something Went Wrong',
-            message: `An error occurred while loading the ${entityName}. Please try again.`,
+            title: t('admin-common.errorBoundary.generic.title'),
+            message: t('admin-common.errorBoundary.generic.description'),
             type: 'generic' as const
         };
     };
@@ -94,23 +96,25 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
         <div className="flex min-h-[400px] items-center justify-center p-6">
             <div className="w-full max-w-md text-center">
                 {/* Error Icon */}
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
                     <AlertTriangleIcon
                         size={32}
                         weight="bold"
-                        className="text-red-600"
+                        className="text-destructive"
                         aria-label="Error icon"
                     />
                 </div>
 
                 {/* Error Title */}
-                <h2 className="mb-2 font-semibold text-gray-900 text-lg">{errorInfo.title}</h2>
+                <h2 className="mb-2 font-semibold text-foreground text-lg">{errorInfo.title}</h2>
 
                 {/* Error Message */}
-                <p className="mb-6 text-gray-600">{errorInfo.message}</p>
+                <p className="mb-6 text-muted-foreground">{errorInfo.message}</p>
 
                 {/* Entity ID (if available) */}
-                {entityId && <p className="mb-4 font-mono text-gray-500 text-sm">ID: {entityId}</p>}
+                {entityId && (
+                    <p className="mb-4 font-mono text-muted-foreground text-sm">ID: {entityId}</p>
+                )}
 
                 {/* Action Buttons */}
                 <div className="space-y-3">
@@ -118,9 +122,9 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
                         <button
                             type="button"
                             onClick={handleRetryWithRefresh}
-                            className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
-                            Retry with Refresh
+                            {t('admin-common.errorBoundary.actions.retryWithRefresh')}
                         </button>
                     )}
 
@@ -128,36 +132,36 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
                         <button
                             type="button"
                             onClick={resetErrorBoundary}
-                            className="w-full rounded-md bg-gray-600 px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+                            className="w-full rounded-md bg-secondary px-4 py-2 font-medium text-secondary-foreground text-sm transition-colors hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2"
                         >
-                            Try Again
+                            {t('admin-common.errorBoundary.actions.tryAgain')}
                         </button>
                     )}
 
                     <button
                         type="button"
                         onClick={handleGoBack}
-                        className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="w-full rounded-md border border-border bg-background px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                        Go Back
+                        {t('admin-common.errorBoundary.actions.goBack')}
                     </button>
 
                     <button
                         type="button"
                         onClick={handleGoHome}
-                        className="w-full text-blue-600 text-sm transition-colors hover:text-blue-800"
+                        className="w-full text-primary text-sm transition-colors hover:text-primary/80"
                     >
-                        Return to Dashboard
+                        {t('admin-common.errorBoundary.actions.returnToDashboard')}
                     </button>
                 </div>
 
                 {/* Development Error Details */}
                 {process.env.NODE_ENV === 'development' && (
                     <details className="mt-6 text-left">
-                        <summary className="cursor-pointer text-gray-500 text-sm">
-                            Error Details (Development)
+                        <summary className="cursor-pointer text-muted-foreground text-sm">
+                            {t('admin-common.errorBoundary.devOnly.title')}
                         </summary>
-                        <pre className="mt-2 overflow-auto rounded bg-gray-100 p-3 text-red-600 text-xs">
+                        <pre className="mt-2 overflow-auto rounded bg-muted p-3 text-destructive text-xs">
                             {error.stack || error.message}
                         </pre>
                     </details>

@@ -153,7 +153,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
         if (!showValidationState) {
             return cn(
                 baseClasses,
-                'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
+                'border-border focus:border-primary focus:ring-primary',
                 inputClassName,
                 className
             );
@@ -162,7 +162,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
         if (hasAnyError) {
             return cn(
                 baseClasses,
-                'border-red-300 bg-red-50 focus:border-red-500 focus:ring-red-500',
+                'border-destructive/30 bg-destructive/5 focus:border-destructive focus:ring-destructive',
                 inputClassName,
                 className
             );
@@ -171,7 +171,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
         if (isValid) {
             return cn(
                 baseClasses,
-                'border-green-300 bg-green-50 focus:border-green-500 focus:ring-green-500',
+                'border-green-300 bg-green-50 focus:border-green-500 focus:ring-green-500 dark:bg-green-950',
                 inputClassName,
                 className
             );
@@ -179,7 +179,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
 
         return cn(
             baseClasses,
-            'border-gray-300 focus:border-blue-500 focus:ring-blue-500',
+            'border-border focus:border-primary focus:ring-primary',
             inputClassName,
             className
         );
@@ -191,10 +191,10 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
             {label && (
                 <label
                     htmlFor={id}
-                    className={cn('block font-medium text-gray-700 text-sm', labelClassName)}
+                    className={cn('block font-medium text-foreground text-sm', labelClassName)}
                 >
                     {label}
-                    {required && <span className="ml-1 text-red-500">*</span>}
+                    {required && <span className="ml-1 text-destructive">*</span>}
                 </label>
             )}
 
@@ -221,7 +221,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
                 {showValidationState && (
                     <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                         {isValidating && (
-                            <LoaderIcon className="h-4 w-4 animate-spin text-gray-400" />
+                            <LoaderIcon className="h-4 w-4 animate-spin text-muted-foreground" />
                         )}
                         {isValid && !isValidating && (
                             <CheckIcon
@@ -231,7 +231,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
                         )}
                         {hasAnyError && !isValidating && (
                             <CloseIcon
-                                className="h-4 w-4 text-red-500"
+                                className="h-4 w-4 text-destructive"
                                 aria-label="Invalid"
                             />
                         )}
@@ -248,7 +248,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
                     {allErrors.map((error) => (
                         <p
                             key={error}
-                            className={cn('text-red-600 text-sm', errorClassName)}
+                            className={cn('text-destructive text-sm', errorClassName)}
                         >
                             {error}
                         </p>
@@ -260,7 +260,7 @@ export const ValidatedInput: React.FC<ValidatedInputProps> = ({
             {helpText && !hasAnyError && (
                 <p
                     id={`${id}-help`}
-                    className={cn('text-gray-500 text-sm', helpClassName)}
+                    className={cn('text-muted-foreground text-sm', helpClassName)}
                 >
                     {helpText}
                 </p>

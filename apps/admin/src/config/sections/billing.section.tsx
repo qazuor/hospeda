@@ -28,6 +28,15 @@ export const billingSection = createSection({
     label: 'Facturación',
     labelKey: 'admin-menu.billing.title',
     icon: <CreditCardIcon className="h-5 w-5" />,
+    permissions: [
+        PermissionEnum.PRICING_PLAN_VIEW,
+        PermissionEnum.SUBSCRIPTION_VIEW,
+        PermissionEnum.PAYMENT_VIEW,
+        PermissionEnum.INVOICE_VIEW,
+        PermissionEnum.SPONSORSHIP_VIEW,
+        PermissionEnum.EXCHANGE_RATE_VIEW,
+        PermissionEnum.ANALYTICS_VIEW
+    ],
     routes: ['/billing', '/billing/**'],
     defaultRoute: '/billing/plans',
     sidebar: {

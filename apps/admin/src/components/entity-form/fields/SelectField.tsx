@@ -12,6 +12,7 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
 import * as React from 'react';
@@ -69,6 +70,8 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -146,8 +149,12 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                         onBlur={onBlur}
                         onFocus={onFocus}
                     >
-                        <SelectValue placeholder={placeholder || 'Select an option...'}>
-                            {loading ? 'Loading...' : selectedOption?.label || placeholder}
+                        <SelectValue
+                            placeholder={placeholder || t('admin-common.states.selectAnOption')}
+                        >
+                            {loading
+                                ? t('admin-common.states.loading')
+                                : selectedOption?.label || placeholder}
                         </SelectValue>
                     </SelectTrigger>
 
@@ -155,7 +162,9 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                         {/* Clear option if allowed */}
                         {allowClear && value && (
                             <SelectItem value="__CLEAR__">
-                                <span className="text-muted-foreground">Clear selection</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-common.actions.clearSelection')}
+                                </span>
                             </SelectItem>
                         )}
 
@@ -202,7 +211,9 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                                 value="__EMPTY__"
                                 disabled
                             >
-                                <span className="text-muted-foreground">No options available</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-common.states.noOptionsAvailable')}
+                                </span>
                             </SelectItem>
                         )}
 
@@ -212,7 +223,9 @@ export const SelectField = React.forwardRef<HTMLButtonElement, SelectFieldProps>
                                 value="__LOADING__"
                                 disabled
                             >
-                                <span className="text-muted-foreground">Loading options...</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-common.states.loadingOptions')}
+                                </span>
                             </SelectItem>
                         )}
                     </SelectContent>

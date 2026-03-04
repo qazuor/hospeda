@@ -141,7 +141,7 @@ export const OptimisticEntityListExample = ({
     if (error) {
         return (
             <Card>
-                <CardContent className="p-8 text-center text-red-600">
+                <CardContent className="p-8 text-center text-red-600 dark:text-red-400">
                     Error loading {pluralDisplayName}: {error.message}
                 </CardContent>
             </Card>
@@ -154,7 +154,7 @@ export const OptimisticEntityListExample = ({
             <div className="flex items-center justify-between">
                 <h1 className="font-bold text-2xl">{pluralDisplayName}</h1>
                 <div className="flex items-center space-x-2">
-                    <span className="text-gray-600 text-sm">{entities.length} items</span>
+                    <span className="text-muted-foreground text-sm">{entities.length} items</span>
                 </div>
             </div>
 
@@ -211,7 +211,7 @@ export const OptimisticEntityListExample = ({
                 </CardHeader>
                 <CardContent>
                     {entities.length === 0 ? (
-                        <div className="py-8 text-center text-gray-500">
+                        <div className="py-8 text-center text-muted-foreground">
                             No {pluralDisplayName.toLowerCase()} found
                         </div>
                     ) : (
@@ -236,12 +236,12 @@ export const OptimisticEntityListExample = ({
 
                                             <div>
                                                 <h3 className="font-medium">{entity.name}</h3>
-                                                <div className="flex items-center space-x-2 text-gray-500 text-sm">
+                                                <div className="flex items-center space-x-2 text-muted-foreground text-sm">
                                                     <span
                                                         className={`inline-block h-2 w-2 rounded-full ${
                                                             entity.status === 'active'
-                                                                ? 'bg-green-500'
-                                                                : 'bg-gray-400'
+                                                                ? 'bg-green-500 dark:bg-green-400'
+                                                                : 'bg-muted-foreground'
                                                         }`}
                                                     />
                                                     <span className="capitalize">
@@ -302,7 +302,7 @@ export const OptimisticEntityListExample = ({
                                                 size="sm"
                                                 onClick={() => handleDeleteItem(entity.id)}
                                                 disabled={isOperationPending}
-                                                className="border-red-200 text-red-700 hover:bg-red-50"
+                                                className="border-red-200 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950"
                                             >
                                                 <DeleteIcon className="h-4 w-4" />
                                             </Button>

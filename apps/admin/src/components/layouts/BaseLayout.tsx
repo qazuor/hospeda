@@ -61,29 +61,29 @@ export const BaseLayout = ({
         <div className={className}>
             {/* Page Header */}
             {(title || breadcrumbs || actions) && (
-                <div className="mb-6 border-gray-200 border-b pb-4">
+                <div className="mb-6 border-border border-b pb-4">
                     {/* Breadcrumbs */}
                     {breadcrumbs && breadcrumbs.length > 0 && (
                         <nav
                             className="mb-2"
                             aria-label="Breadcrumb"
                         >
-                            <ol className="flex items-center space-x-2 text-gray-500 text-sm">
+                            <ol className="flex items-center space-x-2 text-muted-foreground text-sm">
                                 {breadcrumbs.map((crumb, index) => (
                                     <li
                                         key={`${crumb.label}-${index}`}
                                         className="flex items-center"
                                     >
-                                        {index > 0 && <span className="mx-2 text-gray-300">/</span>}
+                                        {index > 0 && <span className="mx-2 text-border">/</span>}
                                         {crumb.href ? (
                                             <a
                                                 href={crumb.href}
-                                                className="rounded hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                                className="rounded hover:text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                                             >
                                                 {crumb.label}
                                             </a>
                                         ) : (
-                                            <span className="font-medium text-gray-900">
+                                            <span className="font-medium text-foreground">
                                                 {crumb.label}
                                             </span>
                                         )}
@@ -96,9 +96,11 @@ export const BaseLayout = ({
                     {/* Title and Actions */}
                     <div className="flex items-center justify-between">
                         <div>
-                            {title && <h1 className="font-bold text-2xl text-gray-900">{title}</h1>}
+                            {title && (
+                                <h1 className="font-bold text-2xl text-foreground">{title}</h1>
+                            )}
                             {description && (
-                                <p className="mt-1 text-gray-600 text-sm">{description}</p>
+                                <p className="mt-1 text-muted-foreground text-sm">{description}</p>
                             )}
                         </div>
 
@@ -122,7 +124,7 @@ export const BaseLayout = ({
 
     // Return content without sidebar
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
             <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{wrappedContent}</div>
         </div>
     );

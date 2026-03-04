@@ -116,7 +116,7 @@ const UserRegistrationExample: React.FC = () => {
         <Card>
             <CardHeader>
                 <CardTitle>User Registration Form</CardTitle>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                     Demonstrates async validation, cross-field validation, and form submission
                 </p>
             </CardHeader>
@@ -247,7 +247,7 @@ const DateRangeExample: React.FC = () => {
         <Card>
             <CardHeader>
                 <CardTitle>Event Date Range Form</CardTitle>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                     Demonstrates date range validation and minimum duration rules
                 </p>
             </CardHeader>
@@ -332,7 +332,7 @@ const ConditionalFieldsExample: React.FC = () => {
         <Card>
             <CardHeader>
                 <CardTitle>Conditional Payment Form</CardTitle>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                     Demonstrates conditional field validation based on other field values
                 </p>
             </CardHeader>
@@ -348,7 +348,7 @@ const ConditionalFieldsExample: React.FC = () => {
                         <div>
                             <label
                                 htmlFor="payment-method"
-                                className="mb-1 block font-medium text-gray-700 text-sm"
+                                className="mb-1 block font-medium text-foreground text-sm"
                             >
                                 Payment Method *
                             </label>
@@ -361,7 +361,7 @@ const ConditionalFieldsExample: React.FC = () => {
                                         e.target.value as ConditionalForm['paymentMethod']
                                     )
                                 }
-                                className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                className="block w-full rounded-md border border-border bg-background px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
                                 required
                             >
                                 <option value="">Select payment method</option>
@@ -386,7 +386,7 @@ const ConditionalFieldsExample: React.FC = () => {
                     {/* Conditional fields - only show for credit card */}
                     {formData.paymentMethod === 'credit_card' && (
                         <div className="space-y-4 border-t pt-4">
-                            <h3 className="font-medium text-gray-900 text-lg">
+                            <h3 className="font-medium text-foreground text-lg">
                                 Credit Card Details
                             </h3>
 
@@ -463,8 +463,8 @@ export const ValidationExample: React.FC = () => {
                 <CardContent>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                         <div>
-                            <h4 className="font-medium text-gray-900">Async Validation</h4>
-                            <ul className="mt-2 space-y-1 text-gray-600 text-sm">
+                            <h4 className="font-medium text-foreground">Async Validation</h4>
+                            <ul className="mt-2 space-y-1 text-muted-foreground text-sm">
                                 <li>• Email uniqueness checking</li>
                                 <li>• Username availability</li>
                                 <li>• Real-time API validation</li>
@@ -473,8 +473,8 @@ export const ValidationExample: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900">Cross-Field Validation</h4>
-                            <ul className="mt-2 space-y-1 text-gray-600 text-sm">
+                            <h4 className="font-medium text-foreground">Cross-Field Validation</h4>
+                            <ul className="mt-2 space-y-1 text-muted-foreground text-sm">
                                 <li>• Password confirmation</li>
                                 <li>• Date range validation</li>
                                 <li>• Conditional required fields</li>
@@ -483,8 +483,8 @@ export const ValidationExample: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900">User Experience</h4>
-                            <ul className="mt-2 space-y-1 text-gray-600 text-sm">
+                            <h4 className="font-medium text-foreground">User Experience</h4>
+                            <ul className="mt-2 space-y-1 text-muted-foreground text-sm">
                                 <li>• Real-time feedback</li>
                                 <li>• Loading indicators</li>
                                 <li>• Success/error states</li>
@@ -493,8 +493,8 @@ export const ValidationExample: React.FC = () => {
                             </ul>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-900">Developer Features</h4>
-                            <ul className="mt-2 space-y-1 text-gray-600 text-sm">
+                            <h4 className="font-medium text-foreground">Developer Features</h4>
+                            <ul className="mt-2 space-y-1 text-muted-foreground text-sm">
                                 <li>• TypeScript support</li>
                                 <li>• Reusable validators</li>
                                 <li>• Configurable rules</li>

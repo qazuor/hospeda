@@ -4,6 +4,7 @@
  * Specialized select component for choosing destinations.
  * Uses the generic ApiSelect component with destination-specific configuration.
  */
+import { useTranslations } from '@/hooks/use-translations';
 import type { FC } from 'react';
 import { ApiSelect, type ApiSelectOption } from '../ui/ApiSelect';
 
@@ -101,6 +102,8 @@ export const DestinationSelect: FC<DestinationSelectProps> = ({
     onlyFeatured = false,
     limit = 100
 }) => {
+    const { t } = useTranslations();
+
     // Build endpoint with optional featured filter
     const endpoint = onlyFeatured
         ? '/api/v1/admin/destinations?featured=true'
@@ -115,7 +118,7 @@ export const DestinationSelect: FC<DestinationSelectProps> = ({
             queryKey={queryKey}
             value={value}
             onValueChange={onValueChange}
-            placeholder="Select a destination..."
+            placeholder={t('admin-entities.selects.destination.placeholder')}
             disabled={disabled}
             required={required}
             error={error}

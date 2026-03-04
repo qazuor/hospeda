@@ -14,7 +14,7 @@ type BadgeCellProps = {
  */
 export const BadgeCell = ({ value, options }: BadgeCellProps): ReactNode => {
     if (value === null || value === undefined) {
-        return <span className="text-gray-400 dark:text-gray-500">—</span>;
+        return <span className="text-muted-foreground">—</span>;
     }
 
     const stringValue = String(value);
@@ -22,7 +22,7 @@ export const BadgeCell = ({ value, options }: BadgeCellProps): ReactNode => {
 
     if (!badgeOption) {
         return (
-            <span className="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 font-medium text-gray-600 text-xs ring-1 ring-gray-500/10 ring-inset dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/20">
+            <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 font-medium text-muted-foreground text-xs ring-1 ring-border ring-inset">
                 {stringValue}
             </span>
         );
@@ -48,11 +48,11 @@ export const BadgeCell = ({ value, options }: BadgeCellProps): ReactNode => {
 function getBadgeColorClasses(color: BadgeColor): string {
     switch (color) {
         case BadgeColor.DEFAULT:
-            return 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/20';
+            return 'bg-muted text-muted-foreground ring-border';
         case BadgeColor.PRIMARY:
             return 'bg-blue-50 text-blue-700 ring-blue-700/10 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30';
         case BadgeColor.SECONDARY:
-            return 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/20';
+            return 'bg-muted text-muted-foreground ring-border';
         case BadgeColor.SUCCESS:
             return 'bg-green-50 text-green-700 ring-green-600/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30';
         case BadgeColor.WARNING:
@@ -80,10 +80,10 @@ function getBadgeColorClasses(color: BadgeColor): string {
         case BadgeColor.ORANGE:
             return 'bg-orange-50 text-orange-700 ring-orange-700/10 dark:bg-orange-900/20 dark:text-orange-400 dark:ring-orange-400/30';
         case BadgeColor.GRAY:
-            return 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/20';
+            return 'bg-muted text-muted-foreground ring-border';
         case BadgeColor.SLATE:
-            return 'bg-slate-50 text-slate-600 ring-slate-500/10 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-400/20';
+            return 'bg-muted text-muted-foreground ring-border';
         default:
-            return 'bg-gray-50 text-gray-600 ring-gray-500/10 dark:bg-gray-800 dark:text-gray-300 dark:ring-gray-400/20';
+            return 'bg-muted text-muted-foreground ring-border';
     }
 }

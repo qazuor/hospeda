@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import type { ReactNode } from 'react';
 
 type GalleryCellProps = {
@@ -12,10 +13,12 @@ type GalleryCellProps = {
  * Expects an array of image objects or URLs.
  */
 export const GalleryCell = ({ value, maxImages = 3, size = 'sm' }: GalleryCellProps): ReactNode => {
+    const { t } = useTranslations();
+
     if (value === null || value === undefined) {
         return (
-            <div className="flex items-center justify-center rounded-md bg-gray-100 text-gray-500 text-xs dark:bg-gray-800 dark:text-gray-400">
-                <span>No gallery</span>
+            <div className="flex items-center justify-center rounded-md bg-muted text-muted-foreground text-xs">
+                <span>{t('admin-common.states.noGallery')}</span>
             </div>
         );
     }
@@ -23,8 +26,8 @@ export const GalleryCell = ({ value, maxImages = 3, size = 'sm' }: GalleryCellPr
     // Handle non-array values
     if (!Array.isArray(value)) {
         return (
-            <div className="flex items-center justify-center rounded-md bg-gray-100 text-gray-500 text-xs dark:bg-gray-800 dark:text-gray-400">
-                <span>Invalid gallery</span>
+            <div className="flex items-center justify-center rounded-md bg-muted text-muted-foreground text-xs">
+                <span>{t('admin-common.states.invalidGallery')}</span>
             </div>
         );
     }
@@ -32,8 +35,8 @@ export const GalleryCell = ({ value, maxImages = 3, size = 'sm' }: GalleryCellPr
     // Handle empty arrays
     if (value.length === 0) {
         return (
-            <div className="flex items-center justify-center rounded-md bg-gray-100 text-gray-500 text-xs dark:bg-gray-800 dark:text-gray-400">
-                <span>Empty gallery</span>
+            <div className="flex items-center justify-center rounded-md bg-muted text-muted-foreground text-xs">
+                <span>{t('admin-common.states.emptyGallery')}</span>
             </div>
         );
     }
@@ -54,8 +57,8 @@ export const GalleryCell = ({ value, maxImages = 3, size = 'sm' }: GalleryCellPr
 
     if (imageUrls.length === 0) {
         return (
-            <div className="flex items-center justify-center rounded-md bg-gray-100 text-gray-500 text-xs dark:bg-gray-800 dark:text-gray-400">
-                <span>No valid images</span>
+            <div className="flex items-center justify-center rounded-md bg-muted text-muted-foreground text-xs">
+                <span>{t('admin-common.states.noValidImages')}</span>
             </div>
         );
     }

@@ -300,7 +300,7 @@ export function EntityCreateContent({
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="text-2xl">{config.title}</CardTitle>
-                            <p className="text-gray-600">{config.description}</p>
+                            <p className="text-muted-foreground">{config.description}</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <Button
@@ -322,7 +322,7 @@ export function EntityCreateContent({
                         <Suspense
                             fallback={
                                 <div className="flex items-center justify-center p-8">
-                                    <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
+                                    <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
                                 </div>
                             }
                         >
@@ -335,7 +335,7 @@ export function EntityCreateContent({
                             >
                                 <div className="space-y-6">
                                     {/* Smart Breadcrumbs */}
-                                    <div className="sticky top-0 z-20 border-gray-200 border-b bg-white pb-4">
+                                    <div className="sticky top-0 z-20 border-border border-b bg-background pb-4">
                                         <SmartBreadcrumbs
                                             sections={sectionProgress}
                                             activeSectionId={activeSection}
@@ -368,7 +368,7 @@ export function EntityCreateContent({
                                             {import.meta.env.DEV &&
                                                 import.meta.env.VITE_DEBUG_LAZY_SECTIONS ===
                                                     'true' && (
-                                                    <div className="mb-4 rounded bg-blue-50 p-2 text-blue-800 text-xs">
+                                                    <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
                                                         Lazy Loading: {getMetrics().loadedCount}/
                                                         {getMetrics().totalSections} sections loaded
                                                     </div>

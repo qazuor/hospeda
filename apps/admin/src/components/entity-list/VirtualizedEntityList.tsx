@@ -160,7 +160,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                     <button
                         type="button"
                         onClick={() => scrollToTop()}
-                        className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
+                        className="rounded bg-foreground/80 p-1 text-background opacity-70 hover:opacity-100"
                         title={t('ui.actions.scrollToTop')}
                     >
                         <ChevronUpIcon
@@ -171,7 +171,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
                     <button
                         type="button"
                         onClick={() => scrollToBottom()}
-                        className="rounded bg-gray-800/80 p-1 text-white opacity-70 hover:opacity-100"
+                        className="rounded bg-foreground/80 p-1 text-background opacity-70 hover:opacity-100"
                         title={t('ui.actions.scrollToBottom')}
                     >
                         <ChevronDownIcon
@@ -186,7 +186,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
             <div
                 ref={containerRef}
                 style={containerStyles}
-                className="scrollbar-thin scrollbar-track-gray-100 scrollbar-thumb-gray-300 hover:scrollbar-thumb-gray-400"
+                className="scrollbar-thin scrollbar-track-muted scrollbar-thumb-muted-foreground/30 hover:scrollbar-thumb-muted-foreground/50"
             >
                 <div style={totalSizeStyles}>
                     {virtualItems.map((virtualItem: VirtualItem) => {
@@ -209,7 +209,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
 
             {/* Debug info (only in development) */}
             {process.env.NODE_ENV === 'development' && (
-                <div className="mt-2 text-gray-500 text-xs">
+                <div className="mt-2 text-muted-foreground text-xs">
                     Total: {items.length} | Visible: {visibleRange.start}-{visibleRange.end} |
                     Rendered: {virtualItems.length}
                 </div>
@@ -226,7 +226,7 @@ export const DefaultEmptyState: React.FC<{ message?: string }> = ({ message }) =
     const displayMessage = message || t('admin-entities.list.noResults');
 
     return (
-        <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
             <PackageIcon
                 size={48}
                 weight="light"
@@ -241,12 +241,17 @@ export const DefaultEmptyState: React.FC<{ message?: string }> = ({ message }) =
 /**
  * Default loading state component
  */
-export const DefaultLoadingState: React.FC<{ message?: string }> = ({ message = 'Loading...' }) => (
-    <div className="flex flex-col items-center justify-center py-12">
-        <LoaderIcon className="mb-4 h-8 w-8 animate-spin text-blue-600" />
-        <p className="text-gray-500 text-sm">{message}</p>
-    </div>
-);
+export const DefaultLoadingState: React.FC<{ message?: string }> = ({ message }) => {
+    const { t } = useTranslations();
+    return (
+        <div className="flex flex-col items-center justify-center py-12">
+            <LoaderIcon className="mb-4 h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground text-sm">
+                {message ?? t('admin-common.states.loading')}
+            </p>
+        </div>
+    );
+};
 
 /**
  * Default error state component
@@ -254,22 +259,27 @@ export const DefaultLoadingState: React.FC<{ message?: string }> = ({ message = 
 export const DefaultErrorState: React.FC<{ error?: Error; onRetry?: () => void }> = ({
     error,
     onRetry
-}) => (
-    <div className="flex flex-col items-center justify-center py-12 text-red-500">
-        <AlertTriangleIcon
-            className="mb-4 h-12 w-12"
-            aria-label="Error state"
-        />
-        <p className="mb-2 font-medium text-sm">Something went wrong</p>
-        {error && <p className="mb-4 text-gray-600 text-xs">{error.message}</p>}
-        {onRetry && (
-            <button
-                type="button"
-                onClick={onRetry}
-                className="rounded bg-red-100 px-3 py-1 text-red-700 text-sm hover:bg-red-200"
-            >
-                Try again
-            </button>
-        )}
-    </div>
-);
+}) => {
+    const { t } = useTranslations();
+    return (
+        <div className="flex flex-col items-center justify-center py-12 text-destructive">
+            <AlertTriangleIcon
+                className="mb-4 h-12 w-12"
+                aria-label={t('admin-common.states.errorState')}
+            />
+            <p className="mb-2 font-medium text-sm">
+                {t('admin-common.states.somethingWentWrong')}
+            </p>
+            {error && <p className="mb-4 text-muted-foreground text-xs">{error.message}</p>}
+            {onRetry && (
+                <button
+                    type="button"
+                    onClick={onRetry}
+                    className="rounded bg-destructive/10 px-3 py-1 text-destructive text-sm hover:bg-destructive/20"
+                >
+                    {t('admin-common.actions.tryAgain')}
+                </button>
+            )}
+        </div>
+    );
+};

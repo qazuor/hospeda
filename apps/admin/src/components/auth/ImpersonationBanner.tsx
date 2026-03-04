@@ -7,8 +7,9 @@
  * @module ImpersonationBanner
  */
 
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
-import { authClient, useSession } from '@/lib/auth-client';
+import { authClient } from '@/lib/auth-client';
 import { Warning, X } from '@phosphor-icons/react';
 import type { TranslationKey } from '@repo/i18n';
 import { useCallback, useState } from 'react';
@@ -16,17 +17,17 @@ import { useCallback, useState } from 'react';
 /**
  * Banner shown at the top of the layout when impersonation is active.
  *
- * Checks `session.session.impersonatedBy` from Better Auth to determine
+ * Checks `impersonatedBy` from AuthContext to determine
  * if the current session is impersonated.
  *
  * @returns The banner JSX or null if not impersonating
  */
 export function ImpersonationBanner() {
     const { t } = useTranslations();
-    const { data: session } = useSession();
+    const { user, impersonatedBy } = useAuthContext();
     const [isLoading, setIsLoading] = useState(false);
 
-    const isImpersonating = !!session?.session?.impersonatedBy;
+    const isImpersonating = !!impersonatedBy;
 
     const handleStopImpersonating = useCallback(async () => {
         setIsLoading(true);
@@ -46,7 +47,7 @@ export function ImpersonationBanner() {
         return null;
     }
 
-    const userName = session?.user?.name ?? session?.user?.email ?? 'Unknown';
+    const userName = user?.displayName ?? user?.email ?? 'Unknown';
 
     return (
         <div

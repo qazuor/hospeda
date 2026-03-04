@@ -8,6 +8,7 @@ import { EntityErrorBoundary } from '@/components/error-boundaries';
 import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
+import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';
 import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
@@ -68,6 +69,8 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     className,
     entityData
 }: EntityPageBaseProps<T>) => {
+    const { t } = useTranslations();
+
     // Extract data from props
     const {
         mode,
@@ -144,8 +147,10 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         return (
             <div className="flex min-h-[400px] items-center justify-center">
                 <div className="text-center">
-                    <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-blue-600" />
-                    <p className="mt-2 text-gray-600 text-sm">Loading {entityType}...</p>
+                    <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
+                    <p className="mt-2 text-muted-foreground text-sm">
+                        {t('admin-common.states.loading')}
+                    </p>
                 </div>
             </div>
         );
@@ -176,15 +181,6 @@ export const EntityPageBase = <T = Record<string, unknown>>({
         (entityRecord?.displayName as string) ||
         (entityConfig.metadata?.entityName as string) ||
         entityType;
-
-    // Debug logging (temporarily disabled)
-    // console.log('[EntityPageBase] Debug info:', {
-    //     mode,
-    //     entityId,
-    //     entityType,
-    //     hasEntity: !!entity,
-    //     entity: entity ? Object.keys(entity) : 'undefined'
-    // });
 
     // Create a complete EntityConfig from our entityConfig
     // Use sections filtered by current mode
@@ -235,7 +231,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                             <CardTitle className="text-2xl">
                                 {mode === 'view' ? entityName : `Edit ${entityName}`}
                             </CardTitle>
-                            <p className="text-gray-600">
+                            <p className="text-muted-foreground">
                                 {mode === 'view'
                                     ? `View ${completeEntityConfig.entityName} details`
                                     : `Modify ${completeEntityConfig.entityName} details`}
@@ -304,7 +300,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                         <Suspense
                             fallback={
                                 <div className="flex items-center justify-center p-8">
-                                    <LoaderIcon className="h-6 w-6 animate-spin text-blue-600" />
+                                    <LoaderIcon className="h-6 w-6 animate-spin text-primary" />
                                 </div>
                             }
                         >

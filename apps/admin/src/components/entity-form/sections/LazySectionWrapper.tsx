@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { LoaderIcon } from '@repo/icons';
 import React, { Suspense, useState } from 'react';
@@ -27,14 +28,19 @@ export interface LazySectionWrapperProps {
 /**
  * Default loading component for sections
  */
-const DefaultSectionLoader: React.FC<{ sectionId: string }> = () => (
-    <div className="flex min-h-[200px] items-center justify-center rounded-lg border border-gray-200 bg-gray-50">
-        <div className="text-center">
-            <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-blue-600" />
-            <p className="mt-2 text-gray-600 text-sm">Loading section...</p>
+const DefaultSectionLoader: React.FC<{ sectionId: string }> = () => {
+    const { t } = useTranslations();
+    return (
+        <div className="flex min-h-[200px] items-center justify-center rounded-lg border bg-muted">
+            <div className="text-center">
+                <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
+                <p className="mt-2 text-muted-foreground text-sm">
+                    {t('admin-common.states.loadingSection')}
+                </p>
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 /**
  * Wrapper component for lazy loading entity form sections

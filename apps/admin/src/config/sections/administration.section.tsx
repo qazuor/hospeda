@@ -27,6 +27,16 @@ export const administrationSection = createSection({
     label: 'Administración',
     labelKey: 'admin-menu.admin.title',
     icon: <AdminIcon className="h-5 w-5" />,
+    permissions: [
+        PermissionEnum.USER_CREATE,
+        PermissionEnum.USER_DELETE,
+        PermissionEnum.ACCESS_PERMISSIONS_MANAGE,
+        PermissionEnum.AMENITY_CREATE,
+        PermissionEnum.FEATURE_CREATE,
+        PermissionEnum.TAG_CREATE,
+        PermissionEnum.SEO_MANAGE,
+        PermissionEnum.ACCESS_PANEL_ADMIN
+    ],
     routes: [
         '/access/**',
         '/amenities',

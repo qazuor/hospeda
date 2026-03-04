@@ -5,6 +5,7 @@ import type {
     SelectOption
 } from '@/components/entity-form/types/field-config.types';
 import { Badge, Label } from '@/components/ui-wrapped';
+import { useTranslations } from '@/hooks/use-translations';
 import { cn } from '@/lib/utils';
 
 import { ExternalLinkIcon } from '@repo/icons';
@@ -57,6 +58,8 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
         },
         ref
     ) => {
+        const { t } = useTranslations();
+
         // Use direct translations from config
         const label = config.label;
         const description = config.description;
@@ -104,13 +107,19 @@ export const EntitySelectViewField = React.forwardRef<HTMLDivElement, EntitySele
                 return (
                     <div className="flex items-center gap-2">
                         <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-                        <span className="text-muted-foreground text-sm">Loading...</span>
+                        <span className="text-muted-foreground text-sm">
+                            {t('admin-common.states.loading')}
+                        </span>
                     </div>
                 );
             }
 
             if (selectedOptions.length === 0) {
-                return <span className="text-muted-foreground italic">No selection</span>;
+                return (
+                    <span className="text-muted-foreground italic">
+                        {t('admin-common.states.noSelection')}
+                    </span>
+                );
             }
 
             if (showAsBadges || isMultiple) {

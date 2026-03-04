@@ -5,7 +5,8 @@
  * This file should be imported early in the application bootstrap.
  */
 
-import { type SectionConfig, registerSections } from '@/lib/sections';
+import { type SectionConfig, filterSectionsByPermissions, registerSections } from '@/lib/sections';
+import type { HeaderNavItem } from '@/lib/sections';
 import { administrationSection } from './administration.section';
 import { analyticsSection } from './analytics.section';
 import { billingSection } from './billing.section';
@@ -32,8 +33,8 @@ export function initializeSections(): void {
 }
 
 /**
- * Header navigation items
- * Used by the Header component to render the main navigation
+ * Static header navigation items (all sections, no permission filtering).
+ * Prefer `getHeaderNavItems()` for permission-aware rendering.
  */
 export const headerNavItems = sections.map((section) => ({
     id: section.id,
@@ -42,6 +43,26 @@ export const headerNavItems = sections.map((section) => ({
     href: section.defaultRoute,
     icon: section.icon
 }));
+
+/**
+ * Get header navigation items filtered by user permissions.
+ * Sections with empty permissions are always visible.
+ * For sections with permissions, the user needs at least one (OR logic).
+ */
+export function getHeaderNavItems({
+    userPermissions
+}: {
+    readonly userPermissions: string[] | undefined;
+}): HeaderNavItem[] {
+    const filtered = filterSectionsByPermissions({ sectionConfigs: sections, userPermissions });
+    return filtered.map((section) => ({
+        id: section.id,
+        label: section.label,
+        labelKey: section.labelKey,
+        href: section.defaultRoute,
+        icon: section.icon
+    }));
+}
 
 // Re-export individual sections for direct access
 export { administrationSection } from './administration.section';

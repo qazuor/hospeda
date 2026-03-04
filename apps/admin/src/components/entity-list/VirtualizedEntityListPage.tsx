@@ -145,9 +145,9 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
 
     const defaultLoadingMoreIndicator = loadingMoreIndicator || (
         <div className="flex items-center justify-center py-4">
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
                 <LoaderIcon
-                    className="h-4 w-4 animate-spin text-blue-600"
+                    className="h-4 w-4 animate-spin text-primary"
                     aria-label="Loading more"
                 />
                 {t('ui.loading.more')}
@@ -162,14 +162,16 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
 
             {/* Stats and controls */}
             <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-4 text-gray-600 text-sm">
+                <div className="flex items-center gap-4 text-muted-foreground text-sm">
                     <span>
                         {isLoading ? 'Loading...' : `${items.length} of ${totalCount} items`}
                     </span>
                     {pagesLoaded > 1 && (
-                        <span className="text-gray-400">({pagesLoaded} pages loaded)</span>
+                        <span className="text-muted-foreground">({pagesLoaded} pages loaded)</span>
                     )}
-                    {isStale && <span className="text-yellow-600">(stale)</span>}
+                    {isStale && (
+                        <span className="text-yellow-600 dark:text-yellow-400">(stale)</span>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -178,7 +180,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                         type="button"
                         onClick={() => refetch()}
                         disabled={isLoading}
-                        className="rounded bg-gray-100 px-3 py-1 text-gray-700 text-sm hover:bg-gray-200 disabled:opacity-50"
+                        className="rounded bg-muted px-3 py-1 text-foreground text-sm hover:bg-accent disabled:opacity-50"
                         title={t('ui.actions.refresh')}
                     >
                         <RefreshIcon
@@ -198,7 +200,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                                     `items: ${items.length}, totalCount: ${totalCount}, pagesLoaded: ${pagesLoaded}, hasNextPage: ${hasNextPage}, isFetchingNextPage: ${isFetchingNextPage}, isStale: ${isStale}`
                                 );
                             }}
-                            className="rounded bg-blue-100 px-2 py-1 text-blue-700 text-xs hover:bg-blue-200"
+                            className="rounded bg-blue-100 px-2 py-1 text-blue-700 text-xs hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300 dark:hover:bg-blue-800"
                             title={t('ui.actions.debugInfo')}
                         >
                             Debug
@@ -237,7 +239,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
 
             {/* End of list indicator */}
             {!hasNextPage && items.length > 0 && !isLoading && (
-                <div className="mt-4 text-center text-gray-500 text-sm">
+                <div className="mt-4 text-center text-muted-foreground text-sm">
                     End of list ({totalCount} total items)
                 </div>
             )}
@@ -247,7 +249,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
 
             {/* Debug panel */}
             {showDebugInfo && process.env.NODE_ENV === 'development' && (
-                <div className="mt-4 rounded border bg-gray-50 p-3 text-xs">
+                <div className="mt-4 rounded border bg-muted p-3 text-xs">
                     <h4 className="mb-2 font-semibold">Debug Info</h4>
                     <div className="grid grid-cols-2 gap-2">
                         <div>Items loaded: {items.length}</div>

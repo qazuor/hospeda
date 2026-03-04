@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { reportComponentError } from '@/lib/errors';
 import { AlertTriangleIcon } from '@repo/icons';
 import { useQueryClient } from '@tanstack/react-query';
@@ -18,6 +19,7 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
     resetErrorBoundary,
     queryKey
 }) => {
+    const { t } = useTranslations();
     const queryClient = useQueryClient();
 
     /**
@@ -50,8 +52,8 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
 
         if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
             return {
-                title: 'Network Error',
-                message: 'Unable to fetch data. Please check your connection and try again.',
+                title: t('admin-common.errorBoundary.query.networkError.title'),
+                message: t('admin-common.errorBoundary.query.networkError.description'),
                 showInvalidate: true,
                 showClear: false
             };
@@ -59,8 +61,8 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
 
         if (errorMessage.includes('timeout')) {
             return {
-                title: 'Request Timeout',
-                message: 'The request took too long to complete. Please try again.',
+                title: t('admin-common.errorBoundary.query.timeout.title'),
+                message: t('admin-common.errorBoundary.query.timeout.description'),
                 showInvalidate: true,
                 showClear: false
             };
@@ -68,8 +70,8 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
 
         if (errorMessage.includes('500') || errorMessage.includes('server')) {
             return {
-                title: 'Server Error',
-                message: 'The server encountered an error. Please try again in a moment.',
+                title: t('admin-common.errorBoundary.query.serverError.title'),
+                message: t('admin-common.errorBoundary.query.serverError.description'),
                 showInvalidate: true,
                 showClear: false
             };
@@ -77,16 +79,16 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
 
         if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
             return {
-                title: 'Authentication Required',
-                message: 'Please sign in to access this data.',
+                title: t('admin-common.errorBoundary.query.authRequired.title'),
+                message: t('admin-common.errorBoundary.query.authRequired.description'),
                 showInvalidate: false,
                 showClear: true
             };
         }
 
         return {
-            title: 'Data Loading Error',
-            message: 'An error occurred while loading data. Please try again.',
+            title: t('admin-common.errorBoundary.query.generic.title'),
+            message: t('admin-common.errorBoundary.query.generic.description'),
             showInvalidate: true,
             showClear: true
         };
@@ -98,24 +100,24 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
         <div className="flex min-h-[200px] items-center justify-center p-4">
             <div className="w-full max-w-sm text-center">
                 {/* Error Icon */}
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-950">
                     <AlertTriangleIcon
                         size={24}
                         weight="bold"
-                        className="text-orange-600"
+                        className="text-orange-600 dark:text-orange-400"
                         aria-label="Query error icon"
                     />
                 </div>
 
                 {/* Error Title */}
-                <h3 className="mb-2 font-medium text-gray-900">{errorInfo.title}</h3>
+                <h3 className="mb-2 font-medium text-foreground">{errorInfo.title}</h3>
 
                 {/* Error Message */}
-                <p className="mb-4 text-gray-600 text-sm">{errorInfo.message}</p>
+                <p className="mb-4 text-muted-foreground text-sm">{errorInfo.message}</p>
 
                 {/* Query Key (if available and in development) */}
                 {process.env.NODE_ENV === 'development' && queryKey && (
-                    <p className="mb-3 font-mono text-gray-400 text-xs">
+                    <p className="mb-3 font-mono text-muted-foreground text-xs">
                         Query: {JSON.stringify(queryKey)}
                     </p>
                 )}
@@ -125,18 +127,18 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
                     <button
                         type="button"
                         onClick={resetErrorBoundary}
-                        className="w-full rounded-md bg-blue-600 px-3 py-2 font-medium text-sm text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                        className="w-full rounded-md bg-primary px-3 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                     >
-                        Try Again
+                        {t('admin-common.errorBoundary.actions.tryAgain')}
                     </button>
 
                     {errorInfo.showInvalidate && (
                         <button
                             type="button"
                             onClick={handleRetryWithInvalidation}
-                            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                            className="w-full rounded-md border border-border bg-background px-3 py-2 font-medium text-foreground text-sm transition-colors hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
-                            Refresh Data
+                            {t('admin-common.errorBoundary.query.actions.refreshData')}
                         </button>
                     )}
 
@@ -144,9 +146,9 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
                         <button
                             type="button"
                             onClick={handleRetryWithClear}
-                            className="w-full text-gray-500 text-sm transition-colors hover:text-gray-700"
+                            className="w-full text-muted-foreground text-sm transition-colors hover:text-foreground"
                         >
-                            Clear Cache & Retry
+                            {t('admin-common.errorBoundary.query.actions.clearCacheRetry')}
                         </button>
                     )}
                 </div>
@@ -154,10 +156,10 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
                 {/* Development Error Details */}
                 {process.env.NODE_ENV === 'development' && (
                     <details className="mt-4 text-left">
-                        <summary className="cursor-pointer text-gray-400 text-xs">
-                            Error Details
+                        <summary className="cursor-pointer text-muted-foreground text-xs">
+                            {t('admin-common.errorBoundary.devOnly.title')}
                         </summary>
-                        <pre className="mt-2 overflow-auto rounded bg-gray-50 p-2 text-red-600 text-xs">
+                        <pre className="mt-2 overflow-auto rounded bg-muted p-2 text-destructive text-xs">
                             {error.stack || error.message}
                         </pre>
                     </details>
