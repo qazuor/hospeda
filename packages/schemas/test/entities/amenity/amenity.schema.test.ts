@@ -308,6 +308,66 @@ describe('AmenitySchema', () => {
         });
     });
 
+    describe('displayWeight validation', () => {
+        it('should apply default value of 50 when displayWeight is not provided', () => {
+            const data = createMinimalAmenity();
+            const result = AmenitySchema.parse(data);
+
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should accept minimum boundary value of 1', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 1 };
+
+            expect(() => AmenitySchema.parse(data)).not.toThrow();
+
+            const result = AmenitySchema.parse(data);
+            expect(result.displayWeight).toBe(1);
+        });
+
+        it('should accept maximum boundary value of 100', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 100 };
+
+            expect(() => AmenitySchema.parse(data)).not.toThrow();
+
+            const result = AmenitySchema.parse(data);
+            expect(result.displayWeight).toBe(100);
+        });
+
+        it('should accept typical middle value of 50', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 50 };
+
+            expect(() => AmenitySchema.parse(data)).not.toThrow();
+
+            const result = AmenitySchema.parse(data);
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should reject value below minimum (0)', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 0 };
+
+            expect(() => AmenitySchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject value above maximum (101)', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 101 };
+
+            expect(() => AmenitySchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject non-integer values (1.5)', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: 1.5 };
+
+            expect(() => AmenitySchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject negative values (-1)', () => {
+            const data = { ...createMinimalAmenity(), displayWeight: -1 };
+
+            expect(() => AmenitySchema.parse(data)).toThrow(ZodError);
+        });
+    });
+
     describe('Type Inference', () => {
         it('should infer correct types from valid data', () => {
             const validData = createValidAmenity();

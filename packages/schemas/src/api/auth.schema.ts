@@ -22,10 +22,34 @@ export type Actor = z.infer<typeof ActorSchema>;
  */
 export const AuthMeResponseSchema = z.object({
     actor: ActorSchema,
-    isAuthenticated: z.boolean().describe('Whether the actor is authenticated (not a guest)')
+    isAuthenticated: z.boolean().describe('Whether the actor is authenticated (not a guest)'),
+    passwordChangeRequired: z
+        .boolean()
+        .optional()
+        .describe('Whether the user must change their password before continuing')
 });
 
 export type AuthMeResponse = z.infer<typeof AuthMeResponseSchema>;
+
+/**
+ * Change password input schema for POST /auth/change-password
+ */
+export const ChangePasswordInputSchema = z.object({
+    currentPassword: z.string().min(1, 'Current password is required'),
+    newPassword: z.string().min(8, 'Password must be at least 8 characters').max(128)
+});
+
+export type ChangePasswordInput = z.infer<typeof ChangePasswordInputSchema>;
+
+/**
+ * Change password response schema
+ */
+export const ChangePasswordResponseSchema = z.object({
+    success: z.boolean(),
+    message: z.string()
+});
+
+export type ChangePasswordResponse = z.infer<typeof ChangePasswordResponseSchema>;
 
 /**
  * Authentication status response schema for /auth/status endpoint

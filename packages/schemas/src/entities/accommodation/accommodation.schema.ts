@@ -19,6 +19,7 @@ import { BaseVisibilityFields } from '../../common/visibility.schema.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
 import { AccommodationIaDataSchema } from './subtypes/accommodation.ia.schema.js';
 import { AccommodationPriceSchema } from './subtypes/accommodation.price.schema.js';
+import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schema.js';
 
 /**
  * Accommodation Schema - Main Entity Schema
@@ -71,6 +72,9 @@ export const AccommodationSchema = z.object({
     faqs: z.array(BaseFaqSchema).optional(),
     price: AccommodationPriceSchema.optional(),
     ...TagsFields,
+
+    // Rating breakdown (aggregate of review ratings)
+    rating: AccommodationRatingSchema.optional(),
 
     // Extra Info
     extraInfo: z

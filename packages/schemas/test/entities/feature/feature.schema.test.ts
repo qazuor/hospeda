@@ -312,6 +312,66 @@ describe('FeatureSchema', () => {
         });
     });
 
+    describe('displayWeight validation', () => {
+        it('should apply default value of 50 when displayWeight is not provided', () => {
+            const data = createMinimalFeature();
+            const result = FeatureSchema.parse(data);
+
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should accept minimum boundary value of 1', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 1 };
+
+            expect(() => FeatureSchema.parse(data)).not.toThrow();
+
+            const result = FeatureSchema.parse(data);
+            expect(result.displayWeight).toBe(1);
+        });
+
+        it('should accept maximum boundary value of 100', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 100 };
+
+            expect(() => FeatureSchema.parse(data)).not.toThrow();
+
+            const result = FeatureSchema.parse(data);
+            expect(result.displayWeight).toBe(100);
+        });
+
+        it('should accept typical middle value of 50', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 50 };
+
+            expect(() => FeatureSchema.parse(data)).not.toThrow();
+
+            const result = FeatureSchema.parse(data);
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should reject value below minimum (0)', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 0 };
+
+            expect(() => FeatureSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject value above maximum (101)', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 101 };
+
+            expect(() => FeatureSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject non-integer values (1.5)', () => {
+            const data = { ...createMinimalFeature(), displayWeight: 1.5 };
+
+            expect(() => FeatureSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject negative values (-1)', () => {
+            const data = { ...createMinimalFeature(), displayWeight: -1 };
+
+            expect(() => FeatureSchema.parse(data)).toThrow(ZodError);
+        });
+    });
+
     describe('Type Inference', () => {
         it('should infer correct types from valid data', () => {
             const validData = createValidFeature();

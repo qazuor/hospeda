@@ -12,7 +12,8 @@ export const AdminInfoSchema = z.object({
         .boolean({
             message: 'zodError.common.adminInfo.favorite.required'
         })
-        .default(false)
+        .default(false),
+    passwordChangeRequired: z.boolean().optional()
 });
 export type AdminInfoType = z.infer<typeof AdminInfoSchema>;
 

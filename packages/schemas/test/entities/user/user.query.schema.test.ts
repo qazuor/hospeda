@@ -117,6 +117,7 @@ describe('User Query Schemas', () => {
             const minimalUser = {
                 id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' as any,
                 slug: 'john-doe',
+                email: 'john@example.com',
                 displayName: 'John Doe',
                 lifecycleState: 'ACTIVE' as any,
                 visibility: 'PUBLIC' as any,

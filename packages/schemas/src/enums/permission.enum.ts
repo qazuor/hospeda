@@ -196,6 +196,7 @@ export enum PermissionEnum {
     USER_IMPERSONATE = 'user.impersonate', // Allows impersonating another user.
     USER_CREATE = 'user.create', // Allows creating a new user.
     USER_UPDATE_ROLES = 'user.update.roles', // Allows updating user roles.
+    USER_UPDATE_ANY = 'user.update.any', // Allows updating any user's profile.
     USER_DELETE = 'user.delete', // Allows deleting a user.
     USER_BOOKMARK_MANAGE = 'user.bookmark.manage', // Allows managing user bookmarks.
     USER_VIEW_PROFILE = 'user.view.profile', // Allows viewing own user profile.

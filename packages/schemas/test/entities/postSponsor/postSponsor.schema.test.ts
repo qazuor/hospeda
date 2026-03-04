@@ -262,10 +262,10 @@ describe('PostSponsorSchema', () => {
             expect(typeof result.description).toBe('string');
 
             // Optional fields
-            if (result.logo !== undefined) {
+            if (result.logo) {
                 expect(typeof result.logo.url).toBe('string');
             }
-            if (result.contactInfo !== undefined) {
+            if (result.contactInfo) {
                 expect(typeof result.contactInfo).toBe('object');
             }
         });

@@ -73,7 +73,8 @@ export const createUserFixture = (overrides: Partial<UserType> = {}): UserType =
         // Admin info
         adminInfo: {
             favorite: false,
-            notes: 'Test user for development'
+            notes: 'Test user for development',
+            passwordChangeRequired: false
         },
 
         // Bookmarks

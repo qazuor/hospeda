@@ -229,6 +229,66 @@ describe('AttractionSchema', () => {
         });
     });
 
+    describe('displayWeight validation', () => {
+        it('should apply default value of 50 when displayWeight is not provided', () => {
+            const data = createMinimalAttraction();
+            const result = AttractionSchema.parse(data);
+
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should accept minimum boundary value of 1', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 1 };
+
+            expect(() => AttractionSchema.parse(data)).not.toThrow();
+
+            const result = AttractionSchema.parse(data);
+            expect(result.displayWeight).toBe(1);
+        });
+
+        it('should accept maximum boundary value of 100', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 100 };
+
+            expect(() => AttractionSchema.parse(data)).not.toThrow();
+
+            const result = AttractionSchema.parse(data);
+            expect(result.displayWeight).toBe(100);
+        });
+
+        it('should accept typical middle value of 50', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 50 };
+
+            expect(() => AttractionSchema.parse(data)).not.toThrow();
+
+            const result = AttractionSchema.parse(data);
+            expect(result.displayWeight).toBe(50);
+        });
+
+        it('should reject value below minimum (0)', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 0 };
+
+            expect(() => AttractionSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject value above maximum (101)', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 101 };
+
+            expect(() => AttractionSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject non-integer values (1.5)', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: 1.5 };
+
+            expect(() => AttractionSchema.parse(data)).toThrow(ZodError);
+        });
+
+        it('should reject negative values (-1)', () => {
+            const data = { ...createMinimalAttraction(), displayWeight: -1 };
+
+            expect(() => AttractionSchema.parse(data)).toThrow(ZodError);
+        });
+    });
+
     describe('Schema Composition', () => {
         it('should include all base field schemas', () => {
             const validData = createValidAttraction();
