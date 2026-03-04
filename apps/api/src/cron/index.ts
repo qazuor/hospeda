@@ -37,4 +37,4 @@ export { cronJobs, getCronJob, getEnabledCronJobs } from './registry';
 export { startCronScheduler } from './bootstrap';
 
 // Export routes
-export { default as cronRoutes } from './routes';
+export { cronRoutes } from './routes';

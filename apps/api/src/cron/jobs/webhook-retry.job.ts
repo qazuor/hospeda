@@ -16,7 +16,18 @@
  * @module cron/jobs/webhook-retry
  */
 
-import { billingWebhookDeadLetter, eq, getDb, isNull } from '@repo/db';
+import {
+    and,
+    billingWebhookDeadLetter,
+    billingWebhookEvents,
+    eq,
+    getDb,
+    isNull,
+    lt
+} from '@repo/db';
+import { getQZPayBilling } from '../../middlewares/billing.js';
+import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
+import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -31,11 +42,55 @@ const MAX_RETRY_ATTEMPTS = 5;
 const BATCH_SIZE = 50;
 
 /**
- * Re-process a webhook event from the dead letter queue
+ * Retry a MercadoPago payment.updated event from the dead letter queue.
  *
- * This function attempts to re-invoke the webhook handler logic for a failed event.
- * Currently, it simulates processing. In production, this should call the actual
- * webhook handler that processes MercadoPago events.
+ * Delegates to the shared processPaymentUpdated logic extracted from
+ * payment-handler.ts, avoiding duplication of business logic.
+ *
+ * @param payload - The stored event payload from the dead letter queue
+ * @returns Promise resolving to true if processing succeeded, false otherwise
+ */
+async function retryMercadoPagoPaymentUpdated(payload: unknown): Promise<boolean> {
+    const billing = getQZPayBilling();
+
+    if (!billing) {
+        apiLogger.warn('Billing not configured, skipping payment.updated retry');
+        return true;
+    }
+
+    const payloadObj =
+        payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null;
+    const eventData = payloadObj?.data;
+
+    if (!eventData || typeof eventData !== 'object') {
+        apiLogger.debug('No event data in payload, skipping payment.updated retry');
+        return true;
+    }
+
+    const data = eventData as Record<string, unknown>;
+
+    const result = await processPaymentUpdated({
+        data,
+        billing,
+        source: 'dead-letter-retry'
+    });
+
+    return result.success;
+}
+
+/**
+ * Re-process a webhook event from the dead letter queue.
+ *
+ * Routes the retry to the appropriate provider-specific handler based on
+ * `event.provider` and `event.type`. The payload is already trusted (sourced
+ * from the dead letter queue) so signature verification is skipped.
+ *
+ * Idempotency for MercadoPago is handled by QZPay at the `billingWebhookEvents`
+ * level. If the event was already processed, the handler returns true without
+ * re-processing business logic.
+ *
+ * Supported providers:
+ * - `mercadopago` — routes to per-type business logic
  *
  * @param event - Dead letter event to retry
  * @returns Promise resolving to true if processing succeeded, false otherwise
@@ -60,24 +115,72 @@ async function retryWebhookEvent(event: {
             'Retrying webhook event from dead letter queue'
         );
 
-        // TODO: Call actual webhook processing logic
-        // For MercadoPago webhooks, this would involve:
-        // 1. Reconstructing the webhook event from payload
-        // 2. Calling the appropriate handler from mercadopago.ts
-        // 3. Handling the result
+        if (event.provider !== 'mercadopago') {
+            apiLogger.warn(
+                { provider: event.provider, eventId: event.id },
+                'Unknown webhook provider in dead letter queue - marking as resolved'
+            );
+            return true;
+        }
 
-        // For now, we'll simulate successful processing
-        // This should be replaced with actual webhook handler invocation
-        apiLogger.info(
-            {
-                eventId: event.id,
-                providerEventId: event.providerEventId,
-                type: event.type
-            },
-            'Webhook event retry simulated (TODO: implement actual retry logic)'
-        );
+        // Check if the corresponding billingWebhookEvents entry already processed
+        const db = getDb();
+        const existingRows = await db
+            .select({ status: billingWebhookEvents.status })
+            .from(billingWebhookEvents)
+            .where(eq(billingWebhookEvents.providerEventId, event.providerEventId))
+            .limit(1);
 
-        return true;
+        const existing = existingRows[0];
+
+        if (existing?.status === 'processed') {
+            apiLogger.info(
+                { eventId: event.id, providerEventId: event.providerEventId },
+                'Webhook event already processed in billingWebhookEvents - resolving dead letter'
+            );
+            return true;
+        }
+
+        // Route to appropriate handler by event type
+        switch (event.type) {
+            case 'payment.updated': {
+                return await retryMercadoPagoPaymentUpdated(event.payload);
+            }
+
+            case 'chargebacks':
+            case 'payment.dispute': {
+                const disputePayload =
+                    event.payload && typeof event.payload === 'object'
+                        ? (event.payload as Record<string, unknown>)
+                        : null;
+                const disputeData = disputePayload?.data as Record<string, unknown> | undefined;
+
+                return await processDisputeEvent({
+                    eventData: disputeData,
+                    eventType: event.type,
+                    eventId: event.id
+                });
+            }
+
+            case 'payment.created':
+            case 'subscription_preapproval.updated': {
+                // These event types have no custom business logic beyond persistence.
+                // The event was already persisted when it first arrived. Treat as resolved.
+                apiLogger.info(
+                    { eventId: event.id, type: event.type },
+                    'No business logic to retry for event type - resolving dead letter'
+                );
+                return true;
+            }
+
+            default: {
+                apiLogger.warn(
+                    { eventId: event.id, type: event.type, provider: event.provider },
+                    'Unrecognized MercadoPago event type in dead letter queue - resolving'
+                );
+                return true;
+            }
+        }
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -195,7 +298,12 @@ export const webhookRetryJob: CronJobDefinition = {
             const unresolvedEvents = await db
                 .select()
                 .from(billingWebhookDeadLetter)
-                .where(isNull(billingWebhookDeadLetter.resolvedAt))
+                .where(
+                    and(
+                        isNull(billingWebhookDeadLetter.resolvedAt),
+                        lt(billingWebhookDeadLetter.attempts, MAX_RETRY_ATTEMPTS)
+                    )
+                )
                 .limit(BATCH_SIZE);
 
             if (unresolvedEvents.length === 0) {

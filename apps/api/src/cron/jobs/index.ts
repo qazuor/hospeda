@@ -19,3 +19,5 @@ export { webhookRetryJob } from './webhook-retry.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
 export { addonExpiryJob } from './addon-expiry.job.js';
 export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
+export { dunningJob } from './dunning.job.js';
+export { searchIndexRefreshJob } from './search-index-refresh.job.js';

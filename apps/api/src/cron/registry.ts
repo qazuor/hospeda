@@ -6,8 +6,10 @@
 
 import {
     addonExpiryJob,
+    dunningJob,
     exchangeRateFetchJob,
     notificationScheduleJob,
+    searchIndexRefreshJob,
     trialExpiryJob,
     webhookRetryJob
 } from './jobs/index.js';
@@ -22,7 +24,9 @@ export const cronJobs: CronJobDefinition[] = [
     webhookRetryJob,
     notificationScheduleJob,
     addonExpiryJob,
-    exchangeRateFetchJob
+    exchangeRateFetchJob,
+    dunningJob,
+    searchIndexRefreshJob
 ];
 
 /**

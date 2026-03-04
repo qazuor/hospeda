@@ -183,4 +183,4 @@ router.post('/:jobName', async (c) => {
     }
 });
 
-export default router;
+export { router as cronRoutes };

@@ -7,7 +7,9 @@
  * Features:
  * - Sends TRIAL_ENDING_REMINDER for trials ending in 3 days
  * - Sends TRIAL_ENDING_REMINDER for trials ending in 1 day
+ * - Sends RENEWAL_REMINDER for subscriptions renewing in 7 days
  * - Sends RENEWAL_REMINDER for subscriptions renewing in 3 days
+ * - Sends RENEWAL_REMINDER for subscriptions renewing in 1 day
  * - Processes failed notification retries from Redis queue
  * - Uses idempotency keys to prevent duplicate notifications
  * - Fire-and-forget pattern for notification sending
@@ -15,23 +17,61 @@
  * @module cron/jobs/notification-schedule
  */
 
+import { billingNotificationLog, eq, getDb } from '@repo/db';
 import { type NotificationPayload, NotificationType, RetryService } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { TrialService } from '../../services/trial.service.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { sendNotification } from '../../utils/notification-helper.js';
+import { getRedisClient } from '../../utils/redis.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * Set of sent notification idempotency keys to prevent duplicates within the same run
- * Format: `${type}:${customerId}:${YYYY-MM-DD}`
+ * Days before renewal when reminders should be sent.
+ * Sends at 7 days, 3 days, and 1 day before subscription renewal.
  */
-const sentNotifications = new Set<string>();
+const RENEWAL_REMINDER_DAYS: readonly number[] = [7, 3, 1] as const;
 
 /**
- * Generate idempotency key for a notification
- *
+ * In-memory fallback for idempotency keys when Redis is unavailable.
+ * Maps key to timestamp (ms) of when the notification was sent.
+ * Format: `${type}:${customerId}:${YYYY-MM-DD}` → timestamp
+ */
+const sentNotificationsFallback = new Map<string, number>();
+
+/**
+ * Reset the in-memory fallback. Intended for testing only.
+ */
+export function resetSentNotificationsFallback(): void {
+    sentNotificationsFallback.clear();
+}
+
+/** Redis key prefix for notification idempotency */
+const IDEMPOTENCY_KEY_PREFIX = 'notif:sent:';
+
+/** TTL for idempotency keys in Redis (25 hours to cover timezone edge cases) */
+const IDEMPOTENCY_TTL_SECONDS = 25 * 60 * 60;
+
+/** TTL for in-memory fallback entries (25 hours, same as Redis) */
+const FALLBACK_TTL_MS = 25 * 60 * 60 * 1000;
+
+/**
+ * Purge stale entries from the in-memory fallback that are older than 25h.
+ * This preserves idempotency between runs on the same day while preventing
+ * unbounded memory growth.
+ */
+function purgeStaleFallbackEntries(): void {
+    const now = Date.now();
+    for (const [key, timestamp] of sentNotificationsFallback) {
+        if (now - timestamp > FALLBACK_TTL_MS) {
+            sentNotificationsFallback.delete(key);
+        }
+    }
+}
+
+/**
+ * Generate idempotency key for a notification.
  * Ensures we don't send the same notification multiple times on the same day.
  *
  * @param type - Notification type
@@ -44,33 +84,58 @@ function generateIdempotencyKey(type: NotificationType, customerId: string): str
 }
 
 /**
- * Check if notification was already sent today
+ * Check if notification was already sent today.
+ * Uses Redis when available, falls back to in-memory Set.
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
  * @returns Whether notification was already sent
  */
-function wasNotificationSent(type: NotificationType, customerId: string): boolean {
+async function wasNotificationSent(type: NotificationType, customerId: string): Promise<boolean> {
     const key = generateIdempotencyKey(type, customerId);
-    return sentNotifications.has(key);
+
+    try {
+        const redis = await getRedisClient();
+        if (redis) {
+            const exists = await redis.exists(`${IDEMPOTENCY_KEY_PREFIX}${key}`);
+            return exists === 1;
+        }
+    } catch {
+        // Fall through to in-memory check
+    }
+
+    return sentNotificationsFallback.has(key);
 }
 
 /**
- * Mark notification as sent
+ * Mark notification as sent.
+ * Stores in Redis with TTL when available, otherwise in-memory Set.
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
  */
-function markNotificationSent(type: NotificationType, customerId: string): void {
+async function markNotificationSent(type: NotificationType, customerId: string): Promise<void> {
     const key = generateIdempotencyKey(type, customerId);
-    sentNotifications.add(key);
+
+    try {
+        const redis = await getRedisClient();
+        if (redis) {
+            await redis.set(`${IDEMPOTENCY_KEY_PREFIX}${key}`, '1', 'EX', IDEMPOTENCY_TTL_SECONDS);
+            return;
+        }
+    } catch {
+        // Fall through to in-memory storage
+    }
+
+    sentNotificationsFallback.set(key, Date.now());
 }
 
 /**
  * Notification schedule cron job definition
  *
  * Schedule: Daily at 8:00 UTC (5:00 AM Argentina time)
- * Purpose: Send scheduled notifications for trials and subscription renewals
+ * Purpose: Send scheduled notifications for trials and subscription renewals.
+ *          Renewal reminders are sent at 7, 3, and 1 day(s) before the renewal date.
  */
 export const notificationScheduleJob: CronJobDefinition = {
     name: 'notification-schedule',
@@ -90,8 +155,9 @@ export const notificationScheduleJob: CronJobDefinition = {
         let processed = 0;
         let errors = 0;
 
-        // Clear sent notifications set at start of each run
-        sentNotifications.clear();
+        // Purge stale entries (>25h) instead of clearing all.
+        // This preserves idempotency between runs on the same day when Redis is unavailable.
+        purgeStaleFallbackEntries();
 
         try {
             // Get billing instance
@@ -132,7 +198,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                     try {
                         // Check idempotency
                         if (
-                            wasNotificationSent(
+                            await wasNotificationSent(
                                 NotificationType.TRIAL_ENDING_REMINDER,
                                 trial.customerId
                             )
@@ -170,7 +236,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             });
                         });
 
-                        markNotificationSent(
+                        await markNotificationSent(
                             NotificationType.TRIAL_ENDING_REMINDER,
                             trial.customerId
                         );
@@ -211,7 +277,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                     try {
                         // Check idempotency
                         if (
-                            wasNotificationSent(
+                            await wasNotificationSent(
                                 NotificationType.TRIAL_ENDING_REMINDER,
                                 trial.customerId
                             )
@@ -249,7 +315,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             });
                         });
 
-                        markNotificationSent(
+                        await markNotificationSent(
                             NotificationType.TRIAL_ENDING_REMINDER,
                             trial.customerId
                         );
@@ -269,8 +335,10 @@ export const notificationScheduleJob: CronJobDefinition = {
                 }
             }
 
-            // 3. Find subscriptions renewing in 3 days
-            logger.info('Finding subscriptions renewing in 3 days');
+            // 3. Find subscriptions renewing soon (7, 3, and 1 day reminders)
+            logger.info('Finding subscriptions renewing soon', {
+                reminderDays: RENEWAL_REMINDER_DAYS
+            });
 
             let renewalsSent = 0;
 
@@ -282,15 +350,14 @@ export const notificationScheduleJob: CronJobDefinition = {
                     });
 
                     const now = new Date();
-                    const targetDate = new Date(now);
-                    targetDate.setDate(targetDate.getDate() + 3);
+                    const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
                     const renewingSoon = (activeSubscriptions?.data || []).filter((sub) => {
                         if (!sub.currentPeriodEnd) return false;
                         const endDate = new Date(sub.currentPeriodEnd);
                         const msRemaining = endDate.getTime() - now.getTime();
                         const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
-                        return daysRemaining === 3;
+                        return reminderDaysSet.has(daysRemaining);
                     });
 
                     logger.info('Dry run mode - would send renewal reminders', {
@@ -312,6 +379,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                     });
 
                     const now = new Date();
+                    const reminderDaysSet = new Set(RENEWAL_REMINDER_DAYS);
 
                     for (const subscription of activeSubscriptions?.data || []) {
                         if (!subscription.currentPeriodEnd) continue;
@@ -320,12 +388,12 @@ export const notificationScheduleJob: CronJobDefinition = {
                         const msRemaining = endDate.getTime() - now.getTime();
                         const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
 
-                        if (daysRemaining !== 3) continue;
+                        if (!reminderDaysSet.has(daysRemaining)) continue;
 
                         try {
                             // Check idempotency
                             if (
-                                wasNotificationSent(
+                                await wasNotificationSent(
                                     NotificationType.RENEWAL_REMINDER,
                                     subscription.customerId
                                 )
@@ -348,23 +416,47 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 continue;
                             }
 
-                            // Get plan name
+                            // Get plan name and price
                             let planName = 'Unknown Plan';
+                            let amount: number | undefined;
+                            const currency = 'ARS';
                             try {
                                 const plan = await billing.plans.get(subscription.planId);
                                 if (plan) {
                                     planName = plan.name;
+                                    // Find price matching subscription interval
+                                    const matchingPrice = plan.prices?.find(
+                                        (p: { billingInterval?: string; unitAmount?: number }) =>
+                                            p.billingInterval === subscription.interval
+                                    );
+                                    if (matchingPrice?.unitAmount) {
+                                        amount = matchingPrice.unitAmount;
+                                    }
                                 }
-                            } catch {
-                                // Use default plan name
+                                if (amount === undefined) {
+                                    logger.warn(
+                                        'Could not determine plan price for renewal reminder',
+                                        {
+                                            customerId: subscription.customerId,
+                                            planId: subscription.planId,
+                                            interval: subscription.interval
+                                        }
+                                    );
+                                }
+                            } catch (planError) {
+                                logger.error('Failed to fetch plan for renewal reminder', {
+                                    customerId: subscription.customerId,
+                                    planId: subscription.planId,
+                                    error:
+                                        planError instanceof Error
+                                            ? planError.message
+                                            : String(planError)
+                                });
+                                // amount stays undefined - will be omitted from notification
                             }
 
-                            // TODO: Get actual amount from subscription metadata or payment history
-                            // For now, use placeholder values (notification template will work without them)
-                            const amount = 0;
-                            const currency = 'ARS';
-
                             // Fire-and-forget notification
+                            // Only include amount/currency if price was successfully resolved
                             sendNotification({
                                 type: NotificationType.RENEWAL_REMINDER,
                                 recipientEmail: customerDetails.email,
@@ -372,9 +464,9 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 userId: customerDetails.userId,
                                 customerId: subscription.customerId,
                                 planName,
-                                amount,
-                                currency,
+                                ...(amount !== undefined ? { amount, currency } : {}),
                                 renewalDate: endDate.toISOString(),
+                                daysRemaining,
                                 idempotencyKey: generateIdempotencyKey(
                                     NotificationType.RENEWAL_REMINDER,
                                     subscription.customerId
@@ -389,7 +481,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                                 });
                             });
 
-                            markNotificationSent(
+                            await markNotificationSent(
                                 NotificationType.RENEWAL_REMINDER,
                                 subscription.customerId
                             );
@@ -398,7 +490,7 @@ export const notificationScheduleJob: CronJobDefinition = {
 
                             logger.debug('Sent renewal reminder', {
                                 customerId: subscription.customerId,
-                                daysRemaining: 3
+                                daysRemaining
                             });
                         } catch (error) {
                             errors++;
@@ -434,9 +526,22 @@ export const notificationScheduleJob: CronJobDefinition = {
             } else {
                 try {
                     // First try Redis-based retry (if Redis is configured)
-                    // TODO: When Redis is configured, pass actual Redis client here
-                    const redisClient = null; // Replace with actual Redis client when available
-                    const retryService = new RetryService(redisClient);
+                    const redisClient = (await getRedisClient()) ?? null;
+                    const retryService = new RetryService(redisClient, {
+                        onPermanentFailure: async (notification) => {
+                            const db = getDb();
+                            await db
+                                .update(billingNotificationLog)
+                                .set({
+                                    status: 'permanently_failed',
+                                    errorMessage: notification.lastError
+                                })
+                                .where(eq(billingNotificationLog.id, notification.id));
+                            logger.warn('Notification marked as permanently failed in database', {
+                                notificationId: notification.id
+                            });
+                        }
+                    });
 
                     if (redisClient) {
                         // Process Redis-based retries

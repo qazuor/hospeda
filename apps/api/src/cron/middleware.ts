@@ -9,17 +9,15 @@ import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
 
 /**
- * Middleware to authenticate cron job requests
- * Validates requests using a shared secret
+ * Middleware to authenticate cron job requests.
+ * Validates requests using a shared secret. Always requires CRON_SECRET.
  *
  * Authentication methods:
  * - Authorization: Bearer <secret>
  * - X-Cron-Secret: <secret>
  *
  * Environment Variables:
- * - NODE_ENV: Current environment (development, production, test)
- * - CRON_AUTH_DISABLED: Set to 'true' to disable auth in development (default: false)
- * - CRON_SECRET: Shared secret for authenticating cron requests
+ * - CRON_SECRET: Shared secret for authenticating cron requests (required in all environments)
  *
  * @example
  * ```typescript
@@ -29,26 +27,12 @@ import type { AppBindings } from '../types';
  * ```
  */
 export const cronAuthMiddleware = async (c: Context<AppBindings>, next: Next): Promise<void> => {
-    // In development, allow bypassing auth if explicitly disabled
-    if (process.env.NODE_ENV !== 'production' && process.env.CRON_AUTH_DISABLED === 'true') {
-        await next();
-        return;
-    }
-
-    // Check if CRON_SECRET is configured
+    // CRON_SECRET is required in all environments
     const cronSecret = process.env.CRON_SECRET;
     if (!cronSecret) {
-        // In production, missing secret is a configuration error
-        if (process.env.NODE_ENV === 'production') {
-            throw new HTTPException(503, {
-                message: 'Cron system not configured - missing CRON_SECRET'
-            });
-        }
-
-        // In development/test, log warning but allow
-        c.get('logger')?.warn('CRON_SECRET not configured - cron endpoints are unprotected');
-        await next();
-        return;
+        throw new HTTPException(503, {
+            message: 'Cron system not configured - CRON_SECRET environment variable is required'
+        });
     }
 
     // Check Authorization header (Bearer token)
