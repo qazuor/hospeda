@@ -92,7 +92,6 @@ pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
 # Build
 pnpm build            # Build all packages
 pnpm build:api        # Build API for production
-pnpm deploy:api       # Build + deploy API to Fly.io
 ```
 
 ### Coding Standards
@@ -119,7 +118,11 @@ pnpm deploy:api       # Build + deploy API to Fly.io
 
 ### Testing Standards
 
-- **TDD approach**: Write tests first, then implement
+- **Test-Informed Development**: Tests are mandatory, timing depends on context:
+  - **Pure logic** (services, utils, schemas, validators): Write tests first when practical
+  - **Integration code** (routes, components, wiring): Write tests alongside implementation
+  - **Bug fixes**: ALWAYS write a regression test reproducing the bug before fixing
+- **No tests = not done**: A task is NEVER complete without tests passing
 - **AAA pattern**: Arrange, Act, Assert
 - **Minimum 90% coverage** target
 - **Run tests before committing**
@@ -200,6 +203,86 @@ HOSPEDA_API_URL=http://localhost:3001
 HOSPEDA_SITE_URL=http://localhost:4321
 ```
 
+## Dependency Policy (Quick Reference)
+
+| Need | Use | NEVER |
+|------|-----|-------|
+| Icons | `@repo/icons` | phosphor-react direct, inline SVG |
+| Validation | Zod via `@repo/schemas` | yup, joi, class-validator |
+| UI (Admin) | Shadcn UI | MUI, Ant Design, Chakra |
+| UI (Web) | Astro components, React islands | Full React pages |
+| Forms | React Hook Form + Zod (admin), native HTML (web) | Formik |
+| Tables | TanStack Table | ag-grid |
+| Data fetching | TanStack Query (admin) | SWR, axios |
+| Styling | Tailwind CSS v4 | CSS modules, styled-components |
+| Testing | Vitest + testing-library | Jest, Mocha |
+| Lint/Format | Biome | ESLint, Prettier |
+| Logging | `@repo/logger` | console.log in apps |
+| i18n | `@repo/i18n` | i18next direct |
+| Database | Drizzle via `@repo/db` | raw SQL, Prisma |
+| Auth | Better Auth via `@repo/auth-ui` | Clerk, custom auth |
+| Money | integer (centavos) | numeric(), float |
+| HTTP | native fetch | axios |
+
+Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.md)
+
+## Common Gotchas
+
+- **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
+- **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
+- **Biome `useExhaustiveDependencies`**: Pass whole objects (e.g. `[config]`) not individual properties
+- **Billing DB schema**: `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
+- **Billing DB schema**: `billing_customers` uses `segment` column, not `category`
+- **Pagination**: Admin routes use `page`+`pageSize` (NOT `limit`). `createAdminListRoute` rejects unknown params
+- **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix
+- **Auth**: NEVER check roles directly.. always use `PermissionEnum`
+
+## Single Source of Truth
+
+Every piece of data, logic, or configuration MUST have exactly ONE canonical location. Never duplicate definitions.
+
+| Aspect | Canonical Source | Never Duplicate In |
+|--------|-----------------|-------------------|
+| Types & validation | `@repo/schemas` (Zod schemas) | API routes, frontend, services |
+| Business logic | `@repo/service-core` | API routes, frontend |
+| Auth logic | `@repo/auth-ui` + Better Auth | Custom auth code in apps |
+| Styling tokens | `@repo/tailwind-config` | Hardcoded values in components |
+| i18n strings | `@repo/i18n` locale files | Hardcoded strings in components |
+| Icons | `@repo/icons` | Inline SVGs, direct phosphor imports |
+| DB access | `@repo/db` models | Raw SQL in services or routes |
+| Env config | `@repo/config` | Per-app env parsing |
+| Logging | `@repo/logger` | `console.log` in apps |
+
+When introducing a new pattern, utility, or constant.. first check if it already exists in a shared package. If it does, use it. If it should be shared, add it to the right package instead of duplicating locally.
+
+## Spec & Task Management
+
+All non-trivial work MUST go through the formal spec and task system. This ensures continuity across sessions, prevents duplicate work, and keeps progress trackable.
+
+### Workflow
+
+1. **New feature/change** → Use `/spec` to generate a formal specification in `.claude/specs/`
+2. **Spec approved** → Use `/task-master:task-from-spec` to generate tasks
+3. **Working on tasks** → Use `/task-master:next-task` to pick the next available task
+4. **Task completed** → Quality gate (`/task-master:quality-gate`) before marking done
+5. **Check progress** → Use `/task-master:task-status` or `/task-master:tasks`
+
+### State Management Rules
+
+- **ALWAYS** update task status when starting work (`pending` → `in_progress`)
+- **ALWAYS** run quality gate before marking a task `completed`
+- **ALWAYS** update spec status when all its tasks are done (`in-progress` → `completed`)
+- **NEVER** leave a task as `in_progress` at the end of a session without documenting progress in `/diary`
+- **NEVER** start working on code without first checking if there's a relevant spec/task
+- When a spec is first worked on, update its status from `draft` → `in-progress`
+- If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications
+
+### Spec Files Location
+
+- Specifications: `.claude/specs/SPEC-NNN-slug/spec.md`
+- Task state: `.claude/tasks/SPEC-NNN-slug/state.json`
+- Progress: `.claude/tasks/SPEC-NNN-slug/progress.md`
+
 ## Important Notes
 
 - Default locale is Spanish (`es`) for the Argentina market. Supported locales: es, en, pt
@@ -215,10 +298,25 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 - [Admin App](apps/admin/CLAUDE.md) - TanStack Start dashboard
 - [API App](apps/api/CLAUDE.md) - Hono REST API
 - [Web App](apps/web/CLAUDE.md) - Astro frontend
+- [Web App Docs](apps/web/docs/README.md) - Web app guides and deployment
 - [Database](packages/db/CLAUDE.md) - Drizzle ORM
 - [Schemas](packages/schemas/CLAUDE.md) - Zod validation
 - [Service Core](packages/service-core/CLAUDE.md) - Business logic
 - [i18n](packages/i18n/CLAUDE.md) - Internationalization
+- [i18n Docs](packages/i18n/docs/README.md) - i18n guides and API reference
 - [Icons](packages/icons/CLAUDE.md) - Icon components
 - [Logger](packages/logger/CLAUDE.md) - Logging
+- [Billing](packages/billing/CLAUDE.md) - Billing/monetization
+- [Billing Docs](packages/billing/docs/README.md) - Billing API and integration guides
+- [Auth UI](packages/auth-ui/CLAUDE.md) - Auth components
+- [Auth UI Docs](packages/auth-ui/docs/README.md) - Auth UI guides and quick start
+- [Notifications Docs](packages/notifications/docs/README.md) - Notification system guides
+- [Tailwind Config](packages/tailwind-config/CLAUDE.md) - Design tokens
 - [Seed](packages/seed/CLAUDE.md) - Database seeding
+
+## Project Documentation
+
+- [Architecture Decisions (ADRs)](docs/decisions/README.md) - Why we chose each technology
+- [Guides](docs/guides/README.md) - Step-by-step development guides
+- [Dependency Policy](docs/guides/dependency-policy.md) - What to use for what
+- [Full Documentation Index](docs/index.md)

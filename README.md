@@ -1,192 +1,139 @@
 # Hospeda - Modern Tourist Accommodation Platform
 
-[![Documentation Validation](https://github.com/qazuor/hospeda/actions/workflows/validate-docs.yml/badge.svg)](https://github.com/qazuor/hospeda/actions/workflows/validate-docs.yml)
+Hospeda is a web platform for discovering and managing tourist accommodations in Concepcion del Uruguay and the Litoral region of Argentina. Built as a TypeScript monorepo with Astro, React, Hono, Drizzle ORM, and PostgreSQL.
 
-Hospeda is a comprehensive web platform for discovering and managing tourist accommodations in Concepción del Uruguay and the Litoral region of Argentina. Built with modern technologies in a monorepo architecture.
+## Tech Stack
 
-## Project Overview
-
-This project is organized as a monorepo using TurboRepo for optimized builds and dependency management. The platform includes both frontend applications and backend services, all sharing common packages for types, utilities, database access, and more.
-
-### Key Features
-
-- Discover accommodations, destinations, events, and more
-- Browse comprehensive destination information
-- Read and write reviews for accommodations and destinations
-- View upcoming events in the region
-- Admin interfaces for managing all platform content
-- Multi-user roles and permissions system
-- Responsive design for all devices
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| Web App | [Astro 5](https://astro.build) + React islands | Minimal JS, SSR, SEO ([ADR-001](docs/decisions/ADR-001-astro-over-nextjs.md)) |
+| Admin | [TanStack Start](https://tanstack.com/start) | Type-safe routing, file-based, full React |
+| API | [Hono](https://hono.dev) | TypeScript-first, edge-ready, Zod integration ([ADR-003](docs/decisions/ADR-003-hono-over-express.md)) |
+| Database | PostgreSQL + [Drizzle ORM](https://orm.drizzle.team) | SQL-like API, tree-shakeable ([ADR-004](docs/decisions/ADR-004-drizzle-over-prisma.md)) |
+| Auth | [Better Auth](https://www.better-auth.com) | Self-hosted, role-based ([ADR-002](docs/decisions/ADR-002-better-auth-over-clerk.md)) |
+| Payments | [MercadoPago](https://www.mercadopago.com.ar) | Native ARS, dominant in Argentina ([ADR-005](docs/decisions/ADR-005-mercadopago-payments.md)) |
+| Styling | Tailwind CSS v4 | Utility-first, dark mode, design tokens |
+| Testing | Vitest | Fast, ESM-native, monorepo-compatible |
+| Linting | Biome | Single tool for lint + format |
+| Build | TurboRepo + pnpm | Fast builds, workspace isolation |
+| Deployment | Vercel | Serverless, preview environments ([ADR-007](docs/decisions/ADR-007-vercel-deployment.md)) |
 
 ## Repository Structure
 
 ```
 hospeda/
-├── apps/                  # Applications
-│   ├── api/               # Backend API service
-│   ├── web/               # Frontend web application
-│   └── admin/             # Admin dashboard
-├── packages/              # Shared packages
-│   ├── config/            # Configuration utilities
-│   ├── db/                # Database access layer
-│   ├── logger/            # Centralized logging
-│   ├── schemas/           # Validation schemas
-│   ├── types/             # TypeScript type definitions
-│   ├── utils/             # Shared utility functions
-│   └── typescript-config/ # TypeScript configurations
-└── turbo.json             # TurboRepo configuration
+├── apps/
+│   ├── api/               # Hono REST API (port 3001)
+│   ├── web/               # Astro public website (port 4321)
+│   └── admin/             # TanStack Start admin dashboard (port 3000)
+├── packages/
+│   ├── auth-ui/           # Shared auth UI components
+│   ├── billing/           # Billing/monetization (MercadoPago)
+│   ├── biome-config/      # Shared Biome configuration
+│   ├── config/            # Shared configuration
+│   ├── db/                # Drizzle ORM models and schemas
+│   ├── i18n/              # Internationalization (es/en/pt)
+│   ├── icons/             # Icon components (Phosphor wrappers)
+│   ├── logger/            # Structured logging
+│   ├── notifications/     # Notification system
+│   ├── schemas/           # Zod validation schemas (source of truth)
+│   ├── seed/              # Database seeding
+│   ├── service-core/      # Business logic (BaseCrudService)
+│   ├── tailwind-config/   # Shared Tailwind configuration
+│   ├── typescript-config/  # Shared TypeScript config
+│   └── utils/             # Shared utilities
+├── docs/                  # Project documentation
+└── scripts/               # Build and deployment scripts
 ```
 
-## Technologies
-
-- **Frontend**: Astro, React, TanStack Router, Tailwind CSS
-- **Backend**: Node.js, Hono
-- **Database**: PostgreSQL with Drizzle ORM
-- **Validation**: Zod
-- **Building/Bundling**: Turbo, Vite
-- **Package Management**: PNPM
-
-## Packages
-
-### @repo/api
-
-The backend API server that provides endpoints for accessing and managing all platform data.
-
-- [View API Documentation](./apps/api/README.md)
-
-### @repo/db
-
-Database layer using Drizzle ORM and PostgreSQL. Provides models, types, and services for data access.
-
-Key features:
-
-- Strongly typed database schema
-- SQL migrations
-- Repository pattern with model and service layers
-- Soft delete functionality
-- Comprehensive logging
-- Audit fields tracking
-
-- [View DB Documentation](./packages/db/README.md)
-
-### @repo/logger
-
-A centralized logging package that provides consistent logs across all applications and services.
-
-- [View Logger Documentation](./packages/logger/README.md)
-
-### @repo/schemas
-
-Zod validation schemas for all entities and data structures in the platform.
-
-- [View Schemas Documentation](./packages/schemas/README.md)
-
-### @repo/types
-
-TypeScript type definitions for all entities, providing type safety across the entire platform.
-
-- [View Types Documentation](./packages/types/README.md)
-
-### @repo/utils
-
-Shared utility functions for common tasks like string manipulation, date formatting, array operations, and more.
-
-Key utilities:
-
-- String formatting and manipulation
-- Date parsing and formatting
-- Array and object operations
-- Validation helpers
-- Currency formatting
-- Type guards and assertions
-
-- [View Utils Documentation](./packages/utils/README.md)
-
-## Getting Started
+## Quick Start
 
 ### Prerequisites
 
-- Node.js 18+
-- PNPM 8.15.6+
+- Node.js >= 18
+- pnpm 9.x
 - PostgreSQL 15+
+- Docker (for local DB)
 
-### Installation
+### Setup
 
 ```bash
-# Clone the repository
 git clone https://github.com/qazuor/hospeda.git
 cd hospeda
-
-# Install dependencies
 pnpm install
-
-# Set up environment variables
-cp .env.example .env
-# Edit .env with your configuration
-
-# Set up database
-pnpm db:setup
-
-# Start development server
-pnpm dev
+cp .env.example .env    # Edit with your configuration
+pnpm db:start           # Start PostgreSQL + Redis (Docker)
+pnpm db:migrate         # Apply migrations
+pnpm db:seed            # Seed database
+pnpm dev                # Start all apps
 ```
 
-### Development Workflow
+### Key Commands
 
-```bash
-# Run all packages and apps in development mode
-pnpm dev
+| Command | Description |
+|---------|-------------|
+| `pnpm dev` | Start all apps in development |
+| `pnpm build` | Build all packages |
+| `pnpm test` | Run all tests |
+| `pnpm lint` | Biome linting |
+| `pnpm format` | Biome formatting |
+| `pnpm typecheck` | TypeScript validation |
+| `pnpm db:fresh` | Reset + migrate + seed database |
+| `pnpm db:studio` | Open Drizzle Studio |
 
-# Run a specific app or package
-pnpm dev --filter=api
-pnpm dev --filter=web
+## API Architecture
 
-# Build all packages and apps
-pnpm build
+Three-tier route system:
 
-# Run tests
-pnpm test
+| Tier | Pattern | Auth | Consumer |
+|------|---------|------|----------|
+| Public | `/api/v1/public/*` | None | Web app |
+| Protected | `/api/v1/protected/*` | Session | Web app (logged in) |
+| Admin | `/api/v1/admin/*` | Admin + permissions | Admin panel |
 
-# Lint code
-pnpm lint
+## Documentation
 
-# Format code
-pnpm format
+### Getting Started
 
-# Check types
-pnpm check-types
-```
+- [Prerequisites](docs/getting-started/prerequisites.md)
+- [Installation](docs/getting-started/installation.md)
+- [Development Environment](docs/getting-started/development-environment.md)
+- [Common Tasks](docs/getting-started/common-tasks.md)
 
-## Available Scripts
+### Architecture
 
-- `pnpm build`: Build all packages and applications
-- `pnpm dev`: Start the development environment
-- `pnpm lint`: Run linters across the codebase
-- `pnpm format`: Format code using Biome
-- `pnpm check`: Run Biome checks and auto-fix
-- `pnpm clean`: Clean all build artifacts
-- `pnpm check-types`: Verify TypeScript types
-- `pnpm test`: Run all tests
+- [Overview](docs/architecture/overview.md)
+- [Monorepo Structure](docs/architecture/monorepo-structure.md)
+- [Patterns](docs/architecture/patterns.md)
+- [Architecture Decisions (ADRs)](docs/decisions/README.md)
 
-## Database Management
+### Guides
 
-The database layer is managed through Drizzle ORM with the following commands:
+- [Adding New Entity](docs/guides/adding-new-entity.md)
+- [Adding Web Pages](docs/guides/adding-web-pages.md)
+- [Adding Admin Pages](docs/guides/adding-admin-pages.md)
+- [Adding API Routes](docs/guides/adding-api-routes.md)
+- [Authentication](docs/guides/authentication.md)
+- [Dependency Policy](docs/guides/dependency-policy.md)
+- [Branding and Theming](docs/guides/branding-and-theming.md)
+- [All Guides](docs/guides/README.md)
 
-- `pnpm db:migrate`: Apply pending migrations
-- `pnpm db:generate`: Generate new migration files
-- `pnpm db:studio`: Open Drizzle Studio for database visualization
-- `pnpm db:regenerate`: Completely recreate the database and apply all migrations
-- `pnpm db:seed`: Seed the database with initial data
+### Operations
+
+- [Deployment](docs/deployment/README.md)
+- [Security](docs/security/README.md)
+- [Monitoring](docs/monitoring/README.md)
+- [Runbooks](docs/runbooks/README.md)
+- [Billing](docs/billing/README.md)
+
+### Testing
+
+- [Testing Strategy](docs/testing/README.md)
+- [Full Documentation Index](docs/index.md)
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add some amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-Please make sure to follow our coding standards and run tests before submitting a PR.
+See [Contributing Guide](docs/contributing/README.md) for code standards, git workflow, and PR process.
 
 ## License
 
