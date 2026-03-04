@@ -60,8 +60,8 @@ vi.mock('@/lib/sections', () => ({
 }));
 
 // Mock header nav items
-vi.mock('@/config/sections', () => ({
-    headerNavItems: [
+vi.mock('@/config/sections', () => {
+    const items = [
         {
             id: 'dashboard',
             labelKey: 'admin-menu.dashboard',
@@ -86,8 +86,12 @@ vi.mock('@/config/sections', () => ({
             routes: ['/analytics'],
             defaultRoute: '/analytics/usage'
         }
-    ]
-}));
+    ];
+    return {
+        headerNavItems: items,
+        getHeaderNavItems: () => items
+    };
+});
 
 // Mock icons - must include all icons used by Header and its children
 vi.mock('@repo/icons', () => ({
@@ -105,7 +109,7 @@ vi.mock('@repo/icons', () => ({
 
 // Mock Clerk header
 vi.mock('@/integrations/clerk/header-user', () => ({
-    default: () => <div data-testid="clerk-header">Clerk</div>
+    HeaderUser: () => <div data-testid="clerk-header">Clerk</div>
 }));
 
 // Import after mocks

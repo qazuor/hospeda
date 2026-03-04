@@ -13,12 +13,13 @@
 
 import {
     filterByPermissions,
+    filterSectionsByPermissions,
     findActiveItem,
     getAllHrefs,
     isGroupActive,
     sidebar
 } from '@/lib/sections/sidebar-helpers';
-import type { SidebarItem } from '@/lib/sections/types';
+import type { SectionConfig, SidebarItem } from '@/lib/sections/types';
 import { describe, expect, it } from 'vitest';
 
 describe('sidebar-helpers', () => {
@@ -125,6 +126,84 @@ describe('sidebar-helpers', () => {
             const config = sidebar.config('Menu', [], 'nav.menu');
 
             expect(config.titleKey).toBe('nav.menu');
+        });
+    });
+
+    describe('filterSectionsByPermissions', () => {
+        const sectionConfigs: SectionConfig[] = [
+            {
+                id: 'dashboard',
+                label: 'Dashboard',
+                routes: ['/dashboard'],
+                defaultRoute: '/dashboard',
+                sidebar: { title: 'Dashboard', items: [] },
+                permissions: []
+            },
+            {
+                id: 'content',
+                label: 'Content',
+                routes: ['/content'],
+                defaultRoute: '/content',
+                sidebar: { title: 'Content', items: [] },
+                permissions: ['content:view', 'post:view']
+            },
+            {
+                id: 'admin',
+                label: 'Admin',
+                routes: ['/admin'],
+                defaultRoute: '/admin',
+                sidebar: { title: 'Admin', items: [] },
+                permissions: ['admin:manage']
+            },
+            {
+                id: 'no-perms',
+                label: 'No Perms',
+                routes: ['/no-perms'],
+                defaultRoute: '/no-perms',
+                sidebar: { title: 'No Perms', items: [] }
+            }
+        ];
+
+        it('should return all sections if userPermissions is undefined', () => {
+            const result = filterSectionsByPermissions({
+                sectionConfigs,
+                userPermissions: undefined
+            });
+            expect(result).toHaveLength(4);
+        });
+
+        it('should show sections with empty permissions to all users', () => {
+            const result = filterSectionsByPermissions({
+                sectionConfigs,
+                userPermissions: []
+            });
+            const ids = result.map((s) => s.id);
+            expect(ids).toContain('dashboard');
+            expect(ids).toContain('no-perms');
+        });
+
+        it('should show a section when user has any of its permissions (OR logic)', () => {
+            const result = filterSectionsByPermissions({
+                sectionConfigs,
+                userPermissions: ['post:view']
+            });
+            expect(result.map((s) => s.id)).toContain('content');
+        });
+
+        it('should hide a section when user has none of its permissions', () => {
+            const result = filterSectionsByPermissions({
+                sectionConfigs,
+                userPermissions: ['content:view']
+            });
+            expect(result.map((s) => s.id)).not.toContain('admin');
+        });
+
+        it('should handle sections without permissions property', () => {
+            const result = filterSectionsByPermissions({
+                sectionConfigs,
+                userPermissions: []
+            });
+            expect(result.map((s) => s.id)).toContain('no-perms');
         });
     });
 

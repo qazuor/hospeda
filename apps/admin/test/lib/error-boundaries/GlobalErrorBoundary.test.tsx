@@ -49,10 +49,10 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        expect(screen.getByText('Oops! Something went wrong')).toBeInTheDocument();
-        expect(screen.getByText('Try Again')).toBeInTheDocument();
-        expect(screen.getByText('Reload Page')).toBeInTheDocument();
-        expect(screen.getByText('Go to Dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Error de la aplicación')).toBeInTheDocument();
+        expect(screen.getByText('Intentar de nuevo')).toBeInTheDocument();
+        expect(screen.getByText('Recargar página')).toBeInTheDocument();
+        expect(screen.getByText('Volver al panel')).toBeInTheDocument();
     });
 
     it('should display error details in development mode', () => {
@@ -66,7 +66,7 @@ describe('GlobalErrorBoundary', () => {
         );
 
         // Click to expand details
-        const details = screen.getByText('Error Details (Development Only)');
+        const details = screen.getByText('Detalles del error (solo desarrollo)');
         expect(details).toBeInTheDocument();
 
         process.env.NODE_ENV = originalEnv;
@@ -96,10 +96,10 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        expect(screen.getByText('Oops! Something went wrong')).toBeInTheDocument();
+        expect(screen.getByText('Error de la aplicación')).toBeInTheDocument();
 
         // Click Try Again
-        fireEvent.click(screen.getByText('Try Again'));
+        fireEvent.click(screen.getByText('Intentar de nuevo'));
 
         // Now render without error
         rerender(
@@ -125,7 +125,7 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        fireEvent.click(screen.getByText('Reload Page'));
+        fireEvent.click(screen.getByText('Recargar página'));
         expect(reloadMock).toHaveBeenCalled();
     });
 
@@ -138,7 +138,7 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        fireEvent.click(screen.getByText('Go to Dashboard'));
+        fireEvent.click(screen.getByText('Volver al panel'));
         // The href should have been set to '/'
         expect(window.location.href).toBe('/');
 

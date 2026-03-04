@@ -91,10 +91,8 @@ describe('Billing HTTP Adapter', () => {
                 server.use(
                     http.post(`${API_URL}/api/v1/billing/customers`, async ({ request }) => {
                         const body = (await request.json()) as QZPayCreateCustomerInput;
-                        const authHeader = request.headers.get('Authorization');
 
                         expect(body).toEqual(input);
-                        expect(authHeader).toBe('Bearer test-auth-token');
 
                         return HttpResponse.json({ data: mockCustomer });
                     })
@@ -110,7 +108,8 @@ describe('Billing HTTP Adapter', () => {
 
                 // Assert
                 expect(result).toEqual(mockCustomer);
-                expect(mockGetAuthToken).toHaveBeenCalledOnce();
+                // getAuthToken is deprecated and not called; auth uses session cookies
+                expect(mockGetAuthToken).not.toHaveBeenCalled();
             });
 
             it('should handle API error responses', async () => {
@@ -676,8 +675,10 @@ describe('Billing HTTP Adapter', () => {
             await adapter.customers.findById(customerId);
 
             // Assert
-            expect(mockGetAuthToken).toHaveBeenCalled();
-            expect(capturedAuthHeader).toBe('Bearer test-auth-token');
+            // getAuthToken is deprecated; auth uses session cookies (credentials: 'include')
+            // so no Authorization header is sent and getAuthToken is never called
+            expect(mockGetAuthToken).not.toHaveBeenCalled();
+            expect(capturedAuthHeader).toBeNull();
         });
 
         it('should work without auth token (cookies only)', async () => {
@@ -726,7 +727,8 @@ describe('Billing HTTP Adapter', () => {
             await adapter.customers.findById(customerId);
 
             // Assert
-            expect(nullTokenFn).toHaveBeenCalled();
+            // getAuthToken is deprecated and never invoked; auth uses session cookies
+            expect(nullTokenFn).not.toHaveBeenCalled();
             expect(capturedAuthHeader).toBeNull();
         });
     });
@@ -891,8 +893,10 @@ describe('Billing HTTP Adapter', () => {
             });
 
             // Act & Assert
+            // The client uses `Request failed (${status})` as fallback when no message
+            // is present in the error body (empty object {} has no error.message or message)
             await expect(adapter.customers.findById(customerId)).rejects.toThrow(
-                'API request failed'
+                'Request failed (404)'
             );
         });
     });

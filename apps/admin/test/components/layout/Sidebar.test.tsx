@@ -2,7 +2,7 @@
  * Tests for Sidebar Component
  *
  * Tests the contextual sidebar navigation (Level 2):
- * 1. Does not render when not contextual
+ * 1. Does not render when no config available
  * 2. Renders items from config
  * 3. Filters items by permissions
  * 4. Handles mobile open/close
@@ -31,7 +31,8 @@ vi.mock('@tanstack/react-router', () => ({
             {children}
         </a>
     ),
-    useLocation: () => ({ pathname: '/dashboard' })
+    useLocation: () => ({ pathname: '/dashboard' }),
+    useParams: () => ({})
 }));
 
 // Mock translations
@@ -41,20 +42,40 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 
-// Sidebar context mock state
-let mockConfig: SidebarConfig | null = null;
-let mockIsContextual = false;
+// Controllable sidebar config for useCurrentSidebarConfig
+let mockSidebarConfig: SidebarConfig | undefined = undefined;
+
+// Sidebar context mock state (only mobile/collapse state used by Sidebar now)
 let mockIsMobileOpen = false;
 const mockCloseMobile = vi.fn();
 
 vi.mock('@/contexts/sidebar-context', () => ({
     useSidebarContext: () => ({
-        config: mockConfig,
-        isContextual: mockIsContextual,
         isMobileOpen: mockIsMobileOpen,
         closeMobile: mockCloseMobile,
         isCollapsed: false
     })
+}));
+
+// Mock useCurrentSidebarConfig from sections
+vi.mock('@/lib/sections', () => ({
+    useCurrentSidebarConfig: () => mockSidebarConfig,
+    isGroupActive: () => false,
+    findActiveItem: () => undefined,
+    filterByPermissions: (items: unknown[], permissions?: string[]) => {
+        if (!permissions || permissions.length === 0) {
+            // Filter out items that require permissions when none provided
+            return (items as Array<{ permissions?: string[] }>).filter(
+                (item) => !item.permissions || item.permissions.length === 0
+            );
+        }
+        return (items as Array<{ permissions?: string[] }>).filter(
+            (item) =>
+                !item.permissions ||
+                item.permissions.length === 0 ||
+                item.permissions.some((p: string) => permissions.includes(p))
+        );
+    }
 }));
 
 // Mock icons - must include all icons used by Sidebar and its children
@@ -70,33 +91,21 @@ import { Sidebar } from '@/components/layout/sidebar/Sidebar';
 describe('Sidebar', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockConfig = null;
-        mockIsContextual = false;
+        mockSidebarConfig = undefined;
         mockIsMobileOpen = false;
     });
 
     describe('visibility', () => {
-        it('should not render when isContextual is false', () => {
-            mockIsContextual = false;
-            mockConfig = { title: 'Test', items: [] };
+        it('should not render when config is undefined (no route match)', () => {
+            mockSidebarConfig = undefined;
 
             const { container } = render(<Sidebar />);
 
             expect(container.firstChild).toBeNull();
         });
 
-        it('should not render when config is null', () => {
-            mockIsContextual = true;
-            mockConfig = null;
-
-            const { container } = render(<Sidebar />);
-
-            expect(container.firstChild).toBeNull();
-        });
-
-        it('should render when isContextual is true and config exists', () => {
-            mockIsContextual = true;
-            mockConfig = { title: 'Test Sidebar', items: [] };
+        it('should render when config exists for current route', () => {
+            mockSidebarConfig = { title: 'Test Sidebar', items: [] };
 
             render(<Sidebar />);
 
@@ -108,8 +117,7 @@ describe('Sidebar', () => {
 
     describe('title rendering', () => {
         it('should render sidebar title', () => {
-            mockIsContextual = true;
-            mockConfig = { title: 'Dashboard', items: [] };
+            mockSidebarConfig = { title: 'Dashboard', items: [] };
 
             render(<Sidebar />);
 
@@ -117,8 +125,7 @@ describe('Sidebar', () => {
         });
 
         it('should use titleKey if provided', () => {
-            mockIsContextual = true;
-            mockConfig = { title: 'Fallback', titleKey: 'admin-menu.dashboard', items: [] };
+            mockSidebarConfig = { title: 'Fallback', titleKey: 'admin-menu.dashboard', items: [] };
 
             render(<Sidebar />);
 
@@ -128,8 +135,7 @@ describe('Sidebar', () => {
 
     describe('items rendering', () => {
         it('should render link items', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     { type: 'link', id: 'home', label: 'Home', href: '/home' },
@@ -144,8 +150,7 @@ describe('Sidebar', () => {
         });
 
         it('should render separator items', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     { type: 'link', id: 'home', label: 'Home', href: '/home' },
@@ -160,8 +165,7 @@ describe('Sidebar', () => {
         });
 
         it('should render group items', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     {
@@ -184,8 +188,7 @@ describe('Sidebar', () => {
 
     describe('permissions filtering', () => {
         it('should show all items when no permissions required', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     { type: 'link', id: 'public', label: 'Public', href: '/public' },
@@ -200,8 +203,7 @@ describe('Sidebar', () => {
         });
 
         it('should filter items by permissions', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     { type: 'link', id: 'public', label: 'Public', href: '/public' },
@@ -222,8 +224,7 @@ describe('Sidebar', () => {
         });
 
         it('should show items when user has matching permissions', () => {
-            mockIsContextual = true;
-            mockConfig = {
+            mockSidebarConfig = {
                 title: 'Test',
                 items: [
                     {
@@ -244,9 +245,8 @@ describe('Sidebar', () => {
 
     describe('mobile behavior', () => {
         it('should show overlay when mobile is open', () => {
-            mockIsContextual = true;
             mockIsMobileOpen = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 
@@ -257,9 +257,8 @@ describe('Sidebar', () => {
 
         it('should call closeMobile when overlay clicked', async () => {
             const user = userEvent.setup();
-            mockIsContextual = true;
             mockIsMobileOpen = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 
@@ -270,9 +269,8 @@ describe('Sidebar', () => {
         });
 
         it('should render close button in mobile header', () => {
-            mockIsContextual = true;
             mockIsMobileOpen = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 
@@ -282,9 +280,8 @@ describe('Sidebar', () => {
 
         it('should call closeMobile when close button clicked', async () => {
             const user = userEvent.setup();
-            mockIsContextual = true;
             mockIsMobileOpen = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 
@@ -297,8 +294,7 @@ describe('Sidebar', () => {
 
     describe('accessibility', () => {
         it('should have navigation role', () => {
-            mockIsContextual = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 
@@ -308,9 +304,8 @@ describe('Sidebar', () => {
         });
 
         it('should have proper aria-label on overlay', () => {
-            mockIsContextual = true;
             mockIsMobileOpen = true;
-            mockConfig = { title: 'Test', items: [] };
+            mockSidebarConfig = { title: 'Test', items: [] };
 
             render(<Sidebar />);
 

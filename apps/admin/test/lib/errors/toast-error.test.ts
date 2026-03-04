@@ -44,7 +44,7 @@ describe('Toast Error Utility', () => {
     });
 
     describe('404 Error Toast', () => {
-        it('should show "Not Found" title for 404 errors', () => {
+        it('should show "Error" title for 404 errors', () => {
             const error = new ApiError('Resource not found', { status: 404 });
 
             showErrorToast({ error });
@@ -52,21 +52,21 @@ describe('Toast Error Utility', () => {
             expect(mockToast).toHaveBeenCalledTimes(1);
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Not Found',
+                    title: 'Error',
                     variant: 'destructive'
                 })
             );
         });
 
-        it('should show "The requested resource was not found" for 404 without message', () => {
+        it('should show "El recurso solicitado no fue encontrado." for 404 without message', () => {
             const error = new ApiError('', { status: 404 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Not Found',
-                    description: 'The requested resource was not found.'
+                    title: 'Error',
+                    description: 'El recurso solicitado no fue encontrado.'
                 })
             );
         });
@@ -78,7 +78,7 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Not Found',
+                    title: 'Error',
                     description: 'Accommodation not found'
                 })
             );
@@ -91,21 +91,21 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Not Found'
+                    title: 'Error'
                 })
             );
         });
     });
 
     describe('422 Validation Error Toast', () => {
-        it('should show "Validation Error" title for 422 errors', () => {
+        it('should show "Error" title for 422 errors', () => {
             const error = new ApiError('Validation failed', { status: 422 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Validation Error',
+                    title: 'Error',
                     variant: 'destructive'
                 })
             );
@@ -127,7 +127,7 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Validation Error',
+                    title: 'Error',
                     description: expect.stringContaining('email')
                 })
             );
@@ -149,7 +149,7 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Validation Error',
+                    title: 'Error',
                     description: 'Validation failed'
                 })
             );
@@ -162,65 +162,64 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Validation Error',
-                    description: 'Please check your input and try again.'
+                    title: 'Error',
+                    description: 'Error de validación. Verifique los campos del formulario.'
                 })
             );
         });
     });
 
     describe('Network Error Toast', () => {
-        it('should show "Connection Error" for network failures', () => {
+        it('should show "Error de conexión" for network failures', () => {
             const error = new TypeError('Failed to fetch');
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Connection Error',
-                    description:
-                        'Unable to connect to the server. Please check your internet connection.',
+                    title: 'Error de conexión',
+                    description: 'No se pudo conectar al servidor.',
                     variant: 'destructive'
                 })
             );
         });
 
-        it('should show "Connection Error" for ERR_NETWORK errors', () => {
+        it('should show "Error de conexión" for ERR_NETWORK errors', () => {
             const error = new Error('ERR_NETWORK');
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Connection Error',
-                    description: expect.stringContaining('Unable to connect')
+                    title: 'Error de conexión',
+                    description: expect.stringContaining('No se pudo conectar')
                 })
             );
         });
 
-        it('should show "Connection Error" for network request failed', () => {
+        it('should show "Error de conexión" for network request failed', () => {
             const error = new Error('Network request failed');
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Connection Error'
+                    title: 'Error de conexión'
                 })
             );
         });
     });
 
     describe('Timeout Error Toast', () => {
-        it('should show "Timeout" for timeout errors', () => {
+        it('should show "Tiempo de espera agotado" for timeout errors', () => {
             const error = new Error('Request timeout');
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Timeout',
-                    description: expect.stringContaining('timed out')
+                    title: 'Tiempo de espera agotado',
+                    description: expect.stringContaining('tiempo de espera')
                 })
             );
         });
@@ -232,8 +231,7 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Timeout',
-                    description: expect.stringContaining('while fetching data')
+                    title: 'Tiempo de espera agotado'
                 })
             );
         });
@@ -261,66 +259,66 @@ describe('Toast Error Utility', () => {
     });
 
     describe('Other API Error Statuses', () => {
-        it('should show "Authentication Required" for 401', () => {
+        it('should show "Error" title and Spanish unauthorized message for 401', () => {
             const error = new ApiError('Unauthorized', { status: 401 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Authentication Required',
-                    description: 'Please sign in to continue.'
+                    title: 'Error',
+                    description: 'Su sesión expiró. Inicie sesión de nuevo.'
                 })
             );
         });
 
-        it('should show "Access Denied" for 403', () => {
+        it('should show "Error" title and Spanish forbidden message for 403', () => {
             const error = new ApiError('Forbidden', { status: 403 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Access Denied',
-                    description: 'You do not have permission to perform this action.'
+                    title: 'Error',
+                    description: 'No tiene permiso para realizar esta acción.'
                 })
             );
         });
 
-        it('should show "Too Many Requests" for 429', () => {
+        it('should show "Error" title and Spanish rate-limit message for 429', () => {
             const error = new ApiError('Rate limited', { status: 429 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Too Many Requests',
-                    description: 'Please wait a moment before trying again.'
+                    title: 'Error',
+                    description: 'Demasiadas solicitudes. Espere un momento.'
                 })
             );
         });
 
-        it('should show "Server Error" for 500', () => {
+        it('should show "Error" title and Spanish server error message for 500', () => {
             const error = new ApiError('Internal server error', { status: 500 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Server Error',
-                    description: 'Something went wrong on our end. Please try again later.'
+                    title: 'Error',
+                    description: 'Error del servidor. Intente de nuevo más tarde.'
                 })
             );
         });
 
-        it('should show "Server Error" for 503', () => {
+        it('should show "Error" title for 503', () => {
             const error = new ApiError('Service unavailable', { status: 503 });
 
             showErrorToast({ error });
 
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    title: 'Server Error'
+                    title: 'Error'
                 })
             );
         });
@@ -338,10 +336,10 @@ describe('Toast Error Utility', () => {
 
             expect(mockToast).toHaveBeenCalledTimes(3);
 
-            // Verify each call has different content
-            expect(toastCalls[0].title).toBe('Not Found');
-            expect(toastCalls[1].title).toBe('Validation Error');
-            expect(toastCalls[2].title).toBe('Server Error');
+            // All API errors use the generic "Error" title from i18n
+            expect(toastCalls[0].title).toBe('Error');
+            expect(toastCalls[1].title).toBe('Error');
+            expect(toastCalls[2].title).toBe('Error');
         });
 
         it('should track all toast calls for visual stacking', () => {
@@ -486,7 +484,7 @@ describe('Toast Error Utility', () => {
             expect(mockToast).toHaveBeenCalledWith(
                 expect.objectContaining({
                     title: 'Error',
-                    description: 'An unexpected error occurred.'
+                    description: 'Ocurrió un error inesperado.'
                 })
             );
         });

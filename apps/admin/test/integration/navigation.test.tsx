@@ -13,16 +13,18 @@
  * - Mobile menu functionality
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { useEffect } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Track mock state for testing
 let mockPathname = '/dashboard';
 let mockParams: Record<string, string> = {};
 const mockNavigate = vi.fn();
+
+// Controllable sidebar config for tests
+let mockSidebarConfig: { title: string; items: unknown[] } | undefined = undefined;
 
 // Mock TanStack Router - prevent actual navigation
 vi.mock('@tanstack/react-router', () => ({
@@ -112,12 +114,12 @@ vi.mock('@repo/icons', () => ({
 
 // Mock Clerk header
 vi.mock('@/integrations/clerk/header-user', () => ({
-    default: () => <div data-testid="clerk-header">Clerk</div>
+    HeaderUser: () => <div data-testid="clerk-header">Clerk</div>
 }));
 
 // Mock section data - defined inline in mocks to avoid hoisting issues
-vi.mock('@/config/sections', () => ({
-    headerNavItems: [
+vi.mock('@/config/sections', () => {
+    const items = [
         {
             id: 'dashboard',
             label: 'Dashboard',
@@ -130,10 +132,14 @@ vi.mock('@/config/sections', () => ({
             labelKey: 'admin-menu.content.title',
             href: '/accommodations'
         }
-    ],
-    initializeSections: vi.fn(),
-    sections: []
-}));
+    ];
+    return {
+        headerNavItems: items,
+        getHeaderNavItems: () => items,
+        initializeSections: vi.fn(),
+        sections: []
+    };
+});
 
 // Mock section registry
 vi.mock('@/lib/sections/section-registry', () => ({
@@ -169,11 +175,12 @@ vi.mock('@/lib/sections/section-registry', () => ({
     getAllSections: () => []
 }));
 
-// Mock section hooks - use function to access mockPathname at runtime
+// Mock section hooks - useCurrentSidebarConfig returns controllable value
 vi.mock('@/lib/sections', async () => {
     return {
         useCurrentSection: () => undefined,
         useCurrentSectionId: () => 'dashboard',
+        useCurrentSidebarConfig: () => mockSidebarConfig,
         useSectionSidebarSync: vi.fn(),
         filterByPermissions: (items: unknown[]) => items,
         sidebar: {
@@ -192,22 +199,11 @@ vi.mock('@/lib/sections', async () => {
 import { Header } from '@/components/layout/header/Header';
 import { Sidebar } from '@/components/layout/sidebar/Sidebar';
 // Import components after mocks
-import { SidebarProvider, useSidebarContext } from '@/contexts/sidebar-context';
+import { SidebarProvider } from '@/contexts/sidebar-context';
 
 // Helper to render with providers
 function renderWithProviders(ui: ReactNode) {
     return render(<SidebarProvider>{ui}</SidebarProvider>);
-}
-
-// Component that sets sidebar config for testing
-function TestSidebarSetter({ config }: { config: { title: string; items: unknown[] } | null }) {
-    const { setConfig } = useSidebarContext();
-    useEffect(() => {
-        if (config) {
-            setConfig(config as Parameters<typeof setConfig>[0]);
-        }
-    }, [config, setConfig]);
-    return null;
 }
 
 describe('Navigation Integration', () => {
@@ -215,6 +211,7 @@ describe('Navigation Integration', () => {
         vi.clearAllMocks();
         mockPathname = '/dashboard';
         mockParams = {};
+        mockSidebarConfig = undefined;
     });
 
     afterEach(() => {
@@ -254,8 +251,9 @@ describe('Navigation Integration', () => {
         });
     });
 
-    describe('Sidebar Context Integration', () => {
-        it('should not show sidebar when no config is set', () => {
+    describe('Sidebar Config Integration', () => {
+        it('should not show sidebar when no config is available', () => {
+            mockSidebarConfig = undefined;
             renderWithProviders(<Sidebar />);
 
             expect(
@@ -263,49 +261,33 @@ describe('Navigation Integration', () => {
             ).not.toBeInTheDocument();
         });
 
-        it('should show sidebar when config is set via context', async () => {
-            renderWithProviders(
-                <>
-                    <TestSidebarSetter
-                        config={{
-                            title: 'Test Sidebar',
-                            items: [{ type: 'link', id: 'test', label: 'Test Link', href: '/test' }]
-                        }}
-                    />
-                    <Sidebar />
-                </>
-            );
+        it('should show sidebar when config is available for current route', () => {
+            mockSidebarConfig = {
+                title: 'Test Sidebar',
+                items: [{ type: 'link', id: 'test', label: 'Test Link', href: '/test' }]
+            };
+            renderWithProviders(<Sidebar />);
 
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('navigation', { name: 'Secondary navigation' })
-                ).toBeInTheDocument();
-            });
+            expect(
+                screen.getByRole('navigation', { name: 'Secondary navigation' })
+            ).toBeInTheDocument();
             expect(screen.getByText('Test Link')).toBeInTheDocument();
         });
 
-        it('should update sidebar title when config changes', async () => {
-            const { rerender } = renderWithProviders(
-                <>
-                    <TestSidebarSetter config={{ title: 'First Title', items: [] }} />
-                    <Sidebar />
-                </>
-            );
+        it('should update sidebar when config changes', () => {
+            mockSidebarConfig = { title: 'First Title', items: [] };
+            const { rerender } = renderWithProviders(<Sidebar />);
 
-            await waitFor(() => {
-                expect(screen.getAllByText('First Title').length).toBeGreaterThanOrEqual(1);
-            });
+            expect(screen.getAllByText('First Title').length).toBeGreaterThanOrEqual(1);
 
+            mockSidebarConfig = { title: 'Second Title', items: [] };
             rerender(
                 <SidebarProvider>
-                    <TestSidebarSetter config={{ title: 'Second Title', items: [] }} />
                     <Sidebar />
                 </SidebarProvider>
             );
 
-            await waitFor(() => {
-                expect(screen.getAllByText('Second Title').length).toBeGreaterThanOrEqual(1);
-            });
+            expect(screen.getAllByText('Second Title').length).toBeGreaterThanOrEqual(1);
         });
     });
 
@@ -321,8 +303,6 @@ describe('Navigation Integration', () => {
             // Both sections should be present
             expect(contentLink).toBeInTheDocument();
             expect(dashboardLink).toBeInTheDocument();
-            // Since our mock always returns 'dashboard', we verify the links exist
-            // In real implementation, content would be active when on /accommodations
         });
 
         it('should handle nested paths correctly', () => {
@@ -345,8 +325,6 @@ describe('Navigation Integration', () => {
             const menuButton = screen.getByRole('button', { name: 'Toggle menu' });
             await user.click(menuButton);
 
-            // Mobile menu should be rendered (MobileMenu component)
-            // The actual visibility is controlled by CSS/state
             expect(menuButton).toBeInTheDocument();
         });
     });
@@ -355,14 +333,37 @@ describe('Navigation Integration', () => {
         it('should support full navigation flow: header -> sidebar -> content', async () => {
             const user = userEvent.setup();
 
-            const dashboardSidebar = {
+            // Start on dashboard with sidebar config
+            mockPathname = '/dashboard';
+            mockSidebarConfig = {
                 title: 'Dashboard',
                 items: [
                     { type: 'link' as const, id: 'overview', label: 'Overview', href: '/dashboard' }
                 ]
             };
 
-            const contentSidebar = {
+            const { rerender } = renderWithProviders(
+                <>
+                    <Header />
+                    <Sidebar />
+                </>
+            );
+
+            // Verify dashboard state
+            expect(screen.getAllByText('Dashboard').length).toBeGreaterThanOrEqual(1);
+
+            // Click on Content section in header
+            const nav = screen.getByRole('navigation', { name: 'Main navigation' });
+            const contentLink = nav.querySelector('[data-section-id="content"]');
+
+            if (contentLink) {
+                await user.click(contentLink);
+                expect(mockNavigate).toHaveBeenCalledWith('/accommodations');
+            }
+
+            // Simulate navigation by updating path and config
+            mockPathname = '/accommodations';
+            mockSidebarConfig = {
                 title: 'Content',
                 items: [
                     {
@@ -374,53 +375,24 @@ describe('Navigation Integration', () => {
                 ]
             };
 
-            // Start on dashboard
-            mockPathname = '/dashboard';
-            const { rerender } = renderWithProviders(
-                <>
-                    <Header />
-                    <TestSidebarSetter config={dashboardSidebar} />
-                    <Sidebar />
-                </>
-            );
-
-            // Verify dashboard state
-            await waitFor(() => {
-                expect(screen.getAllByText('Dashboard').length).toBeGreaterThanOrEqual(1);
-            });
-
-            // Click on Content section in header
-            const nav = screen.getByRole('navigation', { name: 'Main navigation' });
-            const contentLink = nav.querySelector('[data-section-id="content"]');
-
-            if (contentLink) {
-                await user.click(contentLink);
-                expect(mockNavigate).toHaveBeenCalledWith('/accommodations');
-            }
-
-            // Simulate navigation by updating path and rerendering
-            mockPathname = '/accommodations';
             rerender(
                 <SidebarProvider>
                     <Header />
-                    <TestSidebarSetter config={contentSidebar} />
                     <Sidebar />
                 </SidebarProvider>
             );
 
             // Verify content section sidebar is now shown
-            await waitFor(() => {
-                expect(screen.getByText('Accommodations')).toBeInTheDocument();
-            });
+            expect(screen.getByText('Accommodations')).toBeInTheDocument();
         });
     });
 
     describe('Accessibility', () => {
-        it('should have proper ARIA roles throughout navigation', async () => {
+        it('should have proper ARIA roles throughout navigation', () => {
+            mockSidebarConfig = { title: 'Test', items: [] };
             renderWithProviders(
                 <>
                     <Header />
-                    <TestSidebarSetter config={{ title: 'Test', items: [] }} />
                     <Sidebar />
                 </>
             );
@@ -429,11 +401,9 @@ describe('Navigation Integration', () => {
             expect(screen.getByRole('navigation', { name: 'Main navigation' })).toBeInTheDocument();
 
             // Sidebar navigation
-            await waitFor(() => {
-                expect(
-                    screen.getByRole('navigation', { name: 'Secondary navigation' })
-                ).toBeInTheDocument();
-            });
+            expect(
+                screen.getByRole('navigation', { name: 'Secondary navigation' })
+            ).toBeInTheDocument();
         });
 
         it('should support keyboard navigation', async () => {
@@ -444,7 +414,6 @@ describe('Navigation Integration', () => {
             await user.tab();
 
             // Verify that a focusable element received focus
-            // The first focusable element might be the mobile menu button
             expect(document.activeElement).not.toBe(document.body);
         });
     });
