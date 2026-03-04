@@ -1,21 +1,5 @@
 [
     {
-        "specId": "SPEC-003",
-        "title": "Billing System Production Readiness",
-        "type": "improvement",
-        "complexity": "high",
-        "status": "approved",
-        "path": "SPEC-003-billing-production-readiness"
-    },
-    {
-        "specId": "SPEC-004",
-        "title": "Clerk to Better Auth Migration",
-        "type": "infrastructure",
-        "complexity": "high",
-        "status": "approved",
-        "path": "SPEC-004-clerk-to-better-auth-migration"
-    },
-    {
         "specId": "SPEC-009",
         "title": "Admin ISR/Regeneration Management",
         "type": "feature",
@@ -30,5 +14,45 @@
         "complexity": "high",
         "status": "completed",
         "path": "SPEC-014-i18n-complete-translations"
+    },
+    {
+        "specId": "SPEC-019",
+        "title": "Security & Permissions Hardening",
+        "type": "security",
+        "complexity": "high",
+        "status": "completed",
+        "path": "SPEC-019-security-permissions-hardening"
+    },
+    {
+        "specId": "SPEC-025",
+        "title": "Staging Environment Setup & Deployment Pipeline",
+        "type": "infrastructure",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-025-staging-environment-setup"
+    },
+    {
+        "specId": "SPEC-026",
+        "title": "Security Testing Gaps",
+        "type": "security",
+        "complexity": "medium",
+        "status": "draft",
+        "path": "SPEC-026-security-testing-gaps"
+    },
+    {
+        "specId": "SPEC-028",
+        "title": "IVA/Tax Handling",
+        "type": "billing",
+        "complexity": "high",
+        "status": "deferred",
+        "path": "SPEC-028-iva-tax-handling"
+    },
+    {
+        "specId": "SPEC-029",
+        "title": "Web Homepage Redesign: New Visual Identity",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-029-web-homepage-redesign"
     }
 ]

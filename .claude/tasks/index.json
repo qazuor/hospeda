@@ -21,6 +21,13 @@
             "status": "completed",
             "progress": "21/21",
             "path": "SPEC-014-i18n-complete-translations"
+        },
+        {
+            "specId": "SPEC-029",
+            "title": "Web Homepage Redesign: New Visual Identity",
+            "status": "pending",
+            "progress": "0/47",
+            "path": "SPEC-029-web-homepage-redesign"
         }
     ],
     "standalone": {
