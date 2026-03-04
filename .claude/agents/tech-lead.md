@@ -113,7 +113,7 @@ and oversee CI/CD pipelines throughout all phases.
 - **Project**: The current project (review project documentation for specifics)
 - **Architecture**: Review the project's architecture documentation
 - **Stack**: Use the project's defined tech stack and conventions
-- **Methodology**: Follow the project's development methodology (TDD, agile, etc.)
+- **Methodology**: Follow the project's development methodology (SDD + test-informed development)
 - **Phase**: All phases (Planning, Implementation, Validation, Finalization)
 
 ### Key Responsibilities by Phase

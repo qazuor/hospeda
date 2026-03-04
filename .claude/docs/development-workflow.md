@@ -2,19 +2,17 @@
 
 ## Overview
 
-This document defines the **mandatory development workflow** for all non-trivial changes. The workflow combines **Spec Driven Development (SDD)** and **Test Driven Development (TDD)** to ensure every feature is fully specified before coding begins, and every line of code is backed by tests.
+This document defines the **mandatory development workflow** for all non-trivial changes. The workflow is built on **Spec-Driven Development (SDD)** as the primary methodology, complemented by **Test-Informed Development** to ensure every line of code is backed by tests.
 
 **Core philosophy:** Nothing is done without a spec. Nothing is done without tests. No exceptions.
 
 ---
 
-## Methodology: SDD + TDD
+## Methodology: SDD + Test-Informed Development
 
-This workflow uses the best of two complementary methodologies:
+### Spec-Driven Development (SDD) .. PRIMARY METHODOLOGY
 
-### Spec Driven Development (SDD)
-
-The **specification is the single source of truth**. Before any code is written, a detailed spec defines:
+SDD is the **non-negotiable foundation** of all work. The specification is the single source of truth. Before any code is written, a detailed spec defines:
 
 - What to build (user stories, acceptance criteria)
 - How to build it (technical approach, architecture decisions)
@@ -23,29 +21,39 @@ The **specification is the single source of truth**. Before any code is written,
 
 **Principle:** If it is not in the spec, it does not get built. If it is in the spec, it MUST be built AND tested.
 
-### Test Driven Development (TDD)
+**Why SDD is critical for AI agents:**
 
-**Tests are written BEFORE implementation code.** Every task follows the Red-Green-Refactor cycle:
+- Prevents scope drift and "invented" requirements
+- Provides context across sessions (agents lack continuous memory)
+- Allows user to validate direction BEFORE spending time/tokens
+- Creates a verifiable contract between spec and implementation
 
-1. **RED** — Write a failing test that defines the expected behavior
-2. **GREEN** — Write the minimum code to make the test pass
-3. **REFACTOR** — Improve the code while keeping tests green
+### Test-Informed Development .. TESTING METHODOLOGY
 
-**Principle:** If there is no test, the work is not done. Code without tests does not exist in this workflow.
+Tests are **mandatory for all code**, but the timing is flexible based on context:
 
-### How SDD and TDD Work Together
+| Code Type | Testing Approach | Rationale |
+|-----------|-----------------|-----------|
+| **Pure logic** (services, utils, validators, schemas) | Write tests first when practical (TDD style) | Behavior is well-defined upfront, tests guide design |
+| **Integration code** (routes, components, wiring) | Write tests alongside implementation | Often requires exploration of existing code first |
+| **Bug fixes** | ALWAYS write regression test first | Must prove the bug exists before fixing |
+| **Refactors** | Ensure existing tests pass after each step | Tests are the safety net |
+
+**Principle:** No tests = not done. Code without tests is never considered complete. But we do NOT mandate a rigid Red-Green-Refactor cycle for every single line of code.
+
+### How SDD and Test-Informed Development Work Together
 
 ```
-SDD defines WHAT to test (acceptance criteria, edge cases, behaviors)
+SDD defines WHAT to build and test (acceptance criteria, edge cases, behaviors)
          ↓
-TDD defines HOW to implement (test first, then code)
+Test-Informed Development ensures HOW tests are written (timing varies by context)
          ↓
-Quality gates VERIFY everything passes (lint, typecheck, tests)
+Quality gates VERIFY everything passes (lint, typecheck, tests, coverage >= 90%)
 ```
 
-The spec provides the test cases. TDD ensures those test cases are written before the implementation. The quality gate ensures nothing ships without passing.
+The spec provides the test cases. The testing approach ensures those test cases are written as part of (not after) implementation. The quality gate ensures nothing ships without passing.
 
-| SDD Provides | TDD Executes |
+| SDD Provides | Tests Verify |
 |---|---|
 | User stories with acceptance criteria | Unit tests for each acceptance criterion |
 | Edge cases and error scenarios | Tests for each edge case and error |
@@ -99,7 +107,7 @@ A task is ONLY considered done when ALL of the following are true:
 ## Workflow Summary
 
 ```
-Request → Plan Mode → Spec (SDD) → Tasks → Development (TDD) → Done
+Request → Plan Mode → Spec (SDD) → Tasks → Development (Test-Informed) → Done
 ```
 
 | Step | Action | Methodology | Output |
@@ -108,7 +116,7 @@ Request → Plan Mode → Spec (SDD) → Tasks → Development (TDD) → Done
 | 2 | Enter Plan Mode | SDD | Approved plan with full clarity |
 | 3 | Generate specification | SDD | Approved spec with test strategy |
 | 4 | Generate tasks | SDD | Approved atomic tasks with test requirements |
-| 5 | Develop in order | TDD | Completed tasks with tests and state updates |
+| 5 | Develop in order | Test-Informed | Completed tasks with tests and state updates |
 
 ---
 
@@ -120,7 +128,7 @@ The workflow begins when the user requests a feature, fix, improvement, or refac
 
 - **Trivial** (typo, config tweak, 1-2 lines): Skip to direct implementation. No plan or spec needed. **But still write a test if the change affects behavior.**
 - **Small** (single file, clear scope, < 1 hour): Consider a standalone task via `/new-task`. **Must include unit tests.**
-- **Medium or larger** (multiple files, unclear scope, architecture decisions): **MUST follow the full SDD+TDD workflow below.**
+- **Medium or larger** (multiple files, unclear scope, architecture decisions): **MUST follow the full SDD + Test-Informed workflow below.**
 
 **When in doubt, follow the full workflow.** It is always better to over-plan than to start coding with unclear requirements.
 
@@ -292,13 +300,13 @@ A task without test requirements in its description is incomplete and should not
 Tasks are organized into phases that create natural pause points:
 
 1. **Setup** — Configuration, dependencies, environment
-2. **Core** — Database, models, services, business logic (with unit tests per TDD)
-3. **Integration** — API routes, frontend components, connections (with integration tests per TDD)
+2. **Core** — Database, models, services, business logic (with unit tests)
+3. **Integration** — API routes, frontend components, connections (with integration tests)
 4. **Testing** — Cross-cutting integration tests, E2E tests, performance tests
 5. **Docs** — Documentation updates
 6. **Cleanup** — Refactoring, optimization, dead code removal
 
-**Note on the Testing phase:** Unit tests and component-level integration tests are written DURING the Core and Integration phases (TDD). The Testing phase is for cross-cutting tests that span multiple components, E2E tests, and performance tests.
+**Note on the Testing phase:** Unit tests and component-level integration tests are written DURING the Core and Integration phases (alongside or before implementation, depending on context). The Testing phase is for cross-cutting tests that span multiple components, E2E tests, and performance tests.
 
 **Between phases, the user can pause, review progress, and adjust course.** Each phase completion is a checkpoint.
 
@@ -314,16 +322,16 @@ The complete task breakdown with phases and dependencies is presented to the use
 
 ---
 
-## Step 5: Development — Execute Tasks with TDD
+## Step 5: Development — Execute Tasks with Tests
 
-**Purpose:** Implement each task following TDD (Red-Green-Refactor), updating state after each completion.
+**Purpose:** Implement each task with comprehensive tests, updating state after each completion.
 
 ### Task Execution Flow
 
 For each task, follow this cycle:
 
 ```
-Pick task → Write tests (RED) → Implement (GREEN) → Refactor → Quality gate → Update state → Commit → Next task
+Pick task → Understand context → Write tests + implementation → Refactor → Quality gate → Update state → Commit → Next task
 ```
 
 #### 5a. Pick the Next Task
@@ -334,54 +342,47 @@ Use `/next-task` to find the next available task. The system considers:
 - Phase ordering (setup before core before integration...)
 - Complexity scoring (quick wins vs critical path)
 
-#### 5b. Write Tests First (TDD — RED Phase)
+#### 5b. Write Tests and Implementation
 
-**Before writing any implementation code:**
+The approach depends on the type of code being written:
+
+**For pure logic (services, utils, validators, schemas):**
 
 1. Read the task description and its test requirements
 2. Write the test(s) that define the expected behavior
-3. Run the tests — they MUST fail (red)
-4. The failing tests define exactly what needs to be implemented
+3. Run the tests — verify they fail
+4. Implement the minimum code to make tests pass
+5. This is the classic Red-Green cycle and works well for well-defined behavior
 
-**What to write in the RED phase:**
+**For integration code (routes, components, wiring):**
 
-- Unit tests for each public function the task will create or modify
+1. Read the task description and explore existing related code
+2. Write implementation and tests together iteratively
+3. Ensure all behaviors specified in the task have corresponding tests
+4. Run tests frequently during development
+
+**For bug fixes:**
+
+1. Write a regression test that reproduces the bug FIRST
+2. Verify the test fails
+3. Fix the bug
+4. Verify the test passes
+
+**Required tests for every task:**
+
+- Unit tests for each public function the task creates or modifies
 - Integration tests for each API endpoint or service interaction (if applicable)
 - Edge case tests for each documented edge case
 - Error handling tests for each failure scenario
 
-```
-RED: Write failing tests
-  ↓ Tests fail — this is expected and correct
-```
+#### 5c. Refactor
 
-#### 5c. Implement the Minimum Code (TDD — GREEN Phase)
-
-**Now write the implementation:**
-
-1. Write the minimum code necessary to make the failing tests pass
-2. Do not over-engineer — just make the tests green
-3. Run the tests — they MUST all pass (green)
-4. Focus ONLY on what the task specifies — do not scope-creep
-
-```
-GREEN: Write minimum code to pass tests
-  ↓ All tests pass — implementation is correct
-```
-
-#### 5d. Refactor (TDD — REFACTOR Phase)
-
-**With green tests as a safety net:**
+**With passing tests as a safety net:**
 
 1. Improve code quality, naming, structure
 2. Remove duplication
 3. Run tests after each refactor — they MUST stay green
 4. If a refactor breaks a test, undo it and try a different approach
-
-```
-REFACTOR: Improve code with green tests as safety net
-  ↓ Tests still pass — refactoring is safe
-```
 
 #### 5e. Run Quality Gate
 
@@ -430,15 +431,15 @@ When finishing the last task of a phase:
 3. **Pause and ask the user** if they want to continue to the next phase or review first
 4. This is a natural checkpoint for course correction
 
-### TDD Within Each Phase
+### Testing Within Each Phase
 
-| Phase | TDD Application |
+| Phase | Testing Approach |
 |---|---|
-| **Setup** | Write config validation tests, then set up configuration |
-| **Core** | Write unit tests for models/services, then implement them |
-| **Integration** | Write integration tests for APIs/connections, then implement them |
+| **Setup** | Write config validation tests alongside setup |
+| **Core** | Write unit tests for models/services (tests first for pure logic) |
+| **Integration** | Write integration tests for APIs/connections (tests alongside implementation) |
 | **Testing** | Write E2E and cross-cutting tests (this phase IS the test writing) |
-| **Docs** | N/A (no TDD for documentation) |
+| **Docs** | N/A (no tests for documentation) |
 | **Cleanup** | Ensure existing tests pass after each refactor step |
 
 ### Handling Issues During Development
@@ -493,9 +494,9 @@ When finishing the last task of a phase:
 
 **Never** consider any code "done" without tests. Unit tests are ALWAYS required. Integration tests are required for multi-component interactions. E2E tests are required for user-facing flows. **Without tests, the work is not done.**
 
-### Implementation Before Tests
+### Implementation Without Tests
 
-**Never** write implementation code before writing the tests. Follow TDD: Red → Green → Refactor. The tests define the expected behavior; the implementation fulfills it.
+**Never** consider implementation complete without corresponding tests. For pure logic, prefer writing tests first. For integration code, write tests alongside. For bug fixes, ALWAYS write the regression test first. The key rule: no code ships without tests.
 
 ### Committing Implementation Without Tests
 
@@ -521,12 +522,12 @@ When finishing the last task of a phase:
 
 ## Summary
 
-The development workflow combines **Spec Driven Development** and **Test Driven Development** to ensure every non-trivial change follows a structured, test-backed path from requirement to implementation:
+The development workflow uses **Spec-Driven Development** as the primary methodology, complemented by **Test-Informed Development** to ensure every non-trivial change follows a structured, test-backed path from requirement to implementation:
 
 1. **Plan Mode (SDD)** — Ask questions, eliminate ambiguity, define testing strategy, align with the user
 2. **Specification (SDD)** — Document everything in detail including test requirements, get approval
 3. **Task Breakdown (SDD)** — Ultra-granular atomic tasks with test requirements per task, organized by phase, get approval
-4. **Development (TDD)** — For each task: write tests first (RED), implement (GREEN), refactor, pass quality gates, update state, commit atomically
+4. **Development (Test-Informed)** — For each task: write tests (timing depends on code type), implement, refactor, pass quality gates, update state, commit atomically
 5. **Phase Checkpoints** — Pause between phases, review progress and test coverage, adjust if needed
 
 ### The Three Absolutes
