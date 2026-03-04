@@ -154,7 +154,7 @@ describe('Sanitization Middleware', () => {
             expect(result).toEqual(input);
         });
 
-        it('should handle nested objects (shallow only)', () => {
+        it('should handle nested objects (recursively sanitizes nested fields)', () => {
             const input = {
                 name: '<b>John</b>',
                 details: {
@@ -164,18 +164,96 @@ describe('Sanitization Middleware', () => {
             const result = sanitizeObjectStrings(input);
             expect(result.name).toBe('John');
             expect(result.details).toEqual({
-                bio: '<script>alert("xss")</script>Developer'
+                bio: 'Developer'
             });
         });
 
-        it('should preserve array values', () => {
+        it('should sanitize array string values', () => {
             const input = {
                 name: 'John',
                 tags: ['<script>alert("xss")</script>developer', 'programmer']
             };
             const result = sanitizeObjectStrings(input);
             expect(result.name).toBe('John');
-            expect(result.tags).toEqual(['<script>alert("xss")</script>developer', 'programmer']);
+            expect(result.tags).toEqual(['developer', 'programmer']);
+        });
+
+        it('should recursively sanitize nested objects', () => {
+            // Arrange
+            const input = {
+                user: {
+                    name: '<script>alert("xss")</script>John',
+                    profile: {
+                        bio: '<b>Developer</b>'
+                    }
+                }
+            };
+
+            // Act
+            const result = sanitizeObjectStrings(input);
+
+            // Assert
+            expect(result.user.name).toBe('John');
+            expect((result.user.profile as { bio: string }).bio).toBe('Developer');
+        });
+
+        it('should sanitize arrays of objects', () => {
+            // Arrange
+            const input = {
+                items: [{ name: '<script>alert("xss")</script>Item1' }, { name: '<b>Item2</b>' }]
+            };
+
+            // Act
+            const result = sanitizeObjectStrings(input);
+
+            // Assert
+            expect((result.items as Array<{ name: string }>)[0]?.name).toBe('Item1');
+            expect((result.items as Array<{ name: string }>)[1]?.name).toBe('Item2');
+        });
+
+        it('should preserve Date objects in nested structures', () => {
+            // Arrange
+            const createdAt = new Date('2024-01-01');
+            const input = {
+                meta: {
+                    createdAt,
+                    name: '<script>xss</script>Test'
+                }
+            };
+
+            // Act
+            const result = sanitizeObjectStrings(input);
+
+            // Assert
+            expect((result.meta as { createdAt: Date; name: string }).createdAt).toBe(createdAt);
+            expect((result.meta as { createdAt: Date; name: string }).name).toBe('Test');
+        });
+
+        it('should handle deeply nested objects safely', () => {
+            // Arrange - build a 10-level deep object with XSS at the leaf
+            type DeepObject = { level: string; child?: DeepObject };
+            let deepObj: DeepObject = { level: '<script>xss</script>leaf' };
+            for (let i = 9; i >= 1; i--) {
+                deepObj = { level: `<b>level${i}</b>`, child: deepObj };
+            }
+
+            // Act - should not throw despite deep nesting
+            let result: DeepObject | undefined;
+            expect(() => {
+                result = sanitizeObjectStrings(
+                    deepObj as unknown as Record<string, unknown>
+                ) as unknown as DeepObject;
+            }).not.toThrow();
+
+            // Assert - top level and deepest level are sanitized
+            expect(result?.level).toBe('level1');
+
+            let current = result;
+            for (let i = 2; i <= 9; i++) {
+                current = current?.child;
+                expect(current?.level).toBe(`level${i}`);
+            }
+            expect(current?.child?.level).toBe('leaf');
         });
     });
 
@@ -273,6 +351,101 @@ describe('Sanitization Middleware', () => {
             expect(result['x-custom-header']).toBe('valid');
             // HTML tags are removed but text content is preserved
             expect(result['x-api-key']).toBe('boldkey');
+        });
+    });
+
+    describe('Sanitization integration scenarios', () => {
+        it('should sanitize request body with script tags before validation', () => {
+            // Simulates a POST body with XSS payload
+            const requestBody = {
+                name: '<script>document.cookie</script>Admin User',
+                email: 'admin@example.com',
+                bio: '<img src=x onerror="alert(1)">Developer'
+            };
+
+            const sanitized = sanitizeObjectStrings(requestBody);
+
+            expect(sanitized.name).toBe('Admin User');
+            expect(sanitized.email).toBe('admin@example.com');
+            expect(sanitized.bio).toBe('Developer');
+        });
+
+        it('should sanitize query params with XSS payloads', () => {
+            const params = new URLSearchParams();
+            params.set('search', '<script>alert("xss")</script>hotels');
+            params.set('sort', 'name"><img src=x onerror=alert(1)>');
+            params.set('page', '1');
+
+            const sanitized = sanitizeQueryParams(params);
+
+            expect(sanitized.get('search')).toBe('hotels');
+            expect(sanitized.get('sort')).not.toContain('onerror');
+            expect(sanitized.get('page')).toBe('1');
+        });
+
+        it('should sanitize headers with malicious values', () => {
+            const headers = {
+                'x-custom': '<script>steal()</script>valid-value',
+                authorization: 'Bearer abc123',
+                'user-agent': 'Mozilla/5.0 <img src=x onerror=alert(1)>'
+            };
+
+            const sanitized = sanitizeHeaders(headers);
+
+            expect(sanitized['x-custom']).toBe('valid-value');
+            expect(sanitized.authorization).toBe('Bearer abc123');
+            expect(sanitized['user-agent']).not.toContain('onerror');
+        });
+
+        it('should handle double-encoded XSS payloads', () => {
+            // Double-encoded: &lt;script&gt; -> <script> after first decode
+            const input = '&lt;script&gt;alert("xss")&lt;/script&gt;Safe text';
+            const result = sanitizeString(input);
+
+            // After sanitization, <script> tags are stripped (angle brackets removed)
+            // The remaining text content is safe (no executable script)
+            expect(result).not.toContain('<script>');
+            expect(result).not.toContain('</script>');
+            expect(result).toContain('Safe text');
+        });
+
+        it('should sanitize path traversal patterns in string fields', () => {
+            const input = {
+                filename: '../../../etc/passwd',
+                path: '..\\..\\windows\\system32',
+                title: 'Normal Title'
+            };
+
+            const sanitized = sanitizeObjectStrings(input);
+
+            // sanitizeString doesn't specifically target path traversal (that's URL-level),
+            // but it should not introduce any additional risk
+            expect(sanitized.title).toBe('Normal Title');
+            // Verify no error thrown for path traversal strings
+            expect(typeof sanitized.filename).toBe('string');
+            expect(typeof sanitized.path).toBe('string');
+        });
+
+        it('should sanitize nested objects in request body', () => {
+            const requestBody = {
+                user: {
+                    name: '<b>Bold</b> Name',
+                    address: {
+                        city: '<script>xss</script>Buenos Aires',
+                        country: 'Argentina'
+                    }
+                },
+                tags: ['<img src=x>tag1', 'tag2']
+            };
+
+            const sanitized = sanitizeObjectStrings(requestBody);
+
+            expect((sanitized.user as { name: string }).name).toBe('Bold Name');
+            expect((sanitized.user as { address: { city: string } }).address.city).toBe(
+                'Buenos Aires'
+            );
+            expect((sanitized.tags as string[])[0]).toBe('tag1');
+            expect((sanitized.tags as string[])[1]).toBe('tag2');
         });
     });
 

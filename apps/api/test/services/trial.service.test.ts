@@ -69,8 +69,7 @@ describe('TrialService', () => {
 
             // Act
             const result = await trialService.startTrial({
-                customerId,
-                userType: 'owner'
+                customerId
             });
 
             // Assert
@@ -81,53 +80,7 @@ describe('TrialService', () => {
                     planId: mockPlan.id,
                     trialDays: 14,
                     metadata: expect.objectContaining({
-                        userType: 'owner',
-                        autoStarted: true,
-                        createdBy: 'trial-service'
-                    })
-                })
-            );
-        });
-
-        it('should start trial for complex user', async () => {
-            // Arrange
-            const customerId = 'customer-456';
-            const mockPlan = {
-                id: 'plan-complex-basico',
-                name: 'complex-basico', // QZPay uses name as identifier
-                monthlyPriceArs: 5000000
-            };
-            const mockSubscription = {
-                id: 'sub-456',
-                customerId,
-                planId: mockPlan.id,
-                status: 'trialing'
-            };
-
-            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
-                data: [mockPlan]
-            } as never);
-            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
-            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue(
-                mockSubscription as never
-            );
-
-            // Act
-            const result = await trialService.startTrial({
-                customerId,
-                userType: 'complex'
-            });
-
-            // Assert
-            expect(result).toBe('sub-456');
-            expect(mockBilling.subscriptions.create).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    customerId,
-                    planId: mockPlan.id,
-                    trialDays: 14,
-                    metadata: expect.objectContaining({
-                        userType: 'complex',
-                        autoStarted: true,
+                        autoStarted: 'true',
                         createdBy: 'trial-service'
                     })
                 })
@@ -152,8 +105,7 @@ describe('TrialService', () => {
 
             // Act
             const result = await trialService.startTrial({
-                customerId,
-                userType: 'owner'
+                customerId
             });
 
             // Assert
@@ -167,8 +119,7 @@ describe('TrialService', () => {
 
             // Act
             const result = await trialServiceNoBilling.startTrial({
-                customerId: 'customer-123',
-                userType: 'owner'
+                customerId: 'customer-123'
             });
 
             // Assert
@@ -224,15 +175,15 @@ describe('TrialService', () => {
             const mockSubscription = {
                 id: 'sub-456',
                 customerId,
-                planId: 'plan-complex-basico',
+                planId: 'plan-owner-basico',
                 status: 'trialing',
                 trialStart: new Date(now.setDate(now.getDate() - 19)).toISOString(), // Started 19 days ago
                 trialEnd: trialEnd.toISOString()
             };
 
             const mockPlan = {
-                id: 'plan-complex-basico',
-                name: 'complex-basico'
+                id: 'plan-owner-basico',
+                name: 'owner-basico'
             };
 
             vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([
@@ -247,7 +198,7 @@ describe('TrialService', () => {
             expect(result.isOnTrial).toBe(true);
             expect(result.isExpired).toBe(true);
             expect(result.daysRemaining).toBe(0);
-            expect(result.planSlug).toBe('complex-basico');
+            expect(result.planSlug).toBe('owner-basico');
         });
 
         it('should return not on trial if no subscription', async () => {
@@ -324,7 +275,7 @@ describe('TrialService', () => {
             const mockSubscription = {
                 id: 'sub-456',
                 customerId,
-                planId: 'plan-complex-basico',
+                planId: 'plan-owner-basico',
                 status: 'trialing',
                 trialEnd: trialEnd.toISOString()
             };
@@ -333,8 +284,8 @@ describe('TrialService', () => {
                 mockSubscription
             ] as never);
             vi.spyOn(mockBilling.plans, 'get').mockResolvedValue({
-                id: 'plan-complex-basico',
-                name: 'complex-basico'
+                id: 'plan-owner-basico',
+                name: 'owner-basico'
             } as never);
 
             // Act
@@ -515,7 +466,7 @@ describe('TrialService', () => {
         it('should create subscription even if no existing trial', async () => {
             // Arrange
             const customerId = 'customer-456';
-            const newPlanId = 'plan-complex-pro';
+            const newPlanId = 'plan-owner-pro';
 
             const newSubscription = {
                 id: 'sub-paid',

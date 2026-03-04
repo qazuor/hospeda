@@ -197,9 +197,22 @@ describe('Limit Enforcement Middleware', () => {
             // Set up limit in context
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
+            // Use media JSONB structure: 1 featuredImage + 4 gallery = 5 total (under limit of 10)
             const mockGetById = vi.fn().mockResolvedValue({
                 success: true,
-                data: { id: 'accommodation-id-123', photosCount: 5 }
+                data: {
+                    id: 'accommodation-id-123',
+                    media: {
+                        featuredImage: {
+                            url: 'https://example.com/featured.jpg',
+                            moderationState: 'approved'
+                        },
+                        gallery: Array.from({ length: 4 }, (_, i) => ({
+                            url: `https://example.com/${i}.jpg`,
+                            moderationState: 'approved'
+                        }))
+                    }
+                }
             });
             vi.mocked(AccommodationService).mockImplementation(
                 () =>
@@ -220,9 +233,22 @@ describe('Limit Enforcement Middleware', () => {
             // Set up limit in context
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
+            // Use media JSONB structure: 1 featuredImage + 9 gallery = 10 total (at limit)
             const mockGetById = vi.fn().mockResolvedValue({
                 success: true,
-                data: { id: 'accommodation-id-123', photosCount: 10 }
+                data: {
+                    id: 'accommodation-id-123',
+                    media: {
+                        featuredImage: {
+                            url: 'https://example.com/featured.jpg',
+                            moderationState: 'approved'
+                        },
+                        gallery: Array.from({ length: 9 }, (_, i) => ({
+                            url: `https://example.com/${i}.jpg`,
+                            moderationState: 'approved'
+                        }))
+                    }
+                }
             });
             vi.mocked(AccommodationService).mockImplementation(
                 () =>

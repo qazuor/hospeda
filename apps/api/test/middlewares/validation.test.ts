@@ -251,21 +251,23 @@ describe('Validation Middleware', () => {
             expect(res.status).toBe(200);
         });
 
-        it('should reject requests exceeding size limit', async () => {
+        it('should allow requests exceeding content-length (body size enforced by Hono bodyLimit in create-app)', async () => {
+            // Note: Body size validation was moved to Hono's bodyLimit middleware in create-app.ts
+            // (app.use(wrapMiddleware(bodyLimit({...})))) which operates at the stream level.
+            // The validation middleware itself no longer checks Content-Length headers.
+            // This test verifies that the validation middleware passes large content-length headers.
             const res = await app.request('/test', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'User-Agent': 'test-agent',
-                    'Content-Length': '20000000' // 20MB, exceeds 10MB limit
+                    'Content-Length': '20000000' // 20MB header - no longer rejected here
                 },
-                body: 'x'.repeat(20000000)
+                body: JSON.stringify({ data: 'test' }) // small body for the actual request
             });
 
-            expect(res.status).toBe(400);
-            const data = await res.json();
-            expect(data.success).toBe(false);
-            expect(data.error.code).toBe(ValidationErrorCode.REQUEST_TOO_LARGE);
+            // The validation middleware itself does not reject large content-length headers
+            expect(res.status).toBe(200);
         });
 
         it('should allow requests without content-length header', async () => {

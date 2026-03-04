@@ -165,8 +165,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             // Act - Start trial
             const subscriptionId = await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             // Assert
@@ -194,8 +193,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             // Act
             await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             const status = await trialService.getTrialStatus({
@@ -237,8 +235,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             // Act
             await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             const status = await trialService.getTrialStatus({
@@ -268,13 +265,11 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
             // Act - Start trial twice
             const firstTrial = await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             const secondTrial = await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             // Assert
@@ -439,8 +434,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             });
 
             await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             // Act
@@ -471,8 +465,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             });
 
             await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             // Act
@@ -503,8 +496,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             });
 
             await trialService.startTrial({
-                customerId: customer.id,
-                userType: 'owner'
+                customerId: customer.id
             });
 
             // Act

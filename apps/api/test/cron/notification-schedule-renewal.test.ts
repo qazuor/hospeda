@@ -4,20 +4,24 @@
  * Tests the renewal reminder functionality of the notification-schedule job.
  *
  * Test Coverage:
- * - Subscriptions renewing in 3 days get RENEWAL_REMINDER
- * - Subscriptions NOT renewing in 3 days are skipped
+ * - Subscriptions renewing in 7, 3, or 1 days get RENEWAL_REMINDER
+ * - Subscriptions NOT renewing on reminder days are skipped
  * - Duplicate renewal reminders prevented (idempotency)
  * - Dry run mode counts but doesn't send
  * - Customer lookup failure skips notification gracefully
  * - renewalsSent counter in result
  * - Plan name lookup
+ * - daysRemaining is included in notification payload
  *
  * @module test/cron/notification-schedule-renewal
  */
 
 import { NotificationType, RetryService } from '@repo/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { notificationScheduleJob } from '../../src/cron/jobs/notification-schedule.job';
+import {
+    notificationScheduleJob,
+    resetSentNotificationsFallback
+} from '../../src/cron/jobs/notification-schedule.job';
 import type { CronJobContext } from '../../src/cron/types';
 
 // Mock billing middleware
@@ -38,6 +42,21 @@ vi.mock('../../src/utils/notification-helper', () => ({
 // Mock customer lookup helper
 vi.mock('../../src/utils/customer-lookup', () => ({
     lookupCustomerDetails: vi.fn()
+}));
+
+// Mock Redis client (returns undefined = not configured, falls back to in-memory)
+vi.mock('../../src/utils/redis', () => ({
+    getRedisClient: vi.fn().mockResolvedValue(undefined)
+}));
+
+// Mock notification retry service
+vi.mock('../../src/services/notification-retry.service', () => ({
+    processDbNotificationRetries: vi.fn().mockResolvedValue({
+        processed: 0,
+        succeeded: 0,
+        failed: 0,
+        permanentlyFailed: 0
+    })
 }));
 
 // Mock @repo/notifications
@@ -89,6 +108,7 @@ function createMockSubscription(daysUntilRenewal: number) {
         customerId: `cust-${subscriptionCounter}`,
         planId: 'plan-owner-basico',
         status: 'active',
+        interval: 'month',
         currentPeriodEnd: renewalDate.toISOString()
     };
 }
@@ -96,6 +116,7 @@ function createMockSubscription(daysUntilRenewal: number) {
 describe('Notification Schedule Cron Job - Renewal Reminders', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        resetSentNotificationsFallback();
         process.env.WEB_URL = 'https://hospeda.com';
         subscriptionCounter = 0; // Reset counter for each test
     });
@@ -162,7 +183,171 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             );
         });
 
-        it('should NOT send renewal reminders for subscriptions not renewing in 3 days', async () => {
+        it('should send renewal reminders for subscriptions renewing in 7 days', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [
+                createMockSubscription(7) // Renews in 7 days - should send
+            ];
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Plan Owner Básico' })
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as any
+            );
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.RENEWAL_REMINDER,
+                    daysRemaining: 7
+                })
+            );
+        });
+
+        it('should send renewal reminders for subscriptions renewing in 1 day', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [
+                createMockSubscription(1) // Renews in 1 day - should send
+            ];
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Plan Owner Pro' })
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as any
+            );
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.RENEWAL_REMINDER,
+                    daysRemaining: 1
+                })
+            );
+        });
+
+        it('should send reminders for all three reminder days (7, 3, 1)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [
+                createMockSubscription(7), // 7-day reminder
+                createMockSubscription(3), // 3-day reminder
+                createMockSubscription(1) // 1-day reminder
+            ];
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ name: 'Test Plan' })
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-123'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as any
+            );
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.renewalsSent).toBe(3);
+            expect(sendNotification).toHaveBeenCalledTimes(3);
+        });
+
+        it('should NOT send renewal reminders for non-reminder days', async () => {
             // Arrange
             const ctx = createMockContext();
 
@@ -170,7 +355,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
                 createMockSubscription(2), // Renews in 2 days - skip
                 createMockSubscription(4), // Renews in 4 days - skip
                 createMockSubscription(10), // Renews in 10 days - skip
-                createMockSubscription(1) // Renews in 1 day - skip
+                createMockSubscription(5) // Renews in 5 days - skip
             ];
 
             const mockBilling = {
@@ -519,9 +704,9 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
             const ctx = createMockContext({ dryRun: true });
 
             const mockSubscriptions = [
+                createMockSubscription(7),
                 createMockSubscription(3),
-                createMockSubscription(3),
-                createMockSubscription(3)
+                createMockSubscription(1)
             ];
 
             const mockBilling = {
@@ -736,6 +921,200 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
                 trialsEnding3Days: 0,
                 trialsEnding1Day: 0
             });
+        });
+    });
+
+    describe('Renewal Reminder Plan Prices', () => {
+        it('should include actual plan price in renewal notification', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [
+                createMockSubscription(3) // Renews in 3 days
+            ];
+
+            const mockPlan = {
+                name: 'Plan Owner Pro',
+                prices: [
+                    { billingInterval: 'month', unitAmount: 2500000 },
+                    { billingInterval: 'year', unitAmount: 25000000 }
+                ]
+            };
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue(mockPlan)
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(TrialService).mockImplementation(
+                () => mockTrialService as unknown as InstanceType<typeof TrialService>
+            );
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'owner@example.com',
+                name: 'Owner Test',
+                userId: 'user-price-1'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as unknown as InstanceType<typeof RetryService>
+            );
+
+            // Act
+            await notificationScheduleJob.handler(ctx);
+
+            // Assert
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.RENEWAL_REMINDER,
+                    planName: 'Plan Owner Pro',
+                    amount: 2500000,
+                    currency: 'ARS'
+                })
+            );
+        });
+
+        it('should omit amount when plan has no matching price', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [
+                createMockSubscription(3) // Renews in 3 days, interval defaults to 'month'
+            ];
+
+            const mockPlan = {
+                name: 'Custom Plan',
+                prices: [
+                    { billingInterval: 'year', unitAmount: 25000000 } // No monthly price
+                ]
+            };
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue(mockPlan)
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(TrialService).mockImplementation(
+                () => mockTrialService as unknown as InstanceType<typeof TrialService>
+            );
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-price-2'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as unknown as InstanceType<typeof RetryService>
+            );
+
+            // Act
+            await notificationScheduleJob.handler(ctx);
+
+            // Assert - amount and currency should NOT be in the notification payload
+            const notifCall = vi.mocked(sendNotification).mock.calls[0]?.[0] as unknown as Record<
+                string,
+                unknown
+            >;
+            expect(notifCall).toBeDefined();
+            expect(notifCall.type).toBe(NotificationType.RENEWAL_REMINDER);
+            expect(notifCall.planName).toBe('Custom Plan');
+            expect(notifCall).not.toHaveProperty('amount');
+            expect(notifCall).not.toHaveProperty('currency');
+        });
+
+        it('should omit amount when plan fetch fails', async () => {
+            // Arrange
+            const ctx = createMockContext();
+
+            const mockSubscriptions = [createMockSubscription(3)];
+
+            const mockBilling = {
+                subscriptions: {
+                    list: vi.fn().mockResolvedValue({ data: mockSubscriptions })
+                },
+                plans: {
+                    get: vi.fn().mockRejectedValue(new Error('Plan not found'))
+                }
+            };
+
+            const mockTrialService = {
+                findTrialsEndingSoon: vi.fn().mockResolvedValue([])
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+            );
+            vi.mocked(TrialService).mockImplementation(
+                () => mockTrialService as unknown as InstanceType<typeof TrialService>
+            );
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'user@example.com',
+                name: 'Test User',
+                userId: 'user-price-3'
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as unknown as InstanceType<typeof RetryService>
+            );
+
+            // Act
+            await notificationScheduleJob.handler(ctx);
+
+            // Assert - amount omitted, planName defaults to 'Unknown Plan'
+            const notifCall = vi.mocked(sendNotification).mock.calls[0]?.[0] as unknown as Record<
+                string,
+                unknown
+            >;
+            expect(notifCall).toBeDefined();
+            expect(notifCall.type).toBe(NotificationType.RENEWAL_REMINDER);
+            expect(notifCall.planName).toBe('Unknown Plan');
+            expect(notifCall).not.toHaveProperty('amount');
+            expect(notifCall).not.toHaveProperty('currency');
         });
     });
 });

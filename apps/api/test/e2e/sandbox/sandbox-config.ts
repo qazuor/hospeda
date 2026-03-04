@@ -61,8 +61,8 @@ export function getSandboxConfig(): SandboxConfig {
     const sandbox = getEnvBoolean('MERCADO_PAGO_SANDBOX', true);
     const timeout = Number.parseInt(getEnv('MERCADO_PAGO_TIMEOUT', '10000'), 10);
 
-    // Sandbox is configured if we have a TEST- access token
-    const isConfigured = !!accessToken && accessToken.startsWith('TEST-') && sandbox;
+    // Sandbox is configured if we have an access token and sandbox mode is enabled
+    const isConfigured = !!accessToken && sandbox;
 
     return {
         accessToken,

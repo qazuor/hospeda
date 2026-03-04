@@ -73,7 +73,7 @@ describe('handleDisputeOpened', () => {
         // Assert
         expect(apiLogger.warn).toHaveBeenCalledWith(
             expect.objectContaining({
-                eventId: 12345,
+                eventId: '12345',
                 eventType: 'chargebacks',
                 disputeId: 'dispute-abc',
                 paymentId: 'pay-789',
@@ -81,7 +81,7 @@ describe('handleDisputeOpened', () => {
                 amount: 5000,
                 reason: 'unauthorized_purchase'
             }),
-            expect.stringContaining('Dispute/chargeback received')
+            expect.stringContaining('dispute/chargeback')
         );
     });
 
@@ -231,7 +231,7 @@ describe('handleDisputeOpened', () => {
             expect(mockMarkProcessed).toHaveBeenCalledTimes(1);
             expect(apiLogger.debug).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    eventId: 55555
+                    eventId: '55555'
                 }),
                 expect.stringContaining('notification failed')
             );

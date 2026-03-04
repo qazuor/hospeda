@@ -1,5 +1,8 @@
 /**
  * Tests for BillingSettingsService
+ *
+ * Tests the service after migration from billing_audit_logs to dedicated
+ * billing_settings table (key-value pattern with key='global').
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,22 +13,19 @@ import {
 } from '../../src/services/billing-settings.service';
 
 // Hoist shared mock functions for drizzle operators
-const { mockDesc, mockEq, mockAnd } = vi.hoisted(() => ({
-    mockDesc: vi.fn((field: string) => ({ desc: field })),
-    mockEq: vi.fn((field: string, value: unknown) => ({ eq: field, value })),
-    mockAnd: vi.fn((...conditions: unknown[]) => ({ and: conditions }))
+const { mockEq } = vi.hoisted(() => ({
+    mockEq: vi.fn((field: string, value: unknown) => ({ eq: field, value }))
 }));
 
-// Mock drizzle-orm (the service imports and/desc/eq from here)
-vi.mock('drizzle-orm', () => ({
-    desc: mockDesc,
-    eq: mockEq,
-    and: mockAnd
-}));
-
-// Mock @repo/db (also re-exports drizzle operators)
+// Mock @repo/db
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
+    billingSettings: {
+        key: 'key',
+        value: 'value',
+        updatedBy: 'updatedBy',
+        updatedAt: 'updatedAt'
+    },
     billingAuditLogs: {
         action: 'action',
         entityType: 'entityType',
@@ -35,9 +35,7 @@ vi.mock('@repo/db', () => ({
         livemode: 'livemode',
         createdAt: 'createdAt'
     },
-    desc: mockDesc,
-    eq: mockEq,
-    and: mockAnd
+    eq: mockEq
 }));
 
 vi.mock('../../src/utils/logger', () => ({
@@ -50,21 +48,23 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 // Import after mocking to get mocked versions
-import { billingAuditLogs, getDb } from '@repo/db';
-import { and, desc, eq } from '@repo/db';
+import { billingAuditLogs, billingSettings, getDb } from '@repo/db';
 
 describe('BillingSettingsService', () => {
     let service: BillingSettingsService;
 
-    // Mock database methods
+    // Mock database chain methods
     let mockSelect: ReturnType<typeof vi.fn>;
     let mockFrom: ReturnType<typeof vi.fn>;
     let mockWhere: ReturnType<typeof vi.fn>;
-    let mockOrderBy: ReturnType<typeof vi.fn>;
     let mockLimit: ReturnType<typeof vi.fn>;
     let mockInsert: ReturnType<typeof vi.fn>;
     let mockValues: ReturnType<typeof vi.fn>;
-    let mockDb: any;
+    let mockOnConflictDoUpdate: ReturnType<typeof vi.fn>;
+    let mockDb: Record<string, ReturnType<typeof vi.fn>>;
+
+    /** Tracks insert calls in order: [tableName, valuesArg] */
+    let insertCalls: Array<{ table: unknown; values: unknown }>;
 
     // Default settings reference
     const DEFAULT_SETTINGS = {
@@ -84,50 +84,53 @@ describe('BillingSettingsService', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        insertCalls = [];
 
-        // Create chainable mock methods
+        // Create chainable mock methods for SELECT chain
         mockSelect = vi.fn().mockReturnThis();
         mockFrom = vi.fn().mockReturnThis();
         mockWhere = vi.fn().mockReturnThis();
-        mockOrderBy = vi.fn().mockReturnThis();
         mockLimit = vi.fn().mockResolvedValue([]);
-        mockInsert = vi.fn().mockReturnThis();
-        mockValues = vi.fn().mockResolvedValue(undefined);
 
-        // Setup mock db with chainable methods
+        // CREATE chainable mock methods for INSERT chain
+        mockOnConflictDoUpdate = vi.fn().mockResolvedValue(undefined);
+        mockValues = vi.fn();
+
+        // values() can either resolve directly (audit log insert) or return onConflictDoUpdate chain (upsert)
+        mockValues.mockImplementation((valuesArg: unknown) => {
+            // Record the insert call
+            const lastTable = insertCalls.length > 0 ? insertCalls[insertCalls.length - 1] : null;
+            if (lastTable && lastTable.values === null) {
+                lastTable.values = valuesArg;
+            }
+            return {
+                onConflictDoUpdate: mockOnConflictDoUpdate
+            };
+        });
+
+        mockInsert = vi.fn((table: unknown) => {
+            insertCalls.push({ table, values: null });
+            return { values: mockValues };
+        });
+
+        mockSelect.mockReturnValue({ from: mockFrom });
+        mockFrom.mockReturnValue({ where: mockWhere });
+        mockWhere.mockReturnValue({ limit: mockLimit });
+
+        // Setup mock db
         mockDb = {
             select: mockSelect,
             insert: mockInsert
         };
 
-        mockSelect.mockReturnValue({
-            from: mockFrom
-        });
-
-        mockFrom.mockReturnValue({
-            where: mockWhere
-        });
-
-        mockWhere.mockReturnValue({
-            orderBy: mockOrderBy
-        });
-
-        mockOrderBy.mockReturnValue({
-            limit: mockLimit
-        });
-
-        mockInsert.mockReturnValue({
-            values: mockValues
-        });
-
-        vi.mocked(getDb).mockReturnValue(mockDb);
+        vi.mocked(getDb).mockReturnValue(mockDb as unknown as ReturnType<typeof getDb>);
 
         // Create service instance
         service = new BillingSettingsService();
     });
 
     describe('getSettings', () => {
-        it('should return default settings when no entries found', async () => {
+        it('should return default settings when no row found in billing_settings', async () => {
             // Arrange
             mockLimit.mockResolvedValue([]);
 
@@ -138,30 +141,23 @@ describe('BillingSettingsService', () => {
             expect(result).toEqual(DEFAULT_SETTINGS);
             expect(getDb).toHaveBeenCalled();
             expect(mockDb.select).toHaveBeenCalled();
-            expect(mockFrom).toHaveBeenCalledWith(billingAuditLogs);
-            expect(and).toHaveBeenCalled();
-            expect(eq).toHaveBeenCalledWith(billingAuditLogs.action, 'billing_settings_update');
-            expect(eq).toHaveBeenCalledWith(billingAuditLogs.entityType, 'settings');
-            expect(eq).toHaveBeenCalledWith(billingAuditLogs.entityId, 'global');
-            expect(desc).toHaveBeenCalledWith(billingAuditLogs.createdAt);
+            expect(mockFrom).toHaveBeenCalledWith(billingSettings);
+            expect(mockEq).toHaveBeenCalledWith(billingSettings.key, 'global');
         });
 
-        it('should return merged settings when custom entry found', async () => {
+        it('should return merged settings when custom row found', async () => {
             // Arrange
             const customSettings = {
                 ownerTrialDays: 30,
                 currency: 'USD'
             };
 
-            const mockEntry = {
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                changes: customSettings,
-                createdAt: new Date()
+            const mockRow = {
+                key: 'global',
+                value: customSettings
             };
 
-            mockLimit.mockResolvedValue([mockEntry]);
+            mockLimit.mockResolvedValue([mockRow]);
 
             // Act
             const result = await service.getSettings();
@@ -176,17 +172,14 @@ describe('BillingSettingsService', () => {
             expect(result.complexTrialDays).toBe(DEFAULT_SETTINGS.complexTrialDays);
         });
 
-        it('should return defaults when metadata is null', async () => {
+        it('should return defaults when value is null', async () => {
             // Arrange
-            const mockEntry = {
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                changes: null,
-                createdAt: new Date()
+            const mockRow = {
+                key: 'global',
+                value: null
             };
 
-            mockLimit.mockResolvedValue([mockEntry]);
+            mockLimit.mockResolvedValue([mockRow]);
 
             // Act
             const result = await service.getSettings();
@@ -195,17 +188,14 @@ describe('BillingSettingsService', () => {
             expect(result).toEqual(DEFAULT_SETTINGS);
         });
 
-        it('should return defaults when metadata is invalid', async () => {
+        it('should return defaults when value is invalid type', async () => {
             // Arrange
-            const mockEntry = {
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                changes: 'invalid-string',
-                createdAt: new Date()
+            const mockRow = {
+                key: 'global',
+                value: 'invalid-string'
             };
 
-            mockLimit.mockResolvedValue([mockEntry]);
+            mockLimit.mockResolvedValue([mockRow]);
 
             // Act
             const result = await service.getSettings();
@@ -229,10 +219,7 @@ describe('BillingSettingsService', () => {
     describe('updateSettings', () => {
         it('should successfully update partial settings', async () => {
             // Arrange
-            const patch = {
-                ownerTrialDays: 21
-            };
-
+            const patch = { ownerTrialDays: 21 };
             mockLimit.mockResolvedValue([]);
 
             // Act
@@ -243,63 +230,66 @@ describe('BillingSettingsService', () => {
                 ...DEFAULT_SETTINGS,
                 ownerTrialDays: 21
             });
-            expect(mockDb.insert).toHaveBeenCalledWith(billingAuditLogs);
-            expect(mockValues).toHaveBeenCalled();
         });
 
-        it('should insert audit log entry with correct data', async () => {
+        it('should upsert into billing_settings table first', async () => {
             // Arrange
-            const patch = {
-                ownerTrialDays: 21,
-                currency: 'USD'
-            };
-
+            const patch = { ownerTrialDays: 21 };
             mockLimit.mockResolvedValue([]);
 
             // Act
             await service.updateSettings(patch);
 
-            // Assert
-            expect(mockValues).toHaveBeenCalledWith({
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                actorId: null,
-                actorType: 'system',
-                changes: {
-                    ...DEFAULT_SETTINGS,
-                    ...patch
-                },
-                previousValues: DEFAULT_SETTINGS,
-                livemode: true,
-                ipAddress: null,
-                userAgent: null
-            });
+            // Assert - first insert is into billingSettings
+            expect(insertCalls.length).toBeGreaterThanOrEqual(2);
+            expect(insertCalls[0]?.table).toBe(billingSettings);
+            expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    target: billingSettings.key
+                })
+            );
+        });
+
+        it('should insert audit log entry after upsert', async () => {
+            // Arrange
+            const patch = { ownerTrialDays: 21, currency: 'USD' };
+            mockLimit.mockResolvedValue([]);
+
+            // Act
+            await service.updateSettings(patch);
+
+            // Assert - second insert is into billingAuditLogs
+            expect(insertCalls.length).toBe(2);
+            expect(insertCalls[1]?.table).toBe(billingAuditLogs);
+            expect(insertCalls[1]?.values).toEqual(
+                expect.objectContaining({
+                    action: 'billing_settings_update',
+                    entityType: 'settings',
+                    entityId: 'global',
+                    actorId: null,
+                    actorType: 'system',
+                    previousValues: DEFAULT_SETTINGS,
+                    livemode: true
+                })
+            );
         });
 
         it('should include actorId in audit entry when provided', async () => {
             // Arrange
             const patch = { ownerTrialDays: 21 };
             const actorId = 'admin_123';
-
             mockLimit.mockResolvedValue([]);
 
             // Act
             await service.updateSettings(patch, actorId);
 
-            // Assert
-            expect(mockValues).toHaveBeenCalledWith({
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                actorId: actorId,
-                actorType: 'admin',
-                changes: expect.any(Object),
-                previousValues: expect.any(Object),
-                livemode: true,
-                ipAddress: null,
-                userAgent: null
-            });
+            // Assert - audit log has actorId
+            expect(insertCalls[1]?.values).toEqual(
+                expect.objectContaining({
+                    actorId: actorId,
+                    actorType: 'admin'
+                })
+            );
         });
 
         it('should throw on validation failure - ownerTrialDays zero', async () => {
@@ -311,7 +301,7 @@ describe('BillingSettingsService', () => {
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'Validation failed: ownerTrialDays must be between 1 and 90'
             );
-            expect(mockValues).not.toHaveBeenCalled();
+            expect(mockInsert).not.toHaveBeenCalled();
         });
 
         it('should throw on validation failure - invalid currency', async () => {
@@ -323,7 +313,7 @@ describe('BillingSettingsService', () => {
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'Validation failed: currency must be a 3-letter ISO 4217 code'
             );
-            expect(mockValues).not.toHaveBeenCalled();
+            expect(mockInsert).not.toHaveBeenCalled();
         });
 
         it('should throw on multiple validation errors', async () => {
@@ -337,7 +327,7 @@ describe('BillingSettingsService', () => {
 
             // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow('Validation failed:');
-            const error = await service.updateSettings(patch).catch((e) => e);
+            const error = (await service.updateSettings(patch).catch((e: unknown) => e)) as Error;
             expect(error.message).toContain('ownerTrialDays must be between 1 and 90');
             expect(error.message).toContain('complexTrialDays must be between 1 and 90');
             expect(error.message).toContain('taxRate must be between 0 and 100');
@@ -347,172 +337,127 @@ describe('BillingSettingsService', () => {
             // Arrange
             const patch = { ownerTrialDays: 21 };
             mockLimit.mockResolvedValue([]);
-            mockValues.mockRejectedValue(new Error('Insert failed'));
+            mockOnConflictDoUpdate.mockRejectedValue(new Error('Insert failed'));
 
             // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow('Insert failed');
         });
 
         it('should validate ownerTrialDays minimum boundary', async () => {
-            // Arrange
             const patch = { ownerTrialDays: 0 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'ownerTrialDays must be between 1 and 90'
             );
         });
 
         it('should validate ownerTrialDays maximum boundary', async () => {
-            // Arrange
             const patch = { ownerTrialDays: 91 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'ownerTrialDays must be between 1 and 90'
             );
         });
 
         it('should validate complexTrialDays minimum boundary', async () => {
-            // Arrange
             const patch = { complexTrialDays: 0 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'complexTrialDays must be between 1 and 90'
             );
         });
 
         it('should validate complexTrialDays maximum boundary', async () => {
-            // Arrange
             const patch = { complexTrialDays: 91 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'complexTrialDays must be between 1 and 90'
             );
         });
 
         it('should validate gracePeriodDays minimum boundary', async () => {
-            // Arrange
             const patch = { gracePeriodDays: -1 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'gracePeriodDays must be between 0 and 30'
             );
         });
 
         it('should validate gracePeriodDays maximum boundary', async () => {
-            // Arrange
             const patch = { gracePeriodDays: 31 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'gracePeriodDays must be between 0 and 30'
             );
         });
 
         it('should validate currency is 3 letters', async () => {
-            // Arrange
             const patch = { currency: 'US' };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'currency must be a 3-letter ISO 4217 code'
             );
         });
 
         it('should validate taxRate minimum boundary', async () => {
-            // Arrange
             const patch = { taxRate: -1 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'taxRate must be between 0 and 100'
             );
         });
 
         it('should validate taxRate maximum boundary', async () => {
-            // Arrange
             const patch = { taxRate: 101 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'taxRate must be between 0 and 100'
             );
         });
 
         it('should validate maxPaymentRetries minimum boundary', async () => {
-            // Arrange
             const patch = { maxPaymentRetries: -1 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'maxPaymentRetries must be between 0 and 10'
             );
         });
 
         it('should validate maxPaymentRetries maximum boundary', async () => {
-            // Arrange
             const patch = { maxPaymentRetries: 11 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'maxPaymentRetries must be between 0 and 10'
             );
         });
 
         it('should validate retryIntervalHours minimum boundary', async () => {
-            // Arrange
             const patch = { retryIntervalHours: 0 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'retryIntervalHours must be between 1 and 168'
             );
         });
 
         it('should validate retryIntervalHours maximum boundary', async () => {
-            // Arrange
             const patch = { retryIntervalHours: 169 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'retryIntervalHours must be between 1 and 168'
             );
         });
 
         it('should validate trialExpiryReminderDays minimum boundary', async () => {
-            // Arrange
             const patch = { trialExpiryReminderDays: 0 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'trialExpiryReminderDays must be between 1 and 30'
             );
         });
 
         it('should validate trialExpiryReminderDays maximum boundary', async () => {
-            // Arrange
             const patch = { trialExpiryReminderDays: 31 };
             mockLimit.mockResolvedValue([]);
-
-            // Act & Assert
             await expect(service.updateSettings(patch)).rejects.toThrow(
                 'trialExpiryReminderDays must be between 1 and 30'
             );
@@ -521,9 +466,6 @@ describe('BillingSettingsService', () => {
 
     describe('resetSettings', () => {
         it('should return default settings', async () => {
-            // Arrange
-            mockValues.mockResolvedValue(undefined);
-
             // Act
             const result = await service.resetSettings();
 
@@ -531,55 +473,61 @@ describe('BillingSettingsService', () => {
             expect(result).toEqual(DEFAULT_SETTINGS);
         });
 
-        it('should insert reset audit log entry', async () => {
-            // Arrange
-            mockValues.mockResolvedValue(undefined);
-
+        it('should upsert defaults into billing_settings table', async () => {
             // Act
             await service.resetSettings();
 
-            // Assert
-            expect(mockDb.insert).toHaveBeenCalledWith(billingAuditLogs);
-            expect(mockValues).toHaveBeenCalledWith({
-                action: 'billing_settings_reset',
-                entityType: 'settings',
-                entityId: 'global',
-                actorId: null,
-                actorType: 'system',
-                changes: DEFAULT_SETTINGS,
-                previousValues: null,
-                livemode: true,
-                ipAddress: null,
-                userAgent: null
-            });
+            // Assert - first insert is into billingSettings
+            expect(insertCalls.length).toBe(2);
+            expect(insertCalls[0]?.table).toBe(billingSettings);
+            expect(mockOnConflictDoUpdate).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    target: billingSettings.key
+                })
+            );
+        });
+
+        it('should insert reset audit log entry', async () => {
+            // Act
+            await service.resetSettings();
+
+            // Assert - second insert is into billingAuditLogs
+            expect(insertCalls[1]?.table).toBe(billingAuditLogs);
+            expect(insertCalls[1]?.values).toEqual(
+                expect.objectContaining({
+                    action: 'billing_settings_reset',
+                    entityType: 'settings',
+                    entityId: 'global',
+                    actorId: null,
+                    actorType: 'system',
+                    changes: DEFAULT_SETTINGS,
+                    previousValues: null,
+                    livemode: true,
+                    ipAddress: null,
+                    userAgent: null
+                })
+            );
         });
 
         it('should include actorId in audit entry when provided', async () => {
             // Arrange
             const actorId = 'admin_456';
-            mockValues.mockResolvedValue(undefined);
 
             // Act
             await service.resetSettings(actorId);
 
             // Assert
-            expect(mockValues).toHaveBeenCalledWith({
-                action: 'billing_settings_reset',
-                entityType: 'settings',
-                entityId: 'global',
-                actorId: actorId,
-                actorType: 'admin',
-                changes: DEFAULT_SETTINGS,
-                previousValues: null,
-                livemode: true,
-                ipAddress: null,
-                userAgent: null
-            });
+            expect(insertCalls[1]?.values).toEqual(
+                expect.objectContaining({
+                    actorId: actorId,
+                    actorType: 'admin'
+                })
+            );
         });
 
         it('should throw on database failure', async () => {
             // Arrange
-            mockValues.mockRejectedValue(new Error('Insert failed'));
+            mockOnConflictDoUpdate.mockRejectedValue(new Error('Insert failed'));
 
             // Act & Assert
             await expect(service.resetSettings()).rejects.toThrow('Insert failed');
@@ -637,19 +585,14 @@ describe('BillingSettingsService', () => {
                 taxRate: 15
             };
 
-            const mockEntry = {
-                action: 'billing_settings_update',
-                entityType: 'settings',
-                entityId: 'global',
-                changes: existingSettings,
-                createdAt: new Date()
+            const mockRow = {
+                key: 'global',
+                value: existingSettings
             };
 
-            mockLimit.mockResolvedValue([mockEntry]);
+            mockLimit.mockResolvedValue([mockRow]);
 
-            const patch = {
-                ownerTrialDays: 45
-            };
+            const patch = { ownerTrialDays: 45 };
 
             // Act
             const result = await service.updateSettings(patch);

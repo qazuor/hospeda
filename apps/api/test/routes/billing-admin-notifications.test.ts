@@ -64,7 +64,18 @@ vi.mock('@repo/db', () => ({
         metadata: 'metadata',
         createdAt: 'createdAt'
     },
-    sql: vi.fn()
+    sql: vi.fn(),
+    // Required by role-permissions-cache.ts loaded via actor middleware
+    RRolePermissionModel: class MockRRolePermissionModel {
+        async findAll(_filters: unknown, _opts?: unknown) {
+            return { items: [], total: 0 };
+        }
+    },
+    RUserPermissionModel: class MockRUserPermissionModel {
+        async findAll(_filters: unknown, _opts?: unknown) {
+            return { items: [], total: 0 };
+        }
+    }
 }));
 
 describe('Admin Notifications API - GET /', () => {

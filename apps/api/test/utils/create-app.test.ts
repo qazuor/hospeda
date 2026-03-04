@@ -95,7 +95,7 @@ describe('Create App Utility', () => {
             use: vi.fn().mockReturnThis(),
             notFound: vi.fn(),
             route: vi.fn().mockReturnThis(),
-            get: vi.fn(),
+            get: vi.fn().mockReturnThis(),
             request: vi.fn()
         }));
     });
@@ -122,7 +122,7 @@ describe('Create App Utility', () => {
     describe('createApp', () => {
         it('should create an app with all middlewares registered', async () => {
             const module = await import('../../src/utils/create-app');
-            const app = module.default();
+            const app = module.createApp();
             expect(app).toBeDefined();
         });
 
@@ -135,11 +135,12 @@ describe('Create App Utility', () => {
             const mockApp = {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp);
 
-            module.default();
+            module.createApp();
 
             // Verify that onError was called with the result of createErrorHandler()
             expect(mockApp.onError).toHaveBeenCalledWith(expect.any(Function));
@@ -154,18 +155,19 @@ describe('Create App Utility', () => {
             const mockApp = {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp);
 
-            module.default();
+            module.createApp();
 
             // Verify middleware registration order
-            // 21 middlewares: requestId, favicon, sentry, logger, cors, originVerification,
-            // securityHeaders, rateLimit, compression, validation, cache, metrics,
+            // 22 middlewares: requestId, favicon, sentry, logger, cors, originVerification,
+            // securityHeaders, rateLimit, bodyLimit, compression, validation, cache, metrics,
             // responseFormatting, responseValidator, mockAuth (test env), authMiddleware, actor,
             // billing, billingCustomer, entitlement, trial
-            expect(mockApp.use).toHaveBeenCalledTimes(21);
+            expect(mockApp.use).toHaveBeenCalledTimes(22);
         });
 
         it('should register notFound handler', async () => {
@@ -177,11 +179,12 @@ describe('Create App Utility', () => {
             const mockApp = {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp);
 
-            module.default();
+            module.createApp();
 
             expect(mockApp.notFound).toHaveBeenCalled();
         });
@@ -195,11 +198,12 @@ describe('Create App Utility', () => {
             const mockApp = {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp);
 
-            const result = module.default();
+            const result = module.createApp();
 
             expect(result).toBe(mockApp);
         });
@@ -220,7 +224,8 @@ describe('Create App Utility', () => {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
                 notFound: vi.fn(),
-                route: vi.fn().mockReturnThis()
+                route: vi.fn().mockReturnThis(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp as any);
 
@@ -244,7 +249,8 @@ describe('Create App Utility', () => {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
                 notFound: vi.fn(),
-                route: vi.fn().mockReturnThis()
+                route: vi.fn().mockReturnThis(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp as any);
 
@@ -278,7 +284,7 @@ describe('Create App Utility', () => {
             const mockOpenAPIHono = vi.mocked(OpenAPIHono);
 
             const module = await import('../../src/utils/create-app');
-            module.default();
+            module.createApp();
 
             expect(mockOpenAPIHono).toHaveBeenCalledWith({
                 strict: false
@@ -294,11 +300,12 @@ describe('Create App Utility', () => {
             const mockApp = {
                 onError: vi.fn(),
                 use: vi.fn().mockReturnThis(),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp as any);
 
-            module.default();
+            module.createApp();
 
             // Verify all middlewares are registered
             const middlewareCalls = mockApp.use.mock.calls;
@@ -318,11 +325,12 @@ describe('Create App Utility', () => {
                 use: vi.fn().mockImplementation(() => {
                     throw new Error('Middleware error');
                 }),
-                notFound: vi.fn()
+                notFound: vi.fn(),
+                get: vi.fn().mockReturnThis()
             };
             mockOpenAPIHono.mockReturnValue(mockApp as any);
 
-            expect(() => module.default()).toThrow('Middleware error');
+            expect(() => module.createApp()).toThrow('Middleware error');
         });
 
         it('should handle app creation errors', async () => {
@@ -335,7 +343,7 @@ describe('Create App Utility', () => {
                 throw new Error('App creation error');
             });
 
-            expect(() => module.default()).toThrow('App creation error');
+            expect(() => module.createApp()).toThrow('App creation error');
         });
     });
 });

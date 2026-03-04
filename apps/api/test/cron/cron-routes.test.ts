@@ -126,7 +126,18 @@ vi.mock('@repo/db', () => ({
     and: vi.fn(),
     or: vi.fn(),
     desc: vi.fn(),
-    asc: vi.fn()
+    asc: vi.fn(),
+    // Required by role-permissions-cache.ts which is loaded by actor middleware
+    RRolePermissionModel: class MockRRolePermissionModel {
+        async findAll(_filters: unknown, _opts?: unknown) {
+            return { items: [], total: 0 };
+        }
+    },
+    RUserPermissionModel: class MockRUserPermissionModel {
+        async findAll(_filters: unknown, _opts?: unknown) {
+            return { items: [], total: 0 };
+        }
+    }
 }));
 
 // Mock billing middleware to avoid real billing initialization
@@ -322,8 +333,10 @@ describe('Cron Routes Integration Tests', () => {
         });
 
         describe('1.5 CRON_AUTH_DISABLED Bypass', () => {
-            it('should bypass authentication when CRON_AUTH_DISABLED=true in non-production', async () => {
-                // Arrange - temporarily set auth disabled
+            it('should require authentication even when CRON_AUTH_DISABLED=true (feature removed)', async () => {
+                // Note: CRON_AUTH_DISABLED bypass was removed from cronAuthMiddleware.
+                // Authentication is now always required via CRON_SECRET.
+                // This test documents that the bypass no longer works.
                 const originalAuthDisabled = process.env.CRON_AUTH_DISABLED;
                 const originalNodeEnv = process.env.NODE_ENV;
                 process.env.CRON_AUTH_DISABLED = 'true';
@@ -337,12 +350,12 @@ describe('Cron Routes Integration Tests', () => {
                     method: 'GET',
                     headers: {
                         'user-agent': 'test-agent'
-                        // No authentication headers
+                        // No authentication headers - should be rejected even with CRON_AUTH_DISABLED
                     }
                 });
 
-                // Assert
-                expect(response.status).toBe(200);
+                // Assert - authentication is always required now (CRON_AUTH_DISABLED is not supported)
+                expect(response.status).toBe(401);
 
                 // Restore original environment
                 if (originalAuthDisabled !== undefined) {

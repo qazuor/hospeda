@@ -244,7 +244,7 @@ describe('Billing Routes Integration', () => {
                     },
                     body: JSON.stringify({
                         code: 'SUMMER2024',
-                        checkoutId: 'checkout-123'
+                        customerId: 'checkout-123'
                     })
                 });
 
@@ -264,7 +264,7 @@ describe('Billing Routes Integration', () => {
                     },
                     body: JSON.stringify({
                         code: 'SUMMER2024',
-                        checkoutId: 'invalid-uuid'
+                        customerId: 'invalid-uuid'
                     })
                 });
 
@@ -284,7 +284,7 @@ describe('Billing Routes Integration', () => {
                     },
                     body: JSON.stringify({
                         code: 'SUMMER2024',
-                        checkoutId: validCheckoutId
+                        customerId: validCheckoutId
                     })
                 });
 
@@ -576,35 +576,13 @@ describe('Billing Routes Integration', () => {
                         'user-agent': 'test-agent',
                         'content-type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        customerId: 'customer-123',
-                        userType: 'owner'
-                    })
+                    body: JSON.stringify({})
                 });
 
                 expect(res.status).toBe(503);
             });
 
-            it('should validate request body for start trial', async () => {
-                const app = initApp();
-
-                // Missing required fields
-                const res = await app.request('/api/v1/billing/trial/start', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        customerId: 'customer-123'
-                        // Missing userType
-                    })
-                });
-
-                expect(res.status).toBe(503);
-            });
-
-            it('should validate user type enum', async () => {
+            it('should accept empty body for start trial (no userType required)', async () => {
                 const app = initApp();
 
                 const res = await app.request('/api/v1/billing/trial/start', {
@@ -613,48 +591,10 @@ describe('Billing Routes Integration', () => {
                         'user-agent': 'test-agent',
                         'content-type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        customerId: 'customer-123',
-                        userType: 'invalid-type'
-                    })
+                    body: JSON.stringify({})
                 });
 
-                expect(res.status).toBe(503);
-            });
-
-            it('should accept valid trial start request for owner', async () => {
-                const app = initApp();
-
-                const res = await app.request('/api/v1/billing/trial/start', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        customerId: 'customer-123',
-                        userType: 'owner'
-                    })
-                });
-
-                expect(res.status).toBe(503);
-            });
-
-            it('should accept valid trial start request for complex', async () => {
-                const app = initApp();
-
-                const res = await app.request('/api/v1/billing/trial/start', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        customerId: 'customer-123',
-                        userType: 'complex'
-                    })
-                });
-
+                // Returns 503 because billing is not configured in test env
                 expect(res.status).toBe(503);
             });
         });
@@ -1126,9 +1066,9 @@ describe('Billing Routes Integration', () => {
         describe('GET /api/v1/billing/checkout/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
-                const checkoutId = '550e8400-e29b-41d4-a716-446655440000';
+                const customerId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/checkout/${checkoutId}`, {
+                const res = await app.request(`/api/v1/billing/checkout/${customerId}`, {
                     headers: {
                         'user-agent': 'test-agent'
                     }

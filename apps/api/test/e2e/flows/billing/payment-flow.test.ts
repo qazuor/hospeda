@@ -93,8 +93,7 @@ describe('E2E: Payment Flow Integration', () => {
 
             // ACT - Start trial
             const subscriptionId = await trialService.startTrial({
-                customerId: billingCustomerId,
-                userType: 'owner'
+                customerId: billingCustomerId
             });
 
             // ASSERT
@@ -532,11 +531,11 @@ describe('E2E: Payment Flow Integration', () => {
         it('Step 3.3: Apply promo code during checkout', async () => {
             // ARRANGE
             const promoService = new PromoCodeService();
-            const checkoutId = 'test-checkout-789';
+            const customerId = 'test-checkout-789';
             const amount = 10000;
 
             // ACT
-            const applyResult = await promoService.apply(TEST_PROMO_CODE, checkoutId, amount);
+            const applyResult = await promoService.apply(TEST_PROMO_CODE, customerId, amount);
 
             // ASSERT
             expect(applyResult.success).toBe(true);
@@ -703,14 +702,14 @@ describe('E2E: Payment Flow Integration', () => {
             expect(createResult.success).toBe(true);
 
             // ACT - Apply code twice
-            const checkoutId1 = 'checkout-max-1';
-            const checkoutId2 = 'checkout-max-2';
+            const customerId1 = 'checkout-max-1';
+            const customerId2 = 'checkout-max-2';
 
-            const firstApply = await promoService.apply(limitedCodeName, checkoutId1, 10000);
+            const firstApply = await promoService.apply(limitedCodeName, customerId1, 10000);
             expect(firstApply.success).toBe(true);
 
             // Second application should fail (max uses reached)
-            const secondApply = await promoService.apply(limitedCodeName, checkoutId2, 10000);
+            const secondApply = await promoService.apply(limitedCodeName, customerId2, 10000);
 
             // ASSERT
             expect(secondApply.success).toBe(false);
@@ -775,8 +774,7 @@ describe('E2E: Payment Flow Integration', () => {
             });
 
             const subscriptionId = await trialService.startTrial({
-                customerId: trialCustomer.id,
-                userType: 'owner'
+                customerId: trialCustomer.id
             });
 
             expect(subscriptionId).toBeDefined();

@@ -1,686 +1,404 @@
 /**
  * Cache Middleware Tests
- * Tests the caching functionality and configuration
+ * Tests the in-memory cache with TTL, eviction, and X-Cache headers
  */
-import type { Context } from 'hono';
 import { Hono } from 'hono';
-import { cache } from 'hono/cache';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { createCacheMiddleware } from '../../src/middlewares/cache';
 
-// Mock Hono cache
-vi.mock('hono/cache', () => ({
-    cache: vi.fn()
-}));
-
-// Mock globalThis.caches to simulate Web Standards Cache API support
-Object.defineProperty(globalThis, 'caches', {
-    value: {
-        open: vi.fn(),
-        match: vi.fn(),
-        has: vi.fn(),
-        delete: vi.fn(),
-        keys: vi.fn()
-    },
-    writable: true,
-    configurable: true
-});
-
-// Mock environment
+// Mock environment before importing the module
 vi.mock('../../src/utils/env', () => ({
-    env: {
-        CACHE_ENABLED: true,
-        CACHE_DEFAULT_MAX_AGE: 300,
-        CACHE_DEFAULT_STALE_WHILE_REVALIDATE: 60,
-        CACHE_DEFAULT_STALE_IF_ERROR: 86400,
-        CACHE_PUBLIC_ENDPOINTS: '/api/v1/public/accommodations,/health',
-        CACHE_PRIVATE_ENDPOINTS: '/api/v1/public/users',
-        CACHE_NO_CACHE_ENDPOINTS: '/health/db,/docs',
-        CACHE_ETAG_ENABLED: true,
-        CACHE_LAST_MODIFIED_ENABLED: true
-    },
-    getCacheConfig: () => ({
+    getCacheConfig: vi.fn(() => ({
         enabled: true,
-        publicEndpoints: ['/api/v1/public/accommodations', '/health'],
-        privateEndpoints: ['/api/v1/public/users'],
+        publicEndpoints: ['/api/v1/public/accommodations', '/api/v1/public/destinations'],
+        privateEndpoints: ['/api/v1/protected/users'],
         noCacheEndpoints: ['/health/db', '/docs'],
-        maxAge: 300,
-        staleWhileRevalidate: 60,
-        staleIfError: 86400,
+        maxAge: 60,
+        staleWhileRevalidate: 30,
+        staleIfError: 3600,
         etagEnabled: true,
         lastModifiedEnabled: true
-    }),
+    })),
     validateApiEnv: vi.fn()
 }));
 
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+        error: vi.fn()
+    }
+}));
+
+import { clearCache, createCacheMiddleware, getCacheSize } from '../../src/middlewares/cache';
+import { getCacheConfig } from '../../src/utils/env';
+import { apiLogger } from '../../src/utils/logger';
+
+/**
+ * Creates a Hono test app with the cache middleware and a test route.
+ */
+function createTestApp({
+    route = '/api/v1/public/accommodations'
+}: { readonly route?: string } = {}) {
+    const middleware = createCacheMiddleware();
+    const app = new Hono();
+    let callCount = 0;
+
+    app.use('*', middleware);
+    app.get(route, (c) => {
+        callCount++;
+        return c.json({ data: 'test', callCount });
+    });
+
+    // Add a 404-producing route
+    app.get('/api/v1/public/accommodations/not-found', (c) => {
+        callCount++;
+        return c.json({ error: 'not found' }, 404);
+    });
+
+    // Add a 500-producing route
+    app.get('/api/v1/public/accommodations/error', (c) => {
+        callCount++;
+        return c.json({ error: 'server error' }, 500);
+    });
+
+    return { app, getCallCount: () => callCount };
+}
+
 describe('Cache Middleware', () => {
-    const getCacheConfig = () => {
-        const config = vi.mocked(cache).mock.calls[0]?.[0];
-        if (!config) throw new Error('Cache config not found');
-        return config;
-    };
-
-    // Helper to create mock context
-    const createMockContext = (path: string, authHeader?: string): Partial<Context> =>
-        ({
-            req: {
-                path,
-                header: vi.fn().mockReturnValue(authHeader)
-            }
-        }) as any;
-
-    // Helper to create dynamic mocks with consistent structure
-    const createEnvMock = (config: {
-        enabled?: boolean;
-        maxAge?: number;
-        staleWhileRevalidate?: number;
-        staleIfError?: number;
-        publicEndpoints?: string;
-        privateEndpoints?: string;
-        noCacheEndpoints?: string;
-        etagEnabled?: boolean;
-        lastModifiedEnabled?: boolean;
-    }) => ({
-        env: {
-            CACHE_ENABLED: config.enabled ?? true,
-            CACHE_DEFAULT_MAX_AGE: config.maxAge ?? 300,
-            CACHE_DEFAULT_STALE_WHILE_REVALIDATE: config.staleWhileRevalidate ?? 60,
-            CACHE_DEFAULT_STALE_IF_ERROR: config.staleIfError ?? 86400,
-            CACHE_PUBLIC_ENDPOINTS:
-                config.publicEndpoints ?? '/api/v1/public/accommodations,/health',
-            CACHE_PRIVATE_ENDPOINTS: config.privateEndpoints ?? '/api/v1/public/users',
-            CACHE_NO_CACHE_ENDPOINTS: config.noCacheEndpoints ?? '/health/db,/docs',
-            CACHE_ETAG_ENABLED: config.etagEnabled ?? true,
-            CACHE_LAST_MODIFIED_ENABLED: config.lastModifiedEnabled ?? true
-        },
-        getCacheConfig: () => ({
-            enabled: config.enabled ?? true,
-            publicEndpoints: (config.publicEndpoints ?? '/api/v1/public/accommodations,/health')
-                .split(',')
-                .map((e) => e.trim()),
-            privateEndpoints: (config.privateEndpoints ?? '/api/v1/public/users')
-                .split(',')
-                .map((e) => e.trim()),
-            noCacheEndpoints: (config.noCacheEndpoints ?? '/health/db,/docs')
-                .split(',')
-                .map((e) => e.trim()),
-            maxAge: config.maxAge ?? 300,
-            staleWhileRevalidate: config.staleWhileRevalidate ?? 60,
-            staleIfError: config.staleIfError ?? 86400,
-            etagEnabled: config.etagEnabled ?? true,
-            lastModifiedEnabled: config.lastModifiedEnabled ?? true
-        })
-    });
-
     beforeEach(() => {
+        clearCache();
         vi.clearAllMocks();
-        vi.mocked(cache).mockReturnValue(vi.fn());
+        vi.mocked(getCacheConfig).mockReturnValue({
+            enabled: true,
+            publicEndpoints: ['/api/v1/public/accommodations', '/api/v1/public/destinations'],
+            privateEndpoints: ['/api/v1/protected/users'],
+            noCacheEndpoints: ['/health/db', '/docs'],
+            defaultMaxAge: 60,
+            defaultStaleWhileRevalidate: 30,
+            defaultStaleIfError: 3600,
+            maxAge: 60,
+            staleWhileRevalidate: 30,
+            staleIfError: 3600,
+            etagEnabled: true,
+            lastModifiedEnabled: true
+        });
     });
 
-    describe('createCacheMiddleware', () => {
-        it('should create cache middleware with correct configuration', () => {
-            createCacheMiddleware();
+    afterEach(() => {
+        clearCache();
+    });
 
-            expect(vi.mocked(cache)).toHaveBeenCalledWith({
-                cacheName: 'hospeda-api',
-                cacheControl:
-                    'public, max-age=300, stale-while-revalidate=60, stale-if-error=86400',
-                vary: ['Accept-Encoding', 'Accept-Language'],
-                keyGenerator: expect.any(Function),
-                cacheableStatusCodes: [200, 404]
+    describe('Cache Disabled', () => {
+        it('should return pass-through middleware when cache is disabled', async () => {
+            vi.mocked(getCacheConfig).mockReturnValue({
+                enabled: false,
+                publicEndpoints: [],
+                privateEndpoints: [],
+                noCacheEndpoints: [],
+                defaultMaxAge: 60,
+                defaultStaleWhileRevalidate: 30,
+                defaultStaleIfError: 3600,
+                maxAge: 60,
+                staleWhileRevalidate: 30,
+                staleIfError: 3600,
+                etagEnabled: true,
+                lastModifiedEnabled: true
             });
-        });
 
-        it('should return no-op middleware when cache is disabled', async () => {
-            // Reset modules to ensure fresh import
-            vi.resetModules();
+            const { app, getCallCount } = createTestApp();
 
-            // Mock env with cache disabled
-            vi.doMock('../../src/utils/env', () => createEnvMock({ enabled: false }));
+            const res1 = await app.request('/api/v1/public/accommodations');
+            const res2 = await app.request('/api/v1/public/accommodations');
 
-            const { createCacheMiddleware: recreatedMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            const middleware = recreatedMiddleware();
-
-            expect(typeof middleware).toBe('function');
-            expect(vi.mocked(cache)).not.toHaveBeenCalled();
-        });
-
-        it('should parse endpoint lists correctly', () => {
-            createCacheMiddleware();
-
-            const config = getCacheConfig();
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-            expect(keyGenerator).toBeDefined();
-
-            // Test public endpoint
-            const publicContext = createMockContext('/api/v1/public/accommodations');
-            const publicKey = keyGenerator?.(publicContext as unknown as Context);
-            expect(publicKey).toBe('public-/api/v1/public/accommodations');
-
-            // Test private endpoint
-            const privateContext = createMockContext('/api/v1/public/users', 'Bearer token123');
-            const privateKey = keyGenerator?.(privateContext as unknown as Context);
-            expect(privateKey).toBe('private-/api/v1/public/users-Bearer token123');
-
-            // Test no-cache endpoint
-            const noCacheContext = {
-                req: {
-                    path: '/health/db',
-                    header: vi.fn()
-                }
-            };
-            const noCacheKey = keyGenerator?.(noCacheContext as unknown as Context);
-            expect(noCacheKey).toMatch(/\/health\/db-\d+/);
-
-            // Test unspecified endpoint
-            const unspecifiedContext = {
-                req: {
-                    path: '/api/v1/unknown',
-                    header: vi.fn()
-                }
-            };
-            const unspecifiedKey = keyGenerator?.(unspecifiedContext as unknown as Context);
-            expect(unspecifiedKey).toMatch(/\/api\/v1\/unknown-\d+/);
-        });
-
-        it('should handle private endpoints without authorization header', () => {
-            createCacheMiddleware();
-
-            const config = getCacheConfig();
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-
-            const context = {
-                req: {
-                    path: '/api/v1/public/users',
-                    header: vi.fn().mockReturnValue(undefined)
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toBe('private-/api/v1/public/users-anonymous');
-        });
-
-        it('should handle endpoint matching with trailing slashes', () => {
-            createCacheMiddleware();
-
-            const config = getCacheConfig();
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-
-            const context = {
-                req: {
-                    path: '/api/v1/public/accommodations/123',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toBe('public-/api/v1/public/accommodations/123');
-        });
-
-        it('should handle empty endpoint lists', async () => {
-            // Reset modules to ensure fresh import
-            vi.resetModules();
-
-            // Mock env with empty endpoint lists
-            vi.doMock('../../src/utils/env', () =>
-                createEnvMock({
-                    publicEndpoints: '',
-                    privateEndpoints: '',
-                    noCacheEndpoints: ''
-                })
-            );
-
-            const { createCacheMiddleware: recreatedMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            recreatedMiddleware();
-
-            const config = getCacheConfig();
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-
-            const context = {
-                req: {
-                    path: '/api/v1/public/accommodations',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            // When endpoint lists are empty, default behavior is no-cache (unique timestamp)
-            expect(key).toMatch(/\/api\/v1\/public\/accommodations-\d+/);
+            expect(res1.status).toBe(200);
+            expect(res2.status).toBe(200);
+            // Both requests hit the handler because cache is disabled
+            expect(getCallCount()).toBe(2);
+            // No X-Cache header when disabled
+            expect(res1.headers.get('X-Cache')).toBeNull();
         });
     });
 
-    describe('cacheMiddleware', () => {
-        it('should export default middleware instance', async () => {
-            // Reset modules and clear mocks for clean import
-            vi.resetModules();
-            vi.clearAllMocks();
+    describe('Cache Hit and Miss', () => {
+        it('should return MISS on first request and HIT on second', async () => {
+            const { app, getCallCount } = createTestApp();
 
-            const { cacheMiddleware: freshCacheMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            expect(typeof freshCacheMiddleware).toBe('function');
+            const res1 = await app.request('/api/v1/public/accommodations');
+            expect(res1.status).toBe(200);
+            expect(res1.headers.get('X-Cache')).toBe('MISS');
+            expect(getCallCount()).toBe(1);
+
+            const res2 = await app.request('/api/v1/public/accommodations');
+            expect(res2.status).toBe(200);
+            expect(res2.headers.get('X-Cache')).toBe('HIT');
+            // Handler was NOT called again
+            expect(getCallCount()).toBe(1);
+
+            // Body should be identical
+            const body1 = await res1.json();
+            const body2 = await res2.json();
+            expect(body1.data).toBe('test');
+            expect(body2.data).toBe('test');
         });
 
-        it('should be the same as createCacheMiddleware()', async () => {
-            // Reset modules and clear mocks for clean import
-            vi.resetModules();
-            vi.clearAllMocks();
+        it('should cache 404 responses', async () => {
+            const { app, getCallCount } = createTestApp();
 
-            const {
-                cacheMiddleware: freshCacheMiddleware,
-                createCacheMiddleware: freshCreateMiddleware
-            } = await import('../../src/middlewares/cache');
-            const createdMiddleware = freshCreateMiddleware();
-            // They should both be functions (comparison may differ due to environment mocking)
-            expect(typeof freshCacheMiddleware).toBe('function');
-            expect(typeof createdMiddleware).toBe('function');
+            const res1 = await app.request('/api/v1/public/accommodations/not-found');
+            expect(res1.status).toBe(404);
+            expect(res1.headers.get('X-Cache')).toBe('MISS');
+
+            const res2 = await app.request('/api/v1/public/accommodations/not-found');
+            expect(res2.status).toBe(404);
+            expect(res2.headers.get('X-Cache')).toBe('HIT');
+            expect(getCallCount()).toBe(1);
+        });
+
+        it('should NOT cache 500 responses', async () => {
+            const { app, getCallCount } = createTestApp();
+
+            const res1 = await app.request('/api/v1/public/accommodations/error');
+            expect(res1.status).toBe(500);
+            expect(res1.headers.get('X-Cache')).toBe('MISS');
+
+            const res2 = await app.request('/api/v1/public/accommodations/error');
+            expect(res2.status).toBe(500);
+            expect(res2.headers.get('X-Cache')).toBe('MISS');
+            // Both requests hit the handler
+            expect(getCallCount()).toBe(2);
         });
     });
 
-    describe('Integration with Hono', () => {
-        it('should integrate with Hono app', async () => {
-            const mockMiddleware = vi.fn(async (_c: unknown, next: () => Promise<void>) => {
-                await next();
-            });
-            vi.mocked(cache).mockReturnValue(mockMiddleware);
-
-            const { createCacheMiddleware: freshCreateMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            const freshMiddleware = freshCreateMiddleware();
-
+    describe('Only GET Requests Are Cached', () => {
+        it('should not cache POST requests', async () => {
+            const middleware = createCacheMiddleware();
             const app = new Hono();
-            app.use(freshMiddleware);
-            app.get('/test', (c) => c.json({ message: 'success' }));
+            let callCount = 0;
 
-            const res = await app.request('/test');
-
-            expect(res.status).toBe(200);
-            expect(mockMiddleware).toHaveBeenCalled();
-        });
-
-        it('should handle middleware errors gracefully', async () => {
-            const mockMiddleware = vi.fn(async () => {
-                throw new Error('Cache error');
+            app.use('*', middleware);
+            app.post('/api/v1/public/accommodations', (c) => {
+                callCount++;
+                return c.json({ created: true });
             });
-            vi.mocked(cache).mockReturnValue(mockMiddleware);
 
-            const { createCacheMiddleware: freshCreateMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            const freshMiddleware = freshCreateMiddleware();
+            const res1 = await app.request('/api/v1/public/accommodations', { method: 'POST' });
+            const res2 = await app.request('/api/v1/public/accommodations', { method: 'POST' });
 
+            expect(res1.status).toBe(200);
+            expect(res2.status).toBe(200);
+            // No X-Cache header for non-GET requests
+            expect(res1.headers.get('X-Cache')).toBeNull();
+            expect(callCount).toBe(2);
+        });
+    });
+
+    describe('Endpoint Classification', () => {
+        it('should cache public endpoints', async () => {
+            const { app, getCallCount } = createTestApp();
+
+            await app.request('/api/v1/public/accommodations');
+            await app.request('/api/v1/public/accommodations');
+            expect(getCallCount()).toBe(1);
+        });
+
+        it('should NOT cache no-cache endpoints', async () => {
+            const middleware = createCacheMiddleware();
             const app = new Hono();
-            app.use(freshMiddleware);
-            app.get('/test', (c) => c.json({ message: 'success' }));
+            let callCount = 0;
 
-            // Hono handles errors gracefully and returns 500 status
-            const res = await app.request('/test');
-            expect(res.status).toBe(500);
+            app.use('*', middleware);
+            app.get('/health/db', (c) => {
+                callCount++;
+                return c.json({ status: 'ok' });
+            });
+
+            await app.request('/health/db');
+            await app.request('/health/db');
+            // Both requests hit the handler
+            expect(callCount).toBe(2);
+        });
+
+        it('should NOT cache unclassified endpoints', async () => {
+            const middleware = createCacheMiddleware();
+            const app = new Hono();
+            let callCount = 0;
+
+            app.use('*', middleware);
+            app.get('/api/v1/unknown', (c) => {
+                callCount++;
+                return c.json({ data: 'unknown' });
+            });
+
+            await app.request('/api/v1/unknown');
+            await app.request('/api/v1/unknown');
+            expect(callCount).toBe(2);
+        });
+
+        it('should cache private endpoints with separate keys per auth token', async () => {
+            const middleware = createCacheMiddleware();
+            const app = new Hono();
+            let callCount = 0;
+
+            app.use('*', middleware);
+            app.get('/api/v1/protected/users', (c) => {
+                callCount++;
+                return c.json({ user: 'data', callCount });
+            });
+
+            // Two requests with different auth tokens
+            const res1 = await app.request('/api/v1/protected/users', {
+                headers: { Authorization: 'Bearer token-a' }
+            });
+            const res2 = await app.request('/api/v1/protected/users', {
+                headers: { Authorization: 'Bearer token-b' }
+            });
+
+            // Each should be a cache miss (different keys)
+            expect(res1.headers.get('X-Cache')).toBe('MISS');
+            expect(res2.headers.get('X-Cache')).toBe('MISS');
+            expect(callCount).toBe(2);
+
+            // Now repeat with token-a - should be a HIT
+            const res3 = await app.request('/api/v1/protected/users', {
+                headers: { Authorization: 'Bearer token-a' }
+            });
+            expect(res3.headers.get('X-Cache')).toBe('HIT');
+            expect(callCount).toBe(2);
+        });
+
+        it('should use "anonymous" key for private endpoints without auth header', async () => {
+            const middleware = createCacheMiddleware();
+            const app = new Hono();
+            let callCount = 0;
+
+            app.use('*', middleware);
+            app.get('/api/v1/protected/users', (c) => {
+                callCount++;
+                return c.json({ user: 'anon' });
+            });
+
+            await app.request('/api/v1/protected/users');
+            const res2 = await app.request('/api/v1/protected/users');
+
+            expect(res2.headers.get('X-Cache')).toBe('HIT');
+            expect(callCount).toBe(1);
         });
     });
 
-    describe('Cache Configuration', () => {
-        it('should use correct cache control headers', () => {
-            createCacheMiddleware();
+    describe('TTL Expiration', () => {
+        it('should expire cached entries after TTL', async () => {
+            // Use a very short TTL for testing
+            vi.mocked(getCacheConfig).mockReturnValue({
+                enabled: true,
+                publicEndpoints: ['/api/v1/public/accommodations'],
+                privateEndpoints: [],
+                noCacheEndpoints: [],
+                defaultMaxAge: 0,
+                defaultStaleWhileRevalidate: 0,
+                defaultStaleIfError: 0,
+                maxAge: 0, // 0 seconds = immediate expiry
+                staleWhileRevalidate: 0,
+                staleIfError: 0,
+                etagEnabled: true,
+                lastModifiedEnabled: true
+            });
 
-            const config = getCacheConfig();
-            expect(config.cacheControl).toBe(
-                'public, max-age=300, stale-while-revalidate=60, stale-if-error=86400'
-            );
-        });
+            const { app, getCallCount } = createTestApp();
 
-        it('should use correct vary headers', () => {
-            createCacheMiddleware();
+            await app.request('/api/v1/public/accommodations');
+            expect(getCallCount()).toBe(1);
 
-            const config = getCacheConfig();
-            expect(config.vary).toEqual(['Accept-Encoding', 'Accept-Language']);
-        });
+            // Wait a tiny bit for the TTL to expire (0 seconds TTL = 0ms)
+            await new Promise((resolve) => setTimeout(resolve, 5));
 
-        it('should use correct cacheable status codes', () => {
-            createCacheMiddleware();
-
-            const config = getCacheConfig();
-            expect(config.cacheableStatusCodes).toEqual([200, 404]);
-        });
-
-        it('should use correct cache name', () => {
-            createCacheMiddleware();
-
-            const config = getCacheConfig();
-            expect(config.cacheName).toBe('hospeda-api');
-        });
-    });
-
-    describe('Key Generation Logic', () => {
-        let keyGenerator: ((c: Context) => string | Promise<string>) | undefined;
-
-        beforeEach(() => {
-            createCacheMiddleware();
-            const config = getCacheConfig();
-            keyGenerator = config.keyGenerator;
-        });
-
-        it('should generate unique keys for no-cache endpoints', async () => {
-            const context = {
-                req: {
-                    path: '/health/db',
-                    header: vi.fn()
-                }
-            };
-
-            const key1 = keyGenerator?.(context as unknown as Context);
-            // Increased delay to ensure timestamp difference in fast environments
-            await new Promise((resolve) => setTimeout(resolve, 10));
-            const key2 = keyGenerator?.(context as unknown as Context);
-
-            expect(key1).not.toBe(key2);
-            expect(key1).toMatch(/\/health\/db-\d+/);
-            expect(key2).toMatch(/\/health\/db-\d+/);
-        });
-
-        it('should generate consistent keys for public endpoints', () => {
-            const context = {
-                req: {
-                    path: '/api/v1/public/accommodations',
-                    header: vi.fn()
-                }
-            };
-
-            const key1 = keyGenerator?.(context as unknown as Context);
-            const key2 = keyGenerator?.(context as unknown as Context);
-
-            expect(key1).toBe(key2);
-            expect(key1).toBe('public-/api/v1/public/accommodations');
-        });
-
-        it('should generate auth-specific keys for private endpoints', () => {
-            const context1 = {
-                req: {
-                    path: '/api/v1/public/users',
-                    header: vi.fn().mockReturnValue('Bearer token1')
-                }
-            };
-
-            const context2 = {
-                req: {
-                    path: '/api/v1/public/users',
-                    header: vi.fn().mockReturnValue('Bearer token2')
-                }
-            };
-
-            const key1 = keyGenerator?.(context1 as unknown as Context);
-            const key2 = keyGenerator?.(context2 as unknown as Context);
-
-            expect(key1).not.toBe(key2);
-            expect(key1).toBe('private-/api/v1/public/users-Bearer token1');
-            expect(key2).toBe('private-/api/v1/public/users-Bearer token2');
-        });
-
-        it('should handle nested paths correctly', () => {
-            const context = {
-                req: {
-                    path: '/api/v1/public/accommodations/123/details',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toBe('public-/api/v1/public/accommodations/123/details');
-        });
-
-        it('should handle root path', () => {
-            const context = {
-                req: {
-                    path: '/',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toMatch(/\/-\d+/);
+            const res2 = await app.request('/api/v1/public/accommodations');
+            expect(res2.headers.get('X-Cache')).toBe('MISS');
+            expect(getCallCount()).toBe(2);
         });
     });
 
-    describe('Environment Variable Handling', () => {
-        it('should handle different cache configurations', async () => {
-            // Reset modules to ensure fresh import
-            vi.resetModules();
+    describe('LRU Eviction', () => {
+        it('should track cache size via getCacheSize', async () => {
+            const { app } = createTestApp({ route: '/api/v1/public/accommodations/:id' });
 
-            // Mock env with different values
-            vi.doMock('../../src/utils/env', () =>
-                createEnvMock({
-                    maxAge: 600,
-                    staleWhileRevalidate: 120,
-                    staleIfError: 172800,
-                    publicEndpoints: '/custom/public',
-                    privateEndpoints: '/custom/private',
-                    noCacheEndpoints: '/custom/no-cache'
-                })
-            );
+            expect(getCacheSize()).toBe(0);
 
-            const { createCacheMiddleware: recreatedMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            recreatedMiddleware();
+            await app.request('/api/v1/public/accommodations/1');
+            expect(getCacheSize()).toBe(1);
 
-            const config = getCacheConfig();
-            expect(config.cacheControl).toBe(
-                'public, max-age=600, stale-while-revalidate=120, stale-if-error=172800'
-            );
+            await app.request('/api/v1/public/accommodations/2');
+            expect(getCacheSize()).toBe(2);
 
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-            const context = {
-                req: {
-                    path: '/custom/public/test',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toBe('public-/custom/public/test');
+            // Same request should not increase size
+            await app.request('/api/v1/public/accommodations/1');
+            expect(getCacheSize()).toBe(2);
         });
 
-        it('should handle whitespace in endpoint lists', async () => {
-            // Reset modules to ensure fresh import
-            vi.resetModules();
+        it('should clear cache with clearCache', async () => {
+            const { app } = createTestApp({ route: '/api/v1/public/accommodations/:id' });
 
-            // Mock env with whitespace in endpoint lists
-            vi.doMock('../../src/utils/env', () =>
-                createEnvMock({
-                    publicEndpoints: ' /api/v1/public/accommodations , /health ',
-                    privateEndpoints: ' /api/v1/public/users ',
-                    noCacheEndpoints: ' /health/db , /docs '
-                })
-            );
+            await app.request('/api/v1/public/accommodations/1');
+            await app.request('/api/v1/public/accommodations/2');
+            expect(getCacheSize()).toBe(2);
 
-            const { createCacheMiddleware: recreatedMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-            recreatedMiddleware();
-
-            const config = getCacheConfig();
-            const keyGenerator = config.keyGenerator;
-            expect(keyGenerator).toBeDefined();
-
-            const context = {
-                req: {
-                    path: '/api/v1/public/accommodations',
-                    header: vi.fn()
-                }
-            };
-
-            const key = keyGenerator?.(context as unknown as Context);
-            expect(key).toBe('public-/api/v1/public/accommodations');
+            clearCache();
+            expect(getCacheSize()).toBe(0);
         });
     });
 
-    describe('Runtime Auto-Detection', () => {
-        let originalCaches: any;
+    describe('Nested Paths', () => {
+        it('should handle nested paths under public endpoints', async () => {
+            const { app, getCallCount } = createTestApp({
+                route: '/api/v1/public/accommodations/:id/details'
+            });
 
-        beforeEach(() => {
-            // Store original caches value
-            originalCaches = (globalThis as any).caches;
-            vi.clearAllMocks();
-            vi.resetModules();
+            await app.request('/api/v1/public/accommodations/123/details');
+            const res2 = await app.request('/api/v1/public/accommodations/123/details');
+
+            expect(res2.headers.get('X-Cache')).toBe('HIT');
+            expect(getCallCount()).toBe(1);
         });
+    });
 
-        afterEach(() => {
-            // Restore original caches value
-            if (originalCaches !== undefined) {
-                (globalThis as any).caches = originalCaches;
-            } else {
-                (globalThis as any).caches = undefined;
-            }
-            vi.resetModules();
+    describe('cacheMiddleware export', () => {
+        it('should export cacheMiddleware as a factory function', async () => {
+            const { cacheMiddleware } = await import('../../src/middlewares/cache');
+            expect(typeof cacheMiddleware).toBe('function');
+
+            const result = cacheMiddleware();
+            expect(typeof result).toBe('function');
         });
+    });
 
-        it('should disable cache when CACHE_ENABLED=false (Case 1)', async () => {
-            // Mock logger
-            const mockLogger = {
-                info: vi.fn(),
-                warn: vi.fn(),
-                debug: vi.fn(),
-                error: vi.fn()
-            };
-
-            vi.doMock('../../src/utils/logger', () => ({
-                apiLogger: mockLogger
-            }));
-
-            // Mock env with cache disabled
-            vi.doMock('../../src/utils/env', () => ({
-                getCacheConfig: () => ({
-                    enabled: false,
-                    publicEndpoints: [],
-                    privateEndpoints: [],
-                    noCacheEndpoints: [],
-                    maxAge: 300,
-                    staleWhileRevalidate: 60,
-                    staleIfError: 86400,
-                    etagEnabled: true,
-                    lastModifiedEnabled: true
-                })
-            }));
-
-            // Set up caches API (should be ignored)
-            (globalThis as any).caches = { open: vi.fn() };
-
-            const { createCacheMiddleware: freshCreateMiddleware } = await import(
-                '../../src/middlewares/cache'
+    describe('Logging', () => {
+        it('should log info message when cache is enabled', () => {
+            createCacheMiddleware();
+            expect(apiLogger.info).toHaveBeenCalledWith(
+                expect.stringContaining('Cache middleware enabled')
             );
+        });
 
-            const middleware = freshCreateMiddleware();
+        it('should log info message when cache is disabled', () => {
+            vi.mocked(getCacheConfig).mockReturnValue({
+                enabled: false,
+                publicEndpoints: [],
+                privateEndpoints: [],
+                noCacheEndpoints: [],
+                defaultMaxAge: 60,
+                defaultStaleWhileRevalidate: 30,
+                defaultStaleIfError: 3600,
+                maxAge: 60,
+                staleWhileRevalidate: 30,
+                staleIfError: 3600,
+                etagEnabled: true,
+                lastModifiedEnabled: true
+            });
 
-            // Should log info message
-            expect(mockLogger.info).toHaveBeenCalledWith(
+            createCacheMiddleware();
+            expect(apiLogger.info).toHaveBeenCalledWith(
                 'Cache middleware disabled via configuration (CACHE_ENABLED=false)'
             );
-
-            // Should return a pass-through middleware
-            const mockNext = vi.fn();
-            await middleware(createMockContext('/test') as Context, mockNext);
-            expect(mockNext).toHaveBeenCalled();
-        });
-
-        it('should enable cache when CACHE_ENABLED=true and runtime supports it (Case 2)', async () => {
-            // Mock logger
-            const mockLogger = {
-                info: vi.fn(),
-                warn: vi.fn(),
-                debug: vi.fn(),
-                error: vi.fn()
-            };
-
-            vi.doMock('../../src/utils/logger', () => ({
-                apiLogger: mockLogger
-            }));
-
-            // Mock env with cache enabled
-            vi.doMock('../../src/utils/env', () => ({
-                getCacheConfig: () => ({
-                    enabled: true,
-                    publicEndpoints: ['/api/v1/public/accommodations'],
-                    privateEndpoints: ['/api/v1/public/users'],
-                    noCacheEndpoints: ['/health/db'],
-                    maxAge: 300,
-                    staleWhileRevalidate: 60,
-                    staleIfError: 86400,
-                    etagEnabled: true,
-                    lastModifiedEnabled: true
-                })
-            }));
-
-            // Set up caches API (runtime supports it)
-            (globalThis as any).caches = { open: vi.fn() };
-
-            const { createCacheMiddleware: freshCreateMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-
-            freshCreateMiddleware();
-
-            // Should log info message about enabling cache
-            expect(mockLogger.info).toHaveBeenCalledWith(
-                'Cache middleware enabled: Web Standards Cache API detected and available'
-            );
-        });
-
-        it('should disable cache when CACHE_ENABLED=true but runtime does not support it (Case 3)', async () => {
-            // Mock logger
-            const mockLogger = {
-                info: vi.fn(),
-                warn: vi.fn(),
-                debug: vi.fn(),
-                error: vi.fn()
-            };
-
-            vi.doMock('../../src/utils/logger', () => ({
-                apiLogger: mockLogger
-            }));
-
-            // Mock env with cache enabled
-            vi.doMock('../../src/utils/env', () => ({
-                getCacheConfig: () => ({
-                    enabled: true,
-                    publicEndpoints: [],
-                    privateEndpoints: [],
-                    noCacheEndpoints: [],
-                    maxAge: 300,
-                    staleWhileRevalidate: 60,
-                    staleIfError: 86400,
-                    etagEnabled: true,
-                    lastModifiedEnabled: true
-                })
-            }));
-
-            // Remove caches API (runtime doesn't support it - like Node.js)
-            (globalThis as any).caches = undefined;
-
-            const { createCacheMiddleware: freshCreateMiddleware } = await import(
-                '../../src/middlewares/cache'
-            );
-
-            const middleware = freshCreateMiddleware();
-
-            // Should log warning message
-            expect(mockLogger.warn).toHaveBeenCalledWith(
-                'Cache middleware disabled: Web Standards Cache API not available in this runtime (Node.js). Cache would be enabled in compatible runtimes like Cloudflare Workers, Deno, or browsers.'
-            );
-
-            // Should return a pass-through middleware
-            const mockNext = vi.fn();
-            await middleware(createMockContext('/test') as Context, mockNext);
-            expect(mockNext).toHaveBeenCalled();
         });
     });
 });

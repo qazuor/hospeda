@@ -197,7 +197,8 @@ const testData = {
         'complex-premium-monthly'
     ],
     promoCodes: ['WELCOME10', 'SUMMER20', 'TRIAL50'],
-    userTypes: ['owner', 'complex']
+    // userType was removed - all HOST users get the same trial
+    userTypes: ['owner']
 };
 
 // =============================================================================
@@ -306,11 +307,11 @@ function checkoutFlow() {
 
             const promoCode =
                 testData.promoCodes[Math.floor(Math.random() * testData.promoCodes.length)];
-            const checkoutId = generateUUID(); // Mock checkout ID
+            const customerId = generateUUID(); // Mock checkout ID
 
             const promoPayload = JSON.stringify({
                 code: promoCode,
-                checkoutId: checkoutId
+                customerId: customerId
             });
 
             const promoResponse = http.post(
@@ -357,11 +358,8 @@ function viewInvoices() {
  */
 function startTrial() {
     group('Start Trial', () => {
-        const userType = testData.userTypes[Math.floor(Math.random() * testData.userTypes.length)];
-
-        const trialPayload = JSON.stringify({
-            userType: userType
-        });
+        // Trial start requires no body - all HOST users get the same plan
+        const trialPayload = JSON.stringify({});
 
         const trialResponse = http.post(`${BASE_URL}${BILLING_PATH}/trial/start`, trialPayload, {
             headers: createHeaders()

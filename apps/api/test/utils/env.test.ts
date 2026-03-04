@@ -157,10 +157,21 @@ describe('Environment Configuration', () => {
 
     describe('Environment Variable Validation', () => {
         it('should validate NODE_ENV enum values', async () => {
-            const validEnvs = ['development', 'production', 'test'];
+            const testCases = [
+                { envValue: 'development', extra: {} },
+                // production requires CRON_SECRET
+                {
+                    envValue: 'production',
+                    extra: {
+                        CRON_SECRET: 'production-cron-secret-value',
+                        HOSPEDA_REDIS_URL: 'redis://localhost:6379'
+                    }
+                },
+                { envValue: 'test', extra: {} }
+            ];
 
-            for (const envValue of validEnvs) {
-                process.env = createValidTestEnv({ NODE_ENV: envValue });
+            for (const { envValue, extra } of testCases) {
+                process.env = createValidTestEnv({ NODE_ENV: envValue, ...extra });
                 const envModule = await import('../../src/utils/env');
                 envModule.validateApiEnv();
                 expect(envModule.env.NODE_ENV).toBe(envValue);
@@ -293,6 +304,52 @@ describe('Environment Configuration', () => {
             envModule.validateApiEnv();
             expect(envModule.env.API_VALIDATION_MAX_BODY_SIZE).toBe(1048576);
             expect(envModule.env.API_VALIDATION_MAX_REQUEST_TIME).toBe(5000);
+        });
+    });
+
+    describe('Production Environment Requirements', () => {
+        it('should require HOSPEDA_REDIS_URL in production', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                CRON_SECRET: 'production-cron-secret-value'
+                // HOSPEDA_REDIS_URL intentionally missing
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_REDIS_URL in production when provided', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                CRON_SECRET: 'production-cron-secret-value',
+                HOSPEDA_REDIS_URL: 'redis://localhost:6379'
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_REDIS_URL).toBe('redis://localhost:6379');
+        });
+
+        it('should not require HOSPEDA_REDIS_URL in non-production environments', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test'
+                // HOSPEDA_REDIS_URL intentionally missing
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_REDIS_URL).toBeUndefined();
         });
     });
 

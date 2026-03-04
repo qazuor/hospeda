@@ -579,9 +579,10 @@ describe('AddonService', () => {
             // Act
             const result = await serviceWithoutBilling.getUserAddons(userId);
 
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.data).toEqual([]);
+            // Assert - when billing is null, service returns SERVICE_UNAVAILABLE error
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SERVICE_UNAVAILABLE');
+            expect(result.error?.message).toContain('not configured');
         });
 
         it('should return empty array when customer not found', async () => {
@@ -1107,9 +1108,10 @@ describe('AddonService', () => {
             // Act
             const result = await serviceWithoutBilling.checkAddonActive(userId, addonSlug);
 
-            // Assert
-            expect(result.success).toBe(true);
-            expect(result.data).toBe(false);
+            // Assert - when billing is null, service returns SERVICE_UNAVAILABLE error
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SERVICE_UNAVAILABLE');
+            expect(result.error?.message).toContain('not configured');
         });
 
         it('should handle errors gracefully', async () => {

@@ -18,7 +18,10 @@
 
 import { NotificationType, RetryService } from '@repo/notifications';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { notificationScheduleJob } from '../../src/cron/jobs/notification-schedule.job';
+import {
+    notificationScheduleJob,
+    resetSentNotificationsFallback
+} from '../../src/cron/jobs/notification-schedule.job';
 import type { CronJobContext } from '../../src/cron/types';
 
 // Mock billing middleware
@@ -44,6 +47,11 @@ vi.mock('../../src/services/notification-retry.service', () => ({
         failed: 0,
         permanentlyFailed: 0
     })
+}));
+
+// Mock Redis client (returns undefined = not configured, falls back to in-memory)
+vi.mock('../../src/utils/redis', () => ({
+    getRedisClient: vi.fn().mockResolvedValue(undefined)
 }));
 
 // Mock @repo/notifications
@@ -81,6 +89,7 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
 describe('Notification Schedule Cron Job', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        resetSentNotificationsFallback();
         process.env.WEB_URL = 'https://hospeda.com';
     });
 

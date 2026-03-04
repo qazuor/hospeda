@@ -126,6 +126,51 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
+        it('should handle race condition on concurrent create (duplicate key)', async () => {
+            // Arrange
+            const duplicateError = new Error('duplicate key value violates unique constraint');
+            Object.assign(duplicateError, { code: '23505' });
+
+            vi.mocked(mockBilling.customers!.getByExternalId)
+                .mockResolvedValueOnce(null) // First lookup: not found
+                .mockResolvedValueOnce({ ...mockCustomer, id: 'cus_race_winner' }); // Re-fetch after duplicate
+
+            vi.mocked(mockBilling.customers!.create).mockRejectedValue(duplicateError);
+
+            // Act
+            const result = await service.ensureCustomerExists({
+                userId: 'user_123',
+                email: 'test@example.com',
+                name: 'Test User'
+            });
+
+            // Assert - should return the race winner's customer ID
+            expect(result).toBe('cus_race_winner');
+            expect(mockBilling.customers!.getByExternalId).toHaveBeenCalledTimes(2);
+            expect(mockBilling.customers!.create).toHaveBeenCalledTimes(1);
+        });
+
+        it('should re-throw non-duplicate-key errors from create', async () => {
+            // Arrange
+            const throwService = new BillingCustomerSyncService(mockBilling as QZPayBilling, {
+                throwOnError: true
+            });
+
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
+            vi.mocked(mockBilling.customers!.create).mockRejectedValue(
+                new Error('Connection timeout')
+            );
+
+            // Act & Assert
+            await expect(
+                throwService.ensureCustomerExists({
+                    userId: 'user_123',
+                    email: 'test@example.com',
+                    name: 'Test User'
+                })
+            ).rejects.toThrow('Connection timeout');
+        });
+
         it('should handle errors gracefully when throwOnError is false', async () => {
             // Arrange
             vi.mocked(mockBilling.customers!.getByExternalId).mockRejectedValue(
