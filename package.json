@@ -32,8 +32,6 @@
         "lint:md": "markdownlint-cli2 '**/*.md'",
         "prepare": "husky install",
         "build:api": "pnpm --filter hospeda-api build",
-        "prepare:api:prod": "pnpm exec tsx scripts/generate-api-prod-package.ts",
-        "deploy:api": "pnpm build:api && pnpm prepare:api:prod && flyctl deploy --config apps/api/fly.toml --dockerfile Dockerfile.api",
         "db:start": "docker compose --env-file docker/.env up -d postgres redis",
         "db:stop": "docker compose --env-file docker/.env stop postgres redis",
         "db:restart": "pnpm db:stop && pnpm db:start",
@@ -42,6 +40,7 @@
         "db:fresh-dev": "docker compose --env-file docker/.env down -v && docker compose --env-file docker/.env up -d postgres redis && sleep 10 && pnpm --filter @repo/db db:push && pnpm db:seed",
         "db:logs": "docker compose --env-file docker/.env logs -f postgres",
         "db:migrate": "pnpm --filter @repo/db db:migrate",
+        "db:migrate:prod": "bash scripts/migrate-production.sh",
         "db:generate": "pnpm --filter @repo/db db:generate",
         "db:studio": "pnpm --filter @repo/db db:studio",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
@@ -58,7 +57,7 @@
         "@commitlint/config-conventional": "^19.8.1",
         "@playwright/test": "^1.58.2",
         "@types/node": "^22.15.3",
-        "ajv": "^8.17.1",
+        "ajv": "^8.18.0",
         "ajv-formats": "^3.0.1",
         "dotenv": "^17.2.3",
         "husky": "^9.1.7",
@@ -73,14 +72,45 @@
         "node": ">=18"
     },
     "dependencies": {
-        "glob": "^11.0.3",
+        "glob": "^11.1.0",
         "zod": "^4.0.8"
     },
     "workspaces": ["apps/*", "packages/*"],
     "pnpm": {
         "overrides": {
             "react": "19.1.1",
-            "react-dom": "19.1.1"
+            "react-dom": "19.1.1",
+            "devalue": ">=5.6.3",
+            "seroval": ">=1.4.1",
+            "tar": ">=7.5.8",
+            "tar-fs": ">=3.1.1",
+            "node-forge": ">=1.3.2",
+            "basic-ftp": ">=5.2.0",
+            "cookie": ">=0.7.0",
+            "path-to-regexp": ">=6.3.0",
+            "rollup": ">=4.59.0",
+            "qs": ">=6.14.2",
+            "@isaacs/brace-expansion": ">=5.0.1",
+            "mdast-util-to-hast": ">=13.2.1",
+            "preact": ">=10.26.10",
+            "h3": ">=1.15.5",
+            "minimatch": ">=9.0.7",
+            "lodash": ">=4.17.23",
+            "lodash-es": ">=4.17.23",
+            "serialize-javascript": ">=7.0.3",
+            "prismjs": ">=1.30.0",
+            "js-yaml": ">=4.1.1",
+            "undici": ">=6.23.0",
+            "markdown-it": ">=14.1.1",
+            "diff": ">=8.0.3",
+            "@remix-run/node": ">=2.17.2",
+            "@remix-run/router": ">=1.23.2",
+            "@remix-run/server-runtime": ">=2.17.3",
+            "esbuild": ">=0.25.0",
+            "@tanstack/form-core": "0.42.1"
+        },
+        "patchedDependencies": {
+            "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"
         },
         "publicHoistPattern": ["react", "react-dom", "*react*"]
     },

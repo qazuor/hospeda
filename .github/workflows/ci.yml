@@ -18,28 +18,19 @@ jobs:
       # Database
       HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
 
-      # Clerk Authentication (Server-side)
-      HOSPEDA_CLERK_SECRET_KEY: ${{ secrets.HOSPEDA_CLERK_SECRET_KEY }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY || secrets.HOSPEDA_CLERK_SECRET_KEY }}
-
-      # Clerk Authentication (Client-side - Public)
-      HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      # Better Auth
+      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
 
       # Application URLs
       HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}
       HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
 
-      # Optional: Clerk Webhooks
-      HOSPEDA_CLERK_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_CLERK_WEBHOOK_SECRET }}
-
-      # Admin app (Vite format) - Reutiliza los mismos secrets
+      # Admin app (Vite format)
       VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-      VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
-      # Web app (Astro PUBLIC_ format) - Reutiliza los mismos secrets
+      # Web app (Astro PUBLIC_ format)
       PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
       PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-      PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY }}
 
     steps:
       - name: Checkout repository
@@ -68,6 +59,25 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Audit production dependencies (critical/high)
+        run: pnpm audit --prod --audit-level=high
+        continue-on-error: true
+
+      - name: Audit production dependencies (all)
+        if: always()
+        run: pnpm audit --prod || true
+
+      - name: Semgrep SAST scan
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: >-
+            p/typescript
+            p/nodejs
+            p/owasp-top-ten
+            p/secrets
+        env:
+          SEMGREP_RULES: p/typescript p/nodejs p/owasp-top-ten p/secrets
 
       - name: Build all packages and apps
         run: pnpm build

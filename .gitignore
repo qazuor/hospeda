@@ -85,7 +85,6 @@ mcp-todos.json
 .github-workflow/*
 !.github-workflow/tracking.json
 packages/seed/mappings/id-mappings.json
-apps/api/package.prod.json
 docs/dev
 
 # TanStack Router generated files

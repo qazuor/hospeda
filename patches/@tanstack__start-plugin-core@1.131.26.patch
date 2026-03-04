@@ -1,0 +1,25 @@
+diff --git a/dist/esm/start-manifest-plugin/plugin.js b/dist/esm/start-manifest-plugin/plugin.js
+--- a/dist/esm/start-manifest-plugin/plugin.js
++++ b/dist/esm/start-manifest-plugin/plugin.js
+@@ -3,7 +3,7 @@
+ import { VIRTUAL_MODULES } from "@tanstack/start-server-core";
+ import { tsrSplit } from "@tanstack/router-plugin";
+ import { resolveViteId } from "../utils.js";
+-const getCSSRecursively = (chunk, chunksByFileName, basePath) => {
++const getCSSRecursively = (chunk, chunksByFileName, basePath, visited = new Set()) => {
+   var _a;
+   const result = [];
+   for (const cssFile of ((_a = chunk.viteMetadata) == null ? void 0 : _a.importedCss) ?? []) {
+@@ -18,9 +18,10 @@
+   }
+   for (const importedFileName of chunk.imports) {
+     const importedChunk = chunksByFileName.get(importedFileName);
+-    if (importedChunk) {
++    if (importedChunk && !visited.has(importedFileName)) {
++      visited.add(importedFileName);
+       result.push(
+-        ...getCSSRecursively(importedChunk, chunksByFileName, basePath)
++        ...getCSSRecursively(importedChunk, chunksByFileName, basePath, visited)
+       );
+     }
+   }

@@ -6,23 +6,23 @@
         "NODE_ENV",
         "CI",
         "HOSPEDA_DATABASE_URL",
-        "HOSPEDA_CLERK_SECRET_KEY",
-        "CLERK_SECRET_KEY",
-        "HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "HOSPEDA_BETTER_AUTH_SECRET",
         "HOSPEDA_API_URL",
         "HOSPEDA_SITE_URL",
-        "HOSPEDA_CLERK_WEBHOOK_SECRET",
         "VITE_API_URL",
-        "VITE_CLERK_PUBLISHABLE_KEY",
         "PUBLIC_API_URL",
-        "PUBLIC_SITE_URL",
-        "PUBLIC_CLERK_PUBLISHABLE_KEY"
+        "PUBLIC_SITE_URL"
     ],
     "tasks": {
         "build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
             "outputs": ["dist/**"]
+        },
+        "admin#build": {
+            "dependsOn": ["^build"],
+            "inputs": ["$TURBO_DEFAULT$", ".env*"],
+            "outputs": [".output/**", ".tanstack/**"]
         },
         "lint": {
             "outputs": []
