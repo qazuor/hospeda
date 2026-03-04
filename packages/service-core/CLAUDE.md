@@ -825,6 +825,12 @@ export class AccommodationService extends BaseCrudService<...> {
 - Services are the single source of truth for business logic
 - All database access goes through services, not directly to models
 
+## Related Documentation
+
+- [Adding Services Guide](../../docs/guides/adding-services.md)
+- [Error Handling Guide](../../docs/guides/error-handling.md)
+- [Architecture Patterns](../../docs/architecture/patterns.md)
+
 <claude-mem-context>
 # Recent Activity
 

@@ -61,7 +61,7 @@ import { Pool } from 'pg';
 import { initializeDb } from '@repo/db';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.HOSPEDA_DATABASE_URL,
 });
 
 // Must be called before using any models
@@ -537,6 +537,19 @@ The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `u
 - Connection pooling is automatic via Drizzle
 - Migrations are forward-only - no rollback support
 - Use Drizzle Studio for visual database management
+
+## Common Gotchas
+
+- `billing_subscription_addons` has no `livemode` or `deleted_at` columns
+- `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
+- `billing_customers` uses `segment` column, not `category`
+- PostgreSQL `numeric()` returns strings in JS - use integer for monetary values (see ADR-006)
+- Always use soft delete (deletedAt timestamp) by default
+
+## Related Documentation
+
+- [ADR-006: Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
+- [Database Migrations Guide](../../docs/guides/database-migrations.md)
 
 <claude-mem-context>
 # Recent Activity

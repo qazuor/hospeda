@@ -1,6 +1,6 @@
 # Quick Start Guide - @repo/schemas
 
-**Get productive with @repo/schemas in 5 minutes**
+Get productive with @repo/schemas in 5 minutes.
 
 This guide walks you through the essential concepts and patterns using a real-world example from the Hospeda platform. By the end, you'll understand how to use schemas for validation, type inference, and integration with API routes, services, and forms.
 
@@ -45,7 +45,7 @@ export const UserSchema = z.object({
 
   // User-specific fields
   slug: z.string().min(1),
-  authProvider: z.enum(['clerk', 'google', 'facebook']).optional(),
+  authProvider: z.enum(['better_auth', 'google', 'facebook']).optional(),
   authProviderUserId: z.string().optional(),
 
   // Personal information

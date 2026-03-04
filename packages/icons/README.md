@@ -359,3 +359,7 @@ MIT
 - `@repo/db` - Database models
 - `@repo/service-core` - Business logic services
 - `@repo/utils` - Shared utilities
+
+## Related Documentation
+
+- [Dependency Policy](../../docs/guides/dependency-policy.md)

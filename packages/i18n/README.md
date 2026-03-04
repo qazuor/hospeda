@@ -712,6 +712,10 @@ If changes to JSON files aren't reflected:
 - [@repo/auth-ui](../auth-ui) - Uses i18n for auth translations
 - [@repo/utils](../utils) - Utility functions
 
+## Related Documentation
+
+- [Internationalization Guide](../../docs/guides/internationalization.md)
+
 ## License
 
 MIT

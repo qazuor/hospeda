@@ -119,7 +119,7 @@ enum PermissionEnum {
 ```typescript
 // Hono middleware example
 app.use('*', async (c, next) => {
-  const userId = c.get('clerk').userId;
+  const userId = c.get('auth').userId;
   const user = await getUserFromDatabase(userId);
 
   // Create actor
@@ -167,7 +167,7 @@ const guestActor: Actor = {
 
 Permissions follow the `ACTION:RESOURCE` or `RESOURCE_ACTION` format:
 
-**Pattern 1: Colon Notation**
+#### Pattern 1: Colon Notation
 
 ```
 action:resource
@@ -176,7 +176,7 @@ update:article
 delete:article
 ```
 
-**Pattern 2: Underscore Notation (Preferred)**
+#### Pattern 2: Underscore Notation (Preferred)
 
 ```
 RESOURCE_ACTION

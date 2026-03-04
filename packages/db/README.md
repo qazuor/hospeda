@@ -1,6 +1,6 @@
 # @repo/db
 
-**Database Layer for Monorepo — Powered by Drizzle ORM & PostgreSQL**
+Database Layer for Monorepo.. Powered by Drizzle ORM and PostgreSQL.
 
 This package provides a fully-typed, modular, and extensible database layer for your monorepo, built on top of [Drizzle ORM](https://orm.drizzle.team/) and PostgreSQL. It includes ready-to-use models, schemas, utilities, and helpers for all main business domains, following best practices for type safety, maintainability, and testability.
 
@@ -292,3 +292,8 @@ src/
 - Node.js 18+
 - PostgreSQL 13+
 - Internal packages: `@repo/schemas`, `@repo/utils`, etc.
+
+## Related Documentation
+
+- [Database Migrations Guide](../../docs/guides/database-migrations.md)
+- [ADR-004: Drizzle over Prisma](../../docs/decisions/ADR-004-drizzle-over-prisma.md)

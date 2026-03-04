@@ -178,8 +178,8 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hospeda_dev
 DATABASE_SSL=false
 
 # Authentication
-CLERK_SECRET_KEY=sk_test_...
-CLERK_PUBLISHABLE_KEY=pk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_...
+HOSPEDA_BETTER_AUTH_URL=pk_test_...
 
 # Payments
 MERCADOPAGO_ACCESS_TOKEN=TEST-...
@@ -209,8 +209,8 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hospeda_test
 DATABASE_SSL=false
 
 # Authentication (test keys)
-CLERK_SECRET_KEY=sk_test_mock
-CLERK_PUBLISHABLE_KEY=pk_test_mock
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_mock
+HOSPEDA_BETTER_AUTH_URL=pk_test_mock
 
 # Payments (mocked)
 MERCADOPAGO_ACCESS_TOKEN=TEST-MOCK
@@ -240,8 +240,8 @@ DATABASE_URL=postgresql://...@staging-db.neon.tech/hospeda_staging
 DATABASE_SSL=true
 
 # Authentication (test environment)
-CLERK_SECRET_KEY=sk_test_staging_...
-CLERK_PUBLISHABLE_KEY=pk_test_staging_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_staging_...
+HOSPEDA_BETTER_AUTH_URL=pk_test_staging_...
 
 # Payments (sandbox)
 MERCADOPAGO_ACCESS_TOKEN=TEST-STAGING-...
@@ -271,8 +271,8 @@ DATABASE_URL=postgresql://...@prod-db.neon.tech/hospeda_prod
 DATABASE_SSL=true
 
 # Authentication (production)
-CLERK_SECRET_KEY=sk_live_...
-CLERK_PUBLISHABLE_KEY=pk_live_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_live_...
+HOSPEDA_BETTER_AUTH_URL=pk_live_...
 
 # Payments (production)
 MERCADOPAGO_ACCESS_TOKEN=APP-...
@@ -377,7 +377,7 @@ jobs:
     env:
       NODE_ENV: test
       DATABASE_URL: ${{ secrets.DATABASE_URL_TEST }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_TEST }}
+      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET_TEST }}
 
     steps:
       - uses: actions/checkout@v4
@@ -525,9 +525,9 @@ API_HOST=http://localhost
 # Database
 DATABASE_URL=postgresql://user:password@host:port/database
 
-# Authentication (Clerk)
-CLERK_SECRET_KEY=sk_test_...
-CLERK_PUBLISHABLE_KEY=pk_test_...
+# Authentication (Better Auth)
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # Payments (Mercado Pago)
 MERCADOPAGO_ACCESS_TOKEN=TEST-...
@@ -567,7 +567,7 @@ LOG_LEVEL=debug
 ```bash
 # .env
 DATABASE_URL=postgresql://user:MySecretPassword123@prod-db.neon.tech/db
-CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_SECRET_KEY_HERE
 ```
 
 **✅ GOOD:**
@@ -575,7 +575,7 @@ CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
 ```bash
 # .env.example
 DATABASE_URL=postgresql://user:password@host:port/database
-CLERK_SECRET_KEY=sk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_...
 ```
 
 ### 2. Use .env.example
@@ -728,7 +728,7 @@ services:
     environment:
       - NODE_ENV=production
       - DATABASE_URL=${DATABASE_URL}
-      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
+      - HOSPEDA_BETTER_AUTH_SECRET=${HOSPEDA_BETTER_AUTH_SECRET}
 ```
 
 **Running:**
@@ -758,7 +758,7 @@ jobs:
   deploy:
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL_PROD }}
-      CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY_PROD }}
+      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET_PROD }}
 
     steps:
       - name: Deploy

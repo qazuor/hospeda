@@ -1,6 +1,6 @@
 # Schema Reference - @repo/schemas
 
-**Complete reference for all schemas in the @repo/schemas package**
+Complete reference for all schemas in the @repo/schemas package.
 
 This document provides comprehensive documentation of all available schemas, organized by category. Each schema includes field descriptions, validation rules, TypeScript types, and usage examples.
 
@@ -48,7 +48,7 @@ import { UserSchema, type User } from '@repo/schemas';
 | `phone` | `string` | No | Phone number | International format |
 | `role` | `RoleEnum` | Yes | User role | 'user', 'moderator', 'admin' |
 | `permissions` | `string[]` | Yes | Granted permissions | Array, default `[]` |
-| `authProvider` | `string` | No | Auth provider | 'clerk', 'google', 'facebook' |
+| `authProvider` | `string` | No | Auth provider | 'better_auth', 'google', 'facebook' |
 | `authProviderUserId` | `string` | No | Provider user ID | Min 1 char |
 | `createdAt` | `Date` | Yes | Creation timestamp | Auto-generated |
 | `updatedAt` | `Date` | Yes | Last update timestamp | Auto-updated |

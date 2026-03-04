@@ -370,6 +370,16 @@ All icons are wrappers around [Phosphor Icons](https://phosphoricons.com/):
 - Icons inherit color from parent by default (currentColor)
 - Six weight variants available: thin, light, regular, bold, fill, duotone
 
+## Critical Rules
+
+- NEVER use inline `<svg>` elements (except decorative illustrations in 404/500 pages)
+- NEVER import `phosphor-react` directly - always use `@repo/icons` wrappers
+- All icons are server-renderable in Astro without client directives
+
+## Related Documentation
+
+- [Dependency Policy](../../docs/guides/dependency-policy.md)
+
 <claude-mem-context>
 # Recent Activity
 

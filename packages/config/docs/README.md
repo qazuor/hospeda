@@ -233,7 +233,7 @@ Quick overview:
 - **API**: Port, host, CORS origins
 - **Database**: Connection string, pool settings
 - **Logger**: Level, format, enabled flag
-- **Clerk**: Authentication keys
+- **Better Auth**: Authentication configuration
 - **Mercado Pago**: Payment integration keys
 - **Cloudinary**: Image storage credentials
 

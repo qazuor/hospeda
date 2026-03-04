@@ -283,10 +283,10 @@ All environment variables used in Hospeda:
 - `LOG_FORMAT` - Log format: json|pretty (default: json)
 - `LOG_ENABLED` - Enable logging (default: true)
 
-### Authentication (Clerk)
+### Authentication (Better Auth)
 
-- `CLERK_SECRET_KEY` - Clerk API secret key (required)
-- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` - Clerk publishable key (required)
+- `HOSPEDA_BETTER_AUTH_SECRET` - Better Auth secret key (required)
+- `HOSPEDA_BETTER_AUTH_URL` - Better Auth URL (required)
 
 ### Payments (Mercado Pago)
 

@@ -1242,7 +1242,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
 ```typescript
 import { logger, LoggerColors } from '@repo/logger';
-import { verifyToken, type User } from '@clerk/backend';
+import { verifyToken, type User } from '@repo/auth-ui';
 
 /**
  * Authentication logger
@@ -1273,7 +1273,7 @@ export async function authenticateUser(token: string): Promise<User | null> {
 
   try {
     const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
+      secretKey: process.env.HOSPEDA_BETTER_AUTH_SECRET,
     });
 
     authLogger.info('Authentication successful', {
@@ -1300,7 +1300,7 @@ export async function verifyJWT(token: string): Promise<boolean> {
 
   try {
     const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY,
+      secretKey: process.env.HOSPEDA_BETTER_AUTH_SECRET,
     });
 
     // Check expiration

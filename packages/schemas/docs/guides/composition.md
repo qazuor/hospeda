@@ -332,7 +332,7 @@ const AccommodationAdminListSchema = AccommodationSchema.pick({
 ```typescript
 const UserSchema = z.object({
   id: z.string().uuid(),
-  clerkId: z.string(),
+  authProviderId: z.string(),
   email: z.string().email(),
   name: z.string(),
   avatar: z.string().url().nullable(),
@@ -833,7 +833,7 @@ export const validateCompleteForm = (data: unknown) =>
 
 const BaseUserSchema = z.object({
   id: z.string().uuid(),
-  clerkId: z.string(),
+  authProviderId: z.string(),
   email: z.string().email(),
   name: z.string(),
   avatar: z.string().url().nullable(),
@@ -868,7 +868,7 @@ export const HostViewUserSchema = BaseUserSchema.pick({
 // Moderator view
 export const ModeratorUserSchema = BaseUserSchema.pick({
   id: true,
-  clerkId: true,
+  authProviderId: true,
   email: true,
   name: true,
   avatar: true,

@@ -24,7 +24,7 @@ Comprehensive security guide for managing configuration and secrets in the Hospe
 ```bash
 # .env - NEVER COMMIT THIS
 DATABASE_URL=postgresql://user:MySecretPassword123@prod-db.neon.tech/hospeda
-CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_SECRET_KEY_HERE
 MERCADOPAGO_ACCESS_TOKEN=APP-1234567890-REAL-TOKEN
 ```
 
@@ -33,7 +33,7 @@ MERCADOPAGO_ACCESS_TOKEN=APP-1234567890-REAL-TOKEN
 ```bash
 # .env.example - Safe to commit (template only)
 DATABASE_URL=postgresql://user:password@host:port/database
-CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
 MERCADOPAGO_ACCESS_TOKEN=TEST-your-token-here
 ```
 
@@ -169,7 +169,7 @@ const SecureConfigSchema = z.object({
   DATABASE_URL: z.string().url().startsWith('postgresql://'),
 
   // Validate API key format
-  CLERK_SECRET_KEY: z.string().regex(/^sk_(test|live)_[A-Za-z0-9]+$/),
+  HOSPEDA_BETTER_AUTH_SECRET: z.string().regex(/^sk_(test|live)_[A-Za-z0-9]+$/),
 
   // Validate allowed values only
   NODE_ENV: z.enum(['development', 'test', 'staging', 'production']),
@@ -273,7 +273,7 @@ console.log('Database config:', {
   url: maskUrl(databaseConfig.DATABASE_URL),
 });
 
-console.log('API Key:', maskSecret(apiConfig.CLERK_SECRET_KEY));
+console.log('API Key:', maskSecret(apiConfig.HOSPEDA_BETTER_AUTH_SECRET));
 ```
 
 **Production Logger:**
@@ -289,7 +289,7 @@ const logger = createLogger({
     'token',
     'apiKey',
     'DATABASE_URL',
-    'CLERK_SECRET_KEY',
+    'HOSPEDA_BETTER_AUTH_SECRET',
   ],
 });
 
@@ -309,7 +309,7 @@ logger.info({
 
 ```typescript
 throw new Error(`Failed to connect to ${DATABASE_URL}`);
-throw new Error(`Invalid API key: ${CLERK_SECRET_KEY}`);
+throw new Error(`Invalid API key: ${HOSPEDA_BETTER_AUTH_SECRET}`);
 ```
 
 **✅ SECURE - Generic Error Messages:**
@@ -364,7 +364,7 @@ logger.error({
 ## 2024-01-15
 
 - Updated DATABASE_URL (production) - @tech-lead
-- Rotated CLERK_SECRET_KEY - @security-team
+- Rotated HOSPEDA_BETTER_AUTH_SECRET - @security-team
 - Added MERCADOPAGO_WEBHOOK_SECRET - @backend-dev
 
 ## 2024-01-01

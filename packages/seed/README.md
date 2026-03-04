@@ -154,7 +154,7 @@ Core system data needed for the application to function:
 
 Sample data for development and testing:
 
-- Users (with Clerk integration)
+- Users (with Better Auth integration)
 - Accommodations (hotels, cabins, camping, etc.)
 - Posts and sponsors
 - Events and organizers
@@ -168,7 +168,7 @@ Sample data for development and testing:
 HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda
 
 # Super Admin authentication (optional)
-SEED_AUTH_PROVIDER=CLERK
+SEED_AUTH_PROVIDER=BETTER_AUTH
 SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID=user_xxxxxxxxxxxxx
 ```
 

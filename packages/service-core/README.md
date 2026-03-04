@@ -174,6 +174,11 @@ pnpm lint
 pnpm build
 ```
 
+## Related Documentation
+
+- [Adding Services Guide](../../docs/guides/adding-services.md)
+- [Architecture Patterns](../../docs/architecture/patterns.md)
+
 ## License
 
 MIT © Hospeda

@@ -356,7 +356,7 @@ logger.info('User login', {
 logger.info('Token verified', {
   userId: 'user-123',
   tokenExpiresAt: '2024-01-15T12:00:00Z',
-  tokenIssuer: 'clerk',
+  tokenIssuer: 'better_auth',
 });
 
 // ✅ Log payment metadata, not payment details

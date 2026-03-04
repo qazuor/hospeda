@@ -319,6 +319,17 @@ None - lightweight implementation using JSON files.
 - Server-side rendering uses request headers or default locale
 - Missing translations fall back to English
 
+## PT-BR Conventions
+
+- Use "voce" (not "tu") for second person
+- CEP for postal codes (not "codigo postal")
+- "Faturamento" for billing
+- Placeholder format: `{{variable}}`
+
+## Related Documentation
+
+- [Internationalization Guide](../../docs/guides/internationalization.md)
+
 <claude-mem-context>
 # Recent Activity
 

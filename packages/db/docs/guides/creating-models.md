@@ -1291,7 +1291,7 @@ After creating your model:
 1. **Always extend BaseModel** - Don't reinvent CRUD operations
 2. **Use meaningful method names** - `findBySlug` not `getByS`
 3. **Add JSDoc comments** - Document all public methods
-4. **Write tests first** - TDD approach (Red → Green → Refactor)
+4. **Write tests** - Test-informed approach (tests first for pure logic, alongside for integration code)
 5. **Use transactions** - For operations affecting multiple tables
 6. **Log everything** - Use `logQuery` and `logError` helpers
 7. **Handle errors properly** - Throw `DbError` with context

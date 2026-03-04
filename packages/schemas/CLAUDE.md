@@ -559,6 +559,11 @@ Entity-specific admin search schemas extend this with additional filters (e.g., 
 - Always run tests before committing
 - Schemas are the source of truth for types
 
+## Related Documentation
+
+- [Adding New Entity Guide](../../docs/guides/adding-new-entity.md)
+- [Dependency Policy](../../docs/guides/dependency-policy.md)
+
 <claude-mem-context>
 # Recent Activity
 

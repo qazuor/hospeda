@@ -1056,7 +1056,7 @@ import { BaseReviewSchema } from './base';
 export const ReviewWithUserSchema = BaseReviewSchema.extend({
   user: z.object({
     id: z.string().uuid(),
-    clerkId: z.string(),
+    authProviderId: z.string(),
     email: z.string().email(),
     name: z.string(),
     avatar: z.string().url().nullable(),
@@ -1617,22 +1617,22 @@ const WithDefaultSchema = z.object({
 
 ### Common Errors
 
-**Error: "Expected X, received Y"**
+#### Error: "Expected X, received Y"
 
 - **Cause**: Type mismatch
 - **Fix**: Check input data type, use transformations if needed
 
-**Error: "Required" on optional field**
+#### Error: "Required" on Optional Field
 
 - **Cause**: Missing `.optional()` or `.nullable()`
 - **Fix**: Add `.optional()` to field definition
 
-**Error: Circular dependency**
+#### Error: Circular Dependency
 
 - **Cause**: Two schemas reference each other
 - **Fix**: Use `z.lazy()` for recursive schemas
 
-**Error: "Invalid UUID"**
+#### Error: "Invalid UUID"
 
 - **Cause**: ID not in UUID format
 - **Fix**: Ensure IDs are valid UUIDs or use different validation

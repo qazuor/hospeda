@@ -1,19 +1,22 @@
 # Creating Services - Complete Guide
 
-A comprehensive tutorial on creating services from scratch in the Hospeda service layer.
+A comprehensive tutorial on creating services from scratch in the Hospeda service layer, covering the full stack from types and schemas through to API routes and testing.
 
 ## Table of Contents
 
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
-- [Step-by-Step Service Creation](#step-by-step-service-creation)
+- [End-to-End Service Creation](#end-to-end-service-creation)
   - [Step 1: Define Zod Schemas](#step-1-define-zod-schemas)
-  - [Step 2: Create Database Model](#step-2-create-database-model)
-  - [Step 3: Create Service Class](#step-3-create-service-class)
-  - [Step 4: Implement Permission Hooks](#step-4-implement-permission-hooks)
-  - [Step 5: Implement Core Logic Methods](#step-5-implement-core-logic-methods)
-  - Step 6: Add Custom Methods
-  - [Step 7: Write Tests](#step-7-write-tests)
+  - [Step 2: Add Database Schema](#step-2-add-database-schema)
+  - [Step 3: Create Database Model](#step-3-create-database-model)
+  - [Step 4: Create Service Class](#step-4-create-service-class)
+  - [Step 5: Implement Permission Hooks](#step-5-implement-permission-hooks)
+  - [Step 6: Implement Core Logic Methods](#step-6-implement-core-logic-methods)
+  - [Step 7: Add Custom Methods](#step-7-add-custom-methods-optional)
+  - [Step 8: Create API Routes](#step-8-create-api-routes)
+  - [Step 9: Create Test Factory](#step-9-create-test-factory)
+  - [Step 10: Write Tests](#step-10-write-tests)
 - [Complete Working Example](#complete-working-example)
 - [Common Mistakes](#common-mistakes)
 - [Troubleshooting](#troubleshooting)
@@ -49,9 +52,9 @@ Before creating a service, ensure you have:
 4. **TypeScript** knowledge (especially generics)
 5. **Understanding of Actor/Permission system**
 
-## Step-by-Step Service Creation
+## End-to-End Service Creation
 
-We'll create a complete `ArticleService` for a blog platform as our example.
+We will create a complete `Article` entity as our example, covering every layer from schemas to API routes.
 
 ### Step 1: Define Zod Schemas
 
@@ -61,9 +64,10 @@ Schemas define the shape and validation rules for your data. You need **three sc
 2. **UpdateSchema** - For updating existing entities (fields optional)
 3. **SearchSchema** - For filtering and searching
 
-**Location:** `packages/schemas/entities/article.ts`
+**Location:** `packages/schemas/src/entities/article/`
 
 ```typescript
+// packages/schemas/src/entities/article/article.schema.ts
 import { z } from 'zod';
 
 /**
@@ -74,7 +78,7 @@ export const ArticleCreateInputSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(255),
   content: z.string().min(100, 'Content must be at least 100 characters'),
   excerpt: z.string().max(500).optional(),
-  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(), // Will be auto-generated if not provided
+  slug: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
   categoryId: z.string().uuid(),
   tags: z.array(z.string()).default([]),
   status: z.enum(['draft', 'published', 'archived']).default('draft'),
@@ -105,25 +109,16 @@ export const ArticleUpdateInputSchema = z.object({
  * Includes pagination and sorting
  */
 export const ArticleSearchSchema = z.object({
-  // Text search
-  q: z.string().optional(), // Full-text search query
-
-  // Filters
+  q: z.string().optional(),
   title: z.string().optional(),
   categoryId: z.string().uuid().optional(),
   status: z.enum(['draft', 'published', 'archived']).optional(),
   tags: z.array(z.string()).optional(),
   authorId: z.string().uuid().optional(),
-
-  // Date filters
   publishedAfter: z.coerce.date().optional(),
   publishedBefore: z.coerce.date().optional(),
-
-  // Sorting
   sortBy: z.enum(['title', 'publishedAt', 'createdAt', 'updatedAt', 'views']).default('createdAt'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-
-  // Pagination
   page: z.number().int().min(1).default(1),
   pageSize: z.number().int().min(1).max(100).default(20)
 });
@@ -132,6 +127,16 @@ export const ArticleSearchSchema = z.object({
 export type ArticleCreateInput = z.infer<typeof ArticleCreateInputSchema>;
 export type ArticleUpdateInput = z.infer<typeof ArticleUpdateInputSchema>;
 export type ArticleSearchInput = z.infer<typeof ArticleSearchSchema>;
+```
+
+Update schema exports:
+
+```typescript
+// packages/schemas/src/entities/article/index.ts
+export * from './article.schema.js';
+
+// packages/schemas/src/entities/index.ts
+export * from './article/index.js';
 ```
 
 **Best Practices:**
@@ -143,15 +148,61 @@ export type ArticleSearchInput = z.infer<typeof ArticleSearchSchema>;
 - Add `.optional()` to nullable fields in update schemas
 - Use enums for known values (`z.enum()`)
 
-### Step 2: Create Database Model
+### Step 2: Add Database Schema
 
-The model handles all database operations. If you already have a model, skip to Step 3.
+Define the database table using Drizzle ORM.
 
-**Location:** `packages/db/models/article.model.ts`
+**Location:** `packages/db/src/schemas/article/`
+
+```typescript
+// packages/db/src/schemas/article/table.ts
+import { pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+
+export const articleTable = pgTable('articles', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  content: text('content').notNull(),
+  excerpt: text('excerpt'),
+  slug: text('slug').notNull().unique(),
+  categoryId: uuid('category_id').notNull(),
+  status: text('status').notNull().default('draft'),
+  publishedAt: timestamp('published_at'),
+  featuredImageUrl: text('featured_image_url'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+  createdById: uuid('created_by_id').notNull(),
+  updatedById: uuid('updated_by_id').notNull(),
+});
+
+export type ArticleRow = typeof articleTable.$inferSelect;
+export type ArticleInsert = typeof articleTable.$inferInsert;
+```
+
+Update database exports:
+
+```typescript
+// packages/db/src/schemas/index.ts
+export * from './article/table.js';
+```
+
+Generate and apply the migration:
+
+```bash
+cd packages/db
+pnpm db:generate
+pnpm db:migrate
+```
+
+### Step 3: Create Database Model
+
+The model handles all database operations.
+
+**Location:** `packages/db/src/models/article.model.ts`
 
 ```typescript
 import { BaseModel } from './base.model';
-import { articles } from '../schemas';
+import { articleTable } from '../schemas';
 import type { Article } from '@repo/schemas/entities/article';
 
 /**
@@ -159,16 +210,14 @@ import type { Article } from '@repo/schemas/entities/article';
  */
 export class ArticleModel extends BaseModel<Article> {
   constructor() {
-    super(articles, 'article');
+    super(articleTable, 'article');
   }
-
-  // Add custom query methods here if needed
 
   /**
    * Find articles by category
    */
   async findByCategory(categoryId: string, trx?: Transaction): Promise<Article[]> {
-    const query = this.buildQuery(trx).where(eq(articles.categoryId, categoryId));
+    const query = this.buildQuery(trx).where(eq(articleTable.categoryId, categoryId));
     return query;
   }
 
@@ -177,14 +226,21 @@ export class ArticleModel extends BaseModel<Article> {
    */
   async findPublished(trx?: Transaction): Promise<Article[]> {
     const query = this.buildQuery(trx)
-      .where(eq(articles.status, 'published'))
-      .orderBy(desc(articles.publishedAt));
+      .where(eq(articleTable.status, 'published'))
+      .orderBy(desc(articleTable.publishedAt));
     return query;
   }
 }
 ```
 
-### Step 3: Create Service Class
+Update model exports:
+
+```typescript
+// packages/db/src/models/index.ts
+export * from './article.model.js';
+```
+
+### Step 4: Create Service Class
 
 Now create the service class that extends `BaseCrudService`.
 
@@ -217,14 +273,11 @@ export class ArticleService extends BaseCrudService<
   typeof ArticleUpdateInputSchema, // Update schema
   typeof ArticleSearchSchema       // Search schema
 > {
-  // Entity name for logging and error messages
   static readonly ENTITY_NAME = 'article';
   protected readonly entityName = ArticleService.ENTITY_NAME;
 
-  // Database model instance
   public readonly model: ArticleModel;
 
-  // Zod schemas for validation
   public readonly createSchema = ArticleCreateInputSchema;
   public readonly updateSchema = ArticleUpdateInputSchema;
   public readonly searchSchema = ArticleSearchSchema;
@@ -241,12 +294,11 @@ export class ArticleService extends BaseCrudService<
 
   /**
    * Define default relations to include when listing articles
-   * Returns relations configuration for category and author
    */
   protected getDefaultListRelations(): ListRelationsConfig {
     return {
-      category: true,    // Include category data
-      createdBy: {       // Include author with specific fields
+      category: true,
+      createdBy: {
         columns: {
           id: true,
           name: true,
@@ -258,6 +310,13 @@ export class ArticleService extends BaseCrudService<
 
   // Permission hooks and other methods follow...
 }
+```
+
+Update service exports:
+
+```typescript
+// packages/service-core/src/services/index.ts
+export * from './article/article.service.js';
 ```
 
 **Understanding the Generic Types:**
@@ -278,7 +337,7 @@ BaseCrudService<
 - **TUpdateSchema**: Zod schema type for updates
 - **TSearchSchema**: Zod schema type for searches
 
-### Step 4: Implement Permission Hooks
+### Step 5: Implement Permission Hooks
 
 Permission hooks determine who can perform which operations. You must implement **9 required hooks**.
 
@@ -305,10 +364,9 @@ Permission hooks determine who can perform which operations. You must implement 
 
 /**
  * Check if actor can create an article
- * Rule: Only authenticated users with ARTICLE_CREATE permission can create articles
+ * Rule: Only authenticated users with ARTICLE_CREATE permission
  */
 protected _canCreate(actor: Actor, data: unknown): void {
-  // Check authentication
   if (!actor || !actor.id) {
     throw new ServiceError(
       ServiceErrorCode.UNAUTHORIZED,
@@ -316,7 +374,6 @@ protected _canCreate(actor: Actor, data: unknown): void {
     );
   }
 
-  // Check permission
   if (!actor.permissions.includes(PermissionEnum.ARTICLE_CREATE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
@@ -327,7 +384,7 @@ protected _canCreate(actor: Actor, data: unknown): void {
 
 /**
  * Check if actor can update an article
- * Rule: Author can update their own articles, admins can update any article
+ * Rule: Author can update own articles, admins can update any
  */
 protected _canUpdate(actor: Actor, entity: Article): void {
   if (!actor || !actor.id) {
@@ -351,7 +408,6 @@ protected _canUpdate(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can soft delete an article
- * Rule: Author can delete their own articles, admins can delete any
  */
 protected _canSoftDelete(actor: Actor, entity: Article): void {
   if (!actor || !actor.id) {
@@ -374,7 +430,7 @@ protected _canSoftDelete(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can hard delete an article
- * Rule: Only super admins can permanently delete articles
+ * Rule: Only super admins
  */
 protected _canHardDelete(actor: Actor, entity: Article): void {
   if (actor.role !== RoleEnum.SUPER_ADMIN) {
@@ -387,7 +443,7 @@ protected _canHardDelete(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can restore an article
- * Rule: Only admins can restore deleted articles
+ * Rule: Only admins
  */
 protected _canRestore(actor: Actor, entity: Article): void {
   if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
@@ -400,15 +456,13 @@ protected _canRestore(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can view a specific article
- * Rule: Everyone can view published articles, only authors/admins can view drafts
+ * Rule: Everyone sees published, only authors/admins see drafts
  */
 protected _canView(actor: Actor, entity: Article): void {
-  // Published articles are public
   if (entity.status === 'published') {
     return;
   }
 
-  // Drafts require authentication
   if (!actor || !actor.id) {
     throw new ServiceError(
       ServiceErrorCode.UNAUTHORIZED,
@@ -416,7 +470,6 @@ protected _canView(actor: Actor, entity: Article): void {
     );
   }
 
-  // Owner or admin can view drafts
   const isOwner = entity.createdById === actor.id;
   const isAdmin = actor.role === RoleEnum.ADMIN;
 
@@ -430,7 +483,7 @@ protected _canView(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can list articles
- * Rule: Anyone can list (will be filtered in _beforeList hook)
+ * Rule: Anyone can list (filtered in _beforeList hook)
  */
 protected _canList(actor: Actor): void {
   // Public operation - no restrictions
@@ -438,7 +491,6 @@ protected _canList(actor: Actor): void {
 
 /**
  * Check if actor can search articles
- * Rule: Anyone can search (published articles only for guests)
  */
 protected _canSearch(actor: Actor): void {
   // Public operation - filtering happens in _executeSearch
@@ -446,7 +498,6 @@ protected _canSearch(actor: Actor): void {
 
 /**
  * Check if actor can count articles
- * Rule: Anyone can count
  */
 protected _canCount(actor: Actor): void {
   // Public operation
@@ -462,11 +513,9 @@ protected _canCount(actor: Actor): void {
 5. **Ownership**: Compare `entity.createdById === actor.id`
 6. **Hierarchical**: Combine role + ownership + permissions
 
-### Step 5: Implement Core Logic Methods
+### Step 6: Implement Core Logic Methods
 
 You must implement **3 required methods** for search and count operations.
-
-#### Required Methods
 
 ```typescript
 // ============================================================================
@@ -475,11 +524,6 @@ You must implement **3 required methods** for search and count operations.
 
 /**
  * Execute the database search query
- * This is where you translate search parameters into actual database queries
- *
- * @param params - Validated search parameters from searchSchema
- * @param actor - The user performing the search
- * @returns Paginated list of articles
  */
 protected async _executeSearch(
   params: Record<string, unknown>,
@@ -501,10 +545,8 @@ protected async _executeSearch(
     ...otherParams
   } = params;
 
-  // Build filter object
   const filters: Record<string, unknown> = {};
 
-  // Apply text filters
   if (title) filters.title = title;
   if (categoryId) filters.categoryId = categoryId;
   if (authorId) filters.createdById = authorId;
@@ -513,25 +555,17 @@ protected async _executeSearch(
   if (status) {
     filters.status = status;
   } else if (!actor || !actor.id) {
-    // Non-authenticated users only see published articles
     filters.status = 'published';
   }
 
-  // Tags filter
   if (tags && Array.isArray(tags) && tags.length > 0) {
     filters.tags = tags;
   }
 
-  // Date range filters
   if (publishedAfter) filters.publishedAfter = publishedAfter;
   if (publishedBefore) filters.publishedBefore = publishedBefore;
+  if (q) filters.q = q;
 
-  // Full-text search (if supported by model)
-  if (q) {
-    filters.q = q;
-  }
-
-  // Execute query with pagination and sorting
   return this.model.findAll(filters, {
     page,
     pageSize,
@@ -541,11 +575,6 @@ protected async _executeSearch(
 
 /**
  * Execute the database count query
- * Count entities matching the filter criteria
- *
- * @param params - Validated search parameters (only filters matter)
- * @param actor - The user performing the count
- * @returns Object with count property
  */
 protected async _executeCount(
   params: Record<string, unknown>,
@@ -553,13 +582,11 @@ protected async _executeCount(
 ): Promise<{ count: number }> {
   const { categoryId, status, authorId, tags } = params;
 
-  // Build filter object (same logic as _executeSearch but without pagination)
   const filters: Record<string, unknown> = {};
 
   if (categoryId) filters.categoryId = categoryId;
   if (authorId) filters.createdById = authorId;
 
-  // Status filter
   if (status) {
     filters.status = status;
   } else if (!actor || !actor.id) {
@@ -570,7 +597,6 @@ protected async _executeCount(
     filters.tags = tags;
   }
 
-  // Execute count
   const count = await this.model.count(filters);
   return { count };
 }
@@ -591,7 +617,7 @@ protected async _executeCount(
 - Apply security filters
 - Return `{ count: number }` structure
 
-### Step 6: Add Custom Methods (Optional)
+### Step 7: Add Custom Methods (Optional)
 
 Beyond standard CRUD, add business-specific methods.
 
@@ -602,10 +628,6 @@ Beyond standard CRUD, add business-specific methods.
  * Publish an article (change status from draft to published)
  * Business Rule: Only drafts can be published
  * Business Rule: Must have title, content, and category
- *
- * @param actor - User performing the operation
- * @param articleId - Article ID to publish
- * @returns Published article
  */
 public async publish(
   actor: Actor,
@@ -616,7 +638,6 @@ public async publish(
     input: { actor, articleId },
     schema: z.object({ articleId: z.string().uuid() }),
     execute: async (validatedData, validatedActor) => {
-      // Get the article
       const articleResult = await this.getById(validatedActor, validatedData.articleId);
 
       if (!articleResult.data) {
@@ -627,11 +648,8 @@ public async publish(
       }
 
       const article = articleResult.data;
-
-      // Check permission
       this._canUpdate(validatedActor, article);
 
-      // Business rule: Only drafts can be published
       if (article.status !== 'draft') {
         throw new ServiceError(
           ServiceErrorCode.VALIDATION_ERROR,
@@ -639,7 +657,6 @@ public async publish(
         );
       }
 
-      // Business rule: Must have required fields
       if (!article.title || !article.content || !article.categoryId) {
         throw new ServiceError(
           ServiceErrorCode.VALIDATION_ERROR,
@@ -647,15 +664,6 @@ public async publish(
         );
       }
 
-      // Business rule: Content must meet minimum length
-      if (article.content.length < 100) {
-        throw new ServiceError(
-          ServiceErrorCode.VALIDATION_ERROR,
-          'Article content must be at least 100 characters'
-        );
-      }
-
-      // Update status and publish date
       const updateResult = await this.update(validatedActor, validatedData.articleId, {
         status: 'published',
         publishedAt: new Date()
@@ -669,75 +677,6 @@ public async publish(
       }
 
       return updateResult.data;
-    }
-  });
-}
-
-/**
- * Unpublish an article (change status back to draft)
- *
- * @param actor - User performing the operation
- * @param articleId - Article ID to unpublish
- * @returns Unpublished article
- */
-public async unpublish(
-  actor: Actor,
-  articleId: string
-): Promise<ServiceOutput<Article>> {
-  return this.runWithLoggingAndValidation({
-    methodName: 'unpublish',
-    input: { actor, articleId },
-    schema: z.object({ articleId: z.string().uuid() }),
-    execute: async (validatedData, validatedActor) => {
-      const articleResult = await this.getById(validatedActor, validatedData.articleId);
-
-      if (!articleResult.data) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Article not found');
-      }
-
-      this._canUpdate(validatedActor, articleResult.data);
-
-      const updateResult = await this.update(validatedActor, validatedData.articleId, {
-        status: 'draft',
-        publishedAt: null
-      });
-
-      if (!updateResult.data) {
-        throw new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'Failed to unpublish article');
-      }
-
-      return updateResult.data;
-    }
-  });
-}
-```
-
-#### Example: View Counter
-
-```typescript
-/**
- * Increment the view count for an article
- * This is a lightweight operation that doesn't require full update permissions
- *
- * @param articleId - Article ID
- * @returns Updated view count
- */
-public async incrementViews(articleId: string): Promise<ServiceOutput<{ views: number }>> {
-  return this.runWithLoggingAndValidation({
-    methodName: 'incrementViews',
-    input: { articleId },
-    schema: z.object({ articleId: z.string().uuid() }),
-    execute: async (validatedData) => {
-      // No actor needed - public operation
-
-      // Directly update view count in database
-      const result = await this.model.incrementViews(validatedData.articleId);
-
-      if (!result) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Article not found');
-      }
-
-      return { views: result.views };
     }
   });
 }
@@ -768,7 +707,110 @@ public async customMethod(
 }
 ```
 
-### Step 7: Write Tests
+### Step 8: Create API Routes
+
+Create the HTTP endpoints that expose the service.
+
+**Location:** `apps/api/src/routes/article/`
+
+```typescript
+// apps/api/src/routes/article/index.ts
+import { createCRUDRoute, createListRoute } from '../../lib/route-factory.js';
+import { ArticleService } from '@repo/service-core';
+import {
+  ArticleCreateInputSchema,
+  ArticleUpdateInputSchema,
+  ArticleSearchSchema
+} from '@repo/schemas';
+
+// CRUD routes
+export const articleCRUDRoute = createCRUDRoute({
+  service: ArticleService,
+  schemas: {
+    create: ArticleCreateInputSchema,
+    update: ArticleUpdateInputSchema
+  },
+  permissions: {
+    create: ['ARTICLE_CREATE'],
+    read: ['ARTICLE_READ'],
+    update: ['ARTICLE_UPDATE'],
+    delete: ['ARTICLE_DELETE']
+  }
+});
+
+// List/search routes
+export const articleListRoute = createListRoute({
+  service: ArticleService,
+  schema: ArticleSearchSchema,
+  permissions: {
+    list: ['ARTICLE_READ']
+  }
+});
+```
+
+Register routes in the main app:
+
+```typescript
+// apps/api/src/index.ts
+import { articleCRUDRoute, articleListRoute } from './routes/article/index.js';
+
+app.route('/articles', articleListRoute);
+app.route('/articles', articleCRUDRoute);
+```
+
+### Step 9: Create Test Factory
+
+Create mock data generators for tests.
+
+**Location:** `packages/service-core/test/factories/`
+
+```typescript
+// packages/service-core/test/factories/articleFactory.ts
+import type { Article, ArticleCreateInput, ArticleUpdateInput } from '@repo/schemas';
+import { getMockId } from './utilsFactory';
+
+const baseArticle: Article = {
+  id: getMockId('article'),
+  title: 'Mock Article',
+  content: 'A mock article for testing with sufficient content length',
+  excerpt: 'A mock article excerpt',
+  slug: 'mock-article',
+  categoryId: getMockId('category'),
+  status: 'draft',
+  tags: [],
+  publishedAt: null,
+  featuredImageUrl: null,
+  metadata: {},
+  createdAt: new Date(),
+  updatedAt: new Date(),
+  createdById: getMockId('user'),
+  updatedById: getMockId('user'),
+};
+
+export const createMockArticle = (overrides: Partial<Article> = {}): Article => ({
+  ...baseArticle,
+  id: getMockId('article'),
+  ...overrides
+});
+
+export const createMockArticleCreateInput = (
+  overrides: Partial<ArticleCreateInput> = {}
+): ArticleCreateInput => ({
+  title: 'New Article',
+  content: 'A new article for testing with sufficient content length to pass validation',
+  categoryId: getMockId('category'),
+  ...overrides
+});
+
+export const createMockArticleUpdateInput = (
+  overrides: Partial<ArticleUpdateInput> = {}
+): ArticleUpdateInput => ({
+  title: 'Updated Article',
+  ...overrides
+});
+```
+
+### Step 10: Write Tests
 
 Every service needs comprehensive tests.
 
@@ -785,7 +827,6 @@ describe('ArticleService', () => {
   let service: ArticleService;
   let mockModel: ArticleModel;
 
-  // Test actors
   const adminActor: Actor = {
     id: 'admin-1',
     role: RoleEnum.ADMIN,
@@ -840,7 +881,6 @@ describe('ArticleService', () => {
 
   describe('publish', () => {
     it('should publish draft article', async () => {
-      // Create draft first
       const createResult = await service.create(userActor, {
         title: 'Draft Article',
         content: 'Content for draft article that is long enough to meet requirements',
@@ -851,21 +891,48 @@ describe('ArticleService', () => {
       expect(createResult.data).toBeDefined();
       const articleId = createResult.data!.id;
 
-      // Publish it
       const publishResult = await service.publish(userActor, articleId);
 
       expect(publishResult.data).toBeDefined();
       expect(publishResult.data?.status).toBe('published');
       expect(publishResult.data?.publishedAt).toBeDefined();
     });
-
-    it('should reject publishing already published article', async () => {
-      // Implementation...
-    });
   });
-
-  // More tests...
 });
+```
+
+## Testing Your Service
+
+### Run Unit Tests
+
+```bash
+# Test specific service
+pnpm test --filter=service-core -- article
+
+# Test all services
+pnpm test --filter=service-core
+```
+
+### Test API Endpoints
+
+```bash
+# Start the API
+pnpm dev --filter=api
+
+# Test with curl
+curl -X POST http://localhost:3001/api/v1/admin/articles \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test Article", "content": "Testing the API...", "categoryId": "uuid"}'
+```
+
+### Database Migration
+
+```bash
+# Generate migration for new table
+pnpm db:generate
+
+# Apply migration
+pnpm db:migrate
 ```
 
 ## Complete Working Example
@@ -877,22 +944,22 @@ See [basic-service.ts](../examples/basic-service.ts) for a complete, runnable ex
 ### 1. Using Wrong Schema Type
 
 ```typescript
-// ❌ WRONG: Using inferred type
+// WRONG: Using inferred type
 typeof ArticleCreateInputSchema  // Type, not the schema itself
 
-// ✅ CORRECT: Using actual schema
+// CORRECT: Using actual schema
 ArticleCreateInputSchema          // The schema object
 ```
 
 ### 2. Not Implementing All Permission Hooks
 
 ```typescript
-// ❌ WRONG: Missing implementation
+// WRONG: Missing implementation
 protected _canCreate(actor: Actor, data: unknown): void {
   // Empty - will not enforce any permissions!
 }
 
-// ✅ CORRECT: Explicit implementation
+// CORRECT: Explicit implementation
 protected _canCreate(actor: Actor, data: unknown): void {
   if (!actor.id) {
     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
@@ -903,12 +970,12 @@ protected _canCreate(actor: Actor, data: unknown): void {
 ### 3. Forgetting to Call Parent Constructor
 
 ```typescript
-// ❌ WRONG: No super() call
+// WRONG: No super() call
 constructor(ctx: ServiceContext) {
   this.model = new ArticleModel();
 }
 
-// ✅ CORRECT: Call super()
+// CORRECT: Call super()
 constructor(ctx: ServiceContext, model?: ArticleModel) {
   super(ctx, 'article');
   this.model = model ?? new ArticleModel();
@@ -918,22 +985,21 @@ constructor(ctx: ServiceContext, model?: ArticleModel) {
 ### 4. Not Handling Permission Checks in Custom Methods
 
 ```typescript
-// ❌ WRONG: No permission check
+// WRONG: No permission check
 public async publish(actor: Actor, id: string) {
   return this.runWithLoggingAndValidation({
     execute: async () => {
-      // Missing permission check!
       await this.update(actor, id, { status: 'published' });
     }
   });
 }
 
-// ✅ CORRECT: Check permissions
+// CORRECT: Check permissions
 public async publish(actor: Actor, id: string) {
   return this.runWithLoggingAndValidation({
     execute: async (validatedData, validatedActor) => {
       const article = await this.getById(validatedActor, id);
-      this._canUpdate(validatedActor, article.data!); // Check permission
+      this._canUpdate(validatedActor, article.data!);
       await this.update(validatedActor, id, { status: 'published' });
     }
   });
@@ -943,11 +1009,83 @@ public async publish(actor: Actor, id: string) {
 ### 5. Incorrect Error Handling
 
 ```typescript
-// ❌ WRONG: Throwing generic Error
+// WRONG: Throwing generic Error
 throw new Error('Not found');
 
-// ✅ CORRECT: Using ServiceError with proper code
+// CORRECT: Using ServiceError with proper code
 throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Article not found');
+```
+
+## Best Practices
+
+### Type Safety
+
+- Always use named exports
+- Define explicit input/output types for all functions
+- Leverage Zod for runtime validation
+
+### Error Handling
+
+- Use `ServiceError` with appropriate `ServiceErrorCode`
+- Wrap business logic with `runWithLoggingAndValidation`
+- Return standardized `{ success, data?, error? }` responses
+
+### Testing
+
+- Test both success and error cases
+- Use factories for consistent mock data
+- Mock external dependencies
+
+### Performance
+
+- Implement proper pagination in `findAll`
+- Add database indexes for search fields
+- Consider caching for read-heavy operations
+
+### Common Search Patterns
+
+```typescript
+async findAll(options: ArticleSearchOptions = {}) {
+  const { q, category, ...paginationOptions } = options;
+
+  let query = this.db.select().from(this.table);
+
+  if (q) {
+    query = query.where(
+      or(
+        ilike(this.table.name, `%${q}%`),
+        ilike(this.table.description, `%${q}%`)
+      )
+    );
+  }
+
+  if (category) {
+    query = query.where(eq(this.table.category, category));
+  }
+
+  return this.applyPagination(query, paginationOptions);
+}
+```
+
+### Custom Validation in Services
+
+```typescript
+async create(input: ArticleCreateInput): Promise<ServiceResponse<Article>> {
+  return this.runWithLoggingAndValidation(
+    'create',
+    input,
+    async () => {
+      if (await this.nameExists(input.name)) {
+        throw new ServiceError(
+          ServiceErrorCode.DUPLICATE_RESOURCE,
+          'Article name already exists'
+        );
+      }
+
+      return super.create(input);
+    }
+  );
+}
 ```
 
 ## Troubleshooting
@@ -959,8 +1097,8 @@ throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Article not found');
 **Solution:** Make sure you're using `typeof SchemaName`, not the inferred type:
 
 ```typescript
-typeof ArticleCreateInputSchema  // ✅ Correct
-ArticleCreateInput               // ❌ Wrong
+typeof ArticleCreateInputSchema  // Correct
+ArticleCreateInput               // Wrong
 ```
 
 **Problem:** "Property 'model' has no initializer"
@@ -972,7 +1110,7 @@ public readonly model: ArticleModel;
 
 constructor(ctx: ServiceContext, model?: ArticleModel) {
   super(ctx, 'article');
-  this.model = model ?? new ArticleModel();  // Initialize here
+  this.model = model ?? new ArticleModel();
 }
 ```
 
@@ -1006,6 +1144,16 @@ if (!result.success) {
 ```
 
 ## Next Steps
+
+After implementing your service:
+
+1. **Add to API Documentation**: Update API docs
+2. **Update Architecture Docs**: Document any new patterns
+3. **Add Integration Tests**: Test the full API flow
+4. **Consider Caching**: Implement Redis caching if needed
+5. **Monitor Performance**: Add logging and metrics
+
+## Related Guides
 
 - **[Permissions Guide](./permissions.md)** - Deep dive into permission system
 - **[Lifecycle Hooks Guide](./lifecycle-hooks.md)** - Using before/after hooks

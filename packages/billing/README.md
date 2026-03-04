@@ -266,6 +266,11 @@ This package now includes MercadoPago payment adapter configuration:
 - Retry configuration for transient errors
 - Argentina-specific defaults (ARS currency, AR country)
 
+## Related Documentation
+
+- [Billing Documentation](../../docs/billing/README.md)
+- [ADR-005: MercadoPago Payments](../../docs/decisions/ADR-005-mercadopago-payments.md)
+
 ## License
 
 Private - Not for distribution

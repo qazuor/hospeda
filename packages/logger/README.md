@@ -358,6 +358,10 @@ This package is part of the Hospeda monorepo and follows the same license.
 
 ---
 
+## Related Documentation
+
+- [Sentry Setup Guide](../../docs/monitoring/sentry-setup-guide.md)
+
 **Next Steps:**
 
 - Read the [Quick Start Guide](./docs/quick-start.md) to get started

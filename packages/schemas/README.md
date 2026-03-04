@@ -833,3 +833,8 @@ A continuación, se listan todos los esquemas detectados automáticamente, agrup
 | src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkListByEntityOutputSchema | UserBookmarkListByEntityOutput | Schema for user bookmark list response (by entity) Returns array of bookmarks for a specific entity |
 | src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkCountOutputSchema | UserBookmarkCountOutput | Schema for bookmark count response Returns count of bookmarks (used for both entity and user counts) |
 | src/entities/userBookmark/userBookmark.query.schema.ts | userBookmark | UserBookmarkPaginatedListOutputSchema | UserBookmarkPaginatedListOutput | Schema for paginated bookmark list response Used when pagination information is needed in response |
+
+## Related Documentation
+
+- [Adding a New Entity Guide](../../docs/guides/adding-new-entity.md)
+- [Dependency Policy](../../docs/guides/dependency-policy.md)
