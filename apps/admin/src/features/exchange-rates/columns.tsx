@@ -1,20 +1,35 @@
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { defaultIntlLocale, formatDate, formatNumber } from '@repo/i18n';
 import { DeleteIcon } from '@repo/icons';
 import type { ExchangeRate } from './types';
 
 /**
- * Format rate value with appropriate decimal places
+ * Format rate value with appropriate decimal places using locale-aware formatting
  */
-function formatRate(rate: number, decimals = 4): string {
-    return rate.toFixed(decimals);
+function formatRate(rate: number, locale: string, decimals = 4): string {
+    return formatNumber({
+        value: rate,
+        locale,
+        options: { minimumFractionDigits: decimals, maximumFractionDigits: decimals }
+    });
 }
 
 /**
- * Format time relative to now (e.g., "hace 5 min")
+ * Format time relative to now using provided translation strings
  */
-function formatRelativeTime(date: Date): string {
+function formatRelativeTime(
+    date: Date,
+    translations: {
+        justNow: string;
+        minutes: string;
+        hours: string;
+        oneDay: string;
+        days: string;
+        locale?: string;
+    }
+): string {
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffSec = Math.floor(diffMs / 1000);
@@ -22,16 +37,16 @@ function formatRelativeTime(date: Date): string {
     const diffHr = Math.floor(diffMin / 60);
     const diffDay = Math.floor(diffHr / 24);
 
-    if (diffSec < 60) return 'hace un momento';
-    if (diffMin < 60) return `hace ${diffMin} min`;
-    if (diffHr < 24) return `hace ${diffHr}h`;
-    if (diffDay === 1) return 'hace 1 día';
-    if (diffDay < 30) return `hace ${diffDay} días`;
+    if (diffSec < 60) return translations.justNow;
+    if (diffMin < 60) return translations.minutes.replace('{n}', String(diffMin));
+    if (diffHr < 24) return translations.hours.replace('{n}', String(diffHr));
+    if (diffDay === 1) return translations.oneDay;
+    if (diffDay < 30) return translations.days.replace('{n}', String(diffDay));
 
-    return date.toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
+    return formatDate({
+        date,
+        locale: translations.locale ?? defaultIntlLocale,
+        options: { day: '2-digit', month: '2-digit', year: 'numeric' }
     });
 }
 
@@ -61,21 +76,6 @@ function getRateTypeBadgeColor(rateType: string): BadgeColor {
 }
 
 /**
- * Get label for rate type
- */
-function getRateTypeLabel(rateType: string): string {
-    const labels: Record<string, string> = {
-        oficial: 'Oficial',
-        blue: 'Blue',
-        mep: 'MEP',
-        ccl: 'CCL',
-        tarjeta: 'Tarjeta',
-        standard: 'Standard'
-    };
-    return labels[rateType] || rateType;
-}
-
-/**
  * Get badge color for source
  */
 function getSourceBadgeColor(source: string): BadgeColor {
@@ -87,35 +87,51 @@ function getSourceBadgeColor(source: string): BadgeColor {
     return colors[source] || BadgeColor.DEFAULT;
 }
 
-/**
- * Get label for source
- */
-function getSourceLabel(source: string): string {
-    const labels: Record<string, string> = {
-        dolarapi: 'DolarAPI',
-        'exchangerate-api': 'ExchangeRate-API',
-        manual: 'Manual'
-    };
-    return labels[source] || source;
-}
-
 interface ExchangeRateColumnsOptions {
     onDelete?: (id: string) => void;
     isDeleting?: boolean;
+    /** Translation function from useTranslations hook */
+    t: (key: string) => string;
+    /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
+    locale?: string;
 }
 
 /**
  * Get DataTable columns for exchange rates list
  */
 export function getExchangeRateColumns(
-    options: ExchangeRateColumnsOptions = {}
+    options: ExchangeRateColumnsOptions
 ): ReadonlyArray<DataTableColumn<ExchangeRate>> {
-    const { onDelete, isDeleting } = options;
+    const { onDelete, isDeleting, t, locale = defaultIntlLocale } = options;
+
+    const relativeTimeTranslations = {
+        justNow: t('admin-billing.exchangeRates.relativeTime.justNow'),
+        minutes: t('admin-billing.exchangeRates.relativeTime.minutes'),
+        hours: t('admin-billing.exchangeRates.relativeTime.hours'),
+        oneDay: t('admin-billing.exchangeRates.relativeTime.oneDay'),
+        days: t('admin-billing.exchangeRates.relativeTime.days'),
+        locale
+    };
+
+    const rateTypeLabels: Record<string, string> = {
+        oficial: t('admin-billing.exchangeRates.rateTypes.oficial'),
+        blue: t('admin-billing.exchangeRates.rateTypes.blue'),
+        mep: t('admin-billing.exchangeRates.rateTypes.mep'),
+        ccl: t('admin-billing.exchangeRates.rateTypes.ccl'),
+        tarjeta: t('admin-billing.exchangeRates.rateTypes.tarjeta'),
+        standard: t('admin-billing.exchangeRates.rateTypes.standard')
+    };
+
+    const sourceLabels: Record<string, string> = {
+        dolarapi: t('admin-billing.exchangeRates.sources.dolarapi'),
+        'exchangerate-api': t('admin-billing.exchangeRates.sources.exchangerateApi'),
+        manual: t('admin-billing.exchangeRates.sources.manual')
+    };
 
     return [
         {
             id: 'currencyPair',
-            header: 'Par',
+            header: t('admin-billing.exchangeRates.columns.currencyPair'),
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
@@ -126,68 +142,106 @@ export function getExchangeRateColumns(
         },
         {
             id: 'rate',
-            header: 'Tasa',
+            header: t('admin-billing.exchangeRates.columns.rate'),
             enableSorting: true,
             columnType: ColumnType.NUMBER,
-            cell: ({ row }) => <div className="font-mono text-sm">{formatRate(row.rate, 4)}</div>
+            cell: ({ row }) => (
+                <div className="font-mono text-sm">{formatRate(row.rate, locale, 4)}</div>
+            )
         },
         {
             id: 'inverseRate',
-            header: 'Tasa Inversa',
+            header: t('admin-billing.exchangeRates.columns.inverseRate'),
             enableSorting: true,
             columnType: ColumnType.NUMBER,
             cell: ({ row }) => (
                 <div className="font-mono text-muted-foreground text-xs">
-                    {formatRate(row.inverseRate, 6)}
+                    {formatRate(row.inverseRate, locale, 6)}
                 </div>
             )
         },
         {
             id: 'rateType',
-            header: 'Tipo de Tasa',
+            header: t('admin-billing.exchangeRates.columns.rateType'),
             accessorKey: 'rateType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'oficial', label: 'Oficial', color: BadgeColor.BLUE },
-                { value: 'blue', label: 'Blue', color: BadgeColor.GREEN },
-                { value: 'mep', label: 'MEP', color: BadgeColor.PURPLE },
-                { value: 'ccl', label: 'CCL', color: BadgeColor.YELLOW },
-                { value: 'tarjeta', label: 'Tarjeta', color: BadgeColor.RED },
-                { value: 'standard', label: 'Standard', color: BadgeColor.DEFAULT }
+                {
+                    value: 'oficial',
+                    label: t('admin-billing.exchangeRates.rateTypes.oficial'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'blue',
+                    label: t('admin-billing.exchangeRates.rateTypes.blue'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'mep',
+                    label: t('admin-billing.exchangeRates.rateTypes.mep'),
+                    color: BadgeColor.PURPLE
+                },
+                {
+                    value: 'ccl',
+                    label: t('admin-billing.exchangeRates.rateTypes.ccl'),
+                    color: BadgeColor.YELLOW
+                },
+                {
+                    value: 'tarjeta',
+                    label: t('admin-billing.exchangeRates.rateTypes.tarjeta'),
+                    color: BadgeColor.RED
+                },
+                {
+                    value: 'standard',
+                    label: t('admin-billing.exchangeRates.rateTypes.standard'),
+                    color: BadgeColor.DEFAULT
+                }
             ],
             cell: ({ row }) => (
                 <Badge
                     variant="outline"
                     className={`badge-${getRateTypeBadgeColor(row.rateType)}`}
                 >
-                    {getRateTypeLabel(row.rateType)}
+                    {rateTypeLabels[row.rateType] || row.rateType}
                 </Badge>
             )
         },
         {
             id: 'source',
-            header: 'Fuente',
+            header: t('admin-billing.exchangeRates.columns.source'),
             accessorKey: 'source',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'dolarapi', label: 'DolarAPI', color: BadgeColor.BLUE },
-                { value: 'exchangerate-api', label: 'ExchangeRate-API', color: BadgeColor.GREEN },
-                { value: 'manual', label: 'Manual', color: BadgeColor.YELLOW }
+                {
+                    value: 'dolarapi',
+                    label: t('admin-billing.exchangeRates.sources.dolarapi'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'exchangerate-api',
+                    label: t('admin-billing.exchangeRates.sources.exchangerateApi'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'manual',
+                    label: t('admin-billing.exchangeRates.sources.manual'),
+                    color: BadgeColor.YELLOW
+                }
             ],
             cell: ({ row }) => (
                 <Badge
                     variant="outline"
                     className={`badge-${getSourceBadgeColor(row.source)}`}
                 >
-                    {getSourceLabel(row.source)}
+                    {sourceLabels[row.source] || row.source}
                 </Badge>
             )
         },
         {
             id: 'fetchedAt',
-            header: 'Última Actualización',
+            header: t('admin-billing.exchangeRates.columns.lastUpdated'),
             accessorKey: 'fetchedAt',
             enableSorting: true,
             columnType: ColumnType.DATE,
@@ -197,9 +251,11 @@ export function getExchangeRateColumns(
 
                 return (
                     <div className="text-sm">
-                        <div>{formatRelativeTime(fetchedAt)}</div>
+                        <div>{formatRelativeTime(fetchedAt, relativeTimeTranslations)}</div>
                         {isStale && (
-                            <div className="text-muted-foreground text-xs">(desactualizado)</div>
+                            <div className="text-muted-foreground text-xs">
+                                {t('admin-billing.exchangeRates.columns.stale')}
+                            </div>
                         )}
                     </div>
                 );
@@ -207,7 +263,7 @@ export function getExchangeRateColumns(
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.exchangeRates.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => {
@@ -221,10 +277,10 @@ export function getExchangeRateColumns(
                                 size="sm"
                                 onClick={() => onDelete(row.id)}
                                 disabled={isDeleting}
-                                title="Eliminar"
+                                title={t('admin-billing.exchangeRates.deleteButton')}
                             >
                                 <DeleteIcon className="mr-1 h-3 w-3" />
-                                Eliminar
+                                {t('admin-billing.exchangeRates.deleteButton')}
                             </Button>
                         )}
                     </div>

@@ -10,10 +10,10 @@ import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { useAuthContext } from '@/hooks/use-auth-context';
 import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUpdateUserSettings, useUserProfile } from '@/hooks/use-user-profile';
-import { useSession } from '@/lib/auth-client';
 import {
     BellIcon,
     GlobeIcon,
@@ -45,8 +45,8 @@ function resolveTheme(darkMode: boolean | undefined): 'system' | 'light' | 'dark
 
 function MySettingsPage() {
     const { t } = useTranslations();
-    const { data: session } = useSession();
-    const userId = session?.user?.id;
+    const { user: authUser } = useAuthContext();
+    const userId = authUser?.id;
     const { data: profile, isLoading, isError, refetch } = useUserProfile({ userId });
     const mutation = useUpdateUserSettings({ userId });
     const { success: toastSuccess, error: toastError } = useFlashyToast();
@@ -73,14 +73,14 @@ function MySettingsPage() {
             };
             mutation.mutate(merged, {
                 onSuccess: () => {
-                    toastSuccess('Settings saved');
+                    toastSuccess(t('admin-pages.settings.settingsSaved'));
                 },
                 onError: () => {
-                    toastError('Failed to save settings');
+                    toastError(t('admin-pages.settings.settingsSaveError'));
                 }
             });
         },
-        [mutation, toastSuccess, toastError, settings?.darkMode, currentLanguage, notifications]
+        [mutation, toastSuccess, toastError, settings?.darkMode, currentLanguage, notifications, t]
     );
 
     const handleThemeChange = useCallback(
@@ -140,14 +140,14 @@ function MySettingsPage() {
                     <Card>
                         <CardContent className="flex flex-col items-center gap-4 py-12">
                             <p className="text-muted-foreground text-sm">
-                                Failed to load settings. Please try again.
+                                {t('admin-pages.settings.loadError')}
                             </p>
                             <button
                                 type="button"
                                 className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm hover:bg-primary/90"
                                 onClick={() => refetch()}
                             >
-                                Retry
+                                {t('admin-pages.settings.retry')}
                             </button>
                         </CardContent>
                     </Card>
@@ -163,13 +163,15 @@ function MySettingsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                                <PaletteIcon className="h-5 w-5 text-purple-500" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10 dark:bg-purple-400/10">
+                                <PaletteIcon className="h-5 w-5 text-purple-500 dark:text-purple-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg">Appearance</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.settings.appearance.title')}
+                                </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    Customize the look and feel of the admin panel
+                                    {t('admin-pages.settings.appearance.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -178,26 +180,26 @@ function MySettingsPage() {
                         <div className="space-y-4">
                             <div>
                                 <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
-                                    Theme Preference
+                                    {t('admin-pages.settings.appearance.themePreference')}
                                 </span>
                                 <div className="flex flex-wrap gap-3">
                                     <ThemeButton
                                         icon={<MonitorIcon className="h-5 w-5" />}
-                                        label="System"
+                                        label={t('admin-pages.settings.appearance.system')}
                                         active={currentTheme === 'system'}
                                         disabled={isSaving}
                                         onClick={() => handleThemeChange('system')}
                                     />
                                     <ThemeButton
                                         icon={<SunIcon className="h-5 w-5" />}
-                                        label="Light"
+                                        label={t('admin-pages.settings.appearance.light')}
                                         active={currentTheme === 'light'}
                                         disabled={isSaving}
                                         onClick={() => handleThemeChange('light')}
                                     />
                                     <ThemeButton
                                         icon={<MoonIcon className="h-5 w-5" />}
-                                        label="Dark"
+                                        label={t('admin-pages.settings.appearance.dark')}
                                         active={currentTheme === 'dark'}
                                         disabled={isSaving}
                                         onClick={() => handleThemeChange('dark')}
@@ -212,13 +214,15 @@ function MySettingsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 dark:bg-blue-400/10">
                                 <GlobeIcon className="h-5 w-5 text-blue-500" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg">Language & Region</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.settings.language.title')}
+                                </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    Set your preferred language and locale
+                                    {t('admin-pages.settings.language.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -227,25 +231,25 @@ function MySettingsPage() {
                         <div className="space-y-4">
                             <div>
                                 <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
-                                    Interface Language
+                                    {t('admin-pages.settings.language.interfaceLanguage')}
                                 </span>
                                 <div className="flex flex-wrap gap-3">
                                     <LanguageButton
-                                        label="Español"
+                                        label={t('admin-pages.settings.language.es')}
                                         code="es"
                                         active={currentLanguage === 'es'}
                                         disabled={isSaving}
                                         onClick={() => handleLanguageChange('es')}
                                     />
                                     <LanguageButton
-                                        label="English"
+                                        label={t('admin-pages.settings.language.en')}
                                         code="en"
                                         active={currentLanguage === 'en'}
                                         disabled={isSaving}
                                         onClick={() => handleLanguageChange('en')}
                                     />
                                     <LanguageButton
-                                        label="Português"
+                                        label={t('admin-pages.settings.language.pt')}
                                         code="pt"
                                         active={currentLanguage === 'pt'}
                                         disabled={isSaving}
@@ -256,7 +260,7 @@ function MySettingsPage() {
 
                             <div>
                                 <span className="mb-2 block font-medium text-muted-foreground text-xs uppercase">
-                                    Timezone
+                                    {t('admin-pages.settings.language.timezone')}
                                 </span>
                                 <div className="flex items-center gap-2 rounded-lg border bg-card p-3">
                                     <span className="font-medium">{browserTimezone || '...'}</span>
@@ -264,11 +268,11 @@ function MySettingsPage() {
                                         variant="secondary"
                                         className="ml-auto"
                                     >
-                                        Auto
+                                        {t('admin-pages.settings.language.timezoneAuto')}
                                     </Badge>
                                 </div>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Detected from browser settings
+                                    {t('admin-pages.settings.language.timezoneDetected')}
                                 </p>
                             </div>
                         </div>
@@ -279,13 +283,15 @@ function MySettingsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10">
-                                <BellIcon className="h-5 w-5 text-green-500" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500/10 dark:bg-green-400/10">
+                                <BellIcon className="h-5 w-5 text-green-500 dark:text-green-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg">Notifications</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.settings.notifications.title')}
+                                </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    Manage how you receive notifications
+                                    {t('admin-pages.settings.notifications.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -293,29 +299,37 @@ function MySettingsPage() {
                     <CardContent>
                         <div className="space-y-3">
                             <NotificationToggle
-                                label="Enable Notifications"
-                                description="Master toggle for all notifications"
+                                label={t('admin-pages.settings.notifications.enableNotifications')}
+                                description={t(
+                                    'admin-pages.settings.notifications.enableNotificationsDesc'
+                                )}
                                 checked={notifications.enabled}
                                 disabled={isSaving}
                                 onChange={(v) => handleNotificationChange('enabled', v)}
                             />
                             <NotificationToggle
-                                label="Email Notifications"
-                                description="Receive updates via email"
+                                label={t('admin-pages.settings.notifications.emailNotifications')}
+                                description={t(
+                                    'admin-pages.settings.notifications.emailNotificationsDesc'
+                                )}
                                 checked={notifications.allowEmails}
                                 disabled={isSaving || !notifications.enabled}
                                 onChange={(v) => handleNotificationChange('allowEmails', v)}
                             />
                             <NotificationToggle
-                                label="SMS Notifications"
-                                description="Receive updates via SMS"
+                                label={t('admin-pages.settings.notifications.smsNotifications')}
+                                description={t(
+                                    'admin-pages.settings.notifications.smsNotificationsDesc'
+                                )}
                                 checked={notifications.allowSms}
                                 disabled={isSaving || !notifications.enabled}
                                 onChange={(v) => handleNotificationChange('allowSms', v)}
                             />
                             <NotificationToggle
-                                label="Push Notifications"
-                                description="Receive browser push notifications"
+                                label={t('admin-pages.settings.notifications.pushNotifications')}
+                                description={t(
+                                    'admin-pages.settings.notifications.pushNotificationsDesc'
+                                )}
                                 checked={notifications.allowPush}
                                 disabled={isSaving || !notifications.enabled}
                                 onChange={(v) => handleNotificationChange('allowPush', v)}
@@ -328,13 +342,15 @@ function MySettingsPage() {
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10">
-                                <ShieldIcon className="h-5 w-5 text-red-500" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 dark:bg-red-400/10">
+                                <ShieldIcon className="h-5 w-5 text-red-500 dark:text-red-400" />
                             </div>
                             <div>
-                                <CardTitle className="text-lg">Account & Security</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.settings.security.title')}
+                                </CardTitle>
                                 <p className="text-muted-foreground text-sm">
-                                    Manage your account security settings
+                                    {t('admin-pages.settings.security.subtitle')}
                                 </p>
                             </div>
                         </div>
@@ -346,12 +362,10 @@ function MySettingsPage() {
                                     <InfoIcon className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
                                     <div className="flex-1">
                                         <p className="mb-1 font-medium text-sm">
-                                            Authentication Provider
+                                            {t('admin-pages.settings.security.authProviderTitle')}
                                         </p>
                                         <p className="text-muted-foreground text-xs">
-                                            Your account security is managed through Better Auth.
-                                            Password changes and connected accounts can be managed
-                                            from your account settings.
+                                            {t('admin-pages.settings.security.authProviderDesc')}
                                         </p>
                                     </div>
                                 </div>
@@ -359,9 +373,10 @@ function MySettingsPage() {
 
                             <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950">
                                 <p className="text-amber-900 text-sm dark:text-amber-100">
-                                    <strong>Security Tip:</strong> Enable two-factor authentication
-                                    (2FA) for enhanced security. This adds an extra layer of
-                                    protection to your admin account.
+                                    <strong>
+                                        {t('admin-pages.settings.security.securityTip')}:
+                                    </strong>{' '}
+                                    {t('admin-pages.settings.security.securityTipDesc')}
                                 </p>
                             </div>
                         </div>

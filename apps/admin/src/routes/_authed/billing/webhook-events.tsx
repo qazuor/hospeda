@@ -26,6 +26,7 @@ import {
     useWebhookEventsQuery
 } from '@/features/billing-webhook-events';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDateWithSeconds } from '@/lib/format-helpers';
 import type { TranslationKey } from '@repo/i18n';
 import {
     AlertCircleIcon,
@@ -91,20 +92,6 @@ function getTypeLabel(type: WebhookEventType, t: (key: TranslationKey) => string
 }
 
 /**
- * Format date to Spanish locale
- */
-function formatDate(date: string): string {
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-    }).format(new Date(date));
-}
-
-/**
  * Webhook event detail dialog component
  */
 function WebhookEventDetailDialog({
@@ -116,7 +103,7 @@ function WebhookEventDetailDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (!event) return null;
 
@@ -168,14 +155,18 @@ function WebhookEventDetailDialog({
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.webhookEvents.dialog.receivedLabel')}
                                 </p>
-                                <p className="text-xs">{formatDate(event.receivedAt)}</p>
+                                <p className="text-xs">
+                                    {formatDateWithSeconds({ date: event.receivedAt, locale })}
+                                </p>
                             </div>
                             {event.processedAt && (
                                 <div>
                                     <p className="text-muted-foreground text-xs">
                                         {t('admin-billing.webhookEvents.dialog.processedLabel')}
                                     </p>
-                                    <p className="text-xs">{formatDate(event.processedAt)}</p>
+                                    <p className="text-xs">
+                                        {formatDateWithSeconds({ date: event.processedAt, locale })}
+                                    </p>
                                 </div>
                             )}
                         </div>
@@ -237,7 +228,7 @@ function WebhookEventDetailDialog({
 }
 
 function WebhookEventsPage() {
-    const { t } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const { addToast } = useToast();
     const [activeTab, setActiveTab] = useState<TabValue>('events');
     const [typeFilter, setTypeFilter] = useState<WebhookEventType | 'all'>('all');
@@ -571,7 +562,10 @@ function WebhookEventsPage() {
                                     ? activeTab === 'events'
                                         ? t('admin-billing.webhookEvents.noEvents')
                                         : t('admin-billing.webhookEvents.noDeadLetterEvents')
-                                    : `${displayEvents.length} ${displayEvents.length !== 1 ? t('admin-billing.webhookEvents.eventCountPlural') : t('admin-billing.webhookEvents.eventCount')}`}
+                                    : tPlural(
+                                          'admin-billing.webhookEvents.eventCount',
+                                          displayEvents.length
+                                      )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -646,7 +640,10 @@ function WebhookEventsPage() {
                                                 className="border-b hover:bg-muted/50"
                                             >
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                    {formatDate(event.receivedAt)}
+                                                    {formatDateWithSeconds({
+                                                        date: event.receivedAt,
+                                                        locale
+                                                    })}
                                                 </td>
                                                 <td className="px-4 py-3 font-medium text-sm">
                                                     {event.provider}

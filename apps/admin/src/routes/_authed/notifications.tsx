@@ -2,6 +2,8 @@ import { MainPageLayout } from '@/components/layout/MainPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatDate } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -54,6 +56,7 @@ function getVariantForType(
 }
 
 function NotificationsPage() {
+    const { t, locale } = useTranslations();
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     useEffect(() => {
@@ -76,15 +79,17 @@ function NotificationsPage() {
     const unreadCount = notifications.filter((n) => !n.read).length;
 
     return (
-        <MainPageLayout title="Notifications">
+        <MainPageLayout title={t('admin-pages.notifications.title')}>
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="font-bold text-2xl">Notifications</h2>
+                        <h2 className="font-bold text-2xl">
+                            {t('admin-pages.notifications.title')}
+                        </h2>
                         <p className="text-muted-foreground">
                             {unreadCount > 0
-                                ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}`
-                                : 'All notifications read'}
+                                ? `${unreadCount} ${unreadCount > 1 ? t('admin-pages.notifications.unreadPlural').replace('{{count}}', String(unreadCount)) : t('admin-pages.notifications.unreadSingular').replace('{{count}}', String(unreadCount))}`
+                                : t('admin-pages.notifications.allRead')}
                         </p>
                     </div>
                     {notifications.length > 0 && (
@@ -92,7 +97,7 @@ function NotificationsPage() {
                             onClick={clearAll}
                             variant="outline"
                         >
-                            Clear All
+                            {t('admin-pages.notifications.clearAll')}
                         </Button>
                     )}
                 </div>
@@ -100,7 +105,9 @@ function NotificationsPage() {
                 {notifications.length === 0 ? (
                     <Card>
                         <CardContent className="pt-6 text-center">
-                            <p className="text-muted-foreground">No notifications</p>
+                            <p className="text-muted-foreground">
+                                {t('admin-pages.notifications.empty')}
+                            </p>
                         </CardContent>
                     </Card>
                 ) : (
@@ -120,12 +127,21 @@ function NotificationsPage() {
                                                     {notification.type}
                                                 </Badge>
                                                 {!notification.read && (
-                                                    <Badge variant="outline">Unread</Badge>
+                                                    <Badge variant="outline">
+                                                        {t('admin-pages.notifications.unreadBadge')}
+                                                    </Badge>
                                                 )}
                                             </div>
                                             <p className="text-sm">{notification.message}</p>
                                             <p className="text-muted-foreground text-xs">
-                                                {new Date(notification.timestamp).toLocaleString()}
+                                                {formatDate({
+                                                    date: notification.timestamp,
+                                                    locale,
+                                                    options: {
+                                                        dateStyle: 'short',
+                                                        timeStyle: 'short'
+                                                    }
+                                                })}
                                             </p>
                                         </div>
                                         {!notification.read && (
@@ -134,7 +150,7 @@ function NotificationsPage() {
                                                 variant="ghost"
                                                 size="sm"
                                             >
-                                                Mark as Read
+                                                {t('admin-pages.notifications.markAsRead')}
                                             </Button>
                                         )}
                                     </div>

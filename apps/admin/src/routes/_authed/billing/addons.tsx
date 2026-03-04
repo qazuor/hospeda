@@ -143,9 +143,12 @@ function BillingAddonsPage() {
     };
 
     const columns = getPurchasedAddonColumns({
-        onViewDetails: handleViewDetails,
-        onForceExpire: handleForceExpire,
-        onForceActivate: handleForceActivate
+        actions: {
+            onViewDetails: handleViewDetails,
+            onForceExpire: handleForceExpire,
+            onForceActivate: handleForceActivate
+        },
+        t: t as (key: string) => string
     });
 
     if (error) {
@@ -167,7 +170,7 @@ function BillingAddonsPage() {
                                 <p className="text-destructive">
                                     {t('admin-billing.addons.loadError')}
                                 </p>
-                                <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                                <p className="mt-2 text-destructive text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.addons.apiCheckError')}
                                 </p>
@@ -365,8 +368,8 @@ function BillingAddonsPage() {
                             onClick={handleConfirmAction}
                             className={
                                 confirmAction?.type === 'expire'
-                                    ? 'bg-orange-600 hover:bg-orange-700'
-                                    : 'bg-green-600 hover:bg-green-700'
+                                    ? 'bg-orange-600 hover:bg-orange-700 dark:bg-orange-500 dark:hover:bg-orange-600'
+                                    : 'bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600'
                             }
                         >
                             {confirmAction?.type === 'expire'

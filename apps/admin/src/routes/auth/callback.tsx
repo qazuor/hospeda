@@ -6,6 +6,7 @@
  * that redirects to the dashboard after successful OAuth authentication.
  */
 
+import { useTranslations } from '@/hooks/use-translations';
 import { useSession } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
 import { createFileRoute, useRouter } from '@tanstack/react-router';
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/auth/callback')({
  */
 function AuthCallbackPage(): React.JSX.Element {
     const router = useRouter();
+    const { t } = useTranslations();
     const { data: session, isPending } = useSession();
 
     useEffect(() => {
@@ -37,10 +39,10 @@ function AuthCallbackPage(): React.JSX.Element {
     }, [isPending, session, router]);
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
             <div className="text-center">
-                <LoaderIcon className="mx-auto mb-4 h-8 w-8 animate-spin text-cyan-500" />
-                <p className="text-gray-600">Completing authentication...</p>
+                <LoaderIcon className="mx-auto mb-4 h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">{t('admin-pages.auth.callback.completing')}</p>
             </div>
         </div>
     );

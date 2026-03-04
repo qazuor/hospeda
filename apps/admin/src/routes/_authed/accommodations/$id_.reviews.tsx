@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementGate } from '@qazuor/qzpay-react';
+import { formatNumber } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/reviews')({
@@ -35,7 +36,7 @@ function StarRating({ rating }: { rating: number }) {
 
 function AccommodationReviewsPage() {
     const { id } = Route.useParams();
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const { data: accommodation, isLoading } = useAccommodationQuery(id);
 
     const reviewsCount = accommodation?.reviewsCount || 0;
@@ -63,30 +64,41 @@ function AccommodationReviewsPage() {
                         ))}
                     </div>
                 ) : reviewsCount === 0 ? (
-                    <p className="text-muted-foreground">No reviews yet for this accommodation.</p>
+                    <p className="text-muted-foreground">
+                        {t('admin-pages.accommodations.reviews.noReviews')}
+                    </p>
                 ) : (
                     <div className="space-y-6">
                         {/* Reviews Summary */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Reviews Summary</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.accommodations.reviews.summary')}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <p className="text-muted-foreground text-sm">
-                                            Average Rating
+                                            {t('admin-pages.accommodations.reviews.averageRating')}
                                         </p>
                                         <div className="flex items-center gap-3">
                                             <StarRating rating={averageRating} />
                                             <span className="font-semibold text-2xl">
-                                                {averageRating.toFixed(1)}
+                                                {formatNumber({
+                                                    value: averageRating,
+                                                    locale,
+                                                    options: {
+                                                        minimumFractionDigits: 1,
+                                                        maximumFractionDigits: 1
+                                                    }
+                                                })}
                                             </span>
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <p className="text-muted-foreground text-sm">
-                                            Total Reviews
+                                            {t('admin-pages.accommodations.reviews.totalReviews')}
                                         </p>
                                         <p className="font-semibold text-2xl">{reviewsCount}</p>
                                     </div>
@@ -97,7 +109,9 @@ function AccommodationReviewsPage() {
                         {/* Rating Distribution (Mock visualization) */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Rating Distribution</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.accommodations.reviews.ratingDistribution')}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
@@ -120,7 +134,7 @@ function AccommodationReviewsPage() {
                                                 <div className="flex-1">
                                                     <div className="h-2 w-full rounded-full bg-muted">
                                                         <div
-                                                            className="h-full rounded-full bg-yellow-500"
+                                                            className="h-full rounded-full bg-yellow-500 dark:bg-yellow-400"
                                                             style={{ width: `${percentage}%` }}
                                                         />
                                                     </div>
@@ -136,18 +150,21 @@ function AccommodationReviewsPage() {
                         </Card>
 
                         {/* Note about detailed reviews */}
-                        <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
-                            <p className="text-blue-900 text-sm">
-                                <strong>Note:</strong> Detailed review listings will be available in
-                                a future update. Currently showing aggregated review statistics
-                                only.
+                        <div className="rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+                            <p className="text-blue-900 text-sm dark:text-blue-200">
+                                <strong>
+                                    {t('admin-pages.accommodations.reviews.detailedNoteLabel')}
+                                </strong>{' '}
+                                {t('admin-pages.accommodations.reviews.detailedNote')}
                             </p>
                         </div>
 
                         {/* T-G-005: Gate for responding to reviews (placeholder for future implementation) */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-lg">Responder a Reviews</CardTitle>
+                                <CardTitle className="text-lg">
+                                    {t('admin-pages.accommodations.reviews.respondTitle')}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <EntitlementGate
@@ -155,19 +172,20 @@ function AccommodationReviewsPage() {
                                     fallback={
                                         <div className="rounded-md border border-amber-200 bg-amber-50 p-4">
                                             <p className="font-medium text-amber-900">
-                                                Responder a reviews está disponible en planes Pro y
-                                                Premium
+                                                {t(
+                                                    'admin-pages.accommodations.reviews.respondProPremium'
+                                                )}
                                             </p>
                                             <p className="mt-2 text-amber-800 text-sm">
-                                                Actualiza tu plan para poder responder públicamente
-                                                a las opiniones de tus huéspedes.
+                                                {t(
+                                                    'admin-pages.accommodations.reviews.respondUpgrade'
+                                                )}
                                             </p>
                                         </div>
                                     }
                                 >
                                     <p className="text-muted-foreground text-sm">
-                                        La funcionalidad de respuesta a reviews estará disponible
-                                        próximamente.
+                                        {t('admin-pages.accommodations.reviews.respondComingSoon')}
                                     </p>
                                 </EntitlementGate>
                             </CardContent>

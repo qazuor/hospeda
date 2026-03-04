@@ -19,6 +19,9 @@ import {
 } from '@/components/ui/dialog';
 import { useSponsorSponsorshipsQuery } from '@/features/sponsor-dashboard/hooks';
 import type { SponsorSponsorship } from '@/features/sponsor-dashboard/types';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatShortDate } from '@/lib/format-helpers';
+import { formatNumber } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
@@ -27,6 +30,7 @@ export const Route = createFileRoute('/_authed/sponsor/sponsorships')({
 });
 
 function SponsorSponsorshipsPage() {
+    const { t } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
@@ -50,78 +54,114 @@ function SponsorSponsorshipsPage() {
     const columns: DataTableColumn<SponsorSponsorship>[] = [
         {
             id: 'targetType',
-            header: 'Tipo',
+            header: t('admin-pages.sponsor.sponsorships.colType'),
             accessorKey: 'targetType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'EVENT', label: 'Evento', color: BadgeColor.BLUE },
-                { value: 'POST', label: 'Publicación', color: BadgeColor.PURPLE }
+                {
+                    value: 'EVENT',
+                    label: t('admin-pages.sponsor.sponsorships.typeEvent'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'POST',
+                    label: t('admin-pages.sponsor.sponsorships.typePost'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'targetName',
-            header: 'Objetivo',
+            header: t('admin-pages.sponsor.sponsorships.colTarget'),
             accessorKey: 'targetName',
             enableSorting: true,
             columnType: ColumnType.STRING
         },
         {
             id: 'levelTier',
-            header: 'Nivel',
+            header: t('admin-pages.sponsor.sponsorships.colLevel'),
             accessorKey: 'levelTier',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'BRONZE', label: 'Bronce', color: BadgeColor.ORANGE },
-                { value: 'SILVER', label: 'Plata', color: BadgeColor.GRAY },
-                { value: 'GOLD', label: 'Oro', color: BadgeColor.YELLOW }
+                {
+                    value: 'BRONZE',
+                    label: t('admin-pages.sponsor.sponsorships.levelBronze'),
+                    color: BadgeColor.ORANGE
+                },
+                {
+                    value: 'SILVER',
+                    label: t('admin-pages.sponsor.sponsorships.levelSilver'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: 'GOLD',
+                    label: t('admin-pages.sponsor.sponsorships.levelGold'),
+                    color: BadgeColor.YELLOW
+                }
             ]
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-pages.sponsor.sponsorships.colStatus'),
             accessorKey: 'status',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'PENDING', label: 'Pendiente', color: BadgeColor.YELLOW },
-                { value: 'ACTIVE', label: 'Activo', color: BadgeColor.GREEN },
-                { value: 'EXPIRED', label: 'Expirado', color: BadgeColor.GRAY },
-                { value: 'CANCELLED', label: 'Cancelado', color: BadgeColor.RED }
+                {
+                    value: 'PENDING',
+                    label: t('admin-pages.sponsor.sponsorships.statusPending'),
+                    color: BadgeColor.YELLOW
+                },
+                {
+                    value: 'ACTIVE',
+                    label: t('admin-pages.sponsor.sponsorships.statusActive'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'EXPIRED',
+                    label: t('admin-pages.sponsor.sponsorships.statusExpired'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: 'CANCELLED',
+                    label: t('admin-pages.sponsor.sponsorships.statusCancelled'),
+                    color: BadgeColor.RED
+                }
             ]
         },
         {
             id: 'startsAt',
-            header: 'Inicio',
+            header: t('admin-pages.sponsor.sponsorships.colStart'),
             accessorKey: 'startsAt',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'endsAt',
-            header: 'Fin',
+            header: t('admin-pages.sponsor.sponsorships.colEnd'),
             accessorKey: 'endsAt',
             enableSorting: true,
             columnType: ColumnType.DATE
         },
         {
             id: 'impressions',
-            header: 'Impresiones',
+            header: t('admin-pages.sponsor.sponsorships.colImpressions'),
             accessorKey: 'impressions',
             enableSorting: true,
             columnType: ColumnType.NUMBER
         },
         {
             id: 'clicks',
-            header: 'Clicks',
+            header: t('admin-pages.sponsor.sponsorships.colClicks'),
             accessorKey: 'clicks',
             enableSorting: true,
             columnType: ColumnType.NUMBER
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-pages.sponsor.sponsorships.colActions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -130,7 +170,7 @@ function SponsorSponsorshipsPage() {
                     size="sm"
                     onClick={() => handleViewDetails(row)}
                 >
-                    Ver detalles
+                    {t('admin-pages.sponsor.sponsorships.viewDetails')}
                 </Button>
             )
         }
@@ -143,10 +183,9 @@ function SponsorSponsorshipsPage() {
                     <CardContent className="py-8">
                         <div className="text-center">
                             <p className="text-muted-foreground">
-                                No se pudieron cargar los patrocinios. Verifica que la API esté
-                                funcionando.
+                                {t('admin-pages.sponsor.sponsorships.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                            <p className="mt-2 text-destructive text-sm">{error.message}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -162,9 +201,11 @@ function SponsorSponsorshipsPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Mis Patrocinios</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.sponsor.sponsorships.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Visualiza y gestiona tus patrocinios activos
+                        {t('admin-pages.sponsor.sponsorships.subtitle')}
                     </p>
                 </div>
 
@@ -180,11 +221,21 @@ function SponsorSponsorshipsPage() {
                             }))
                         }
                     >
-                        <option value="all">Todos los estados</option>
-                        <option value="PENDING">Pendiente</option>
-                        <option value="ACTIVE">Activo</option>
-                        <option value="EXPIRED">Expirado</option>
-                        <option value="CANCELLED">Cancelado</option>
+                        <option value="all">
+                            {t('admin-pages.sponsor.sponsorships.filterAllStatuses')}
+                        </option>
+                        <option value="PENDING">
+                            {t('admin-pages.sponsor.sponsorships.statusPending')}
+                        </option>
+                        <option value="ACTIVE">
+                            {t('admin-pages.sponsor.sponsorships.statusActive')}
+                        </option>
+                        <option value="EXPIRED">
+                            {t('admin-pages.sponsor.sponsorships.statusExpired')}
+                        </option>
+                        <option value="CANCELLED">
+                            {t('admin-pages.sponsor.sponsorships.statusCancelled')}
+                        </option>
                     </select>
 
                     <select
@@ -197,9 +248,15 @@ function SponsorSponsorshipsPage() {
                             }))
                         }
                     >
-                        <option value="all">Todos los tipos</option>
-                        <option value="EVENT">Evento</option>
-                        <option value="POST">Publicación</option>
+                        <option value="all">
+                            {t('admin-pages.sponsor.sponsorships.filterAllTypes')}
+                        </option>
+                        <option value="EVENT">
+                            {t('admin-pages.sponsor.sponsorships.typeEvent')}
+                        </option>
+                        <option value="POST">
+                            {t('admin-pages.sponsor.sponsorships.typePost')}
+                        </option>
                     </select>
                 </div>
 
@@ -243,15 +300,8 @@ function SponsorshipDetailDialog({
     onOpenChange: (open: boolean) => void;
     sponsorship: SponsorSponsorship | null;
 }) {
+    const { t, locale } = useTranslations();
     if (!sponsorship) return null;
-
-    const formatDate = (date: string) => {
-        return new Intl.DateTimeFormat('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(new Date(date));
-    };
 
     return (
         <Dialog
@@ -261,13 +311,17 @@ function SponsorshipDetailDialog({
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{sponsorship.targetName}</DialogTitle>
-                    <DialogDescription>Detalles del patrocinio</DialogDescription>
+                    <DialogDescription>
+                        {t('admin-pages.sponsor.sponsorships.dialog.details')}
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-4">
                     <div className="grid gap-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Estado:</span>
+                            <span className="text-muted-foreground">
+                                {t('admin-pages.sponsor.sponsorships.dialog.status')}
+                            </span>
                             <Badge
                                 variant={sponsorship.status === 'ACTIVE' ? 'success' : 'secondary'}
                             >
@@ -275,46 +329,69 @@ function SponsorshipDetailDialog({
                             </Badge>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Tipo:</span>
+                            <span className="text-muted-foreground">
+                                {t('admin-pages.sponsor.sponsorships.dialog.type')}
+                            </span>
                             <span>{sponsorship.targetType}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Nivel:</span>
+                            <span className="text-muted-foreground">
+                                {t('admin-pages.sponsor.sponsorships.dialog.level')}
+                            </span>
                             <span>{sponsorship.levelTier}</span>
                         </div>
                         <div className="flex justify-between">
-                            <span className="text-muted-foreground">Período:</span>
+                            <span className="text-muted-foreground">
+                                {t('admin-pages.sponsor.sponsorships.dialog.period')}
+                            </span>
                             <span>
-                                {formatDate(sponsorship.startsAt)} -{' '}
-                                {formatDate(sponsorship.endsAt)}
+                                {formatShortDate({ date: sponsorship.startsAt, locale })} -{' '}
+                                {formatShortDate({ date: sponsorship.endsAt, locale })}
                             </span>
                         </div>
                     </div>
 
                     <div className="rounded-md border bg-muted p-4">
-                        <h4 className="mb-3 font-semibold text-sm">Métricas</h4>
+                        <h4 className="mb-3 font-semibold text-sm">
+                            {t('admin-pages.sponsor.sponsorships.dialog.metrics')}
+                        </h4>
                         <div className="grid gap-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Impresiones:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.sponsor.sponsorships.dialog.impressions')}
+                                </span>
                                 <span className="font-medium">
-                                    {sponsorship.impressions.toLocaleString('es-AR')}
+                                    {formatNumber({
+                                        value: sponsorship.impressions,
+                                        locale
+                                    })}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Clicks:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.sponsor.sponsorships.dialog.clicks')}
+                                </span>
                                 <span className="font-medium">
-                                    {sponsorship.clicks.toLocaleString('es-AR')}
+                                    {formatNumber({ value: sponsorship.clicks, locale })}
                                 </span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">CTR:</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.sponsor.sponsorships.dialog.ctr')}
+                                </span>
                                 <span className="font-medium">
                                     {sponsorship.impressions > 0
-                                        ? (
-                                              (sponsorship.clicks / sponsorship.impressions) *
-                                              100
-                                          ).toFixed(2)
-                                        : 0}
+                                        ? formatNumber({
+                                              value:
+                                                  (sponsorship.clicks / sponsorship.impressions) *
+                                                  100,
+                                              locale,
+                                              options: {
+                                                  minimumFractionDigits: 2,
+                                                  maximumFractionDigits: 2
+                                              }
+                                          })
+                                        : formatNumber({ value: 0, locale })}
                                     %
                                 </span>
                             </div>
@@ -327,7 +404,7 @@ function SponsorshipDetailDialog({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                     >
-                        Cerrar
+                        {t('admin-pages.sponsor.sponsorships.dialog.close')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

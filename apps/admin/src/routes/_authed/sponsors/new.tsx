@@ -3,6 +3,7 @@ import { EntityCreateContent } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createSponsorConsolidatedConfig } from '@/features/sponsors/config';
 import { useCreateSponsorMutation } from '@/features/sponsors/hooks/useSponsorQuery';
+import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -13,24 +14,28 @@ export const Route = createFileRoute('/_authed/sponsors/new')({
     pendingComponent: createPendingComponent()
 });
 
-const createConfig: EntityCreateConfig = {
-    entityType: 'sponsor',
-    title: 'Crear Patrocinador',
-    description: 'Crear un nuevo patrocinador',
-    entityName: 'Patrocinador',
-    entityNamePlural: 'Patrocinadores',
-    basePath: '/sponsors',
-    submitLabel: 'Crear Patrocinador',
-    savingLabel: 'Creando...',
-    successToastTitle: 'Patrocinador creado',
-    successToastMessage: 'El patrocinador se ha creado exitosamente',
-    errorToastTitle: 'Error al crear',
-    errorMessage: 'Error inesperado al crear el patrocinador'
-};
-
 function SponsorCreatePage() {
     const navigate = useNavigate();
+    const { t } = useTranslations();
     const createMutation = useCreateSponsorMutation();
+
+    const entityName = t('admin-entities.entities.sponsor.singular');
+    const entityNamePlural = t('admin-entities.entities.sponsor.plural');
+
+    const createConfig: EntityCreateConfig = {
+        entityType: 'sponsor',
+        title: `${t('admin-entities.list.new')} ${entityName}`,
+        description: t('admin-entities.entities.sponsor.description'),
+        entityName,
+        entityNamePlural,
+        basePath: '/sponsors',
+        submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
+        savingLabel: t('admin-entities.messages.saving'),
+        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
+        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
+        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
+        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+    };
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.POST_SPONSOR_CREATE]}>

@@ -24,6 +24,7 @@ import {
     useNotificationLogsQuery
 } from '@/features/billing-notification-logs';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDateWithTime } from '@/lib/format-helpers';
 import type { TranslationKey } from '@repo/i18n';
 import { CalendarIcon, FilterIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
@@ -91,19 +92,6 @@ function getChannelLabel(channel: NotificationChannel, t: (key: TranslationKey) 
 }
 
 /**
- * Format date to Spanish locale
- */
-function formatDate(date: string): string {
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(new Date(date));
-}
-
-/**
  * Notification detail dialog component
  */
 function NotificationDetailDialog({
@@ -115,7 +103,7 @@ function NotificationDetailDialog({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (!notification) return null;
 
@@ -163,7 +151,9 @@ function NotificationDetailDialog({
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.notificationLogs.dialog.sentDateLabel')}
                                 </p>
-                                <p className="font-medium">{formatDate(notification.sentAt)}</p>
+                                <p className="font-medium">
+                                    {formatDateWithTime({ date: notification.sentAt, locale })}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -247,7 +237,7 @@ function NotificationDetailDialog({
 }
 
 function NotificationLogsPage() {
-    const { t } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const [typeFilter, setTypeFilter] = useState<NotificationType | 'all'>('all');
     const [statusFilter, setStatusFilter] = useState<NotificationStatus | 'all'>('all');
     const [channelFilter, setChannelFilter] = useState<NotificationChannel | 'all'>('all');
@@ -527,14 +517,10 @@ function NotificationLogsPage() {
                                   ? t('admin-billing.notificationLogs.errorLoading')
                                   : filteredNotifications.length === 0
                                     ? t('admin-billing.notificationLogs.noNotifications')
-                                    : filteredNotifications.length === 1
-                                      ? t('admin-billing.notificationLogs.notificationCount')
-                                      : t(
-                                            'admin-billing.notificationLogs.notificationCountPlural'
-                                        ).replace(
-                                            '{count}',
-                                            filteredNotifications.length.toString()
-                                        )}
+                                    : tPlural(
+                                          'admin-billing.notificationLogs.notificationCount',
+                                          filteredNotifications.length
+                                      )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -608,7 +594,10 @@ function NotificationLogsPage() {
                                                     className="border-b hover:bg-muted/50"
                                                 >
                                                     <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                        {formatDate(notification.sentAt)}
+                                                        {formatDateWithTime({
+                                                            date: notification.sentAt,
+                                                            locale
+                                                        })}
                                                     </td>
                                                     <td className="px-4 py-3 text-xs">
                                                         {getTypeLabel(notification.type, t)}

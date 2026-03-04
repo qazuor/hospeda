@@ -1,32 +1,10 @@
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatCentsToArs } from '@/lib/format-helpers';
+import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import type { AddonDefinition } from './types';
-
-/**
- * Format ARS price from cents to readable string
- */
-function formatArsPrice(cents: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(cents / 100);
-}
-
-/**
- * Get target categories label
- */
-function getCategoriesLabel(categories: readonly string[]): string {
-    const labels: Record<string, string> = {
-        owner: 'Propietario',
-        complex: 'Complejo',
-        tourist: 'Turista'
-    };
-    return categories.map((c) => labels[c] || c).join(', ');
-}
 
 interface AddonColumnsOptions {
     onEdit?: (addon: AddonDefinition) => void;
@@ -34,20 +12,44 @@ interface AddonColumnsOptions {
     onDelete?: (id: string) => void;
     isTogglingActive?: boolean;
     isDeleting?: boolean;
+    /** Translation function from useTranslations hook */
+    t: (key: string) => string;
+    /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
+    locale?: string;
 }
 
 /**
  * Get DataTable columns for add-ons list
  */
 export function getAddonColumns(
-    options: AddonColumnsOptions = {}
+    options: AddonColumnsOptions
 ): ReadonlyArray<DataTableColumn<AddonDefinition>> {
-    const { onEdit, onToggleActive, onDelete, isTogglingActive, isDeleting } = options;
+    const {
+        onEdit,
+        onToggleActive,
+        onDelete,
+        isTogglingActive,
+        isDeleting,
+        t,
+        locale = defaultIntlLocale
+    } = options;
+
+    /**
+     * Get target categories label using translations
+     */
+    const getCategoriesLabel = (categories: readonly string[]): string => {
+        const labels: Record<string, string> = {
+            owner: t('admin-billing.addons.categoryLabels.owner'),
+            complex: t('admin-billing.addons.categoryLabels.complex'),
+            tourist: t('admin-billing.addons.categoryLabels.tourist')
+        };
+        return categories.map((c) => labels[c] || c).join(', ');
+    };
 
     return [
         {
             id: 'name',
-            header: 'Nombre',
+            header: t('admin-billing.addons.catalogColumns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -60,41 +62,56 @@ export function getAddonColumns(
         },
         {
             id: 'billingType',
-            header: 'Tipo',
+            header: t('admin-billing.addons.catalogColumns.billingType'),
             accessorKey: 'billingType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'one_time', label: 'Único', color: BadgeColor.BLUE },
-                { value: 'recurring', label: 'Recurrente', color: BadgeColor.PURPLE }
+                {
+                    value: 'one_time',
+                    label: t('admin-billing.addons.billingTypeLabels.oneTime'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'recurring',
+                    label: t('admin-billing.addons.billingTypeLabels.recurring'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'price',
-            header: 'Precio',
+            header: t('admin-billing.addons.catalogColumns.price'),
             enableSorting: true,
             cell: ({ row }) => (
                 <div>
-                    <span className="font-medium">{formatArsPrice(row.priceArs)}</span>
+                    <span className="font-medium">
+                        {formatCentsToArs({ cents: row.priceArs, locale })}
+                    </span>
                     {row.billingType === 'recurring' && (
-                        <span className="text-muted-foreground text-xs"> /mes</span>
+                        <span className="text-muted-foreground text-xs">
+                            {' '}
+                            {t('admin-billing.addons.catalogColumns.perMonth')}
+                        </span>
                     )}
                 </div>
             )
         },
         {
             id: 'duration',
-            header: 'Duración',
+            header: t('admin-billing.addons.catalogColumns.duration'),
             enableSorting: false,
             cell: ({ row }) => (
                 <span className="text-sm">
-                    {row.durationDays ? `${row.durationDays} días` : '-'}
+                    {row.durationDays
+                        ? `${row.durationDays} ${t('admin-billing.addons.catalogColumns.daysUnit')}`
+                        : '-'}
                 </span>
             )
         },
         {
             id: 'categories',
-            header: 'Categorías',
+            header: t('admin-billing.addons.catalogColumns.categories'),
             accessorKey: 'targetCategories',
             enableSorting: false,
             cell: ({ row }) => (
@@ -105,18 +122,20 @@ export function getAddonColumns(
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.addons.catalogColumns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             cell: ({ row }) => (
                 <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                    {row.isActive ? 'Activo' : 'Inactivo'}
+                    {row.isActive
+                        ? t('admin-billing.addons.actionActivate')
+                        : t('admin-billing.addons.actionDeactivate')}
                 </Badge>
             )
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.addons.catalogColumns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -127,10 +146,16 @@ export function getAddonColumns(
                             size="sm"
                             onClick={() => onToggleActive(row.slug, !row.isActive)}
                             disabled={isTogglingActive}
-                            title={row.isActive ? 'Desactivar' : 'Activar'}
+                            title={
+                                row.isActive
+                                    ? t('admin-billing.addons.actionDeactivate')
+                                    : t('admin-billing.addons.actionActivate')
+                            }
                         >
                             <PowerIcon className="mr-1 h-3 w-3" />
-                            {row.isActive ? 'Desactivar' : 'Activar'}
+                            {row.isActive
+                                ? t('admin-billing.addons.actionDeactivate')
+                                : t('admin-billing.addons.actionActivate')}
                         </Button>
                     )}
                     {onEdit && (
@@ -138,10 +163,10 @@ export function getAddonColumns(
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(row)}
-                            title="Editar"
+                            title={t('admin-billing.addons.actionEdit')}
                         >
                             <EditIcon className="mr-1 h-3 w-3" />
-                            Editar
+                            {t('admin-billing.addons.actionEdit')}
                         </Button>
                     )}
                     {onDelete && (
@@ -150,10 +175,10 @@ export function getAddonColumns(
                             size="sm"
                             onClick={() => onDelete(row.slug)}
                             disabled={isDeleting}
-                            title="Eliminar"
+                            title={t('admin-billing.addons.actionDelete')}
                         >
                             <DeleteIcon className="mr-1 h-3 w-3" />
-                            Eliminar
+                            {t('admin-billing.addons.actionDelete')}
                         </Button>
                     )}
                 </div>

@@ -881,10 +881,10 @@ function IconCell({
 }) {
     return (
         <div className="flex flex-col items-center gap-1">
-            <div className="flex h-10 w-10 items-center justify-center rounded border border-gray-200 bg-white dark:border-gray-700 dark:bg-gray-800">
+            <div className="flex h-10 w-10 items-center justify-center rounded border border-border bg-card">
                 {children}
             </div>
-            {label ? <span className="text-[10px] text-gray-400">{label}</span> : null}
+            {label ? <span className="text-[10px] text-muted-foreground">{label}</span> : null}
         </div>
     );
 }
@@ -900,17 +900,17 @@ function CategorySection({
 }) {
     return (
         <div className="mb-8">
-            <h2 className="mb-3 border-gray-200 border-b pb-2 font-semibold text-lg dark:border-gray-700">
+            <h2 className="mb-3 border-border border-b pb-2 font-semibold text-lg">
                 {group.label}
-                <span className="ml-2 font-normal text-gray-400 text-sm">
+                <span className="ml-2 font-normal text-muted-foreground text-sm">
                     ({group.icons.length} icons)
                 </span>
             </h2>
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="border-gray-200 border-b text-left text-gray-500 text-xs dark:border-gray-700">
-                            <th className="sticky left-0 z-10 bg-white pr-4 pb-2 font-medium dark:bg-gray-950">
+                        <tr className="border-border border-b text-left text-muted-foreground text-xs">
+                            <th className="sticky left-0 z-10 bg-background pr-4 pb-2 font-medium">
                                 @repo/icons name
                             </th>
                             <th className="pr-4 pb-2 font-medium">Current SVG</th>
@@ -933,9 +933,9 @@ function CategorySection({
                             return (
                                 <tr
                                     key={mapping.name}
-                                    className="border-gray-100 border-b hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-900"
+                                    className="border-border border-b hover:bg-accent"
                                 >
-                                    <td className="sticky left-0 z-10 bg-white py-2 pr-4 font-mono text-xs dark:bg-gray-950">
+                                    <td className="sticky left-0 z-10 bg-background py-2 pr-4 font-mono text-xs">
                                         {mapping.name}
                                     </td>
                                     <td className="py-2 pr-4">
@@ -959,10 +959,10 @@ function CategorySection({
                                             </IconCell>
                                         </td>
                                     ))}
-                                    <td className="py-2 pr-4 font-mono text-cyan-600 text-xs">
+                                    <td className="py-2 pr-4 font-mono text-primary text-xs">
                                         {mapping.phosphorName}
                                     </td>
-                                    <td className="py-2 text-gray-400 text-xs">
+                                    <td className="py-2 text-muted-foreground text-xs">
                                         {mapping.notes || '-'}
                                     </td>
                                 </tr>
@@ -1000,14 +1000,14 @@ function IconComparisonPage() {
         <div className="mx-auto max-w-[1800px] p-6">
             <div className="mb-6">
                 <h1 className="font-bold text-2xl">Icon Comparison: @repo/icons vs Phosphor</h1>
-                <p className="mt-1 text-gray-500 text-sm">
+                <p className="mt-1 text-muted-foreground text-sm">
                     SPEC-008 Migration Tool .. {totalIcons} icons mapped across{' '}
                     {ICON_CATEGORIES.length} categories .. Showing all 6 Phosphor weights per icon
                 </p>
             </div>
 
             {/* Controls */}
-            <div className="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900">
+            <div className="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-border bg-muted p-4">
                 <div className="flex items-center gap-2">
                     <label
                         htmlFor="search-input"
@@ -1021,10 +1021,10 @@ function IconComparisonPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Filter icons..."
-                        className="rounded border border-gray-300 px-3 py-1.5 text-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500 dark:border-gray-600 dark:bg-gray-800"
+                        className="rounded border border-border bg-background px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     />
                     {searchQuery ? (
-                        <span className="text-gray-400 text-xs">
+                        <span className="text-muted-foreground text-xs">
                             {filteredCount}/{totalIcons}
                         </span>
                     ) : null}
@@ -1041,7 +1041,7 @@ function IconComparisonPage() {
                         id="size-select"
                         value={iconSize}
                         onChange={(e) => setIconSize(Number(e.target.value))}
-                        className="rounded border border-gray-300 px-2 py-1.5 text-sm dark:border-gray-600 dark:bg-gray-800"
+                        className="rounded border border-border bg-background px-2 py-1.5 text-sm"
                     >
                         <option value={16}>16px (xs)</option>
                         <option value={20}>20px (sm)</option>
@@ -1063,9 +1063,9 @@ function IconComparisonPage() {
                         type="color"
                         value={duotoneColor}
                         onChange={(e) => setDuotoneColor(e.target.value)}
-                        className="h-8 w-8 cursor-pointer rounded border border-gray-300 p-0.5 dark:border-gray-600"
+                        className="h-8 w-8 cursor-pointer rounded border border-border p-0.5"
                     />
-                    <span className="font-mono text-gray-400 text-xs">{duotoneColor}</span>
+                    <span className="font-mono text-muted-foreground text-xs">{duotoneColor}</span>
                 </div>
             </div>
 
@@ -1080,7 +1080,7 @@ function IconComparisonPage() {
             ))}
 
             {filteredCategories.length === 0 ? (
-                <div className="py-12 text-center text-gray-400">
+                <div className="py-12 text-center text-muted-foreground">
                     No icons match &quot;{searchQuery}&quot;
                 </div>
             ) : null}

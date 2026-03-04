@@ -8,6 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSponsorInvoicesQuery } from '@/features/sponsor-dashboard/hooks';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatArs, formatShortDate } from '@/lib/format-helpers';
 import { DownloadIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -18,23 +20,8 @@ export const Route = createFileRoute('/_authed/sponsor/invoices')({
 type InvoiceStatus = 'draft' | 'open' | 'paid' | 'void';
 
 function SponsorInvoicesPage() {
+    const { t, tPlural, locale } = useTranslations();
     const { data: invoices, isLoading, error } = useSponsorInvoicesQuery();
-
-    const formatDate = (date: string) => {
-        return new Intl.DateTimeFormat('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        }).format(new Date(date));
-    };
-
-    const formatArs = (amount: number) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS',
-            minimumFractionDigits: 0
-        }).format(amount);
-    };
 
     const getStatusVariant = (status: InvoiceStatus) => {
         const variants = {
@@ -48,10 +35,10 @@ function SponsorInvoicesPage() {
 
     const getStatusLabel = (status: InvoiceStatus) => {
         const labels = {
-            draft: 'Borrador',
-            open: 'Abierta',
-            paid: 'Pagada',
-            void: 'Anulada'
+            draft: t('admin-pages.sponsor.invoices.statusDraft'),
+            open: t('admin-pages.sponsor.invoices.statusOpen'),
+            paid: t('admin-pages.sponsor.invoices.statusPaid'),
+            void: t('admin-pages.sponsor.invoices.statusVoid')
         };
         return labels[status];
     };
@@ -65,10 +52,9 @@ function SponsorInvoicesPage() {
                     <CardContent className="py-8">
                         <div className="text-center">
                             <p className="text-muted-foreground">
-                                No se pudieron cargar las facturas. Verifica que la API esté
-                                funcionando.
+                                {t('admin-pages.sponsor.invoices.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                            <p className="mt-2 text-destructive text-sm">{error.message}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -81,35 +67,41 @@ function SponsorInvoicesPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Mis Facturas</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.sponsor.invoices.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Consulta y descarga tus facturas de patrocinio
+                        {t('admin-pages.sponsor.invoices.subtitle')}
                     </p>
                 </div>
 
                 {/* Invoices table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Listado de facturas</CardTitle>
+                        <CardTitle>{t('admin-pages.sponsor.invoices.listTitle')}</CardTitle>
                         <CardDescription>
                             {!invoices || invoices.length === 0
-                                ? 'No hay facturas'
-                                : `${invoices.length} factura${invoices.length !== 1 ? 's' : ''}`}
+                                ? t('admin-pages.sponsor.invoices.noInvoices')
+                                : tPlural(
+                                      'admin-pages.sponsor.invoices.invoiceCount',
+                                      invoices.length
+                                  )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
                         {isLoading ? (
                             <div className="py-8 text-center">
-                                <p className="text-muted-foreground text-sm">Cargando...</p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('admin-pages.sponsor.invoices.loading')}
+                                </p>
                             </div>
                         ) : !invoices || invoices.length === 0 ? (
                             <div className="py-8 text-center">
                                 <p className="text-muted-foreground text-sm">
-                                    No hay facturas registradas aún
+                                    {t('admin-pages.sponsor.invoices.emptyMessage')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Las facturas se generarán automáticamente cuando se procesen
-                                    pagos
+                                    {t('admin-pages.sponsor.invoices.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -118,19 +110,19 @@ function SponsorInvoicesPage() {
                                     <thead className="border-b">
                                         <tr>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Nº Factura
+                                                {t('admin-pages.sponsor.invoices.colNumber')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Fecha
+                                                {t('admin-pages.sponsor.invoices.colDate')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Monto
+                                                {t('admin-pages.sponsor.invoices.colAmount')}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Estado
+                                                {t('admin-pages.sponsor.invoices.colStatus')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Acciones
+                                                {t('admin-pages.sponsor.invoices.colActions')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -144,10 +136,13 @@ function SponsorInvoicesPage() {
                                                     {invoice.invoiceNumber}
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground">
-                                                    {formatDate(invoice.date)}
+                                                    {formatShortDate({
+                                                        date: invoice.date,
+                                                        locale
+                                                    })}
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium">
-                                                    {formatArs(invoice.amount)}
+                                                    {formatArs({ value: invoice.amount, locale })}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <Badge
@@ -162,10 +157,12 @@ function SponsorInvoicesPage() {
                                                         size="sm"
                                                         onClick={() => handleDownload(invoice.id)}
                                                         disabled
-                                                        title="Requiere API de facturación"
+                                                        title={t(
+                                                            'admin-pages.sponsor.invoices.downloadTooltip'
+                                                        )}
                                                     >
                                                         <DownloadIcon className="mr-2 size-4" />
-                                                        Descargar
+                                                        {t('admin-pages.sponsor.invoices.download')}
                                                     </Button>
                                                 </td>
                                             </tr>
@@ -181,25 +178,29 @@ function SponsorInvoicesPage() {
                 {invoices && invoices.length > 0 && (
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-base">Resumen</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-pages.sponsor.invoices.summaryTitle')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="grid gap-2 text-sm">
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">
-                                        Total de facturas:
+                                        {t('admin-pages.sponsor.invoices.summaryTotal')}
                                     </span>
                                     <span className="font-medium">{invoices.length}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Facturas pagas:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-pages.sponsor.invoices.summaryPaid')}
+                                    </span>
                                     <span className="font-medium">
                                         {invoices.filter((inv) => inv.status === 'paid').length}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-muted-foreground">
-                                        Facturas pendientes:
+                                        {t('admin-pages.sponsor.invoices.summaryPending')}
                                     </span>
                                     <span className="font-medium">
                                         {invoices.filter((inv) => inv.status === 'open').length}
@@ -207,17 +208,20 @@ function SponsorInvoicesPage() {
                                 </div>
                                 <div className="border-t pt-2">
                                     <div className="flex justify-between font-semibold">
-                                        <span>Total invertido:</span>
                                         <span>
-                                            {formatArs(
-                                                invoices.reduce(
+                                            {t('admin-pages.sponsor.invoices.summaryInvested')}
+                                        </span>
+                                        <span>
+                                            {formatArs({
+                                                value: invoices.reduce(
                                                     (acc, inv) =>
                                                         inv.status === 'paid'
                                                             ? acc + inv.amount
                                                             : acc,
                                                     0
-                                                )
-                                            )}
+                                                ),
+                                                locale
+                                            })}
                                         </span>
                                     </div>
                                 </div>

@@ -6,7 +6,6 @@ import {
     type AccommodationListFilters,
     type AccommodationSearchFilters,
     accommodationQueryKeys,
-    invalidateAccommodationDetail,
     invalidateAccommodationLists
 } from './accommodationQueryKeys';
 
@@ -183,34 +182,6 @@ export const useAccommodationSearchQuery = (
 };
 
 /**
- * Hook for fetching accommodation section data
- * Useful for lazy loading specific sections
- *
- * TODO: The endpoint `/api/v1/admin/accommodations/:id/sections/:sectionId` does not
- * exist in the API yet. This hook will fail at runtime until that endpoint is implemented.
- */
-export const useAccommodationSectionQuery = (
-    id: string,
-    sectionId: string,
-    options?: {
-        enabled?: boolean;
-    }
-) => {
-    return useQuery({
-        queryKey: accommodationQueryKeys.section(id, sectionId),
-        queryFn: async (): Promise<Record<string, unknown>> => {
-            const response = await fetchApi({
-                path: `/api/v1/admin/accommodations/${id}/sections/${sectionId}`
-            });
-            return response.data as Record<string, unknown>;
-        },
-        enabled: options?.enabled ?? Boolean(id && sectionId),
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000 // 10 minutes
-    });
-};
-
-/**
  * Mutation hook for creating accommodations
  */
 export const useCreateAccommodationMutation = () => {
@@ -297,34 +268,6 @@ export const useUpdateAccommodationMutation = (id: string) => {
 
             // Invalidate lists to reflect changes
             queryClient.invalidateQueries({ queryKey: invalidateAccommodationLists() });
-        }
-    });
-};
-
-/**
- * Mutation hook for updating accommodation sections
- *
- * TODO: The endpoint `PATCH /api/v1/admin/accommodations/:id/sections/:sectionId` does not
- * exist in the API yet. This hook will fail at runtime until that endpoint is implemented.
- */
-export const useUpdateAccommodationSectionMutation = (id: string, sectionId: string) => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: async (data: Record<string, unknown>): Promise<Record<string, unknown>> => {
-            const response = await fetchApi({
-                path: `/api/v1/admin/accommodations/${id}/sections/${sectionId}`,
-                method: 'PATCH',
-                body: data
-            });
-            return response.data as Record<string, unknown>;
-        },
-        onSuccess: (updatedSection) => {
-            // Update section cache
-            queryClient.setQueryData(accommodationQueryKeys.section(id, sectionId), updatedSection);
-
-            // Invalidate main accommodation to reflect changes
-            queryClient.invalidateQueries({ queryKey: invalidateAccommodationDetail(id) });
         }
     });
 };

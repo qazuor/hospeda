@@ -12,7 +12,6 @@ import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { LimitGate } from '@qazuor/qzpay-react';
 import { AccommodationTypeEnum, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMemo } from 'react';
 
 export const Route = createFileRoute('/_authed/accommodations/new')({
     component: AccommodationCreatePage,
@@ -26,23 +25,23 @@ function AccommodationCreatePage() {
     const createMutation = useCreateAccommodationMutation();
     const accommodationTypeOptions = useAccommodationTypeOptions(AccommodationTypeEnum);
 
-    const createConfig: EntityCreateConfig = useMemo(
-        () => ({
-            entityType: 'accommodation',
-            title: `${t('admin-entities.list.new')} ${t('admin-entities.entities.accommodation.singular')}`,
-            description: t('admin-entities.entities.accommodation.description'),
-            entityName: 'Alojamiento',
-            entityNamePlural: 'Alojamientos',
-            basePath: '/accommodations',
-            submitLabel: 'Crear Alojamiento',
-            savingLabel: 'Creando...',
-            successToastTitle: 'Alojamiento creado',
-            successToastMessage: 'El alojamiento se ha creado exitosamente',
-            errorToastTitle: 'Error al crear',
-            errorMessage: 'Error inesperado al crear el alojamiento'
-        }),
-        [t]
-    );
+    const entityName = t('admin-entities.entities.accommodation.singular');
+    const entityNamePlural = t('admin-entities.entities.accommodation.plural');
+
+    const createConfig: EntityCreateConfig = {
+        entityType: 'accommodation',
+        title: `${t('admin-entities.list.new')} ${entityName}`,
+        description: t('admin-entities.entities.accommodation.description'),
+        entityName,
+        entityNamePlural,
+        basePath: '/accommodations',
+        submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
+        savingLabel: t('admin-entities.messages.saving'),
+        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
+        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
+        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
+        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+    };
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
@@ -61,20 +60,20 @@ function AccommodationCreatePage() {
                             <Card>
                                 <CardContent className="py-8">
                                     <div className="mx-auto max-w-md space-y-4 text-center">
-                                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
+                                        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-900">
                                             <Icon
                                                 name="alertTriangle"
-                                                className="h-8 w-8 text-amber-600"
+                                                className="h-8 w-8 text-amber-600 dark:text-amber-400"
                                             />
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-amber-900 text-lg">
-                                                Límite de alojamientos alcanzado
+                                            <h3 className="font-semibold text-amber-900 text-lg dark:text-amber-100">
+                                                {t(
+                                                    'admin-entities.limits.accommodationLimitReached'
+                                                )}
                                             </h3>
-                                            <p className="mt-2 text-amber-800 text-sm">
-                                                Has alcanzado el límite máximo de alojamientos
-                                                permitidos en tu plan actual. Actualiza tu plan para
-                                                crear más alojamientos.
+                                            <p className="mt-2 text-amber-800 text-sm dark:text-amber-200">
+                                                {t('admin-entities.limits.accommodationLimitDesc')}
                                             </p>
                                         </div>
                                         <div className="flex justify-center gap-3 pt-4">
@@ -82,12 +81,12 @@ function AccommodationCreatePage() {
                                                 variant="outline"
                                                 onClick={() => navigate({ to: '/accommodations' })}
                                             >
-                                                Volver
+                                                {t('admin-entities.actions.back')}
                                             </Button>
                                             <Button
                                                 onClick={() => navigate({ to: '/billing/plans' })}
                                             >
-                                                Ver planes
+                                                {t('admin-entities.actions.viewPlans')}
                                             </Button>
                                         </div>
                                     </div>

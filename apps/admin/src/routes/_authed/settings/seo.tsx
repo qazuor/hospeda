@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -45,6 +46,7 @@ function saveSeoSettings(settings: SeoSettings): void {
 }
 
 function SeoSettingsPage() {
+    const { t } = useTranslations();
     const [settings, setSettings] = useState<SeoSettings>(DEFAULT_SETTINGS);
     const [isSaved, setIsSaved] = useState(false);
 
@@ -67,55 +69,69 @@ function SeoSettingsPage() {
         <SidebarPageLayout titleKey="admin-pages.titles.settingsSeo">
             <div className="max-w-3xl space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">SEO Configuration</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.systemSettings.seo.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Manage default SEO settings for the public website
+                        {t('admin-pages.systemSettings.seo.subtitle')}
                     </p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Meta Defaults</CardTitle>
+                        <CardTitle>{t('admin-pages.systemSettings.seo.metaDefaults')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="titleTemplate">Title Template</Label>
+                            <Label htmlFor="titleTemplate">
+                                {t('admin-pages.systemSettings.seo.titleTemplate')}
+                            </Label>
                             <Input
                                 id="titleTemplate"
                                 value={settings.titleTemplate}
                                 onChange={(e) => handleChange('titleTemplate', e.target.value)}
-                                placeholder="{page} | Hospeda"
+                                placeholder={t(
+                                    'admin-pages.systemSettings.seo.titleTemplatePlaceholder'
+                                )}
                             />
                             <p className="text-muted-foreground text-xs">
-                                Use {'{page}'} as placeholder for page name
+                                {t('admin-pages.systemSettings.seo.titleTemplateHint')}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="defaultDescription">Default Meta Description</Label>
+                            <Label htmlFor="defaultDescription">
+                                {t('admin-pages.systemSettings.seo.defaultDescription')}
+                            </Label>
                             <Textarea
                                 id="defaultDescription"
                                 value={settings.defaultDescription}
                                 onChange={(e) => handleChange('defaultDescription', e.target.value)}
-                                placeholder="Default site description..."
+                                placeholder={t(
+                                    'admin-pages.systemSettings.seo.defaultDescriptionPlaceholder'
+                                )}
                                 rows={3}
                             />
                             <p className="text-muted-foreground text-xs">
-                                Used when a page doesn&apos;t have a specific description
+                                {t('admin-pages.systemSettings.seo.defaultDescriptionHint')}
                             </p>
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="defaultOgImage">Default OG Image URL</Label>
+                            <Label htmlFor="defaultOgImage">
+                                {t('admin-pages.systemSettings.seo.defaultOgImage')}
+                            </Label>
                             <Input
                                 id="defaultOgImage"
                                 value={settings.defaultOgImage}
                                 onChange={(e) => handleChange('defaultOgImage', e.target.value)}
-                                placeholder="https://example.com/og-image.jpg"
+                                placeholder={t(
+                                    'admin-pages.systemSettings.seo.defaultOgImagePlaceholder'
+                                )}
                                 type="url"
                             />
                             <p className="text-muted-foreground text-xs">
-                                Default Open Graph image for social sharing
+                                {t('admin-pages.systemSettings.seo.defaultOgImageHint')}
                             </p>
                         </div>
                     </CardContent>
@@ -123,36 +139,48 @@ function SeoSettingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Advanced SEO</CardTitle>
+                        <CardTitle>{t('admin-pages.systemSettings.seo.advancedSeo')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">Sitemap Generation</p>
+                                <p className="font-medium">
+                                    {t('admin-pages.systemSettings.seo.sitemapGeneration')}
+                                </p>
                                 <p className="text-muted-foreground text-sm">
-                                    Automatically generated at /sitemap.xml
+                                    {t('admin-pages.systemSettings.seo.sitemapGenerationDesc')}
                                 </p>
                             </div>
-                            <Badge variant="outline">Enabled</Badge>
+                            <Badge variant="outline">
+                                {t('admin-pages.systemSettings.seo.sitemapEnabled')}
+                            </Badge>
                         </div>
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">Robots.txt</p>
+                                <p className="font-medium">
+                                    {t('admin-pages.systemSettings.seo.robotsTxt')}
+                                </p>
                                 <p className="text-muted-foreground text-sm">
-                                    Search engine crawling configuration
+                                    {t('admin-pages.systemSettings.seo.robotsTxtDesc')}
                                 </p>
                             </div>
-                            <Badge variant="outline">Configured</Badge>
+                            <Badge variant="outline">
+                                {t('admin-pages.systemSettings.seo.robotsConfigured')}
+                            </Badge>
                         </div>
                     </CardContent>
                 </Card>
 
                 <div className="flex items-center justify-between">
                     <p className="text-muted-foreground text-sm">
-                        Note: These settings will be connected to the API in a future update
+                        {t('admin-pages.systemSettings.seo.apiNote')}
                     </p>
-                    <Button onClick={handleSave}>{isSaved ? 'Saved' : 'Save Changes'}</Button>
+                    <Button onClick={handleSave}>
+                        {isSaved
+                            ? t('admin-pages.systemSettings.seo.saved')
+                            : t('admin-pages.systemSettings.seo.save')}
+                    </Button>
                 </div>
             </div>
         </SidebarPageLayout>

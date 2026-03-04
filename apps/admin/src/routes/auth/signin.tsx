@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { signIn } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
@@ -36,6 +37,7 @@ export const Route = createFileRoute('/auth/signin')({
  * Layout with image on left and form on right
  */
 function SignInPage(): React.JSX.Element {
+    const { t } = useTranslations();
     const [isClient, setIsClient] = useState(false);
     const [backgroundImage, setBackgroundImage] = useState<AuthBackgroundImage | null>(null);
     const { isSyncing, canRedirectToProtected, syncError } = useAuthSync();
@@ -71,7 +73,9 @@ function SignInPage(): React.JSX.Element {
                 window.location.href = '/dashboard';
             }
         } catch (error) {
-            setFormError(error instanceof Error ? error.message : 'An unexpected error occurred');
+            setFormError(
+                error instanceof Error ? error.message : t('admin-pages.auth.signin.submitButton')
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -84,20 +88,26 @@ function SignInPage(): React.JSX.Element {
                 callbackURL: `${window.location.origin}/dashboard`
             });
         } catch (error) {
-            setFormError(error instanceof Error ? error.message : 'Google sign in failed');
+            setFormError(
+                error instanceof Error
+                    ? error.message
+                    : t('admin-pages.auth.signin.continueWithGoogle')
+            );
         }
     };
 
     // Show loading state while checking session
     if (isSyncing) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-cyan-600" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-primary" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">Checking session...</h2>
+                        <h2 className="font-semibold text-foreground text-xl">
+                            {t('admin-pages.auth.signin.checkingSession')}
+                        </h2>
                     </div>
                 </div>
             </div>
@@ -107,13 +117,13 @@ function SignInPage(): React.JSX.Element {
     // Show sync error if there was a problem
     if (syncError) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
-                        <h2 className="font-semibold text-gray-900 text-xl">
-                            Authentication Error
+                        <h2 className="font-semibold text-foreground text-xl">
+                            {t('admin-pages.auth.signin.authError')}
                         </h2>
-                        <p className="mt-2 text-gray-600">{syncError}</p>
+                        <p className="mt-2 text-muted-foreground">{syncError}</p>
                         <button
                             type="button"
                             onClick={() => {
@@ -121,9 +131,9 @@ function SignInPage(): React.JSX.Element {
                                     window.location.reload();
                                 }
                             }}
-                            className="mt-4 rounded-md bg-cyan-600 px-4 py-2 text-white hover:bg-cyan-700"
+                            className="mt-4 rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
                         >
-                            Retry
+                            {t('admin-pages.auth.signin.retry')}
                         </button>
                     </div>
                 </div>
@@ -134,14 +144,18 @@ function SignInPage(): React.JSX.Element {
     // Already authenticated, redirect
     if (canRedirectToProtected) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-cyan-600" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-primary" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">Redirecting...</h2>
-                        <p className="mt-2 text-gray-600">You are already authenticated</p>
+                        <h2 className="font-semibold text-foreground text-xl">
+                            {t('admin-pages.auth.signin.redirecting')}
+                        </h2>
+                        <p className="mt-2 text-muted-foreground">
+                            {t('admin-pages.auth.signin.alreadyAuthenticated')}
+                        </p>
                         <AutoRedirect />
                     </div>
                 </div>
@@ -151,7 +165,7 @@ function SignInPage(): React.JSX.Element {
 
     if (!isClient) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+            <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
                 <div className="flex min-h-screen">
                     <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
                         <div className="absolute inset-0 bg-gradient-to-t from-cyan-900/50 to-emerald-600/30" />
@@ -159,11 +173,11 @@ function SignInPage(): React.JSX.Element {
                     </div>
                     <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
                         <div className="w-full max-w-md">
-                            <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
+                            <div className="rounded-xl border bg-card p-8 shadow-lg">
                                 <div className="animate-pulse space-y-4">
-                                    <div className="h-10 rounded-md bg-gray-200" />
-                                    <div className="h-10 rounded-md bg-gray-200" />
-                                    <div className="h-10 rounded-md bg-gray-200" />
+                                    <div className="h-10 rounded-md bg-muted" />
+                                    <div className="h-10 rounded-md bg-muted" />
+                                    <div className="h-10 rounded-md bg-muted" />
                                 </div>
                             </div>
                         </div>
@@ -174,7 +188,7 @@ function SignInPage(): React.JSX.Element {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100">
+        <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-emerald-50 to-blue-100 dark:from-cyan-950 dark:via-emerald-950 dark:to-blue-950">
             <div className="flex min-h-screen">
                 {/* Left side - Image */}
                 <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
@@ -187,10 +201,14 @@ function SignInPage(): React.JSX.Element {
                         />
                     )}
                     <div className="absolute bottom-8 left-8 text-white">
-                        <h2 className="mb-2 font-bold text-3xl">Welcome back</h2>
-                        <p className="text-cyan-100">Manage your accommodations with ease</p>
+                        <h2 className="mb-2 font-bold text-3xl">
+                            {t('admin-pages.auth.signin.welcomeBack')}
+                        </h2>
+                        <p className="text-cyan-100 dark:text-cyan-300">
+                            {t('admin-pages.auth.signin.manageAccommodations')}
+                        </p>
                         {backgroundImage && (
-                            <p className="mt-1 text-cyan-200 text-sm opacity-80">
+                            <p className="mt-1 text-cyan-200 text-sm opacity-80 dark:text-cyan-400">
                                 {backgroundImage.location}
                             </p>
                         )}
@@ -208,19 +226,21 @@ function SignInPage(): React.JSX.Element {
                                     className="h-16 w-auto"
                                 />
                             </div>
-                            <h1 className="font-bold text-3xl text-gray-900">Sign in</h1>
-                            <p className="mt-2 text-gray-600">
-                                Welcome back! Please sign in to your account
+                            <h1 className="font-bold text-3xl text-foreground">
+                                {t('admin-pages.auth.signin.title')}
+                            </h1>
+                            <p className="mt-2 text-muted-foreground">
+                                {t('admin-pages.auth.signin.subtitle')}
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
+                        <div className="rounded-xl border bg-card p-8 shadow-lg">
                             <form
                                 onSubmit={handleSubmit}
                                 className="space-y-4"
                             >
                                 {formError && (
-                                    <div className="rounded-md bg-red-50 p-3 text-red-700 text-sm">
+                                    <div className="rounded-md bg-destructive/5 p-3 text-destructive text-sm">
                                         {formError}
                                     </div>
                                 )}
@@ -228,9 +248,9 @@ function SignInPage(): React.JSX.Element {
                                 <div>
                                     <label
                                         htmlFor="email"
-                                        className="block font-medium text-gray-700 text-sm"
+                                        className="block font-medium text-foreground text-sm"
                                     >
-                                        Email
+                                        {t('admin-pages.auth.signin.emailLabel')}
                                     </label>
                                     <input
                                         id="email"
@@ -238,17 +258,17 @@ function SignInPage(): React.JSX.Element {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                                        placeholder="you@example.com"
+                                        className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={t('admin-pages.auth.signin.emailPlaceholder')}
                                     />
                                 </div>
 
                                 <div>
                                     <label
                                         htmlFor="password"
-                                        className="block font-medium text-gray-700 text-sm"
+                                        className="block font-medium text-foreground text-sm"
                                     >
-                                        Password
+                                        {t('admin-pages.auth.signin.passwordLabel')}
                                     </label>
                                     <input
                                         id="password"
@@ -256,30 +276,36 @@ function SignInPage(): React.JSX.Element {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-cyan-500 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                                        placeholder="Enter your password"
+                                        className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={t(
+                                            'admin-pages.auth.signin.passwordPlaceholder'
+                                        )}
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full rounded-md bg-cyan-600 px-4 py-2 font-medium text-white transition-colors hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Signing in...' : 'Sign in'}
+                                    {isSubmitting
+                                        ? t('admin-pages.auth.signin.submittingButton')
+                                        : t('admin-pages.auth.signin.submitButton')}
                                 </button>
                             </form>
 
                             <div className="my-4 flex items-center gap-3">
-                                <div className="h-px flex-1 bg-gray-200" />
-                                <span className="text-gray-400 text-sm">or</span>
-                                <div className="h-px flex-1 bg-gray-200" />
+                                <div className="h-px flex-1 bg-border" />
+                                <span className="text-muted-foreground text-sm">
+                                    {t('admin-pages.auth.signin.orSeparator')}
+                                </span>
+                                <div className="h-px flex-1 bg-border" />
                             </div>
 
                             <button
                                 type="button"
                                 onClick={handleGoogleSignIn}
-                                className="flex w-full items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-50"
+                                className="flex w-full items-center justify-center gap-2 rounded-md border border-border bg-card px-4 py-2 font-medium text-foreground text-sm transition-colors hover:bg-accent"
                             >
                                 <svg
                                     className="h-5 w-5"
@@ -304,18 +330,18 @@ function SignInPage(): React.JSX.Element {
                                         fill="#EA4335"
                                     />
                                 </svg>
-                                Continue with Google
+                                {t('admin-pages.auth.signin.continueWithGoogle')}
                             </button>
                         </div>
 
                         <div className="text-center">
-                            <p className="text-gray-600">
-                                Don't have an account?{' '}
+                            <p className="text-muted-foreground">
+                                {t('admin-pages.auth.signin.noAccount')}{' '}
                                 <Link
                                     to="/auth/signup"
-                                    className="font-medium text-cyan-600 transition-colors hover:text-cyan-500"
+                                    className="font-medium text-primary transition-colors hover:text-primary/80"
                                 >
-                                    Sign up
+                                    {t('admin-pages.auth.signin.signUpLink')}
                                 </Link>
                             </p>
                         </div>

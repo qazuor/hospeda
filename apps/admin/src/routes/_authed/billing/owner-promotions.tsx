@@ -231,7 +231,9 @@ function BillingOwnerPromotionsPage() {
                             <p className="text-muted-foreground">
                                 {t('admin-billing.ownerPromotions.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                            <p className="mt-2 text-red-600 text-sm dark:text-red-400">
+                                {error.message}
+                            </p>
                         </div>
                     </CardContent>
                 </Card>

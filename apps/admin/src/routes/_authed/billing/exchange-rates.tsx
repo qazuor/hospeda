@@ -28,6 +28,7 @@ import type {
     ExchangeRateCreateInput
 } from '@/features/exchange-rates';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { AddIcon, RefreshIcon, SettingsIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -40,6 +41,7 @@ type TabId = 'current' | 'history' | 'config';
 
 function ExchangeRatesPage() {
     const { addToast } = useToast();
+    const { t } = useTranslations();
     const [activeTab, setActiveTab] = useState<TabId>('current');
     const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
 
@@ -58,7 +60,7 @@ function ExchangeRatesPage() {
     };
 
     const handleDelete = (id: string) => {
-        if (confirm('¿Estás seguro de que deseas eliminar este override manual?')) {
+        if (confirm(t('admin-pages.exchangeRates.confirmDelete'))) {
             deleteOverrideMutation.mutate(id);
         }
     };
@@ -67,14 +69,17 @@ function ExchangeRatesPage() {
         try {
             const result = await triggerFetchMutation.mutateAsync();
             addToast({
-                title: 'Tasas actualizadas',
-                message: `${result.totalStored} tasas almacenadas correctamente`,
+                title: t('admin-pages.exchangeRates.fetchSuccess'),
+                message: t('admin-pages.exchangeRates.fetchSuccessMsg').replace(
+                    '{{count}}',
+                    String(result.totalStored)
+                ),
                 variant: 'success'
             });
         } catch {
             addToast({
-                title: 'Error',
-                message: 'Error al actualizar tasas',
+                title: t('admin-pages.exchangeRates.errorTitle'),
+                message: t('admin-pages.exchangeRates.fetchError'),
                 variant: 'error'
             });
         }
@@ -86,7 +91,8 @@ function ExchangeRatesPage() {
 
     const columns = getExchangeRateColumns({
         onDelete: handleDelete,
-        isDeleting: deleteOverrideMutation.isPending
+        isDeleting: deleteOverrideMutation.isPending,
+        t: t as (key: string) => string
     });
 
     const ratesList = (Array.isArray(rates) ? rates : []) as ExchangeRate[];
@@ -96,10 +102,11 @@ function ExchangeRatesPage() {
             <div className="space-y-6">
                 {/* Header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Tasas de Cambio</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.exchangeRates.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Gestiona las tasas de cambio entre divisas con actualizaciones automáticas y
-                        overrides manuales
+                        {t('admin-pages.exchangeRates.subtitle')}
                     </p>
                 </div>
 
@@ -110,20 +117,20 @@ function ExchangeRatesPage() {
                             active={activeTab === 'current'}
                             onClick={() => setActiveTab('current')}
                         >
-                            Tasas Actuales
+                            {t('admin-pages.exchangeRates.tabCurrent')}
                         </TabButton>
                         <TabButton
                             active={activeTab === 'history'}
                             onClick={() => setActiveTab('history')}
                         >
-                            Historial
+                            {t('admin-pages.exchangeRates.tabHistory')}
                         </TabButton>
                         <TabButton
                             active={activeTab === 'config'}
                             onClick={() => setActiveTab('config')}
                         >
                             <SettingsIcon className="mr-2 inline-block h-4 w-4" />
-                            Configuración
+                            {t('admin-pages.exchangeRates.tabConfig')}
                         </TabButton>
                     </nav>
                 </div>
@@ -135,7 +142,10 @@ function ExchangeRatesPage() {
                         <div className="flex items-center justify-between gap-4">
                             <div className="text-muted-foreground text-sm">
                                 {ratesList.length > 0 &&
-                                    `${ratesList.length} tasas de cambio disponibles`}
+                                    t('admin-pages.exchangeRates.ratesAvailable').replace(
+                                        '{{count}}',
+                                        String(ratesList.length)
+                                    )}
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -145,12 +155,12 @@ function ExchangeRatesPage() {
                                 >
                                     <RefreshIcon className="mr-2 h-4 w-4" />
                                     {triggerFetchMutation.isPending
-                                        ? 'Actualizando...'
-                                        : 'Actualizar Ahora'}
+                                        ? t('admin-pages.exchangeRates.updating')
+                                        : t('admin-pages.exchangeRates.updateNow')}
                                 </Button>
                                 <Button onClick={() => setOverrideDialogOpen(true)}>
                                     <AddIcon className="mr-2 h-4 w-4" />
-                                    Crear Override Manual
+                                    {t('admin-pages.exchangeRates.createOverride')}
                                 </Button>
                             </div>
                         </div>
@@ -159,9 +169,7 @@ function ExchangeRatesPage() {
                         <Card className="border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
                             <CardContent className="py-4">
                                 <p className="text-blue-800 text-sm dark:text-blue-200">
-                                    <strong>Nota:</strong> Las tasas se actualizan automáticamente
-                                    según la configuración. Los overrides manuales tienen prioridad
-                                    sobre las tasas automáticas.
+                                    {t('admin-pages.exchangeRates.infoNote')}
                                 </p>
                             </CardContent>
                         </Card>
@@ -197,10 +205,11 @@ function ExchangeRatesPage() {
                 {activeTab === 'history' && (
                     <div className="space-y-4">
                         <div>
-                            <h3 className="mb-2 font-semibold text-lg">Historial de Tasas</h3>
+                            <h3 className="mb-2 font-semibold text-lg">
+                                {t('admin-pages.exchangeRates.historyTitle')}
+                            </h3>
                             <p className="text-muted-foreground text-sm">
-                                Visualiza el historial de cambios en las tasas de cambio a lo largo
-                                del tiempo
+                                {t('admin-pages.exchangeRates.historyDesc')}
                             </p>
                         </div>
                         <RateHistoryView />
@@ -212,11 +221,10 @@ function ExchangeRatesPage() {
                     <div className="space-y-4">
                         <div>
                             <h3 className="mb-2 font-semibold text-lg">
-                                Configuración de Actualización
+                                {t('admin-pages.exchangeRates.configTitle')}
                             </h3>
                             <p className="text-muted-foreground text-sm">
-                                Configura cómo y cuándo se actualizan las tasas de cambio
-                                automáticamente
+                                {t('admin-pages.exchangeRates.configDesc')}
                             </p>
                         </div>
 

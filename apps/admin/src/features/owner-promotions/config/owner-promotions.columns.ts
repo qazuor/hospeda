@@ -1,22 +1,32 @@
 import type { ColumnConfig } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { defaultIntlLocale, formatCurrency, pluralize } from '@repo/i18n';
 import { OwnerPromotionDiscountTypeEnum } from '@repo/schemas';
 import type { OwnerPromotion } from '../schemas/owner-promotions.schemas';
 
 /**
  * Format discount value based on type
+ *
+ * @param promotion - Owner promotion data
+ * @param locale - BCP 47 locale string (e.g. 'es-AR', 'en-US')
+ * @param t - Translation function
  */
-const formatDiscountValue = (promotion: OwnerPromotion): string => {
+const formatDiscountValue = (
+    promotion: OwnerPromotion,
+    t: (key: string) => string,
+    locale = defaultIntlLocale
+): string => {
     switch (promotion.discountType) {
         case OwnerPromotionDiscountTypeEnum.PERCENTAGE:
             return `${promotion.discountValue}%`;
         case OwnerPromotionDiscountTypeEnum.FIXED:
-            return new Intl.NumberFormat('es-AR', {
-                style: 'currency',
-                currency: 'ARS'
-            }).format(promotion.discountValue);
+            return formatCurrency({ value: promotion.discountValue, locale, currency: 'ARS' });
         case OwnerPromotionDiscountTypeEnum.FREE_NIGHT:
-            return `${promotion.discountValue} ${promotion.discountValue === 1 ? 'noche gratis' : 'noches gratis'}`;
+            return pluralize({
+                t,
+                key: 'admin-entities.ownerPromotions.columns.freeNight',
+                count: promotion.discountValue
+            });
         default:
             return String(promotion.discountValue);
     }
@@ -24,12 +34,18 @@ const formatDiscountValue = (promotion: OwnerPromotion): string => {
 
 /**
  * Creates column configuration for owner promotions list
+ *
+ * @param locale - BCP 47 locale string (e.g. 'es-AR', 'en-US')
+ * @param t - Translation function
  */
-export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromotion>[] =>
+export const createOwnerPromotionsColumns = (
+    locale = defaultIntlLocale,
+    t: (key: string) => string = (k) => k
+): readonly ColumnConfig<OwnerPromotion>[] =>
     [
         {
             id: 'title',
-            header: 'Título',
+            header: t('admin-entities.ownerPromotions.columns.title'),
             accessorKey: 'title',
             enableSorting: true,
             columnType: ColumnType.ENTITY,
@@ -40,7 +56,7 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'owner',
-            header: 'Propietario',
+            header: t('admin-entities.ownerPromotions.columns.owner'),
             accessorKey: 'ownerId',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -49,7 +65,7 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'accommodation',
-            header: 'Alojamiento',
+            header: t('admin-entities.ownerPromotions.columns.accommodation'),
             accessorKey: 'accommodationId',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -58,24 +74,24 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'discountType',
-            header: 'Tipo de Descuento',
+            header: t('admin-entities.ownerPromotions.columns.discountType'),
             accessorKey: 'discountType',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
                     value: OwnerPromotionDiscountTypeEnum.PERCENTAGE,
-                    label: 'Porcentaje',
+                    label: t('admin-entities.ownerPromotions.discountTypes.percentage'),
                     color: BadgeColor.BLUE
                 },
                 {
                     value: OwnerPromotionDiscountTypeEnum.FIXED,
-                    label: 'Monto Fijo',
+                    label: t('admin-entities.ownerPromotions.discountTypes.fixed'),
                     color: BadgeColor.GREEN
                 },
                 {
                     value: OwnerPromotionDiscountTypeEnum.FREE_NIGHT,
-                    label: 'Noche Gratis',
+                    label: t('admin-entities.ownerPromotions.discountTypes.freeNight'),
                     color: BadgeColor.PURPLE
                 }
             ],
@@ -84,17 +100,17 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'discountValue',
-            header: 'Valor',
+            header: t('admin-entities.ownerPromotions.columns.discountValue'),
             accessorKey: 'discountValue',
             enableSorting: true,
             columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) => formatDiscountValue(row),
+            widgetRenderer: (row) => formatDiscountValue(row, t, locale),
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
         {
             id: 'validFrom',
-            header: 'Válido Desde',
+            header: t('admin-entities.ownerPromotions.columns.validFrom'),
             accessorKey: 'validFrom',
             enableSorting: true,
             columnType: ColumnType.DATE,
@@ -103,7 +119,7 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'validUntil',
-            header: 'Válido Hasta',
+            header: t('admin-entities.ownerPromotions.columns.validUntil'),
             accessorKey: 'validUntil',
             enableSorting: true,
             columnType: ColumnType.DATE,
@@ -112,7 +128,7 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'redemptions',
-            header: 'Canjes',
+            header: t('admin-entities.ownerPromotions.columns.redemptions'),
             accessorKey: 'currentRedemptions',
             enableSorting: true,
             columnType: ColumnType.WIDGET,
@@ -127,31 +143,31 @@ export const createOwnerPromotionsColumns = (): readonly ColumnConfig<OwnerPromo
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-entities.ownerPromotions.columns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             columnType: ColumnType.WIDGET,
             widgetRenderer: (row) => {
                 if (!row.isActive) {
-                    return 'Inactivo';
+                    return t('admin-entities.ownerPromotions.statuses.inactive');
                 }
 
                 if (row.validUntil) {
                     const now = new Date();
                     const validUntil = new Date(row.validUntil);
                     if (validUntil < now) {
-                        return 'Expirado';
+                        return t('admin-entities.ownerPromotions.statuses.expired');
                     }
                 }
 
-                return 'Activo';
+                return t('admin-entities.ownerPromotions.statuses.active');
             },
             startVisibleOnTable: true,
             startVisibleOnGrid: true
         },
         {
             id: 'createdAt',
-            header: 'Creado',
+            header: t('admin-entities.ownerPromotions.columns.createdAt'),
             accessorKey: 'createdAt',
             enableSorting: true,
             columnType: ColumnType.TIME_AGO,

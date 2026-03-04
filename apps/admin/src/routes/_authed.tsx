@@ -1,7 +1,9 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/contexts/auth-context';
 import { useTranslations } from '@/hooks/use-translations';
+import type { AuthState } from '@/lib/auth-session';
 import { fetchAuthSession } from '@/lib/auth-session';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
@@ -53,7 +55,7 @@ function AuthedNotFoundComponent() {
  * Automatically applies AppLayout to all child routes
  */
 export const Route = createFileRoute('/_authed')({
-    beforeLoad: async () => {
+    beforeLoad: async ({ location }) => {
         const authState = await fetchAuthSession();
 
         // If not authenticated, redirect to signin
@@ -61,9 +63,37 @@ export const Route = createFileRoute('/_authed')({
             throw redirect({
                 to: '/auth/signin',
                 search: {
-                    redirect: typeof window !== 'undefined' ? window.location.pathname : '/'
+                    redirect: location.pathname
                 }
             });
+        }
+
+        // Verify admin panel access.
+        // Roles with implicit panel access: SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, SPONSOR.
+        // USER and GUEST are public-web-only roles and cannot access the admin panel.
+        const adminPanelRoles: readonly string[] = [
+            RoleEnum.SUPER_ADMIN,
+            RoleEnum.ADMIN,
+            RoleEnum.CLIENT_MANAGER,
+            RoleEnum.EDITOR,
+            RoleEnum.HOST,
+            RoleEnum.SPONSOR
+        ] as const;
+
+        const hasPanelAccess =
+            (authState.role !== null && adminPanelRoles.includes(authState.role)) ||
+            authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
+
+        if (!hasPanelAccess) {
+            throw redirect({
+                to: '/auth/forbidden'
+            });
+        }
+
+        // Force password change redirect for admin users
+        // Redirects to standalone auth page (outside admin layout)
+        if (authState.passwordChangeRequired) {
+            throw redirect({ to: '/auth/change-password' });
         }
 
         return authState;
@@ -77,8 +107,11 @@ export const Route = createFileRoute('/_authed')({
  * Wraps all authenticated routes with AppLayout
  */
 function AuthedLayout() {
+    const routeContext = Route.useRouteContext();
+    const authState = routeContext as unknown as AuthState;
+
     return (
-        <AuthProvider>
+        <AuthProvider initialAuthState={authState}>
             <AppLayout>
                 <Outlet />
             </AppLayout>

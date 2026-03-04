@@ -1,6 +1,8 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
+import { formatNumber } from '@repo/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -56,6 +58,7 @@ async function fetchMetrics(): Promise<MetricsData> {
 }
 
 function AnalyticsUsagePage() {
+    const { t, locale } = useTranslations();
     const {
         data: metrics,
         isLoading,
@@ -83,9 +86,11 @@ function AnalyticsUsagePage() {
         <SidebarPageLayout titleKey="admin-pages.titles.analyticsUsage">
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">API Usage Metrics</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.analytics.usage.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Monitor API performance and usage statistics
+                        {t('admin-pages.analytics.usage.subtitle')}
                     </p>
                 </div>
 
@@ -93,7 +98,7 @@ function AnalyticsUsagePage() {
                     <Card>
                         <CardContent className="pt-6">
                             <p className="text-muted-foreground text-sm">
-                                No metrics available. The metrics endpoint may not be responding.
+                                {t('admin-pages.analytics.usage.noMetrics')}
                             </p>
                         </CardContent>
                     </Card>
@@ -103,12 +108,14 @@ function AnalyticsUsagePage() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        Total Requests
+                                        {t('admin-pages.analytics.usage.totalRequests')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="font-bold text-2xl">
-                                        {isLoading ? '...' : totalRequests.toLocaleString()}
+                                        {isLoading
+                                            ? '...'
+                                            : formatNumber({ value: totalRequests, locale })}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -116,15 +123,22 @@ function AnalyticsUsagePage() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        Total Errors
+                                        {t('admin-pages.analytics.usage.totalErrors')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="font-bold text-2xl">
-                                        {isLoading ? '...' : totalErrors.toLocaleString()}
+                                        {isLoading
+                                            ? '...'
+                                            : formatNumber({ value: totalErrors, locale })}
                                     </div>
                                     <p className="text-muted-foreground text-xs">
-                                        {isLoading ? '' : `${errorRate.toFixed(2)}% error rate`}
+                                        {isLoading
+                                            ? ''
+                                            : t('admin-pages.analytics.usage.errorRate').replace(
+                                                  '{{rate}}',
+                                                  errorRate.toFixed(2)
+                                              )}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -132,7 +146,7 @@ function AnalyticsUsagePage() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        Avg Response Time
+                                        {t('admin-pages.analytics.usage.avgResponseTime')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -145,7 +159,7 @@ function AnalyticsUsagePage() {
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        Active Connections
+                                        {t('admin-pages.analytics.usage.activeConnections')}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -160,19 +174,37 @@ function AnalyticsUsagePage() {
                         {metrics?.endpoints && metrics.endpoints.length > 0 && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle>Endpoint Breakdown</CardTitle>
+                                    <CardTitle>
+                                        {t('admin-pages.analytics.usage.endpointBreakdown')}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="overflow-auto">
                                         <table className="w-full text-sm">
                                             <thead>
                                                 <tr className="border-b text-left">
-                                                    <th className="pb-2 font-medium">Endpoint</th>
-                                                    <th className="pb-2 font-medium">Requests</th>
-                                                    <th className="pb-2 font-medium">Errors</th>
-                                                    <th className="pb-2 font-medium">Avg (ms)</th>
-                                                    <th className="pb-2 font-medium">P95 (ms)</th>
-                                                    <th className="pb-2 font-medium">P99 (ms)</th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t(
+                                                            'admin-pages.analytics.usage.colEndpoint'
+                                                        )}
+                                                    </th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t(
+                                                            'admin-pages.analytics.usage.colRequests'
+                                                        )}
+                                                    </th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t('admin-pages.analytics.usage.colErrors')}
+                                                    </th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t('admin-pages.analytics.usage.colAvg')}
+                                                    </th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t('admin-pages.analytics.usage.colP95')}
+                                                    </th>
+                                                    <th className="pb-2 font-medium">
+                                                        {t('admin-pages.analytics.usage.colP99')}
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -188,13 +220,16 @@ function AnalyticsUsagePage() {
                                                                 {ep.endpoint}
                                                             </td>
                                                             <td className="py-2">
-                                                                {ep.requests.toLocaleString()}
+                                                                {formatNumber({
+                                                                    value: ep.requests,
+                                                                    locale
+                                                                })}
                                                             </td>
                                                             <td className="py-2">
                                                                 <span
                                                                     className={
                                                                         ep.errors > 0
-                                                                            ? 'text-red-600'
+                                                                            ? 'text-destructive'
                                                                             : ''
                                                                     }
                                                                 >
@@ -221,11 +256,13 @@ function AnalyticsUsagePage() {
 
                         <Card>
                             <CardHeader>
-                                <CardTitle>Raw Metrics Data</CardTitle>
+                                <CardTitle>{t('admin-pages.analytics.usage.rawData')}</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <pre className="overflow-auto rounded-md bg-muted p-4 text-xs">
-                                    {isLoading ? 'Loading...' : JSON.stringify(metrics, null, 2)}
+                                    {isLoading
+                                        ? t('admin-pages.analytics.usage.loading')
+                                        : JSON.stringify(metrics, null, 2)}
                                 </pre>
                             </CardContent>
                         </Card>

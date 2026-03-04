@@ -17,6 +17,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -31,6 +32,7 @@ interface FetchConfigFormProps {
 
 export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: FetchConfigFormProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
 
     const form = useForm({
         defaultValues: {
@@ -50,8 +52,8 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                     value.dolarApiFetchIntervalMinutes > 60
                 ) {
                     addToast({
-                        title: 'Error de validación',
-                        message: 'El intervalo de DolarAPI debe estar entre 5 y 60 minutos',
+                        title: t('admin-billing.exchangeRates.fetchConfig.validationError'),
+                        message: t('admin-billing.exchangeRates.fetchConfig.validationDolarApi'),
                         variant: 'error'
                     });
                     return;
@@ -62,8 +64,10 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                     value.exchangeRateApiFetchIntervalHours > 24
                 ) {
                     addToast({
-                        title: 'Error de validación',
-                        message: 'El intervalo de ExchangeRate-API debe estar entre 1 y 24 horas',
+                        title: t('admin-billing.exchangeRates.fetchConfig.validationError'),
+                        message: t(
+                            'admin-billing.exchangeRates.fetchConfig.validationExchangeRateApi'
+                        ),
                         variant: 'error'
                     });
                     return;
@@ -81,15 +85,17 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                 await onSubmit(payload);
 
                 addToast({
-                    title: 'Configuración guardada',
-                    message: 'La configuración se actualizó correctamente',
+                    title: t('admin-billing.exchangeRates.fetchConfig.successTitle'),
+                    message: t('admin-billing.exchangeRates.fetchConfig.successMessage'),
                     variant: 'success'
                 });
             } catch (error) {
                 addToast({
-                    title: 'Error',
+                    title: t('admin-billing.exchangeRates.fetchConfig.errorTitle'),
                     message:
-                        error instanceof Error ? error.message : 'Error al guardar configuración',
+                        error instanceof Error
+                            ? error.message
+                            : t('admin-billing.exchangeRates.fetchConfig.errorMessage'),
                     variant: 'error'
                 });
             }
@@ -114,7 +120,9 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
     if (!config) {
         return (
             <div className="rounded-lg border p-6 text-center">
-                <p className="text-muted-foreground">Cargando configuración...</p>
+                <p className="text-muted-foreground">
+                    {t('admin-billing.exchangeRates.fetchConfig.loading')}
+                </p>
             </div>
         );
     }
@@ -132,11 +140,17 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
         >
             {/* Default Rate Type */}
             <div className="rounded-lg border p-6">
-                <h3 className="mb-4 font-semibold text-lg">Tipo de Tasa por Defecto</h3>
+                <h3 className="mb-4 font-semibold text-lg">
+                    {t('admin-billing.exchangeRates.fetchConfig.sections.defaultRateType')}
+                </h3>
                 <form.Field name="defaultRateType">
                     {(field) => (
                         <div>
-                            <Label htmlFor="defaultRateType">Tipo de Tasa</Label>
+                            <Label htmlFor="defaultRateType">
+                                {t(
+                                    'admin-billing.exchangeRates.fetchConfig.fields.defaultRateType'
+                                )}
+                            </Label>
                             <Select
                                 value={field.state.value}
                                 onValueChange={(value) =>
@@ -147,16 +161,30 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="oficial">Oficial</SelectItem>
-                                    <SelectItem value="blue">Blue</SelectItem>
-                                    <SelectItem value="mep">MEP</SelectItem>
-                                    <SelectItem value="ccl">CCL</SelectItem>
-                                    <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="oficial">
+                                        {t('admin-billing.exchangeRates.rateTypes.oficial')}
+                                    </SelectItem>
+                                    <SelectItem value="blue">
+                                        {t('admin-billing.exchangeRates.rateTypes.blue')}
+                                    </SelectItem>
+                                    <SelectItem value="mep">
+                                        {t('admin-billing.exchangeRates.rateTypes.mep')}
+                                    </SelectItem>
+                                    <SelectItem value="ccl">
+                                        {t('admin-billing.exchangeRates.rateTypes.ccl')}
+                                    </SelectItem>
+                                    <SelectItem value="tarjeta">
+                                        {t('admin-billing.exchangeRates.rateTypes.tarjeta')}
+                                    </SelectItem>
+                                    <SelectItem value="standard">
+                                        {t('admin-billing.exchangeRates.rateTypes.standard')}
+                                    </SelectItem>
                                 </SelectContent>
                             </Select>
                             <p className="mt-2 text-muted-foreground text-sm">
-                                Tipo de tasa ARS que se usará por defecto en conversiones
+                                {t(
+                                    'admin-billing.exchangeRates.fetchConfig.fields.defaultRateTypeHint'
+                                )}
                             </p>
                         </div>
                     )}
@@ -165,13 +193,17 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
 
             {/* Fetch Intervals */}
             <div className="rounded-lg border p-6">
-                <h3 className="mb-4 font-semibold text-lg">Intervalos de Actualización</h3>
+                <h3 className="mb-4 font-semibold text-lg">
+                    {t('admin-billing.exchangeRates.fetchConfig.sections.fetchIntervals')}
+                </h3>
                 <div className="grid gap-6 md:grid-cols-2">
                     <form.Field name="dolarApiFetchIntervalMinutes">
                         {(field) => (
                             <div>
                                 <Label htmlFor="dolarApiFetchIntervalMinutes">
-                                    Intervalo DolarAPI (minutos)
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.dolarApiInterval'
+                                    )}
                                 </Label>
                                 <Input
                                     id="dolarApiFetchIntervalMinutes"
@@ -183,7 +215,9 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                                     onBlur={field.handleBlur}
                                 />
                                 <p className="mt-2 text-muted-foreground text-sm">
-                                    Frecuencia de obtención de tasas ARS (5-60 minutos)
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.dolarApiIntervalHint'
+                                    )}
                                 </p>
                             </div>
                         )}
@@ -193,7 +227,9 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                         {(field) => (
                             <div>
                                 <Label htmlFor="exchangeRateApiFetchIntervalHours">
-                                    Intervalo ExchangeRate-API (horas)
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.exchangeRateApiInterval'
+                                    )}
                                 </Label>
                                 <Input
                                     id="exchangeRateApiFetchIntervalHours"
@@ -205,7 +241,9 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                                     onBlur={field.handleBlur}
                                 />
                                 <p className="mt-2 text-muted-foreground text-sm">
-                                    Frecuencia de obtención de tasas internacionales (1-24 horas)
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.exchangeRateApiIntervalHint'
+                                    )}
                                 </p>
                             </div>
                         )}
@@ -215,17 +253,23 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
 
             {/* Disclaimer Settings */}
             <div className="rounded-lg border p-6">
-                <h3 className="mb-4 font-semibold text-lg">Configuración de Disclaimer</h3>
+                <h3 className="mb-4 font-semibold text-lg">
+                    {t('admin-billing.exchangeRates.fetchConfig.sections.disclaimer')}
+                </h3>
                 <div className="space-y-6">
                     <form.Field name="showConversionDisclaimer">
                         {(field) => (
                             <div className="flex items-center justify-between">
                                 <div className="space-y-1">
                                     <Label htmlFor="showConversionDisclaimer">
-                                        Mostrar Disclaimer
+                                        {t(
+                                            'admin-billing.exchangeRates.fetchConfig.fields.showDisclaimer'
+                                        )}
                                     </Label>
                                     <p className="text-muted-foreground text-sm">
-                                        Mostrar aviso legal en conversiones de moneda
+                                        {t(
+                                            'admin-billing.exchangeRates.fetchConfig.fields.showDisclaimerHint'
+                                        )}
                                     </p>
                                 </div>
                                 <Switch
@@ -241,17 +285,25 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                         <form.Field name="disclaimerText">
                             {(field) => (
                                 <div>
-                                    <Label htmlFor="disclaimerText">Texto del Disclaimer</Label>
+                                    <Label htmlFor="disclaimerText">
+                                        {t(
+                                            'admin-billing.exchangeRates.fetchConfig.fields.disclaimerText'
+                                        )}
+                                    </Label>
                                     <Textarea
                                         id="disclaimerText"
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
                                         onBlur={field.handleBlur}
-                                        placeholder="Las tasas de cambio son indicativas y pueden variar..."
+                                        placeholder={t(
+                                            'admin-common.placeholders.billing.exchangeRateDisclaimer'
+                                        )}
                                         rows={4}
                                     />
                                     <p className="mt-2 text-muted-foreground text-sm">
-                                        Texto personalizado que se mostrará en las conversiones
+                                        {t(
+                                            'admin-billing.exchangeRates.fetchConfig.fields.disclaimerTextHint'
+                                        )}
                                     </p>
                                 </div>
                             )}
@@ -262,14 +314,22 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
 
             {/* Auto Fetch Setting */}
             <div className="rounded-lg border p-6">
-                <h3 className="mb-4 font-semibold text-lg">Obtención Automática</h3>
+                <h3 className="mb-4 font-semibold text-lg">
+                    {t('admin-billing.exchangeRates.fetchConfig.sections.autoFetch')}
+                </h3>
                 <form.Field name="enableAutoFetch">
                     {(field) => (
                         <div className="flex items-center justify-between">
                             <div className="space-y-1">
-                                <Label htmlFor="enableAutoFetch">Habilitar Auto-Fetch</Label>
+                                <Label htmlFor="enableAutoFetch">
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.enableAutoFetch'
+                                    )}
+                                </Label>
                                 <p className="text-muted-foreground text-sm">
-                                    Obtener tasas automáticamente según los intervalos configurados
+                                    {t(
+                                        'admin-billing.exchangeRates.fetchConfig.fields.enableAutoFetchHint'
+                                    )}
                                 </p>
                             </div>
                             <Switch
@@ -289,7 +349,7 @@ export function FetchConfigForm({ config, onSubmit, isSubmitting = false }: Fetc
                     disabled={isSubmitting}
                 >
                     {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-                    Guardar Configuración
+                    {t('admin-billing.exchangeRates.fetchConfig.saveButton')}
                 </Button>
             </div>
         </form>

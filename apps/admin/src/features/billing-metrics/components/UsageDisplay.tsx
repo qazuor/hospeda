@@ -1,4 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatNumber } from '@repo/i18n';
 import { AlertCircleIcon, CheckCircleIcon, InfoIcon } from '@repo/icons';
 import type { CustomerUsageSummary } from '../types';
 
@@ -10,32 +12,35 @@ interface UsageDisplayProps {
  * Get color based on usage percentage
  */
 function getUsageColor(percentage: number): string {
-    if (percentage >= 90) return 'text-red-600';
-    if (percentage >= 75) return 'text-orange-600';
-    if (percentage >= 50) return 'text-yellow-600';
-    return 'text-green-600';
+    if (percentage >= 90) return 'text-red-600 dark:text-red-400';
+    if (percentage >= 75) return 'text-orange-600 dark:text-orange-400';
+    if (percentage >= 50) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-green-600 dark:text-green-400';
 }
 
 /**
  * Get progress bar color based on usage percentage
  */
 function getProgressColor(percentage: number): string {
-    if (percentage >= 90) return 'bg-red-600';
-    if (percentage >= 75) return 'bg-orange-600';
-    if (percentage >= 50) return 'bg-yellow-600';
-    return 'bg-green-600';
+    if (percentage >= 90) return 'bg-red-600 dark:bg-red-500';
+    if (percentage >= 75) return 'bg-orange-600 dark:bg-orange-500';
+    if (percentage >= 50) return 'bg-yellow-600 dark:bg-yellow-500';
+    return 'bg-green-600 dark:bg-green-500';
 }
 
 /**
  * Get icon based on usage percentage
  */
 function getUsageIcon(percentage: number) {
-    if (percentage >= 90) return <AlertCircleIcon className="h-4 w-4 text-red-600" />;
-    if (percentage >= 75) return <InfoIcon className="h-4 w-4 text-orange-600" />;
-    return <CheckCircleIcon className="h-4 w-4 text-green-600" />;
+    if (percentage >= 90)
+        return <AlertCircleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />;
+    if (percentage >= 75)
+        return <InfoIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />;
+    return <CheckCircleIcon className="h-4 w-4 text-green-600 dark:text-green-400" />;
 }
 
 export function UsageDisplay({ usage }: UsageDisplayProps) {
+    const { t, locale } = useTranslations();
     const { customer, limits, totalLimits, limitsAtCapacity } = usage;
 
     return (
@@ -43,27 +48,37 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
             {/* Customer Info */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Información del Cliente</CardTitle>
+                    <CardTitle>
+                        {t('admin-billing.metrics.usageDisplay.customerInfoTitle')}
+                    </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <dl className="grid grid-cols-2 gap-4 text-sm">
                         <div>
-                            <dt className="font-medium text-muted-foreground">Email</dt>
+                            <dt className="font-medium text-muted-foreground">
+                                {t('admin-billing.metrics.usageDisplay.emailLabel')}
+                            </dt>
                             <dd className="mt-1">{customer.email}</dd>
                         </div>
                         {customer.name && (
                             <div>
-                                <dt className="font-medium text-muted-foreground">Nombre</dt>
+                                <dt className="font-medium text-muted-foreground">
+                                    {t('admin-billing.metrics.usageDisplay.nameLabel')}
+                                </dt>
                                 <dd className="mt-1">{customer.name}</dd>
                             </div>
                         )}
                         <div>
-                            <dt className="font-medium text-muted-foreground">Categoría</dt>
+                            <dt className="font-medium text-muted-foreground">
+                                {t('admin-billing.metrics.usageDisplay.categoryLabel')}
+                            </dt>
                             <dd className="mt-1 capitalize">{customer.category}</dd>
                         </div>
                         {customer.planName && (
                             <div>
-                                <dt className="font-medium text-muted-foreground">Plan Actual</dt>
+                                <dt className="font-medium text-muted-foreground">
+                                    {t('admin-billing.metrics.usageDisplay.currentPlanLabel')}
+                                </dt>
                                 <dd className="mt-1">{customer.planName}</dd>
                             </div>
                         )}
@@ -74,12 +89,15 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
             {/* Usage Summary */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Resumen de Uso</CardTitle>
+                    <CardTitle>
+                        {t('admin-billing.metrics.usageDisplay.usageSummaryTitle')}
+                    </CardTitle>
                     <CardDescription>
-                        {totalLimits} límites totales
+                        {totalLimits} {t('admin-billing.metrics.usageDisplay.totalLimits')}
                         {limitsAtCapacity > 0 && (
-                            <span className="ml-2 text-red-600">
-                                • {limitsAtCapacity} al límite
+                            <span className="ml-2 text-red-600 dark:text-red-400">
+                                • {limitsAtCapacity}{' '}
+                                {t('admin-billing.metrics.usageDisplay.atCapacity')}
                             </span>
                         )}
                     </CardDescription>
@@ -88,7 +106,7 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
                     {limits.length === 0 ? (
                         <div className="py-8 text-center">
                             <p className="text-muted-foreground text-sm">
-                                No hay límites configurados para este cliente
+                                {t('admin-billing.metrics.usageDisplay.noLimitsMessage')}
                             </p>
                         </div>
                     ) : (
@@ -117,7 +135,15 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
                                             <p
                                                 className={`font-semibold text-sm ${getUsageColor(limit.percentage)}`}
                                             >
-                                                {limit.percentage.toFixed(1)}%
+                                                {formatNumber({
+                                                    value: limit.percentage,
+                                                    locale,
+                                                    options: {
+                                                        minimumFractionDigits: 1,
+                                                        maximumFractionDigits: 1
+                                                    }
+                                                })}
+                                                %
                                             </p>
                                             <p className="text-muted-foreground text-xs">
                                                 {limit.currentValue} / {limit.maxValue} {limit.unit}
@@ -135,11 +161,12 @@ export function UsageDisplay({ usage }: UsageDisplayProps) {
 
                                     {/* Warning message for high usage */}
                                     {limit.percentage >= 90 && (
-                                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-red-800 text-xs">
+                                        <div className="flex items-center gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-red-800 text-xs dark:border-red-800 dark:bg-red-950 dark:text-red-300">
                                             <AlertCircleIcon className="h-3 w-3" />
                                             <span>
-                                                Este límite está cerca o ha alcanzado su capacidad
-                                                máxima
+                                                {t(
+                                                    'admin-billing.metrics.usageDisplay.nearCapacityWarning'
+                                                )}
                                             </span>
                                         </div>
                                     )}

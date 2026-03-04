@@ -3,6 +3,7 @@ import { EntityCreateContent } from '@/components/entity-pages';
 import type { EntityCreateConfig } from '@/components/entity-pages';
 import { createAttractionConsolidatedConfig } from '@/features/attractions/config';
 import { useCreateAttractionMutation } from '@/features/attractions/hooks/useAttractionQuery';
+import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -13,24 +14,28 @@ export const Route = createFileRoute('/_authed/content/destination-attractions/n
     pendingComponent: createPendingComponent()
 });
 
-const createConfig: EntityCreateConfig = {
-    entityType: 'attraction',
-    title: 'Crear Atracción',
-    description: 'Crear una nueva atracción',
-    entityName: 'Atracción',
-    entityNamePlural: 'Atracciones',
-    basePath: '/content/destination-attractions',
-    submitLabel: 'Crear Atracción',
-    savingLabel: 'Creando...',
-    successToastTitle: 'Atracción creada',
-    successToastMessage: 'La atracción se ha creado exitosamente',
-    errorToastTitle: 'Error al crear',
-    errorMessage: 'Error inesperado al crear la atracción'
-};
-
 function AttractionCreatePage() {
     const navigate = useNavigate();
+    const { t } = useTranslations();
     const createMutation = useCreateAttractionMutation();
+
+    const entityName = t('admin-entities.entities.attraction.singular');
+    const entityNamePlural = t('admin-entities.entities.attraction.plural');
+
+    const createConfig: EntityCreateConfig = {
+        entityType: 'attraction',
+        title: `${t('admin-entities.list.new')} ${entityName}`,
+        description: t('admin-entities.entities.attraction.description'),
+        entityName,
+        entityNamePlural,
+        basePath: '/content/destination-attractions',
+        submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
+        savingLabel: t('admin-entities.messages.saving'),
+        successToastTitle: t('admin-entities.messages.created').replace('{entity}', entityName),
+        successToastMessage: t('admin-entities.messages.created').replace('{entity}', entityName),
+        errorToastTitle: t('admin-entities.messages.error.create').replace('{entity}', entityName),
+        errorMessage: t('admin-entities.messages.error.create').replace('{entity}', entityName)
+    };
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.ATTRACTION_CREATE]}>

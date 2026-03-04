@@ -1,13 +1,14 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
+import { fetchApi } from '@/lib/api/client';
+import type { TranslationKey } from '@repo/i18n';
 import { useQueries } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/analytics/business')({
     component: AnalyticsBusinessPage
 });
-
-import { fetchApi } from '@/lib/api/client';
 
 async function fetchEntityCount(endpoint: string): Promise<number> {
     const result = await fetchApi<{
@@ -20,17 +21,22 @@ async function fetchEntityCount(endpoint: string): Promise<number> {
     return result.data.data?.pagination?.total ?? result.data.metadata?.total ?? 0;
 }
 
-const ENTITIES = [
-    { name: 'Accommodations', endpoint: '/admin/accommodations', key: 'accommodations' },
-    { name: 'Destinations', endpoint: '/admin/destinations', key: 'destinations' },
-    { name: 'Events', endpoint: '/admin/events', key: 'events' },
-    { name: 'Posts', endpoint: '/admin/posts', key: 'posts' },
-    { name: 'Attractions', endpoint: '/admin/attractions', key: 'attractions' }
+const ENTITY_KEYS = [
+    {
+        translationKey: 'entityAccommodations',
+        endpoint: '/admin/accommodations',
+        key: 'accommodations'
+    },
+    { translationKey: 'entityDestinations', endpoint: '/admin/destinations', key: 'destinations' },
+    { translationKey: 'entityEvents', endpoint: '/admin/events', key: 'events' },
+    { translationKey: 'entityPosts', endpoint: '/admin/posts', key: 'posts' },
+    { translationKey: 'entityAttractions', endpoint: '/admin/attractions', key: 'attractions' }
 ];
 
 function AnalyticsBusinessPage() {
+    const { t } = useTranslations();
     const queries = useQueries({
-        queries: ENTITIES.map((entity) => ({
+        queries: ENTITY_KEYS.map((entity) => ({
             queryKey: ['entity-count', entity.key],
             queryFn: () => fetchEntityCount(entity.endpoint),
             staleTime: 5 * 60 * 1000 // 5 minutes
@@ -43,14 +49,16 @@ function AnalyticsBusinessPage() {
         <SidebarPageLayout titleKey="admin-pages.titles.analyticsBusiness">
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Total Entities</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.analytics.business.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Overview of all content entities in the system
+                        {t('admin-pages.analytics.business.subtitle')}
                     </p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {ENTITIES.map((entity, index) => {
+                    {ENTITY_KEYS.map((entity, index) => {
                         const query = queries[index];
                         const count = query.data ?? 0;
 
@@ -58,7 +66,9 @@ function AnalyticsBusinessPage() {
                             <Card key={entity.key}>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="font-medium text-sm">
-                                        {entity.name}
+                                        {t(
+                                            `admin-pages.analytics.business.${entity.translationKey}` as TranslationKey
+                                        )}
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -66,7 +76,7 @@ function AnalyticsBusinessPage() {
                                         {isLoading ? '...' : count}
                                     </div>
                                     <p className="mt-1 text-muted-foreground text-xs">
-                                        Total count
+                                        {t('admin-pages.analytics.business.totalCount')}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -76,14 +86,14 @@ function AnalyticsBusinessPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Status Breakdown</CardTitle>
+                        <CardTitle>{t('admin-pages.analytics.business.statusBreakdown')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <p className="text-muted-foreground text-sm">
-                            Detailed analytics by status (draft, published, archived) coming soon.
+                            {t('admin-pages.analytics.business.statusBreakdownDesc')}
                         </p>
                         <p className="mt-2 text-muted-foreground text-sm">
-                            Currently showing total entity counts only.
+                            {t('admin-pages.analytics.business.totalCountNote')}
                         </p>
                     </CardContent>
                 </Card>

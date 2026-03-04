@@ -75,11 +75,8 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
 
 /**
  * Create a new promo code
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function createPromoCode(payload: CreatePromoCodePayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: POST /api/v1/billing/promo-codes
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: '/api/v1/billing/promo-codes',
         method: 'POST',
@@ -90,11 +87,8 @@ async function createPromoCode(payload: CreatePromoCodePayload) {
 
 /**
  * Update an existing promo code
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PUT /api/v1/billing/promo-codes/:id
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/billing/promo-codes/${id}`,
         method: 'PUT',
@@ -105,11 +99,8 @@ async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
 
 /**
  * Toggle promo code active status
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function togglePromoCodeActive(id: string, isActive: boolean) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: PATCH /api/v1/billing/promo-codes/:id
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/billing/promo-codes/${id}`,
         method: 'PATCH',
@@ -120,11 +111,8 @@ async function togglePromoCodeActive(id: string, isActive: boolean) {
 
 /**
  * Delete a promo code
- * TODO: Replace with actual API endpoint once qzpay-hono billing routes are implemented
  */
 async function deletePromoCode(id: string) {
-    // TODO: Update endpoint when API is ready
-    // Expected endpoint: DELETE /api/v1/billing/promo-codes/:id
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
         path: `/api/v1/billing/promo-codes/${id}`,
         method: 'DELETE'

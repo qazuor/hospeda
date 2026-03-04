@@ -630,7 +630,8 @@ function BillingPromoCodesPage() {
         onToggleActive: handleToggleActive,
         onDelete: handleDeleteClick,
         isTogglingActive: toggleActiveMutation.isPending,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        t: t as (key: string) => string
     });
 
     if (error) {
@@ -652,7 +653,7 @@ function BillingPromoCodesPage() {
                                 <p className="text-muted-foreground">
                                     {t('admin-billing.promoCodes.apiLoadError')}
                                 </p>
-                                <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                                <p className="mt-2 text-destructive text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.promoCodes.staticFallback')}
                                 </p>
@@ -681,9 +682,9 @@ function BillingPromoCodesPage() {
 
                 {/* API Warning */}
                 {!data?.items && (
-                    <Card className="border-yellow-200 bg-yellow-50">
+                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
                         <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
                                 <strong>{t('admin-billing.promoCodes.noteLabel')}</strong>{' '}
                                 {t('admin-billing.promoCodes.apiUnavailable')}
                             </p>

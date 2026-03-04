@@ -4,6 +4,7 @@
  * Displays overview cards with system-wide metrics
  */
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { AlertTriangleIcon, TrendingUpIcon, UsersIcon } from '@repo/icons';
 import type { SystemUsageStats } from '../types';
 
@@ -13,10 +14,12 @@ interface SystemStatsCardsProps {
 }
 
 export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsCardsProps) {
+    const { t } = useTranslations();
+
     const categoryLabels: Record<string, string> = {
-        owner: 'Propietarios',
-        complex: 'Complejos',
-        tourist: 'Turistas'
+        owner: t('admin-billing.metrics.systemStats.categoryOwner'),
+        complex: t('admin-billing.metrics.systemStats.categoryComplex'),
+        tourist: t('admin-billing.metrics.systemStats.categoryTourist')
     };
 
     return (
@@ -24,7 +27,9 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             {/* Total Customers */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-medium text-sm">Total de Clientes</CardTitle>
+                    <CardTitle className="font-medium text-sm">
+                        {t('admin-billing.metrics.systemStats.totalCustomers')}
+                    </CardTitle>
                     <UsersIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -48,7 +53,9 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             {/* Active Plans */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-medium text-sm">Planes Activos</CardTitle>
+                    <CardTitle className="font-medium text-sm">
+                        {t('admin-billing.metrics.systemStats.activePlans')}
+                    </CardTitle>
                     <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -72,15 +79,17 @@ export function SystemStatsCards({ stats, approachingLimitsCount }: SystemStatsC
             {/* Approaching Limits */}
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="font-medium text-sm">Cerca del Límite</CardTitle>
-                    <AlertTriangleIcon className="h-4 w-4 text-orange-600" />
+                    <CardTitle className="font-medium text-sm">
+                        {t('admin-billing.metrics.systemStats.approachingLimits')}
+                    </CardTitle>
+                    <AlertTriangleIcon className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </CardHeader>
                 <CardContent>
-                    <div className="font-bold text-2xl text-orange-600">
+                    <div className="font-bold text-2xl text-orange-600 dark:text-orange-400">
                         {approachingLimitsCount}
                     </div>
                     <p className="mt-2 text-muted-foreground text-xs">
-                        Clientes con uso {'>'} 90% en algún límite
+                        {t('admin-billing.metrics.systemStats.approachingLimitsHint')}
                     </p>
                 </CardContent>
             </Card>

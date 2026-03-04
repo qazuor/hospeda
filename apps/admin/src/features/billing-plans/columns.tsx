@@ -1,20 +1,10 @@
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatCentsToArs } from '@/lib/format-helpers';
+import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import type { PlanDefinition } from './types';
-
-/**
- * Format ARS price from cents to readable string
- */
-function formatArsPrice(cents: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(cents / 100);
-}
 
 interface PlanColumnsOptions {
     onEdit?: (plan: PlanDefinition) => void;
@@ -22,20 +12,32 @@ interface PlanColumnsOptions {
     onDelete?: (id: string) => void;
     isTogglingActive?: boolean;
     isDeleting?: boolean;
+    /** Translation function from useTranslations hook */
+    t: (key: string) => string;
+    /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
+    locale?: string;
 }
 
 /**
  * Get DataTable columns for plans list
  */
 export function getPlanColumns(
-    options: PlanColumnsOptions = {}
+    options: PlanColumnsOptions
 ): ReadonlyArray<DataTableColumn<PlanDefinition>> {
-    const { onEdit, onToggleActive, onDelete, isTogglingActive, isDeleting } = options;
+    const {
+        onEdit,
+        onToggleActive,
+        onDelete,
+        isTogglingActive,
+        isDeleting,
+        t,
+        locale = defaultIntlLocale
+    } = options;
 
     return [
         {
             id: 'name',
-            header: 'Nombre',
+            header: t('admin-billing.plans.columns.name'),
             accessorKey: 'name',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -48,71 +50,94 @@ export function getPlanColumns(
         },
         {
             id: 'category',
-            header: 'Categoría',
+            header: t('admin-billing.plans.columns.category'),
             accessorKey: 'category',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'owner', label: 'Propietario', color: BadgeColor.BLUE },
-                { value: 'complex', label: 'Complejo', color: BadgeColor.PURPLE },
-                { value: 'tourist', label: 'Turista', color: BadgeColor.GREEN }
+                {
+                    value: 'owner',
+                    label: t('admin-billing.plans.categoryLabels.owner'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'complex',
+                    label: t('admin-billing.plans.categoryLabels.complex'),
+                    color: BadgeColor.PURPLE
+                },
+                {
+                    value: 'tourist',
+                    label: t('admin-billing.plans.categoryLabels.tourist'),
+                    color: BadgeColor.GREEN
+                }
             ]
         },
         {
             id: 'monthlyPrice',
-            header: 'Precio Mensual',
+            header: t('admin-billing.plans.columns.monthlyPrice'),
             enableSorting: true,
             cell: ({ row }) => (
                 <div>
-                    <span className="font-medium">{formatArsPrice(row.monthlyPriceArs)}</span>
-                    <span className="text-muted-foreground text-xs"> /mes</span>
+                    <span className="font-medium">
+                        {formatCentsToArs({ cents: row.monthlyPriceArs, locale })}
+                    </span>
+                    <span className="text-muted-foreground text-xs">
+                        {' '}
+                        {t('admin-billing.plans.columns.perMonth')}
+                    </span>
                 </div>
             )
         },
         {
             id: 'annualPrice',
-            header: 'Precio Anual',
+            header: t('admin-billing.plans.columns.annualPrice'),
             enableSorting: true,
             cell: ({ row }) => (
                 <span className="text-sm">
-                    {row.annualPriceArs ? formatArsPrice(row.annualPriceArs) : '-'}
+                    {row.annualPriceArs
+                        ? formatCentsToArs({ cents: row.annualPriceArs, locale })
+                        : '-'}
                 </span>
             )
         },
         {
             id: 'entitlements',
-            header: 'Permisos',
+            header: t('admin-billing.plans.columns.entitlements'),
             enableSorting: false,
             cell: ({ row }) => (
                 <span className="text-muted-foreground text-xs">
-                    {row.entitlements.length} permisos
+                    {row.entitlements.length} {t('admin-billing.plans.columns.permissionsCount')}
                 </span>
             )
         },
         {
             id: 'limits',
-            header: 'Límites',
+            header: t('admin-billing.plans.columns.limits'),
             enableSorting: false,
             cell: ({ row }) => (
-                <span className="text-muted-foreground text-xs">{row.limits.length} límites</span>
+                <span className="text-muted-foreground text-xs">
+                    {row.limits.length} {t('admin-billing.plans.columns.limitsCount')}
+                </span>
             )
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.plans.columns.status'),
             accessorKey: 'isActive',
             enableSorting: true,
             cell: ({ row }) => (
                 <div className="flex gap-2">
                     <Badge variant={row.isActive ? 'success' : 'secondary'}>
-                        {row.isActive ? 'Activo' : 'Inactivo'}
+                        {row.isActive
+                            ? t('admin-billing.plans.statusActive')
+                            : t('admin-billing.plans.statusInactive')}
                     </Badge>
                     {row.isDefault && (
                         <Badge
                             variant="outline"
-                            className="border-blue-300 bg-blue-50 text-blue-700"
+                            className="border-primary/20 bg-primary/5 text-primary"
                         >
-                            Por defecto
+                            {t('admin-billing.plans.statusDefault')}
                         </Badge>
                     )}
                 </div>
@@ -120,7 +145,7 @@ export function getPlanColumns(
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.plans.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -131,10 +156,16 @@ export function getPlanColumns(
                             size="sm"
                             onClick={() => onToggleActive(row.slug, !row.isActive)}
                             disabled={isTogglingActive}
-                            title={row.isActive ? 'Desactivar' : 'Activar'}
+                            title={
+                                row.isActive
+                                    ? t('admin-billing.plans.actionDeactivate')
+                                    : t('admin-billing.plans.actionActivate')
+                            }
                         >
                             <PowerIcon className="mr-1 h-3 w-3" />
-                            {row.isActive ? 'Desactivar' : 'Activar'}
+                            {row.isActive
+                                ? t('admin-billing.plans.actionDeactivate')
+                                : t('admin-billing.plans.actionActivate')}
                         </Button>
                     )}
                     {onEdit && (
@@ -142,10 +173,10 @@ export function getPlanColumns(
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(row)}
-                            title="Editar"
+                            title={t('admin-billing.plans.actionEdit')}
                         >
                             <EditIcon className="mr-1 h-3 w-3" />
-                            Editar
+                            {t('admin-billing.plans.actionEdit')}
                         </Button>
                     )}
                     {onDelete && (
@@ -154,10 +185,10 @@ export function getPlanColumns(
                             size="sm"
                             onClick={() => onDelete(row.slug)}
                             disabled={isDeleting}
-                            title="Eliminar"
+                            title={t('admin-billing.plans.actionDelete')}
                         >
                             <DeleteIcon className="mr-1 h-3 w-3" />
-                            Eliminar
+                            {t('admin-billing.plans.actionDelete')}
                         </Button>
                     )}
                 </div>

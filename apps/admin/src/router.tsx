@@ -14,6 +14,30 @@ export interface RouterContext {
     };
 }
 
+/**
+ * Loading bar shown during route transitions.
+ * Only appears after defaultPendingMs delay to avoid flash on fast navigations.
+ */
+function RouterPendingComponent() {
+    return (
+        <div className="fixed inset-x-0 top-0 z-50 h-0.5">
+            <div
+                className="h-full bg-primary"
+                style={{
+                    animation: 'router-pending-bar 1.5s ease-in-out infinite'
+                }}
+            />
+            <style>{`
+                @keyframes router-pending-bar {
+                    0% { width: 0%; margin-left: 0%; }
+                    50% { width: 60%; margin-left: 20%; }
+                    100% { width: 0%; margin-left: 100%; }
+                }
+            `}</style>
+        </div>
+    );
+}
+
 // Create a new router instance
 export const createRouter = () => {
     const context: RouterContext = {};
@@ -24,7 +48,9 @@ export const createRouter = () => {
         scrollRestoration: true,
         defaultPreloadStaleTime: 0,
         defaultPreload: 'intent', // Prefetch on hover/focus
-        defaultPreloadDelay: 100 // Small delay to avoid excessive prefetching
+        defaultPreloadDelay: 100, // Small delay to avoid excessive prefetching
+        defaultPendingComponent: RouterPendingComponent,
+        defaultPendingMs: 200 // Only show if navigation takes > 200ms
     });
 };
 

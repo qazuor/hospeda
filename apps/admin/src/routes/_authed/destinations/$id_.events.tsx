@@ -8,6 +8,7 @@ import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
 import { Badge } from '@/components/ui/badge';
 import { useDestinationQuery } from '@/features/destinations/hooks/useDestinationQuery';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDate } from '@repo/i18n';
 import { Link, createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/destinations/$id_/events')({
@@ -16,7 +17,7 @@ export const Route = createFileRoute('/_authed/destinations/$id_/events')({
 
 function DestinationEventsPage() {
     const { id } = Route.useParams();
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const { data: destination, isLoading } = useDestinationQuery(id);
 
     // API response may include joined relations not in base Destination type
@@ -37,10 +38,10 @@ function DestinationEventsPage() {
             const dateValue = event.date as Record<string, unknown> | undefined;
             if (dateValue && typeof dateValue === 'object' && 'start' in dateValue) {
                 const startDate = new Date(String(dateValue.start));
-                return startDate.toLocaleDateString('es-AR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                return formatDate({
+                    date: startDate,
+                    locale,
+                    options: { year: 'numeric', month: 'long', day: 'numeric' }
                 });
             }
             return 'Date not available';

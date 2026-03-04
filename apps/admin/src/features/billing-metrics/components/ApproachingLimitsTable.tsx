@@ -6,6 +6,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatNumber } from '@repo/i18n';
 import { AlertTriangleIcon } from '@repo/icons';
 import type { ApproachingLimitsResponse } from '../types';
 
@@ -14,18 +16,22 @@ interface ApproachingLimitsTableProps {
 }
 
 export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
+    const { t, locale } = useTranslations();
+
     if (data.customers.length === 0) {
         return (
             <Card className="border-dashed">
                 <CardContent className="py-8 text-center">
-                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                        <AlertTriangleIcon className="h-6 w-6 text-green-600" />
+                    <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
+                        <AlertTriangleIcon className="h-6 w-6 text-green-600 dark:text-green-400" />
                     </div>
                     <p className="text-muted-foreground">
-                        No hay clientes cerca de alcanzar sus límites
+                        {t('admin-billing.metrics.approachingLimits.noClientsTitle')}
                     </p>
                     <p className="mt-1 text-muted-foreground text-sm">
-                        Todos los clientes están usando menos del {data.threshold}% de sus límites
+                        {t('admin-billing.metrics.approachingLimits.noClientsHint')}{' '}
+                        {data.threshold}
+                        {t('admin-billing.metrics.approachingLimits.noClientsHintSuffix')}
                     </p>
                 </CardContent>
             </Card>
@@ -36,12 +42,17 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <AlertTriangleIcon className="h-5 w-5 text-orange-600" />
-                    Clientes Cerca del Límite
+                    <AlertTriangleIcon className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                    {t('admin-billing.metrics.approachingLimits.cardTitle')}
                 </CardTitle>
                 <CardDescription>
-                    {data.totalCustomers} cliente{data.totalCustomers !== 1 ? 's' : ''} usando más
-                    del {data.threshold}% de algún límite
+                    {data.totalCustomers}{' '}
+                    {data.totalCustomers !== 1
+                        ? t('admin-billing.metrics.approachingLimits.clientsUsingPlural')
+                        : t('admin-billing.metrics.approachingLimits.clientsUsing')}{' '}
+                    {t('admin-billing.metrics.approachingLimits.clientsUsingSuffix')}{' '}
+                    {data.threshold}
+                    {t('admin-billing.metrics.approachingLimits.clientsUsingSuffix2')}
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -76,7 +87,12 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
                                     }
                                     className="ml-2"
                                 >
-                                    {customer.percentage.toFixed(0)}%
+                                    {formatNumber({
+                                        value: customer.percentage,
+                                        locale,
+                                        options: { maximumFractionDigits: 0 }
+                                    })}
+                                    %
                                 </Badge>
                             </div>
 
@@ -94,7 +110,7 @@ export function ApproachingLimitsTable({ data }: ApproachingLimitsTableProps) {
                                     className={
                                         customer.percentage >= 95
                                             ? '[&>div]:bg-destructive'
-                                            : '[&>div]:bg-orange-500'
+                                            : '[&>div]:bg-orange-500 dark:[&>div]:bg-orange-400'
                                     }
                                 />
                             </div>

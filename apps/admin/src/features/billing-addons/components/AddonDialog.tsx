@@ -25,6 +25,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
@@ -47,6 +48,7 @@ export function AddonDialog({
     isSubmitting = false
 }: AddonDialogProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
 
     const form = useForm({
         defaultValues: {
@@ -74,8 +76,10 @@ export function AddonDialog({
                 await onSubmit(payload);
 
                 addToast({
-                    title: addon ? 'Add-on actualizado' : 'Add-on creado',
-                    message: `El add-on "${value.name}" se ${addon ? 'actualizó' : 'creó'} correctamente`,
+                    title: addon
+                        ? t('admin-billing.addons.catalogDialog.successUpdate')
+                        : t('admin-billing.addons.catalogDialog.successCreate'),
+                    message: `${value.name} ${addon ? t('admin-billing.addons.catalogDialog.successMessageUpdate') : t('admin-billing.addons.catalogDialog.successMessageCreate')}`,
                     variant: 'success'
                 });
 
@@ -83,8 +87,11 @@ export function AddonDialog({
                 form.reset();
             } catch (error) {
                 addToast({
-                    title: 'Error',
-                    message: error instanceof Error ? error.message : 'Error al guardar el add-on',
+                    title: t('admin-billing.addons.catalogDialog.errorTitle'),
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : t('admin-billing.addons.catalogDialog.errorMessage'),
                     variant: 'error'
                 });
             }
@@ -107,11 +114,15 @@ export function AddonDialog({
         >
             <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{addon ? 'Editar Add-on' : 'Crear Add-on'}</DialogTitle>
+                    <DialogTitle>
+                        {addon
+                            ? t('admin-billing.addons.catalogDialog.editTitle')
+                            : t('admin-billing.addons.catalogDialog.createTitle')}
+                    </DialogTitle>
                     <DialogDescription>
                         {addon
-                            ? 'Modifica los detalles del add-on existente'
-                            : 'Completa el formulario para crear un nuevo add-on'}
+                            ? t('admin-billing.addons.catalogDialog.editDescription')
+                            : t('admin-billing.addons.catalogDialog.createDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -125,14 +136,17 @@ export function AddonDialog({
                 >
                     {/* Basic Information */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Información básica</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.addons.catalogDialog.sections.basicInfo')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="slug">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="slug">
-                                            Slug <span className="text-destructive">*</span>
+                                            {t('admin-billing.addons.catalogDialog.fields.slug')}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="slug"
@@ -155,14 +169,17 @@ export function AddonDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="name">
-                                            Nombre <span className="text-destructive">*</span>
+                                            {t('admin-billing.addons.catalogDialog.fields.name')}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="name"
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
                                             onBlur={field.handleBlur}
-                                            placeholder="Boost de visibilidad (7 días)"
+                                            placeholder={t(
+                                                'admin-common.placeholders.billing.addonNameExample'
+                                            )}
                                         />
                                         {field.state.meta.errors && (
                                             <p className="mt-1 text-destructive text-xs">
@@ -178,14 +195,17 @@ export function AddonDialog({
                             {(field) => (
                                 <div>
                                     <Label htmlFor="description">
-                                        Descripción <span className="text-destructive">*</span>
+                                        {t('admin-billing.addons.catalogDialog.fields.description')}{' '}
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Textarea
                                         id="description"
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
                                         onBlur={field.handleBlur}
-                                        placeholder="Describe el add-on..."
+                                        placeholder={t(
+                                            'admin-billing.addons.catalogDialog.fields.descriptionPlaceholder'
+                                        )}
                                         rows={3}
                                     />
                                     {field.state.meta.errors && (
@@ -200,14 +220,19 @@ export function AddonDialog({
 
                     {/* Pricing */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Facturación</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.addons.catalogDialog.sections.billing')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-3">
                             <form.Field name="billingType">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="billingType">
-                                            Tipo <span className="text-destructive">*</span>
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.billingType'
+                                            )}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
                                             value={field.state.value}
@@ -221,9 +246,15 @@ export function AddonDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="one_time">Único</SelectItem>
+                                                <SelectItem value="one_time">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.billingTypes.oneTime'
+                                                    )}
+                                                </SelectItem>
                                                 <SelectItem value="recurring">
-                                                    Recurrente
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.billingTypes.recurring'
+                                                    )}
                                                 </SelectItem>
                                             </SelectContent>
                                         </Select>
@@ -235,7 +266,10 @@ export function AddonDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="priceArs">
-                                            Precio (ARS) <span className="text-destructive">*</span>
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.priceArs'
+                                            )}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="priceArs"
@@ -262,7 +296,9 @@ export function AddonDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="durationDays">
-                                            Duración (días)
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.durationDays'
+                                            )}
                                             {billingTypeValue === 'one_time' && (
                                                 <span className="text-destructive">*</span>
                                             )}
@@ -283,8 +319,12 @@ export function AddonDialog({
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
                                             {billingTypeValue === 'one_time'
-                                                ? 'Días que dura el beneficio'
-                                                : 'No aplica para recurrentes'}
+                                                ? t(
+                                                      'admin-billing.addons.catalogDialog.fields.durationHintOneTime'
+                                                  )
+                                                : t(
+                                                      'admin-billing.addons.catalogDialog.fields.durationHintRecurring'
+                                                  )}
                                         </p>
                                     </div>
                                 )}
@@ -294,13 +334,19 @@ export function AddonDialog({
 
                     {/* Benefits */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Beneficios</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.addons.catalogDialog.sections.benefits')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="affectsLimitKey">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="affectsLimitKey">Límite afectado</Label>
+                                        <Label htmlFor="affectsLimitKey">
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.affectsLimitKey'
+                                            )}
+                                        </Label>
                                         <Select
                                             value={field.state.value || 'none'}
                                             onValueChange={(value) =>
@@ -313,7 +359,11 @@ export function AddonDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="none">Ninguno</SelectItem>
+                                                <SelectItem value="none">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.none'
+                                                    )}
+                                                </SelectItem>
                                                 {Object.values(LimitKey).map((key) => (
                                                     <SelectItem
                                                         key={key}
@@ -331,7 +381,11 @@ export function AddonDialog({
                             <form.Field name="limitIncrease">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="limitIncrease">Incremento</Label>
+                                        <Label htmlFor="limitIncrease">
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.limitIncrease'
+                                            )}
+                                        </Label>
                                         <Input
                                             id="limitIncrease"
                                             type="number"
@@ -353,7 +407,9 @@ export function AddonDialog({
                                 {(field) => (
                                     <div className="md:col-span-2">
                                         <Label htmlFor="grantsEntitlement">
-                                            Habilita funcionalidad
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.grantsEntitlement'
+                                            )}
                                         </Label>
                                         <Select
                                             value={field.state.value || 'none'}
@@ -369,7 +425,11 @@ export function AddonDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="none">Ninguna</SelectItem>
+                                                <SelectItem value="none">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.noneEntitlement'
+                                                    )}
+                                                </SelectItem>
                                                 {Object.values(EntitlementKey).map((key) => (
                                                     <SelectItem
                                                         key={key}
@@ -388,14 +448,18 @@ export function AddonDialog({
 
                     {/* Target & Status */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Configuración</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.addons.catalogDialog.sections.configuration')}
+                        </h3>
 
                         <div className="space-y-4">
                             <form.Field name="targetCategories">
                                 {(field) => (
                                     <div>
                                         <Label>
-                                            Categorías objetivo{' '}
+                                            {t(
+                                                'admin-billing.addons.catalogDialog.fields.targetCategories'
+                                            )}{' '}
                                             <span className="text-destructive">*</span>
                                         </Label>
                                         <div className="mt-2 flex gap-4">
@@ -415,7 +479,11 @@ export function AddonDialog({
                                                     }}
                                                     className="rounded"
                                                 />
-                                                <span className="text-sm">Propietario</span>
+                                                <span className="text-sm">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.categoryOwner'
+                                                    )}
+                                                </span>
                                             </label>
                                             <label className="flex items-center gap-2">
                                                 <input
@@ -433,7 +501,11 @@ export function AddonDialog({
                                                     }}
                                                     className="rounded"
                                                 />
-                                                <span className="text-sm">Complejo</span>
+                                                <span className="text-sm">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.categoryComplex'
+                                                    )}
+                                                </span>
                                             </label>
                                         </div>
                                         {field.state.meta.errors && (
@@ -449,7 +521,11 @@ export function AddonDialog({
                                 <form.Field name="sortOrder">
                                     {(field) => (
                                         <div>
-                                            <Label htmlFor="sortOrder">Orden</Label>
+                                            <Label htmlFor="sortOrder">
+                                                {t(
+                                                    'admin-billing.addons.catalogDialog.fields.sortOrder'
+                                                )}
+                                            </Label>
                                             <Input
                                                 id="sortOrder"
                                                 type="number"
@@ -461,7 +537,9 @@ export function AddonDialog({
                                                 onBlur={field.handleBlur}
                                             />
                                             <p className="mt-1 text-muted-foreground text-xs">
-                                                Orden de visualización
+                                                {t(
+                                                    'admin-billing.addons.catalogDialog.fields.sortOrderHint'
+                                                )}
                                             </p>
                                         </div>
                                     )}
@@ -471,9 +549,15 @@ export function AddonDialog({
                                     {(field) => (
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <Label htmlFor="isActive">Estado</Label>
+                                                <Label htmlFor="isActive">
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.isActive'
+                                                    )}
+                                                </Label>
                                                 <p className="text-muted-foreground text-xs">
-                                                    Activar add-on
+                                                    {t(
+                                                        'admin-billing.addons.catalogDialog.fields.isActiveHint'
+                                                    )}
                                                 </p>
                                             </div>
                                             <Switch
@@ -495,14 +579,16 @@ export function AddonDialog({
                             onClick={() => onOpenChange(false)}
                             disabled={isSubmitting}
                         >
-                            Cancelar
+                            {t('admin-billing.addons.catalogDialog.cancelButton')}
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
                         >
                             {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-                            {addon ? 'Guardar cambios' : 'Crear add-on'}
+                            {addon
+                                ? t('admin-billing.addons.catalogDialog.saveButton')
+                                : t('admin-billing.addons.catalogDialog.createButton')}
                         </Button>
                     </DialogFooter>
                 </form>

@@ -26,7 +26,9 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
 import { ENTITLEMENT_DEFINITIONS, EntitlementKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
+import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -41,14 +43,14 @@ interface PlanDialogProps {
 }
 
 /**
- * Group entitlements by category for organized display
+ * Entitlement group keys by category
  */
-const ENTITLEMENT_GROUPS: {
-    label: string;
+const ENTITLEMENT_GROUP_KEYS: {
+    labelKey: string;
     keys: EntitlementKey[];
 }[] = [
     {
-        label: 'Propietario',
+        labelKey: 'owner',
         keys: [
             EntitlementKey.PUBLISH_ACCOMMODATIONS,
             EntitlementKey.EDIT_ACCOMMODATION_INFO,
@@ -65,7 +67,7 @@ const ENTITLEMENT_GROUPS: {
         ]
     },
     {
-        label: 'Alojamiento',
+        labelKey: 'accommodation',
         keys: [
             EntitlementKey.CAN_USE_RICH_DESCRIPTION,
             EntitlementKey.CAN_EMBED_VIDEO,
@@ -77,7 +79,7 @@ const ENTITLEMENT_GROUPS: {
         ]
     },
     {
-        label: 'Complejo',
+        labelKey: 'complex',
         keys: [
             EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
             EntitlementKey.CONSOLIDATED_ANALYTICS,
@@ -88,7 +90,7 @@ const ENTITLEMENT_GROUPS: {
         ]
     },
     {
-        label: 'Turista',
+        labelKey: 'tourist',
         keys: [
             EntitlementKey.SAVE_FAVORITES,
             EntitlementKey.WRITE_REVIEWS,
@@ -121,6 +123,7 @@ export function PlanDialog({
     isSubmitting = false
 }: PlanDialogProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
 
     const form = useForm({
         defaultValues: {
@@ -165,8 +168,10 @@ export function PlanDialog({
                 await onSubmit(payload);
 
                 addToast({
-                    title: plan ? 'Plan actualizado' : 'Plan creado',
-                    message: `El plan "${value.name}" se ${plan ? 'actualizo' : 'creo'} correctamente`,
+                    title: plan
+                        ? t('admin-billing.plans.dialog.successUpdate')
+                        : t('admin-billing.plans.dialog.successCreate'),
+                    message: `"${value.name}" ${plan ? t('admin-billing.plans.dialog.successMessageUpdate') : t('admin-billing.plans.dialog.successMessageCreate')}`,
                     variant: 'success'
                 });
 
@@ -174,8 +179,11 @@ export function PlanDialog({
                 form.reset();
             } catch (error) {
                 addToast({
-                    title: 'Error',
-                    message: error instanceof Error ? error.message : 'Error al guardar el plan',
+                    title: t('admin-billing.plans.dialog.errorTitle'),
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : t('admin-billing.plans.dialog.errorMessage'),
                     variant: 'error'
                 });
             }
@@ -198,11 +206,15 @@ export function PlanDialog({
         >
             <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>{plan ? 'Editar Plan' : 'Crear Plan'}</DialogTitle>
+                    <DialogTitle>
+                        {plan
+                            ? t('admin-billing.plans.dialog.editTitle')
+                            : t('admin-billing.plans.dialog.createTitle')}
+                    </DialogTitle>
                     <DialogDescription>
                         {plan
-                            ? 'Modifica los detalles del plan existente'
-                            : 'Completa el formulario para crear un nuevo plan de suscripcion'}
+                            ? t('admin-billing.plans.dialog.editDescription')
+                            : t('admin-billing.plans.dialog.createDescription')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -216,25 +228,30 @@ export function PlanDialog({
                 >
                     {/* Basic Information */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Informacion basica</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.basicInfo')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="slug">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="plan-slug">
-                                            Slug <span className="text-destructive">*</span>
+                                            {t('admin-billing.plans.dialog.fields.slug')}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="plan-slug"
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
                                             onBlur={field.handleBlur}
-                                            placeholder="owner-basico"
+                                            placeholder={t(
+                                                'admin-billing.plans.dialog.fields.slugPlaceholder'
+                                            )}
                                             disabled={!!plan}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Identificador unico del plan
+                                            {t('admin-billing.plans.dialog.fields.slugHint')}
                                         </p>
                                     </div>
                                 )}
@@ -244,14 +261,17 @@ export function PlanDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="plan-name">
-                                            Nombre <span className="text-destructive">*</span>
+                                            {t('admin-billing.plans.dialog.fields.name')}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="plan-name"
                                             value={field.state.value}
                                             onChange={(e) => field.handleChange(e.target.value)}
                                             onBlur={field.handleBlur}
-                                            placeholder="Basico Propietario"
+                                            placeholder={t(
+                                                'admin-billing.plans.dialog.fields.namePlaceholder'
+                                            )}
                                         />
                                     </div>
                                 )}
@@ -263,7 +283,8 @@ export function PlanDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="plan-category">
-                                            Categoria <span className="text-destructive">*</span>
+                                            {t('admin-billing.plans.dialog.fields.category')}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
                                             value={field.state.value}
@@ -277,9 +298,19 @@ export function PlanDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="owner">Propietario</SelectItem>
-                                                <SelectItem value="complex">Complejo</SelectItem>
-                                                <SelectItem value="tourist">Turista</SelectItem>
+                                                <SelectItem value="owner">
+                                                    {t('admin-billing.plans.categoryLabels.owner')}
+                                                </SelectItem>
+                                                <SelectItem value="complex">
+                                                    {t(
+                                                        'admin-billing.plans.categoryLabels.complex'
+                                                    )}
+                                                </SelectItem>
+                                                <SelectItem value="tourist">
+                                                    {t(
+                                                        'admin-billing.plans.categoryLabels.tourist'
+                                                    )}
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -291,14 +322,17 @@ export function PlanDialog({
                             {(field) => (
                                 <div>
                                     <Label htmlFor="plan-description">
-                                        Descripcion <span className="text-destructive">*</span>
+                                        {t('admin-billing.plans.dialog.fields.description')}{' '}
+                                        <span className="text-destructive">*</span>
                                     </Label>
                                     <Textarea
                                         id="plan-description"
                                         value={field.state.value}
                                         onChange={(e) => field.handleChange(e.target.value)}
                                         onBlur={field.handleBlur}
-                                        placeholder="Describe el plan..."
+                                        placeholder={t(
+                                            'admin-billing.plans.dialog.fields.descriptionPlaceholder'
+                                        )}
                                         rows={3}
                                     />
                                 </div>
@@ -308,14 +342,16 @@ export function PlanDialog({
 
                     {/* Pricing */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Precios</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.pricing')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-3">
                             <form.Field name="monthlyPriceArs">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="plan-monthly-ars">
-                                            Mensual (ARS){' '}
+                                            {t('admin-billing.plans.dialog.fields.monthlyArs')}{' '}
                                             <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
@@ -331,7 +367,7 @@ export function PlanDialog({
                                             placeholder="15000"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Precio en pesos (se convierte a centavos)
+                                            {t('admin-billing.plans.dialog.fields.monthlyArsHint')}
                                         </p>
                                     </div>
                                 )}
@@ -340,7 +376,9 @@ export function PlanDialog({
                             <form.Field name="annualPriceArs">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="plan-annual-ars">Anual (ARS)</Label>
+                                        <Label htmlFor="plan-annual-ars">
+                                            {t('admin-billing.plans.dialog.fields.annualArs')}
+                                        </Label>
                                         <Input
                                             id="plan-annual-ars"
                                             type="number"
@@ -354,7 +392,7 @@ export function PlanDialog({
                                             placeholder="150000"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Dejarlo en 0 si no hay opcion anual
+                                            {t('admin-billing.plans.dialog.fields.annualArsHint')}
                                         </p>
                                     </div>
                                 )}
@@ -363,7 +401,9 @@ export function PlanDialog({
                             <form.Field name="monthlyPriceUsdRef">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="plan-usd-ref">Ref. USD</Label>
+                                        <Label htmlFor="plan-usd-ref">
+                                            {t('admin-billing.plans.dialog.fields.usdRef')}
+                                        </Label>
                                         <Input
                                             id="plan-usd-ref"
                                             type="number"
@@ -377,7 +417,7 @@ export function PlanDialog({
                                             placeholder="12"
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Precio de referencia en dolares
+                                            {t('admin-billing.plans.dialog.fields.usdRefHint')}
                                         </p>
                                     </div>
                                 )}
@@ -387,16 +427,22 @@ export function PlanDialog({
 
                     {/* Trial */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Periodo de prueba</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.trial')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="hasTrial">
                                 {(field) => (
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <Label htmlFor="plan-has-trial">Trial habilitado</Label>
+                                            <Label htmlFor="plan-has-trial">
+                                                {t('admin-billing.plans.dialog.fields.hasTrial')}
+                                            </Label>
                                             <p className="text-muted-foreground text-xs">
-                                                Permite probar el plan sin pagar
+                                                {t(
+                                                    'admin-billing.plans.dialog.fields.hasTrialHint'
+                                                )}
                                             </p>
                                         </div>
                                         <Switch
@@ -411,7 +457,9 @@ export function PlanDialog({
                             <form.Field name="trialDays">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="plan-trial-days">Dias de prueba</Label>
+                                        <Label htmlFor="plan-trial-days">
+                                            {t('admin-billing.plans.dialog.fields.trialDays')}
+                                        </Label>
                                         <Input
                                             id="plan-trial-days"
                                             type="number"
@@ -432,15 +480,19 @@ export function PlanDialog({
 
                     {/* Entitlements */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Funcionalidades (Entitlements)</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.entitlements')}
+                        </h3>
 
                         <form.Field name="entitlements">
                             {(field) => (
                                 <div className="max-h-64 space-y-4 overflow-y-auto rounded-md border p-4">
-                                    {ENTITLEMENT_GROUPS.map((group) => (
-                                        <div key={group.label}>
+                                    {ENTITLEMENT_GROUP_KEYS.map((group) => (
+                                        <div key={group.labelKey}>
                                             <p className="mb-2 font-medium text-muted-foreground text-xs uppercase tracking-wider">
-                                                {group.label}
+                                                {t(
+                                                    `admin-billing.plans.dialog.entitlementGroups.${group.labelKey}` as TranslationKey
+                                                )}
                                             </p>
                                             <div className="grid gap-2 md:grid-cols-2">
                                                 {group.keys.map((key) => (
@@ -480,7 +532,9 @@ export function PlanDialog({
 
                     {/* Limits */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Limites</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.limits')}
+                        </h3>
 
                         <form.Field name="limits">
                             {(field) => (
@@ -517,7 +571,9 @@ export function PlanDialog({
                                                         }}
                                                     />
                                                     <p className="mt-1 text-muted-foreground text-xs">
-                                                        -1 = ilimitado, 0 = no aplica
+                                                        {t(
+                                                            'admin-billing.plans.dialog.fields.limitsHint'
+                                                        )}
                                                     </p>
                                                 </div>
                                             </div>
@@ -530,13 +586,17 @@ export function PlanDialog({
 
                     {/* Configuration */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Configuracion</h3>
+                        <h3 className="font-medium text-sm">
+                            {t('admin-billing.plans.dialog.sections.configuration')}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="sortOrder">
                                 {(field) => (
                                     <div>
-                                        <Label htmlFor="plan-sort-order">Orden</Label>
+                                        <Label htmlFor="plan-sort-order">
+                                            {t('admin-billing.plans.dialog.fields.sortOrder')}
+                                        </Label>
                                         <Input
                                             id="plan-sort-order"
                                             type="number"
@@ -548,7 +608,7 @@ export function PlanDialog({
                                             onBlur={field.handleBlur}
                                         />
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Orden de visualizacion en tablas de precios
+                                            {t('admin-billing.plans.dialog.fields.sortOrderHint')}
                                         </p>
                                     </div>
                                 )}
@@ -560,10 +620,14 @@ export function PlanDialog({
                                         <div className="flex items-center justify-between">
                                             <div>
                                                 <Label htmlFor="plan-is-default">
-                                                    Plan por defecto
+                                                    {t(
+                                                        'admin-billing.plans.dialog.fields.isDefault'
+                                                    )}
                                                 </Label>
                                                 <p className="text-muted-foreground text-xs">
-                                                    Se asigna automaticamente a nuevos usuarios
+                                                    {t(
+                                                        'admin-billing.plans.dialog.fields.isDefaultHint'
+                                                    )}
                                                 </p>
                                             </div>
                                             <Switch
@@ -579,9 +643,15 @@ export function PlanDialog({
                                     {(field) => (
                                         <div className="flex items-center justify-between">
                                             <div>
-                                                <Label htmlFor="plan-is-active">Activo</Label>
+                                                <Label htmlFor="plan-is-active">
+                                                    {t(
+                                                        'admin-billing.plans.dialog.fields.isActive'
+                                                    )}
+                                                </Label>
                                                 <p className="text-muted-foreground text-xs">
-                                                    Disponible para suscripcion
+                                                    {t(
+                                                        'admin-billing.plans.dialog.fields.isActiveHint'
+                                                    )}
                                                 </p>
                                             </div>
                                             <Switch
@@ -603,14 +673,16 @@ export function PlanDialog({
                             onClick={() => onOpenChange(false)}
                             disabled={isSubmitting}
                         >
-                            Cancelar
+                            {t('admin-billing.plans.dialog.cancelButton')}
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
                         >
                             {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-                            {plan ? 'Guardar cambios' : 'Crear plan'}
+                            {plan
+                                ? t('admin-billing.plans.dialog.saveButton')
+                                : t('admin-billing.plans.dialog.createButton')}
                         </Button>
                     </DialogFooter>
                 </form>

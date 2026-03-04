@@ -45,9 +45,9 @@ function PostSeoPage() {
 
                     <div className="rounded-lg border bg-card p-6">
                         <div className="space-y-4">
-                            <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-                            <div className="h-32 animate-pulse rounded bg-gray-100" />
-                            <div className="h-24 animate-pulse rounded bg-gray-100" />
+                            <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+                            <div className="h-32 animate-pulse rounded bg-muted" />
+                            <div className="h-24 animate-pulse rounded bg-muted" />
                         </div>
                     </div>
                 </div>
@@ -57,9 +57,9 @@ function PostSeoPage() {
 
     const getCharCountColor = (current: number, target: number) => {
         const ratio = current / target;
-        if (ratio < 0.8 || ratio > 1.2) return 'text-red-600';
-        if (ratio < 0.9 || ratio > 1.1) return 'text-yellow-600';
-        return 'text-green-600';
+        if (ratio < 0.8 || ratio > 1.2) return 'text-destructive';
+        if (ratio < 0.9 || ratio > 1.1) return 'text-yellow-600 dark:text-yellow-400';
+        return 'text-green-600 dark:text-green-400';
     };
 
     return (
@@ -76,15 +76,17 @@ function PostSeoPage() {
                     {/* Google Preview */}
                     <Card className="mb-6">
                         <CardHeader>
-                            <CardTitle className="text-base">Search Engine Preview</CardTitle>
+                            <CardTitle className="text-base">
+                                {t('admin-pages.posts.seo.searchEnginePreview')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-1">
-                                <p className="cursor-pointer text-blue-600 text-lg hover:underline">
+                                <p className="cursor-pointer text-lg text-primary hover:underline">
                                     {metaTitle.slice(0, 60)}
                                     {metaTitle.length > 60 ? '...' : ''}
                                 </p>
-                                <p className="text-green-700 text-sm">
+                                <p className="text-green-700 text-sm dark:text-green-300">
                                     hospeda.com.ar/posts/{slug}
                                 </p>
                                 <p className="text-muted-foreground text-sm">
@@ -103,11 +105,13 @@ function PostSeoPage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <span className="mb-1 block font-medium text-sm">
-                                            Meta Title
+                                            {t('admin-pages.posts.seo.metaTitle')}
                                         </span>
                                         <p className="text-muted-foreground text-sm">
                                             {metaTitle || (
-                                                <span className="italic">No meta title set</span>
+                                                <span className="italic">
+                                                    {t('admin-pages.posts.seo.noMetaTitle')}
+                                                </span>
                                             )}
                                         </p>
                                     </div>
@@ -127,12 +131,12 @@ function PostSeoPage() {
                                 <div className="flex items-start justify-between">
                                     <div className="flex-1">
                                         <span className="mb-1 block font-medium text-sm">
-                                            Meta Description
+                                            {t('admin-pages.posts.seo.metaDescription')}
                                         </span>
                                         <p className="text-muted-foreground text-sm">
                                             {metaDescription || (
                                                 <span className="italic">
-                                                    No meta description set
+                                                    {t('admin-pages.posts.seo.noMetaDescription')}
                                                 </span>
                                             )}
                                         </p>
@@ -150,9 +154,15 @@ function PostSeoPage() {
                         {/* Slug */}
                         <Card>
                             <CardContent className="pt-6">
-                                <span className="mb-1 block font-medium text-sm">Slug</span>
+                                <span className="mb-1 block font-medium text-sm">
+                                    {t('admin-pages.posts.seo.slug')}
+                                </span>
                                 <p className="text-muted-foreground text-sm">
-                                    {slug || <span className="italic">No slug set</span>}
+                                    {slug || (
+                                        <span className="italic">
+                                            {t('admin-pages.posts.seo.noSlug')}
+                                        </span>
+                                    )}
                                 </p>
                             </CardContent>
                         </Card>
@@ -161,11 +171,13 @@ function PostSeoPage() {
                         <Card>
                             <CardContent className="pt-6">
                                 <span className="mb-1 block font-medium text-sm">
-                                    Canonical URL
+                                    {t('admin-pages.posts.seo.canonicalUrl')}
                                 </span>
                                 <p className="text-muted-foreground text-sm">
                                     {canonicalUrl || (
-                                        <span className="italic">No canonical URL set</span>
+                                        <span className="italic">
+                                            {t('admin-pages.posts.seo.noCanonicalUrl')}
+                                        </span>
                                     )}
                                 </p>
                             </CardContent>
@@ -174,15 +186,21 @@ function PostSeoPage() {
                         {/* OG Image */}
                         <Card>
                             <CardContent className="pt-6">
-                                <span className="mb-1 block font-medium text-sm">OG Image URL</span>
+                                <span className="mb-1 block font-medium text-sm">
+                                    {t('admin-pages.posts.seo.ogImageUrl')}
+                                </span>
                                 <p className="text-muted-foreground text-sm">
-                                    {ogImage || <span className="italic">No OG image set</span>}
+                                    {ogImage || (
+                                        <span className="italic">
+                                            {t('admin-pages.posts.seo.noOgImage')}
+                                        </span>
+                                    )}
                                 </p>
                                 {ogImage && (
                                     <div className="mt-4">
                                         <img
                                             src={ogImage}
-                                            alt="OG Preview"
+                                            alt={t('admin-pages.posts.seo.ogImageAlt')}
                                             className="max-h-48 rounded-md border object-cover"
                                         />
                                     </div>

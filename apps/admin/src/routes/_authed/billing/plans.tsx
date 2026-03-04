@@ -124,7 +124,8 @@ function BillingPlansPage() {
         onToggleActive: handleToggleActive,
         onDelete: handleDelete,
         isTogglingActive: toggleActiveMutation.isPending,
-        isDeleting: deleteMutation.isPending
+        isDeleting: deleteMutation.isPending,
+        t: t as (key: string) => string
     });
 
     if (error) {
@@ -146,7 +147,7 @@ function BillingPlansPage() {
                                 <p className="text-muted-foreground">
                                     {t('admin-billing.plans.apiLoadError')}
                                 </p>
-                                <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                                <p className="mt-2 text-destructive text-sm">{error.message}</p>
                                 <p className="mt-4 text-muted-foreground text-sm">
                                     {t('admin-billing.plans.staticFallback')}
                                 </p>
@@ -195,9 +196,9 @@ function BillingPlansPage() {
                 </div>
 
                 {!hasApiData && !isLoading && (
-                    <Card className="border-yellow-200 bg-yellow-50">
+                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
                         <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
                                 <strong>{t('admin-billing.plans.noteLabel')}</strong>{' '}
                                 {t('admin-billing.plans.apiUnavailable')}
                             </p>

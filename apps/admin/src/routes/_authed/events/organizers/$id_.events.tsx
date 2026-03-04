@@ -31,8 +31,8 @@ function EventOrganizerEventsPage() {
                     />
                     <div className="rounded-lg border bg-card p-6">
                         <div className="space-y-4">
-                            <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-                            <div className="h-32 animate-pulse rounded bg-gray-100" />
+                            <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+                            <div className="h-32 animate-pulse rounded bg-muted" />
                         </div>
                     </div>
                 </div>
@@ -40,7 +40,8 @@ function EventOrganizerEventsPage() {
         );
     }
 
-    const organizerName = organizer?.name || 'Organizer';
+    const organizerName =
+        organizer?.name || t('admin-pages.events.organizerEvents.defaultOrganizerName');
 
     return (
         <SidebarPageLayout titleKey="admin-pages.titles.eventOrganizers">
@@ -58,24 +59,26 @@ function EventOrganizerEventsPage() {
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2 text-base">
                                     <CalendarIcon className="h-5 w-5 text-muted-foreground" />
-                                    Events by {organizerName}
+                                    {t('admin-pages.events.organizerEvents.eventsBy')}{' '}
+                                    {organizerName}
                                 </CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <p className="text-muted-foreground text-sm">
-                                    No events found for this organizer.
+                                    {t('admin-pages.events.organizerEvents.noEvents')}
                                 </p>
                             </CardContent>
                         </Card>
 
                         {/* Coming Soon Note */}
-                        <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4">
-                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+                        <div className="flex gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+                            <InfoIcon className="mt-0.5 h-5 w-5 shrink-0 text-blue-600 dark:text-blue-400" />
                             <div>
-                                <p className="font-medium text-blue-900 text-sm">Coming Soon</p>
-                                <p className="mt-1 text-blue-800 text-sm">
-                                    This tab will display all events organized by this organizer,
-                                    including past, current, and upcoming events with quick actions.
+                                <p className="font-medium text-blue-900 text-sm dark:text-blue-200">
+                                    {t('admin-pages.events.organizerEvents.comingSoon')}
+                                </p>
+                                <p className="mt-1 text-blue-800 text-sm dark:text-blue-300">
+                                    {t('admin-pages.events.organizerEvents.comingSoonDesc')}
                                 </p>
                             </div>
                         </div>

@@ -14,28 +14,22 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatDateWithTime } from '@/lib/format-helpers';
+import { formatNumber } from '@repo/i18n';
 import { useState } from 'react';
 import { useExchangeRateHistoryQuery } from '../hooks';
 import type { ExchangeRate, ExchangeRateHistoryFilters } from '../types';
 
 /**
- * Format date to local string
+ * Format rate value using locale-aware number formatting
  */
-function formatDate(date: Date): string {
-    return new Date(date).toLocaleString('es-AR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+function formatRate(rate: number, locale: string): string {
+    return formatNumber({
+        value: rate,
+        locale,
+        options: { minimumFractionDigits: 4, maximumFractionDigits: 4 }
     });
-}
-
-/**
- * Format rate value
- */
-function formatRate(rate: number): string {
-    return rate.toFixed(4);
 }
 
 /**
@@ -68,6 +62,7 @@ function getSourceBadge(source: string): React.ReactNode {
 }
 
 export function RateHistoryView() {
+    const { t, locale } = useTranslations();
     const [filters, setFilters] = useState<ExchangeRateHistoryFilters>({
         fromCurrency: undefined,
         toCurrency: undefined,
@@ -105,10 +100,14 @@ export function RateHistoryView() {
         <div className="space-y-6">
             {/* Filters */}
             <div className="rounded-lg border p-6">
-                <h3 className="mb-4 font-semibold text-lg">Filtros</h3>
+                <h3 className="mb-4 font-semibold text-lg">
+                    {t('admin-billing.exchangeRates.historyView.filtersTitle')}
+                </h3>
                 <div className="grid gap-4 md:grid-cols-3">
                     <div>
-                        <Label htmlFor="fromCurrency">Moneda Origen</Label>
+                        <Label htmlFor="fromCurrency">
+                            {t('admin-billing.exchangeRates.historyView.fields.fromCurrency')}
+                        </Label>
                         <Select
                             value={filters.fromCurrency || 'all'}
                             onValueChange={(value) => handleFilterChange('fromCurrency', value)}
@@ -117,7 +116,9 @@ export function RateHistoryView() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todas</SelectItem>
+                                <SelectItem value="all">
+                                    {t('admin-billing.exchangeRates.historyView.selectAll')}
+                                </SelectItem>
                                 <SelectItem value="USD">USD</SelectItem>
                                 <SelectItem value="ARS">ARS</SelectItem>
                                 <SelectItem value="BRL">BRL</SelectItem>
@@ -126,7 +127,9 @@ export function RateHistoryView() {
                     </div>
 
                     <div>
-                        <Label htmlFor="toCurrency">Moneda Destino</Label>
+                        <Label htmlFor="toCurrency">
+                            {t('admin-billing.exchangeRates.historyView.fields.toCurrency')}
+                        </Label>
                         <Select
                             value={filters.toCurrency || 'all'}
                             onValueChange={(value) => handleFilterChange('toCurrency', value)}
@@ -135,7 +138,9 @@ export function RateHistoryView() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todas</SelectItem>
+                                <SelectItem value="all">
+                                    {t('admin-billing.exchangeRates.historyView.selectAll')}
+                                </SelectItem>
                                 <SelectItem value="ARS">ARS</SelectItem>
                                 <SelectItem value="USD">USD</SelectItem>
                                 <SelectItem value="BRL">BRL</SelectItem>
@@ -144,7 +149,9 @@ export function RateHistoryView() {
                     </div>
 
                     <div>
-                        <Label htmlFor="rateType">Tipo de Tasa</Label>
+                        <Label htmlFor="rateType">
+                            {t('admin-billing.exchangeRates.historyView.fields.rateType')}
+                        </Label>
                         <Select
                             value={filters.rateType || 'all'}
                             onValueChange={(value) => handleFilterChange('rateType', value)}
@@ -153,19 +160,35 @@ export function RateHistoryView() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="oficial">Oficial</SelectItem>
-                                <SelectItem value="blue">Blue</SelectItem>
-                                <SelectItem value="mep">MEP</SelectItem>
-                                <SelectItem value="ccl">CCL</SelectItem>
-                                <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                                <SelectItem value="standard">Standard</SelectItem>
+                                <SelectItem value="all">
+                                    {t('admin-billing.exchangeRates.historyView.selectAllTypes')}
+                                </SelectItem>
+                                <SelectItem value="oficial">
+                                    {t('admin-billing.exchangeRates.rateTypes.oficial')}
+                                </SelectItem>
+                                <SelectItem value="blue">
+                                    {t('admin-billing.exchangeRates.rateTypes.blue')}
+                                </SelectItem>
+                                <SelectItem value="mep">
+                                    {t('admin-billing.exchangeRates.rateTypes.mep')}
+                                </SelectItem>
+                                <SelectItem value="ccl">
+                                    {t('admin-billing.exchangeRates.rateTypes.ccl')}
+                                </SelectItem>
+                                <SelectItem value="tarjeta">
+                                    {t('admin-billing.exchangeRates.rateTypes.tarjeta')}
+                                </SelectItem>
+                                <SelectItem value="standard">
+                                    {t('admin-billing.exchangeRates.rateTypes.standard')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div>
-                        <Label htmlFor="source">Fuente</Label>
+                        <Label htmlFor="source">
+                            {t('admin-billing.exchangeRates.historyView.fields.source')}
+                        </Label>
                         <Select
                             value={filters.source || 'all'}
                             onValueChange={(value) => handleFilterChange('source', value)}
@@ -174,16 +197,26 @@ export function RateHistoryView() {
                                 <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">Todas</SelectItem>
-                                <SelectItem value="dolarapi">DolarAPI</SelectItem>
-                                <SelectItem value="exchangerate-api">ExchangeRate-API</SelectItem>
-                                <SelectItem value="manual">Manual</SelectItem>
+                                <SelectItem value="all">
+                                    {t('admin-billing.exchangeRates.historyView.selectAll')}
+                                </SelectItem>
+                                <SelectItem value="dolarapi">
+                                    {t('admin-billing.exchangeRates.sources.dolarapi')}
+                                </SelectItem>
+                                <SelectItem value="exchangerate-api">
+                                    {t('admin-billing.exchangeRates.sources.exchangerateApi')}
+                                </SelectItem>
+                                <SelectItem value="manual">
+                                    {t('admin-billing.exchangeRates.sources.manual')}
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
                     <div>
-                        <Label htmlFor="from">Desde</Label>
+                        <Label htmlFor="from">
+                            {t('admin-billing.exchangeRates.historyView.fields.from')}
+                        </Label>
                         <Input
                             id="from"
                             type="date"
@@ -193,7 +226,9 @@ export function RateHistoryView() {
                     </div>
 
                     <div>
-                        <Label htmlFor="to">Hasta</Label>
+                        <Label htmlFor="to">
+                            {t('admin-billing.exchangeRates.historyView.fields.to')}
+                        </Label>
                         <Input
                             id="to"
                             type="date"
@@ -208,7 +243,7 @@ export function RateHistoryView() {
                         variant="outline"
                         onClick={handleReset}
                     >
-                        Limpiar Filtros
+                        {t('admin-billing.exchangeRates.historyView.clearFilters')}
                     </Button>
                 </div>
             </div>
@@ -219,11 +254,23 @@ export function RateHistoryView() {
                     <table className="w-full">
                         <thead className="border-b bg-muted/50">
                             <tr>
-                                <th className="px-4 py-3 text-left font-medium text-sm">Fecha</th>
-                                <th className="px-4 py-3 text-left font-medium text-sm">Par</th>
-                                <th className="px-4 py-3 text-left font-medium text-sm">Tasa</th>
-                                <th className="px-4 py-3 text-left font-medium text-sm">Tipo</th>
-                                <th className="px-4 py-3 text-left font-medium text-sm">Fuente</th>
+                                <th className="px-4 py-3 text-left font-medium text-sm">
+                                    {t('admin-billing.exchangeRates.historyView.tableHeaders.date')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium text-sm">
+                                    {t('admin-billing.exchangeRates.historyView.tableHeaders.pair')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium text-sm">
+                                    {t('admin-billing.exchangeRates.historyView.tableHeaders.rate')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium text-sm">
+                                    {t('admin-billing.exchangeRates.historyView.tableHeaders.type')}
+                                </th>
+                                <th className="px-4 py-3 text-left font-medium text-sm">
+                                    {t(
+                                        'admin-billing.exchangeRates.historyView.tableHeaders.source'
+                                    )}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -233,7 +280,7 @@ export function RateHistoryView() {
                                         colSpan={5}
                                         className="px-4 py-8 text-center text-muted-foreground"
                                     >
-                                        Cargando historial...
+                                        {t('admin-billing.exchangeRates.historyView.loading')}
                                     </td>
                                 </tr>
                             )}
@@ -244,10 +291,12 @@ export function RateHistoryView() {
                                         colSpan={5}
                                         className="px-4 py-8 text-center text-destructive"
                                     >
-                                        Error al cargar historial:{' '}
+                                        {t('admin-billing.exchangeRates.historyView.error')}{' '}
                                         {error instanceof Error
                                             ? error.message
-                                            : 'Error desconocido'}
+                                            : t(
+                                                  'admin-billing.exchangeRates.historyView.unknownError'
+                                              )}
                                     </td>
                                 </tr>
                             )}
@@ -258,7 +307,7 @@ export function RateHistoryView() {
                                         colSpan={5}
                                         className="px-4 py-8 text-center text-muted-foreground"
                                     >
-                                        No se encontraron registros
+                                        {t('admin-billing.exchangeRates.historyView.noRecords')}
                                     </td>
                                 </tr>
                             )}
@@ -273,13 +322,16 @@ export function RateHistoryView() {
                                         className="border-b hover:bg-muted/30"
                                     >
                                         <td className="px-4 py-3 text-sm">
-                                            {formatDate(new Date(rate.fetchedAt))}
+                                            {formatDateWithTime({
+                                                date: new Date(rate.fetchedAt),
+                                                locale
+                                            })}
                                         </td>
                                         <td className="px-4 py-3 font-medium text-sm">
                                             {rate.fromCurrency}/{rate.toCurrency}
                                         </td>
                                         <td className="px-4 py-3 font-mono text-sm">
-                                            {formatRate(rate.rate)}
+                                            {formatRate(rate.rate, locale)}
                                         </td>
                                         <td className="px-4 py-3 text-sm">
                                             {getRateTypeBadge(rate.rateType)}
@@ -296,7 +348,10 @@ export function RateHistoryView() {
                 {/* Pagination Info */}
                 {!isLoading && !error && history && history.length > 0 && (
                     <div className="border-t px-4 py-3 text-muted-foreground text-sm">
-                        Mostrando {history.length} registros
+                        {t('admin-billing.exchangeRates.historyView.showingCount').replace(
+                            '{n}',
+                            String(history.length)
+                        )}
                     </div>
                 )}
             </div>

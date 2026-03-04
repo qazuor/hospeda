@@ -17,6 +17,7 @@ import {
 } from '@/features/billing-settings';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDate } from '@repo/i18n';
 import { AlertCircleIcon, LoaderIcon, SaveIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { createFileRoute } from '@tanstack/react-router';
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/_authed/billing/settings')({
 });
 
 function BillingSettingsPage() {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const { addToast } = useToast();
     const [hasChanges, setHasChanges] = useState(false);
 
@@ -136,16 +137,16 @@ function BillingSettingsPage() {
                         </p>
                     </div>
 
-                    <Card className="border-red-200 bg-red-50">
+                    <Card className="border-destructive/30 bg-destructive/5">
                         <CardContent className="py-8">
                             <div className="flex items-start gap-3">
-                                <AlertCircleIcon className="mt-0.5 h-5 w-5 text-red-600" />
+                                <AlertCircleIcon className="mt-0.5 h-5 w-5 text-destructive" />
                                 <div>
-                                    <p className="font-medium text-red-900">
+                                    <p className="font-medium text-destructive">
                                         {t('admin-billing.settings.loadError')}
                                     </p>
-                                    <p className="mt-1 text-red-700 text-sm">{error.message}</p>
-                                    <p className="mt-2 text-red-700 text-sm">
+                                    <p className="mt-1 text-destructive text-sm">{error.message}</p>
+                                    <p className="mt-2 text-destructive text-sm">
                                         {t('admin-billing.settings.defaultFallback')}
                                     </p>
                                 </div>
@@ -192,9 +193,9 @@ function BillingSettingsPage() {
                 </div>
 
                 {!isApiAvailable && (
-                    <Card className="border-yellow-200 bg-yellow-50">
+                    <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950">
                         <CardContent className="py-4">
-                            <p className="text-sm text-yellow-800">
+                            <p className="text-sm text-yellow-800 dark:text-yellow-200">
                                 <strong>{t('admin-billing.settings.noteLabel')}</strong>{' '}
                                 {t('admin-billing.settings.apiUnavailable')}
                             </p>
@@ -435,9 +436,10 @@ function BillingSettingsPage() {
                             <Label>{t('admin-billing.settings.webhook.lastReceivedLabel')}</Label>
                             <p className="mt-2 text-sm">
                                 {settings?.webhook.lastWebhookReceivedAt
-                                    ? new Date(
-                                          settings.webhook.lastWebhookReceivedAt
-                                      ).toLocaleString('es-AR')
+                                    ? formatDate({
+                                          date: settings.webhook.lastWebhookReceivedAt,
+                                          locale
+                                      })
                                     : t('admin-billing.settings.webhook.none')}
                             </p>
                         </div>

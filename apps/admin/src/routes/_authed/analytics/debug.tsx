@@ -2,6 +2,7 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
 import { useMutation, useQueries, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -29,6 +30,7 @@ async function resetMetrics(): Promise<void> {
 }
 
 function AnalyticsDebugPage() {
+    const { t } = useTranslations();
     const queryClient = useQueryClient();
 
     const [healthQuery, dbHealthQuery] = useQueries({
@@ -64,21 +66,27 @@ function AnalyticsDebugPage() {
         <SidebarPageLayout titleKey="admin-pages.titles.analyticsDebug">
             <div className="space-y-6">
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">System Debug</h2>
-                    <p className="text-muted-foreground">Health checks and system diagnostics</p>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.analytics.debug.title')}
+                    </h2>
+                    <p className="text-muted-foreground">
+                        {t('admin-pages.analytics.debug.subtitle')}
+                    </p>
                 </div>
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Health Checks</CardTitle>
+                        <CardTitle>{t('admin-pages.analytics.debug.healthChecks')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">API Status</p>
+                                <p className="font-medium">
+                                    {t('admin-pages.analytics.debug.apiStatus')}
+                                </p>
                                 <p className="text-muted-foreground text-sm">
                                     {isLoading
-                                        ? 'Checking...'
+                                        ? t('admin-pages.analytics.debug.checking')
                                         : ((health?.version as string) ?? 'N/A')}
                                 </p>
                             </div>
@@ -89,8 +97,12 @@ function AnalyticsDebugPage() {
 
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium">Database Status</p>
-                                <p className="text-muted-foreground text-sm">Connection pool</p>
+                                <p className="font-medium">
+                                    {t('admin-pages.analytics.debug.dbStatus')}
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('admin-pages.analytics.debug.dbConnectionPool')}
+                                </p>
                             </div>
                             <Badge variant={dbStatus === 'healthy' ? 'default' : 'destructive'}>
                                 {isLoading ? '...' : (dbStatus ?? 'unknown')}
@@ -100,11 +112,15 @@ function AnalyticsDebugPage() {
                         {health?.uptime !== undefined && (
                             <div className="border-t pt-4">
                                 <p className="text-sm">
-                                    <span className="font-medium">Uptime:</span>{' '}
+                                    <span className="font-medium">
+                                        {t('admin-pages.analytics.debug.uptime')}
+                                    </span>{' '}
                                     {Math.floor((health.uptime as number) / 1000)}s
                                 </p>
                                 <p className="text-sm">
-                                    <span className="font-medium">Environment:</span>{' '}
+                                    <span className="font-medium">
+                                        {t('admin-pages.analytics.debug.environment')}
+                                    </span>{' '}
                                     {health.environment as string}
                                 </p>
                             </div>
@@ -114,20 +130,26 @@ function AnalyticsDebugPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>System Info</CardTitle>
+                        <CardTitle>{t('admin-pages.analytics.debug.systemInfo')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Node Version</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.analytics.debug.nodeVersion')}
+                                </span>
                                 <span className="font-mono">{process.version}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">Platform</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.analytics.debug.platform')}
+                                </span>
                                 <span className="font-mono">{navigator.platform}</span>
                             </div>
                             <div className="flex justify-between">
-                                <span className="text-muted-foreground">User Agent</span>
+                                <span className="text-muted-foreground">
+                                    {t('admin-pages.analytics.debug.userAgent')}
+                                </span>
                                 <span className="max-w-xs truncate font-mono text-xs">
                                     {navigator.userAgent.split(' ').slice(0, 2).join(' ')}
                                 </span>
@@ -138,25 +160,31 @@ function AnalyticsDebugPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Cache Management</CardTitle>
+                        <CardTitle>{t('admin-pages.analytics.debug.cacheManagement')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-2">
                             <p className="text-muted-foreground text-sm">
-                                Clear API metrics cache (development only)
+                                {t('admin-pages.analytics.debug.cacheClearDesc')}
                             </p>
                             <Button
                                 onClick={() => resetMutation.mutate()}
                                 disabled={resetMutation.isPending}
                                 variant="outline"
                             >
-                                {resetMutation.isPending ? 'Clearing...' : 'Clear Cache'}
+                                {resetMutation.isPending
+                                    ? t('admin-pages.analytics.debug.clearing')
+                                    : t('admin-pages.analytics.debug.clearCache')}
                             </Button>
                             {resetMutation.isSuccess && (
-                                <p className="text-green-600 text-sm">Cache cleared successfully</p>
+                                <p className="text-green-600 text-sm dark:text-green-400">
+                                    {t('admin-pages.analytics.debug.cacheCleared')}
+                                </p>
                             )}
                             {resetMutation.isError && (
-                                <p className="text-destructive text-sm">Failed to clear cache</p>
+                                <p className="text-destructive text-sm">
+                                    {t('admin-pages.analytics.debug.cacheClearError')}
+                                </p>
                             )}
                         </div>
                     </CardContent>

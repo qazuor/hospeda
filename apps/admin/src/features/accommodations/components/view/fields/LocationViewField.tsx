@@ -2,6 +2,7 @@ import { Icon } from '@/components/icons';
 import { Badge } from '@/components/ui-wrapped/Badge';
 import { Card } from '@/components/ui-wrapped/Card';
 import type { LocationFieldData } from '@/features/accommodations/types/accommodation-form.types';
+import { useTranslations } from '@/hooks/use-translations';
 
 /**
  * Props for LocationViewField component
@@ -26,6 +27,7 @@ export function LocationViewField({
     compact = false,
     className = ''
 }: LocationViewFieldProps) {
+    const { t } = useTranslations();
     const hasCoordinates = data.latitude && data.longitude;
 
     // Format coordinates for display
@@ -54,9 +56,9 @@ export function LocationViewField({
             <div className={`flex items-center space-x-2 ${className}`}>
                 <Icon
                     name="map-pin"
-                    className="h-4 w-4 flex-shrink-0 text-gray-500"
+                    className="h-4 w-4 flex-shrink-0 text-muted-foreground"
                 />
-                <span className="truncate text-gray-900 text-sm">{getFullAddress()}</span>
+                <span className="truncate text-foreground text-sm">{getFullAddress()}</span>
                 {data.destinationName && (
                     <Badge
                         variant="secondary"
@@ -77,11 +79,13 @@ export function LocationViewField({
                     <div className="flex items-center space-x-2">
                         <Icon
                             name="globe"
-                            className="h-5 w-5 text-blue-500"
+                            className="h-5 w-5 text-primary"
                         />
                         <div>
-                            <span className="font-medium text-gray-700 text-sm">Destination</span>
-                            <p className="text-gray-900 text-sm">{data.destinationName}</p>
+                            <span className="font-medium text-muted-foreground text-sm">
+                                {t('admin-pages.accommodations.location.destination')}
+                            </span>
+                            <p className="text-foreground text-sm">{data.destinationName}</p>
                         </div>
                     </div>
                 )}
@@ -90,16 +94,18 @@ export function LocationViewField({
                 <div className="flex items-start space-x-2">
                     <Icon
                         name="map-pin"
-                        className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500"
+                        className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400"
                     />
                     <div className="flex-1">
-                        <span className="font-medium text-gray-700 text-sm">Address</span>
+                        <span className="font-medium text-muted-foreground text-sm">
+                            {t('admin-pages.accommodations.location.address')}
+                        </span>
                         <div className="mt-1 space-y-1">
-                            <p className="text-gray-900 text-sm">{data.address}</p>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-foreground text-sm">{data.address}</p>
+                            <p className="text-muted-foreground text-sm">
                                 {data.city}, {data.state} {data.postalCode}
                             </p>
-                            <p className="text-gray-600 text-sm">{data.country}</p>
+                            <p className="text-muted-foreground text-sm">{data.country}</p>
                         </div>
                     </div>
                 </div>
@@ -109,10 +115,10 @@ export function LocationViewField({
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4">
                             <div>
-                                <span className="font-medium text-gray-500 text-xs uppercase tracking-wide">
-                                    Coordinates
+                                <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                                    {t('admin-pages.accommodations.location.coordinates')}
                                 </span>
-                                <p className="text-gray-900 text-sm">
+                                <p className="text-foreground text-sm">
                                     {data.latitude && data.longitude && (
                                         <>
                                             {formatCoordinate(data.latitude, 'lat')},{' '}
@@ -129,13 +135,13 @@ export function LocationViewField({
                                 href={getMapUrl() || undefined}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 text-xs shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                                className="inline-flex items-center rounded-md border border-border bg-background px-3 py-1.5 font-medium text-foreground text-xs shadow-sm hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             >
                                 <Icon
                                     name="map-pin"
                                     className="mr-1 h-3 w-3"
                                 />
-                                View on Map
+                                {t('admin-pages.accommodations.location.viewOnMap')}
                             </a>
                         )}
                     </div>
@@ -143,9 +149,11 @@ export function LocationViewField({
 
                 {/* Location Notes */}
                 {data.locationNotes && (
-                    <div className="border-gray-200 border-t pt-3">
-                        <span className="font-medium text-gray-700 text-sm">Notes</span>
-                        <p className="mt-1 text-gray-600 text-sm">{data.locationNotes}</p>
+                    <div className="border-border border-t pt-3">
+                        <span className="font-medium text-muted-foreground text-sm">
+                            {t('admin-pages.accommodations.location.notes')}
+                        </span>
+                        <p className="mt-1 text-muted-foreground text-sm">{data.locationNotes}</p>
                     </div>
                 )}
             </div>

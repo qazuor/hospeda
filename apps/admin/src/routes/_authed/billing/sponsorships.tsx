@@ -23,6 +23,7 @@ import type {
     SponsorshipPackage
 } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatCurrency } from '@repo/i18n';
 import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
 import { SponsorshipStatusEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -273,7 +274,7 @@ function SponsorshipsTab() {
                         <p className="text-muted-foreground">
                             {t('admin-billing.sponsorships.errors.loadSponsorships')}
                         </p>
-                        <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                        <p className="mt-2 text-destructive text-sm">{error.message}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -367,7 +368,7 @@ function SponsorshipsTab() {
  * Sponsorship Levels Tab
  */
 function SponsorshipLevelsTab() {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
@@ -379,10 +380,7 @@ function SponsorshipLevelsTab() {
     const toggleActiveMutation = useToggleLevelActiveMutation();
 
     const formatPrice = (amount: number) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS'
-        }).format(amount);
+        return formatCurrency({ value: amount, locale, currency: 'ARS' });
     };
 
     const columns: DataTableColumn<SponsorshipLevel>[] = [
@@ -503,7 +501,7 @@ function SponsorshipLevelsTab() {
                         <p className="text-muted-foreground">
                             {t('admin-billing.sponsorships.errors.loadLevels')}
                         </p>
-                        <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                        <p className="mt-2 text-destructive text-sm">{error.message}</p>
                     </div>
                 </CardContent>
             </Card>
@@ -545,7 +543,7 @@ function SponsorshipLevelsTab() {
  * Sponsorship Packages Tab
  */
 function SponsorshipPackagesTab() {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
 
@@ -557,10 +555,7 @@ function SponsorshipPackagesTab() {
     const toggleActiveMutation = useTogglePackageActiveMutation();
 
     const formatPrice = (amount: number) => {
-        return new Intl.NumberFormat('es-AR', {
-            style: 'currency',
-            currency: 'ARS'
-        }).format(amount);
+        return formatCurrency({ value: amount, locale, currency: 'ARS' });
     };
 
     const columns: DataTableColumn<SponsorshipPackage>[] = [
@@ -649,7 +644,7 @@ function SponsorshipPackagesTab() {
                         <p className="text-muted-foreground">
                             {t('admin-billing.sponsorships.errors.loadPackages')}
                         </p>
-                        <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                        <p className="mt-2 text-destructive text-sm">{error.message}</p>
                     </div>
                 </CardContent>
             </Card>

@@ -7,6 +7,8 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { formatCentsToArs, formatDateWithTime } from '@/lib/format-helpers';
+import { defaultIntlLocale } from '@repo/i18n';
 import { EyeIcon, MoreHorizontalIcon, PowerIcon, PowerOffIcon } from '@repo/icons';
 import type { PurchasedAddon } from './types';
 
@@ -19,43 +21,26 @@ export interface PurchasedAddonRowActions {
     onForceActivate: (addon: PurchasedAddon) => void;
 }
 
-/**
- * Format date to Spanish locale
- */
-function formatDate(dateString: string | null): string {
-    if (!dateString) return '—';
-
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(new Date(dateString));
-}
-
-/**
- * Format price in ARS
- */
-function formatPrice(cents: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(cents / 100);
+interface PurchasedAddonColumnsOptions {
+    actions?: PurchasedAddonRowActions;
+    /** Translation function from useTranslations hook */
+    t: (key: string) => string;
+    /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
+    locale?: string;
 }
 
 /**
  * Get DataTable columns for purchased add-ons list
  */
-export function getPurchasedAddonColumns(
-    actions?: PurchasedAddonRowActions
-): ReadonlyArray<DataTableColumn<PurchasedAddon>> {
+export function getPurchasedAddonColumns({
+    actions,
+    t,
+    locale = defaultIntlLocale
+}: PurchasedAddonColumnsOptions): ReadonlyArray<DataTableColumn<PurchasedAddon>> {
     const columns: DataTableColumn<PurchasedAddon>[] = [
         {
             id: 'customerEmail',
-            header: 'Cliente',
+            header: t('admin-billing.addons.purchasedColumns.customer'),
             accessorKey: 'customerEmail',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -70,7 +55,7 @@ export function getPurchasedAddonColumns(
         },
         {
             id: 'addon',
-            header: 'Add-on',
+            header: t('admin-billing.addons.purchasedColumns.addon'),
             accessorKey: 'addonSlug',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -83,45 +68,67 @@ export function getPurchasedAddonColumns(
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.addons.purchasedColumns.status'),
             accessorKey: 'status',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'active', label: 'Activo', color: BadgeColor.GREEN },
-                { value: 'expired', label: 'Expirado', color: BadgeColor.SECONDARY },
-                { value: 'cancelled', label: 'Cancelado', color: BadgeColor.RED }
+                {
+                    value: 'active',
+                    label: t('admin-billing.addons.purchasedStatuses.active'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'expired',
+                    label: t('admin-billing.addons.purchasedStatuses.expired'),
+                    color: BadgeColor.SECONDARY
+                },
+                {
+                    value: 'cancelled',
+                    label: t('admin-billing.addons.purchasedStatuses.cancelled'),
+                    color: BadgeColor.RED
+                }
             ]
         },
         {
             id: 'purchasedAt',
-            header: 'Fecha de Compra',
+            header: t('admin-billing.addons.purchasedColumns.purchasedAt'),
             accessorKey: 'purchasedAt',
             enableSorting: true,
             columnType: ColumnType.STRING,
-            cell: ({ row }) => <span className="text-sm">{formatDate(row.purchasedAt)}</span>
+            cell: ({ row }) => (
+                <span className="text-sm">
+                    {formatDateWithTime({ date: row.purchasedAt, locale })}
+                </span>
+            )
         },
         {
             id: 'expiresAt',
-            header: 'Fecha de Expiración',
+            header: t('admin-billing.addons.purchasedColumns.expiresAt'),
             accessorKey: 'expiresAt',
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <span className="text-sm">
-                    {row.expiresAt ? formatDate(row.expiresAt) : 'Sin expiración'}
+                    {row.expiresAt
+                        ? formatDateWithTime({ date: row.expiresAt, locale })
+                        : t('admin-billing.addons.purchasedColumns.noExpiry')}
                 </span>
             )
         },
         {
             id: 'price',
-            header: 'Precio',
+            header: t('admin-billing.addons.purchasedColumns.price'),
             enableSorting: true,
-            cell: ({ row }) => <span className="font-medium">{formatPrice(row.priceArs)}</span>
+            cell: ({ row }) => (
+                <span className="font-medium">
+                    {formatCentsToArs({ cents: row.priceArs, locale })}
+                </span>
+            )
         },
         {
             id: 'paymentId',
-            header: 'ID de Pago',
+            header: t('admin-billing.addons.purchasedColumns.paymentId'),
             accessorKey: 'paymentId',
             enableSorting: false,
             columnType: ColumnType.STRING,
@@ -137,7 +144,7 @@ export function getPurchasedAddonColumns(
     if (actions) {
         columns.push({
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.addons.purchasedColumns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -148,32 +155,34 @@ export function getPurchasedAddonColumns(
                             size="sm"
                             className="h-8 w-8 p-0"
                         >
-                            <span className="sr-only">Abrir menú</span>
+                            <span className="sr-only">
+                                {t('admin-billing.addons.purchasedColumns.openMenu')}
+                            </span>
                             <MoreHorizontalIcon className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => actions.onViewDetails(row)}>
                             <EyeIcon className="mr-2 h-4 w-4" />
-                            Ver detalles
+                            {t('admin-billing.addons.purchasedColumns.viewDetails')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {row.status === 'active' && (
                             <DropdownMenuItem
                                 onClick={() => actions.onForceExpire(row)}
-                                className="text-orange-600 focus:text-orange-600"
+                                className="text-orange-600 focus:text-orange-600 dark:text-orange-400"
                             >
                                 <PowerOffIcon className="mr-2 h-4 w-4" />
-                                Forzar expiración
+                                {t('admin-billing.addons.purchasedColumns.forceExpire')}
                             </DropdownMenuItem>
                         )}
                         {(row.status === 'expired' || row.status === 'cancelled') && (
                             <DropdownMenuItem
                                 onClick={() => actions.onForceActivate(row)}
-                                className="text-green-600 focus:text-green-600"
+                                className="text-green-600 focus:text-green-600 dark:text-green-400"
                             >
                                 <PowerIcon className="mr-2 h-4 w-4" />
-                                Forzar activación
+                                {t('admin-billing.addons.purchasedColumns.forceActivate')}
                             </DropdownMenuItem>
                         )}
                     </DropdownMenuContent>

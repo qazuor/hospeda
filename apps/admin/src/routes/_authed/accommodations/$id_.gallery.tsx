@@ -46,18 +46,23 @@ function AccommodationGalleryPage() {
                     </div>
                 ) : !featuredImage && galleryImages.length === 0 ? (
                     <p className="text-muted-foreground">
-                        No images available for this accommodation.
+                        {t('admin-pages.accommodations.gallery.noImages')}
                     </p>
                 ) : (
                     <div className="space-y-6">
                         {/* Featured Image */}
                         {featuredImage && (
                             <div className="space-y-2">
-                                <h3 className="font-semibold text-sm">Featured Image</h3>
+                                <h3 className="font-semibold text-sm">
+                                    {t('admin-pages.accommodations.gallery.featuredImage')}
+                                </h3>
                                 <div className="group relative overflow-hidden rounded-lg border">
                                     <img
                                         src={featuredImage.url}
-                                        alt={featuredImage.caption || 'Featured image'}
+                                        alt={
+                                            featuredImage.caption ||
+                                            t('admin-pages.accommodations.gallery.featuredImageAlt')
+                                        }
                                         className="aspect-video w-full object-cover"
                                     />
                                     {(featuredImage.caption || featuredImage.description) && (
@@ -82,8 +87,14 @@ function AccommodationGalleryPage() {
                         {galleryImages.length > 0 && (
                             <div className="space-y-2">
                                 <h3 className="font-semibold text-sm">
-                                    Gallery ({galleryImages.length}{' '}
-                                    {galleryImages.length === 1 ? 'image' : 'images'})
+                                    {t('admin-pages.accommodations.gallery.title')} (
+                                    {t(
+                                        galleryImages.length === 1
+                                            ? 'admin-common.gallery.imageCount_one'
+                                            : 'admin-common.gallery.imageCount_other',
+                                        { count: galleryImages.length }
+                                    )}
+                                    )
                                 </h3>
                                 <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                                     {galleryImages.map((image, index) => (
@@ -94,7 +105,13 @@ function AccommodationGalleryPage() {
                                         >
                                             <img
                                                 src={image.url}
-                                                alt={image.caption || `Gallery image ${index + 1}`}
+                                                alt={
+                                                    image.caption ||
+                                                    t(
+                                                        'admin-pages.accommodations.gallery.imageAlt',
+                                                        { index: String(index + 1) }
+                                                    )
+                                                }
                                                 className="aspect-video w-full object-cover"
                                             />
                                             {(image.caption || image.description) && (

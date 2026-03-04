@@ -7,6 +7,8 @@ import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSponsorSummaryQuery } from '@/features/sponsor-dashboard/hooks';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatCurrency, formatNumber } from '@repo/i18n';
 import {
     ActivityIcon,
     BarChartIcon,
@@ -21,6 +23,7 @@ export const Route = createFileRoute('/_authed/sponsor/')({
 });
 
 function SponsorDashboardPage() {
+    const { t, locale } = useTranslations();
     const { data: summary, isLoading, error } = useSponsorSummaryQuery();
 
     if (error) {
@@ -30,9 +33,9 @@ function SponsorDashboardPage() {
                     <CardContent className="py-8">
                         <div className="text-center">
                             <p className="text-muted-foreground">
-                                No se pudo cargar el resumen. Verifica que la API esté funcionando.
+                                {t('admin-pages.sponsor.dashboard.loadError')}
                             </p>
-                            <p className="mt-2 text-red-600 text-sm">{error.message}</p>
+                            <p className="mt-2 text-destructive text-sm">{error.message}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -45,39 +48,44 @@ function SponsorDashboardPage() {
             <div className="space-y-6">
                 {/* Page header */}
                 <div>
-                    <h2 className="mb-2 font-bold text-2xl">Panel de Patrocinio</h2>
+                    <h2 className="mb-2 font-bold text-2xl">
+                        {t('admin-pages.sponsor.dashboard.title')}
+                    </h2>
                     <p className="text-muted-foreground">
-                        Gestiona tus patrocinios y visualiza estadísticas
+                        {t('admin-pages.sponsor.dashboard.subtitle')}
                     </p>
                 </div>
 
                 {/* Summary cards */}
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <SummaryCard
-                        title="Patrocinios Activos"
+                        title={t('admin-pages.sponsor.dashboard.activeSponsorships')}
                         value={summary?.activeSponsorships || 0}
                         icon={<PackageIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
-                        title="Impresiones Totales"
-                        value={(summary?.totalImpressions || 0).toLocaleString('es-AR')}
+                        title={t('admin-pages.sponsor.dashboard.totalImpressions')}
+                        value={formatNumber({
+                            value: summary?.totalImpressions || 0,
+                            locale
+                        })}
                         icon={<ActivityIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
-                        title="Clicks Totales"
-                        value={(summary?.totalClicks || 0).toLocaleString('es-AR')}
+                        title={t('admin-pages.sponsor.dashboard.totalClicks')}
+                        value={formatNumber({ value: summary?.totalClicks || 0, locale })}
                         icon={<MousePointerClickIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
                     <SummaryCard
-                        title="Inversión"
-                        value={new Intl.NumberFormat('es-AR', {
-                            style: 'currency',
-                            currency: 'ARS',
-                            minimumFractionDigits: 0
-                        }).format(summary?.revenue || 0)}
+                        title={t('admin-pages.sponsor.dashboard.investment')}
+                        value={formatCurrency({
+                            value: summary?.revenue || 0,
+                            locale,
+                            currency: 'ARS'
+                        })}
                         icon={<TrendingUpIcon className="size-4 text-muted-foreground" />}
                         loading={isLoading}
                     />
@@ -86,9 +94,9 @@ function SponsorDashboardPage() {
                 {/* Quick actions */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Acciones rápidas</CardTitle>
+                        <CardTitle>{t('admin-pages.sponsor.dashboard.quickActions')}</CardTitle>
                         <CardDescription>
-                            Gestiona tus patrocinios y visualiza reportes
+                            {t('admin-pages.sponsor.dashboard.quickActionsDesc')}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -100,9 +108,11 @@ function SponsorDashboardPage() {
                                 >
                                     <PackageIcon className="size-5" />
                                     <div className="text-left">
-                                        <div className="font-semibold">Mis Patrocinios</div>
+                                        <div className="font-semibold">
+                                            {t('admin-pages.sponsor.dashboard.mySponsorships')}
+                                        </div>
                                         <div className="text-muted-foreground text-xs">
-                                            Ver y gestionar patrocinios
+                                            {t('admin-pages.sponsor.dashboard.mySponshorshipsDesc')}
                                         </div>
                                     </div>
                                 </Button>
@@ -115,9 +125,11 @@ function SponsorDashboardPage() {
                                 >
                                     <BarChartIcon className="size-5" />
                                     <div className="text-left">
-                                        <div className="font-semibold">Analíticas</div>
+                                        <div className="font-semibold">
+                                            {t('admin-pages.sponsor.dashboard.analytics')}
+                                        </div>
                                         <div className="text-muted-foreground text-xs">
-                                            Ver métricas de rendimiento
+                                            {t('admin-pages.sponsor.dashboard.analyticsDesc')}
                                         </div>
                                     </div>
                                 </Button>
@@ -130,9 +142,11 @@ function SponsorDashboardPage() {
                                 >
                                     <ActivityIcon className="size-5" />
                                     <div className="text-left">
-                                        <div className="font-semibold">Facturas</div>
+                                        <div className="font-semibold">
+                                            {t('admin-pages.sponsor.dashboard.invoices')}
+                                        </div>
                                         <div className="text-muted-foreground text-xs">
-                                            Consultar y descargar facturas
+                                            {t('admin-pages.sponsor.dashboard.invoicesDesc')}
                                         </div>
                                     </div>
                                 </Button>
@@ -144,16 +158,18 @@ function SponsorDashboardPage() {
                 {/* Recent activity */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Actividad reciente</CardTitle>
-                        <CardDescription>Últimos eventos de tus patrocinios</CardDescription>
+                        <CardTitle>{t('admin-pages.sponsor.dashboard.recentActivity')}</CardTitle>
+                        <CardDescription>
+                            {t('admin-pages.sponsor.dashboard.recentActivityDesc')}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="py-8 text-center">
                             <p className="text-muted-foreground text-sm">
-                                No hay actividad reciente
+                                {t('admin-pages.sponsor.dashboard.noRecentActivity')}
                             </p>
                             <p className="mt-2 text-muted-foreground text-xs">
-                                Requiere implementación de API de actividades
+                                {t('admin-pages.sponsor.dashboard.activityApiPending')}
                             </p>
                         </div>
                     </CardContent>

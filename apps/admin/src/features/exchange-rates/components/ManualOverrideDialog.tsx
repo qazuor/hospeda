@@ -23,6 +23,8 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatNumber } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -43,6 +45,7 @@ export function ManualOverrideDialog({
     isSubmitting = false
 }: ManualOverrideDialogProps) {
     const { addToast } = useToast();
+    const { t, locale } = useTranslations();
 
     const form = useForm({
         defaultValues: {
@@ -57,8 +60,12 @@ export function ManualOverrideDialog({
                 // Validate rate is positive
                 if (value.rate <= 0) {
                     addToast({
-                        title: 'Error de validación',
-                        message: 'La tasa debe ser un número positivo',
+                        title: t(
+                            'admin-billing.exchangeRates.manualOverrideDialog.validationError'
+                        ),
+                        message: t(
+                            'admin-billing.exchangeRates.manualOverrideDialog.validationRatePositive'
+                        ),
                         variant: 'error'
                     });
                     return;
@@ -80,8 +87,8 @@ export function ManualOverrideDialog({
                 await onSubmit(payload);
 
                 addToast({
-                    title: 'Override creado',
-                    message: `Override manual ${value.fromCurrency}/${value.toCurrency} creado correctamente`,
+                    title: t('admin-billing.exchangeRates.manualOverrideDialog.successTitle'),
+                    message: t('admin-billing.exchangeRates.manualOverrideDialog.successMessage'),
                     variant: 'success'
                 });
 
@@ -89,8 +96,11 @@ export function ManualOverrideDialog({
                 form.reset();
             } catch (error) {
                 addToast({
-                    title: 'Error',
-                    message: error instanceof Error ? error.message : 'Error al crear override',
+                    title: t('admin-billing.exchangeRates.manualOverrideDialog.errorTitle'),
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : t('admin-billing.exchangeRates.manualOverrideDialog.errorMessage'),
                     variant: 'error'
                 });
             }
@@ -105,7 +115,18 @@ export function ManualOverrideDialog({
     }, [open, form]);
 
     const rateValue = form.state.values.rate;
-    const inverseRate = rateValue > 0 ? (1 / rateValue).toFixed(6) : '0.000000';
+    const inverseRate =
+        rateValue > 0
+            ? formatNumber({
+                  value: 1 / rateValue,
+                  locale,
+                  options: { minimumFractionDigits: 6, maximumFractionDigits: 6 }
+              })
+            : formatNumber({
+                  value: 0,
+                  locale,
+                  options: { minimumFractionDigits: 6, maximumFractionDigits: 6 }
+              });
 
     return (
         <Dialog
@@ -114,9 +135,11 @@ export function ManualOverrideDialog({
         >
             <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Crear Override Manual</DialogTitle>
+                    <DialogTitle>
+                        {t('admin-billing.exchangeRates.manualOverrideDialog.title')}
+                    </DialogTitle>
                     <DialogDescription>
-                        Define una tasa de cambio manual que sobrescribirá las tasas automáticas
+                        {t('admin-billing.exchangeRates.manualOverrideDialog.description')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -130,14 +153,20 @@ export function ManualOverrideDialog({
                 >
                     {/* Currency Pair */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Par de monedas</h3>
+                        <h3 className="font-medium text-sm">
+                            {t(
+                                'admin-billing.exchangeRates.manualOverrideDialog.sections.currencyPair'
+                            )}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="fromCurrency">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="fromCurrency">
-                                            Moneda Origen{' '}
+                                            {t(
+                                                'admin-billing.exchangeRates.manualOverrideDialog.fields.fromCurrency'
+                                            )}{' '}
                                             <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
@@ -163,7 +192,9 @@ export function ManualOverrideDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="toCurrency">
-                                            Moneda Destino{' '}
+                                            {t(
+                                                'admin-billing.exchangeRates.manualOverrideDialog.fields.toCurrency'
+                                            )}{' '}
                                             <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
@@ -189,14 +220,21 @@ export function ManualOverrideDialog({
 
                     {/* Rate Details */}
                     <div className="space-y-4">
-                        <h3 className="font-medium text-sm">Detalles de la tasa</h3>
+                        <h3 className="font-medium text-sm">
+                            {t(
+                                'admin-billing.exchangeRates.manualOverrideDialog.sections.rateDetails'
+                            )}
+                        </h3>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <form.Field name="rate">
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="rate">
-                                            Tasa <span className="text-destructive">*</span>
+                                            {t(
+                                                'admin-billing.exchangeRates.manualOverrideDialog.fields.rate'
+                                            )}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Input
                                             id="rate"
@@ -216,7 +254,10 @@ export function ManualOverrideDialog({
                                             </p>
                                         )}
                                         <p className="mt-1 text-muted-foreground text-xs">
-                                            Tasa inversa: {inverseRate}
+                                            {t(
+                                                'admin-billing.exchangeRates.manualOverrideDialog.fields.inverseRateHint'
+                                            )}{' '}
+                                            {inverseRate}
                                         </p>
                                     </div>
                                 )}
@@ -226,7 +267,10 @@ export function ManualOverrideDialog({
                                 {(field) => (
                                     <div>
                                         <Label htmlFor="rateType">
-                                            Tipo de Tasa <span className="text-destructive">*</span>
+                                            {t(
+                                                'admin-billing.exchangeRates.manualOverrideDialog.fields.rateType'
+                                            )}{' '}
+                                            <span className="text-destructive">*</span>
                                         </Label>
                                         <Select
                                             value={field.state.value}
@@ -238,12 +282,32 @@ export function ManualOverrideDialog({
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="oficial">Oficial</SelectItem>
-                                                <SelectItem value="blue">Blue</SelectItem>
-                                                <SelectItem value="mep">MEP</SelectItem>
-                                                <SelectItem value="ccl">CCL</SelectItem>
-                                                <SelectItem value="tarjeta">Tarjeta</SelectItem>
-                                                <SelectItem value="standard">Standard</SelectItem>
+                                                <SelectItem value="oficial">
+                                                    {t(
+                                                        'admin-billing.exchangeRates.rateTypes.oficial'
+                                                    )}
+                                                </SelectItem>
+                                                <SelectItem value="blue">
+                                                    {t(
+                                                        'admin-billing.exchangeRates.rateTypes.blue'
+                                                    )}
+                                                </SelectItem>
+                                                <SelectItem value="mep">
+                                                    {t('admin-billing.exchangeRates.rateTypes.mep')}
+                                                </SelectItem>
+                                                <SelectItem value="ccl">
+                                                    {t('admin-billing.exchangeRates.rateTypes.ccl')}
+                                                </SelectItem>
+                                                <SelectItem value="tarjeta">
+                                                    {t(
+                                                        'admin-billing.exchangeRates.rateTypes.tarjeta'
+                                                    )}
+                                                </SelectItem>
+                                                <SelectItem value="standard">
+                                                    {t(
+                                                        'admin-billing.exchangeRates.rateTypes.standard'
+                                                    )}
+                                                </SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -254,7 +318,11 @@ export function ManualOverrideDialog({
                         <form.Field name="expiresAt">
                             {(field) => (
                                 <div>
-                                    <Label htmlFor="expiresAt">Expira En (opcional)</Label>
+                                    <Label htmlFor="expiresAt">
+                                        {t(
+                                            'admin-billing.exchangeRates.manualOverrideDialog.fields.expiresAt'
+                                        )}
+                                    </Label>
                                     <Input
                                         id="expiresAt"
                                         type="datetime-local"
@@ -263,7 +331,9 @@ export function ManualOverrideDialog({
                                         onBlur={field.handleBlur}
                                     />
                                     <p className="mt-1 text-muted-foreground text-xs">
-                                        Deja vacío para que no expire
+                                        {t(
+                                            'admin-billing.exchangeRates.manualOverrideDialog.fields.expiresAtHint'
+                                        )}
                                     </p>
                                 </div>
                             )}
@@ -277,14 +347,14 @@ export function ManualOverrideDialog({
                             onClick={() => onOpenChange(false)}
                             disabled={isSubmitting}
                         >
-                            Cancelar
+                            {t('admin-billing.exchangeRates.manualOverrideDialog.cancelButton')}
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting}
                         >
                             {isSubmitting && <LoaderIcon className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear Override
+                            {t('admin-billing.exchangeRates.manualOverrideDialog.createButton')}
                         </Button>
                     </DialogFooter>
                 </form>

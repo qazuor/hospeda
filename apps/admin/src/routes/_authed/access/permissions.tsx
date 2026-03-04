@@ -8,6 +8,8 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { ChevronDownIcon, ChevronRightIcon } from '@repo/icons';
 import { PermissionCategoryEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
@@ -27,6 +29,27 @@ function formatCategoryName(category: string): string {
         .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
         .join(' ');
 }
+
+// Internal group keys (not displayed directly, translated in render)
+const GROUP_KEYS = {
+    CONTENT_MANAGEMENT: 'Content Management',
+    USER_ACCESS: 'User & Access',
+    COMMERCE_BILLING: 'Commerce & Billing',
+    MARKETING_ADVERTISING: 'Marketing & Advertising',
+    SERVICES_LISTINGS: 'Services & Listings',
+    SYSTEM_CONFIGURATION: 'System & Configuration'
+} as const;
+
+type GroupKey = (typeof GROUP_KEYS)[keyof typeof GROUP_KEYS];
+
+const GROUP_TRANSLATION_KEYS: Record<GroupKey, TranslationKey> = {
+    'Content Management': 'admin-pages.access.permissions.groupContentManagement',
+    'User & Access': 'admin-pages.access.permissions.groupUserAccess',
+    'Commerce & Billing': 'admin-pages.access.permissions.groupCommerceBilling',
+    'Marketing & Advertising': 'admin-pages.access.permissions.groupMarketingAdvertising',
+    'Services & Listings': 'admin-pages.access.permissions.groupServicesListings',
+    'System & Configuration': 'admin-pages.access.permissions.groupSystemConfiguration'
+};
 
 /**
  * Group categories by domain for better organization
@@ -139,6 +162,7 @@ function groupCategories(categories: string[]): Record<string, string[]> {
 }
 
 function PermissionsPage() {
+    const { t } = useTranslations();
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
 
     const categories = Object.values(PermissionCategoryEnum);
@@ -157,10 +181,7 @@ function PermissionsPage() {
                 {/* Page description */}
                 <div className="rounded-lg border bg-muted/50 p-4">
                     <p className="text-muted-foreground text-sm">
-                        This page displays all permission categories available in the system.
-                        Permissions are organized by domain and control access to specific features
-                        and resources. Individual permission details are managed through role
-                        assignments.
+                        {t('admin-pages.access.permissions.pageDescription')}
                     </p>
                 </div>
 
@@ -168,33 +189,47 @@ function PermissionsPage() {
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="font-medium text-sm">Total Categories</CardTitle>
+                            <CardTitle className="font-medium text-sm">
+                                {t('admin-pages.access.permissions.totalCategories')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="font-bold text-2xl">{categories.length}</div>
-                            <p className="text-muted-foreground text-xs">Permission categories</p>
+                            <p className="text-muted-foreground text-xs">
+                                {t('admin-pages.access.permissions.permissionCategories')}
+                            </p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="font-medium text-sm">Domain Groups</CardTitle>
+                            <CardTitle className="font-medium text-sm">
+                                {t('admin-pages.access.permissions.domainGroups')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div className="font-bold text-2xl">
                                 {Object.keys(groupedCategories).length}
                             </div>
-                            <p className="text-muted-foreground text-xs">Functional domains</p>
+                            <p className="text-muted-foreground text-xs">
+                                {t('admin-pages.access.permissions.functionalDomains')}
+                            </p>
                         </CardContent>
                     </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="font-medium text-sm">Access Control</CardTitle>
+                            <CardTitle className="font-medium text-sm">
+                                {t('admin-pages.access.permissions.accessControl')}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="font-bold text-2xl">Fine-grained</div>
-                            <p className="text-muted-foreground text-xs">Permission model</p>
+                            <div className="font-bold text-2xl">
+                                {t('admin-pages.access.permissions.fineGrained')}
+                            </div>
+                            <p className="text-muted-foreground text-xs">
+                                {t('admin-pages.access.permissions.permissionModel')}
+                            </p>
                         </CardContent>
                     </Card>
                 </div>
@@ -203,6 +238,9 @@ function PermissionsPage() {
                 <div className="space-y-4">
                     {Object.entries(groupedCategories).map(([groupName, groupCategories]) => {
                         const isExpanded = expandedGroups[groupName] ?? true;
+                        const translationKey = (GROUP_TRANSLATION_KEYS[groupName as GroupKey] ??
+                            groupName) as TranslationKey;
+                        const translatedGroupName = t(translationKey);
 
                         return (
                             <Card key={groupName}>
@@ -217,7 +255,9 @@ function PermissionsPage() {
                                             ) : (
                                                 <ChevronRightIcon className="h-5 w-5 text-muted-foreground" />
                                             )}
-                                            <CardTitle className="text-lg">{groupName}</CardTitle>
+                                            <CardTitle className="text-lg">
+                                                {translatedGroupName}
+                                            </CardTitle>
                                         </div>
                                         <Badge variant="secondary">{groupCategories.length}</Badge>
                                     </div>
@@ -248,9 +288,8 @@ function PermissionsPage() {
                 {/* Info note */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
                     <p className="text-blue-900 text-sm dark:text-blue-100">
-                        <strong>Note:</strong> Individual permission details and their assignments
-                        to roles are available in the Roles page. Users inherit permissions based on
-                        their assigned role.
+                        <strong>{t('admin-pages.access.permissions.infoNote')}:</strong>{' '}
+                        {t('admin-pages.access.permissions.infoNoteDesc')}
                     </p>
                 </div>
             </div>

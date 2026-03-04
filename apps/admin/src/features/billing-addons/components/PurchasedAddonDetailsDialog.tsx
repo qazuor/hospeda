@@ -11,6 +11,8 @@ import {
     DialogHeader,
     DialogTitle
 } from '@/components/ui/dialog';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatCentsToArs, formatDateWithTime } from '@/lib/format-helpers';
 import type { PurchasedAddon } from '../types';
 
 interface PurchasedAddonDetailsDialogProps {
@@ -20,45 +22,18 @@ interface PurchasedAddonDetailsDialogProps {
 }
 
 /**
- * Format date to Spanish locale
+ * Get status badge variant based on status value
  */
-function formatDate(dateString: string | null): string {
-    if (!dateString) return '—';
-
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    }).format(new Date(dateString));
-}
-
-/**
- * Format price in ARS
- */
-function formatPrice(cents: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(cents / 100);
-}
-
-/**
- * Get status badge variant
- */
-function getStatusBadge(status: string) {
+function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' {
     switch (status) {
         case 'active':
-            return { label: 'Activo', variant: 'default' as const };
+            return 'default';
         case 'expired':
-            return { label: 'Expirado', variant: 'secondary' as const };
+            return 'secondary';
         case 'cancelled':
-            return { label: 'Cancelado', variant: 'destructive' as const };
+            return 'destructive';
         default:
-            return { label: status, variant: 'default' as const };
+            return 'default';
     }
 }
 
@@ -67,9 +42,12 @@ export function PurchasedAddonDetailsDialog({
     open,
     onOpenChange
 }: PurchasedAddonDetailsDialogProps) {
+    const { t, locale } = useTranslations();
+
     if (!addon) return null;
 
-    const statusBadge = getStatusBadge(addon.status);
+    const statusLabel = t(`admin-billing.addons.purchasedStatuses.${addon.status}`) || addon.status;
+    const statusVariant = getStatusVariant(addon.status);
 
     return (
         <Dialog
@@ -78,30 +56,38 @@ export function PurchasedAddonDetailsDialog({
         >
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                    <DialogTitle>Detalles del Add-on Comprado</DialogTitle>
+                    <DialogTitle>{t('admin-billing.addons.detailsDialog.title')}</DialogTitle>
                     <DialogDescription>
-                        Información completa del add-on adquirido por el cliente
+                        {t('admin-billing.addons.detailsDialog.description')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-6">
                     {/* Customer Info */}
                     <div>
-                        <h3 className="mb-3 font-medium text-sm">Información del Cliente</h3>
+                        <h3 className="mb-3 font-medium text-sm">
+                            {t('admin-billing.addons.detailsDialog.customerSection')}
+                        </h3>
                         <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                             <div className="grid gap-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Email:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.emailLabel')}
+                                    </span>
                                     <span className="font-medium">{addon.customerEmail}</span>
                                 </div>
                                 {addon.customerName && (
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">Nombre:</span>
+                                        <span className="text-muted-foreground">
+                                            {t('admin-billing.addons.detailsDialog.nameLabel')}
+                                        </span>
                                         <span className="font-medium">{addon.customerName}</span>
                                     </div>
                                 )}
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Customer ID:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.customerIdLabel')}
+                                    </span>
                                     <span className="font-mono text-xs">{addon.customerId}</span>
                                 </div>
                             </div>
@@ -110,20 +96,28 @@ export function PurchasedAddonDetailsDialog({
 
                     {/* Add-on Info */}
                     <div>
-                        <h3 className="mb-3 font-medium text-sm">Información del Add-on</h3>
+                        <h3 className="mb-3 font-medium text-sm">
+                            {t('admin-billing.addons.detailsDialog.addonSection')}
+                        </h3>
                         <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                             <div className="grid gap-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Nombre:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.addonNameLabel')}
+                                    </span>
                                     <span className="font-medium">{addon.addonName}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Slug:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.addonSlugLabel')}
+                                    </span>
                                     <span className="font-mono text-xs">{addon.addonSlug}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Estado:</span>
-                                    <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.statusLabel')}
+                                    </span>
+                                    <Badge variant={statusVariant}>{statusLabel}</Badge>
                                 </div>
                             </div>
                         </div>
@@ -131,30 +125,42 @@ export function PurchasedAddonDetailsDialog({
 
                     {/* Purchase Info */}
                     <div>
-                        <h3 className="mb-3 font-medium text-sm">Información de Compra</h3>
+                        <h3 className="mb-3 font-medium text-sm">
+                            {t('admin-billing.addons.detailsDialog.purchaseSection')}
+                        </h3>
                         <div className="space-y-2 rounded-lg border bg-muted/50 p-4">
                             <div className="grid gap-2 text-sm">
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Precio:</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.priceLabel')}
+                                    </span>
                                     <span className="font-semibold">
-                                        {formatPrice(addon.priceArs)}
+                                        {formatCentsToArs({ cents: addon.priceArs, locale })}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-muted-foreground">Fecha de compra:</span>
-                                    <span>{formatDate(addon.purchasedAt)}</span>
+                                    <span className="text-muted-foreground">
+                                        {t('admin-billing.addons.detailsDialog.purchasedAtLabel')}
+                                    </span>
+                                    <span>
+                                        {formatDateWithTime({ date: addon.purchasedAt, locale })}
+                                    </span>
                                 </div>
                                 {addon.expiresAt && (
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground">
-                                            Fecha de expiración:
+                                            {t('admin-billing.addons.detailsDialog.expiresAtLabel')}
                                         </span>
-                                        <span>{formatDate(addon.expiresAt)}</span>
+                                        <span>
+                                            {formatDateWithTime({ date: addon.expiresAt, locale })}
+                                        </span>
                                     </div>
                                 )}
                                 {addon.paymentId && (
                                     <div className="flex justify-between">
-                                        <span className="text-muted-foreground">ID de Pago:</span>
+                                        <span className="text-muted-foreground">
+                                            {t('admin-billing.addons.detailsDialog.paymentIdLabel')}
+                                        </span>
                                         <span className="font-mono text-xs">{addon.paymentId}</span>
                                     </div>
                                 )}
@@ -165,7 +171,9 @@ export function PurchasedAddonDetailsDialog({
                     {/* Record ID */}
                     <div className="rounded-lg border border-dashed bg-muted/30 p-3">
                         <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">ID del registro:</span>
+                            <span className="text-muted-foreground">
+                                {t('admin-billing.addons.detailsDialog.recordIdLabel')}
+                            </span>
                             <span className="font-mono">{addon.id}</span>
                         </div>
                     </div>

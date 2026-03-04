@@ -1,22 +1,27 @@
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { formatCentsToArs, formatShortDate } from '@/lib/format-helpers';
+import { defaultIntlLocale } from '@repo/i18n';
 import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import type { PlanCategory, PromoCode } from './types';
 
 /**
  * Format discount value based on type
+ *
+ * @param type - Discount type: 'percentage' or 'fixed'
+ * @param value - Discount value
+ * @param locale - BCP 47 locale string (e.g. 'es-AR', 'en-US')
  */
-function formatDiscount(type: 'percentage' | 'fixed', value: number): string {
+function formatDiscount(
+    type: 'percentage' | 'fixed',
+    value: number,
+    locale: string = defaultIntlLocale
+): string {
     if (type === 'percentage') {
         return `${value}%`;
     }
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(value / 100);
+    return formatCentsToArs({ cents: value, locale });
 }
 
 /**
@@ -26,60 +31,66 @@ function formatUsage(used: number, max: number | null): string {
     return max ? `${used} / ${max}` : `${used} / ∞`;
 }
 
-/**
- * Format date range
- */
-function formatDateRange(from: Date, until: Date | null): string {
-    const fromStr = from.toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    if (!until) {
-        return `Desde ${fromStr}`;
-    }
-    const untilStr = until.toLocaleDateString('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    });
-    return `${fromStr} - ${untilStr}`;
-}
-
-/**
- * Get plan label
- */
-function getPlanLabel(plan: PlanCategory): string {
-    switch (plan) {
-        case 'owner':
-            return 'Propietario';
-        case 'complex':
-            return 'Complejo';
-        case 'tourist':
-            return 'Turista';
-    }
-}
-
 interface PromoCodeColumnsOptions {
     onEdit?: (promoCode: PromoCode) => void;
     onToggleActive?: (id: string, isActive: boolean) => void;
     onDelete?: (promoCode: PromoCode) => void;
     isTogglingActive?: boolean;
     isDeleting?: boolean;
+    /** Translation function from useTranslations hook */
+    t: (key: string) => string;
+    /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
+    locale?: string;
 }
 
 /**
  * Get DataTable columns for promo codes list
  */
 export function getPromoCodeColumns(
-    options: PromoCodeColumnsOptions = {}
+    options: PromoCodeColumnsOptions
 ): ReadonlyArray<DataTableColumn<PromoCode>> {
-    const { onEdit, onToggleActive, onDelete, isTogglingActive, isDeleting } = options;
+    const {
+        onEdit,
+        onToggleActive,
+        onDelete,
+        isTogglingActive,
+        isDeleting,
+        t,
+        locale = defaultIntlLocale
+    } = options;
+
+    /**
+     * Get plan label using translations
+     */
+    const getPlanLabel = (plan: PlanCategory): string => {
+        switch (plan) {
+            case 'owner':
+                return t('admin-billing.promoCodes.planLabels.owner');
+            case 'complex':
+                return t('admin-billing.promoCodes.planLabels.complex');
+            case 'tourist':
+                return t('admin-billing.promoCodes.planLabels.tourist');
+        }
+    };
+
+    /**
+     * Format date range using translation patterns
+     */
+    const formatDateRange = (from: Date, until: Date | null): string => {
+        const fromStr = formatShortDate({ date: from, locale });
+        if (!until) {
+            return t('admin-billing.promoCodes.columns.validFrom').replace('{date}', fromStr);
+        }
+        const untilStr = formatShortDate({ date: until, locale });
+        return t('admin-billing.promoCodes.columns.validRange')
+            .replace('{from}', fromStr)
+            .replace('{until}', untilStr);
+    };
 
     return [
         {
             id: 'code',
-            header: 'Código',
+            header: t('admin-billing.promoCodes.columns.code'),
             accessorKey: 'code',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -92,28 +103,38 @@ export function getPromoCodeColumns(
         },
         {
             id: 'type',
-            header: 'Tipo',
+            header: t('admin-billing.promoCodes.columns.type'),
             accessorKey: 'type',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'percentage', label: 'Porcentaje', color: BadgeColor.BLUE },
-                { value: 'fixed', label: 'Monto Fijo', color: BadgeColor.PURPLE }
+                {
+                    value: 'percentage',
+                    label: t('admin-billing.promoCodes.typeLabels.percentage'),
+                    color: BadgeColor.BLUE
+                },
+                {
+                    value: 'fixed',
+                    label: t('admin-billing.promoCodes.typeLabels.fixed'),
+                    color: BadgeColor.PURPLE
+                }
             ]
         },
         {
             id: 'discount',
-            header: 'Descuento',
+            header: t('admin-billing.promoCodes.columns.discount'),
             accessorKey: 'discountValue',
             enableSorting: true,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
-                <span className="font-semibold">{formatDiscount(row.type, row.discountValue)}</span>
+                <span className="font-semibold">
+                    {formatDiscount(row.type, row.discountValue, locale)}
+                </span>
             )
         },
         {
             id: 'usage',
-            header: 'Usos',
+            header: t('admin-billing.promoCodes.columns.usage'),
             accessorKey: 'usedCount',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -125,7 +146,7 @@ export function getPromoCodeColumns(
         },
         {
             id: 'validity',
-            header: 'Vigencia',
+            header: t('admin-billing.promoCodes.columns.validity'),
             accessorKey: 'validFrom',
             enableSorting: true,
             columnType: ColumnType.STRING,
@@ -135,14 +156,16 @@ export function getPromoCodeColumns(
         },
         {
             id: 'plans',
-            header: 'Planes',
+            header: t('admin-billing.promoCodes.columns.plans'),
             accessorKey: 'applicablePlans',
             enableSorting: false,
             columnType: ColumnType.STRING,
             cell: ({ row }) => (
                 <div className="flex flex-wrap gap-1">
                     {row.applicablePlans.length === 3 ? (
-                        <Badge variant="secondary">Todos</Badge>
+                        <Badge variant="secondary">
+                            {t('admin-billing.promoCodes.columns.allPlans')}
+                        </Badge>
                     ) : (
                         row.applicablePlans.map((plan) => (
                             <Badge
@@ -158,7 +181,7 @@ export function getPromoCodeColumns(
         },
         {
             id: 'features',
-            header: 'Características',
+            header: t('admin-billing.promoCodes.columns.features'),
             enableSorting: false,
             cell: ({ row }) => (
                 <div className="flex flex-wrap gap-1">
@@ -167,7 +190,7 @@ export function getPromoCodeColumns(
                             variant="outline"
                             className="text-xs"
                         >
-                            Acumulable
+                            {t('admin-billing.promoCodes.columns.stackable')}
                         </Badge>
                     )}
                     {row.requiresFirstPurchase && (
@@ -175,7 +198,7 @@ export function getPromoCodeColumns(
                             variant="outline"
                             className="text-xs"
                         >
-                            Primera compra
+                            {t('admin-billing.promoCodes.columns.firstPurchase')}
                         </Badge>
                     )}
                     {row.minimumAmount && (
@@ -183,7 +206,7 @@ export function getPromoCodeColumns(
                             variant="outline"
                             className="text-xs"
                         >
-                            Mínimo
+                            {t('admin-billing.promoCodes.columns.minimum')}
                         </Badge>
                     )}
                 </div>
@@ -191,19 +214,31 @@ export function getPromoCodeColumns(
         },
         {
             id: 'status',
-            header: 'Estado',
+            header: t('admin-billing.promoCodes.columns.status'),
             accessorKey: 'status',
             enableSorting: true,
             columnType: ColumnType.BADGE,
             badgeOptions: [
-                { value: 'active', label: 'Activo', color: BadgeColor.GREEN },
-                { value: 'expired', label: 'Expirado', color: BadgeColor.GRAY },
-                { value: 'inactive', label: 'Inactivo', color: BadgeColor.RED }
+                {
+                    value: 'active',
+                    label: t('admin-billing.promoCodes.columns.statusActive'),
+                    color: BadgeColor.GREEN
+                },
+                {
+                    value: 'expired',
+                    label: t('admin-billing.promoCodes.columns.statusExpired'),
+                    color: BadgeColor.GRAY
+                },
+                {
+                    value: 'inactive',
+                    label: t('admin-billing.promoCodes.columns.statusInactive'),
+                    color: BadgeColor.RED
+                }
             ]
         },
         {
             id: 'actions',
-            header: 'Acciones',
+            header: t('admin-billing.promoCodes.columns.actions'),
             enableSorting: false,
             enableHiding: false,
             cell: ({ row }) => (
@@ -214,10 +249,16 @@ export function getPromoCodeColumns(
                             size="sm"
                             onClick={() => onToggleActive(row.id, !row.isActive)}
                             disabled={isTogglingActive}
-                            title={row.isActive ? 'Desactivar' : 'Activar'}
+                            title={
+                                row.isActive
+                                    ? t('admin-billing.promoCodes.actionDeactivate')
+                                    : t('admin-billing.promoCodes.actionActivate')
+                            }
                         >
                             <PowerIcon className="mr-1 h-3 w-3" />
-                            {row.isActive ? 'Desactivar' : 'Activar'}
+                            {row.isActive
+                                ? t('admin-billing.promoCodes.actionDeactivate')
+                                : t('admin-billing.promoCodes.actionActivate')}
                         </Button>
                     )}
                     {onEdit && (
@@ -225,10 +266,10 @@ export function getPromoCodeColumns(
                             variant="outline"
                             size="sm"
                             onClick={() => onEdit(row)}
-                            title="Editar"
+                            title={t('admin-billing.promoCodes.actionEdit')}
                         >
                             <EditIcon className="mr-1 h-3 w-3" />
-                            Editar
+                            {t('admin-billing.promoCodes.actionEdit')}
                         </Button>
                     )}
                     {onDelete && (
@@ -237,10 +278,10 @@ export function getPromoCodeColumns(
                             size="sm"
                             onClick={() => onDelete(row)}
                             disabled={isDeleting}
-                            title="Eliminar"
+                            title={t('admin-billing.promoCodes.actionDelete')}
                         >
                             <DeleteIcon className="mr-1 h-3 w-3" />
-                            Eliminar
+                            {t('admin-billing.promoCodes.actionDelete')}
                         </Button>
                     )}
                 </div>

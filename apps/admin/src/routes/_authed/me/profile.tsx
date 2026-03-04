@@ -13,7 +13,7 @@ import { useUserDisplayName, useUserInitials } from '@/hooks/use-auth';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { useSession } from '@/lib/auth-client';
+import { formatDate } from '@repo/i18n';
 import {
     FacebookIcon,
     InstagramIcon,
@@ -42,15 +42,16 @@ function ProfileField({
     readonly value: string | null | undefined;
     readonly type?: 'text' | 'email' | 'url' | 'date';
 }) {
+    const { t, locale } = useTranslations();
     const formattedValue = (() => {
         if (!value) return null;
 
         if (type === 'date') {
             try {
-                return new Date(value).toLocaleDateString('es-AR', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
+                return formatDate({
+                    date: value,
+                    locale,
+                    options: { year: 'numeric', month: 'long', day: 'numeric' }
                 });
             } catch {
                 return value;
@@ -62,7 +63,11 @@ function ProfileField({
 
     const renderValue = () => {
         if (!formattedValue) {
-            return <span className="text-muted-foreground text-sm italic">Not set</span>;
+            return (
+                <span className="text-muted-foreground text-sm italic">
+                    {t('admin-pages.profile.fieldNotSet')}
+                </span>
+            );
         }
 
         if (type === 'email') {
@@ -152,11 +157,12 @@ function SocialLink({
     readonly url: string | null | undefined;
     readonly icon: ReactNode;
 }) {
+    const { t } = useTranslations();
     if (!url) {
         return (
             <div className="flex items-center gap-2 text-muted-foreground">
                 {icon}
-                <span className="text-sm italic">Not set</span>
+                <span className="text-sm italic">{t('admin-pages.profile.social.notSet')}</span>
             </div>
         );
     }
@@ -175,9 +181,8 @@ function SocialLink({
 }
 
 function MyProfilePage() {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const { user: authUser } = useAuthContext();
-    const { data: session } = useSession();
     const displayName = useUserDisplayName();
     const initials = useUserInitials();
 
@@ -231,14 +236,14 @@ function MyProfilePage() {
                     <Card>
                         <CardContent className="py-12 text-center">
                             <p className="mb-2 font-medium text-destructive">
-                                Failed to load profile
+                                {t('admin-pages.profile.loadError')}
                             </p>
                             <p className="mb-4 text-muted-foreground text-sm">{error.message}</p>
                             <Button
                                 variant="outline"
                                 onClick={() => refetch()}
                             >
-                                Retry
+                                {t('admin-pages.profile.retry')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -247,9 +252,9 @@ function MyProfilePage() {
         );
     }
 
-    const avatarUrl = session?.user?.image ?? profile?.avatarUrl;
-    const email = session?.user?.email ?? authUser?.email ?? profile?.email;
-    const emailVerified = session?.user?.emailVerified ?? false;
+    const avatarUrl = authUser?.avatar ?? profile?.avatarUrl;
+    const email = authUser?.email ?? profile?.email;
+    const emailVerified = authUser?.emailVerified ?? false;
     const role = authUser?.role ?? profile?.role;
     const permissions = authUser?.permissions ?? profile?.permissions ?? [];
 
@@ -297,14 +302,14 @@ function MyProfilePage() {
                                             variant="outline"
                                             className="gap-1 border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
                                         >
-                                            Email verified
+                                            {t('admin-pages.profile.emailVerified')}
                                         </Badge>
                                     ) : (
                                         <Badge
                                             variant="outline"
                                             className="gap-1 border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
                                         >
-                                            Email not verified
+                                            {t('admin-pages.profile.emailNotVerified')}
                                         </Badge>
                                     )}
                                 </div>
@@ -317,64 +322,64 @@ function MyProfilePage() {
                 <div className="grid gap-6 md:grid-cols-2">
                     {/* Personal info */}
                     <ProfileSection
-                        title="Personal Information"
-                        subtitle="Your account details"
+                        title={t('admin-pages.profile.personalInfo.title')}
+                        subtitle={t('admin-pages.profile.personalInfo.subtitle')}
                         icon={<UserIcon className="h-5 w-5 text-blue-500" />}
-                        iconColorClass="bg-blue-500/10"
+                        iconColorClass="bg-blue-500/10 dark:bg-blue-400/10"
                     >
                         <ProfileField
-                            label="Display Name"
+                            label={t('admin-pages.profile.personalInfo.displayName')}
                             value={profile?.displayName}
                         />
                         <ProfileField
-                            label="First Name"
+                            label={t('admin-pages.profile.personalInfo.firstName')}
                             value={profile?.firstName}
                         />
                         <ProfileField
-                            label="Last Name"
+                            label={t('admin-pages.profile.personalInfo.lastName')}
                             value={profile?.lastName}
                         />
                         <ProfileField
-                            label="Birth Date"
+                            label={t('admin-pages.profile.personalInfo.birthDate')}
                             value={profile?.birthDate?.toString()}
                             type="date"
                         />
                         <ProfileField
-                            label="Slug"
+                            label={t('admin-pages.profile.personalInfo.slug')}
                             value={profile?.slug}
                         />
                         <ProfileField
-                            label="Bio"
+                            label={t('admin-pages.profile.personalInfo.bio')}
                             value={profile?.profile?.bio}
                         />
                         <ProfileField
-                            label="Occupation"
+                            label={t('admin-pages.profile.personalInfo.occupation')}
                             value={profile?.profile?.occupation}
                         />
                     </ProfileSection>
 
                     {/* Contact info */}
                     <ProfileSection
-                        title="Contact Information"
-                        subtitle="Your contact details"
-                        icon={<MailIcon className="h-5 w-5 text-green-500" />}
-                        iconColorClass="bg-green-500/10"
+                        title={t('admin-pages.profile.contactInfo.title')}
+                        subtitle={t('admin-pages.profile.contactInfo.subtitle')}
+                        icon={<MailIcon className="h-5 w-5 text-green-500 dark:text-green-400" />}
+                        iconColorClass="bg-green-500/10 dark:bg-green-400/10"
                     >
                         <ProfileField
-                            label="Email"
+                            label={t('admin-pages.profile.contactInfo.email')}
                             value={email}
                             type="email"
                         />
                         <ProfileField
-                            label="Phone"
+                            label={t('admin-pages.profile.contactInfo.phone')}
                             value={profile?.phone}
                         />
                         <ProfileField
-                            label="Phone (Secondary)"
+                            label={t('admin-pages.profile.contactInfo.phoneSecondary')}
                             value={profile?.phoneSecondary}
                         />
                         <ProfileField
-                            label="Website"
+                            label={t('admin-pages.profile.contactInfo.website')}
                             value={profile?.website}
                             type="url"
                         />
@@ -382,66 +387,68 @@ function MyProfilePage() {
 
                     {/* Location */}
                     <ProfileSection
-                        title="Location"
-                        subtitle="Your address information"
-                        icon={<LocationIcon className="h-5 w-5 text-purple-500" />}
-                        iconColorClass="bg-purple-500/10"
+                        title={t('admin-pages.profile.location.title')}
+                        subtitle={t('admin-pages.profile.location.subtitle')}
+                        icon={
+                            <LocationIcon className="h-5 w-5 text-purple-500 dark:text-purple-400" />
+                        }
+                        iconColorClass="bg-purple-500/10 dark:bg-purple-400/10"
                     >
                         <ProfileField
-                            label="Address Line 1"
+                            label={t('admin-pages.profile.location.addressLine1')}
                             value={profile?.addressLine1}
                         />
                         <ProfileField
-                            label="Address Line 2"
+                            label={t('admin-pages.profile.location.addressLine2')}
                             value={profile?.addressLine2}
                         />
                         <ProfileField
-                            label="City"
+                            label={t('admin-pages.profile.location.city')}
                             value={profile?.city}
                         />
                         <ProfileField
-                            label="Province"
+                            label={t('admin-pages.profile.location.province')}
                             value={profile?.province}
                         />
                         <ProfileField
-                            label="Country"
+                            label={t('admin-pages.profile.location.country')}
                             value={profile?.country}
                         />
                         <ProfileField
-                            label="Postal Code"
+                            label={t('admin-pages.profile.location.postalCode')}
                             value={profile?.postalCode}
                         />
                     </ProfileSection>
 
                     {/* Social Networks */}
                     <ProfileSection
-                        title="Social Networks"
-                        subtitle="Your social media links"
-                        icon={<WebIcon className="h-5 w-5 text-indigo-500" />}
-                        iconColorClass="bg-indigo-500/10"
+                        title={t('admin-pages.profile.social.title')}
+                        subtitle={t('admin-pages.profile.social.subtitle')}
+                        icon={<WebIcon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />}
+                        iconColorClass="bg-indigo-500/10 dark:bg-indigo-400/10"
                     >
                         <SocialLink
-                            label="Facebook"
+                            label={t('admin-pages.profile.social.facebook')}
                             url={profile?.facebookUrl}
                             icon={<FacebookIcon className="h-4 w-4" />}
                         />
                         <SocialLink
-                            label="Instagram"
+                            label={t('admin-pages.profile.social.instagram')}
                             url={profile?.instagramUrl}
                             icon={<InstagramIcon className="h-4 w-4" />}
                         />
                         <SocialLink
-                            label="Twitter"
+                            label={t('admin-pages.profile.social.twitter')}
                             url={profile?.twitterUrl}
                             icon={<WebIcon className="h-4 w-4" />}
                         />
                         <SocialLink
-                            label="LinkedIn"
+                            label={t('admin-pages.profile.social.linkedin')}
                             url={profile?.linkedinUrl}
                             icon={<WebIcon className="h-4 w-4" />}
                         />
                         <SocialLink
-                            label="YouTube"
+                            label={t('admin-pages.profile.social.youtube')}
                             url={profile?.youtubeUrl}
                             icon={<WebIcon className="h-4 w-4" />}
                         />
@@ -450,43 +457,46 @@ function MyProfilePage() {
 
                 {/* Account Security */}
                 <ProfileSection
-                    title="Account Security"
-                    subtitle="Authentication and permissions"
-                    icon={<ShieldIcon className="h-5 w-5 text-amber-500" />}
-                    iconColorClass="bg-amber-500/10"
+                    title={t('admin-pages.profile.security.title')}
+                    subtitle={t('admin-pages.profile.security.subtitle')}
+                    icon={<ShieldIcon className="h-5 w-5 text-amber-500 dark:text-amber-400" />}
+                    iconColorClass="bg-amber-500/10 dark:bg-amber-400/10"
                 >
                     <div className="grid gap-3 sm:grid-cols-2">
                         <div>
                             <span className="mb-1 block font-medium text-muted-foreground text-xs uppercase">
-                                Email Verified
+                                {t('admin-pages.profile.security.emailVerified')}
                             </span>
                             {emailVerified ? (
                                 <Badge
                                     variant="outline"
                                     className="border-green-300 text-green-700 dark:border-green-700 dark:text-green-400"
                                 >
-                                    Verified
+                                    {t('admin-pages.profile.security.verified')}
                                 </Badge>
                             ) : (
                                 <Badge
                                     variant="outline"
                                     className="border-amber-300 text-amber-700 dark:border-amber-700 dark:text-amber-400"
                                 >
-                                    Not verified
+                                    {t('admin-pages.profile.security.notVerified')}
                                 </Badge>
                             )}
                         </div>
                         <ProfileField
-                            label="Role"
+                            label={t('admin-pages.profile.security.role')}
                             value={role}
                         />
                         <ProfileField
-                            label="Permissions"
-                            value={`${permissions.length} permission${permissions.length !== 1 ? 's' : ''} assigned`}
+                            label={t('admin-pages.profile.security.permissions')}
+                            value={tPlural(
+                                'admin-pages.profile.security.permissionsCount',
+                                permissions.length
+                            )}
                         />
                         <ProfileField
-                            label="Auth Provider"
-                            value="Better Auth"
+                            label={t('admin-pages.profile.security.authProvider')}
+                            value={t('admin-pages.profile.security.authProviderName')}
                         />
                     </div>
                 </ProfileSection>

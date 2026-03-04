@@ -8,6 +8,7 @@
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import {
     EditIcon,
     GlobeIcon,
@@ -147,6 +148,7 @@ const LEVEL_VARIANTS: Record<
 };
 
 function RolesPage() {
+    const { t } = useTranslations();
     // Get roles in hierarchical order
     const roles = Object.values(RoleEnum);
 
@@ -156,9 +158,7 @@ function RolesPage() {
                 {/* Page description */}
                 <div className="rounded-lg border bg-muted/50 p-4">
                     <p className="text-muted-foreground text-sm">
-                        System roles define user access levels and permissions. Each role inherits
-                        capabilities based on their position in the hierarchy. Roles are managed at
-                        the system level and cannot be modified from this interface.
+                        {t('admin-pages.access.roles.pageDescription')}
                     </p>
                 </div>
 
@@ -189,7 +189,7 @@ function RolesPage() {
                                                 >
                                                     {info.level.charAt(0).toUpperCase() +
                                                         info.level.slice(1)}{' '}
-                                                    Access
+                                                    {t('admin-pages.access.roles.accessSuffix')}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -202,7 +202,7 @@ function RolesPage() {
 
                                     <div>
                                         <h4 className="mb-2 font-medium text-sm">
-                                            Key Capabilities:
+                                            {t('admin-pages.access.roles.keyCapabilities')}
                                         </h4>
                                         <ul className="space-y-1">
                                             {info.capabilities.map((capability) => (
@@ -225,9 +225,8 @@ function RolesPage() {
                 {/* Info note */}
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-900 dark:bg-blue-950">
                     <p className="text-blue-900 text-sm dark:text-blue-100">
-                        <strong>Note:</strong> Individual permission details are managed through the
-                        Permissions page. Users can be assigned to roles from the User Management
-                        section.
+                        <strong>{t('admin-pages.access.roles.infoNote')}:</strong>{' '}
+                        {t('admin-pages.access.roles.infoNoteDesc')}
                     </p>
                 </div>
             </div>

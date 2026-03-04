@@ -2,6 +2,7 @@ import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card } from '@/components/ui-wrapped/Card';
 import type { ContactInfoFieldData } from '@/features/accommodations/types/accommodation-form.types';
+import { useTranslations } from '@/hooks/use-translations';
 
 /**
  * Props for ContactInfoViewField component
@@ -33,7 +34,7 @@ function ContactMethod({
     value,
     href,
     action,
-    iconColor = 'text-gray-500'
+    iconColor = 'text-muted-foreground'
 }: ContactMethodProps) {
     const content = (
         <div className="flex items-center space-x-3">
@@ -42,8 +43,10 @@ function ContactMethod({
                 className={`h-5 w-5 ${iconColor} flex-shrink-0`}
             />
             <div className="min-w-0 flex-1">
-                <p className="font-medium text-gray-500 text-xs uppercase tracking-wide">{label}</p>
-                <p className="truncate text-gray-900 text-sm">{value}</p>
+                <p className="font-medium text-muted-foreground text-xs uppercase tracking-wide">
+                    {label}
+                </p>
+                <p className="truncate text-foreground text-sm">{value}</p>
             </div>
         </div>
     );
@@ -54,7 +57,7 @@ function ContactMethod({
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block rounded-lg border border-gray-200 p-3 transition-colors hover:border-gray-300 hover:bg-gray-50"
+                className="block rounded-lg border border-border p-3 transition-colors hover:border-border hover:bg-accent"
             >
                 {content}
             </a>
@@ -66,14 +69,14 @@ function ContactMethod({
             <button
                 type="button"
                 onClick={action}
-                className="block w-full rounded-lg border border-gray-200 p-3 text-left transition-colors hover:border-gray-300 hover:bg-gray-50"
+                className="block w-full rounded-lg border border-border p-3 text-left transition-colors hover:border-border hover:bg-accent"
             >
                 {content}
             </button>
         );
     }
 
-    return <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">{content}</div>;
+    return <div className="rounded-lg border border-border bg-muted p-3">{content}</div>;
 }
 
 /**
@@ -87,6 +90,7 @@ export function ContactInfoViewField({
     compact = false,
     className = ''
 }: ContactInfoViewFieldProps) {
+    const { t } = useTranslations();
     // Helper functions for generating contact URLs
     const getEmailHref = (email: string) => `mailto:${email}`;
     const getPhoneHref = (phone: string) => `tel:${phone.replace(/\s/g, '')}`;
@@ -100,7 +104,7 @@ export function ContactInfoViewField({
                     {data.email && (
                         <a
                             href={getEmailHref(data.email)}
-                            className="flex items-center space-x-1 text-blue-600 text-sm hover:text-blue-800"
+                            className="flex items-center space-x-1 text-primary text-sm hover:text-primary"
                         >
                             <Icon
                                 name="envelope"
@@ -112,7 +116,7 @@ export function ContactInfoViewField({
                     {data.phone && (
                         <a
                             href={getPhoneHref(data.phone)}
-                            className="flex items-center space-x-1 text-green-600 text-sm hover:text-green-800"
+                            className="flex items-center space-x-1 text-green-600 text-sm hover:text-green-800 dark:text-green-400 dark:hover:text-green-200"
                         >
                             <Icon
                                 name="phone"
@@ -131,24 +135,26 @@ export function ContactInfoViewField({
             <div className="space-y-6">
                 {/* Primary Contact Methods */}
                 <div>
-                    <h4 className="mb-3 font-medium text-gray-900 text-sm">Primary Contact</h4>
+                    <h4 className="mb-3 font-medium text-foreground text-sm">
+                        {t('admin-pages.accommodations.contactInfo.primaryContact')}
+                    </h4>
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                         {data.email && (
                             <ContactMethod
                                 iconName="envelope"
-                                label="Email"
+                                label={t('admin-pages.accommodations.contactInfo.labels.email')}
                                 value={data.email}
                                 href={getEmailHref(data.email)}
-                                iconColor="text-blue-500"
+                                iconColor="text-primary"
                             />
                         )}
                         {data.phone && (
                             <ContactMethod
                                 iconName="phone"
-                                label="Phone"
+                                label={t('admin-pages.accommodations.contactInfo.labels.phone')}
                                 value={data.phone}
                                 href={getPhoneHref(data.phone)}
-                                iconColor="text-green-500"
+                                iconColor="text-green-500 dark:text-green-400"
                             />
                         )}
                     </div>
@@ -157,13 +163,15 @@ export function ContactInfoViewField({
                 {/* Website */}
                 {data.website && (
                     <div>
-                        <h4 className="mb-3 font-medium text-gray-900 text-sm">Website</h4>
+                        <h4 className="mb-3 font-medium text-foreground text-sm">
+                            {t('admin-pages.accommodations.contactInfo.website')}
+                        </h4>
                         <ContactMethod
                             iconName="globe"
-                            label="Website"
+                            label={t('admin-pages.accommodations.contactInfo.labels.website')}
                             value={data.website}
                             href={data.website}
-                            iconColor="text-purple-500"
+                            iconColor="text-purple-500 dark:text-purple-400"
                         />
                     </div>
                 )}
@@ -171,33 +179,39 @@ export function ContactInfoViewField({
                 {/* Contact Person */}
                 {(data.contactPersonName || data.contactPersonEmail || data.contactPersonPhone) && (
                     <div>
-                        <h4 className="mb-3 font-medium text-gray-900 text-sm">Contact Person</h4>
+                        <h4 className="mb-3 font-medium text-foreground text-sm">
+                            {t('admin-pages.accommodations.contactInfo.contactPerson')}
+                        </h4>
                         <div className="space-y-3">
                             {data.contactPersonName && (
                                 <ContactMethod
                                     iconName="user"
-                                    label="Name"
+                                    label={t('admin-pages.accommodations.contactInfo.labels.name')}
                                     value={data.contactPersonName}
-                                    iconColor="text-gray-500"
+                                    iconColor="text-muted-foreground"
                                 />
                             )}
                             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                                 {data.contactPersonEmail && (
                                     <ContactMethod
                                         iconName="envelope"
-                                        label="Email"
+                                        label={t(
+                                            'admin-pages.accommodations.contactInfo.labels.email'
+                                        )}
                                         value={data.contactPersonEmail}
                                         href={getEmailHref(data.contactPersonEmail)}
-                                        iconColor="text-blue-500"
+                                        iconColor="text-primary"
                                     />
                                 )}
                                 {data.contactPersonPhone && (
                                     <ContactMethod
                                         iconName="phone"
-                                        label="Phone"
+                                        label={t(
+                                            'admin-pages.accommodations.contactInfo.labels.phone'
+                                        )}
                                         value={data.contactPersonPhone}
                                         href={getPhoneHref(data.contactPersonPhone)}
-                                        iconColor="text-green-500"
+                                        iconColor="text-green-500 dark:text-green-400"
                                     />
                                 )}
                             </div>
@@ -208,23 +222,27 @@ export function ContactInfoViewField({
                 {/* Messaging & Social */}
                 {(data.whatsapp || data.instagram || data.facebook) && (
                     <div>
-                        <h4 className="mb-3 font-medium text-gray-900 text-sm">
-                            Messaging & Social Media
+                        <h4 className="mb-3 font-medium text-foreground text-sm">
+                            {t('admin-pages.accommodations.contactInfo.messagingSocial')}
                         </h4>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                             {data.whatsapp && (
                                 <ContactMethod
                                     iconName="chat"
-                                    label="WhatsApp"
+                                    label={t(
+                                        'admin-pages.accommodations.contactInfo.labels.whatsapp'
+                                    )}
                                     value={data.whatsapp}
                                     href={getWhatsAppHref(data.whatsapp)}
-                                    iconColor="text-green-600"
+                                    iconColor="text-green-600 dark:text-green-400"
                                 />
                             )}
                             {data.instagram && (
                                 <ContactMethod
                                     iconName="globe"
-                                    label="Instagram"
+                                    label={t(
+                                        'admin-pages.accommodations.contactInfo.labels.instagram'
+                                    )}
                                     value={data.instagram}
                                     href={data.instagram}
                                     iconColor="text-pink-500"
@@ -233,10 +251,12 @@ export function ContactInfoViewField({
                             {data.facebook && (
                                 <ContactMethod
                                     iconName="globe"
-                                    label="Facebook"
+                                    label={t(
+                                        'admin-pages.accommodations.contactInfo.labels.facebook'
+                                    )}
                                     value={data.facebook}
                                     href={data.facebook}
-                                    iconColor="text-blue-600"
+                                    iconColor="text-primary"
                                 />
                             )}
                         </div>
@@ -244,7 +264,7 @@ export function ContactInfoViewField({
                 )}
 
                 {/* Quick Actions */}
-                <div className="border-gray-200 border-t pt-4">
+                <div className="border-border border-t pt-4">
                     <div className="flex flex-wrap gap-2">
                         {data.email && (
                             <Button
@@ -256,7 +276,7 @@ export function ContactInfoViewField({
                                     name="envelope"
                                     className="mr-1 h-4 w-4"
                                 />
-                                Send Email
+                                {t('admin-pages.accommodations.contactInfo.sendEmail')}
                             </Button>
                         )}
                         {data.phone && (
@@ -271,7 +291,7 @@ export function ContactInfoViewField({
                                     name="phone"
                                     className="mr-1 h-4 w-4"
                                 />
-                                Call
+                                {t('admin-pages.accommodations.contactInfo.call')}
                             </Button>
                         )}
                         {data.whatsapp && (
@@ -287,7 +307,7 @@ export function ContactInfoViewField({
                                     name="chat"
                                     className="mr-1 h-4 w-4"
                                 />
-                                WhatsApp
+                                {t('admin-pages.accommodations.contactInfo.whatsapp')}
                             </Button>
                         )}
                     </div>

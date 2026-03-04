@@ -1,3 +1,4 @@
+import { useTranslations } from '@/hooks/use-translations';
 import { signUp } from '@/lib/auth-client';
 import { LoaderIcon } from '@repo/icons';
 import { Link, createFileRoute } from '@tanstack/react-router';
@@ -36,6 +37,7 @@ export const Route = createFileRoute('/auth/signup')({
  * Layout with image on left and form on right
  */
 function SignUpPage(): React.JSX.Element {
+    const { t } = useTranslations();
     const [isClient, setIsClient] = useState(false);
     const [backgroundImage, setBackgroundImage] = useState<AuthBackgroundImage | null>(null);
     const { isSyncing, shouldShowSignIn } = useAuthSync();
@@ -82,13 +84,15 @@ function SignUpPage(): React.JSX.Element {
     // Show loading state while checking session
     if (isSyncing) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100 dark:from-emerald-950 dark:via-cyan-950 dark:to-teal-950">
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-emerald-600" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-primary" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">Checking session...</h2>
+                        <h2 className="font-semibold text-foreground text-xl">
+                            {t('admin-pages.auth.signup.checkingSession')}
+                        </h2>
                     </div>
                 </div>
             </div>
@@ -98,14 +102,18 @@ function SignUpPage(): React.JSX.Element {
     // Don't show sign-up form if user is already signed in
     if (!shouldShowSignIn) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100 dark:from-emerald-950 dark:via-cyan-950 dark:to-teal-950">
                 <div className="flex min-h-screen items-center justify-center">
                     <div className="text-center">
                         <div className="mb-4">
-                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-emerald-600" />
+                            <LoaderIcon className="mx-auto h-12 w-12 animate-spin text-primary" />
                         </div>
-                        <h2 className="font-semibold text-gray-900 text-xl">Redirecting...</h2>
-                        <p className="mt-2 text-gray-600">You are already authenticated</p>
+                        <h2 className="font-semibold text-foreground text-xl">
+                            {t('admin-pages.auth.signup.redirecting')}
+                        </h2>
+                        <p className="mt-2 text-muted-foreground">
+                            {t('admin-pages.auth.signup.alreadyAuthenticated')}
+                        </p>
                         <AutoRedirect />
                     </div>
                 </div>
@@ -115,7 +123,7 @@ function SignUpPage(): React.JSX.Element {
 
     if (!isClient) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
+            <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100 dark:from-emerald-950 dark:via-cyan-950 dark:to-teal-950">
                 <div className="flex min-h-screen">
                     <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
                         <div className="absolute inset-0 bg-gradient-to-t from-emerald-900/50 to-cyan-600/30" />
@@ -123,11 +131,11 @@ function SignUpPage(): React.JSX.Element {
                     </div>
                     <div className="flex w-full items-center justify-center px-6 py-12 lg:w-1/2">
                         <div className="w-full max-w-md">
-                            <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
+                            <div className="rounded-xl border bg-card p-8 shadow-lg">
                                 <div className="animate-pulse space-y-4">
-                                    <div className="h-10 rounded-md bg-gray-200" />
-                                    <div className="h-10 rounded-md bg-gray-200" />
-                                    <div className="h-10 rounded-md bg-gray-200" />
+                                    <div className="h-10 rounded-md bg-muted" />
+                                    <div className="h-10 rounded-md bg-muted" />
+                                    <div className="h-10 rounded-md bg-muted" />
                                 </div>
                             </div>
                         </div>
@@ -138,7 +146,7 @@ function SignUpPage(): React.JSX.Element {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100">
+        <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-teal-100 dark:from-emerald-950 dark:via-cyan-950 dark:to-teal-950">
             <div className="flex min-h-screen">
                 {/* Left side - Image */}
                 <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
@@ -151,10 +159,14 @@ function SignUpPage(): React.JSX.Element {
                         />
                     )}
                     <div className="absolute bottom-8 left-8 text-white">
-                        <h2 className="mb-2 font-bold text-3xl">Join us today</h2>
-                        <p className="text-emerald-100">Start managing your accommodations</p>
+                        <h2 className="mb-2 font-bold text-3xl">
+                            {t('admin-pages.auth.signup.joinUs')}
+                        </h2>
+                        <p className="text-emerald-100 dark:text-emerald-300">
+                            {t('admin-pages.auth.signup.startManaging')}
+                        </p>
                         {backgroundImage && (
-                            <p className="mt-1 text-emerald-200 text-sm opacity-80">
+                            <p className="mt-1 text-emerald-200 text-sm opacity-80 dark:text-emerald-400">
                                 {backgroundImage.location}
                             </p>
                         )}
@@ -172,19 +184,21 @@ function SignUpPage(): React.JSX.Element {
                                     className="h-16 w-auto"
                                 />
                             </div>
-                            <h1 className="font-bold text-3xl text-gray-900">Create account</h1>
-                            <p className="mt-2 text-gray-600">
-                                Get started with your free account today
+                            <h1 className="font-bold text-3xl text-foreground">
+                                {t('admin-pages.auth.signup.title')}
+                            </h1>
+                            <p className="mt-2 text-muted-foreground">
+                                {t('admin-pages.auth.signup.subtitle')}
                             </p>
                         </div>
 
-                        <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
+                        <div className="rounded-xl border bg-card p-8 shadow-lg">
                             <form
                                 onSubmit={handleSubmit}
                                 className="space-y-4"
                             >
                                 {formError && (
-                                    <div className="rounded-md bg-red-50 p-3 text-red-700 text-sm">
+                                    <div className="rounded-md bg-destructive/5 p-3 text-destructive text-sm">
                                         {formError}
                                     </div>
                                 )}
@@ -192,9 +206,9 @@ function SignUpPage(): React.JSX.Element {
                                 <div>
                                     <label
                                         htmlFor="name"
-                                        className="block font-medium text-gray-700 text-sm"
+                                        className="block font-medium text-foreground text-sm"
                                     >
-                                        Full Name
+                                        {t('admin-pages.auth.signup.nameLabel')}
                                     </label>
                                     <input
                                         id="name"
@@ -202,17 +216,17 @@ function SignUpPage(): React.JSX.Element {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        placeholder="John Doe"
+                                        className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={t('admin-pages.auth.signup.namePlaceholder')}
                                     />
                                 </div>
 
                                 <div>
                                     <label
                                         htmlFor="email"
-                                        className="block font-medium text-gray-700 text-sm"
+                                        className="block font-medium text-foreground text-sm"
                                     >
-                                        Email
+                                        {t('admin-pages.auth.signup.emailLabel')}
                                     </label>
                                     <input
                                         id="email"
@@ -220,17 +234,17 @@ function SignUpPage(): React.JSX.Element {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         required
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        placeholder="you@example.com"
+                                        className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={t('admin-pages.auth.signup.emailPlaceholder')}
                                     />
                                 </div>
 
                                 <div>
                                     <label
                                         htmlFor="password"
-                                        className="block font-medium text-gray-700 text-sm"
+                                        className="block font-medium text-foreground text-sm"
                                     >
-                                        Password
+                                        {t('admin-pages.auth.signup.passwordLabel')}
                                     </label>
                                     <input
                                         id="password"
@@ -239,29 +253,33 @@ function SignUpPage(): React.JSX.Element {
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
                                         minLength={8}
-                                        className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                                        placeholder="At least 8 characters"
+                                        className="mt-1 block w-full rounded-md border border-border bg-background px-3 py-2 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                        placeholder={t(
+                                            'admin-pages.auth.signup.passwordPlaceholder'
+                                        )}
                                     />
                                 </div>
 
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full rounded-md bg-emerald-600 px-4 py-2 font-medium text-white transition-colors hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                    className="w-full rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                 >
-                                    {isSubmitting ? 'Creating account...' : 'Create account'}
+                                    {isSubmitting
+                                        ? t('admin-pages.auth.signup.submittingButton')
+                                        : t('admin-pages.auth.signup.submitButton')}
                                 </button>
                             </form>
                         </div>
 
                         <div className="text-center">
-                            <p className="text-gray-600">
-                                Already have an account?{' '}
+                            <p className="text-muted-foreground">
+                                {t('admin-pages.auth.signup.hasAccount')}{' '}
                                 <Link
                                     to="/auth/signin"
-                                    className="font-medium text-emerald-600 transition-colors hover:text-emerald-500"
+                                    className="font-medium text-primary transition-colors hover:text-primary/80"
                                 >
-                                    Sign in
+                                    {t('admin-pages.auth.signup.signInLink')}
                                 </Link>
                             </p>
                         </div>

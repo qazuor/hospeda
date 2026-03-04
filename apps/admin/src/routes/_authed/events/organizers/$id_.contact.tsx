@@ -8,6 +8,7 @@ import { PageTabs, eventOrganizerTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useEventOrganizerQuery } from '@/features/event-organizers/hooks/useEventOrganizerQuery';
+import { useTranslations } from '@/hooks/use-translations';
 import { GlobeIcon, MailIcon, PhoneIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
@@ -16,6 +17,7 @@ export const Route = createFileRoute('/_authed/events/organizers/$id_/contact')(
 });
 
 function EventOrganizerContactPage() {
+    const { t } = useTranslations();
     const { id } = Route.useParams();
     const { data: organizer, isLoading } = useEventOrganizerQuery(id);
 
@@ -29,8 +31,8 @@ function EventOrganizerContactPage() {
                     />
                     <div className="rounded-lg border bg-card p-6">
                         <div className="space-y-4">
-                            <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
-                            <div className="h-32 animate-pulse rounded bg-gray-100" />
+                            <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+                            <div className="h-32 animate-pulse rounded bg-muted" />
                         </div>
                     </div>
                 </div>
@@ -61,18 +63,22 @@ function EventOrganizerContactPage() {
                 />
 
                 <div className="rounded-lg border bg-card p-6">
-                    <h2 className="mb-4 font-semibold text-lg">Contact</h2>
+                    <h2 className="mb-4 font-semibold text-lg">
+                        {t('admin-pages.eventOrganizers.contact.contactSection')}
+                    </h2>
 
                     <div className="space-y-4">
                         {/* Contact Information */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="text-base">Contact Information</CardTitle>
+                                <CardTitle className="text-base">
+                                    {t('admin-pages.eventOrganizers.contact.contactInfo')}
+                                </CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 {!hasContactInfo && (
                                     <p className="text-muted-foreground text-sm">
-                                        No contact information available.
+                                        {t('admin-pages.eventOrganizers.contact.noContactInfo')}
                                     </p>
                                 )}
 
@@ -81,11 +87,11 @@ function EventOrganizerContactPage() {
                                         <MailIcon className="h-5 w-5 text-muted-foreground" />
                                         <div>
                                             <span className="mb-1 block font-medium text-sm">
-                                                Email
+                                                {t('admin-pages.eventOrganizers.contact.email')}
                                             </span>
                                             <a
                                                 href={`mailto:${email}`}
-                                                className="text-blue-600 text-sm hover:underline"
+                                                className="text-primary text-sm hover:underline"
                                             >
                                                 {email}
                                             </a>
@@ -98,11 +104,11 @@ function EventOrganizerContactPage() {
                                         <PhoneIcon className="h-5 w-5 text-muted-foreground" />
                                         <div>
                                             <span className="mb-1 block font-medium text-sm">
-                                                Phone
+                                                {t('admin-pages.eventOrganizers.contact.phone')}
                                             </span>
                                             <a
                                                 href={`tel:${phone}`}
-                                                className="text-blue-600 text-sm hover:underline"
+                                                className="text-primary text-sm hover:underline"
                                             >
                                                 {phone}
                                             </a>
@@ -115,13 +121,13 @@ function EventOrganizerContactPage() {
                                         <GlobeIcon className="h-5 w-5 text-muted-foreground" />
                                         <div>
                                             <span className="mb-1 block font-medium text-sm">
-                                                Website
+                                                {t('admin-pages.eventOrganizers.contact.website')}
                                             </span>
                                             <a
                                                 href={website}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-blue-600 text-sm hover:underline"
+                                                className="text-primary text-sm hover:underline"
                                             >
                                                 {website}
                                             </a>
@@ -135,7 +141,9 @@ function EventOrganizerContactPage() {
                         {hasSocialInfo && (
                             <Card>
                                 <CardHeader>
-                                    <CardTitle className="text-base">Social Networks</CardTitle>
+                                    <CardTitle className="text-base">
+                                        {t('admin-pages.eventOrganizers.contact.socialNetworks')}
+                                    </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -148,7 +156,7 @@ function EventOrganizerContactPage() {
                                                     href={socialNetworks.twitter}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 text-sm hover:underline"
+                                                    className="text-primary text-sm hover:underline"
                                                 >
                                                     {socialNetworks.twitter}
                                                 </a>
@@ -163,7 +171,7 @@ function EventOrganizerContactPage() {
                                                     href={socialNetworks.facebook}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 text-sm hover:underline"
+                                                    className="text-primary text-sm hover:underline"
                                                 >
                                                     {socialNetworks.facebook}
                                                 </a>
@@ -178,7 +186,7 @@ function EventOrganizerContactPage() {
                                                     href={socialNetworks.instagram}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 text-sm hover:underline"
+                                                    className="text-primary text-sm hover:underline"
                                                 >
                                                     {socialNetworks.instagram}
                                                 </a>
@@ -193,7 +201,7 @@ function EventOrganizerContactPage() {
                                                     href={socialNetworks.linkedIn}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-600 text-sm hover:underline"
+                                                    className="text-primary text-sm hover:underline"
                                                 >
                                                     {socialNetworks.linkedIn}
                                                 </a>

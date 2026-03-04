@@ -18,6 +18,7 @@ import {
     useVoidInvoiceMutation
 } from '@/features/billing-invoices/hooks';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatArs, formatShortDate } from '@/lib/format-helpers';
 import type { TranslationKey } from '@repo/i18n';
 import { CalendarIcon, DownloadIcon, FileTextIcon, LoaderIcon, MailIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
@@ -83,29 +84,6 @@ function getStatusLabel(status: InvoiceStatus, t: (key: TranslationKey) => strin
 }
 
 /**
- * Format date to Spanish locale
- */
-function formatDate(date: string): string {
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-    }).format(new Date(date));
-}
-
-/**
- * Format ARS currency
- */
-function formatArs(amount: number): string {
-    return new Intl.NumberFormat('es-AR', {
-        style: 'currency',
-        currency: 'ARS',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
-}
-
-/**
  * Invoice detail dialog component
  */
 function InvoiceDetailDialog({
@@ -123,7 +101,7 @@ function InvoiceDetailDialog({
     onMarkAsVoid: (invoice: Invoice) => void;
     onSendReminder: (invoice: Invoice) => void;
 }) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (!invoice) return null;
 
@@ -144,8 +122,9 @@ function InvoiceDetailDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.invoices.dialog.issuedOn')}{' '}
-                        {formatDate(invoice.issueDate)} • {t('admin-billing.invoices.dialog.dueOn')}{' '}
-                        {formatDate(invoice.dueDate)}
+                        {formatShortDate({ date: invoice.issueDate, locale })} •{' '}
+                        {t('admin-billing.invoices.dialog.dueOn')}{' '}
+                        {formatShortDate({ date: invoice.dueDate, locale })}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -172,7 +151,7 @@ function InvoiceDetailDialog({
                             {invoice.paidDate && (
                                 <p className="mt-1 text-muted-foreground text-xs">
                                     {t('admin-billing.invoices.dialog.paidOn')}{' '}
-                                    {formatDate(invoice.paidDate)}
+                                    {formatShortDate({ date: invoice.paidDate, locale })}
                                 </p>
                             )}
                         </div>
@@ -212,10 +191,10 @@ function InvoiceDetailDialog({
                                                 {item.quantity}
                                             </td>
                                             <td className="px-4 py-3 text-right">
-                                                {formatArs(item.unitPrice)}
+                                                {formatArs({ value: item.unitPrice, locale })}
                                             </td>
                                             <td className="px-4 py-3 text-right font-medium">
-                                                {formatArs(item.total)}
+                                                {formatArs({ value: item.total, locale })}
                                             </td>
                                         </tr>
                                     ))}
@@ -231,18 +210,22 @@ function InvoiceDetailDialog({
                                 <span className="text-muted-foreground">
                                     {t('admin-billing.invoices.dialog.subtotal')}
                                 </span>
-                                <span className="font-medium">{formatArs(invoice.subtotal)}</span>
+                                <span className="font-medium">
+                                    {formatArs({ value: invoice.subtotal, locale })}
+                                </span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">
                                     {t('admin-billing.invoices.dialog.tax')}
                                 </span>
-                                <span className="font-medium">{formatArs(invoice.tax)}</span>
+                                <span className="font-medium">
+                                    {formatArs({ value: invoice.tax, locale })}
+                                </span>
                             </div>
                             <div className="border-t pt-2">
                                 <div className="flex justify-between font-semibold text-lg">
                                     <span>{t('admin-billing.invoices.dialog.total')}</span>
-                                    <span>{formatArs(invoice.total)}</span>
+                                    <span>{formatArs({ value: invoice.total, locale })}</span>
                                 </div>
                             </div>
                         </div>
@@ -250,18 +233,18 @@ function InvoiceDetailDialog({
 
                     {/* Payment Information */}
                     {invoice.status === 'paid' && invoice.paymentMethod && (
-                        <div className="rounded-md border bg-green-50 p-4">
-                            <p className="mb-1 font-semibold text-green-900 text-sm">
+                        <div className="rounded-md border bg-green-50 p-4 dark:bg-green-950">
+                            <p className="mb-1 font-semibold text-green-900 text-sm dark:text-green-100">
                                 {t('admin-billing.invoices.dialog.paymentInfo')}
                             </p>
-                            <p className="text-green-800 text-sm">
+                            <p className="text-green-800 text-sm dark:text-green-200">
                                 {t('admin-billing.invoices.dialog.paymentMethod')}:{' '}
                                 {invoice.paymentMethod}
                             </p>
                             {invoice.paidDate && (
-                                <p className="text-green-800 text-sm">
+                                <p className="text-green-800 text-sm dark:text-green-200">
                                     {t('admin-billing.invoices.dialog.paymentDate')}:{' '}
-                                    {formatDate(invoice.paidDate)}
+                                    {formatShortDate({ date: invoice.paidDate, locale })}
                                 </p>
                             )}
                         </div>
@@ -336,7 +319,7 @@ function InvoiceDetailDialog({
 }
 
 function BillingInvoicesPage() {
-    const { t } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const { addToast } = useToast();
     const [statusFilter, setStatusFilter] = useState<InvoiceStatus | 'all'>('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -524,7 +507,7 @@ function BillingInvoicesPage() {
                                         htmlFor="invoice-start-date"
                                         className="mb-2 block font-medium text-sm"
                                     >
-                                        Fecha Desde
+                                        {t('admin-billing.invoices.dateFrom')}
                                     </label>
                                     <Input
                                         id="invoice-start-date"
@@ -538,7 +521,7 @@ function BillingInvoicesPage() {
                                         htmlFor="invoice-end-date"
                                         className="mb-2 block font-medium text-sm"
                                     >
-                                        Fecha Hasta
+                                        {t('admin-billing.invoices.dateTo')}
                                     </label>
                                     <Input
                                         id="invoice-end-date"
@@ -556,7 +539,7 @@ function BillingInvoicesPage() {
                                             setEndDate('');
                                         }}
                                     >
-                                        Limpiar Filtros de Fecha
+                                        {t('admin-billing.invoices.clearDateFilters')}
                                     </Button>
                                 </div>
                             </div>
@@ -567,15 +550,18 @@ function BillingInvoicesPage() {
                 {/* Invoices Table */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Listado de Facturas</CardTitle>
+                        <CardTitle>{t('admin-billing.invoices.listTitle')}</CardTitle>
                         <CardDescription>
                             {isLoading
-                                ? 'Cargando...'
+                                ? t('admin-billing.invoices.loading')
                                 : isError
-                                  ? 'Error al cargar facturas'
+                                  ? t('admin-billing.invoices.errorLoading')
                                   : filteredInvoices.length === 0
-                                    ? 'No hay facturas'
-                                    : `${filteredInvoices.length} factura${filteredInvoices.length !== 1 ? 's' : ''}`}
+                                    ? t('admin-billing.invoices.noInvoices')
+                                    : tPlural(
+                                          'admin-billing.invoices.invoiceCount',
+                                          filteredInvoices.length
+                                      )}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -583,24 +569,25 @@ function BillingInvoicesPage() {
                             <div className="py-12 text-center">
                                 <LoaderIcon className="mx-auto h-8 w-8 animate-spin text-primary" />
                                 <p className="mt-4 text-muted-foreground text-sm">
-                                    Cargando facturas...
+                                    {t('admin-billing.invoices.loadingInvoices')}
                                 </p>
                             </div>
                         ) : isError ? (
                             <div className="py-12 text-center">
-                                <p className="text-destructive text-sm">Error al cargar facturas</p>
+                                <p className="text-destructive text-sm">
+                                    {t('admin-billing.invoices.errorLoading')}
+                                </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Verifica que la API esté disponible
+                                    {t('admin-billing.invoices.apiCheckError')}
                                 </p>
                             </div>
                         ) : filteredInvoices.length === 0 ? (
                             <div className="py-12 text-center">
                                 <p className="text-muted-foreground text-sm">
-                                    No hay facturas registradas aún.
+                                    {t('admin-billing.invoices.emptyTitle')}
                                 </p>
                                 <p className="mt-2 text-muted-foreground text-xs">
-                                    Las facturas se generarán automáticamente cuando se procesen
-                                    pagos.
+                                    {t('admin-billing.invoices.emptyHint')}
                                 </p>
                             </div>
                         ) : (
@@ -609,25 +596,25 @@ function BillingInvoicesPage() {
                                     <thead>
                                         <tr className="border-b">
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Nº Factura
+                                                {t('admin-billing.invoices.columns.invoiceNumber')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Usuario
+                                                {t('admin-billing.invoices.columns.user')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Monto
+                                                {t('admin-billing.invoices.columns.amount')}
                                             </th>
                                             <th className="px-4 py-3 text-center font-medium">
-                                                Estado
+                                                {t('admin-billing.invoices.columns.status')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Emisión
+                                                {t('admin-billing.invoices.columns.issueDate')}
                                             </th>
                                             <th className="px-4 py-3 text-left font-medium">
-                                                Vencimiento
+                                                {t('admin-billing.invoices.columns.dueDate')}
                                             </th>
                                             <th className="px-4 py-3 text-right font-medium">
-                                                Acciones
+                                                {t('admin-billing.invoices.columns.actions')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -651,7 +638,7 @@ function BillingInvoicesPage() {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-3 text-right font-medium">
-                                                    {formatArs(invoice.amount)}
+                                                    {formatArs({ value: invoice.amount, locale })}
                                                 </td>
                                                 <td className="px-4 py-3 text-center">
                                                     <Badge
@@ -661,10 +648,16 @@ function BillingInvoicesPage() {
                                                     </Badge>
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                    {formatDate(invoice.issueDate)}
+                                                    {formatShortDate({
+                                                        date: invoice.issueDate,
+                                                        locale
+                                                    })}
                                                 </td>
                                                 <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                    {formatDate(invoice.dueDate)}
+                                                    {formatShortDate({
+                                                        date: invoice.dueDate,
+                                                        locale
+                                                    })}
                                                 </td>
                                                 <td className="px-4 py-3 text-right">
                                                     <div className="flex justify-end gap-2">
@@ -675,7 +668,9 @@ function BillingInvoicesPage() {
                                                                 handleViewDetails(invoice)
                                                             }
                                                         >
-                                                            Ver
+                                                            {t(
+                                                                'admin-billing.invoices.viewDetails'
+                                                            )}
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
