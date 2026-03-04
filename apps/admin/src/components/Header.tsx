@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 
-import { HeaderUser as ClerkHeader } from '../integrations/clerk/header-user.tsx';
+import { HeaderUser as AuthHeader } from '../integrations/clerk/header-user.tsx';
 
 export function Header() {
     return (
@@ -35,7 +35,7 @@ export function Header() {
             </nav>
 
             <div>
-                <ClerkHeader />
+                <AuthHeader />
             </div>
         </header>
     );

@@ -16,10 +16,7 @@ const AdminEnvSchema = z.object({
     VITE_API_URL: z.string().url().describe('API base URL'),
 
     // Authentication
-    VITE_CLERK_PUBLISHABLE_KEY: z
-        .string()
-        .min(1)
-        .describe('Clerk publishable key for authentication'),
+    VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
 
     // App Configuration
     VITE_APP_NAME: z.string().default('Hospeda Admin').describe('Application name'),
@@ -116,7 +113,7 @@ export const validateAdminEnv = (): AdminEnv => {
         // Create env object from import.meta.env
         const envData = {
             VITE_API_URL: import.meta.env.VITE_API_URL,
-            VITE_CLERK_PUBLISHABLE_KEY: import.meta.env.VITE_CLERK_PUBLISHABLE_KEY,
+            VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
             VITE_APP_DESCRIPTION:
@@ -148,10 +145,10 @@ export const getApiUrl = (): string => {
 };
 
 /**
- * Get Clerk publishable key for authentication
+ * Get Better Auth URL for authentication
  */
-export const getClerkPublishableKey = (): string => {
-    return safeEnv.get('VITE_CLERK_PUBLISHABLE_KEY') as string;
+export const getBetterAuthUrl = (): string => {
+    return safeEnv.get('VITE_BETTER_AUTH_URL') as string;
 };
 
 /**

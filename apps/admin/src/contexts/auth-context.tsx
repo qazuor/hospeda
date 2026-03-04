@@ -3,7 +3,7 @@
  *
  * Provides centralized auth state using Better Auth's useSession hook,
  * enriched with user role and permissions from the API. Replaces the
- * previous Clerk-based auth context.
+ * previous auth context.
  *
  * @module auth-context
  */

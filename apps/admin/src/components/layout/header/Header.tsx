@@ -13,7 +13,7 @@ import { CommandPalette } from '@/components/search/CommandPalette';
 import { getHeaderNavItems } from '@/config/sections';
 import { useSidebarContext } from '@/contexts/sidebar-context';
 import { useTranslations } from '@/hooks/use-translations';
-import { HeaderUser as ClerkHeader } from '@/integrations/clerk/header-user';
+import { HeaderUser as AuthHeader } from '@/integrations/clerk/header-user';
 import { useCurrentSectionId } from '@/lib/sections';
 import { MenuIcon, NotificationIcon, SettingsIcon, UserIcon } from '@repo/icons';
 import { Link, useRouter } from '@tanstack/react-router';
@@ -177,8 +177,8 @@ export function Header({ userPermissions }: HeaderProps) {
                             <SettingsIcon className="h-5 w-5" />
                         </Link>
 
-                        {/* Clerk user menu */}
-                        <ClerkHeader />
+                        {/* Auth user menu */}
+                        <AuthHeader />
                     </div>
                 </div>
             </header>
