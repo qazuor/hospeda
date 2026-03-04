@@ -6,7 +6,7 @@ This document describes how to configure the required GitHub secrets for the CI/
 
 The following secrets must be configured in GitHub for the CI/CD pipeline to work correctly.
 
-**✅ Important:** You only need to configure these secrets. The CI workflow automatically maps them to the formats needed by each app (e.g., `VITE_*` for admin, `PUBLIC_*` for web).
+**Important:** You only need to configure these secrets. The CI workflow automatically maps them to the formats needed by each app (e.g., `VITE_*` for admin, `PUBLIC_*` for web).
 
 ### 1. Database
 
@@ -15,26 +15,15 @@ The following secrets must be configured in GitHub for the CI/CD pipeline to wor
   - Format: `postgresql://user:password@host:5432/database`
   - Example: `postgresql://hospeda_user:mypass123@localhost:5432/hospeda_db`
 
-### 2. Clerk Authentication (Server-side)
+### 2. Better Auth
 
-- **`HOSPEDA_CLERK_SECRET_KEY`**
-  - Clerk secret key for API server-side authentication
-  - Format: `sk_test_...` (test) or `sk_live_...` (production)
-  - Get from: [Clerk Dashboard](https://dashboard.clerk.com) → API Keys
+- **`HOSPEDA_BETTER_AUTH_SECRET`**
+  - Secret key used by Better Auth for signing sessions and tokens
+  - Generate with: `openssl rand -base64 32`
+  - Must be at least 32 characters
+  - Keep this secret consistent across all environments that share the same database
 
-- **`CLERK_SECRET_KEY`**
-  - Same value as `HOSPEDA_CLERK_SECRET_KEY`
-  - Used by Admin app for TanStack Start server-side auth
-  - **⚠️ Important:** This should be the same secret key
-
-### 3. Clerk Authentication (Client-side - Public)
-
-- **`HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY`**
-  - Clerk publishable key (safe to expose in client)
-  - Format: `pk_test_...` (test) or `pk_live_...` (production)
-  - Get from: [Clerk Dashboard](https://dashboard.clerk.com) → API Keys
-
-### 4. Application URLs
+### 3. Application URLs
 
 - **`HOSPEDA_API_URL`**
   - URL where the API is hosted
@@ -48,20 +37,13 @@ The following secrets must be configured in GitHub for the CI/CD pipeline to wor
   - Staging: `https://staging.hospeda.com`
   - Production: `https://hospeda.com`
 
-### 5. Optional Secrets
-
-- **`HOSPEDA_CLERK_WEBHOOK_SECRET`**
-  - Webhook secret for Clerk webhooks (if using webhooks)
-  - Format: `whsec_...`
-  - Get from: [Clerk Dashboard](https://dashboard.clerk.com) → Webhooks
-
 ## How to Configure Secrets in GitHub
 
 ### Step 1: Access Repository Settings
 
 1. Go to your GitHub repository
 2. Click on **Settings** tab
-3. In the left sidebar, click on **Secrets and variables** → **Actions**
+3. In the left sidebar, click on **Secrets and variables** -> **Actions**
 
 ### Step 2: Add Secrets
 
@@ -76,13 +58,10 @@ The following secrets must be configured in GitHub for the CI/CD pipeline to wor
 After adding all secrets, you should see them listed in the repository secrets page:
 
 ```
-✅ HOSPEDA_DATABASE_URL
-✅ HOSPEDA_CLERK_SECRET_KEY
-✅ CLERK_SECRET_KEY
-✅ HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY
-✅ HOSPEDA_API_URL
-✅ HOSPEDA_SITE_URL
-⚪ HOSPEDA_CLERK_WEBHOOK_SECRET (optional)
+HOSPEDA_DATABASE_URL
+HOSPEDA_BETTER_AUTH_SECRET
+HOSPEDA_API_URL
+HOSPEDA_SITE_URL
 ```
 
 ## Secret Values by Environment
@@ -95,10 +74,8 @@ These values are stored in `.env.local` at the project root:
 # Database
 HOSPEDA_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hospeda
 
-# Clerk
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
+# Better Auth
+HOSPEDA_BETTER_AUTH_SECRET=your-dev-secret-at-least-32-characters-long
 
 # URLs
 HOSPEDA_API_URL=http://localhost:3001
@@ -115,9 +92,7 @@ Use staging-specific values:
 
 ```bash
 HOSPEDA_DATABASE_URL=postgresql://user:pass@staging-db.example.com:5432/hospeda_staging
-HOSPEDA_CLERK_SECRET_KEY=sk_test_...  # or sk_live_... if using production Clerk
-CLERK_SECRET_KEY=sk_test_...
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=staging-secret-generated-with-openssl-rand
 HOSPEDA_API_URL=https://api-staging.hospeda.com
 HOSPEDA_SITE_URL=https://staging.hospeda.com
 ```
@@ -128,9 +103,7 @@ Use production values:
 
 ```bash
 HOSPEDA_DATABASE_URL=postgresql://user:pass@prod-db.example.com:5432/hospeda_prod
-HOSPEDA_CLERK_SECRET_KEY=sk_live_...
-CLERK_SECRET_KEY=sk_live_...
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_...
+HOSPEDA_BETTER_AUTH_SECRET=production-secret-generated-with-openssl-rand
 HOSPEDA_API_URL=https://api.hospeda.com
 HOSPEDA_SITE_URL=https://hospeda.com
 ```
@@ -156,6 +129,11 @@ HOSPEDA_SITE_URL=https://hospeda.com
    - Variables without these prefixes are server-only
    - Only put non-sensitive data in public variables
 
+5. **Better Auth secret generation**
+   - Always use a cryptographically secure random generator
+   - Recommended: `openssl rand -base64 32`
+   - Never reuse the same secret across production and non-production environments
+
 ## Troubleshooting
 
 ### Build fails with "environment validation FAILED"
@@ -168,26 +146,17 @@ HOSPEDA_SITE_URL=https://hospeda.com
 2. Verify the secret names match exactly (case-sensitive)
 3. Check that secret values are valid (e.g., URLs are proper URLs)
 
-### Admin app typecheck fails
-
-**Cause:** `CLERK_SECRET_KEY` is missing or invalid.
-
-**Solution:**
-
-1. Ensure `CLERK_SECRET_KEY` is configured in GitHub Secrets
-2. Ensure it has the same value as `HOSPEDA_CLERK_SECRET_KEY`
-
 ### API app build fails
 
-**Cause:** Database URL or Clerk keys are missing.
+**Cause:** Database URL or Better Auth secret is missing.
 
 **Solution:**
 
 1. Verify `HOSPEDA_DATABASE_URL` is a valid PostgreSQL connection string
-2. Verify both Clerk keys are configured
+2. Verify `HOSPEDA_BETTER_AUTH_SECRET` is configured and at least 32 characters
 
 ## Need Help?
 
-- 📚 [GitHub Secrets Documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
-- 🔑 [Clerk API Keys](https://clerk.com/docs/references/backend/overview)
-- 🗄️ [PostgreSQL Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)
+- [GitHub Secrets Documentation](https://docs.github.com/en/actions/security-guides/encrypted-secrets)
+- [Better Auth Documentation](https://www.better-auth.com/docs)
+- [PostgreSQL Connection Strings](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING)

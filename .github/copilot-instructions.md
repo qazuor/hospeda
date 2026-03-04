@@ -7,7 +7,7 @@ Hospeda is a **TurboRepo monorepo** for a tourism accommodation platform using:
 - **Apps**: `api/` (Hono), `web/` (Astro+React), `admin/` (TanStack Start)
 - **Packages**: Shared libraries with `@repo/*` namespace (`db`, `schemas`, `types`, `service-core`, etc.)
 - **Database**: PostgreSQL + Drizzle ORM with type-safe schemas
-- **Auth**: Clerk integration with Actor-based permissions
+- **Auth**: Better Auth integration with Actor-based permissions
 
 ## 🔧 Development Workflow
 
