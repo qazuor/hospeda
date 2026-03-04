@@ -67,7 +67,7 @@ describe('Billing HTTP Adapter', () => {
             expect(adapter.transaction).toBeDefined();
         });
 
-        it('should work without getAuthToken (Clerk cookies)', () => {
+        it('should work without getAuthToken (session cookies)', () => {
             const adapter = createHttpBillingAdapter({
                 apiUrl: API_URL
             });

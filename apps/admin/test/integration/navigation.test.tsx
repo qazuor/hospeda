@@ -112,9 +112,9 @@ vi.mock('@repo/icons', () => ({
     AddIcon: () => <span data-testid="add-icon">Add</span>
 }));
 
-// Mock Clerk header
+// Mock auth header
 vi.mock('@/integrations/clerk/header-user', () => ({
-    HeaderUser: () => <div data-testid="clerk-header">Clerk</div>
+    HeaderUser: () => <div data-testid="auth-header">Auth</div>
 }));
 
 // Mock section data - defined inline in mocks to avoid hoisting issues

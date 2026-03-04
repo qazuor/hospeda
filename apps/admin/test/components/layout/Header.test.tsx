@@ -107,9 +107,9 @@ vi.mock('@repo/icons', () => ({
     DropdownIcon: () => <span data-testid="dropdown-icon">Dropdown</span>
 }));
 
-// Mock Clerk header
+// Mock auth header
 vi.mock('@/integrations/clerk/header-user', () => ({
-    HeaderUser: () => <div data-testid="clerk-header">Clerk</div>
+    HeaderUser: () => <div data-testid="auth-header">Auth</div>
 }));
 
 // Import after mocks
@@ -154,10 +154,10 @@ describe('Header', () => {
             expect(screen.getByTestId('settings-icon')).toBeInTheDocument();
         });
 
-        it('should render Clerk user menu', () => {
+        it('should render auth user menu', () => {
             render(<Header />);
 
-            expect(screen.getByTestId('clerk-header')).toBeInTheDocument();
+            expect(screen.getByTestId('auth-header')).toBeInTheDocument();
         });
     });
 

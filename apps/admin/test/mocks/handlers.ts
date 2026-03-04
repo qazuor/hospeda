@@ -126,7 +126,7 @@ const mockPost = {
 
 const mockUser = {
     id: 'user-1',
-    clerkId: 'clerk_user_1',
+    authProviderId: 'auth_user_1',
     displayName: 'Test User',
     primaryEmail: 'test@example.com',
     role: 'user',

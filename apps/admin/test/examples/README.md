@@ -28,7 +28,7 @@ The test environment is configured in `test/setup.tsx`:
 
 - MSW server starts automatically before all tests
 - Handlers reset after each test for isolation
-- Common mocks (Clerk, TanStack Router) are pre-configured
+- Common mocks (Better Auth, TanStack Router) are pre-configured
 
 ## API Mocking with MSW
 
