@@ -58,9 +58,9 @@ HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5436/hospeda
 MERCADO_PAGO_ACCESS_TOKEN=TEST-your_access_token_here
 MERCADO_PAGO_SANDBOX=true
 
-# Clerk Auth (REQUIRED)
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
+# Better Auth (REQUIRED)
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # Optional but recommended
 SENTRY_DSN=                  # Leave empty to disable
@@ -80,9 +80,9 @@ pnpm db:studio     # Visual verification (optional)
 
 | Role | Email | Purpose |
 |------|-------|---------|
-| New user | Create fresh in Clerk | Test trial flow |
+| New user | Create fresh in Better Auth | Test trial flow |
 | Owner with subscription | Existing user with active plan | Test management |
-| Admin | User with admin role in Clerk | Test admin pages |
+| Admin | User with admin role in Better Auth | Test admin pages |
 | Tourist | User with tourist plan | Test tourist features |
 
 ---
@@ -142,7 +142,7 @@ pnpm db:studio     # Visual verification (optional)
 | Step | Action | Expected Result |
 |------|--------|-----------------|
 | 1 | Go to `/precios/propietarios` | Pricing page loads |
-| 2 | Click CTA on "Pro" plan | Redirects to Clerk signup |
+| 2 | Click CTA on "Pro" plan | Redirects to signup page |
 | 3 | Complete registration | Account created successfully |
 | 4 | After signup, navigate to `/mi-cuenta/suscripcion` | Subscription page loads |
 | 5 | Check SubscriptionStatusCard | Shows "En prueba" status |

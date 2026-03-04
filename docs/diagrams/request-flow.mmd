@@ -107,7 +107,7 @@ sequenceDiagram
     API->>Middleware: Authenticate request
     activate Middleware
 
-    Middleware->>Middleware: Verify Clerk JWT token
+    Middleware->>Middleware: Verify Better Auth JWT token
     Middleware->>Middleware: Extract actor (userId, role)
     Middleware->>Middleware: Validate request body (Zod)
 

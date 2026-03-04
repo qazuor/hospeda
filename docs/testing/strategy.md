@@ -2,13 +2,13 @@
 
 ## Overview
 
-Hospeda's testing strategy is built on **Test-Driven Development (TDD)** principles with a strict **90% code coverage** requirement. This document outlines our testing philosophy, workflows, and the test pyramid that guides our approach.
+Hospeda's testing strategy is built on **Test-Informed Development** principles with a strict **90% code coverage** requirement. This document outlines our testing philosophy, workflows, and the test pyramid that guides our approach.
 
 ## Testing Philosophy
 
-### Why Test-First?
+### Why Test-Informed Development?
 
-Test-Driven Development is not just about testing—it's about **design**. By writing tests first, we:
+Test-Informed Development is about ensuring all code has comprehensive tests while being pragmatic about timing. Tests drive **design** and **confidence**:
 
 1. **Force Better Design**: Tests reveal tight coupling and complex dependencies
 2. **Create Living Documentation**: Tests show exactly how code should be used
@@ -16,11 +16,17 @@ Test-Driven Development is not just about testing—it's about **design**. By wr
 4. **Prevent Regressions**: Catch bugs before they reach production
 5. **Accelerate Development**: Less time debugging, more time building
 
+### When to Write Tests
+
+- **Pure logic** (services, utils, validators): Write tests first when practical (Red-Green-Refactor)
+- **Integration code** (routes, components, wiring): Write tests alongside implementation
+- **Bug fixes**: ALWAYS write regression test first
+
 ### Core Principles
 
-#### 1. TDD First (Red-Green-Refactor)
+#### 1. Tests Mandatory (Timing Flexible)
 
-Every feature starts with a failing test:
+For pure logic, start with a failing test when practical:
 
 ```typescript
 // ❌ RED: Write failing test first
@@ -90,74 +96,61 @@ Each test must be **completely independent**:
 - Tests pass in any order
 - Tests can run in parallel
 
-## The Three Laws of TDD
+## Test-Informed Guidelines
 
-Formulated by Robert C. Martin (Uncle Bob):
+### For Pure Logic (Services, Utils, Validators)
 
-### Law 1: Don't Write Production Code Without a Failing Test
-
-You are not allowed to write any production code unless it is to make a failing unit test pass.
+When practical, use the Red-Green-Refactor cycle:
 
 ```typescript
-// ❌ WRONG: Writing code first
-export class AccommodationService {
-  async create(data: CreateAccommodationData) {
-    // Don't write this first!
-    const accommodation = await this.model.create(data);
-    return { success: true, data: accommodation };
-  }
-}
-
-// ✅ RIGHT: Write test first
+// ✅ RECOMMENDED: Write test first for pure logic
 describe('AccommodationService', () => {
   it('should create accommodation', async () => {
-    // Write this first, let it fail
     const service = new AccommodationService();
     const result = await service.create({ name: 'Hotel' });
     expect(result.success).toBe(true);
   });
 });
-```
 
-### Law 2: Don't Write More of a Test Than Sufficient to Fail
-
-Write only enough of a unit test to fail. Compilation failures count as failures.
-
-```typescript
-// ❌ WRONG: Writing entire test suite upfront
-describe('AccommodationService', () => {
-  it('should create', async () => { /* full test */ });
-  it('should update', async () => { /* full test */ });
-  it('should delete', async () => { /* full test */ });
-  // Don't write all these at once!
-});
-
-// ✅ RIGHT: One test at a time
-describe('AccommodationService', () => {
-  it('should create accommodation', async () => {
-    // Just this one test, make it fail
-    const result = await service.create({ name: 'Hotel' });
-    expect(result).toBeDefined();
-  });
-  // Add more tests after this passes
-});
-```
-
-### Law 3: Don't Write More Production Code Than Sufficient to Pass
-
-Write only the minimum production code needed to pass the currently failing test.
-
-```typescript
-// ❌ WRONG: Overengineering
-async create(data: CreateAccommodationData) {
-  // Don't add features not tested yet!
-  const validated = validate(data);
-  const withSlug = addSlug(validated);
-  const withTimestamps = addTimestamps(withSlug);
-  const withAudit = addAuditLog(withTimestamps);
-  return this.model.create(withAudit);
+// Then implement
+export class AccommodationService {
+  async create(data: CreateAccommodationData) {
+    const accommodation = await this.model.create(data);
+    return { success: true, data: accommodation };
+  }
 }
+```
 
+### For Integration Code (Routes, Components, Wiring)
+
+Write tests alongside implementation:
+
+```typescript
+// ✅ OK: Implement route, then write test for it
+// Both created in the same work session
+```
+
+### For Bug Fixes
+
+ALWAYS write a regression test first:
+
+```typescript
+// ✅ REQUIRED: Reproduce bug with failing test
+it('should handle duplicate name correctly', async () => {
+  // This test reproduces the bug
+  const result = await service.create({ name: 'Hotel' });
+  const duplicate = await service.create({ name: 'Hotel' });
+  expect(duplicate.success).toBe(false);
+});
+
+// Then fix the bug to make the test pass
+```
+
+### Write Incrementally
+
+Write only enough of a test to fail, then only enough code to pass:
+
+```typescript
 // ✅ RIGHT: Minimal implementation
 async create(data: CreateAccommodationData) {
   // Only what's needed to pass current test
@@ -165,7 +158,7 @@ async create(data: CreateAccommodationData) {
 }
 ```
 
-## TDD Workflow (Red-Green-Refactor)
+## Red-Green-Refactor Workflow
 
 ### The Cycle
 
@@ -275,7 +268,7 @@ export class AccommodationService extends BaseCrudService {
 
 **Key**: Tests validate refactor didn't break anything.
 
-### Complete TDD Example
+### Complete Test-First Example
 
 **Feature**: Create accommodation with duplicate name prevention
 
@@ -457,7 +450,7 @@ describe('generateSlug', () => {
 - Extremely fast (run constantly)
 - Pinpoint failures precisely
 - Easy to write and maintain
-- Great for TDD
+- Great for test-first workflows
 
 ### Layer 2: Integration Tests (25%)
 
@@ -1238,7 +1231,7 @@ export default defineConfig({
 
 ### DO ✅
 
-- **Write tests first** (TDD)
+- **Write tests for all code** (timing flexible by code type)
 - **Follow AAA pattern** (Arrange-Act-Assert)
 - **One assertion per test** (ideally)
 - **Descriptive test names** (should...)
@@ -1254,7 +1247,7 @@ export default defineConfig({
 - **Skip tests** (.skip, .only in commits)
 - **Share state** (between tests)
 - **Test implementation** (test behavior)
-- **Write tests after** (TDD first)
+- **Skip writing tests** (all code must have tests)
 - **Ignore failing tests** (fix immediately)
 - **Test 3rd party** (trust libraries)
 - **Use real DB in unit** (mock it)

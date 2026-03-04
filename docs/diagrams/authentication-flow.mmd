@@ -1,4 +1,4 @@
-%% Authentication Flow - Complete Clerk Authentication Sequence
+%% Authentication Flow - Complete Better Auth Authentication Sequence
 %% This diagram shows three authentication scenarios:
 %% A. Sign Up Flow - New user registration
 %% B. Sign In Flow - Existing user login
@@ -7,8 +7,8 @@
 sequenceDiagram
     actor User
     participant Web as Frontend (Web/Admin)
-    participant ClerkUI as Clerk SDK
-    participant ClerkAPI as Clerk Backend
+    participant AuthUI as Better Auth SDK
+    participant AuthAPI as Better Auth Backend
     participant API as Hospeda API
     participant DB as Database
 
@@ -20,38 +20,38 @@ sequenceDiagram
     User->>Web: Navigate to /auth/signup
     activate Web
 
-    Web->>ClerkUI: Render <SignUp />
-    activate ClerkUI
+    Web->>AuthUI: Render <SignUp />
+    activate AuthUI
 
-    ClerkUI-->>User: Display signup form
-    deactivate ClerkUI
+    AuthUI-->>User: Display signup form
+    deactivate AuthUI
 
-    User->>ClerkUI: Fill form (email, password, name)
-    activate ClerkUI
+    User->>AuthUI: Fill form (email, password, name)
+    activate AuthUI
 
-    ClerkUI->>ClerkUI: Validate input (client-side)
+    AuthUI->>AuthUI: Validate input (client-side)
 
-    ClerkUI->>ClerkAPI: POST /v1/sign_ups
-    activate ClerkAPI
+    AuthUI->>AuthAPI: POST /v1/sign_ups
+    activate AuthAPI
 
-    ClerkAPI->>ClerkAPI: Validate credentials
-    ClerkAPI->>ClerkAPI: Hash password
-    ClerkAPI->>ClerkAPI: Create Clerk account
-    ClerkAPI->>ClerkAPI: Generate session token
+    AuthAPI->>AuthAPI: Validate credentials
+    AuthAPI->>AuthAPI: Hash password
+    AuthAPI->>AuthAPI: Create Better Auth account
+    AuthAPI->>AuthAPI: Generate session token
 
-    ClerkAPI-->>ClerkUI: Session created (clerkId, JWT)
-    deactivate ClerkAPI
+    AuthAPI-->>AuthUI: Session created (authUserId, JWT)
+    deactivate AuthAPI
 
-    ClerkUI->>ClerkUI: Store session in cookie
-    ClerkUI->>Web: Trigger redirect to /auth/signup-callback
-    deactivate ClerkUI
+    AuthUI->>AuthUI: Store session in cookie
+    AuthUI->>Web: Trigger redirect to /auth/signup-callback
+    deactivate AuthUI
 
-    Web->>Web: Extract clerkId from session
-    Web->>API: POST /api/v1/public/auth/signup<br/>{clerkId, email, firstName, lastName}
+    Web->>Web: Extract authUserId from session
+    Web->>API: POST /api/v1/public/auth/signup<br/>{authUserId, email, firstName, lastName}
     activate API
 
     API->>API: Validate request body (Zod)
-    API->>DB: INSERT INTO users (clerk_id, email, first_name, last_name)
+    API->>DB: INSERT INTO users (auth_provider_user_id, email, first_name, last_name)
     activate DB
 
     alt User Created Successfully
@@ -74,7 +74,7 @@ sequenceDiagram
         API-->>Web: { success: false, error: 'USER_CREATION_FAILED' }
         deactivate API
 
-        Web->>ClerkAPI: Sign out user (cleanup)
+        Web->>AuthAPI: Sign out user (cleanup)
         Web-->>User: Show error message
         deactivate Web
     end
@@ -87,35 +87,35 @@ sequenceDiagram
     User->>Web: Navigate to /auth/signin
     activate Web
 
-    Web->>ClerkUI: Render <SignIn />
-    activate ClerkUI
+    Web->>AuthUI: Render <SignIn />
+    activate AuthUI
 
-    ClerkUI-->>User: Display signin form
-    deactivate ClerkUI
+    AuthUI-->>User: Display signin form
+    deactivate AuthUI
 
-    User->>ClerkUI: Enter credentials (email, password)
-    activate ClerkUI
+    User->>AuthUI: Enter credentials (email, password)
+    activate AuthUI
 
-    ClerkUI->>ClerkAPI: POST /v1/sessions
-    activate ClerkAPI
+    AuthUI->>AuthAPI: POST /v1/sessions
+    activate AuthAPI
 
-    ClerkAPI->>ClerkAPI: Validate credentials
-    ClerkAPI->>ClerkAPI: Verify password hash
+    AuthAPI->>AuthAPI: Validate credentials
+    AuthAPI->>AuthAPI: Verify password hash
 
     alt Valid Credentials
-        ClerkAPI->>ClerkAPI: Generate session token (JWT)
-        ClerkAPI-->>ClerkUI: Session created (JWT)
-        deactivate ClerkAPI
+        AuthAPI->>AuthAPI: Generate session token (JWT)
+        AuthAPI-->>AuthUI: Session created (JWT)
+        deactivate AuthAPI
 
-        ClerkUI->>ClerkUI: Store session in cookie
-        ClerkUI->>Web: Trigger redirect to /auth/signin-callback
-        deactivate ClerkUI
+        AuthUI->>AuthUI: Store session in cookie
+        AuthUI->>Web: Trigger redirect to /auth/signin-callback
+        deactivate AuthUI
 
-        Web->>Web: Extract clerkId from session
-        Web->>API: POST /api/v1/public/auth/signin<br/>{clerkId}
+        Web->>Web: Extract authUserId from session
+        Web->>API: POST /api/v1/public/auth/signin<br/>{authUserId}
         activate API
 
-        API->>DB: SELECT * FROM users WHERE clerk_id = ?
+        API->>DB: SELECT * FROM users WHERE auth_provider_user_id = ?
         activate DB
 
         alt User Exists
@@ -135,7 +135,7 @@ sequenceDiagram
             DB-->>API: No user found
             deactivate DB
 
-            API->>DB: INSERT INTO users (clerk_id, ...)
+            API->>DB: INSERT INTO users (auth_provider_user_id, ...)
             activate DB
             DB-->>API: User created
             deactivate DB
@@ -149,11 +149,11 @@ sequenceDiagram
         end
 
     else Invalid Credentials
-        ClerkAPI-->>ClerkUI: Authentication failed
-        deactivate ClerkAPI
+        AuthAPI-->>AuthUI: Authentication failed
+        deactivate AuthAPI
 
-        ClerkUI-->>User: Show error message
-        deactivate ClerkUI
+        AuthUI-->>User: Show error message
+        deactivate AuthUI
         deactivate Web
     end
 
@@ -165,13 +165,13 @@ sequenceDiagram
     User->>Web: Navigate to /accommodations/create
     activate Web
 
-    Web->>ClerkUI: useAuth() - Check session
-    activate ClerkUI
+    Web->>AuthUI: useAuth() - Check session
+    activate AuthUI
 
     alt Session Exists
-        ClerkUI->>ClerkUI: Validate session token
-        ClerkUI-->>Web: { isSignedIn: true, userId: 'clerk_user_123' }
-        deactivate ClerkUI
+        AuthUI->>AuthUI: Validate session token
+        AuthUI-->>Web: { isSignedIn: true, userId: 'auth_user_123' }
+        deactivate AuthUI
 
         Web->>Web: Render protected page
         Web-->>User: Display accommodation creation form
@@ -180,25 +180,25 @@ sequenceDiagram
         User->>Web: Submit form (create accommodation)
         activate Web
 
-        Web->>ClerkUI: getToken() - Get JWT
-        activate ClerkUI
-        ClerkUI-->>Web: JWT token
-        deactivate ClerkUI
+        Web->>AuthUI: getToken() - Get JWT
+        activate AuthUI
+        AuthUI-->>Web: JWT token
+        deactivate AuthUI
 
         Web->>API: POST /api/v1/accommodations<br/>Authorization: Bearer {JWT}
         activate API
 
         API->>API: Extract Authorization header
-        API->>ClerkAPI: Verify JWT signature
-        activate ClerkAPI
+        API->>AuthAPI: Verify JWT signature
+        activate AuthAPI
 
         alt Valid JWT
-            ClerkAPI->>ClerkAPI: Validate token signature
-            ClerkAPI->>ClerkAPI: Check expiration
-            ClerkAPI-->>API: Token valid { userId: 'clerk_user_123' }
-            deactivate ClerkAPI
+            AuthAPI->>AuthAPI: Validate token signature
+            AuthAPI->>AuthAPI: Check expiration
+            AuthAPI-->>API: Token valid { userId: 'auth_user_123' }
+            deactivate AuthAPI
 
-            API->>DB: SELECT * FROM users WHERE clerk_id = 'clerk_user_123'
+            API->>DB: SELECT * FROM users WHERE auth_provider_user_id = 'auth_user_123'
             activate DB
             DB-->>API: User record (id, role, permissions)
             deactivate DB
@@ -228,24 +228,24 @@ sequenceDiagram
             end
 
         else Invalid JWT
-            ClerkAPI-->>API: Token invalid/expired
-            deactivate ClerkAPI
+            AuthAPI-->>API: Token invalid/expired
+            deactivate AuthAPI
 
             API-->>Web: 401 Unauthorized
             deactivate API
 
-            Web->>ClerkAPI: Attempt token refresh
-            activate ClerkAPI
+            Web->>AuthAPI: Attempt token refresh
+            activate AuthAPI
 
             alt Refresh Success
-                ClerkAPI-->>Web: New JWT
-                deactivate ClerkAPI
+                AuthAPI-->>Web: New JWT
+                deactivate AuthAPI
                 Web->>API: Retry request with new token
                 Note over Web,API: Repeat authentication flow
 
             else Refresh Failed
-                ClerkAPI-->>Web: Refresh failed
-                deactivate ClerkAPI
+                AuthAPI-->>Web: Refresh failed
+                deactivate AuthAPI
                 Web->>Web: Clear session
                 Web->>Web: Redirect to /auth/signin
                 Web-->>User: "Session expired, please sign in"
@@ -254,8 +254,8 @@ sequenceDiagram
         end
 
     else No Session
-        ClerkUI-->>Web: { isSignedIn: false }
-        deactivate ClerkUI
+        AuthUI-->>Web: { isSignedIn: false }
+        deactivate AuthUI
 
         Web->>Web: Redirect to /auth/signin?redirect=/accommodations/create
         Web-->>User: Show signin form
@@ -263,4 +263,4 @@ sequenceDiagram
     end
 
     %% Summary
-    Note over User,DB: ✅ Key Points:<br/>1. Clerk manages authentication state<br/>2. JWT tokens authorize API requests<br/>3. Actor context derived from Clerk user<br/>4. Permissions checked on every request<br/>5. Token refresh handled automatically
+    Note over User,DB: ✅ Key Points:<br/>1. Better Auth manages authentication state<br/>2. JWT tokens authorize API requests<br/>3. Actor context derived from Better Auth user<br/>4. Permissions checked on every request<br/>5. Token refresh handled automatically

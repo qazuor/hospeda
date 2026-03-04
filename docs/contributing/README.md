@@ -24,9 +24,9 @@ Contributing to Hospeda offers unique opportunities:
 - **Full-Stack Experience**: Work with cutting-edge technologies
   - Frontend: Astro + React 19, TanStack Start
   - Backend: Hono API, PostgreSQL with Drizzle ORM
-  - Infrastructure: Fly.io, Neon, Vercel
+  - Infrastructure: Vercel, Neon
 - **Real-World Project**: Production-grade codebase with high standards
-- **Best Practices**: TDD, type safety, clean architecture
+- **Best Practices**: Test-informed development, type safety, clean architecture
 - **Monorepo Experience**: Learn TurboRepo and PNPM workspaces
 
 ### Make an Impact
@@ -149,7 +149,7 @@ git checkout -b fix/bug-description
 1. **Read the relevant standards:**
    - [Code Standards](./code-standards.md)
    - [Git Workflow](./git-workflow.md)
-2. **Write tests first** (TDD: Red → Green → Refactor)
+2. **Write tests** (test-informed: tests first for pure logic, alongside for integration code, always first for bug fixes)
 3. **Implement your changes**
 4. **Run quality checks:**
 
@@ -783,4 +783,4 @@ Still have questions? We're here to help!
 
 ---
 
-*Last updated: 2025-01-15*
+Last updated: 2025-01-15

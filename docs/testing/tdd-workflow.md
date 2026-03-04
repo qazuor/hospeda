@@ -1,16 +1,16 @@
-# TDD Workflow Guide
+# Test-Informed Development Workflow Guide
 
-Practical step-by-step guide for Test-Driven Development (TDD) workflow in Hospeda platform.
+Practical step-by-step guide for the Test-Informed Development workflow in Hospeda platform.
 
 ## Table of Contents
 
 - [Introduction](#introduction)
-- [Why TDD in Hospeda](#why-tdd-in-hospeda)
+- [Why Test-Informed Development in Hospeda](#why-test-informed-development-in-hospeda)
 - [The Red-Green-Refactor Cycle](#the-red-green-refactor-cycle)
 - [Step-by-Step Workflow](#step-by-step-workflow)
 - [Real Example: Accommodation Service](#real-example-accommodation-service)
-- [Common TDD Patterns](#common-tdd-patterns)
-- [TDD Anti-Patterns](#tdd-anti-patterns)
+- [Common Testing Patterns](#common-testing-patterns)
+- [Testing Anti-Patterns](#testing-anti-patterns)
 - [Integration with CI/CD](#integration-with-cicd)
 - [Troubleshooting](#troubleshooting)
 - [Tools and Utilities](#tools-and-utilities)
@@ -18,39 +18,48 @@ Practical step-by-step guide for Test-Driven Development (TDD) workflow in Hospe
 
 ## Introduction
 
-Test-Driven Development (TDD) is not just a testing methodology—it's a **design approach** that shapes how we build software at Hospeda. By writing tests first, we create better, more maintainable code that is easier to refactor and extend.
+Test-Informed Development is a **pragmatic testing approach** at Hospeda. Tests are mandatory for all code, but the timing is flexible based on the type of code being written.
 
-### What is TDD?
+### When to Write Tests First
 
-TDD is a software development process where you:
+- **Pure logic** (services, utils, validators): Write tests first when practical. The Red-Green-Refactor cycle works best here.
+- **Bug fixes**: ALWAYS write a regression test first to reproduce the bug.
 
-1. Write a failing test **before** writing any production code
+### When to Write Tests Alongside
+
+- **Integration code** (routes, components, wiring): Write tests alongside implementation in the same work session.
+
+### The Red-Green-Refactor Cycle
+
+For pure logic, use this cycle:
+
+1. Write a failing test **before** writing production code
 2. Write the minimal code to make that test pass
 3. Refactor the code while keeping tests green
 
-This cycle repeats for every feature, creating a comprehensive test suite that validates your entire codebase.
+This cycle creates a comprehensive test suite that validates your codebase.
 
-## Why TDD in Hospeda
+## Why Test-Informed Development in Hospeda
 
 ### Benefits We've Experienced
 
-**1. Better Design**
+#### 1. Better Design
 
 Tests reveal tight coupling and complex dependencies early. If a class is hard to test, it's probably poorly designed.
 
-**2. Living Documentation**
+#### 2. Living Documentation
 
 Tests show exactly how code should be used. New developers can read tests to understand the system.
 
-**3. Confident Refactoring**
+#### 3. Confident Refactoring
 
 Change code without fear. If tests stay green, functionality is preserved.
 
-**4. Prevent Regressions**
+#### 4. Prevent Regressions
 
 Catch bugs before they reach production. Every feature has tests from day one.
 
-**5. Faster Development**
+#### 5. Faster Development
 
 Less time debugging, more time building. The initial investment pays off quickly.
 
@@ -63,7 +72,7 @@ Less time debugging, more time building. The initial investment pays off quickly
 
 ## The Red-Green-Refactor Cycle
 
-The TDD workflow is a continuous cycle:
+For pure logic, the test-informed workflow uses a continuous cycle:
 
 ```mermaid
 graph LR
@@ -179,9 +188,9 @@ export class AccommodationService extends BaseCrudService {
 
 ## Step-by-Step Workflow
 
-### Complete TDD Process
+### Complete Test-Informed Process
 
-Follow these steps for every feature you build:
+Follow these steps for every feature you build (adjust timing based on code type):
 
 ### Step 1: Understand Requirements
 
@@ -468,7 +477,7 @@ Ensure 90% coverage minimum is maintained.
 
 ## Real Example: Accommodation Service
 
-Let's implement a complete feature using TDD: **Calculate average rating**.
+Let's implement a complete feature using the test-first approach: **Calculate average rating**.
 
 ### Requirements
 
@@ -781,7 +790,7 @@ pnpm test:coverage -- calculateAverageRating
 Coverage: 100%
 ```
 
-## Common TDD Patterns
+## Common Testing Patterns
 
 ### Pattern 1: Test Factories
 
@@ -936,7 +945,7 @@ describe('BookingService', () => {
 });
 ```
 
-## TDD Anti-Patterns
+## Testing Anti-Patterns
 
 ### Anti-Pattern 1: Testing Implementation Details
 
@@ -965,45 +974,40 @@ it('should reject invalid email', async () => {
 });
 ```
 
-### Anti-Pattern 2: Writing Tests After Code
+### Anti-Pattern 2: Skipping Tests Entirely
 
-**DON'T** write code first:
+**DON'T** skip writing tests:
 
 ```typescript
-// ❌ BAD: Code already exists
+// ❌ BAD: No tests written at all
 export class AccommodationService {
   async create(input) {
-    // Code written first
+    // Shipped without tests
   }
 }
-
-// Then tests written to match existing code
-it('should create accommodation', async () => {
-  // Test follows implementation
-});
 ```
 
-**DO** write tests first:
+**DO** write tests (timing depends on code type):
 
 ```typescript
-// ✅ GOOD: Test written first
+// ✅ GOOD for pure logic: Test written first
 it('should create accommodation', async () => {
-  // Test defines behavior
   const result = await service.create({ actor, data });
   expect(result.data).toBeDefined();
 });
 
-// Then implement to pass test
-export class AccommodationService {
-  async create(input) {
-    // Implementation follows test
-  }
-}
+// ✅ GOOD for integration code: Test written alongside
+// Both implementation and test created in the same work session
+
+// ✅ REQUIRED for bug fixes: Regression test written first
+it('should not crash on empty input', async () => {
+  // Reproduces the bug, then fix the code
+});
 ```
 
-### Anti-Pattern 3: Skipping RED Phase
+### Anti-Pattern 3: Skipping RED Phase (for Pure Logic)
 
-**DON'T** skip seeing the test fail:
+When writing tests first for pure logic, **DON'T** skip seeing the test fail:
 
 ```typescript
 // ❌ BAD: Write test and implementation together
@@ -1194,7 +1198,7 @@ pnpm test:watch
 # Immediate feedback
 ```
 
-**TDD workflow with watch mode:**
+**Test-informed workflow with watch mode:**
 
 1. Write failing test → Save
 2. See test fail in watch output
@@ -1446,17 +1450,17 @@ pnpm test:watch
 
 ### Further Reading
 
-- [Testing Strategy](../testing/strategy.md) - Comprehensive testing philosophy
-- [Unit Testing Guide](../testing/unit-testing.md) - Detailed unit testing patterns
-- [Integration Testing Guide](../testing/integration-testing.md) - Testing interactions
-- [Test Factories](../testing/test-factories.md) - Generating test data
-- [Mocking Strategies](../testing/mocking.md) - Effective mocking with Vitest
+- [Testing Strategy](./strategy.md) - Comprehensive testing philosophy
+- [Unit Testing Guide](./unit-testing.md) - Detailed unit testing patterns
+- [Integration Testing Guide](./integration-testing.md) - Testing interactions
+- [Test Factories](./test-factories.md) - Generating test data
+- [Mocking Strategies](./mocking.md) - Effective mocking with Vitest
 
 ### Practice Exercises
 
-1. **Exercise 1:** Implement a new service method using TDD
+1. **Exercise 1:** Implement a new service method using test-first approach
    - Choose a simple feature (e.g., "archive accommodation")
-   - Follow RED-GREEN-REFACTOR cycle
+   - Follow RED-GREEN-REFACTOR cycle (pure logic)
    - Achieve 100% coverage
 
 1. **Exercise 2:** Refactor existing code with tests
@@ -1464,14 +1468,14 @@ pnpm test:watch
    - Write tests for current behavior
    - Refactor while keeping tests green
 
-1. **Exercise 3:** Fix a bug using TDD
+1. **Exercise 3:** Fix a bug using regression-test-first approach
    - Write a failing test that reproduces the bug
    - Fix the bug to make test pass
    - Ensure no regressions
 
 ### Resources
 
-- [TDD by Example](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530) - Kent Beck
+- [TDD by Example](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530) - Kent Beck (reference for Red-Green-Refactor cycle)
 - [Vitest Documentation](https://vitest.dev)
 - [Testing Best Practices](https://testingjavascript.com)
 
@@ -1483,6 +1487,6 @@ pnpm test:watch
 
 **Related Documentation:**
 
-- [Testing Strategy](../testing/strategy.md)
+- [Testing Strategy](./strategy.md)
 - [Code Standards](../development/code-standards.md)
 - [Architecture Patterns](../architecture/patterns.md)

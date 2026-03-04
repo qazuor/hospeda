@@ -179,7 +179,7 @@ Hospeda's API security follows a **defense in depth** approach:
 | **XSS** | Cross-site scripting | Input sanitization + CSP |
 | **CSRF** | Cross-site request forgery | SameSite cookies + Origin validation |
 | **Information Disclosure** | Exposing sensitive data | Error sanitization |
-| **Broken Authentication** | Weak auth mechanisms | Clerk + JWT |
+| **Broken Authentication** | Weak auth mechanisms | Better Auth + session tokens |
 | **Injection** | Code/command injection | Input validation |
 
 ### Defense Layers
@@ -542,7 +542,7 @@ function getClientIp(c: Context): string {
 ```typescript
 // apps/api/src/middlewares/rate-limit.ts
 
-import { getAuth } from '@hono/clerk-auth';
+import { getAuth } from '../lib/auth';
 
 /**
  * Get rate limit key (user ID or IP)
@@ -715,7 +715,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
 
   // Higher limits for authenticated users
   if (auth?.userId) {
-    const user = await clerkClient.users.getUser(auth.userId);
+    const user = await auth.api.getSession({ headers: c.req.raw.headers });
     const role = user.publicMetadata?.role as UserRole;
 
     // Admin bypass
@@ -2455,7 +2455,7 @@ API_COMPRESSION_THRESHOLD=1024
 
 1. **Network Level**: CDN, firewall
 2. **Application Level**: Rate limiting, CORS
-3. **Authentication Level**: Clerk, JWT
+3. **Authentication Level**: Better Auth, session tokens
 4. **Validation Level**: Zod schemas
 5. **Data Level**: Sanitization, encryption
 

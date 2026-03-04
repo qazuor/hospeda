@@ -34,7 +34,7 @@ This runbook provides comprehensive procedures for monitoring the Hospeda platfo
 
 - [ ] Vercel Dashboard access (frontend monitoring)
 - [ ] Neon Console access (database monitoring)
-- [ ] Backend platform access (Fly.io/similar)
+- [ ] Vercel Dashboard access (backend/API monitoring)
 - [ ] GitHub Actions access (CI/CD monitoring)
 - [ ] Team communication channels (for alerts)
 
@@ -60,7 +60,7 @@ This runbook provides comprehensive procedures for monitoring the Hospeda platfo
 | Component | Tool | Purpose | Access |
 |-----------|------|---------|--------|
 | **Frontend** | Vercel Analytics | Page performance, Web Vitals | Vercel Dashboard |
-| **Backend** | Platform metrics | CPU, memory, response times | Fly.io Dashboard |
+| **Backend** | Vercel Analytics | Function duration, error rates | Vercel Dashboard |
 | **Database** | Neon Monitoring | Query performance, connections | Neon Console |
 | **Logs** | @repo/logger | Structured logging | Platform logs |
 | **CI/CD** | GitHub Actions | Build/deploy monitoring | GitHub Actions |
@@ -69,8 +69,8 @@ This runbook provides comprehensive procedures for monitoring the Hospeda platfo
 
 | Component | Tool | Purpose | Status |
 |-----------|------|---------|--------|
+| **Error Tracking** | Sentry | Error monitoring, stack traces | Configured (see [Sentry Setup](./sentry-setup.md)) |
 | **APM** | Prometheus + Grafana | Advanced metrics, dashboards | Planned |
-| **Error Tracking** | Sentry | Error monitoring, stack traces | Planned |
 | **Uptime** | UptimeRobot | External uptime monitoring | Planned |
 | **Alerts** | PagerDuty/Slack | Alerting system | Planned |
 
@@ -255,32 +255,32 @@ export function initWebVitals() {
 
 ## Backend Monitoring Setup
 
-### Platform Metrics (Fly.io)
+### Platform Metrics (Vercel)
 
 **Via Dashboard**:
 
-1. Go to Fly.io Dashboard
-2. Select `hospeda-api` app
-3. View **Metrics** tab
+1. Go to Vercel Dashboard
+2. Select the `hospeda-api` project
+3. View **Analytics** and **Functions** tabs
 
 **Available metrics**:
 
-- CPU usage (per instance)
-- Memory usage (per instance)
-- Request rate
-- Response times (p50, p95, p99)
+- Function invocation count
+- Function duration (p50, p95, p99)
+- Error rate per function
+- Cold start frequency
 
 **Via CLI**:
 
 ```bash
-# View current metrics
-fly dashboard --app hospeda-api
-
 # View logs in real-time
-fly logs --app hospeda-api
+vercel logs --prod --follow
 
-# Check instance status
-fly status --app hospeda-api
+# List recent deployments
+vercel ls
+
+# Inspect a specific deployment
+vercel inspect <deployment-url>
 ```
 
 ### Custom API Metrics
@@ -913,7 +913,7 @@ Response time (p95): 105ms ✓ (monthly average)
 
 **Review**:
 
-- Hosting costs (Vercel, Fly.io, Neon)
+- Hosting costs (Vercel, Neon)
 - Scaling events and their cost impact
 - Opportunities for optimization
 
@@ -1023,7 +1023,7 @@ app.get('/api/accommodations', async (c) => {
 
 ### Log Aggregation
 
-**Current**: Platform-specific logs (Vercel, Fly.io)
+**Current**: Platform-specific logs (Vercel for all apps)
 
 **Future**: Centralized logging (e.g., Datadog, LogDNA)
 
@@ -1108,6 +1108,7 @@ fly logs --app hospeda-api | grep "userId.*user-123"
 
 ## Related Documentation
 
+- [Sentry Setup](./sentry-setup.md) - Error tracking configuration, alerts, and dashboards
 - [Production Bugs](./production-bugs.md) - Using metrics to investigate issues
 - [Scaling](./scaling.md) - Using metrics to make scaling decisions
 - [Performance Guide](../performance/README.md) - Performance optimization based on metrics

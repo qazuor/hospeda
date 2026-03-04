@@ -32,7 +32,7 @@ We'll add proper email validation to an existing field. This task teaches:
 
 - Finding code in the monorepo
 - Writing Zod schemas
-- Following TDD workflow
+- Following test-informed workflow
 - Running quality checks
 - Creating atomic commits
 
@@ -73,9 +73,9 @@ export const userSchema = z.object({
 
 ---
 
-## Step 2: Write Tests First (TDD - Red)
+## Step 2: Write Tests First (Red Phase)
 
-Following TDD, we write tests BEFORE implementation.
+For pure validation logic like schemas, we write tests BEFORE implementation (test-first approach).
 
 ### Create Test File
 
@@ -164,7 +164,7 @@ pnpm test user.schema.test.ts
 
 ---
 
-## Step 3: Implement Solution (TDD - Green)
+## Step 3: Implement Solution (Green Phase)
 
 Now we write the MINIMUM code to make tests pass.
 
@@ -205,7 +205,7 @@ pnpm test user.schema.test.ts
 
 ---
 
-## Step 4: Refactor (TDD - Refactor)
+## Step 4: Refactor (Refactor Phase)
 
 Tests pass, but can we improve the code?
 
@@ -429,8 +429,8 @@ Congratulations! You've completed your first contribution. You learned:
 
 ### Development Workflow
 
-- ✅ TDD cycle: Red → Green → Refactor
-- ✅ Writing tests first
+- ✅ Test-informed cycle: Red → Green → Refactor (for pure logic)
+- ✅ Writing tests (first for pure logic, alongside for integration code)
 - ✅ Implementing minimal solution
 - ✅ Refactoring for code quality
 

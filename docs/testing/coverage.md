@@ -850,4 +850,4 @@ it.skip('hard to test', () => { ... }); // ❌
 **Related Documentation**:
 
 - [Testing Philosophy](./README.md)
-- [TDD Workflow](.claude/docs/workflows/phase-2-implementation.md)
+- [Test-Informed Workflow](./tdd-workflow.md)

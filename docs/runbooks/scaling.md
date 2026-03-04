@@ -32,7 +32,7 @@ This runbook provides procedures for scaling the Hospeda platform to handle incr
 ### Required Access
 
 - [ ] Vercel Admin access (frontend scaling)
-- [ ] Fly.io/backend platform access (backend scaling)
+- [ ] Vercel Admin access (backend/API scaling)
 - [ ] Neon Console access (database scaling)
 - [ ] Monitoring dashboards access
 - [ ] Team communication channels
@@ -40,7 +40,7 @@ This runbook provides procedures for scaling the Hospeda platform to handle incr
 ### Required Tools
 
 - [ ] Browser (for dashboards)
-- [ ] Terminal with CLI tools (vercel, fly, psql)
+- [ ] Terminal with CLI tools (vercel, psql)
 - [ ] Load testing tools (k6, autocannon)
 - [ ] Monitoring access (metrics dashboards)
 
@@ -147,9 +147,9 @@ curl -f https://api.hospeda.com/health
 1. **Backend** (CPU/memory)
 
    ```bash
-   # Check via platform dashboard (Fly.io)
-   # Metrics → CPU/Memory
-   # Critical: > 85%
+   # Check via Vercel Dashboard
+   # Functions tab → Duration / Error rate
+   # Critical: p95 duration > 5s or error rate > 5%
    ```
 
 1. **Frontend** (CDN, edge)
@@ -314,99 +314,83 @@ pnpm analyze  # If analyze script exists
 3. Go to **Analytics** tab
 4. Review Web Vitals
 
-## Backend Scaling (Fly.io/Similar)
+## Backend Scaling (Vercel)
 
-**Note**: Adapt for your specific backend platform. Examples use Fly.io.
+Vercel serverless functions auto-scale horizontally per request. Manual scaling is not
+required. Instead, tuning involves adjusting function memory and duration limits.
 
 ### Backend Emergency Scaling
 
-**When**: CPU > 85%, Memory > 90%, or API response times > 1s
+**When**: API function timeouts or high error rates
 
-**Step 1**: Check current scale
-
-```bash
-# Check current instances
-fly status --app hospeda-api
-
-# Expected output:
-# Instances
-#   ID       VERSION  REGION  STATE   CHECKS  MEMORY  CPU
-#   abc123   v42      mia     running  ✓       512MB   2x
-
-# Current: 1 instance
-```
-
-**Step 2**: Scale horizontally (add instances)
-
-**Recommended for**:
-
-- High request volume
-- Traffic spikes
-- Need redundancy
+**Step 1**: Check current function performance
 
 ```bash
-# Scale to 3 instances
-fly scale count 3 --app hospeda-api
+# View function logs and durations
+vercel logs --prod --follow
 
-# Or specific regions
-fly scale count 2 --region mia --app hospeda-api
-fly scale count 1 --region iad --app hospeda-api
+# Or check in Vercel Dashboard → Functions tab
 ```
 
-**Expected**:
+**Step 2**: Increase function resources (if hitting limits)
 
-- New instances deploy (< 2 minutes)
-- Load balancing automatic
-- Health checks pass
+Edit `apps/api/vercel.json`:
+
+```json
+{
+  "functions": {
+    "api/index.ts": {
+      "memory": 2048,
+      "maxDuration": 30
+    }
+  }
+}
+```
+
+Then redeploy:
+
+```bash
+cd apps/api && vercel --prod
+```
 
 **Step 3**: Monitor impact
 
 ```bash
 # Watch logs
-fly logs --app hospeda-api
-
-# Check metrics
-fly dashboard --app hospeda-api
+vercel logs --prod --follow
 ```
 
 **Look for**:
 
-- Request distribution across instances
-- CPU/memory per instance decreasing
-- Response times improving
+- Function duration decreasing
+- Error rate dropping
+- Response times stabilizing
 
-### Backend Vertical Scaling
+### Backend Configuration Tuning
 
-**When**: Single-threaded bottleneck or memory-intensive operations
+**When**: Consistent slow responses or memory pressure
 
-**Step 1**: Check current resources
+**Step 1**: Check current function metrics in Vercel Dashboard
 
-```bash
-# Check current VM size
-fly status --app hospeda-api
+**Step 2**: Tune configuration in `apps/api/vercel.json`
 
-# Memory: 512MB, CPU: 2x shared
+```json
+{
+  "functions": {
+    "api/index.ts": {
+      "memory": 3008,
+      "maxDuration": 60
+    }
+  }
+}
 ```
 
-**Step 2**: Scale vertically (increase resources)
-
-```bash
-# Increase memory
-fly scale memory 1024 --app hospeda-api
-
-# Increase CPU
-fly scale vm shared-cpu-2x --app hospeda-api
-
-# Or dedicated CPU
-fly scale vm dedicated-cpu-1x --app hospeda-api
-```
-
-**Cost consideration**: Vertical scaling is more expensive
+**Cost consideration**: Higher memory and duration limits increase cost on Vercel Pro.
 
 **Step 3**: Redeploy
 
 ```bash
-# Changes require redeploy
+# Trigger new deployment
 fly deploy --app hospeda-api
 ```
 
@@ -422,24 +406,20 @@ fly logs --app hospeda-api
 
 ### Backend Scaling Strategy
 
-**Start with horizontal** (more cost-effective):
+Vercel serverless auto-scales horizontally with no instance management required.
 
-1. Scale to 2-3 instances
-2. Monitor performance
-3. Add more instances if needed (up to 5-10)
+**Tuning order** (most to least impactful):
 
-**Then vertical** (if still bottlenecked):
-
-1. Increase memory (512MB → 1GB → 2GB)
-2. Increase CPU (shared → dedicated)
+1. Increase function memory (`"memory"` in `vercel.json`)
+2. Increase max duration (`"maxDuration"` in `vercel.json`)
+3. Optimize database connection pooling for serverless
 
 **Maximum recommended**:
 
-- Instances: 5-10 (for small/medium apps)
-- Memory: 2-4 GB
-- CPU: dedicated-cpu-2x
+- Memory: 3008 MB (Vercel Pro limit)
+- Max duration: 300s (Vercel Pro limit)
 
-**Beyond that**: Consider architecture changes
+**Beyond that**: Consider architecture changes (edge functions, caching, queue-based processing)
 
 ### Backend Optimization
 
@@ -1014,7 +994,7 @@ export const options = {
    - Scale database, not just backend
 
 1. **External dependency**
-   - Third-party API slow (Clerk, Mercado Pago)
+   - Third-party API slow (Better Auth, Mercado Pago)
    - Check external service status
 
 1. **Code-level bottleneck**

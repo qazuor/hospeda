@@ -18,7 +18,7 @@ Quick answers to common questions for developers working on the Hospeda project.
 
 ### How do I set up the project locally?
 
-Clone the repository, install dependencies with `pnpm install`, set up your `.env.local` file with required environment variables (DATABASE_URL, CLERK keys), run `pnpm db:migrate` to set up the database, and finally `pnpm dev` to start development servers.
+Clone the repository, install dependencies with `pnpm install`, set up your `.env.local` file with required environment variables (DATABASE_URL, Better Auth keys), run `pnpm db:migrate` to set up the database, and finally `pnpm dev` to start development servers.
 
 See [Setup Guide](../getting-started/setup.md) for detailed instructions.
 
@@ -46,9 +46,9 @@ Run `pnpm db:studio` to open Drizzle Studio at `http://localhost:4983`. This pro
 
 Create a `.env.local` file in the project root. Copy `.env.example` as a template. Never commit `.env.local` to git - it's in `.gitignore` for security.
 
-### How do I get Clerk authentication keys?
+### How do I configure Better Auth?
 
-Sign up at [clerk.com](https://clerk.com), create an application, and copy the publishable and secret keys to your `.env.local` as `CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY`.
+Set the `HOSPEDA_BETTER_AUTH_SECRET` (a random secret key for signing sessions) and `HOSPEDA_BETTER_AUTH_URL` (your API auth endpoint, e.g., `http://localhost:3001/api/auth`) in your `.env.local`. See [Better Auth docs](https://www.better-auth.com/docs) for details.
 
 ---
 
@@ -266,9 +266,9 @@ describe('AccommodationCard', () => {
 });
 ```
 
-### How do I write tests following TDD?
+### How do I write tests following Test-Informed Development?
 
-Write the test first (it should fail - RED), implement the minimum code to make it pass (GREEN), refactor while keeping tests passing (REFACTOR), and repeat. Never write production code without a failing test first.
+Tests are mandatory but timing is flexible. For **pure logic** (services, utils, validators), write the test first when practical: it should fail (RED), implement the minimum code to make it pass (GREEN), refactor while keeping tests passing (REFACTOR). For **integration code** (routes, components, wiring), write tests alongside implementation. For **bug fixes**, always write a regression test first.
 
 ### Where do test files go?
 
@@ -495,7 +495,7 @@ Check `DATABASE_URL` in `.env.local` is correct, verify database server is runni
 
 ### "Authentication error" - what to check?
 
-Verify Clerk keys in `.env.local` are correct, check that user is logged in, ensure JWT token is being sent in requests, verify token hasn't expired, check Clerk dashboard for service status, and ensure middleware is configured correctly.
+Verify `HOSPEDA_BETTER_AUTH_SECRET` and `HOSPEDA_BETTER_AUTH_URL` in `.env.local` are correct, check that user is logged in, verify the session cookie is present in requests, check the `sessions` table in the database for active sessions, and ensure the Better Auth middleware is configured correctly.
 
 ### "Validation error" - how to debug?
 
@@ -547,4 +547,4 @@ If your question isn't answered here:
 
 ---
 
-*Last updated: 2025-11-06*
+Last updated: 2025-11-06

@@ -76,7 +76,7 @@ graph TB
 | **Services** | TypeScript, Zod validation |
 | **Database** | PostgreSQL, Drizzle ORM |
 | **Cache** | Redis |
-| **Auth** | Clerk |
+| **Auth** | Better Auth |
 | **Payments** | Mercado Pago |
 | **Infrastructure** | Vercel, Neon Cloud, Docker |
 | **Monorepo** | TurboRepo, pnpm workspaces |
@@ -93,7 +93,7 @@ graph TB
 
 ### 2. Developer Experience
 
-- Fast feedback loops (TDD)
+- Fast feedback loops (test-informed development)
 - Comprehensive tooling
 - Clear conventions
 

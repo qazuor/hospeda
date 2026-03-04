@@ -131,11 +131,11 @@ DATABASE_URL="your-neon-connection-string"
 REDIS_URL="your-redis-url"  # Or use Upstash
 ```
 
-**Authentication (Clerk):**
+**Authentication (Better Auth):**
 
 ```env
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key"
-CLERK_SECRET_KEY="your-clerk-secret-key"
+HOSPEDA_BETTER_AUTH_URL="http://localhost:3001/api/auth"
+HOSPEDA_BETTER_AUTH_SECRET="your-secret-key"
 ```
 
 **Payments (Mercado Pago - optional for now):**
@@ -510,12 +510,12 @@ pnpm dev
 
 ---
 
-**Problem**: Clerk authentication not working
+**Problem**: Better Auth authentication not working
 
 **Solution**:
 
 1. Verify keys in `.env.local` are correct
-2. Check Clerk dashboard for app status
+2. Check Better Auth dashboard for app status
 3. Ensure `ALLOWED_ORIGINS` includes your dev URLs
 
 ---

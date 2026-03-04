@@ -128,17 +128,17 @@ Curated collection of official documentation and learning resources for all tech
 
 ### Authentication
 
-#### Clerk
+#### Better Auth
 
-- **URL**: <https://clerk.com/docs>
-- **Description**: User management and authentication platform with social login support.
-- **Relevance**: Handles all user authentication in Hospeda (web and admin).
+- **URL**: <https://www.better-auth.com/docs>
+- **Description**: Self-hosted authentication library for TypeScript applications with plugin-based architecture.
+- **Relevance**: Handles all user authentication in Hospeda (web, admin, and API) with database-backed sessions.
 
 **Key Sections**:
 
-- [Astro Integration](https://clerk.com/docs/references/astro/overview)
-- [React Integration](https://clerk.com/docs/references/react/overview)
-- [Backend API](https://clerk.com/docs/references/backend/overview)
+- [Getting Started](https://www.better-auth.com/docs/introduction)
+- [Basic Usage](https://www.better-auth.com/docs/basic-usage)
+- [Plugins](https://www.better-auth.com/docs/plugins)
 
 ### Styling
 
@@ -268,7 +268,7 @@ Curated collection of official documentation and learning resources for all tech
 
 - **URL**: <https://testingjavascript.com/>
 - **Description**: Kent C. Dodds' comprehensive testing course.
-- **Use for**: Learning testing best practices and TDD methodology.
+- **Use for**: Learning testing best practices and test-informed development methodology.
 
 #### Vitest Best Practices
 
@@ -580,4 +580,4 @@ Found a useful resource? Add it to this list!
 
 ---
 
-*Last updated: 2025-11-06*
+Last updated: 2025-11-06

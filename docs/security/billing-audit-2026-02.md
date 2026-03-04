@@ -19,7 +19,7 @@ The billing system demonstrates **solid security fundamentals** with proper auth
 
 ### Key Strengths
 
-1. ✅ Strong authentication (Clerk) and authorization (role-based + permissions)
+1. ✅ Strong authentication (Better Auth) and authorization (role-based + permissions)
 2. ✅ Comprehensive input validation via Zod schemas
 3. ✅ Webhook signature verification (QZPay handles MercadoPago signatures)
 4. ✅ SQL injection prevention (using Drizzle ORM with parameterized queries)
@@ -1206,7 +1206,7 @@ if (!isValidSignature) {
 
 **Strengths:**
 
-1. ✅ **Clerk authentication** properly integrated
+1. ✅ **Better Auth authentication** properly integrated
 2. ✅ **Bearer token** authentication (not vulnerable to CSRF by default)
 3. ✅ **Actor middleware** extracts and validates user identity on every request
 4. ✅ **Role-based access control** (ADMIN, SUPER_ADMIN, USER, GUEST)
@@ -1517,7 +1517,7 @@ const addonPurchases = await db
 | Risk | Status | Notes |
 |------|--------|-------|
 | API1: Broken Object Level Authorization | ✅ PASS | Authorization checks in place, minor issue in M-002 |
-| API2: Broken Authentication | ✅ PASS | Clerk authentication + Bearer tokens |
+| API2: Broken Authentication | ✅ PASS | Better Auth session-based authentication + Bearer tokens |
 | API3: Broken Object Property Level Authorization | ✅ PASS | Zod schemas validate input properties |
 | API4: Unrestricted Resource Consumption | ⚠️ PARTIAL | Rate limiting present, but needs stricter limits (H-002) |
 | API5: Broken Function Level Authorization | ✅ PASS | Role-based access control enforced |

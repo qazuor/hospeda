@@ -566,30 +566,33 @@ const accommodations = await fetch('/api/accommodations').then(r => r.json());
 
 **Related**: Islands Architecture, SSR, React
 
-### Clerk
+### Better Auth
 
-Authentication provider used for user management, login, and session handling.
+Authentication library used for user management, login, and session handling. Replaced Clerk as the authentication provider.
 
 **Features**:
 
-- User authentication
-- Session management
-- Social login (Google, GitHub, etc.)
-- JWT tokens
+- User authentication with email/password and social login
+- Session management via database-backed sessions
+- Plugin-based architecture (admin, organization, etc.)
+- Self-hosted (no external service dependency)
 
 **Example**:
 
 ```typescript
-import { auth } from '@clerk/astro/server';
+// Check session in Astro page
+const user = Astro.locals.user;
 
-const { userId } = auth();
-
-if (!userId) {
-  return Response.redirect('/login');
+if (!user) {
+  return Astro.redirect(`/${locale}/auth/signin`);
 }
 ```
 
-**Related**: Authentication, JWT, Actor
+**Configuration**: Requires `HOSPEDA_BETTER_AUTH_SECRET` and `HOSPEDA_BETTER_AUTH_URL` environment variables.
+
+**Documentation**: [Better Auth Docs](https://www.better-auth.com/docs)
+
+**Related**: Authentication, Session, Actor
 
 ### Islands Architecture
 
@@ -828,7 +831,7 @@ it('should create accommodation successfully', async () => {
 });
 ```
 
-**Related**: TDD, Vitest
+**Related**: Test-Informed Development, Vitest
 
 ### Coverage
 
@@ -849,7 +852,7 @@ accommodation.service |  95%  |  88%   |  100% |  94%
 accommodation.model   |  92%  |  90%   |  100% |  91%
 ```
 
-**Related**: TDD, Vitest
+**Related**: Test-Informed Development, Vitest
 
 ### E2E Testing
 
@@ -904,7 +907,7 @@ describe('AccommodationService integration', () => {
 
 ### Red-Green-Refactor
 
-The TDD cycle: write failing test (red), make it pass (green), improve code (refactor).
+A testing cycle recommended for pure logic: write failing test (red), make it pass (green), improve code (refactor). Used within the Test-Informed Development methodology when writing pure functions, validators, and business logic.
 
 **Example workflow**:
 
@@ -929,24 +932,21 @@ function calculateTotal(input: {
 }
 ```
 
-**Related**: TDD, AAA Pattern
+**Related**: Test-Informed Development, AAA Pattern
 
-### TDD (Test-Driven Development)
+### Test-Informed Development
 
-Development methodology where tests are written before implementation code.
+Hospeda's testing methodology. Tests are MANDATORY but timing is flexible based on code type:
 
-**Process**:
+**Guidelines by code type**:
 
-1. Write test
-2. Run test (should fail)
-3. Write minimal code to pass
-4. Run test (should pass)
-5. Refactor
-6. Repeat
+- **Pure logic** (services, utils, validators): Write tests first when practical (Red-Green-Refactor)
+- **Integration code** (routes, components, wiring): Write tests alongside implementation
+- **Bug fixes**: ALWAYS write regression test first
 
-**Required**: All Hospeda code must use TDD.
+**Required**: All Hospeda code must have tests. 90% coverage minimum.
 
-**Related**: Red-Green-Refactor, Coverage
+**Related**: Red-Green-Refactor, Coverage, SDD (Spec-Driven Development)
 
 ### Test Pyramid
 
@@ -1005,7 +1005,7 @@ describe('calculateBookingPrice', () => {
 });
 ```
 
-**Related**: Integration Testing, TDD, Vitest
+**Related**: Integration Testing, Test-Informed Development, Vitest
 
 ### Vitest
 
@@ -1045,7 +1045,7 @@ pnpm test:watch        # Watch mode
 pnpm test:coverage     # With coverage
 ```
 
-**Related**: TDD, Coverage
+**Related**: Test-Informed Development, Coverage
 
 ---
 
@@ -1423,4 +1423,4 @@ const service = await touristServiceService.create({
 
 ---
 
-*Last updated: 2025-11-06*
+Last updated: 2025-11-06

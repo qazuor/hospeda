@@ -1,63 +1,212 @@
 # Performance Documentation
 
-Welcome to the Hospeda performance documentation. This guide covers performance optimization strategies, best practices, and monitoring approaches for the entire platform.
+## Performance Philosophy
 
-## 📖 Documentation
+Hospeda's approach to performance is guided by four core principles:
 
-| Document | Description |
-|----------|-------------|
-| [Overview](./overview.md) | Performance philosophy, targets, and architecture decisions |
-| [Database Optimization](./database-optimization.md) | Query optimization, indexing, N+1 prevention, connection pooling |
-| [Caching Strategies](./caching.md) | Backend cache (Hono), frontend cache (TanStack Query), cache warming |
-| [Frontend Optimization](./frontend-optimization.md) | Bundle size, code splitting, Lighthouse optimization, image optimization |
-| [Performance Monitoring](./monitoring.md) | Real User Monitoring (RUM), API metrics, database profiling, alerting |
+### 1. User-First Optimization
 
-## 🎯 Performance Targets
+Focus on perceived performance over technical metrics:
 
-### Web Vitals (Lighthouse 100)
+- Prioritize what users experience (loading states, interactivity)
+- Optimize critical rendering path (above-the-fold content)
+- Use optimistic updates to mask network latency
+- Implement skeleton loaders and progressive enhancement
 
-Core Web Vitals targets for optimal user experience:
+### 2. Data-Driven Decisions
 
-| Metric | Target | Maximum | Description |
-|--------|--------|---------|-------------|
-| **LCP** | < 2.5s | 4.0s | Largest Contentful Paint - Main content load time |
-| **FID** | < 100ms | 300ms | First Input Delay - Interactivity responsiveness |
-| **CLS** | < 0.1 | 0.25 | Cumulative Layout Shift - Visual stability |
-| **FCP** | < 1.8s | 3.0s | First Contentful Paint - First visual element |
-| **TTI** | < 3.8s | 7.3s | Time to Interactive - Fully interactive page |
+Measure everything, optimize bottlenecks systematically:
 
-### API Performance
+- Establish baseline metrics before optimization
+- Use Real User Monitoring (RUM) for production insights
+- Profile with actual user devices and network conditions
+- Focus optimization efforts on high-impact areas (80/20 rule)
+
+### 3. Proactive Performance Management
+
+Build performance into the development process from day one:
+
+- Set performance budgets for bundle size and timing
+- Run automated Lighthouse audits in CI/CD
+- Review performance impact in code reviews
+- Monitor production metrics continuously
+
+### 4. Continuous Improvement
+
+Performance is not a one-time effort but an ongoing practice:
+
+- Regular performance audits (weekly automated, quarterly manual)
+- Monitor performance trends over time
+- Set and review SLOs (Service Level Objectives)
+- Learn from performance incidents
+
+---
+
+## Performance Targets
+
+### Frontend - Core Web Vitals
+
+| Metric | Good | Needs Improvement | Poor | Description |
+|--------|------|-------------------|------|-------------|
+| **LCP** | < 2.5s | 2.5s - 4.0s | > 4.0s | Largest Contentful Paint |
+| **FID** | < 100ms | 100ms - 300ms | > 300ms | First Input Delay |
+| **CLS** | < 0.1 | 0.1 - 0.25 | > 0.25 | Cumulative Layout Shift |
+| **FCP** | < 1.8s | 1.8s - 3.0s | > 3.0s | First Contentful Paint |
+| **TTI** | < 3.8s | 3.8s - 7.3s | > 7.3s | Time to Interactive |
+| **TBT** | < 200ms | 200ms - 600ms | > 600ms | Total Blocking Time |
+
+Target: 75% of page loads in "Good" category for all metrics.
+
+### Frontend - Lighthouse Scores
+
+| Metric | Minimum | Target |
+|--------|---------|--------|
+| Performance | 90 | 95+ |
+| Accessibility | 95 | 100 |
+| Best Practices | 95 | 100 |
+| SEO | 95 | 100 |
+
+### Frontend - Bundle Size Budgets
+
+**Web App** (Public Site):
+
+| Asset | Target | Maximum |
+|-------|--------|---------|
+| Initial JS | < 80KB | 100KB |
+| Route JS | < 30KB | 50KB |
+| Initial CSS | < 40KB | 50KB |
+| Images (above-fold) | < 150KB | 200KB |
+| Fonts | < 40KB | 50KB |
+| Total Initial | < 300KB | 400KB |
+
+**Admin App** (Dashboard):
+
+| Asset | Target | Maximum |
+|-------|--------|---------|
+| Initial JS | < 150KB | 200KB |
+| Route JS | < 50KB | 75KB |
+| Initial CSS | < 60KB | 75KB |
+| Vendor JS | < 120KB | 150KB |
+| Total Initial | < 400KB | 500KB |
+
+### Backend - API Response Times (p95)
+
+| Endpoint Type | Target | Maximum | Example |
+|---------------|--------|---------|---------|
+| Simple GET | < 50ms | 100ms | `GET /api/v1/health` |
+| List Endpoint | < 100ms | 200ms | `GET /api/v1/accommodations` (paginated) |
+| Detail Endpoint | < 75ms | 150ms | `GET /api/v1/accommodations/:id` |
+| POST/PUT | < 150ms | 300ms | `POST /api/v1/accommodations` |
+| Complex Query | < 200ms | 500ms | Search with filters, joins |
+| File Upload | < 1000ms | 2000ms | Image upload to Cloudinary |
+
+### Backend - Availability
+
+| SLO | Target | Downtime/Month |
+|-----|--------|----------------|
+| API Uptime | 99.9% | 43 minutes |
+| Database Uptime | 99.95% | 21 minutes |
+| Overall System | 99.5% | 3.6 hours |
+
+### Database - Query Performance (p95)
+
+| Query Type | Target | Maximum |
+|------------|--------|---------|
+| Primary Key Lookup | < 5ms | 10ms |
+| Indexed Query | < 20ms | 50ms |
+| Complex Join | < 50ms | 100ms |
+| Aggregation | < 100ms | 200ms |
+| Full-Text Search | < 75ms | 150ms |
+
+### Database - Connection Pool
 
 | Metric | Target | Maximum |
 |--------|--------|---------|
-| **Response Time** (p95) | < 200ms | 500ms |
-| **Throughput** | > 1000 req/s | - |
-| **Error Rate** | < 0.1% | 1% |
-| **Availability** | > 99.9% | - |
+| Pool Size | 20-30 | 50 |
+| Connection Acquisition | < 50ms | 100ms |
+| Cache Hit Rate | > 80% | - |
+| Index Scan Rate | > 95% | - |
 
-### Database Performance
+---
 
-| Metric | Target | Maximum |
-|--------|--------|---------|
-| **Query Time** (p95) | < 50ms | 100ms |
-| **Connection Pool** | 10-50 connections | - |
-| **Cache Hit Rate** | > 80% | - |
-| **Index Usage** | > 95% of queries | - |
+## Performance Budgets
 
-## ✅ Optimization Checklist
+Performance budgets are hard limits enforced in CI/CD. Exceeding budgets blocks PR merges.
 
-### Pre-Deployment Checklist
+### Enforcement Levels
 
-Use this checklist before deploying any feature:
+- **Strict**: CI fails, blocks PR merge
+- **Warn**: CI passes with warning, requires manual review
+- **Monitor**: Tracked but does not block
+
+**Web App** enforcement: Strict
+**Admin App** enforcement: Warn
+
+---
+
+## Architecture Decisions
+
+### Edge Computing (Vercel)
+
+```
+User Request
+     |
+Vercel Edge (Cloudflare)
+     |
+Edge Function (Middleware) .. Geo-distributed, < 50ms latency
+     |
+SSR/ISR (Astro/React)
+     |
+API (Hono) .. Vercel serverless
+     |
+Database (Neon) .. Primary region
+```
+
+**Benefits**: Low latency at edge, automatic scaling, built-in CDN, DDoS protection.
+**Trade-offs**: Cold starts (~500ms), execution time limits, regional database latency from edge.
+
+### Database Connection Pooling
+
+Serverless functions create many short-lived connections. Neon serverless pooling + PgBouncer transaction pooling manages this:
+
+```
+Serverless Functions (100s of instances)
+    |
+PgBouncer (Transaction Pooling)
+    |
+Connection Pool (10-50 connections)
+    |
+PostgreSQL (Neon)
+```
+
+### Multi-Layer Caching
+
+```
+1. Browser Cache (Static Assets)    .. max-age headers, immutable hashes
+2. CDN Cache (Vercel Edge)          .. stale-while-revalidate
+3. Server Cache (Hono Middleware)    .. cache-control per endpoint
+4. Application Cache (TanStack Query) .. staleTime per query
+5. Database Cache (PostgreSQL)       .. shared_buffers, prepared statements
+```
+
+### Code Splitting
+
+- **Web App (Astro)**: Automatic route-based splitting, component islands for selective hydration
+- **Admin App (TanStack Start)**: Lazy-loaded route components, vendor chunk splitting
+
+---
+
+## Optimization Checklist
+
+### Pre-Deployment
 
 #### Database
 
-- [ ] Database indexes created for all WHERE/JOIN clauses
+- [ ] Indexes created for all WHERE/JOIN clauses
 - [ ] No N+1 queries (verified with query analysis)
-- [ ] All queries use pagination (LIMIT/OFFSET or cursor-based)
-- [ ] EXPLAIN ANALYZE run on all new queries
+- [ ] All queries use pagination
+- [ ] EXPLAIN ANALYZE run on new queries
 - [ ] Query execution time < 50ms (p95)
-- [ ] Connection pooling configured (10-50 connections)
 - [ ] Foreign keys indexed
 
 #### Backend API
@@ -68,428 +217,159 @@ Use this checklist before deploying any feature:
 - [ ] Input validation with Zod
 - [ ] Error handling implemented
 - [ ] Rate limiting configured
-- [ ] API endpoint tested with load testing (k6)
 
 #### Frontend
 
 - [ ] Bundle size < 100KB initial (Web app)
 - [ ] Route-based code splitting implemented
 - [ ] Images optimized (WebP format, lazy loading)
-- [ ] Fonts optimized (woff2 format, preloaded)
-- [ ] Critical CSS inlined
+- [ ] Fonts optimized (woff2, preloaded)
 - [ ] Non-critical JavaScript deferred
-- [ ] Lighthouse score > 95 for all metrics
+- [ ] Lighthouse score > 95
 
 #### Monitoring
 
 - [ ] Performance metrics collection configured
 - [ ] Error tracking enabled (Sentry)
 - [ ] Database query monitoring active
-- [ ] API endpoint monitoring configured
 - [ ] Alerts configured for SLO violations
 
-### Post-Deployment Checklist
+### Post-Deployment
 
-Verify production performance:
-
-#### Verification
-
-- [ ] Real User Monitoring (RUM) data collected
-- [ ] Production Lighthouse audit passed (score > 95)
-- [ ] API response times within targets (< 200ms p95)
-- [ ] Database query times within targets (< 50ms p95)
-- [ ] No errors in error tracking system
+- [ ] Real User Monitoring data collected
+- [ ] Production Lighthouse audit passed
+- [ ] API response times within targets
+- [ ] Database query times within targets
 - [ ] Cache hit rate > 80%
 
-#### Monitoring Setup
+---
 
-- [ ] Performance alerts configured
-- [ ] SLO dashboards created
-- [ ] Weekly Lighthouse audits scheduled
-- [ ] Database slow query alerts active
-- [ ] API error rate alerts configured
-- [ ] On-call rotation documented
-
-#### Documentation
-
-- [ ] Performance metrics documented
-- [ ] Optimization decisions recorded (ADRs)
-- [ ] Known performance issues tracked
-- [ ] Runbook for performance incidents created
-
-## 🚀 Quick Wins
-
-Common optimizations that provide immediate performance improvements:
+## Quick Wins
 
 ### 1. Add Database Indexes
 
-**Problem**: Sequential scans on large tables
-
-**Solution**:
+10-100x query speedup. Index foreign keys and WHERE clause columns.
 
 ```sql
--- Index foreign keys
-CREATE INDEX idx_accommodations_destination_id
-ON accommodations(destination_id);
-
--- Index WHERE clause columns
-CREATE INDEX idx_accommodations_is_active
-ON accommodations(is_active);
-
--- Composite indexes for multiple columns
-CREATE INDEX idx_accommodations_city_active
-ON accommodations(city, is_active);
+CREATE INDEX idx_accommodations_city_active ON accommodations(city, is_active);
 ```
 
-**Impact**: 10-100x query speedup
+### 2. API Response Caching
 
-**Time**: 5-15 minutes
-
-### 2. Implement API Response Caching
-
-**Problem**: Repeated expensive computations
-
-**Solution**:
+5-10x faster for cached endpoints.
 
 ```typescript
-import { cache } from 'hono/cache';
-
-app.get(
-  '/api/v1/accommodations',
-  cache({
-    cacheName: 'hospeda-api',
-    cacheControl: 'max-age=300', // 5 minutes
-  }),
-  async (c) => {
-    // Handler logic
-  }
-);
+app.get('/api/v1/accommodations', cache({ cacheControl: 'max-age=300' }), handler);
 ```
 
-**Impact**: 5-10x faster response time for cached endpoints
+### 3. Image Optimization
 
-**Time**: 10-20 minutes
+50-80% reduction in image size using Astro's Image component with WebP format and lazy loading.
 
-### 3. Enable Image Optimization
+### 4. Code Splitting
 
-**Problem**: Large unoptimized images slow page load
+30-50% reduction in initial bundle via lazy-loaded routes and dynamic imports.
 
-**Solution**:
+### 5. Data Prefetching
 
-```astro
----
-import { Image } from 'astro:assets';
-import accommodationImage from '../assets/accommodation.jpg';
+Instant navigation via TanStack Query prefetching on hover.
+
 ---
 
-<Image
-  src={accommodationImage}
-  alt="Accommodation"
-  width={800}
-  height={600}
-  format="webp"
-  loading="lazy"
-/>
-```
+## Common Pitfalls
 
-**Impact**: 50-80% reduction in image size
+### N+1 Queries
 
-**Time**: 15-30 minutes
-
-### 4. Use Route-Based Code Splitting
-
-**Problem**: Large JavaScript bundles slow initial load
-
-**Solution**:
+Use JOINs instead of iterating queries in a loop:
 
 ```typescript
-// Lazy load heavy components
-const AdminDashboard = lazy(() => import('./AdminDashboard'));
-
-// Lazy load routes
-const routes = [
-  {
-    path: '/admin',
-    component: lazy(() => import('./routes/admin')),
-  },
-];
+// Use single query with JOIN instead of N separate queries
+const results = await db
+  .select({ accommodation: accommodationsTable, destination: destinationsTable })
+  .from(accommodationsTable)
+  .leftJoin(destinationsTable, eq(accommodationsTable.destinationId, destinationsTable.id));
 ```
 
-**Impact**: 30-50% reduction in initial bundle size
+### Unbounded Queries
 
-**Time**: 20-40 minutes
+Always paginate. Never `SELECT *` without `LIMIT`.
 
-### 5. Prefetch Critical Data
+### Large Bundle Sizes
 
-**Problem**: Waterfalls and loading states
+Import only what you need. Use `import debounce from 'lodash/debounce'` instead of `import * as _ from 'lodash'`.
 
-**Solution**:
+### Blocking Main Thread
 
-```typescript
-import { queryOptions, useQuery } from '@tanstack/react-query';
+Use Web Workers for heavy computations to avoid freezing the UI.
 
-// Define query options
-const accommodationOptions = (id: string) => queryOptions({
-  queryKey: ['accommodation', id],
-  queryFn: () => fetchAccommodation(id),
-  staleTime: 5 * 60 * 1000, // 5 minutes
-});
+---
 
-// Prefetch on hover
-const handleMouseEnter = () => {
-  queryClient.prefetchQuery(accommodationOptions(id));
-};
-```
+## Performance Testing
 
-**Impact**: Instant navigation, improved perceived performance
-
-**Time**: 10-20 minutes per feature
-
-## 📊 Monitoring Tools
-
-### Frontend Monitoring
-
-- **Lighthouse CI**: Automated performance audits in CI/CD
-- **Web Vitals**: Real User Monitoring (RUM) for Core Web Vitals
-- **Vercel Analytics**: Production performance metrics
-- **Chrome DevTools**: Performance profiling and debugging
-
-### Backend Monitoring
-
-- **Prometheus**: Metrics collection and alerting
-- **Grafana**: Dashboards and visualizations
-- **Sentry**: Error tracking and performance monitoring
-- **Hono Metrics**: Request duration, error rates, throughput
-
-### Database Monitoring
-
-- **Neon Dashboard**: Query performance, connection pool, storage
-- **pg_stat_statements**: Slow query analysis
-- **EXPLAIN ANALYZE**: Query execution plan analysis
-- **PgHero**: Database performance insights
-
-See [Performance Monitoring](./monitoring.md) for detailed setup instructions.
-
-## 📈 Performance Budget
-
-### Bundle Size Budget
-
-**Web App** (Public Site):
-
-```json
-{
-  "js/initial": "100 KB",
-  "js/route": "50 KB",
-  "css/initial": "50 KB",
-  "images/above-fold": "200 KB",
-  "fonts": "50 KB",
-  "total/initial": "400 KB"
-}
-```
-
-**Admin App** (Dashboard):
-
-```json
-{
-  "js/initial": "200 KB",
-  "js/route": "75 KB",
-  "css/initial": "75 KB",
-  "vendor": "150 KB",
-  "total/initial": "500 KB"
-}
-```
-
-**API** (Response Size):
-
-```json
-{
-  "list-endpoint": "50 KB",
-  "detail-endpoint": "20 KB",
-  "search-endpoint": "100 KB"
-}
-```
-
-### Time Budget
-
-**Web App**:
-
-```json
-{
-  "ttfb": "200ms",
-  "fcp": "1.8s",
-  "lcp": "2.5s",
-  "tti": "3.8s",
-  "route-transition": "300ms"
-}
-```
-
-**Admin App**:
-
-```json
-{
-  "initial-load": "3.0s",
-  "route-transition": "500ms",
-  "table-render-100-rows": "200ms"
-}
-```
-
-**API**:
-
-```json
-{
-  "simple-get": "50ms",
-  "list-endpoint": "100ms",
-  "complex-query": "200ms",
-  "mutation": "150ms"
-}
-```
-
-## 🔍 Performance Testing
-
-### Lighthouse Audit
+### Lighthouse CI
 
 ```bash
-# Install Lighthouse CI
 npm install -g @lhci/cli
-
-# Run audit
-lhci autorun --collect.url=https://hospeda.com
-
-# Run with budget
 lhci autorun --config=lighthouserc.json
 ```
 
-### Load Testing
+### Load Testing (k6)
 
 ```bash
-# Install k6
-brew install k6
-
-# Run load test
 k6 run scripts/load-test.js
-
-# Run with thresholds
-k6 run --vus 100 --duration 5m scripts/load-test.js
+k6 run scripts/load-test.js -e BASE_URL=https://staging-api.hospeda.com
 ```
 
 ### Database Profiling
 
 ```sql
--- Enable slow query log
-ALTER SYSTEM SET log_min_duration_statement = 100;
-SELECT pg_reload_conf();
+-- Find slow queries
+SELECT query, mean_exec_time FROM pg_stat_statements
+WHERE mean_exec_time > 50 ORDER BY mean_exec_time DESC;
 
--- View slow queries
-SELECT
-  query,
-  calls,
-  mean_exec_time,
-  max_exec_time
-FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
-LIMIT 10;
+-- Find sequential scans
+SELECT tablename, seq_scan, seq_tup_read FROM pg_stat_user_tables
+WHERE seq_scan > 0 ORDER BY seq_tup_read DESC;
 ```
 
-## 🎓 Learning Resources
+---
 
-### Official Documentation
+## Monitoring Tools
+
+### Frontend
+
+- **Lighthouse CI**: Automated performance audits in CI/CD
+- **Web Vitals**: Real User Monitoring for Core Web Vitals
+- **Vercel Analytics**: Production performance metrics
+- **Chrome DevTools**: Performance profiling and debugging
+
+### Backend
+
+- **Sentry**: Error tracking and performance monitoring
+- **Hono Metrics**: Request duration, error rates, throughput
+- **Vercel Analytics**: Function duration and error rate
+
+### Database
+
+- **Neon Dashboard**: Query performance, connection pool, storage
+- **pg_stat_statements**: Slow query analysis
+- **EXPLAIN ANALYZE**: Query execution plan analysis
+
+---
+
+## Detailed Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Database Optimization](../../packages/db/docs/guides/optimization.md) | Query optimization, indexing, N+1 prevention, connection pooling |
+| [Caching Strategies](./caching.md) | Backend cache, frontend cache, cache warming |
+| [Frontend Optimization](./frontend-optimization.md) | Bundle size, code splitting, Lighthouse optimization |
+| [Performance Monitoring](./monitoring.md) | RUM, API metrics, database profiling, alerting |
+
+## External Resources
 
 - [Web.dev - Performance](https://web.dev/performance/)
 - [Web.dev - Core Web Vitals](https://web.dev/vitals/)
 - [PostgreSQL Performance Tips](https://wiki.postgresql.org/wiki/Performance_Optimization)
 - [Drizzle ORM Best Practices](https://orm.drizzle.team/docs/performance)
-
-### Performance Guides
-
-- [Frontend Performance Checklist](https://www.smashingmagazine.com/2021/01/front-end-performance-2021-free-pdf-checklist/)
-- [Backend Performance Best Practices](https://github.com/goldbergyoni/nodebestpractices#performance-best-practices)
-- [Database Performance Tuning](https://www.postgresql.org/docs/current/performance-tips.html)
-
-### Tools and Libraries
-
-- [Lighthouse](https://github.com/GoogleChrome/lighthouse)
 - [k6 Load Testing](https://k6.io/docs/)
-- [Web Vitals Library](https://github.com/GoogleChrome/web-vitals)
-- [TanStack Query](https://tanstack.com/query/latest)
-
-## 🔗 Related Documentation
-
-### Architecture
-
-- [System Architecture](../architecture/overview.md)
-- [Database Schema](../architecture/database-schema.md)
-- [API Design](../architecture/api-design.md)
-- [Caching Strategy](../architecture/caching-strategy.md)
-
-### Development
-
-- [Development Setup](../development/setup.md)
-- [Testing Guide](../development/testing.md)
-- [Deployment Guide](../deployment/README.md)
-
-### Operations
-
-- [Monitoring Setup](../operations/monitoring.md)
-- [Alerting Configuration](../operations/alerting.md)
-- [Incident Response](../operations/incident-response.md)
-
-## 📞 Support
-
-### Performance Issues
-
-If you encounter performance issues:
-
-1. **Document the issue**: Include metrics, screenshots, and reproduction steps
-2. **Check monitoring**: Review dashboards for anomalies
-3. **Profile the code**: Use Chrome DevTools or database EXPLAIN ANALYZE
-4. **Create GitHub issue**: Use performance issue template
-5. **Contact on-call**: For production critical issues
-
-### Performance Questions
-
-For questions about performance optimization:
-
-- Check this documentation first
-- Review related documentation
-- Ask in #performance Slack channel
-- Consult with Performance Team
-
-## 🗺️ Roadmap
-
-### Q1 2025
-
-- [ ] Implement Redis caching layer
-- [ ] Set up Prometheus + Grafana monitoring
-- [ ] Configure Real User Monitoring (RUM)
-- [ ] Establish performance SLOs
-
-### Q2 2025
-
-- [ ] Optimize database queries (target < 50ms p95)
-- [ ] Implement CDN for static assets
-- [ ] Set up automated performance regression testing
-- [ ] Create performance runbooks
-
-### Q3 2025
-
-- [ ] Implement edge caching with Vercel
-- [ ] Optimize images with Cloudinary
-- [ ] Set up performance budgets in CI
-- [ ] Conduct performance audit with external vendor
-
-### Q4 2025
-
-- [ ] Implement HTTP/3 and QUIC
-- [ ] Optimize database with read replicas
-- [ ] Set up predictive scaling
-- [ ] Review and update performance targets
-
----
-
-**Last Updated**: 2025-01-05
-
-**Maintained By**: Tech Lead, Performance Team
-
-**Review Cycle**: Quarterly
-
-**Next Review**: 2025-04-01

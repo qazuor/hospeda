@@ -267,7 +267,7 @@ return <div>{result.name}</div>;
 |-------------|-------------------|----------------|
 | **SQL Injection** | Parameterized queries | Drizzle ORM |
 | **XSS** | Output escaping + CSP | React + CSP headers |
-| **CSRF** | SameSite cookies | Clerk |
+| **CSRF** | SameSite cookies | Better Auth |
 | **Command Injection** | Input validation | Zod schemas |
 | **Path Traversal** | Path normalization | File validation |
 | **File Upload** | Type + size validation | MIME checking |

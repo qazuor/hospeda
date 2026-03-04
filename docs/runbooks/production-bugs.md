@@ -208,11 +208,11 @@ Based on initial assessment, choose investigation path:
 
 **Investigation Steps**:
 
-**Step 1**: Check API logs (Vercel/Fly.io)
+**Step 1**: Check API logs (Vercel)
 
 ```bash
-# Vercel logs (if API on Vercel)
-vercel logs https://api.hospeda.com --since 1h
+# View production API logs
+vercel logs --prod --since 1h
 
 # Or check deployment logs
 vercel logs [deployment-url]
@@ -222,7 +222,7 @@ vercel logs [deployment-url]
 
 - Unhandled exceptions
 - Database connection errors
-- External service failures (Clerk, Mercado Pago)
+- External service failures (Better Auth, Mercado Pago)
 - Timeout errors
 
 **Step 2**: Identify failing endpoints
@@ -557,7 +557,7 @@ time curl -s https://api.hospeda.com/api/accommodations > /dev/null
 **Common bottlenecks**:
 
 - **Database queries**: Check query times (see [Database Investigation](#database-issue-investigation))
-- **External API calls**: Check Clerk, Mercado Pago response times
+- **External API calls**: Check Better Auth, Mercado Pago response times
 - **Large payloads**: Check response size
 - **N+1 queries**: Multiple DB queries for single request
 
@@ -624,35 +624,34 @@ For slow endpoint:
 
 **Investigation Steps**:
 
-**Step 1**: Check Clerk status
+**Step 1**: Check Better Auth configuration
 
-1. Go to <https://status.clerk.com>
-2. Verify no ongoing incidents
+1. Verify `HOSPEDA_BETTER_AUTH_SECRET` is set correctly
+2. Verify `HOSPEDA_BETTER_AUTH_URL` points to the correct API endpoint
+3. Check the database `sessions` table for recent entries
 
-**Step 2**: Check Clerk configuration
-
-In Clerk Dashboard:
-
-1. Verify application settings
-2. Check allowed redirect URLs
-3. Verify JWT template (if custom)
-4. Check environment (development vs production)
-
-**Step 3**: Check environment variables
+**Step 2**: Check environment variables
 
 **Required variables**:
 
 ```bash
-CLERK_SECRET_KEY=sk_...
-CLERK_PUBLISHABLE_KEY=pk_...
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 ```
 
 **Verify**:
 
 ```bash
 # Check if set (don't print values)
-[ -n "$CLERK_SECRET_KEY" ] && echo "✅ CLERK_SECRET_KEY set" || echo "❌ CLERK_SECRET_KEY missing"
+[ -n "$HOSPEDA_BETTER_AUTH_SECRET" ] && echo "✅ HOSPEDA_BETTER_AUTH_SECRET set" || echo "❌ HOSPEDA_BETTER_AUTH_SECRET missing"
+[ -n "$HOSPEDA_BETTER_AUTH_URL" ] && echo "✅ HOSPEDA_BETTER_AUTH_URL set" || echo "❌ HOSPEDA_BETTER_AUTH_URL missing"
+```
+
+**Step 3**: Check database sessions
+
+```bash
+# Check for recent sessions
+psql $DATABASE_URL -c "SELECT id, user_id, created_at, expires_at FROM sessions ORDER BY created_at DESC LIMIT 5"
 ```
 
 **Step 4**: Test authentication flow
@@ -662,9 +661,9 @@ NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_...
 3. Open DevTools → Network
 4. Attempt login
 5. Check requests:
-   - Request to Clerk
+   - Request to Better Auth API endpoint
    - Response status
-   - Cookies set
+   - Session cookie set
    - Redirect behavior
 
 **Step 5**: Check middleware (API)
@@ -705,8 +704,7 @@ curl https://api.hospeda.com/api/bookings \
 
 ```bash
 # Check if set (in production environment)
-# Via Vercel dashboard → Settings → Environment Variables
-# or Fly.io dashboard → Secrets
+# Via Vercel dashboard → Project Settings → Environment Variables
 ```
 
 **Step 2**: Test database connection
@@ -876,7 +874,7 @@ node --inspect dist/index.js
 - 401 errors on protected endpoints
 - "Session expired" messages
 
-**Root Cause**: Clerk environment mismatch or JWT configuration change
+**Root Cause**: Better Auth secret mismatch or session configuration change
 
 **Solution**:
 
@@ -884,16 +882,16 @@ node --inspect dist/index.js
 
 Check that production environment has:
 
-- `CLERK_SECRET_KEY` (correct for production)
-- `CLERK_PUBLISHABLE_KEY` (correct for production)
-- Not using development keys in production
+- `HOSPEDA_BETTER_AUTH_SECRET` (correct for production)
+- `HOSPEDA_BETTER_AUTH_URL` (correct for production)
+- Not using development secrets in production
 
-**Step 2**: Check Clerk Dashboard
+**Step 2**: Check database sessions
 
-1. Go to Clerk Dashboard
-2. Verify application is in correct environment
-3. Check JWT template hasn't changed
-4. Verify allowed origins include production URL
+1. Query the `sessions` table for recent entries
+2. Verify session expiration times are reasonable
+3. Check that the auth URL matches the production API endpoint
+4. Verify CORS configuration allows the production frontend origin
 
 **Step 3**: Clear sessions
 
@@ -918,7 +916,7 @@ We apologize for the inconvenience.
 
 **Prevention**:
 
-- Never change Clerk keys without planning
+- Never change Better Auth keys without planning
 - Test auth in staging before production deploy
 - Document environment variable changes
 - Add auth health check to deployment pipeline

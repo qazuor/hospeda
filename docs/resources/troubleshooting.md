@@ -625,8 +625,8 @@ cp .env.example .env.local
 # 2. Fill in required values
 # Edit .env.local with your values:
 # - DATABASE_URL
-# - CLERK_PUBLISHABLE_KEY
-# - CLERK_SECRET_KEY
+# - HOSPEDA_BETTER_AUTH_SECRET
+# - HOSPEDA_BETTER_AUTH_URL
 # - etc.
 
 # 3. Verify variables are loaded
@@ -810,65 +810,54 @@ export function MyComponent() { ... }
 #### Authentication Not Diagnosis
 
 ```bash
-# Check Clerk keys in .env.local
-cat .env.local | grep CLERK
+# Check Better Auth env vars in .env.local
+cat .env.local | grep BETTER_AUTH
 
-# Test Clerk API
-curl https://api.clerk.com/v1/health
-
-# Check browser cookies
+# Check browser cookies for session cookie
 # DevTools → Application → Cookies
 
-# Verify JWT token
-# Copy token from request headers and decode at jwt.io
+# Check database sessions table
+psql $DATABASE_URL -c "SELECT * FROM sessions ORDER BY created_at DESC LIMIT 5"
 ```
 
-#### Copy token Solution
+#### Better Auth Solution
 
 ```typescript
-// 1. Verify Clerk configuration
+// 1. Verify Better Auth configuration
 // Check .env.local has correct keys
-CLERK_PUBLISHABLE_KEY=pk_test_...
-CLERK_SECRET_KEY=sk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
-// 2. Add authentication middleware
-import { clerkMiddleware } from '@clerk/astro/server';
-
-app.use('*', clerkMiddleware());
+// 2. Verify Better Auth middleware is configured
+// The API uses Better Auth middleware for session validation
 
 // 3. Protect routes properly
-import { auth } from '@clerk/astro/server';
-
-export async function GET(context: APIContext) {
-  const { userId } = auth();
-
-  if (!userId) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  // Process authenticated request
+// In Astro pages, check Astro.locals.user
+const user = Astro.locals.user;
+if (!user) {
+  return Astro.redirect(`/${locale}/auth/signin`);
 }
 
 // 4. Handle authentication errors
 try {
-  const { userId } = auth();
-  if (!userId) throw new Error('Not authenticated');
+  const session = await auth.api.getSession({ headers });
+  if (!session) throw new Error('Not authenticated');
 } catch (error) {
   console.error('Auth error:', error);
   return Response.redirect('/login');
 }
 
-// 5. Check Clerk dashboard for issues
-// Visit dashboard.clerk.com
+// 5. Check database sessions table for issues
+// SELECT * FROM sessions WHERE user_id = 'xxx';
 ```
 
-#### Copy token Prevention
+#### Better Auth Prevention
 
 - Test authentication flow regularly
-- Monitor Clerk dashboard for errors
+- Monitor session creation in database
 - Add authentication tests
 - Document authentication setup
-- Use environment-specific Clerk instances
+- Verify HOSPEDA_BETTER_AUTH_SECRET matches across environments
 
 ---
 
@@ -987,8 +976,8 @@ it('should create accommodation', async () => {
 });
 
 // 3. Mock external dependencies
-vi.mock('@clerk/backend', () => ({
-  verifyToken: vi.fn().mockResolvedValue({ userId: 'test-user' }),
+vi.mock('@repo/auth', () => ({
+  verifySession: vi.fn().mockResolvedValue({ userId: 'test-user' }),
 }));
 
 // 4. Fix race conditions
@@ -1149,7 +1138,7 @@ vi.mock('optional-dependency', () => {
 
 #### Check specific Prevention
 
-- Write tests as you write code (TDD)
+- Write tests alongside your code (test-informed development)
 - Review coverage reports regularly
 - Test all branches and edge cases
 - Use coverage tools in CI
@@ -1410,4 +1399,4 @@ Found a solution to a problem not listed here? Please add it!
 
 ---
 
-*Last updated: 2025-11-06*
+Last updated: 2025-11-06

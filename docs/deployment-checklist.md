@@ -101,6 +101,7 @@ Defined in `apps/api/vercel.json`. Vercel sends `POST` requests with `CRON_SECRE
 | `notification-schedule` | `0 8 * * *` | Schedule notifications daily at 8 AM UTC |
 | `webhook-retry` | `0 */1 * * *` | Retry failed webhooks every hour |
 | `exchange-rate-fetch` | `*/15 * * * *` | Fetch exchange rates every 15 minutes |
+| `dunning` | `0 6 * * *` | Retry failed payments and cancel expired grace periods daily at 6 AM UTC |
 
 ### Deploy Phase
 
@@ -241,7 +242,7 @@ pnpm db:rollback
 
 ### Emergency Rollback Checklist
 
-- [ ] Identify the issue (check Sentry, Fly.io logs, Vercel logs)
+- [ ] Identify the issue (check Sentry, Vercel function logs)
 - [ ] Determine which app(s) need rollback
 - [ ] Roll back the affected app(s) using commands above
 - [ ] If database migration caused the issue, roll back migration first, then app

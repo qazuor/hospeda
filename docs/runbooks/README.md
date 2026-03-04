@@ -44,7 +44,7 @@ Runbooks are operational documentation that provide:
 1. **[Rollback Procedures](./rollback.md)** (~1,200 lines)
    - Rolling back deployments safely
    - Frontend rollback (Vercel)
-   - Backend rollback (Fly.io/similar)
+   - Backend rollback (Vercel)
    - Database migration rollback
    - Rollback decision criteria
    - Post-rollback verification
@@ -63,7 +63,7 @@ Runbooks are operational documentation that provide:
    - Handling load increases
    - Scaling triggers and thresholds
    - Frontend scaling (Vercel)
-   - Backend scaling (Fly.io/similar)
+   - Backend scaling (Vercel serverless)
    - Database scaling (Neon)
    - Load testing procedures
    - Cost optimization
@@ -233,14 +233,14 @@ External Support:
 | **Vercel** | Admin | Team invitation | Frontend deployments, rollbacks |
 | **Neon Console** | Admin | Team invitation | Database operations, backups |
 | **GitHub** | Write | Repository settings | Code deployments, Actions |
-| **Fly.io** | Operator | Team invitation | Backend deployments, scaling |
+| **Vercel (API)** | Admin | Team invitation | API deployments, scaling, rollbacks |
 | **Production DB** | Read-only | DBA approval | Query analysis, debugging |
 
 ### Common Tools
 
 #### Deployment & Infrastructure
 
-- **Vercel CLI**: Frontend deployment management
+- **Vercel CLI**: Deployment management (all apps including API)
 
   ```bash
   # Install
@@ -254,22 +254,6 @@ External Support:
 
   # Rollback
   vercel rollback
-  ```
-
-- **Fly CLI**: Backend deployment management
-
-  ```bash
-  # Install
-  curl -L https://fly.io/install.sh | sh
-
-  # Login
-  fly auth login
-
-  # List apps
-  fly apps list
-
-  # Scale
-  fly scale count 3
   ```
 
 - **GitHub CLI**: Repository and Actions management
@@ -362,7 +346,6 @@ External Support:
 For new team members or on-call rotation:
 
 - [ ] Install Vercel CLI and authenticate
-- [ ] Install Fly CLI and authenticate (if using Fly.io)
 - [ ] Install GitHub CLI and authenticate
 - [ ] Install psql (PostgreSQL client)
 - [ ] Install Docker Desktop
@@ -673,7 +656,6 @@ gh run view [run-id] --log
 
 - [Vercel Documentation](https://vercel.com/docs)
 - [Neon Documentation](https://neon.tech/docs)
-- [Fly.io Documentation](https://fly.io/docs)
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/)
 - [Hono Documentation](https://hono.dev/)
 

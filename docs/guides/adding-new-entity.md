@@ -1086,7 +1086,7 @@ curl -X DELETE http://localhost:3000/api/reviews/uuid-here \
 
 ## Step 6: Testing
 
-Write comprehensive tests for all layers following TDD principles.
+Write comprehensive tests for all layers following test-informed development principles.
 
 ### 6.1 Model Tests
 
@@ -1618,7 +1618,7 @@ describe('Review Routes', () => {
 **Related Documentation:**
 
 - [Testing Guide](../testing/README.md)
-- [TDD Workflow](./tdd-workflow.md)
+- [Test-Informed Workflow](../testing/tdd-workflow.md)
 
 ## Common Issues & Solutions
 

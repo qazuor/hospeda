@@ -72,7 +72,7 @@ Skip to [Installation](installation.md) if you already have:
 ### First Contribution
 
 - Find a beginner-friendly task
-- Follow TDD workflow
+- Follow test-informed workflow
 - Create atomic commits
 - Test your changes
 

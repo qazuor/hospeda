@@ -25,7 +25,7 @@ Hospeda uses environment-specific configuration to manage different deployment t
 
 1. **`.env.example`** - Template with all available variables (committed to git)
 2. **`.env.local`** - Local development overrides (gitignored)
-3. **Platform Variables** - Environment-specific secrets (Vercel, Fly.io)
+3. **Platform Variables** - Environment-specific secrets (Vercel)
 4. **Runtime Configuration** - Validated and typed configuration objects
 
 ## Environment Tiers
@@ -182,11 +182,11 @@ HOSPEDA_ADMIN_URL=https://admin-staging.hospeda.com
 HOSPEDA_ADMIN_URL=https://admin.hospeda.com
 ```
 
-### Authentication (Clerk)
+### Authentication (Better Auth)
 
-#### HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY
+#### HOSPEDA_BETTER_AUTH_URL
 
-**Description**: Clerk publishable key (client-side)
+**Description**: Better Auth publishable key (client-side)
 
 **Format**: `pk_test_*` or `pk_live_*`
 
@@ -197,22 +197,22 @@ HOSPEDA_ADMIN_URL=https://admin.hospeda.com
 **Example:**
 
 ```env
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
+HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
 ```
 
 **Usage:**
 
 ```typescript
-import { ClerkProvider } from '@clerk/clerk-react';
+import { Better AuthProvider } from '@repo/auth-ui';
 
-<ClerkProvider publishableKey={import.meta.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY}>
+<Better AuthProvider publishableKey={import.meta.env.HOSPEDA_BETTER_AUTH_URL}>
   {/* App */}
-</ClerkProvider>
+</Better AuthProvider>
 ```
 
-#### HOSPEDA_CLERK_SECRET_KEY
+#### HOSPEDA_BETTER_AUTH_SECRET
 
-**Description**: Clerk secret key (server-side)
+**Description**: Better Auth secret key (server-side)
 
 **Format**: `sk_test_*` or `sk_live_*`
 
@@ -223,22 +223,22 @@ import { ClerkProvider } from '@clerk/clerk-react';
 **Example:**
 
 ```env
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
 ```
 
 **Usage:**
 
 ```typescript
-import { clerkClient } from '@clerk/clerk-sdk-node';
+import { authClient } from '@repo/auth-ui';
 
-const client = clerkClient({
-  secretKey: process.env.HOSPEDA_CLERK_SECRET_KEY,
+const client = authClient({
+  secretKey: process.env.HOSPEDA_BETTER_AUTH_SECRET,
 });
 ```
 
-#### HOSPEDA_CLERK_WEBHOOK_SECRET
+#### HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET
 
-**Description**: Clerk webhook signing secret
+**Description**: Better Auth webhook signing secret
 
 **Format**: `whsec_*`
 
@@ -249,7 +249,7 @@ const client = clerkClient({
 **Example:**
 
 ```env
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_example789ghi
+HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_example789ghi
 ```
 
 **Usage:**
@@ -257,7 +257,7 @@ HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_example789ghi
 ```typescript
 import { Webhook } from 'svix';
 
-const webhook = new Webhook(process.env.HOSPEDA_CLERK_WEBHOOK_SECRET);
+const webhook = new Webhook(process.env.HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET);
 webhook.verify(payload, headers);
 ```
 
@@ -643,10 +643,10 @@ HOSPEDA_ADMIN_URL=http://localhost:3000
 # Database (local or development)
 HOSPEDA_DATABASE_URL=postgresql://postgres:postgres@localhost:5432/hospeda_dev
 
-# Clerk (development application)
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_dev123
-HOSPEDA_CLERK_SECRET_KEY=sk_test_dev456
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_dev789
+# Better Auth (development application)
+HOSPEDA_BETTER_AUTH_URL=pk_test_dev123
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_dev456
+HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_dev789
 
 # API Configuration (relaxed for development)
 HOSPEDA_API_LOG_LEVEL=debug
@@ -673,7 +673,7 @@ CLOUDINARY_API_SECRET=dev-api-secret
 
 ### Staging Environment
 
-**Platform**: Vercel (Web/Admin), Fly.io (API)
+**Platform**: Vercel (Web/Admin/API)
 
 **Configuration Method**: Platform environment variables
 
@@ -689,10 +689,10 @@ HOSPEDA_ADMIN_URL=https://admin-staging.hospeda.com
 # Database (staging Neon database)
 HOSPEDA_DATABASE_URL=postgresql://user:pass@staging-db.neon.tech/hospeda_staging
 
-# Clerk (staging application)
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_staging789
+# Better Auth (staging application)
+HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
+HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_staging789
 
 # API Configuration
 HOSPEDA_API_LOG_LEVEL=info
@@ -724,7 +724,7 @@ SENTRY_ENVIRONMENT=staging
 
 ### Production Environment
 
-**Platform**: Vercel (Web/Admin), Fly.io (API)
+**Platform**: Vercel (Web/Admin/API)
 
 **Configuration Method**: Platform environment variables + Secrets
 
@@ -740,10 +740,10 @@ HOSPEDA_ADMIN_URL=https://admin.hospeda.com
 # Database (production Neon database)
 HOSPEDA_DATABASE_URL=postgresql://user:pass@prod-db.neon.tech/hospeda_production
 
-# Clerk (production application)
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_live_prod123
-HOSPEDA_CLERK_SECRET_KEY=sk_live_prod456
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_prod789
+# Better Auth (production application)
+HOSPEDA_BETTER_AUTH_URL=pk_live_prod123
+HOSPEDA_BETTER_AUTH_SECRET=sk_live_prod456
+HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_prod789
 
 # API Configuration (strict security)
 HOSPEDA_API_LOG_LEVEL=info
@@ -806,36 +806,28 @@ vercel env add HOSPEDA_DATABASE_URL staging
 # Project Settings → Environment Variables → Add
 ```
 
-#### Project Settings Fly.io (API)
+#### Project Settings Vercel (API)
 
 ```bash
-# Set secret for API
-fly secrets set HOSPEDA_DATABASE_URL="postgresql://..." -a hospeda-api-staging
+# Set secret for API (staging environment)
+vercel env add HOSPEDA_DATABASE_URL preview
 
-# List secrets
-fly secrets list -a hospeda-api-staging
+# List environment variables
+vercel env ls
 ```
 
 ### Production Secrets
 
 **Storage**: Platform environment variables (encrypted)
 
-#### Production Secrets Vercel (Web/Admin)
+#### Production Secrets Vercel (Web/Admin/API)
 
 ```bash
 # Set production environment variable
 vercel env add HOSPEDA_DATABASE_URL production
 
 # Use Vercel dashboard for sensitive values
-```
-
-#### Use Vercel Fly.io (API)
-
-```bash
-# Set production secret
-fly secrets set HOSPEDA_DATABASE_URL="postgresql://..." -a hospeda-api
-
-# Important: Production secrets are encrypted at rest
+# Project Settings → Environment Variables → Add
 ```
 
 ### Secret Rotation
@@ -853,7 +845,7 @@ fly secrets set HOSPEDA_DATABASE_URL="postgresql://..." -a hospeda-api
 **Critical Secrets (rotate immediately if compromised):**
 
 - Database credentials
-- Clerk secret keys
+- Better Auth secret keys
 - Mercado Pago tokens
 - Cloudinary API secrets
 
@@ -880,10 +872,10 @@ const envSchema = z.object({
   // Database
   HOSPEDA_DATABASE_URL: z.string().startsWith('postgresql://'),
 
-  // Clerk
-  HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
-  HOSPEDA_CLERK_SECRET_KEY: z.string().startsWith('sk_'),
-  HOSPEDA_CLERK_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
+  // Better Auth
+  HOSPEDA_BETTER_AUTH_URL: z.string().startsWith('pk_'),
+  HOSPEDA_BETTER_AUTH_SECRET: z.string().startsWith('sk_'),
+  HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
 
   // API Configuration
   HOSPEDA_API_LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),

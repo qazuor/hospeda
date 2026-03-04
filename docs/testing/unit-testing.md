@@ -1352,4 +1352,4 @@ describe('MathUtils', () => {
 **Related Documentation**:
 
 - [Testing Strategy](./strategy.md)
-- [TDD Workflow](.claude/docs/workflows/phase-2-implementation.md)
+- [Test-Informed Workflow](./tdd-workflow.md)

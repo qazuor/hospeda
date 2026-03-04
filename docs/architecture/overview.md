@@ -465,7 +465,7 @@ async update(params: {
 
 ### Security Features
 
-- **Authentication**: Clerk-based authentication
+- **Authentication**: Better Auth-based authentication
 - **Authorization**: Actor-based permissions + RLS
 - **Input Validation**: Zod schemas on all inputs
 - **SQL Injection Prevention**: Drizzle parameterized queries

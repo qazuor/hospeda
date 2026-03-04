@@ -1,12 +1,30 @@
 # Deployment Documentation
 
-## Overview
+## Introduction
 
-This directory contains comprehensive deployment documentation for the Hospeda tourism platform. Hospeda is a monorepo application with multiple services deployed across different platforms.
+Hospeda is a modern tourism accommodation platform built as a monorepo application with multiple services deployed across cloud-native infrastructure. This document covers the deployment strategy, architecture, and operational considerations.
 
-## Architecture Overview
+### Platform Components
 
-Hospeda uses a modern, cloud-native architecture:
+1. **Web App** .. Public-facing website for browsing and booking accommodations
+2. **Admin Dashboard** .. Internal tool for managing listings, bookings, and operations
+3. **API Server** .. Backend services handling business logic and data
+
+### Technology Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Frontend (Web) | Astro + React 19 | SSR public website |
+| Frontend (Admin) | TanStack Start + React 19 | SSR admin dashboard |
+| Backend (API) | Hono (Node.js) | REST API server |
+| Database | PostgreSQL (Neon) | Primary data store |
+| ORM | Drizzle | Type-safe database access |
+| Authentication | Better Auth | User authentication |
+| Payments | Mercado Pago | Payment processing |
+| Storage | Cloudinary | Image hosting and CDN |
+| Hosting | Vercel | Application hosting (all three apps) |
+
+## Architecture
 
 ```mermaid
 graph TB
@@ -20,7 +38,7 @@ graph TB
         Admin[Admin Dashboard<br/>TanStack Start<br/>:3000]
     end
 
-    subgraph "Application Layer - Fly.io"
+    subgraph "Application Layer - Vercel (serverless)"
         API[API Server<br/>Hono<br/>:3001]
     end
 
@@ -30,7 +48,7 @@ graph TB
     end
 
     subgraph "External Services"
-        Clerk[Clerk<br/>Authentication]
+        BetterAuth[Better Auth<br/>Authentication]
         MercadoPago[Mercado Pago<br/>Payments]
         Cloudinary[Cloudinary<br/>Image Storage]
     end
@@ -41,224 +59,86 @@ graph TB
     Admin -->|API Calls| API
     API --> DB
     API -.->|Optional| Redis
-    API --> Clerk
+    API --> BetterAuth
     API --> MercadoPago
     API --> Cloudinary
-    Web --> Clerk
-    Admin --> Clerk
+    Web --> BetterAuth
+    Admin --> BetterAuth
 ```
+
+## Deployment Strategy
+
+### Monorepo Architecture
+
+Hospeda uses a **TurboRepo monorepo** structure that enables:
+
+- **Shared Dependencies**: Common packages used across applications
+- **Coordinated Deployments**: Deploy all services or individual apps
+- **Code Reusability**: Shared schemas, utilities, and business logic
+- **Type Safety**: End-to-end type safety from database to frontend
+
+### Multi-Cloud Deployment
+
+| Service | Platform | Purpose |
+|---------|----------|---------|
+| Web | Vercel | Public-facing website |
+| Admin | Vercel | Administration dashboard |
+| API | Vercel (serverless) | Backend API server |
+| Database | Neon | Serverless PostgreSQL |
+| Auth | Better Auth | Authentication service |
+| Payments | Mercado Pago | Payment processing |
+
+### Core Principles
+
+1. **Continuous Deployment** .. Automated deployments on code merge
+2. **Progressive Delivery** .. Deploy to staging before production
+3. **Zero-Downtime Deployments** .. Atomic deployment strategy
+4. **Rollback Capability** .. Instant rollback if issues detected
+5. **Infrastructure as Code** .. Configuration in version control
+6. **Observability First** .. Comprehensive monitoring and logging
 
 ## Deployment Platforms
 
-| Service | Platform | URL Pattern | Purpose |
-|---------|----------|-------------|---------|
-| **Web** | Vercel | `hospeda.com` | Public-facing website |
-| **Admin** | Vercel | `admin.hospeda.com` | Administration dashboard |
-| **API** | Fly.io/Node | `api.hospeda.com` | Backend API server |
-| **Database** | Neon | PostgreSQL endpoint | Primary data store |
-| **Auth** | Clerk | Clerk endpoints | Authentication service |
-| **Payments** | Mercado Pago | MP endpoints | Payment processing |
+### Vercel (Web, Admin, API)
 
-## Quick Links
+**Features Used:**
 
-### Core Documentation
+- Serverless functions for API
+- SSR/SSG for frontend applications
+- Global edge network for low-latency delivery
+- Automatic SSL/TLS certificates
+- Preview deployments for pull requests
+- Atomic deployments with instant rollback
+- Environment variable management
 
-- **[Deployment Overview](./overview.md)** - Architecture, strategy, and deployment flow
-- **[Environment Configuration](./environments.md)** - Environment variables and configuration
-- **[API Deployment](./api.md)** - Hono API deployment to Fly.io
-- **[Web Deployment](./web.md)** - Astro web app deployment to Vercel
-- **[Admin Deployment](./admin.md)** - TanStack Start admin deployment to Vercel
-- **[Database Management](./database.md)** - Neon PostgreSQL setup and migrations
+**Deployment Triggers:**
 
-### Specialized Guides
+- **Production**: Push to `main` branch
+- **Preview**: Pull requests to `main`
+- **Manual**: Triggered via Vercel CLI or dashboard
 
-- **[CI/CD Pipeline](./cicd.md)** - Automated deployment workflows
-- **[Monitoring & Logging](./monitoring.md)** - Application monitoring and log management
-- **[Disaster Recovery](./disaster-recovery.md)** - Backup and recovery procedures
-- **[Scaling Guide](./scaling.md)** - Horizontal and vertical scaling strategies
-- **[Security](./security.md)** - Security best practices and configuration
-- **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
+### Neon (Database)
 
-### Reference
+**Features Used:**
 
-- **[Environment Variables Reference](./environments.md#environment-variables-reference)** - Complete list of env vars
-- **[Deployment Checklist](./checklist.md)** - Pre-deployment verification steps
-- **[Rollback Procedures](./rollback.md)** - How to rollback deployments
+- Serverless PostgreSQL with automatic scaling
+- Built-in connection pooling (Pgbouncer)
+- Database branching for development
+- Automatic daily backups with 7-day retention
+- Point-in-time recovery
+- Query performance monitoring
 
-## Prerequisites
+**Database Branches:**
 
-Before deploying Hospeda, ensure you have:
+- `main`: Production database
+- `staging`: Staging environment database
+- `dev`: Development database
 
-### Required Accounts
+### External Services
 
-- [ ] **Vercel Account** - For web and admin deployments
-- [ ] **Fly.io Account** - For API deployment
-- [ ] **Neon Account** - For PostgreSQL database
-- [ ] **Clerk Account** - For authentication
-- [ ] **Mercado Pago Account** - For payment processing
-- [ ] **GitHub Account** - For source code and CI/CD
-
-### Optional Accounts
-
-- [ ] **Cloudinary Account** - For image storage and CDN
-- [ ] **Redis Cloud Account** - For caching (if using Redis)
-- [ ] **Sentry Account** - For error tracking
-- [ ] **LogTail Account** - For centralized logging
-
-### Local Development Tools
-
-- [ ] **Node.js** - Version 20.10.0 or higher
-- [ ] **PNPM** - Version 8.15.6 or higher
-- [ ] **Git** - Version 2.40 or higher
-- [ ] **Docker** - (Optional) For local database
-
-### CLI Tools
-
-```bash
-# Install Vercel CLI
-pnpm add -g vercel
-
-# Install Fly CLI
-curl -L https://fly.io/install.sh | sh
-
-# Install Neon CLI
-curl -fsSL https://raw.githubusercontent.com/neondatabase/neonctl/main/install.sh | bash
-```
-
-## Quick Start
-
-### 1. Clone Repository
-
-```bash
-git clone https://github.com/hospeda/hospeda.git
-cd hospeda
-```
-
-### 2. Install Dependencies
-
-```bash
-pnpm install
-```
-
-### 3. Configure Environment Variables
-
-```bash
-# Copy environment template
-cp .env.example .env.local
-
-# Edit .env.local with your values
-nano .env.local
-```
-
-See [Environment Configuration](./environments.md) for detailed variable descriptions.
-
-### 4. Set Up Database
-
-```bash
-# Run migrations
-pnpm db:migrate
-
-# Seed database (optional, for development)
-pnpm db:seed
-```
-
-### 5. Deploy Services
-
-```bash
-# Deploy API to Fly.io
-cd apps/api
-fly deploy
-
-# Deploy Web to Vercel
-cd apps/web
-vercel --prod
-
-# Deploy Admin to Vercel
-cd apps/admin
-vercel --prod
-```
-
-See individual deployment guides for detailed instructions.
-
-## Common Deployment Commands
-
-### Development
-
-```bash
-# Start all services locally
-pnpm dev
-
-# Start specific service
-pnpm dev --filter=api
-pnpm dev --filter=web
-pnpm dev --filter=admin
-
-# Run tests before deployment
-pnpm test
-
-# Run type checking
-pnpm typecheck
-
-# Run linting
-pnpm lint
-```
-
-### Database
-
-```bash
-# Generate migration
-pnpm db:generate
-
-# Run migrations
-pnpm db:migrate
-
-# Rollback migration
-pnpm db:rollback
-
-# Open database studio
-pnpm db:studio
-
-# Seed database
-pnpm db:seed
-
-# Fresh database (reset + migrate + seed)
-pnpm db:fresh
-```
-
-### Deployment
-
-```bash
-# Deploy API (Fly.io)
-cd apps/api
-fly deploy
-fly logs  # View logs
-
-# Deploy Web (Vercel)
-cd apps/web
-vercel --prod
-vercel logs  # View logs
-
-# Deploy Admin (Vercel)
-cd apps/admin
-vercel --prod
-vercel logs  # View logs
-```
-
-### Monitoring
-
-```bash
-# Check API health
-curl https://api.hospeda.com/health
-
-# View API logs (Fly.io)
-fly logs -a hospeda-api
-
-# View Web logs (Vercel)
-vercel logs hospeda-web
-
-# Check database status
-neonctl status
-```
+- **Better Auth**: OAuth providers, email/password auth, session management, webhooks
+- **Mercado Pago**: Credit/debit card payments, installment plans, refunds, webhooks
+- **Cloudinary**: Image uploads, automatic optimization, responsive images, global CDN
 
 ## Deployment Flow
 
@@ -296,36 +176,220 @@ graph LR
     ProdDeploy --> Smoke --> Monitor
 ```
 
-### Environments
+### Stages
 
-1. **Development** (`dev`)
-   - Local development environment
-   - Hot reload enabled
-   - Debug logging
-   - Local or development database
+1. **Local Development**: Feature development, unit tests, local testing
+2. **Quality Gates (CI)**: Type checking, linting, unit tests, coverage >= 90%, security audit
+3. **Staging**: Deploy on merge to `develop`, run integration tests, manual QA
+4. **Production**: Deploy on merge to `main`, run smoke tests, monitor error rates
 
-1. **Staging** (`staging`)
-   - Pre-production testing
-   - Production-like configuration
-   - Staging database (separate from prod)
-   - Full monitoring enabled
+### Safety Measures
 
-1. **Production** (`production`)
-   - Live production environment
-   - Optimized builds
-   - Production database
-   - Full monitoring and alerting
+- Atomic deployments (zero downtime)
+- Automatic rollback on health check failure
+- Database migration validation
+- Post-deployment monitoring (15 minutes)
 
-## Deployment Checklist
+## Environment Strategy
 
-Before deploying to production:
+### Environment Tiers
+
+| Environment | Trigger | Database | External Services | Rate Limiting |
+|-------------|---------|----------|-------------------|---------------|
+| Development | Local | Local Docker | Mock/sandbox | None |
+| Staging | Merge to `develop` | Staging Neon branch | Sandbox mode | Relaxed |
+| Production | Merge to `main` | Production Neon | Production mode | Strict |
+
+### Environment Variables
+
+```env
+# Development
+NODE_ENV=development
+HOSPEDA_API_URL=http://localhost:3001
+HOSPEDA_SITE_URL=http://localhost:4321
+HOSPEDA_DATABASE_URL=postgresql://localhost:5432/hospeda_dev
+
+# Staging
+NODE_ENV=staging
+HOSPEDA_API_URL=https://api-staging.hospeda.com
+HOSPEDA_SITE_URL=https://staging.hospeda.com
+
+# Production
+NODE_ENV=production
+HOSPEDA_API_URL=https://api.hospeda.com
+HOSPEDA_SITE_URL=https://hospeda.com
+```
+
+### Environment Isolation
+
+- Separate databases for dev, staging, production
+- Separate Better Auth applications per environment
+- Separate payment credentials per environment
+- Unique API keys per environment
+- Different domain names per environment
+
+## Rollback Procedures
+
+### Application Rollback (Vercel)
+
+```bash
+# List recent deployments
+vercel ls
+
+# Rollback to previous deployment
+vercel rollback
+
+# Rollback to specific deployment
+vercel rollback <deployment-url>
+
+# Or promote a specific deployment via Vercel dashboard
+```
+
+### Database Rollback
+
+```bash
+pnpm db:rollback
+pnpm db:rollback --to=<migration-name>
+```
+
+## Monitoring and Health Checks
+
+### Health Check Endpoints
+
+```bash
+# API
+curl https://api.hospeda.com/health
+# Expected: {"status": "healthy", "timestamp": "..."}
+
+# Web
+curl https://hospeda.com/api/health
+
+# Admin
+curl https://admin.hospeda.com/api/health
+```
+
+### Monitoring Tools
+
+- **Vercel Analytics**: Frontend and API performance metrics
+- **Neon Console**: Database performance and connection pool monitoring
+- **Sentry**: Error tracking and alerting
+- **LogTail**: Centralized log viewing
+
+### Alerting
+
+| Trigger | Threshold | Action |
+|---------|-----------|--------|
+| Error rate | > 5% for 5 minutes | Investigate immediately |
+| Response time p95 | > 1000ms for 5 minutes | Investigate |
+| CPU usage | > 80% for 10 minutes | Scale up |
+| Health check failures | 2 consecutive | Auto-rollback |
+
+### Service Status Pages
+
+- Vercel: <https://www.vercel-status.com/>
+- Neon: <https://neonstatus.com/>
+
+## Security Considerations
+
+### Secret Management
+
+- Never commit secrets to version control
+- Use Vercel Environment Variables for production (encrypted at rest)
+- Use `.env.local` for development (gitignored)
+- Rotate secrets regularly
+- Use different secrets per environment
+
+### Network Security
+
+- HTTPS enforced on all endpoints
+- CORS properly configured (whitelist origins)
+- Rate limiting per endpoint and per user
+- Security headers (CSP, HSTS, X-Frame-Options)
+- DDoS protection via Cloudflare
+
+See [Security Documentation](../security/README.md) for detailed security guidelines.
+
+## Disaster Recovery
+
+### Backup Strategy
+
+- **Automatic**: Daily backups via Neon (7-day staging, 30-day production)
+- **Manual**: `pg_dump $HOSPEDA_DATABASE_URL > backup-$(date +%Y%m%d).sql`
+
+### Recovery Targets
+
+- **RTO (Recovery Time Objective)**: 1 hour
+- **RPO (Recovery Point Objective)**: 24 hours
+
+### Recovery Procedures
+
+1. **Database Failure**: Restore from Neon backup or point-in-time recovery
+2. **Application Failure**: Rollback deployment via Vercel
+3. **External Service Failure**: Graceful degradation
+4. **Complete Infrastructure Failure**: Migrate to backup provider
+
+## Common Commands
+
+### Development
+
+```bash
+pnpm dev                # Start all services locally
+pnpm test               # Run unit tests
+pnpm typecheck          # Type checking
+pnpm lint               # Code linting
+```
+
+### Database
+
+```bash
+pnpm db:generate        # Generate migration
+pnpm db:migrate         # Run migrations
+pnpm db:rollback        # Rollback migration
+pnpm db:studio          # Open database studio
+pnpm db:seed            # Seed database
+pnpm db:fresh           # Reset + migrate + seed
+```
+
+### Deployment
+
+```bash
+# Deploy individual apps via Vercel CLI
+cd apps/api && vercel --prod
+cd apps/web && vercel --prod
+cd apps/admin && vercel --prod
+
+# View logs
+vercel logs --prod
+```
+
+## Quick Links
+
+### Core Documentation
+
+- **[Environment Configuration](./environments.md)** .. Environment variables and configuration
+- **[API Deployment](../../apps/api/docs/development/deployment.md)** .. Hono API deployment to Vercel
+- **[Web Deployment](../../apps/web/docs/deployment.md)** .. Astro web app deployment to Vercel
+- **[Admin Deployment](../../apps/admin/docs/development/deployment.md)** .. TanStack Start admin deployment to Vercel
+
+### Specialized Guides
+
+- **[CI/CD Pipeline](./ci-cd.md)** .. Automated deployment workflows
+
+### External Documentation
+
+- [Vercel Documentation](https://vercel.com/docs)
+- [Neon Documentation](https://neon.tech/docs)
+- [Better Auth Documentation](https://better-auth.com/docs)
+- [Mercado Pago Documentation](https://www.mercadopago.com.ar/developers)
+
+## Pre-Deployment Checklist
 
 ### Code Quality
 
 - [ ] All tests passing (`pnpm test`)
 - [ ] Type checking passes (`pnpm typecheck`)
 - [ ] Linting passes (`pnpm lint`)
-- [ ] Code coverage ≥ 90%
+- [ ] Code coverage >= 90%
 - [ ] No security vulnerabilities (`pnpm audit`)
 
 ### Database
@@ -345,268 +409,18 @@ Before deploying to production:
 
 ### External Services
 
-- [ ] Clerk authentication working
+- [ ] Better Auth authentication working
 - [ ] Mercado Pago integration tested
 - [ ] Cloudinary uploads working
-- [ ] Email service configured
 
 ### Monitoring
 
 - [ ] Health check endpoints working
 - [ ] Logging configured
 - [ ] Error tracking enabled (Sentry)
-- [ ] Performance monitoring enabled
 - [ ] Alerts configured
-
-### Documentation
-
-- [ ] Deployment notes updated
-- [ ] Changelog updated
-- [ ] API documentation current
-- [ ] Environment variables documented
 
 ### Communication
 
 - [ ] Team notified of deployment
-- [ ] Maintenance window scheduled (if needed)
 - [ ] Rollback plan communicated
-- [ ] On-call engineer assigned
-
-## Troubleshooting Quick Reference
-
-### Common Issues
-
-| Issue | Quick Fix | Documentation |
-|-------|-----------|---------------|
-| Build fails | Check Node.js version (20.10.0+) | [Troubleshooting](./troubleshooting.md#build-failures) |
-| Database connection fails | Verify `HOSPEDA_DATABASE_URL` | [Database](./database.md#connection-issues) |
-| Authentication not working | Check Clerk keys | [Security](./security.md#authentication) |
-| API errors | Check logs: `fly logs` | [API Deployment](./api.md#debugging) |
-| Vercel deployment fails | Check build logs in Vercel dashboard | [Web](./web.md)/[Admin](./admin.md) |
-| Environment variables missing | Verify `.env` file | [Environments](./environments.md) |
-| CORS errors | Update CORS configuration | [API](./api.md#cors-configuration) |
-| Rate limiting issues | Adjust rate limit settings | [API](./api.md#rate-limiting) |
-| Database migration fails | Check migration logs | [Database](./database.md#migrations) |
-| Production errors | Check Sentry dashboard | [Monitoring](./monitoring.md) |
-
-### Getting Help
-
-1. **Check Documentation** - Start with relevant deployment guide
-2. **Review Logs** - Check application and platform logs
-3. **Verify Configuration** - Ensure environment variables are correct
-4. **Test Staging** - Reproduce issue in staging environment
-5. **Contact Team** - Reach out to team leads or DevOps
-
-### Emergency Procedures
-
-| Scenario | Immediate Action | Documentation |
-|----------|------------------|---------------|
-| Production down | Run health checks, check status page | [Disaster Recovery](./disaster-recovery.md) |
-| Database connection lost | Verify Neon status, check connection pool | [Database](./database.md#troubleshooting) |
-| High error rate | Check Sentry, review recent deployments | [Monitoring](./monitoring.md) |
-| Security incident | Follow incident response plan | [Security](./security.md#incident-response) |
-| Data loss | Initiate backup restoration | [Disaster Recovery](./disaster-recovery.md#data-recovery) |
-
-## Monitoring & Health Checks
-
-### Health Check Endpoints
-
-```bash
-# API health check
-curl https://api.hospeda.com/health
-# Expected: {"status": "healthy", "timestamp": "..."}
-
-# Web health check
-curl https://hospeda.com/api/health
-# Expected: 200 OK
-
-# Admin health check
-curl https://admin.hospeda.com/api/health
-# Expected: 200 OK
-```
-
-### Service Status
-
-- **Vercel**: <https://www.vercel-status.com/>
-- **Fly.io**: <https://status.flyio.net/>
-- **Neon**: <https://neonstatus.com/>
-- **Clerk**: <https://status.clerk.com/>
-
-### Monitoring Dashboards
-
-- **Vercel Analytics**: Monitor web and admin performance
-- **Fly.io Metrics**: Monitor API performance and scaling
-- **Neon Console**: Monitor database performance
-- **Sentry**: Monitor errors and exceptions
-- **LogTail**: Centralized log viewing
-
-## Security Considerations
-
-### Secret Management
-
-- **Never commit secrets** to version control
-- Use platform-specific secret management:
-  - Vercel: Use Vercel Environment Variables
-  - Fly.io: Use Fly Secrets (`fly secrets set`)
-  - Development: Use `.env.local` (gitignored)
-
-### Environment Isolation
-
-- Separate databases for dev, staging, production
-- Separate Clerk applications for each environment
-- Separate API keys and secrets per environment
-- Use different domain names for each environment
-
-### Access Control
-
-- Limit production access to authorized personnel
-- Use role-based access control (RBAC)
-- Enable two-factor authentication (2FA)
-- Audit access logs regularly
-
-### Network Security
-
-- Enable HTTPS for all services
-- Configure CORS properly
-- Implement rate limiting
-- Use security headers
-- Enable DDoS protection
-
-See [Security Documentation](./security.md) for detailed security guidelines.
-
-## Performance Optimization
-
-### Build Optimization
-
-- Enable tree-shaking
-- Optimize bundle size
-- Use code splitting
-- Compress assets
-- Optimize images
-
-### Runtime Optimization
-
-- Enable caching (Redis)
-- Use CDN for static assets
-- Optimize database queries
-- Implement pagination
-- Use connection pooling
-
-### Scaling
-
-- **Horizontal Scaling**: Add more instances (Fly.io auto-scaling)
-- **Vertical Scaling**: Increase instance resources
-- **Database Scaling**: Use Neon scaling features
-- **Caching**: Implement Redis for frequently accessed data
-
-See [Scaling Guide](./scaling.md) for detailed scaling strategies.
-
-## Continuous Integration/Continuous Deployment (CI/CD)
-
-Hospeda uses GitHub Actions for automated deployment:
-
-### Automated Workflows
-
-1. **Pull Request Checks**
-   - Run tests
-   - Type checking
-   - Linting
-   - Code coverage
-
-1. **Staging Deployment**
-   - Deploy to staging on merge to `develop`
-   - Run integration tests
-   - Notify team
-
-1. **Production Deployment**
-   - Deploy to production on merge to `main`
-   - Run smoke tests
-   - Monitor error rates
-   - Notify team
-
-See [CI/CD Documentation](./cicd.md) for workflow configuration.
-
-## Version Control & Branching
-
-### Branch Strategy
-
-- `main` - Production-ready code
-- `develop` - Integration branch for staging
-- `feature/*` - Feature development
-- `fix/*` - Bug fixes
-- `hotfix/*` - Critical production fixes
-
-### Deployment Tags
-
-Tag production deployments for version tracking:
-
-```bash
-git tag -a v1.2.0 -m "Release version 1.2.0"
-git push origin v1.2.0
-```
-
-## Rollback Procedures
-
-If a deployment causes issues:
-
-### Quick Rollback
-
-```bash
-# Vercel - Rollback to previous deployment
-vercel rollback
-
-# Fly.io - Rollback to previous release
-fly releases list
-fly releases rollback <version>
-
-# Database - Rollback migration
-pnpm db:rollback
-```
-
-See [Rollback Procedures](./rollback.md) for detailed instructions.
-
-## Support & Resources
-
-### Documentation
-
-- [Vercel Documentation](https://vercel.com/docs)
-- [Fly.io Documentation](https://fly.io/docs/)
-- [Neon Documentation](https://neon.tech/docs)
-- [Clerk Documentation](https://clerk.com/docs)
-- [Mercado Pago Documentation](https://www.mercadopago.com.ar/developers)
-
-### Internal Resources
-
-- Project README: `/README.md`
-- Development Guide: `/docs/development/README.md`
-- Architecture Guide: `/docs/architecture/README.md`
-- API Documentation: `/docs/api/README.md`
-
-### Team Contacts
-
-- **Tech Lead**: Architecture and deployment strategy
-- **DevOps**: Infrastructure and CI/CD
-- **Backend Team**: API deployment and database
-- **Frontend Team**: Web and admin deployment
-
-## Contributing
-
-When updating deployment documentation:
-
-1. Follow the [Documentation Standards](../development/documentation.md)
-2. Test all commands and procedures
-3. Include screenshots for UI-based steps
-4. Update the changelog
-5. Request review from DevOps team
-
-## Changelog
-
-| Version | Date | Changes | Author |
-|---------|------|---------|--------|
-| 1.0.0 | 2024-01-15 | Initial deployment documentation | Tech Team |
-
----
-
-**Last Updated**: 2024-01-15
-**Maintained By**: DevOps Team
-**Questions?** Contact the tech lead or DevOps team

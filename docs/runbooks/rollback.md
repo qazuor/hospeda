@@ -2,7 +2,7 @@
 
 ## Overview
 
-This runbook provides procedures for safely rolling back deployments when issues are detected in production. It covers frontend (Vercel), backend (Fly.io/similar), and database migration rollbacks.
+This runbook provides procedures for safely rolling back deployments when issues are detected in production. It covers frontend (Vercel), backend (Vercel serverless), and database migration rollbacks.
 
 **When to Use**:
 
@@ -31,7 +31,7 @@ This runbook provides procedures for safely rolling back deployments when issues
 ### Required Access
 
 - [ ] Vercel Admin access (frontend rollback)
-- [ ] Fly.io/backend platform access (backend rollback)
+- [ ] Vercel Admin access (backend rollback via Vercel dashboard)
 - [ ] GitHub repository write access
 - [ ] Production database access (for migration rollback)
 - [ ] Team communication channels
@@ -39,14 +39,14 @@ This runbook provides procedures for safely rolling back deployments when issues
 ### Required Tools
 
 - [ ] Browser (for Vercel Dashboard)
-- [ ] Terminal with CLI tools (vercel, fly, gh, psql)
+- [ ] Terminal with CLI tools (vercel, gh, psql)
 - [ ] Git configured with repository access
 - [ ] VPN/secure connection (for database access)
 
 ### Knowledge Requirements
 
 - Understanding of deployment architecture
-- Familiarity with Vercel/Fly.io dashboards
+- Familiarity with Vercel dashboard
 - Basic Git operations
 - Database migration concepts
 - Understanding of service dependencies
@@ -304,29 +304,27 @@ Next steps: [post-rollback tasks]
 - [ ] Confirmed error rate normalized
 - [ ] Updated team on completion
 
-## Backend Rollback (Fly.io/Similar)
+## Backend Rollback (Vercel)
 
-Rollback backend API deployed on Fly.io or similar platform.
+Rollback backend API deployed on Vercel serverless.
 
-**Note**: Adapt commands for your specific backend platform. Examples use Fly.io syntax.
-
-### Step 1: Identify Current Version
+### Step 1: Identify Current Deployment
 
 ```bash
-# Check current running version
-fly status --app hospeda-api
+# List recent deployments for the API project
+vercel ls hospeda-api
 
-# Check recent releases
-fly releases --app hospeda-api
+# Or view in the Vercel dashboard
+# https://vercel.com/dashboard > hospeda-api > Deployments
 ```
 
 **Expected output**:
 
 ```text
-ID       VERSION   STATUS    CREATED
-v12      2a3b4c5   deployed  2024-11-06T14:30:00Z  <- Current (broken)
-v11      1a2b3c4   deployed  2024-11-06T12:00:00Z  <- Target
-v10      9a8b7c6   deployed  2024-11-05T10:00:00Z
+Age    Deployment                                    Status
+2m     https://hospeda-api-abc123.vercel.app         READY (broken)
+2h     https://hospeda-api-xyz789.vercel.app         READY  <- Target
+1d     https://hospeda-api-def456.vercel.app         READY
 ```
 
 ### Step 2: Verify Database Compatibility
@@ -359,63 +357,52 @@ ls -lt packages/db/migrations/ | head -5
 
 | Migration Type | Backend Rollback Safe? | Action |
 |---------------|----------------------|---------|
-| Added column | ✅ Yes (if nullable) | Rollback backend, keep migration |
-| Added table | ✅ Yes (if not used by old code) | Rollback backend, keep migration |
-| Modified column | ⚠️  Maybe | Check if old code compatible |
-| Dropped column | ❌ No | Must rollback migration first |
-| Dropped table | ❌ No | Must rollback migration first |
+| Added column | Yes (if nullable) | Rollback backend, keep migration |
+| Added table | Yes (if not used by old code) | Rollback backend, keep migration |
+| Modified column | Maybe | Check if old code compatible |
+| Dropped column | No | Must rollback migration first |
+| Dropped table | No | Must rollback migration first |
 
-### Step 3: Deploy Previous Version
+### Step 3: Promote Previous Deployment
 
-**Via Fly.io CLI**:
+**Via Vercel Dashboard**:
+
+1. Open the Vercel dashboard for `hospeda-api`
+2. Go to the **Deployments** tab
+3. Find the last known-good deployment
+4. Click `...` > **Promote to Production**
+
+**Via Vercel CLI**:
 
 ```bash
-# Rollback to previous release
-fly releases rollback --app hospeda-api
-
-# Or rollback to specific version
-fly releases rollback v11 --app hospeda-api
+# Promote a specific deployment URL to production
+vercel promote https://hospeda-api-xyz789.vercel.app --scope <team>
 ```
 
-**Via Git revert** (alternative):
+**Expected**: Production traffic switches to the promoted deployment instantly.
+
+### Step 4: Verify Deployment
 
 ```bash
-# Checkout previous version
-git log --oneline -10  # Find commit to revert to
-git checkout [commit-hash]
+# Check API health
+curl https://api.hospeda.com.ar/health
 
-# Deploy
-fly deploy --app hospeda-api
-
-# Return to main branch after rollback
-git checkout main
-```
-
-**Expected**: Deployment triggered, new version rolling out
-
-### Step 4: Monitor Deployment
-
-```bash
-# Watch deployment progress
-fly logs --app hospeda-api
-
-# Check status
-fly status --app hospeda-api
+# View function logs
+vercel logs --prod
 ```
 
 **Look for**:
 
-- Successful startup messages
-- No connection errors
-- Health checks passing
-- All instances running
+- Successful health check response
+- No error spikes in Sentry
+- Expected response times in Vercel Analytics
 
-**Expected logs**:
+**Expected health response**:
 
 ```text
 [info] Starting application...
 [info] Database connected
-[info] Server listening on port 8080
+[info] Server listening on port 3001
 [info] Health check passed
 ```
 
@@ -446,8 +433,8 @@ curl https://api.hospeda.com/api/bookings \
 **Check error rates**:
 
 ```bash
-# Via logs (sample last 100 requests)
-fly logs --app hospeda-api | grep -E "status\":(4|5)[0-9]{2}" | wc -l
+# Via Vercel logs
+vercel logs --prod | grep -E '"status":(4|5)[0-9]{2}' | wc -l
 # Expected: < 5 (< 5% error rate)
 ```
 
@@ -457,8 +444,8 @@ fly logs --app hospeda-api | grep -E "status\":(4|5)[0-9]{2}" | wc -l
 # Check database connectivity
 psql $DATABASE_URL -c "SELECT count(*) FROM accommodations"
 
-# Check for connection errors in logs
-fly logs --app hospeda-api | grep -i "database\|connection" | tail -20
+# Check for connection errors in Vercel logs
+vercel logs --prod | grep -i "database\|connection" | tail -20
 ```
 
 **Expected**:
@@ -478,9 +465,9 @@ fly logs --app hospeda-api | grep -i "database\|connection" | tail -20
 
 **Monitoring locations**:
 
-- Fly.io dashboard → Metrics
+- Vercel dashboard → Functions tab (duration, errors)
 - Neon Console → Monitoring
-- Application logs
+- Sentry → Issues and Performance
 
 ### Step 8: Update Team
 
@@ -802,7 +789,7 @@ TO '/tmp/missing_data.csv' CSV HEADER;
 
 **Example scenarios**:
 
-**Scenario 1: Dropped column (data lost)**
+Scenario 1 - Dropped column (data lost):
 
 ```sql
 -- Cannot restore data, add column with defaults
@@ -812,7 +799,7 @@ ALTER TABLE accommodations ADD COLUMN dropped_field TEXT DEFAULT 'unknown';
 -- UPDATE accommodations SET dropped_field = backup.value FROM backup_table ...
 ```
 
-**Scenario 2: Invalid data transformation**
+Scenario 2 - Invalid data transformation:
 
 ```sql
 -- Reverse transformation if possible
@@ -1067,7 +1054,7 @@ git push
 
 1. Identify backend version before regression
 2. Check database compatibility
-3. Rollback backend via Fly.io/platform
+3. Rollback backend via Vercel dashboard (promote previous deployment)
 4. Monitor performance recovery
 
 **Time**: ~15 minutes
@@ -1114,7 +1101,7 @@ git push
    ```
 
 1. **Check if issue is elsewhere**
-   - External service down? (Clerk, Mercado Pago)
+   - External service down? (Better Auth, Mercado Pago)
    - Database issue unrelated to deployment?
    - Network/DNS issue?
 

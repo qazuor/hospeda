@@ -25,7 +25,7 @@ graph TD
     NeonDB[(🗄️ Neon PostgreSQL<br/>Serverless<br/>Connection Pool)]
 
     %% External Services
-    Clerk[🔐 Clerk<br/>Authentication]
+    BetterAuth[🔐 BetterAuth<br/>Authentication]
     MercadoPago[💳 Mercado Pago<br/>Payments]
     Cloudinary[🖼️ Cloudinary<br/>Image Storage]
 
@@ -61,7 +61,7 @@ graph TD
     AdminApp -->|API Calls| APIApp
 
     APIApp -->|SQL Queries| NeonDB
-    APIApp -->|Verify JWT| Clerk
+    APIApp -->|Verify JWT| BetterAuth
     APIApp -->|Process Payment| MercadoPago
     APIApp -->|Upload Images| Cloudinary
 
@@ -89,7 +89,7 @@ graph TD
     class WebApp,AdminApp frontend
     class APIApp backend
     class NeonDB,ProdDB,PreviewDB,DevDB database
-    class Clerk,MercadoPago,Cloudinary external
+    class BetterAuth,MercadoPago,Cloudinary external
     class Analytics,Logs monitoring
     class ProdEdge,PreviewEdge,DevLocal,ProdAPI,PreviewAPI environment
 ```

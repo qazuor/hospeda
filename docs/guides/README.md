@@ -1,58 +1,35 @@
 # Guides
 
-Comprehensive step-by-step guides for common development tasks in the Hospeda platform.
+> Step-by-step guides for common development tasks in the Hospeda platform.
 
-## Quick Navigation
+## Development Guides
 
-### Development Guides
+| Guide | Description |
+|-------|-------------|
+| [Adding a New Entity](adding-new-entity.md) | End-to-end tutorial: Schema, Model, Service, API, Frontend |
+| [Local Development Setup](local-development-setup.md) | PostgreSQL, Redis, Docker, environment configuration |
+| [Error Handling](error-handling.md) | Error patterns and Result type |
+| [Debugging](debugging.md) | Debugging techniques and tools |
+| [CLI Utilities](cli-utilities.md) | Available CLI scripts and commands |
+| [Markdown Formatting](markdown-formatting.md) | Documentation formatting standards |
 
-- **[Adding a New Entity](./adding-new-entity.md)** - Complete end-to-end tutorial for adding a new entity (Schema → Model → Service → API → Frontend)
+## Policy Documents
 
-### Coming Soon
+| Document | Description |
+|----------|-------------|
+| [Dependency Policy](dependency-policy.md) | Which libraries to use (and never use) for each concern |
 
-More guides will be added as the project evolves:
+## App-Specific Guides
 
-- TDD Workflow - Red-Green-Refactor cycle
-- Testing Strategy - Unit, Integration, E2E testing
-- Error Handling - Error patterns and best practices
-- Authentication - Clerk integration deep dive
-- Debugging - Debugging techniques
-- Database Migrations - Migration workflow
-- Internationalization - Adding new languages
+Guides that are specific to a single app have been moved to each app's own docs:
 
-## What Are Guides?
+- **Web**: [Adding Pages](../../apps/web/docs/guides/adding-pages.md), [Branding and Theming](../../apps/web/docs/guides/branding-and-theming.md)
+- **Admin**: [Adding Admin Pages](../../apps/admin/docs/development/README.md)
+- **API**: [Adding API Routes](../../apps/api/docs/development/README.md)
 
-Guides are **practical, hands-on tutorials** that walk you through completing a specific task from start to finish. Unlike API reference documentation, guides focus on:
+## Related
 
-- Step-by-step instructions
-- Real-world examples
-- Best practices
-- Common pitfalls to avoid
-- Testing strategies
-
-## When to Use Guides
-
-Use guides when you need to:
-
-- Learn how to implement a new feature
-- Understand the workflow for a specific task
-- Follow established patterns and conventions
-- See working code examples in context
-
-## Guide Format
-
-Each guide follows a consistent structure:
-
-1. **Overview** - What you'll build and why
-2. **Prerequisites** - What you need to know/have installed
-3. **Step-by-Step Instructions** - Detailed implementation
-4. **Testing** - How to test your implementation
-5. **Common Issues** - Troubleshooting tips
-6. **Next Steps** - Where to go from here
-
-## Related Documentation
-
-- **[Architecture](/docs/architecture/README.md)** - System architecture and patterns
-- **[Getting Started](/docs/getting-started/README.md)** - Setup and installation
-- **[API Documentation](/apps/api/docs/README.md)** - API routes and endpoints
-- **[Testing](/docs/testing/README.md)** - Testing strategies and tools
+- [Architecture](../architecture/README.md)
+- [Getting Started](../getting-started/README.md)
+- [Testing](../testing/README.md)
+- [Contributing](../contributing/README.md)

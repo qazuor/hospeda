@@ -317,11 +317,12 @@ apps/api:lint:
 
 **Coverage Tool**: Vitest coverage (c8/v8 provider)
 
-**Test Pattern**: Test-Driven Development (TDD)
+**Test Pattern**: Test-Informed Development
 
-- Red: Write failing test
-- Green: Make test pass
-- Refactor: Improve code while keeping tests green
+- Write tests alongside implementation (timing flexible by code type)
+- Bug fixes: always write regression test first
+- Pure logic: tests first when practical (Red-Green-Refactor)
+- Integration code: tests alongside implementation
 
 **Example Test Output:**
 
@@ -415,8 +416,8 @@ The CI workflow requires the following secrets to be configured in GitHub:
 | Secret Name | Purpose | Example Value |
 |-------------|---------|---------------|
 | `HOSPEDA_DATABASE_URL` | PostgreSQL connection for tests | `postgresql://user:pass@localhost:5432/test` |
-| `HOSPEDA_CLERK_SECRET_KEY` | Clerk authentication (backend) | `YOUR_TEST_SECRET_HERE` |
-| `HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication (frontend) | `YOUR_TEST_PUBLISHABLE_HERE` |
+| `HOSPEDA_BETTER_AUTH_SECRET` | Better Auth authentication (backend) | `YOUR_TEST_SECRET_HERE` |
+| `HOSPEDA_BETTER_AUTH_URL` | Better Auth authentication (frontend) | `YOUR_TEST_PUBLISHABLE_HERE` |
 | `HOSPEDA_API_URL` | API endpoint for tests | `http://localhost:3000` |
 | `HOSPEDA_SITE_URL` | Frontend URL for tests | `http://localhost:4321` |
 
@@ -1497,8 +1498,8 @@ All secrets must be configured in **GitHub Repository Settings → Secrets and V
 | Secret Name | Purpose | Example Value | Used By |
 |-------------|---------|---------------|---------|
 | `HOSPEDA_DATABASE_URL` | PostgreSQL connection | `postgresql://user:pass@host:5432/db` | CI, Search Refresh |
-| `HOSPEDA_CLERK_SECRET_KEY` | Clerk backend auth | `YOUR_SECRET_KEY_HERE` | CI |
-| `HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk frontend auth | `YOUR_PUBLISHABLE_KEY_HERE` | CI |
+| `HOSPEDA_BETTER_AUTH_SECRET` | Better Auth backend auth | `YOUR_SECRET_KEY_HERE` | CI |
+| `HOSPEDA_BETTER_AUTH_URL` | Better Auth frontend auth | `YOUR_PUBLISHABLE_KEY_HERE` | CI |
 | `HOSPEDA_API_URL` | API endpoint | `https://api.hospeda.com` | CI |
 | `HOSPEDA_SITE_URL` | Frontend URL | `https://hospeda.com` | CI |
 
@@ -1533,7 +1534,7 @@ All secrets must be configured in **GitHub Repository Settings → Secrets and V
 
 **Rotation Steps**:
 
-1. **Generate new secret** (Clerk, database, etc.)
+1. **Generate new secret** (Better Auth, database, etc.)
 2. **Update GitHub secret** with new value
 3. **Deploy applications** with new secret
 4. **Verify functionality** in production
@@ -1555,7 +1556,7 @@ For critical secrets like database URLs:
 
 ```
 HOSPEDA_DATABASE_URL          # Production DB
-HOSPEDA_CLERK_SECRET_KEY      # Production Clerk
+HOSPEDA_BETTER_AUTH_SECRET      # Production Better Auth
 HOSPEDA_API_URL               # https://api.hospeda.com
 HOSPEDA_SITE_URL              # https://hospeda.com
 ```
@@ -1564,7 +1565,7 @@ HOSPEDA_SITE_URL              # https://hospeda.com
 
 ```
 HOSPEDA_DEV_DATABASE_URL      # Staging DB
-HOSPEDA_DEV_CLERK_SECRET_KEY  # Staging Clerk
+HOSPEDA_DEV_BETTER_AUTH_SECRET  # Staging Better Auth
 HOSPEDA_DEV_API_URL           # https://staging-api.hospeda.com
 HOSPEDA_DEV_SITE_URL          # https://staging.hospeda.com
 ```
@@ -1575,8 +1576,8 @@ Use `.env.local` file (never commit to git):
 
 ```bash
 DATABASE_URL=postgresql://localhost:5432/hospeda_dev
-CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
+HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
 API_URL=http://localhost:3000
 SITE_URL=http://localhost:4321
 ```
@@ -1634,7 +1635,7 @@ SITE_URL=http://localhost:4321
 ```yaml
 env:
   DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
-  CLERK_SECRET_KEY: ${{ secrets.HOSPEDA_CLERK_SECRET_KEY }}
+  HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
 ```
 
 **Never Log Secrets**:
@@ -1693,8 +1694,8 @@ act -j test --dryrun
 ```bash
 # .env.local
 HOSPEDA_DATABASE_URL=postgresql://localhost:5432/hospeda_dev
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
+HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
+HOSPEDA_BETTER_AUTH_URL=YOUR_TEST_PUBLISHABLE_HERE
 HOSPEDA_API_URL=http://localhost:3000
 HOSPEDA_SITE_URL=http://localhost:4321
 ```
@@ -2545,7 +2546,7 @@ git commit -m "feat(db): add User model with CRUD operations"
 **Principles**:
 
 1. **No shortcuts**: Every change goes through CI
-2. **Tests first**: Write tests before code (TDD)
+2. **Tests required**: Write tests for all code (timing flexible by code type)
 3. **Coverage matters**: 90% is non-negotiable
 4. **Documentation**: Update docs with code changes
 5. **Review thoroughly**: Don't rubber-stamp PRs

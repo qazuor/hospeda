@@ -1,6 +1,6 @@
 # Authentication & Authorization
 
-Complete guide to authentication and authorization implementation in Hospeda using Clerk.
+Complete guide to authentication and authorization implementation in Hospeda using Better Auth.
 
 ## Table of Contents
 
@@ -8,11 +8,11 @@ Complete guide to authentication and authorization implementation in Hospeda usi
   - [Table of Contents](#table-of-contents)
   - [Overview](#overview)
     - [Authentication vs Authorization](#authentication-vs-authorization)
-    - [Clerk Integration Overview](#clerk-integration-overview)
+    - [Better Auth Integration Overview](#better-auth-integration-overview)
     - [Architecture Diagram](#architecture-diagram)
-  - [Clerk Setup](#clerk-setup)
-    - [Account Configuration](#account-configuration)
-    - [Application Setup](#application-setup)
+  - [Better Auth Setup](#better-auth-setup)
+    - [Installation](#installation)
+    - [Configuration](#configuration)
     - [Social Providers](#social-providers)
     - [Environment Variables](#environment-variables)
       - [API Application](#api-application)
@@ -31,16 +31,12 @@ Complete guide to authentication and authorization implementation in Hospeda usi
     - [OAuth Providers](#oauth-providers)
       - [Supported Providers](#supported-providers)
       - [Configuration Example (Google)](#configuration-example-google)
-    - [Magic Links](#magic-links)
-      - [Implementation](#implementation)
   - [Session Management](#session-management)
-    - [JWT Token Structure](#jwt-token-structure)
-      - [Example JWT Payload](#example-jwt-payload)
-    - [Token Validation](#token-validation)
-      - [API Token Validation](#api-token-validation)
-      - [Frontend Token Validation](#frontend-token-validation)
+    - [Session Structure](#session-structure)
+    - [Session Validation](#session-validation)
+      - [API Session Validation](#api-session-validation)
+      - [Frontend Session Validation](#frontend-session-validation)
     - [Session Expiration](#session-expiration)
-    - [Refresh Tokens](#refresh-tokens)
     - [Session Invalidation](#session-invalidation)
       - [Manual Session Invalidation](#manual-session-invalidation)
   - [Authorization (RBAC)](#authorization-rbac)
@@ -61,23 +57,9 @@ Complete guide to authentication and authorization implementation in Hospeda usi
       - [Route-Level Ownership Check](#route-level-ownership-check)
   - [Multi-Factor Authentication (MFA)](#multi-factor-authentication-mfa)
     - [MFA Setup](#mfa-setup)
-      - [Dashboard Configuration](#dashboard-configuration)
     - [TOTP Implementation](#totp-implementation)
     - [Backup Codes](#backup-codes)
     - [User Experience](#user-experience)
-  - [Webhooks](#webhooks)
-    - [Clerk Webhook Events](#clerk-webhook-events)
-      - [User Events](#user-events)
-      - [Session Events](#session-events)
-      - [Organization Events](#organization-events)
-    - [Webhook Verification](#webhook-verification)
-      - [Security Implementation](#security-implementation)
-    - [User Sync to Database](#user-sync-to-database)
-      - [Webhook Handler Implementation](#webhook-handler-implementation)
-    - [Event Handling Examples](#event-handling-examples)
-      - [`user.created` Event](#usercreated-event)
-      - [`user.updated` Event](#userupdated-event)
-      - [`user.deleted` Event](#userdeleted-event)
   - [Testing](#testing)
     - [Unit Testing with Mock Auth](#unit-testing-with-mock-auth)
       - [Test Environment Setup](#test-environment-setup)
@@ -87,7 +69,7 @@ Complete guide to authentication and authorization implementation in Hospeda usi
       - [Unauthorized Request Test](#unauthorized-request-test)
     - [Testing Different Roles](#testing-different-roles)
   - [Security Best Practices](#security-best-practices)
-    - [Token Storage](#token-storage)
+    - [Session Storage](#session-storage)
     - [HTTPS Only](#https-only)
     - [CSRF Protection](#csrf-protection)
     - [Rate Limiting](#rate-limiting)
@@ -95,13 +77,10 @@ Complete guide to authentication and authorization implementation in Hospeda usi
     - [Audit Logging](#audit-logging)
   - [Troubleshooting](#troubleshooting)
     - [Common Issues](#common-issues)
-      - [1. "Invalid token" Error](#1-invalid-token-error)
+      - [1. "Unauthorized" Error](#1-unauthorized-error)
       - [2. CORS Errors](#2-cors-errors)
-      - [3. Webhook Not Received](#3-webhook-not-received)
-      - [4. Session Not Persisting](#4-session-not-persisting)
+      - [3. Session Not Persisting](#3-session-not-persisting)
     - [Debug Mode](#debug-mode)
-  - [Migration Guide](#migration-guide)
-    - [From Custom Auth to Clerk](#from-custom-auth-to-clerk)
   - [References](#references)
 
 ## Overview
@@ -112,7 +91,7 @@ Complete guide to authentication and authorization implementation in Hospeda usi
 
 - Confirms user identity
 - Validates credentials
-- Issues session tokens
+- Creates sessions
 - Manages login/logout
 
 **Authorization** is the process of verifying WHAT a user can do:
@@ -122,149 +101,134 @@ Complete guide to authentication and authorization implementation in Hospeda usi
 - Validates resource ownership
 - Implements role-based access
 
-### Clerk Integration Overview
+### Better Auth Integration Overview
 
-Hospeda uses **Clerk** as the managed authentication provider:
+Hospeda uses **Better Auth** as the self-hosted authentication provider:
 
 **Features:**
 
-- 🔐 Secure authentication with JWT tokens
-- 🌐 OAuth providers (Google, GitHub, etc.)
-- 📱 Multi-factor authentication (MFA)
-- 🔄 User lifecycle webhooks
-- 🎨 Customizable UI components
-- 🛡️ Built-in security best practices
+- Secure session-based authentication
+- OAuth providers (Google, GitHub, etc.)
+- Email/password authentication
+- Multi-factor authentication (MFA/TOTP)
+- Self-hosted (no external API dependency)
+- Database-backed sessions (Drizzle adapter)
 
 **Integration Points:**
 
-- **API**: `@hono/clerk-auth` for Hono middleware
-- **Web**: `@clerk/astro` for Astro integration
-- **Admin**: `@clerk/tanstack-react-start` for TanStack Start
+- **API**: Better Auth instance in `apps/api/src/lib/auth.ts`
+- **Web**: Session validation via API calls
+- **Admin**: Session validation via API calls with `beforeLoad` guards
 
 ### Architecture Diagram
 
 ```mermaid
 graph TB
     User[User Browser]
-    Clerk[Clerk Service]
-    API[API Server]
+    API[API Server + Better Auth]
     Web[Web App]
     Admin[Admin App]
     DB[(Database)]
 
-    User -->|1. Sign In/Up| Clerk
-    Clerk -->|2. JWT Token| User
-    User -->|3. Request + Token| Web
-    User -->|3. Request + Token| Admin
-    Web -->|4. API Call + Token| API
-    Admin -->|4. API Call + Token| API
-    API -->|5. Validate Token| Clerk
-    Clerk -->|6. User Data| API
-    API -->|7. Query/Update| DB
-    Clerk -->|8. Webhooks| API
-    API -->|9. Sync User| DB
+    User -->|1. Sign In/Up| API
+    API -->|2. Create session| DB
+    API -->|3. Session cookie| User
+    User -->|4. Request + Cookie| Web
+    User -->|4. Request + Cookie| Admin
+    Web -->|5. API Call + Cookie| API
+    Admin -->|5. API Call + Cookie| API
+    API -->|6. Validate session| DB
+    DB -->|7. Session data| API
+    API -->|8. Protected resource| Web
+    API -->|8. Protected resource| Admin
 ```
 
 **Flow:**
 
-1. User authenticates with Clerk
-2. Clerk issues JWT token
-3. Frontend apps receive token
-4. API receives requests with token
-5. API validates token with Clerk
-6. Clerk returns user data
-7. API performs operations
-8. Clerk sends webhooks on user events
-9. API syncs user data to database
+1. User authenticates via Better Auth (email/password or OAuth)
+2. Better Auth creates a session in the database
+3. Session cookie is returned to the browser
+4. Frontend apps include cookie in requests
+5. API receives requests with session cookie
+6. Better Auth validates session against database
+7. Session and user data are retrieved
+8. API returns protected resources
 
-## Clerk Setup
+## Better Auth Setup
 
-### Account Configuration
-
-#### 1. Create Clerk Account
-
-Visit [clerk.com](https://clerk.com) and sign up:
+### Installation
 
 ```bash
-# Navigate to dashboard
-https://dashboard.clerk.com
+# API
+cd apps/api
+pnpm add better-auth
+
+# Note: Better Auth is self-hosted, so it only needs to be
+# installed in the API where the auth instance is created.
+# Frontend apps communicate with auth via API endpoints.
 ```
 
-#### 2. Create Application
+### Configuration
 
-```text
-Application Name: Hospeda
-Application Type: Standard
-```
+```typescript
+// apps/api/src/lib/auth.ts
+import { betterAuth } from 'better-auth';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { db } from '@repo/db';
 
-#### 3. Enable Features
-
-In Dashboard → Settings:
-
-- ✅ Email & Password
-- ✅ OAuth Providers (Google, GitHub)
-- ✅ Multi-factor Authentication
-- ✅ Webhooks
-
-### Application Setup
-
-#### 1. Configure Domains
-
-```text
-Development:
-  - http://localhost:3001 (API)
-  - http://localhost:4321 (Web)
-  - http://localhost:3000 (Admin)
-
-Production:
-  - https://api.hospeda.com
-  - https://hospeda.com
-  - https://admin.hospeda.com
-```
-
-#### 2. Set Allowed Origins
-
-Dashboard → Settings → CORS:
-
-```text
-http://localhost:3000
-http://localhost:3001
-http://localhost:4321
-https://hospeda.com
-https://admin.hospeda.com
-https://api.hospeda.com
-```
-
-#### 3. Configure Session Settings
-
-Dashboard → Sessions:
-
-```text
-Session Duration: 7 days
-Inactivity Timeout: 30 minutes
-Multi-session: Enabled
+export const auth = betterAuth({
+  database: drizzleAdapter(db),
+  secret: process.env.HOSPEDA_BETTER_AUTH_SECRET!,
+  baseURL: process.env.HOSPEDA_BETTER_AUTH_URL!,
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+  },
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+    github: {
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+    },
+  },
+  session: {
+    expiresIn: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // Refresh session every 24 hours
+  },
+  trustedOrigins: [
+    'http://localhost:3000',
+    'http://localhost:4321',
+    'https://hospeda.com',
+    'https://admin.hospeda.com',
+  ],
+});
 ```
 
 ### Social Providers
 
 #### 1. Enable Google OAuth
 
-Dashboard → Authentication → Social Connections → Google:
-
 ```text
-✅ Enable Google
-Client ID: [from Google Cloud Console]
-Client Secret: [from Google Cloud Console]
+1. Go to Google Cloud Console
+2. Create OAuth 2.0 credentials
+3. Set authorized redirect URIs:
+   - https://api.hospeda.com/api/auth/callback/google
+   - http://localhost:3001/api/auth/callback/google (dev)
+4. Add credentials to environment variables
 ```
 
 #### 2. Enable GitHub OAuth
 
-Dashboard → Authentication → Social Connections → GitHub:
-
 ```text
-✅ Enable GitHub
-Client ID: [from GitHub OAuth Apps]
-Client Secret: [from GitHub OAuth Apps]
+1. Go to GitHub Settings > Developer Settings > OAuth Apps
+2. Create new OAuth App
+3. Set callback URL:
+   - https://api.hospeda.com/api/auth/callback/github
+   - http://localhost:3001/api/auth/callback/github (dev)
+4. Add credentials to environment variables
 ```
 
 ### Environment Variables
@@ -274,10 +238,15 @@ Client Secret: [from GitHub OAuth Apps]
 ```env
 # .env.local (API)
 
-# Clerk Authentication
-HOSPEDA_CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxx
+# Better Auth
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key-at-least-32-chars
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001
+
+# OAuth Providers
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
 
 # API Configuration
 HOSPEDA_API_URL=http://localhost:3001
@@ -292,11 +261,7 @@ NODE_ENV=development
 ```env
 # .env.local (Web)
 
-# Clerk Authentication
-PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
-CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-
-# API URL
+# API URL (Better Auth runs on the API)
 PUBLIC_API_URL=http://localhost:3001
 ```
 
@@ -305,11 +270,7 @@ PUBLIC_API_URL=http://localhost:3001
 ```env
 # .env.local (Admin)
 
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=YOUR_TEST_PUBLISHABLE_HERE
-CLERK_SECRET_KEY=YOUR_TEST_SECRET_HERE
-
-# API URL
+# API URL (Better Auth runs on the API)
 VITE_API_URL=http://localhost:3001
 ```
 
@@ -319,33 +280,31 @@ VITE_API_URL=http://localhost:3001
 
 **Features:**
 
-- Test keys (`pk_test_*`, `sk_test_*`)
-- Local webhooks via ngrok
-- Relaxed CORS
+- Local database for sessions
 - Debug logging enabled
+- Relaxed CORS (localhost origins)
+- HTTP allowed
 
 **Setup:**
 
 ```bash
-# Install ngrok for local webhook testing
-brew install ngrok  # macOS
-# or
-npm install -g ngrok
+# Start database
+pnpm db:start
 
-# Start ngrok tunnel
-ngrok http 3001
+# Run migrations (Better Auth tables are created automatically)
+pnpm db:migrate
 
-# Use ngrok URL for webhook endpoint
-https://your-ngrok-url.ngrok.io/api/v1/auth/sync
+# Start API (Better Auth runs on the API server)
+pnpm dev:api
 ```
 
 #### Production Mode
 
 **Features:**
 
-- Live keys (`pk_live_*`, `sk_live_*`)
-- Production webhooks
-- Strict CORS
+- Production database
+- Strict CORS (only production origins)
+- HTTPS required
 - Error logging only
 
 **Environment:**
@@ -355,10 +314,9 @@ https://your-ngrok-url.ngrok.io/api/v1/auth/sync
 
 NODE_ENV=production
 
-# Clerk Production Keys
-HOSPEDA_CLERK_SECRET_KEY=YOUR_SECRET_KEY_HERE
-HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY_HERE
-HOSPEDA_CLERK_WEBHOOK_SECRET=whsec_live_xxxxxxxxxxxxxxxxxxxxxxxx
+# Better Auth Production Config
+HOSPEDA_BETTER_AUTH_SECRET=production-secret-at-least-32-chars
+HOSPEDA_BETTER_AUTH_URL=https://api.hospeda.com
 
 # Production URLs
 HOSPEDA_API_URL=https://api.hospeda.com
@@ -373,25 +331,38 @@ HOSPEDA_API_URL=https://api.hospeda.com
 **Frontend (React Component):**
 
 ```tsx
-// Web: src/components/auth/SignUpFormWrapper.tsx
+// Web: src/components/auth/SignUpForm.tsx
 // Admin: src/routes/auth/signup.tsx
 
-import { SignUp } from '@clerk/astro';
+import { useState } from 'react';
 
-export function SignUpFormWrapper() {
+export function SignUpForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const response = await fetch('/api/auth/sign-up/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password, name }),
+      credentials: 'include', // Include session cookie
+    });
+
+    if (response.ok) {
+      window.location.href = '/dashboard';
+    }
+  };
+
   return (
-    <SignUp
-      path="/signup"
-      routing="path"
-      signInUrl="/signin"
-      afterSignUpUrl="/dashboard"
-      appearance={{
-        elements: {
-          rootBox: 'mx-auto',
-          card: 'shadow-lg'
-        }
-      }}
-    />
+    <form onSubmit={handleSubmit}>
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)} />
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <button type="submit">Sign Up</button>
+    </form>
   );
 }
 ```
@@ -402,19 +373,16 @@ export function SignUpFormWrapper() {
 sequenceDiagram
     participant User
     participant Frontend
-    participant Clerk
     participant API
+    participant BetterAuth as Better Auth
     participant DB
 
     User->>Frontend: Enter email/password
-    Frontend->>Clerk: Sign up request
-    Clerk->>Clerk: Validate & hash password
-    Clerk->>User: Send verification email
-    User->>Clerk: Click verification link
-    Clerk->>Clerk: Create user account
-    Clerk->>Frontend: Return session token
-    Clerk->>API: Webhook: user.created
-    API->>DB: Create user record
+    Frontend->>API: POST /api/auth/sign-up/email
+    API->>BetterAuth: Create user
+    BetterAuth->>DB: Insert user + session
+    BetterAuth->>API: Return session
+    API->>Frontend: Set session cookie
     Frontend->>User: Redirect to dashboard
 ```
 
@@ -423,17 +391,16 @@ sequenceDiagram
 **Frontend:**
 
 ```tsx
-// Clerk automatically handles OAuth buttons
+// OAuth is handled via redirect to Better Auth endpoint
 
-import { SignUp } from '@clerk/astro';
+export function OAuthSignUpButton() {
+  const handleGoogleSignUp = () => {
+    // Redirect to Better Auth OAuth endpoint
+    window.location.href = '/api/auth/sign-in/social?provider=google';
+  };
 
-export function SignUpFormWrapper() {
   return (
-    <SignUp
-      path="/signup"
-      routing="path"
-      // OAuth buttons automatically included
-    />
+    <button onClick={handleGoogleSignUp}>Sign up with Google</button>
   );
 }
 ```
@@ -444,21 +411,21 @@ export function SignUpFormWrapper() {
 sequenceDiagram
     participant User
     participant Frontend
-    participant Clerk
-    participant Google
     participant API
+    participant BetterAuth as Better Auth
+    participant Google
     participant DB
 
     User->>Frontend: Click "Sign up with Google"
-    Frontend->>Clerk: Initiate OAuth
-    Clerk->>Google: Redirect to Google
+    Frontend->>API: Redirect to /api/auth/sign-in/social?provider=google
+    API->>BetterAuth: Initiate OAuth
+    BetterAuth->>Google: Redirect to Google
     User->>Google: Authorize Hospeda
-    Google->>Clerk: Authorization code
-    Clerk->>Google: Exchange for tokens
-    Google->>Clerk: User profile
-    Clerk->>Frontend: Return session token
-    Clerk->>API: Webhook: user.created
-    API->>DB: Create user record
+    Google->>BetterAuth: Authorization code
+    BetterAuth->>Google: Exchange for tokens
+    Google->>BetterAuth: User profile
+    BetterAuth->>DB: Create user + session
+    BetterAuth->>Frontend: Redirect with session cookie
     Frontend->>User: Redirect to dashboard
 ```
 
@@ -469,18 +436,30 @@ sequenceDiagram
 **Frontend:**
 
 ```tsx
-// Web: src/components/auth/SignInFormWrapper.tsx
+// Web: src/components/auth/SignInForm.tsx
 
-import { SignIn } from '@clerk/astro';
+export function SignInForm() {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-export function SignInFormWrapper() {
+    const response = await fetch('/api/auth/sign-in/email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include',
+    });
+
+    if (response.ok) {
+      window.location.href = '/dashboard';
+    }
+  };
+
   return (
-    <SignIn
-      path="/signin"
-      routing="path"
-      signUpUrl="/signup"
-      afterSignInUrl="/dashboard"
-    />
+    <form onSubmit={handleSubmit}>
+      <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+      <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      <button type="submit">Sign In</button>
+    </form>
   );
 }
 ```
@@ -488,23 +467,19 @@ export function SignInFormWrapper() {
 **Backend Validation (API):**
 
 ```typescript
-// apps/api/src/middlewares/auth.ts
+// apps/api/src/lib/auth.ts
+// Better Auth handles sign-in validation automatically
+// The auth instance is mounted as a route handler
 
-import { clerkMiddleware } from '@hono/clerk-auth';
+import { auth } from './lib/auth';
+import { Hono } from 'hono';
 
-export const clerkAuth = () => {
-  const secretKey = process.env.HOSPEDA_CLERK_SECRET_KEY || '';
-  const publishableKey = process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
+const app = new Hono();
 
-  if (process.env.NODE_ENV === 'production' && (!secretKey || !publishableKey)) {
-    throw new Error('Clerk keys are required in production');
-  }
-
-  return clerkMiddleware({
-    secretKey,
-    publishableKey
-  });
-};
+// Mount Better Auth routes
+app.on(['GET', 'POST'], '/api/auth/**', (c) => {
+  return auth.handler(c.req.raw);
+});
 ```
 
 **Flow:**
@@ -513,18 +488,19 @@ export const clerkAuth = () => {
 sequenceDiagram
     participant User
     participant Frontend
-    participant Clerk
     participant API
+    participant BetterAuth as Better Auth
+    participant DB
 
     User->>Frontend: Enter credentials
-    Frontend->>Clerk: Sign in request
-    Clerk->>Clerk: Validate credentials
-    Clerk->>Frontend: Return JWT token
-    Frontend->>Frontend: Store token
-    Frontend->>API: Request with token
-    API->>Clerk: Validate token
-    Clerk->>API: User data
-    API->>Frontend: Protected data
+    Frontend->>API: POST /api/auth/sign-in/email
+    API->>BetterAuth: Validate credentials
+    BetterAuth->>DB: Verify user + hash
+    DB->>BetterAuth: User data
+    BetterAuth->>DB: Create session
+    BetterAuth->>API: Return session
+    API->>Frontend: Set session cookie
+    Frontend->>User: Redirect to dashboard
 ```
 
 #### OAuth Sign In
@@ -537,11 +513,11 @@ Same as OAuth Sign Up flow, but for existing users.
 
 | Provider | Status | Configuration |
 |----------|--------|---------------|
-| Google | ✅ Enabled | OAuth 2.0 |
-| GitHub | ✅ Enabled | OAuth 2.0 |
-| Facebook | ⚪ Available | Not configured |
-| Twitter | ⚪ Available | Not configured |
-| Microsoft | ⚪ Available | Not configured |
+| Google | Enabled | OAuth 2.0 |
+| GitHub | Enabled | OAuth 2.0 |
+| Facebook | Available | Not configured |
+| Twitter | Available | Not configured |
+| Microsoft | Available | Not configured |
 
 #### Configuration Example (Google)
 
@@ -552,18 +528,23 @@ Same as OAuth Sign Up flow, but for existing users.
 2. Enable Google+ API
 3. Create OAuth 2.0 credentials
 4. Set authorized redirect URIs:
-   - https://accounts.clerk.dev/oauth/callback
-   - http://localhost:3000/oauth/callback (dev)
+   - https://api.hospeda.com/api/auth/callback/google
+   - http://localhost:3001/api/auth/callback/google (dev)
 ```
 
-**2. Clerk Dashboard:**
+**2. Better Auth Config:**
 
-```text
-Authentication → Social Connections → Google
-- Enable Google
-- Client ID: [paste from Google]
-- Client Secret: [paste from Google]
-- Scopes: email, profile, openid
+```typescript
+// apps/api/src/lib/auth.ts
+export const auth = betterAuth({
+  // ...
+  socialProviders: {
+    google: {
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    },
+  },
+});
 ```
 
 **3. Test:**
@@ -576,113 +557,61 @@ http://localhost:4321/signup
 # Should redirect to Google OAuth consent
 ```
 
-### Magic Links
-
-Magic links allow passwordless authentication via email.
-
-#### Implementation
-
-**1. Enable in Clerk Dashboard:**
-
-```text
-Authentication → Email & SMS → Email
-✅ Enable Email Codes
-✅ Enable Email Links
-```
-
-**2. Frontend:**
-
-```tsx
-// Automatically enabled in Clerk components
-
-import { SignIn } from '@clerk/astro';
-
-export function SignInFormWrapper() {
-  return (
-    <SignIn
-      path="/signin"
-      routing="path"
-      // Magic link option automatically shown
-    />
-  );
-}
-```
-
-**3. Flow:**
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant Frontend
-    participant Clerk
-    participant Email
-
-    User->>Frontend: Click "Email me a link"
-    Frontend->>Clerk: Request magic link
-    Clerk->>Email: Send magic link email
-    Email->>User: Magic link email
-    User->>Clerk: Click magic link
-    Clerk->>Frontend: Redirect with token
-    Frontend->>User: Authenticated session
-```
-
 ## Session Management
 
-### JWT Token Structure
+### Session Structure
 
-Clerk uses JWT (JSON Web Tokens) for session management.
-
-#### Example JWT Payload
+Better Auth uses database-backed sessions instead of JWTs:
 
 ```json
 {
-  "azp": "https://hospeda.com",
-  "exp": 1735689600,
-  "iat": 1735603200,
-  "iss": "https://clerk.hospeda.com",
-  "nbf": 1735603190,
-  "sid": "sess_2a1b3c4d5e6f7g8h9i0j",
-  "sub": "user_2a1b3c4d5e6f7g8h9i0j",
-  "email": "user@example.com",
-  "email_verified": true,
-  "first_name": "John",
-  "last_name": "Doe",
-  "metadata": {
-    "role": "user",
-    "permissions": ["accommodation:read"]
+  "session": {
+    "id": "sess_abc123def456",
+    "userId": "user_abc123",
+    "expiresAt": "2026-03-09T12:00:00.000Z",
+    "createdAt": "2026-03-02T12:00:00.000Z",
+    "updatedAt": "2026-03-02T12:00:00.000Z",
+    "ipAddress": "203.0.113.1",
+    "userAgent": "Mozilla/5.0..."
+  },
+  "user": {
+    "id": "user_abc123",
+    "email": "user@example.com",
+    "name": "John Doe",
+    "emailVerified": true,
+    "role": "user"
   }
 }
 ```
 
-**Claims:**
+**Key Properties:**
 
-- `sub`: User ID
-- `sid`: Session ID
-- `exp`: Expiration timestamp
-- `iat`: Issued at timestamp
-- `email`: User email
-- `metadata`: Custom user metadata (role, permissions)
+- `session.id`: Unique session identifier
+- `session.userId`: Associated user
+- `session.expiresAt`: Session expiration time
+- `user.role`: User role for authorization
 
-### Token Validation
+### Session Validation
 
-#### API Token Validation
+#### API Session Validation
 
 ```typescript
 // apps/api/src/middlewares/auth.ts
 
-import { getAuth } from '@hono/clerk-auth';
+import { auth } from '../lib/auth';
 import type { Context } from 'hono';
 
-export async function validateToken(c: Context) {
-  const auth = getAuth(c);
+export async function validateSession(c: Context) {
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
 
-  // Check if authenticated
-  if (!auth?.userId) {
+  if (!session) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  // Token is valid, user is authenticated
-  return auth;
+  // Session is valid, user is authenticated
+  return session;
 }
 ```
 
@@ -692,7 +621,7 @@ export async function validateToken(c: Context) {
 // apps/api/src/routes/accommodation/create.ts
 
 import { createOpenApiRoute } from '../../utils/route-factory';
-import { getAuth } from '@hono/clerk-auth';
+import { auth } from '../../lib/auth';
 
 export const createAccommodationRoute = createOpenApiRoute({
   method: 'post',
@@ -700,9 +629,11 @@ export const createAccommodationRoute = createOpenApiRoute({
   summary: 'Create accommodation',
   handler: async (c, params, body) => {
     // Auth is automatically validated by middleware
-    const auth = getAuth(c);
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
+    });
 
-    if (!auth?.userId) {
+    if (!session) {
       throw new Error('Unauthorized');
     }
 
@@ -712,20 +643,32 @@ export const createAccommodationRoute = createOpenApiRoute({
 
     return result.data;
   }
-  // Auth required by default
 });
 ```
 
-#### Frontend Token Validation
+#### Frontend Session Validation
 
 **Web (Astro):**
 
 ```typescript
 // apps/web/src/middleware.ts
 
-import { clerkMiddleware } from '@clerk/astro/server';
+import { defineMiddleware } from 'astro:middleware';
 
-export const onRequest = clerkMiddleware();
+export const onRequest = defineMiddleware(async (context, next) => {
+  // Check session via API
+  const response = await fetch(`${API_URL}/api/auth/get-session`, {
+    headers: context.request.headers,
+    credentials: 'include',
+  });
+
+  if (response.ok) {
+    const session = await response.json();
+    context.locals.user = session.user;
+  }
+
+  return next();
+});
 ```
 
 **Admin (TanStack Start):**
@@ -734,13 +677,14 @@ export const onRequest = clerkMiddleware();
 // apps/admin/src/routes/_authed.tsx
 
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuth } from '@clerk/tanstack-react-start';
 
 export const Route = createFileRoute('/_authed')({
   beforeLoad: async ({ context }) => {
-    const { isSignedIn } = useAuth();
+    const response = await fetch(`${API_URL}/api/auth/get-session`, {
+      credentials: 'include',
+    });
 
-    if (!isSignedIn) {
+    if (!response.ok) {
       throw redirect({
         to: '/auth/signin',
         search: {
@@ -748,6 +692,9 @@ export const Route = createFileRoute('/_authed')({
         }
       });
     }
+
+    const session = await response.json();
+    return { user: session.user };
   }
 });
 ```
@@ -757,58 +704,29 @@ export const Route = createFileRoute('/_authed')({
 **Default Settings:**
 
 - **Session Duration**: 7 days
-- **Inactivity Timeout**: 30 minutes
-- **Refresh Window**: Last 10% of session duration
-
-**Automatic Refresh:**
-
-Clerk automatically refreshes tokens in the background:
-
-```typescript
-// Clerk handles this automatically
-// No manual implementation needed
-
-// Token refresh happens when:
-// 1. Session is in the last 10% of duration
-// 2. User makes a request
-// 3. Frontend is active
-```
-
-**Manual Refresh (if needed):**
-
-```typescript
-// Frontend (React)
-import { useAuth } from '@clerk/astro';
-
-function Component() {
-  const { getToken } = useAuth();
-
-  const refreshToken = async () => {
-    // Force token refresh
-    const token = await getToken({ template: 'default' });
-    return token;
-  };
-}
-```
-
-### Refresh Tokens
-
-Clerk manages refresh tokens automatically. No manual implementation required.
-
-**How it works:**
-
-1. Initial sign-in: Clerk issues access token + refresh token
-2. Access token expires: Clerk uses refresh token to get new access token
-3. Refresh token expires: User must sign in again
+- **Update Age**: 24 hours (session refreshed on activity)
 
 **Configuration:**
 
-```text
-Dashboard → Sessions → Advanced
+```typescript
+// apps/api/src/lib/auth.ts
+export const auth = betterAuth({
+  // ...
+  session: {
+    expiresIn: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // Refresh every 24 hours on activity
+  },
+});
+```
 
-Session Token Lifetime: 7 days
-Refresh Token Lifetime: 30 days
-Refresh Token Rotation: Enabled
+**Automatic Refresh:**
+
+Better Auth automatically refreshes sessions when the user is active:
+
+```typescript
+// Better Auth handles this automatically
+// When a request is made and the session age exceeds updateAge,
+// the session expiration is extended
 ```
 
 ### Session Invalidation
@@ -821,21 +739,16 @@ Refresh Token Rotation: Enabled
 // apps/api/src/routes/auth/signout.ts
 
 import { createSimpleRoute } from '../../utils/route-factory';
-import { clerkClient } from '@clerk/backend';
+import { auth } from '../../lib/auth';
 
 export const signOutRoute = createSimpleRoute({
   method: 'post',
   path: '/auth/signout',
   summary: 'Sign out user',
   handler: async (c) => {
-    const auth = getAuth(c);
-
-    if (!auth?.sessionId) {
-      return { success: false, error: 'No active session' };
-    }
-
-    // Revoke session in Clerk
-    await clerkClient.sessions.revokeSession(auth.sessionId);
+    await auth.api.signOut({
+      headers: c.req.raw.headers,
+    });
 
     return { success: true, message: 'Signed out successfully' };
   }
@@ -847,14 +760,13 @@ export const signOutRoute = createSimpleRoute({
 ```typescript
 // Web/Admin
 
-import { useClerk } from '@clerk/astro';
-
 function SignOutButton() {
-  const { signOut } = useClerk();
-
   const handleSignOut = async () => {
-    await signOut();
-    // Redirects to sign-in page
+    await fetch('/api/auth/sign-out', {
+      method: 'POST',
+      credentials: 'include',
+    });
+    window.location.href = '/auth/signin';
   };
 
   return <button onClick={handleSignOut}>Sign Out</button>;
@@ -866,18 +778,16 @@ function SignOutButton() {
 ```typescript
 // Admin only - revoke all sessions for a user
 
-import { clerkClient } from '@clerk/backend';
+import { db } from '@repo/db';
+import { sessions } from '@repo/db/schema';
+import { eq } from 'drizzle-orm';
 
 async function revokeAllUserSessions(userId: string) {
-  const sessions = await clerkClient.sessions.getSessionList({ userId });
+  const result = await db
+    .delete(sessions)
+    .where(eq(sessions.userId, userId));
 
-  await Promise.all(
-    sessions.map(session =>
-      clerkClient.sessions.revokeSession(session.id)
-    )
-  );
-
-  return { revoked: sessions.length };
+  return { revoked: result.rowCount };
 }
 ```
 
@@ -1024,7 +934,7 @@ export function hasPermission(role: UserRole, permission: Permission): boolean {
 ```typescript
 // apps/api/src/middlewares/actor.ts
 
-import { getAuth } from '@hono/clerk-auth';
+import { auth } from '../lib/auth';
 import type { Context, Next } from 'hono';
 import { getPermissionsForRole } from '@repo/schemas';
 
@@ -1040,12 +950,14 @@ export interface Actor {
 }
 
 /**
- * Actor middleware - extracts user from Clerk auth
+ * Actor middleware - extracts user from Better Auth session
  */
 export const actorMiddleware = async (c: Context, next: Next) => {
-  const auth = getAuth(c);
+  const session = await auth.api.getSession({
+    headers: c.req.raw.headers,
+  });
 
-  if (!auth?.userId) {
+  if (!session) {
     // Unauthenticated actor
     c.set('actor', {
       isAuthenticated: false,
@@ -1059,18 +971,15 @@ export const actorMiddleware = async (c: Context, next: Next) => {
     return;
   }
 
-  // Get user from Clerk
-  const user = await clerkClient.users.getUser(auth.userId);
-
-  // Extract role from metadata
-  const role = (user.publicMetadata?.role as UserRole) || 'user';
+  // Extract role from user data
+  const role = (session.user.role as UserRole) || 'user';
   const permissions = getPermissionsForRole(role);
 
   // Authenticated actor
   c.set('actor', {
     isAuthenticated: true,
-    userId: auth.userId,
-    email: user.emailAddresses[0]?.emailAddress || null,
+    userId: session.user.id,
+    email: session.user.email || null,
     role,
     permissions
   } as Actor);
@@ -1204,18 +1113,30 @@ export const deleteAccommodationRoute = createOpenApiRoute({
 ```typescript
 // apps/web/src/middleware.ts
 
-import { clerkMiddleware, createRouteMatcher } from '@clerk/astro/server';
+import { defineMiddleware } from 'astro:middleware';
 
-const isProtectedRoute = createRouteMatcher([
-  '/dashboard(.*)',
-  '/accommodations/new',
-  '/profile(.*)'
-]);
+const protectedRoutes = ['/dashboard', '/accommodations/new', '/profile'];
 
-export const onRequest = clerkMiddleware((auth, context) => {
-  if (isProtectedRoute(context.request) && !auth().userId) {
-    return auth().redirectToSignIn();
+export const onRequest = defineMiddleware(async (context, next) => {
+  const isProtected = protectedRoutes.some(route =>
+    context.url.pathname.startsWith(route)
+  );
+
+  if (isProtected) {
+    const session = await fetch(`${API_URL}/api/auth/get-session`, {
+      headers: context.request.headers,
+      credentials: 'include',
+    });
+
+    if (!session.ok) {
+      return context.redirect('/auth/signin');
+    }
+
+    const data = await session.json();
+    context.locals.user = data.user;
   }
+
+  return next();
 });
 ```
 
@@ -1223,20 +1144,16 @@ export const onRequest = clerkMiddleware((auth, context) => {
 
 ```astro
 ---
-// apps/web/src/pages/dashboard.astro
+// apps/web/src/pages/[lang]/mi-cuenta/index.astro
 
-import { getAuth } from '@clerk/astro/server';
+const user = Astro.locals.user;
 
-const auth = await getAuth(Astro);
-
-if (!auth.userId) {
-  return Astro.redirect('/signin');
+if (!user) {
+  return Astro.redirect(`/${locale}/auth/signin`);
 }
-
-const user = await currentUser();
 ---
 
-<h1>Welcome, {user?.firstName}!</h1>
+<h1>Welcome, {user.name}!</h1>
 ```
 
 #### Frontend Route Protection (Admin - TanStack)
@@ -1245,13 +1162,14 @@ const user = await currentUser();
 // apps/admin/src/routes/_authed.tsx
 
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuth } from '@clerk/tanstack-react-start';
 
 export const Route = createFileRoute('/_authed')({
   beforeLoad: async ({ context }) => {
-    const { isSignedIn, userId } = useAuth();
+    const response = await fetch(`${API_URL}/api/auth/get-session`, {
+      credentials: 'include',
+    });
 
-    if (!isSignedIn) {
+    if (!response.ok) {
       throw redirect({
         to: '/auth/signin',
         search: {
@@ -1260,7 +1178,8 @@ export const Route = createFileRoute('/_authed')({
       });
     }
 
-    return { userId };
+    const session = await response.json();
+    return { user: session.user, userId: session.user.id };
   }
 });
 ```
@@ -1271,14 +1190,12 @@ export const Route = createFileRoute('/_authed')({
 // apps/admin/src/routes/_authed/admin.tsx
 
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useUser } from '@clerk/tanstack-react-start';
 
 export const Route = createFileRoute('/_authed/admin')({
-  beforeLoad: async () => {
-    const { user } = useUser();
-    const role = user?.publicMetadata?.role;
+  beforeLoad: async ({ context }) => {
+    const { user } = context;
 
-    if (role !== 'admin') {
+    if (user.role !== 'admin') {
       throw redirect({
         to: '/',
         search: {
@@ -1404,25 +1321,20 @@ export const updateAccommodationRoute = createOpenApiRoute({
 
 ### MFA Setup
 
-#### Dashboard Configuration
+Better Auth supports TOTP-based MFA:
 
-```text
-1. Navigate to Clerk Dashboard
-2. User & Authentication → Multi-factor
-3. Enable MFA:
-   ✅ SMS (via Twilio)
-   ✅ TOTP (Authenticator apps)
-   ✅ Backup codes
+```typescript
+// apps/api/src/lib/auth.ts
+import { twoFactor } from 'better-auth/plugins';
 
-1. MFA Policy:
-   ○ Optional (user choice)
-   ● Required for admins
-   ○ Required for all users
-
-1. SMS Provider (Twilio):
-   Account SID: [from Twilio]
-   Auth Token: [from Twilio]
-   Phone Number: [from Twilio]
+export const auth = betterAuth({
+  // ...
+  plugins: [
+    twoFactor({
+      issuer: 'Hospeda',
+    }),
+  ],
+});
 ```
 
 ### TOTP Implementation
@@ -1434,28 +1346,21 @@ TOTP (Time-based One-Time Password) uses authenticator apps like Google Authenti
 ```tsx
 // apps/admin/src/components/MfaSetup.tsx
 
-import { useUser } from '@clerk/tanstack-react-start';
-
 export function MfaSetup() {
-  const { user } = useUser();
-
   const enableMfa = async () => {
-    // Clerk handles MFA setup UI
-    await user?.createTOTP();
-    // User scans QR code with authenticator app
-  };
+    const response = await fetch('/api/auth/two-factor/enable', {
+      method: 'POST',
+      credentials: 'include',
+    });
 
-  const verifyMfa = async (code: string) => {
-    await user?.verifyTOTP({ code });
+    const { totpURI, backupCodes } = await response.json();
+    // Display QR code from totpURI
+    // Display backup codes
   };
 
   return (
     <div>
-      {!user?.twoFactorEnabled ? (
-        <button onClick={enableMfa}>Enable MFA</button>
-      ) : (
-        <p>MFA is enabled ✓</p>
-      )}
+      <button onClick={enableMfa}>Enable MFA</button>
     </div>
   );
 }
@@ -1467,18 +1372,21 @@ export function MfaSetup() {
 sequenceDiagram
     participant User
     participant Frontend
-    participant Clerk
+    participant API
+    participant BetterAuth as Better Auth
     participant Authenticator
 
     User->>Frontend: Enter email/password
-    Frontend->>Clerk: Sign in request
-    Clerk->>Frontend: Prompt for MFA code
+    Frontend->>API: POST /api/auth/sign-in/email
+    API->>BetterAuth: Validate credentials
+    BetterAuth->>Frontend: Prompt for MFA code
     Frontend->>User: Show MFA input
     User->>Authenticator: Open app
     Authenticator->>User: Generate code
     User->>Frontend: Enter code
-    Frontend->>Clerk: Verify code
-    Clerk->>Frontend: Return session token
+    Frontend->>API: POST /api/auth/two-factor/verify
+    API->>BetterAuth: Verify TOTP code
+    BetterAuth->>Frontend: Return session cookie
     Frontend->>User: Authenticated
 ```
 
@@ -1486,67 +1394,9 @@ sequenceDiagram
 
 Backup codes are one-time use codes for when the user loses access to their authenticator device.
 
-**Generate Backup Codes:**
-
 ```tsx
-// apps/admin/src/components/BackupCodes.tsx
-
-import { useUser } from '@clerk/tanstack-react-start';
-import { useState } from 'react';
-
-export function BackupCodes() {
-  const { user } = useUser();
-  const [codes, setCodes] = useState<string[]>([]);
-
-  const generateCodes = async () => {
-    const backupCodes = await user?.createBackupCode();
-    setCodes(backupCodes?.codes || []);
-  };
-
-  return (
-    <div>
-      <button onClick={generateCodes}>Generate Backup Codes</button>
-
-      {codes.length > 0 && (
-        <div>
-          <h3>Save these codes in a safe place</h3>
-          <ul>
-            {codes.map((code, index) => (
-              <li key={index}><code>{code}</code></li>
-            ))}
-          </ul>
-          <p>Each code can only be used once.</p>
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-**Use Backup Code:**
-
-```tsx
-// During login, if MFA code doesn't work
-
-import { useSignIn } from '@clerk/tanstack-react-start';
-
-export function MfaLogin() {
-  const { signIn } = useSignIn();
-
-  const useBackupCode = async (code: string) => {
-    await signIn?.attemptSecondFactor({
-      strategy: 'backup_code',
-      code
-    });
-  };
-
-  return (
-    <div>
-      <input placeholder="Backup code" />
-      <button onClick={() => useBackupCode(code)}>Use Backup Code</button>
-    </div>
-  );
-}
+// Generated during MFA setup
+// Store securely and display to user once
 ```
 
 ### User Experience
@@ -1559,273 +1409,6 @@ export function MfaLogin() {
 4. **Backup codes**: Always provide backup codes
 5. **Recovery options**: Allow account recovery if device is lost
 
-**MFA Status Display:**
-
-```tsx
-// apps/admin/src/components/SecuritySettings.tsx
-
-import { useUser } from '@clerk/tanstack-react-start';
-
-export function SecuritySettings() {
-  const { user } = useUser();
-
-  return (
-    <div className="security-settings">
-      <h2>Security</h2>
-
-      <div className="mfa-status">
-        <h3>Multi-Factor Authentication</h3>
-        {user?.twoFactorEnabled ? (
-          <>
-            <p className="enabled">✓ Enabled</p>
-            <button onClick={disableMfa}>Disable MFA</button>
-            <button onClick={viewBackupCodes}>View Backup Codes</button>
-          </>
-        ) : (
-          <>
-            <p className="disabled">✗ Disabled</p>
-            <button onClick={enableMfa}>Enable MFA</button>
-            <p className="warning">
-              We recommend enabling MFA for better security
-            </p>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-```
-
-## Webhooks
-
-Clerk sends webhooks when user events occur (creation, updates, deletion).
-
-### Clerk Webhook Events
-
-#### User Events
-
-```typescript
-// Webhook event types
-
-type WebhookEvent =
-  | 'user.created'
-  | 'user.updated'
-  | 'user.deleted'
-  | 'session.created'
-  | 'session.ended'
-  | 'session.revoked'
-  | 'organization.created'
-  | 'organization.updated'
-  | 'organization.deleted';
-```
-
-#### Session Events
-
-- `session.created`: User signs in
-- `session.ended`: User signs out
-- `session.revoked`: Session manually revoked
-
-#### Organization Events
-
-- `organization.created`: New organization created
-- `organization.updated`: Organization details updated
-- `organization.deleted`: Organization deleted
-
-### Webhook Verification
-
-#### Security Implementation
-
-```typescript
-// apps/api/src/routes/auth/sync.ts
-
-import { Webhook } from 'svix';
-import type { Context } from 'hono';
-
-/**
- * Verify webhook signature from Clerk
- */
-function verifyWebhook(c: Context): boolean {
-  const webhookSecret = process.env.HOSPEDA_CLERK_WEBHOOK_SECRET;
-
-  if (!webhookSecret) {
-    throw new Error('Webhook secret not configured');
-  }
-
-  // Get Svix headers
-  const svixId = c.req.header('svix-id');
-  const svixTimestamp = c.req.header('svix-timestamp');
-  const svixSignature = c.req.header('svix-signature');
-
-  if (!svixId || !svixTimestamp || !svixSignature) {
-    return false;
-  }
-
-  // Verify signature
-  const wh = new Webhook(webhookSecret);
-
-  try {
-    const body = await c.req.text();
-    wh.verify(body, {
-      'svix-id': svixId,
-      'svix-timestamp': svixTimestamp,
-      'svix-signature': svixSignature
-    });
-
-    return true;
-  } catch (error) {
-    console.error('Webhook verification failed:', error);
-    return false;
-  }
-}
-```
-
-### User Sync to Database
-
-#### Webhook Handler Implementation
-
-```typescript
-// apps/api/src/routes/auth/sync.ts
-
-import { createSimpleRoute } from '../../utils/route-factory';
-import { Webhook } from 'svix';
-import { UserModel } from '@repo/db';
-import { apiLogger } from '../../utils/logger';
-
-export const syncWebhookRoute = createSimpleRoute({
-  method: 'post',
-  path: '/auth/sync',
-  summary: 'Clerk webhook handler',
-  handler: async (c) => {
-    // Verify webhook signature
-    const isValid = verifyWebhook(c);
-
-    if (!isValid) {
-      return c.json({ error: 'Invalid webhook signature' }, 401);
-    }
-
-    // Parse webhook payload
-    const payload = await c.req.json();
-    const eventType = payload.type;
-    const userData = payload.data;
-
-    apiLogger.info({
-      message: 'Webhook received',
-      eventType,
-      userId: userData.id
-    });
-
-    // Handle different event types
-    switch (eventType) {
-      case 'user.created':
-        await handleUserCreated(userData);
-        break;
-
-      case 'user.updated':
-        await handleUserUpdated(userData);
-        break;
-
-      case 'user.deleted':
-        await handleUserDeleted(userData);
-        break;
-
-      default:
-        apiLogger.warn({
-          message: 'Unknown webhook event type',
-          eventType
-        });
-    }
-
-    return { success: true };
-  },
-  options: {
-    skipAuth: true // Webhooks don't use auth tokens
-  }
-});
-```
-
-### Event Handling Examples
-
-#### `user.created` Event
-
-```typescript
-// apps/api/src/routes/auth/sync.ts
-
-async function handleUserCreated(userData: any) {
-  const userModel = new UserModel();
-
-  // Extract user data
-  const email = userData.email_addresses?.[0]?.email_address;
-  const role = (userData.public_metadata?.role as UserRole) || 'user';
-
-  // Create user in database
-  await userModel.create({
-    id: userData.id,
-    clerkId: userData.id,
-    email,
-    firstName: userData.first_name,
-    lastName: userData.last_name,
-    role,
-    emailVerified: userData.email_addresses?.[0]?.verification?.status === 'verified',
-    createdAt: new Date(userData.created_at)
-  });
-
-  apiLogger.info({
-    message: 'User created in database',
-    userId: userData.id,
-    email
-  });
-}
-```
-
-#### `user.updated` Event
-
-```typescript
-// apps/api/src/routes/auth/sync.ts
-
-async function handleUserUpdated(userData: any) {
-  const userModel = new UserModel();
-
-  const email = userData.email_addresses?.[0]?.email_address;
-  const role = (userData.public_metadata?.role as UserRole) || 'user';
-
-  // Update user in database
-  await userModel.update({
-    id: userData.id,
-    email,
-    firstName: userData.first_name,
-    lastName: userData.last_name,
-    role,
-    emailVerified: userData.email_addresses?.[0]?.verification?.status === 'verified',
-    updatedAt: new Date()
-  });
-
-  apiLogger.info({
-    message: 'User updated in database',
-    userId: userData.id
-  });
-}
-```
-
-#### `user.deleted` Event
-
-```typescript
-// apps/api/src/routes/auth/sync.ts
-
-async function handleUserDeleted(userData: any) {
-  const userModel = new UserModel();
-
-  // Soft delete user in database
-  await userModel.softDelete({
-    id: userData.id
-  });
-
-  apiLogger.info({
-    message: 'User soft deleted in database',
-    userId: userData.id
-  });
-}
-```
-
 ## Testing
 
 ### Unit Testing with Mock Auth
@@ -1837,11 +1420,12 @@ async function handleUserDeleted(userData: any) {
 
 NODE_ENV=test
 
-# Disable Clerk auth validation in tests
-API_VALIDATION_CLERK_AUTH_ENABLED=false
+# Disable real auth validation in tests
+API_VALIDATION_AUTH_ENABLED=false
 
 # Other test config
 HOSPEDA_DATABASE_URL=postgresql://test:test@localhost:5432/hospeda_test
+HOSPEDA_BETTER_AUTH_SECRET=test-secret-for-testing-only-32chars
 ```
 
 #### Mock Auth Middleware
@@ -1849,11 +1433,11 @@ HOSPEDA_DATABASE_URL=postgresql://test:test@localhost:5432/hospeda_test
 ```typescript
 // apps/api/src/middlewares/auth.ts
 
-export const clerkAuth = () => {
+export const getAuthMiddleware = () => {
   // In test environment, use mock auth
   if (
     process.env.NODE_ENV === 'test' &&
-    process.env.API_VALIDATION_CLERK_AUTH_ENABLED === 'false'
+    process.env.API_VALIDATION_AUTH_ENABLED === 'false'
   ) {
     return async (c: Context, next: Next) => {
       const authHeader = c.req.header('authorization');
@@ -1868,22 +1452,18 @@ export const clerkAuth = () => {
         authHeader?.startsWith('Bearer ') &&
         !invalidTokens.includes(authHeader);
 
-      const mockAuth = hasValidToken
-        ? { userId: 'test-user-id' }
-        : { userId: null };
+      const mockSession = hasValidToken
+        ? { user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }
+        : null;
 
-      c.set('clerkAuth', () => mockAuth as any);
-      c.set('auth', mockAuth);
+      c.set('session', mockSession);
 
       await next();
     };
   }
 
-  // Production: use real Clerk auth
-  return clerkMiddleware({
-    secretKey: process.env.HOSPEDA_CLERK_SECRET_KEY || '',
-    publishableKey: process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || ''
-  });
+  // Production: use real Better Auth
+  return actorMiddleware;
 };
 ```
 
@@ -2070,31 +1650,28 @@ describe('DELETE /accommodations/:id - Authorization', () => {
 
 ## Security Best Practices
 
-### Token Storage
+### Session Storage
 
-**✅ DO:**
+**Better Auth handles session storage securely:**
 
 ```typescript
-// Frontend - Store in httpOnly cookie (Clerk handles this)
-// Token is automatically stored securely
+// Sessions are stored in the database, not in the browser
+// Only a session token cookie is sent to the browser
 
-// Access token via Clerk hooks
-import { useAuth } from '@clerk/astro';
-
-const { getToken } = useAuth();
-const token = await getToken();
+// Cookie settings (configured by Better Auth):
+// - httpOnly: true (prevents XSS access)
+// - secure: true in production (HTTPS only)
+// - sameSite: 'lax' (CSRF protection)
+// - path: '/'
 ```
 
-**❌ DON'T:**
+**DO NOT:**
 
 ```typescript
-// Never store tokens in localStorage
-localStorage.setItem('token', token); // INSECURE!
+// Never store session data in localStorage
+localStorage.setItem('session', sessionData); // INSECURE!
 
-// Never store tokens in sessionStorage
-sessionStorage.setItem('token', token); // INSECURE!
-
-// Never expose tokens in URL
+// Never expose session tokens in URL
 window.location.href = `/dashboard?token=${token}`; // INSECURE!
 ```
 
@@ -2132,11 +1709,11 @@ export const enforceHttps = async (c: Context, next: Next) => {
 
 ### CSRF Protection
 
-Clerk provides built-in CSRF protection via:
+Better Auth provides built-in CSRF protection via:
 
 1. **SameSite cookies**: Prevents cross-site requests
-2. **Origin validation**: Checks request origin
-3. **Token rotation**: Rotates session tokens
+2. **Origin validation**: Checks request origin via trustedOrigins config
+3. **Session-based auth**: No bearer tokens to steal via XSS
 
 **Additional Protection:**
 
@@ -2184,14 +1761,17 @@ RATE_LIMIT_WINDOW_MS=60000  # 100 req/min
 
 ### Session Timeout
 
-**Configure in Clerk Dashboard:**
+**Configure in Better Auth:**
 
-```text
-Dashboard → Sessions → Settings
-
-Session Duration: 7 days
-Inactivity Timeout: 30 minutes
-Multi-session: Enabled
+```typescript
+// apps/api/src/lib/auth.ts
+export const auth = betterAuth({
+  // ...
+  session: {
+    expiresIn: 7 * 24 * 60 * 60, // 7 days
+    updateAge: 24 * 60 * 60, // Refresh every 24 hours
+  },
+});
 ```
 
 **Implement Frontend Timeout:**
@@ -2199,18 +1779,19 @@ Multi-session: Enabled
 ```typescript
 // apps/web/src/utils/session-timeout.ts
 
-import { useAuth } from '@clerk/astro';
-
 export function useSessionTimeout() {
-  const { signOut } = useAuth();
   let timeoutId: NodeJS.Timeout;
 
   const resetTimeout = () => {
     clearTimeout(timeoutId);
 
     // Sign out after 30 minutes of inactivity
-    timeoutId = setTimeout(() => {
-      signOut();
+    timeoutId = setTimeout(async () => {
+      await fetch('/api/auth/sign-out', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      window.location.href = '/auth/signin';
     }, 30 * 60 * 1000);
   };
 
@@ -2231,20 +1812,26 @@ export function useSessionTimeout() {
 
 import { apiLogger } from '../../utils/logger';
 
-async function handleUserCreated(userData: any) {
-  // Create user in database
-  await userModel.create({ ... });
-
-  // Log authentication event
-  apiLogger.security({
-    event: 'user.created',
-    userId: userData.id,
-    email: userData.email_addresses?.[0]?.email_address,
-    ipAddress: userData.last_sign_in_ip,
-    userAgent: userData.last_sign_in_user_agent,
-    timestamp: new Date()
-  });
-}
+// Better Auth hooks for logging
+export const auth = betterAuth({
+  // ...
+  hooks: {
+    after: [
+      {
+        matcher: (context) => context.path.startsWith('/sign-in'),
+        handler: async (ctx) => {
+          apiLogger.security({
+            event: 'user.sign_in',
+            userId: ctx.session?.userId,
+            ipAddress: ctx.headers?.get('x-forwarded-for'),
+            userAgent: ctx.headers?.get('user-agent'),
+            timestamp: new Date(),
+          });
+        },
+      },
+    ],
+  },
+});
 ```
 
 **Log Authorization Events:**
@@ -2274,32 +1861,29 @@ export class BaseService {
 
 ### Common Issues
 
-#### 1. "Invalid token" Error
+#### 1. "Unauthorized" Error
 
 **Symptoms:**
 
 ```json
 {
   "error": "Unauthorized",
-  "message": "Invalid token"
+  "message": "Authentication required"
 }
 ```
 
 **Solutions:**
 
 ```bash
-# Check token is being sent
-curl -H "Authorization: Bearer YOUR_TOKEN" \
+# Check session cookie is being sent
+curl -b cookies.txt \
   http://localhost:3001/api/v1/accommodations
 
-# Verify Clerk keys are correct
-echo $HOSPEDA_CLERK_SECRET_KEY
+# Verify Better Auth secret is set
+echo $HOSPEDA_BETTER_AUTH_SECRET
 
-# Check token expiration
-# Decode JWT at https://jwt.io
-
-# Force token refresh (frontend)
-const token = await getToken({ template: 'default' });
+# Check session exists in database
+# Use Drizzle Studio: pnpm db:studio
 ```
 
 #### 2. CORS Errors
@@ -2313,10 +1897,15 @@ has been blocked by CORS policy
 
 **Solutions:**
 
-```env
-# .env - Add origin to allowed list
-
-API_CORS_ORIGINS=http://localhost:3000,http://localhost:4321,http://localhost:3001
+```typescript
+// Verify trustedOrigins in Better Auth config
+export const auth = betterAuth({
+  // ...
+  trustedOrigins: [
+    'http://localhost:3000',
+    'http://localhost:4321',
+  ],
+});
 ```
 
 ```typescript
@@ -2328,51 +1917,7 @@ import { corsMiddleware } from './middlewares/cors';
 app.use('*', corsMiddleware());
 ```
 
-#### 3. Webhook Not Received
-
-**Symptoms:**
-
-- User created in Clerk but not in database
-- No webhook logs in API
-
-**Solutions:**
-
-```bash
-# 1. Check webhook endpoint is publicly accessible
-curl -X POST https://api.hospeda.com/api/v1/auth/sync
-
-# 2. Verify webhook secret
-echo $HOSPEDA_CLERK_WEBHOOK_SECRET
-
-# 3. Check Clerk Dashboard → Webhooks → Logs
-# Look for failed deliveries
-
-# 4. Use ngrok for local testing
-ngrok http 3001
-# Update webhook URL in Clerk Dashboard
-```
-
-**Test Webhook Locally:**
-
-```bash
-# Send test webhook
-curl -X POST http://localhost:3001/api/v1/auth/sync \
-  -H "Content-Type: application/json" \
-  -H "svix-id: test-id" \
-  -H "svix-timestamp: $(date +%s)" \
-  -H "svix-signature: test-signature" \
-  -d '{
-    "type": "user.created",
-    "data": {
-      "id": "test-user-123",
-      "email_addresses": [
-        { "email_address": "test@example.com" }
-      ]
-    }
-  }'
-```
-
-#### 4. Session Not Persisting
+#### 3. Session Not Persisting
 
 **Symptoms:**
 
@@ -2382,37 +1927,24 @@ curl -X POST http://localhost:3001/api/v1/auth/sync \
 **Solutions:**
 
 ```typescript
-// Check cookie settings (Clerk handles this)
-// Ensure cookies are allowed in browser
-
-// Verify SameSite cookie policy
-// Dashboard → Sessions → Cookies
+// Ensure credentials: 'include' is set on all fetch calls
+const response = await fetch('/api/auth/get-session', {
+  credentials: 'include', // Required for cookies
+});
 
 // Check HTTPS in production
+// Secure cookies only work over HTTPS
 if (process.env.NODE_ENV === 'production') {
-  // Cookies require Secure flag
-  // Only works over HTTPS
+  // Ensure HOSPEDA_BETTER_AUTH_URL uses https://
 }
+
+// Verify cookie domain matches
+// Better Auth sets cookies on the API domain
 ```
 
 ### Debug Mode
 
-**Enable Clerk Debug Logging:**
-
-```typescript
-// Frontend (React)
-
-import { ClerkProvider } from '@clerk/astro';
-
-<ClerkProvider
-  publishableKey={import.meta.env.PUBLIC_CLERK_PUBLISHABLE_KEY}
-  debug={import.meta.env.DEV} // Enable debug in development
->
-  {children}
-</ClerkProvider>
-```
-
-**API Debug Logging:**
+**Enable Debug Logging:**
 
 ```env
 # .env.local
@@ -2422,140 +1954,116 @@ API_ENABLE_REQUEST_LOGGING=true
 ```
 
 ```typescript
-// apps/api/src/middlewares/auth.ts
+// apps/api/src/lib/auth.ts
 
-import { apiLogger } from '../utils/logger';
-
-export const clerkAuth = () => {
-  return clerkMiddleware({
-    secretKey: process.env.HOSPEDA_CLERK_SECRET_KEY || '',
-    publishableKey: process.env.HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
-    onError: (error) => {
-      apiLogger.error({
-        message: 'Clerk authentication error',
-        error: error.message,
-        stack: error.stack
-      });
-    }
-  });
-};
+export const auth = betterAuth({
+  // ...
+  logger: {
+    disabled: false,
+    level: 'debug',
+  },
+});
 ```
 
-## Migration Guide
+## Quick Reference
 
-### From Custom Auth to Clerk
+### Package Architecture
 
-#### Step 1: Install Clerk SDKs
+```
+@repo/auth-ui          # Shared auth UI components (sign-in, sign-up forms)
+packages/db            # User, session, account tables (Drizzle schema)
+apps/api               # Better Auth server instance, session middleware
+apps/web               # Auth pages, session checks in Astro frontmatter
+apps/admin             # Auth guards in TanStack Router beforeLoad
+```
+
+### Application Roles
+
+| Role | Description | Access |
+|------|-------------|--------|
+| `GUEST` | Default role for new users | Browse, search, leave reviews |
+| `HOST` | Accommodation owner | Manage properties, view bookings, billing |
+| `SPONSOR` | Business sponsor | Manage sponsored content, view analytics |
+| `EDITOR` | Content editor | Manage blog posts, events, destinations |
+| `ADMIN` | Platform administrator | Full access to admin panel |
+
+### Permission System Quick Rules
+
+**Critical Rule: NEVER check roles directly. Always use PermissionEnum.**
+
+```typescript
+// CORRECT
+import { PermissionEnum } from '@repo/schemas';
+requirePermission(PermissionEnum.ACCOMMODATION_CREATE);
+
+// WRONG - never do this
+if (user.role === 'ADMIN') { ... }
+if (user.role === 'HOST') { ... }
+```
+
+### Common Permissions
+
+| Permission | Roles |
+|-----------|-------|
+| `ACCOMMODATION_READ` | ADMIN, EDITOR, HOST |
+| `ACCOMMODATION_CREATE` | ADMIN, HOST |
+| `ACCOMMODATION_UPDATE` | ADMIN, HOST (own) |
+| `ACCOMMODATION_DELETE` | ADMIN |
+| `USER_MANAGE` | ADMIN |
+| `BILLING_MANAGE` | ADMIN |
+| `CONTENT_MANAGE` | ADMIN, EDITOR |
+
+### Three-Tier Route Architecture
+
+```typescript
+// Public routes - no auth
+app.route('/api/v1/public', publicRoutes);
+
+// Protected routes - require valid session
+app.use('/api/v1/protected/*', requireAuth);
+app.route('/api/v1/protected', protectedRoutes);
+
+// Admin routes - require admin session + permissions
+app.use('/api/v1/admin/*', requireAuth, requireAdmin);
+app.route('/api/v1/admin', adminRoutes);
+```
+
+### Shared Auth UI Components (@repo/auth-ui)
+
+- `SignInForm` .. Email/password sign-in form
+- `SignUpForm` .. Registration form with role selection
+- `ForgotPasswordForm` .. Password reset request
+- `UserAvatar` .. User avatar display
+- `AuthProvider` .. Auth context provider
+
+Usage in web app:
+
+```astro
+---
+import { SignInForm } from '@repo/auth-ui';
+---
+<SignInForm client:load locale={locale} />
+```
+
+### Environment Variables
 
 ```bash
-# API
-cd apps/api
-pnpm add @clerk/backend @hono/clerk-auth svix
+# Required for Better Auth
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key-min-32-chars
+HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
-# Web
-cd apps/web
-pnpm add @clerk/astro
-
-# Admin
-cd apps/admin
-pnpm add @clerk/tanstack-react-start
+# API URL (where Better Auth server runs)
+HOSPEDA_API_URL=http://localhost:3001
 ```
-
-#### Step 2: Configure Environment Variables
-
-See [Environment Variables](#environment-variables) section.
-
-#### Step 3: Add Clerk Middleware
-
-```typescript
-// apps/api/src/app.ts
-
-import { clerkAuth } from './middlewares/auth';
-import { actorMiddleware } from './middlewares/actor';
-
-app.use('*', clerkAuth());
-app.use('*', actorMiddleware);
-```
-
-#### Step 4: Migrate User Data
-
-```typescript
-// Migration script: scripts/migrate-users-to-clerk.ts
-
-import { clerkClient } from '@clerk/backend';
-import { UserModel } from '@repo/db';
-
-async function migrateUsers() {
-  const userModel = new UserModel();
-  const users = await userModel.findAll();
-
-  for (const user of users) {
-    // Create user in Clerk
-    const clerkUser = await clerkClient.users.createUser({
-      emailAddress: [user.email],
-      firstName: user.firstName,
-      lastName: user.lastName,
-      password: 'TEMPORARY_PASSWORD', // User must reset
-      publicMetadata: {
-        role: user.role
-      }
-    });
-
-    // Update database with Clerk ID
-    await userModel.update({
-      id: user.id,
-      clerkId: clerkUser.id
-    });
-
-    // Send password reset email
-    await clerkClient.users.sendPasswordResetEmail(user.email);
-  }
-}
-```
-
-#### Step 5: Update Frontend Components
-
-```tsx
-// Before (custom auth)
-import { useAuth } from './hooks/useAuth';
-
-function Component() {
-  const { user, signIn, signOut } = useAuth();
-}
-
-// After (Clerk)
-import { useAuth } from '@clerk/astro';
-
-function Component() {
-  const { user, signIn, signOut } = useAuth();
-}
-```
-
-#### Step 6: Test Thoroughly
-
-1. Test sign up flow
-2. Test sign in flow
-3. Test protected routes
-4. Test role-based access
-5. Test webhooks
-6. Test session management
-
-#### Step 7: Deploy
-
-1. Update environment variables in production
-2. Deploy API changes
-3. Deploy frontend changes
-4. Monitor logs for issues
 
 ## References
 
 **Official Documentation:**
 
-- [Clerk Documentation](https://clerk.com/docs)
-- [Clerk API Reference](https://clerk.com/docs/reference/backend-api)
-- [@hono/clerk-auth](https://github.com/honojs/middleware/tree/main/packages/clerk-auth)
-- [@clerk/astro](https://clerk.com/docs/references/astro/overview)
-- [@clerk/tanstack-react-start](https://clerk.com/docs/references/react/overview)
+- [Better Auth Documentation](https://www.better-auth.com/docs)
+- [Better Auth API Reference](https://www.better-auth.com/docs/api-reference)
+- [Better Auth Drizzle Adapter](https://www.better-auth.com/docs/adapters/drizzle)
+- [Better Auth Social Providers](https://www.better-auth.com/docs/authentication/social)
 
 **Related Hospeda Documentation:**
 
@@ -2566,6 +2074,6 @@ function Component() {
 
 **External Resources:**
 
-- [JWT.io](https://jwt.io) - JWT token decoder
 - [OAuth 2.0 Specification](https://oauth.net/2/)
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
+- [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)

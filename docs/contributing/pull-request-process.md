@@ -309,11 +309,11 @@ Fixes #[issue number]
 ```markdown
 ## Summary
 
-Implements user authentication using Clerk, including login, signup, and JWT validation middleware.
+Implements user authentication using Better Auth, including login, signup, and JWT validation middleware.
 
 ## Changes
 
-- Add Clerk integration to API
+- Add Better Auth integration to API
 - Implement authentication middleware
 - Add protected route decorator
 - Add user session management
@@ -372,7 +372,7 @@ Implements authentication requirements from #45
 
 ## Additional Context
 
-Used Clerk for authentication as decided in ADR-003. Middleware validates JWT on each request to protected routes.
+Used Better Auth for authentication as decided in ADR-003. Middleware validates JWT on each request to protected routes.
 
 ## PR Size Guidelines
 
@@ -410,7 +410,7 @@ Instead of one large PR (1000+ lines):
 
 ```text
 ❌ feat(api): implement complete user authentication system
-   - Adds Clerk integration
+   - Adds Better Auth integration
    - Adds middleware
    - Adds protected routes
    - Updates all endpoints
@@ -421,7 +421,7 @@ Instead of one large PR (1000+ lines):
 Split into multiple PRs:
 
 ```text
-✅ PR 1: feat(api): add Clerk SDK integration (100 lines)
+✅ PR 1: feat(api): add Better Auth SDK integration (100 lines)
 ✅ PR 2: feat(api): add authentication middleware (150 lines)
 ✅ PR 3: feat(api): protect user endpoints (120 lines)
 ✅ PR 4: feat(api): protect booking endpoints (130 lines)
@@ -744,7 +744,7 @@ git merge --squash feature/user-authentication
 # Commit
 git commit -m "feat(api): add user authentication
 
-Implements complete authentication flow with Clerk.
+Implements complete authentication flow with Better Auth.
 
 Closes #123"
 
@@ -773,8 +773,8 @@ Closes #<issue>
 ```text
 feat(api): add user authentication
 
-Implements user authentication using Clerk:
-- Add Clerk SDK integration
+Implements user authentication using Better Auth:
+- Add Better Auth SDK integration
 - Add authentication middleware
 - Add protected route decorator
 - Add user session management
@@ -879,7 +879,7 @@ You've successfully contributed to Hospeda!
 **Status**: 60% complete
 
 **Completed**:
-- [x] Clerk SDK integration
+- [x] Better Auth SDK integration
 - [x] Authentication middleware
 - [x] Basic tests
 

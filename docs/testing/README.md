@@ -2,7 +2,7 @@
 
 ## Overview
 
-Hospeda's testing infrastructure is built on **Test-Driven Development (TDD)** principles with a strict **90% code coverage requirement**. All code must be tested before merge, with no exceptions.
+Hospeda's testing infrastructure is built on **Test-Informed Development** principles with a strict **90% code coverage requirement**. All code must be tested before merge, with no exceptions.
 
 This documentation provides comprehensive guides for writing and maintaining tests across the entire platform.
 
@@ -10,7 +10,8 @@ This documentation provides comprehensive guides for writing and maintaining tes
 
 | Document | Description | Lines |
 |----------|-------------|-------|
-| [Testing Strategy](./strategy.md) | Testing philosophy, TDD workflow, and test pyramid | ~1,200 |
+| [Testing Strategy](./strategy.md) | Testing philosophy, test-informed workflow, and test pyramid | ~1,200 |
+| [Test-Informed Workflow](./tdd-workflow.md) | Red-Green-Refactor cycle and test timing guidelines | ~400 |
 | [Unit Testing](./unit-testing.md) | Unit test patterns with AAA methodology | ~1,500 |
 | [Integration Testing](./integration-testing.md) | Integration test patterns and database testing | ~1,200 |
 | [E2E Testing](./e2e-testing.md) | End-to-end testing with Playwright | ~1,000 |
@@ -18,11 +19,19 @@ This documentation provides comprehensive guides for writing and maintaining tes
 | [Mocking Strategies](./mocking.md) | Comprehensive mocking guide with Vitest | ~900 |
 | [Coverage Requirements](./coverage.md) | 90% coverage requirements and enforcement | ~600 |
 
+### Billing QA
+
+| Document | Description | Lines |
+|----------|-------------|-------|
+| [Billing QA Checklist](./billing-qa-checklist.md) | Pre-launch QA checklist for billing flows | ~200 |
+| [Billing E2E Checklist](./billing-e2e-checklist.md) | End-to-end billing test scenarios | ~300 |
+| [Billing Manual Testing](./billing-manual-testing.md) | Manual testing procedures for billing | ~200 |
+
 ## 🎯 Testing Philosophy
 
 ### Core Principles
 
-1. **TDD First**: Red → Green → Refactor cycle is mandatory
+1. **Tests Mandatory**: All code must have tests. Timing is flexible by code type
 2. **90% Coverage**: No exceptions, enforced in CI/CD
 3. **AAA Pattern**: Arrange → Act → Assert for all tests
 4. **Fast Tests**: Unit < 100ms, Integration < 1s, E2E < 10s
@@ -379,12 +388,12 @@ pnpm test:coverage
 ### Add Test for New Feature
 
 ```bash
-# 1. Create test file (TDD: test first!)
+# 1. Create test file
 touch test/models/new-feature.model.test.ts
 
-# 2. Write failing test
+# 2. For pure logic: write failing test first
 # 3. Implement feature
-# 4. Make test pass
+# 4. For integration code: write tests alongside
 # 5. Refactor
 
 # 6. Verify coverage
@@ -463,7 +472,7 @@ open coverage/index.html
 
 - [Vitest Documentation](https://vitest.dev/)
 - [Testing Best Practices](https://kentcdodds.com/blog/common-mistakes-with-react-testing-library)
-- [TDD by Example](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530)
+- [TDD by Example](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530) (reference for Red-Green-Refactor cycle)
 
 ## 🎯 Testing by Component
 
@@ -493,7 +502,7 @@ open coverage/index.html
 - **Focus**: Rendering, user interactions, state
 - **Type**: Unit + E2E
 - **Coverage**: 85%+
-- **Guide**: [Component Testing](./component-testing.md)
+- **Guide**: See unit testing patterns below
 
 ## 🔄 Continuous Integration
 
@@ -546,7 +555,7 @@ Track testing health:
 
 ### DO ✅
 
-- Write tests first (TDD)
+- Write tests for all code (timing flexible by code type)
 - Follow AAA pattern
 - Use descriptive names
 - Test edge cases
@@ -560,7 +569,7 @@ Track testing health:
 - Skip tests (`.skip`, `.only`)
 - Share state between tests
 - Test implementation details
-- Write tests after code
+- Skip writing tests
 - Ignore failing tests
 - Use real external services
 - Commit flaky tests
@@ -582,6 +591,6 @@ Track testing health:
 
 **Related Documentation**:
 
-- [Code Standards](../development/code-standards.md)
-- [Architecture Patterns](../architecture/patterns.md)
-- [Development Workflow](../development/workflow.md)
+- [Code Standards](../contributing/code-standards.md)
+- [Architecture Overview](../architecture/overview.md)
+- [Git Workflow](../contributing/git-workflow.md)

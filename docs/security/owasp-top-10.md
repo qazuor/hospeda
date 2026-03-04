@@ -42,36 +42,26 @@ All protected endpoints require valid JWT tokens:
 
 ```typescript
 // apps/api/src/middleware/auth.ts
-import { verifyToken } from '@clerk/backend';
+import { auth } from '../lib/auth';
 import { createMiddleware } from 'hono/factory';
 
 export const requireAuth = createMiddleware(async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-
   try {
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY!,
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
     });
 
-    // Verify token hasn't expired
-    const now = Math.floor(Date.now() / 1000);
-    if (payload.exp && payload.exp < now) {
-      return c.json({ error: 'Token expired' }, 401);
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
     }
 
     // Set authenticated context
-    c.set('userId', payload.sub);
-    c.set('sessionId', payload.sid);
+    c.set('userId', session.user.id);
+    c.set('sessionId', session.session.id);
 
     await next();
   } catch (error) {
-    return c.json({ error: 'Invalid token' }, 401);
+    return c.json({ error: 'Invalid or expired session' }, 401);
   }
 });
 ```
@@ -134,7 +124,6 @@ export const hasPermission = (
 ```typescript
 // apps/api/src/middleware/permissions.ts
 import { createMiddleware } from 'hono/factory';
-import { clerkClient } from '@clerk/backend';
 import { hasPermission, type Permission } from '@repo/schemas';
 
 export const requirePermission = (permission: Permission) => {
@@ -145,9 +134,9 @@ export const requirePermission = (permission: Permission) => {
       return c.json({ error: 'Authentication required' }, 401);
     }
 
-    // Fetch user role from Clerk
-    const user = await clerkClient.users.getUser(userId);
-    const role = user.publicMetadata.role as UserRole;
+    // Fetch user role from database
+    const user = await getUserById(userId);
+    const role = user.role as UserRole;
 
     if (!hasPermission(role, permission)) {
       return c.json({ error: 'Insufficient permissions' }, 403);
@@ -344,7 +333,7 @@ Cryptographic failures relate to failures that expose sensitive data. This was p
 All connections use HTTPS with TLS 1.3:
 
 ```typescript
-// Enforced at platform level (Vercel, Fly.io)
+// Enforced at platform level (Vercel)
 // Automatic HTTP → HTTPS redirect
 
 // Strict Transport Security header
@@ -396,14 +385,12 @@ c.cookie('session', sessionToken, cookieOptions);
 ```bash
 # .env.example (template only, no real values)
 DATABASE_URL=
-CLERK_SECRET_KEY=
-CLERK_PUBLISHABLE_KEY=
+HOSPEDA_BETTER_AUTH_SECRET=
 MERCADO_PAGO_ACCESS_TOKEN=
 
 # Real secrets stored in:
 # - GitHub Secrets (CI/CD)
-# - Vercel Environment Variables (encrypted at rest)
-# - Fly.io Secrets (encrypted at rest)
+# - Vercel Environment Variables (encrypted at rest, all apps)
 ```
 
 **Never commit secrets:**
@@ -419,12 +406,12 @@ MERCADO_PAGO_ACCESS_TOKEN=
 
 #### 5. Password Handling
 
-**Delegated to Clerk:**
+**Handled by Better Auth:**
 
-- Passwords never stored in our database
-- Clerk uses bcrypt with high cost factor
-- Password breach detection
+- Passwords hashed with secure algorithms (bcrypt/argon2)
+- Better Auth manages credential storage in our database
 - Passwordless options (OAuth, magic links)
+- Self-hosted, no external dependency for auth
 
 #### 6. Payment Data
 
@@ -496,16 +483,10 @@ export const decrypt = (ciphertext: string): string => {
 - Strong cipher suites only
 - HSTS preload enabled
 
-**Fly.io (API):**
+**Vercel (API):**
 
-```toml
-# fly.toml
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-```
+HTTPS is enforced automatically. All Vercel deployments serve over HTTPS only.
+Redirection from HTTP to HTTPS is handled at the edge.
 
 #### Certificate Management
 
@@ -526,8 +507,8 @@ app.use('*', secureHeaders({
   strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", 'https://clerk.com'],
-    connectSrc: ["'self'", 'https://api.clerk.com'],
+    scriptSrc: ["'self'"],
+    connectSrc: ["'self'"],
     upgradeInsecureRequests: [], // Force HTTPS
   },
 }));
@@ -759,7 +740,6 @@ app.use('*', secureHeaders({
     defaultSrc: ["'self'"],
     scriptSrc: [
       "'self'",
-      'https://clerk.com', // Trusted third-party
     ],
     styleSrc: [
       "'self'",
@@ -772,13 +752,12 @@ app.use('*', secureHeaders({
     ],
     connectSrc: [
       "'self'",
-      'https://api.clerk.com',
       'https://api.mercadopago.com',
     ],
     fontSrc: ["'self'"],
     objectSrc: ["'none'"], // No Flash, Java, etc.
     mediaSrc: ["'self'"],
-    frameSrc: ['https://clerk.com'], // Clerk iframe
+    frameSrc: ["'none'"], // No iframes needed (Better Auth is self-hosted)
     baseUri: ["'self'"],
     formAction: ["'self'"],
     frameAncestors: ["'none'"], // No framing (clickjacking protection)
@@ -1104,7 +1083,7 @@ if (input.pricePerNight < 10) {
 // - Only DML on assigned tables (SELECT, INSERT, UPDATE, DELETE)
 
 // API keys have scoped permissions
-// - Clerk: user management only
+// - Better Auth: authentication only (self-hosted)
 // - Mercado Pago: payment processing only
 // - Cloudinary: image upload only
 ```
@@ -1237,27 +1216,28 @@ class BookingService {
 **ADR (Architecture Decision Record) Example:**
 
 ```markdown
-# ADR 001: Use Clerk for Authentication
+# ADR 001: Use Better Auth for Authentication
 
 ## Context
 Need secure, scalable authentication for Hospeda platform.
 
 ## Decision
-Use Clerk for authentication instead of building custom auth.
+Use Better Auth for self-hosted authentication instead of a third-party SaaS.
 
 ## Security Rationale
-- Battle-tested authentication (reduces security risks)
-- Automatic security updates
-- Breach detection
+- Open-source, self-hosted authentication (full control)
+- No vendor dependency or external API calls for auth
+- Session-based authentication (no JWT token management)
 - MFA support
 - OAuth providers
-- Compliance (SOC 2, GDPR)
+- Data stays in our database
 
 ## Consequences
-- Positive: Reduced security surface area
-- Positive: Professional-grade auth features
-- Negative: Vendor dependency
-- Mitigation: Clerk supports data export, standard JWT tokens
+- Positive: Full control over auth data and logic
+- Positive: No external dependency for authentication
+- Positive: Lower latency (no external API calls)
+- Negative: Responsible for security updates ourselves
+- Mitigation: Active open-source community, regular updates
 ```
 
 ### Threat Modeling
@@ -1266,7 +1246,7 @@ Use Clerk for authentication instead of building custom auth.
 
 | Threat | Example | Mitigation |
 |--------|---------|------------|
-| **S**poofing | Fake user identity | Clerk authentication, JWT verification |
+| **S**poofing | Fake user identity | Better Auth session verification |
 | **T**ampering | Modify booking data | HTTPS, integrity checks, audit logs |
 | **R**epudiation | Deny creating booking | Audit logs, signed transactions |
 | **I**nformation Disclosure | Expose PII | Access controls, encryption, data minimization |
@@ -1379,8 +1359,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().url(),
-  CLERK_SECRET_KEY: z.string().startsWith('sk_'),
-  CLERK_PUBLISHABLE_KEY: z.string().startsWith('pk_'),
+  HOSPEDA_BETTER_AUTH_SECRET: z.string().min(32),
 
   // Optional with secure defaults
   API_RATE_LIMIT: z.number().default(300), // 300 req/min
@@ -1419,14 +1398,14 @@ export const securityHeadersMiddleware = secureHeaders({
   // Content Security Policy
   contentSecurityPolicy: {
     defaultSrc: ["'self'"],
-    scriptSrc: ["'self'", 'https://clerk.com'],
+    scriptSrc: ["'self'"],
     styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind requires unsafe-inline
     imgSrc: ["'self'", 'https://res.cloudinary.com', 'data:'],
-    connectSrc: ["'self'", 'https://api.clerk.com', 'https://api.mercadopago.com'],
+    connectSrc: ["'self'", 'https://api.mercadopago.com'],
     fontSrc: ["'self'"],
     objectSrc: ["'none'"],
     mediaSrc: ["'self'"],
-    frameSrc: ['https://clerk.com'],
+    frameSrc: ["'none'"],
     baseUri: ["'self'"],
     formAction: ["'self'"],
     frameAncestors: ["'none'"],
@@ -1613,43 +1592,18 @@ pnpm outdated
 }
 ```
 
-**Fly.io (API):**
+**Vercel (API):**
 
-```toml
-# fly.toml
-app = "hospeda-api"
-primary_region = "gru" # São Paulo (closest to Argentina)
-
-[env]
-  NODE_ENV = "production"
-  LOG_LEVEL = "info"
-
-[http_service]
-  internal_port = 3000
-  force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  min_machines_running = 1
-  processes = ["app"]
-
-[[http_service.checks]]
-  grace_period = "10s"
-  interval = "30s"
-  method = "GET"
-  timeout = "5s"
-  path = "/health"
-
-[[services]]
-  protocol = "tcp"
-  internal_port = 3000
-
-  [[services.ports]]
-    port = 443
-    handlers = ["tls", "http"]
-
-  [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
+```json
+// apps/api/vercel.json
+{
+  "version": 2,
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=api",
+  "nodeVersion": "20",
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
 ```
 
 ### Configuration Management
@@ -1675,9 +1629,8 @@ export const config = {
   },
 
   auth: {
-    clerk: {
-      secretKey: env.CLERK_SECRET_KEY,
-      publishableKey: env.CLERK_PUBLISHABLE_KEY,
+    betterAuth: {
+      secret: env.HOSPEDA_BETTER_AUTH_SECRET,
     },
     sessionDuration: env.SESSION_DURATION || 3600,
   },
@@ -1952,7 +1905,7 @@ jobs:
     "hono": "^4.0.0",
 
     // For critical packages, pin exact version
-    "clerk-backend": "1.2.3"
+    "better-auth": "1.2.3"
   }
 }
 ```
@@ -1970,7 +1923,7 @@ pnpm list --depth=0
 # ├── hono@4.0.5
 # ├── drizzle-orm@0.29.3
 # ├── zod@3.22.4
-# └── @clerk/backend@1.2.8
+# └── better-auth@1.2.8
 ```
 
 **Known Issues:**
@@ -2046,8 +1999,8 @@ describe('Vulnerable Components - Versions', () => {
     // Example: Ensure Hono >= 4.0.0
     expect(pkg.dependencies.hono).toMatch(/^\^4\./);
 
-    // Ensure Clerk >= 1.2.0
-    expect(pkg.dependencies['@clerk/backend']).toMatch(/^\^?1\.[2-9]\./);
+    // Ensure Better Auth >= 1.2.0
+    expect(pkg.dependencies['better-auth']).toMatch(/^\^?1\.[2-9]\./);
   });
 });
 ```
@@ -2085,26 +2038,25 @@ Authentication and session management vulnerabilities allow attackers to comprom
 
 ### How Hospeda Prevents It
 
-#### 1. Clerk Authentication
+#### 1. Better Auth Authentication
 
-**Delegated Authentication:**
+**Self-Hosted Authentication:**
 
-Hospeda uses Clerk for all authentication, providing:
+Hospeda uses Better Auth for all authentication, providing:
 
-- Secure password hashing (bcrypt)
-- Breach detection (HaveIBeenPwned integration)
-- Multi-factor authentication (TOTP, SMS)
+- Secure password hashing (bcrypt/argon2)
+- Multi-factor authentication (TOTP)
 - OAuth providers (Google, GitHub, etc.)
-- Magic link authentication
-- Session management
+- Session-based authentication
+- Self-hosted (no external API dependency)
 
-**Why Clerk?**
+**Why Better Auth?**
 
-- Battle-tested authentication
-- Automatic security updates
-- Compliance (SOC 2, GDPR)
-- Professional-grade features
-- No need to implement password storage
+- Open-source, self-hosted authentication
+- Full control over user data
+- No vendor dependency
+- Session-based (no JWT token management)
+- Active community and regular updates
 
 #### 2. JWT Token Validation
 
@@ -2112,50 +2064,31 @@ Hospeda uses Clerk for all authentication, providing:
 
 ```typescript
 // apps/api/src/middleware/auth.ts
-import { verifyToken } from '@clerk/backend';
+import { auth } from '../lib/auth';
 
 export const requireAuth = createMiddleware(async (c, next) => {
-  const authHeader = c.req.header('Authorization');
-
-  if (!authHeader?.startsWith('Bearer ')) {
-    return c.json({ error: 'Authentication required' }, 401);
-  }
-
-  const token = authHeader.replace('Bearer ', '');
-
   try {
-    const payload = await verifyToken(token, {
-      secretKey: process.env.CLERK_SECRET_KEY!,
+    const session = await auth.api.getSession({
+      headers: c.req.raw.headers,
     });
 
-    // Verify claims
-    const now = Math.floor(Date.now() / 1000);
-
-    if (payload.exp && payload.exp < now) {
-      return c.json({ error: 'Token expired' }, 401);
+    if (!session) {
+      return c.json({ error: 'Authentication required' }, 401);
     }
 
-    if (payload.nbf && payload.nbf > now) {
-      return c.json({ error: 'Token not yet valid' }, 401);
-    }
-
-    // Verify audience (API)
-    if (payload.aud !== 'https://api.hospeda.com') {
-      return c.json({ error: 'Invalid token audience' }, 401);
-    }
-
+    // Verify session is not expired (Better Auth handles this automatically)
     // Set context
-    c.set('userId', payload.sub);
-    c.set('sessionId', payload.sid);
+    c.set('userId', session.user.id);
+    c.set('sessionId', session.session.id);
 
     await next();
   } catch (error) {
-    logger.warn('Token verification failed', {
+    logger.warn('Session verification failed', {
       error: error.message,
       ip: c.req.header('x-forwarded-for'),
     });
 
-    return c.json({ error: 'Invalid or expired token' }, 401);
+    return c.json({ error: 'Invalid or expired session' }, 401);
   }
 });
 ```
@@ -2181,20 +2114,19 @@ c.cookie('__session', sessionToken, sessionCookieOptions);
 **Session Lifecycle:**
 
 ```typescript
-// Login: Clerk creates session
-const session = await clerkClient.sessions.createSession({
-  userId: user.id,
-  expiresAt: Date.now() + 3600000, // 1 hour
+// Login: Better Auth creates session
+const session = await auth.api.signInEmail({
+  body: { email, password },
 });
 
-// Refresh: Automatic via Clerk SDK
-// Old token expires, new token issued seamlessly
+// Refresh: Automatic via Better Auth
+// Session is refreshed on activity based on updateAge config
 
 // Logout: Revoke session
-await clerkClient.sessions.revokeSession(sessionId);
+await auth.api.signOut({ headers: c.req.raw.headers });
 
-// Suspicious activity: Revoke all sessions
-await clerkClient.users.revokeAllSessions(userId);
+// Suspicious activity: Revoke all sessions for user
+await db.delete(sessions).where(eq(sessions.userId, userId));
 ```
 
 #### 4. Brute Force Protection
@@ -2223,7 +2155,7 @@ app.use('/api/auth/*', rateLimiter({
 }));
 ```
 
-**Account Lockout (Clerk):**
+**Account Lockout (Better Auth + Rate Limiting):**
 
 - Automatic after repeated failed login attempts
 - Temporary lockout (increases with subsequent failures)
@@ -2232,15 +2164,15 @@ app.use('/api/auth/*', rateLimiter({
 
 #### 5. Multi-Factor Authentication
 
-**MFA Support via Clerk:**
+**MFA Support via Better Auth:**
 
 ```typescript
 // Check if user has MFA enabled
-const user = await clerkClient.users.getUser(userId);
+const user = await getUserById(userId);
 const hasMFA = user.twoFactorEnabled;
 
 // Require MFA for admin users
-if (user.publicMetadata.role === 'admin' && !hasMFA) {
+if (user.role === 'admin' && !hasMFA) {
   return c.json({
     error: 'MFA required for admin accounts',
     action: 'enable_mfa',
@@ -2258,56 +2190,57 @@ if (user.publicMetadata.role === 'admin' && !hasMFA) {
 
 #### 6. Password Policies
 
-**Handled by Clerk:**
+**Handled by Better Auth:**
 
 - Minimum 8 characters
-- Complexity requirements (uppercase, lowercase, numbers)
-- Password breach detection (HaveIBeenPwned)
-- Password history (prevent reuse)
-- Regular password expiration (optional)
+- Complexity requirements (configurable)
+- Secure hashing (bcrypt/argon2)
+- Password stored securely in our database by Better Auth
+- Self-hosted, full control over password policies
 
-**We don't store passwords:**
+**Better Auth manages password storage:**
 
 ```typescript
-// ✅ CORRECT: Delegated to Clerk
-// No password field in our User table
+// Better Auth handles password hashing and storage in the database
+// The password is never stored in plain text
+// We configure password policies in Better Auth config
 
-// ❌ NEVER DO THIS:
-// interface User {
-//   passwordHash: string; // Don't store passwords!
-// }
+export const auth = betterAuth({
+  emailAndPassword: {
+    enabled: true,
+    minPasswordLength: 8,
+  },
+});
 ```
 
 ### Webhook Signature Verification
 
-**Clerk Webhooks:**
+**MercadoPago Webhooks:**
 
 ```typescript
-import { Webhook } from 'svix';
+import { createHmac } from 'crypto';
 
-app.post('/api/webhooks/clerk', async (c) => {
+app.post('/api/webhooks/mercadopago', async (c) => {
   const payload = await c.req.text();
-  const headers = c.req.raw.headers;
+  const signature = c.req.header('x-signature');
+  const requestId = c.req.header('x-request-id');
 
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
+  // Verify webhook signature
+  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET!;
+  const expectedSignature = createHmac('sha256', secret)
+    .update(requestId + payload)
+    .digest('hex');
 
-  let event;
-  try {
-    // Verify webhook signature
-    event = wh.verify(payload, {
-      'svix-id': headers.get('svix-id')!,
-      'svix-timestamp': headers.get('svix-timestamp')!,
-      'svix-signature': headers.get('svix-signature')!,
-    });
-  } catch (error) {
-    logger.warn('Invalid webhook signature', { error });
+  if (signature !== expectedSignature) {
+    logger.warn('Invalid webhook signature', { requestId });
     return c.json({ error: 'Invalid signature' }, 401);
   }
 
   // Process verified event
+  const event = JSON.parse(payload);
   switch (event.type) {
-    case 'user.created':
-      await handleUserCreated(event.data);
+    case 'payment':
+      await handlePaymentEvent(event.data);
       break;
     // ...
   }
@@ -2534,7 +2467,7 @@ pnpm install --frozen-lockfile
   "dependencies": {
     // ✅ Official packages from verified publishers
     "hono": "^4.0.0", // @hono namespace
-    "@clerk/backend": "^1.2.0", // @clerk namespace
+    "better-auth": "^1.2.0", // better-auth package
     "drizzle-orm": "^0.29.0" // drizzle-team org
   }
 }
@@ -3025,7 +2958,7 @@ export const auditMiddleware = createMiddleware(async (c, next) => {
   const user = c.get('user');
 
   // Only audit admin actions
-  if (user.publicMetadata.role === 'admin') {
+  if (user.role === 'admin') {
     const startTime = Date.now();
 
     await next();
@@ -3315,7 +3248,7 @@ export type SafeUrl = z.infer<typeof safeUrlSchema>;
 ```typescript
 // For webhook callbacks
 const ALLOWED_WEBHOOK_DOMAINS = [
-  'clerk.com',
+  'mercadopago.com.ar',
   'mercadopago.com',
 ] as const;
 
@@ -3474,36 +3407,33 @@ export const validateExternalUrl = (url: string): boolean => {
 
 ```typescript
 // Only accept webhooks from verified sources
-app.post('/api/webhooks/clerk', async (c) => {
+app.post('/api/webhooks/mercadopago', async (c) => {
   // Verify webhook signature (prevents spoofing)
-  const signature = c.req.header('svix-signature');
-  const timestamp = c.req.header('svix-timestamp');
-  const id = c.req.header('svix-id');
+  const signature = c.req.header('x-signature');
+  const requestId = c.req.header('x-request-id');
 
-  if (!signature || !timestamp || !id) {
+  if (!signature || !requestId) {
     return c.json({ error: 'Missing webhook headers' }, 401);
   }
 
   const payload = await c.req.text();
 
-  // Verify signature with Clerk's public key
-  const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET!);
+  // Verify signature with MercadoPago secret
+  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET!;
+  const expectedSignature = createHmac('sha256', secret)
+    .update(requestId + payload)
+    .digest('hex');
 
-  try {
-    const event = wh.verify(payload, {
-      'svix-signature': signature,
-      'svix-timestamp': timestamp,
-      'svix-id': id,
-    });
-
-    // Webhook verified, process event
-    await processClerkEvent(event);
-
-    return c.json({ success: true });
-  } catch (error) {
-    logger.warn('Invalid webhook signature', { error });
+  if (signature !== expectedSignature) {
+    logger.warn('Invalid webhook signature', { requestId });
     return c.json({ error: 'Invalid signature' }, 401);
   }
+
+  // Webhook verified, process event
+  const event = JSON.parse(payload);
+  await processPaymentEvent(event);
+
+  return c.json({ success: true });
 });
 ```
 

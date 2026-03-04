@@ -29,7 +29,7 @@ This guide covers general debugging techniques and troubleshooting for developme
 | Type error in TypeScript | Check type definitions, verify imports | [Type Errors](#type-errors) |
 | Database query fails | Check Drizzle query syntax, verify schema | [Database Debugging](#debugging-database-queries) |
 | Test failing | Check test setup, verify mocks | [Test Debugging](#debugging-tests) |
-| Authentication not working | Verify Clerk configuration, check JWT | [Auth Debugging](#debugging-authentication) |
+| Authentication not working | Verify Better Auth configuration, check session | [Auth Debugging](#debugging-authentication) |
 | React component not rendering | Check props, verify data fetching | [Frontend Debugging](#debugging-react-components) |
 
 ## Debugging Tools
@@ -296,7 +296,7 @@ const accommodation = await accommodationModel.findOne({ city: 'Concepción' });
 console.log(accommodation); // null
 ```
 
-#### Debug
+#### Debug Null Query Results
 
 1. Check exact value in database (case-sensitive!)
 2. Check for extra whitespace
@@ -428,7 +428,7 @@ const result = await accommodationService.create({
 });
 ```
 
-#### Debug
+#### Debug Validation Errors
 
 1. Check Zod schema requirements
 2. Log input data before validation
@@ -455,7 +455,7 @@ if (!result.success) {
 }
 ```
 
-#### Debug
+#### Debug Service Error Results
 
 ```typescript
 // Add detailed logging in service
@@ -485,7 +485,7 @@ await db.transaction(async (trx) => {
 });
 ```
 
-#### Debug
+#### Debug Transaction Rollbacks
 
 ```typescript
 // Add try-catch to see where error occurs
@@ -522,7 +522,7 @@ app.use('*', logger());
 
 #### Issue 1: 500 Internal Server Error
 
-#### Debug
+#### Debug 500 Errors
 
 ```bash
 # Check API logs
@@ -613,12 +613,10 @@ app.get('/api/profile', authMiddleware(), async (c) => {
 **Test with curl**:
 
 ```bash
-# Get token from Clerk dashboard or login flow
-export TOKEN="your-jwt-token"
-
-# Test endpoint
-curl http://localhost:3000/api/profile \
-  -H "Authorization: Bearer $TOKEN"
+# Get session cookie from browser or login flow
+# Test endpoint with session cookie
+curl http://localhost:3001/api/v1/protected/profile \
+  -b "better-auth.session_token=your-session-token"
 ```
 
 #### Issue 4: CORS Error
@@ -644,7 +642,7 @@ app.use('*', cors({
 
 #### Issue 1: Component Not Rendering
 
-#### Debug
+#### Debug Component Rendering
 
 ```tsx
 export function AccommodationCard({ accommodation }: Props) {
@@ -687,7 +685,7 @@ export function AccommodationList() {
 
 #### Issue 3: useEffect Not Triggering
 
-#### Debug
+#### Debug useEffect Dependencies
 
 ```tsx
 useEffect(() => {
@@ -714,7 +712,7 @@ useEffect(() => {
 
 #### Issue 4: State Not Updating
 
-#### Debug
+#### Debug Async State Updates
 
 ```tsx
 const [count, setCount] = useState(0);
@@ -752,7 +750,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 
 #### Issue 1: Query Not Fetching
 
-#### Debug
+#### Debug Query State
 
 ```typescript
 const { data, isLoading, error } = useQuery({
@@ -782,7 +780,7 @@ refetch();
 
 #### Issue 3: Mutation Not Updating Cache
 
-#### Debug
+#### Debug Cache Invalidation
 
 ```typescript
 const mutation = useMutation({
@@ -803,10 +801,10 @@ const mutation = useMutation({
 
 #### Issue 1: User Not Authenticated
 
-#### Debug
+#### Debug Auth State
 
 ```tsx
-import { useUser } from '@clerk/clerk-react';
+import { useUser } from '@repo/auth-ui';
 
 export function Profile() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -843,19 +841,19 @@ fetch('http://localhost:3000/api/bookings', {
   .then((data) => console.log('Response data:', data));
 ```
 
-#### Issue 3: Clerk Environment Mismatch
+#### Issue 3: Better Auth Environment Mismatch
 
-#### Debug
+#### Debug Environment Configuration
 
 ```bash
 # Check environment variables
-echo $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
-echo $CLERK_SECRET_KEY
+echo $HOSPEDA_BETTER_AUTH_SECRET
+echo $HOSPEDA_BETTER_AUTH_URL
 
 # Verify they match environment (dev/staging/prod)
 ```
 
-**Common cause**: Using development keys in production or vice versa
+**Common cause**: Using development config in production or vice versa
 
 ### Debugging Tests
 
@@ -900,7 +898,7 @@ it('should fetch accommodations', async () => {
 
 #### Issue 2: Mock Not Working
 
-#### Debug
+#### Debug Mock Calls
 
 ```typescript
 import { vi } from 'vitest';
@@ -1185,38 +1183,29 @@ Error: JWT token invalid
 
 **Solutions**:
 
-#### Solution 1: Check Clerk Configuration
+#### Solution 1: Check Better Auth Configuration
 
 ```bash
 # Verify environment variables are set
-echo $CLERK_SECRET_KEY
-echo $NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+echo $HOSPEDA_BETTER_AUTH_SECRET
+echo $HOSPEDA_BETTER_AUTH_URL
 
 # Should not be empty
 ```
 
-#### Solution 2: Check Clerk Dashboard
+#### Solution 2: Check Database Sessions
 
-1. Go to [Clerk Dashboard](https://dashboard.clerk.com)
-2. Verify application is correct environment (dev/prod)
-3. Check API keys match your `.env.local`
-4. Verify allowed origins include your app URL
+1. Open Drizzle Studio: `pnpm db:studio`
+2. Check the `sessions` table for the user's session
+3. Verify session has not expired
+4. Verify CORS origins include your app URL
 
 #### Solution 3: Clear Session and Re-Login
 
 ```typescript
-// In your app
-import { useClerk } from '@clerk/clerk-react';
-
-function DebugAuth() {
-  const { signOut } = useClerk();
-
-  return (
-    <button onClick={() => signOut()}>
-      Sign Out and Try Again
-    </button>
-  );
-}
+// Clear session cookie and redirect to sign-in
+document.cookie = 'better-auth.session_token=; Max-Age=0; path=/';
+window.location.href = '/auth/signin';
 ```
 
 #### Solution 4: Check JWT in API
@@ -1234,7 +1223,7 @@ export function authMiddleware() {
     }
 
     try {
-      // Verify token with Clerk
+      // Verify session with Better Auth
       const user = await verifyToken(token);
       console.log('User verified:', user.id);
       c.set('user', user);
@@ -1536,7 +1525,7 @@ const result = await accommodationService.create({
 ## Related Documentation
 
 - [Production Bug Investigation](../runbooks/production-bugs.md) - Production debugging
-- [TDD Workflow](./tdd-workflow.md) - Test-driven development
+- [Test-Informed Workflow](../testing/tdd-workflow.md) - Test-informed development
 - [Testing Strategy](./testing-strategy.md) - Testing guidelines
 - [Error Handling](./error-handling.md) - Error handling patterns
 - [Architecture Overview](../architecture/README.md) - System architecture
