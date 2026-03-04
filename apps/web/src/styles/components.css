@@ -38,7 +38,7 @@
     line-height: 1.2;
     font-weight: 500;
     white-space: nowrap;
-    color: #fff;
+    color: var(--color-surface, #fff);
     background: var(--color-primary-700, #084a4d);
     border-radius: 6px;
     pointer-events: none;

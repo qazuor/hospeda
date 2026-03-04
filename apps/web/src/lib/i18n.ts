@@ -5,7 +5,7 @@
  */
 
 import type { Namespace } from '@repo/i18n';
-import { namespaces, trans } from '@repo/i18n';
+import { namespaces, pluralize, trans } from '@repo/i18n';
 
 /**
  * Array of supported locales for the application.
@@ -209,6 +209,47 @@ export function t({
             .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
             .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
     }, raw);
+}
+
+/**
+ * Resolves the correct plural form of a translation key based on count.
+ * Uses the CLDR `_one` / `_other` convention via the shared pluralize utility.
+ *
+ * @param params - Object with locale, namespace, base key, count, and optional extra params.
+ * @param params.locale - The locale for translations.
+ * @param params.namespace - The namespace for the translation key.
+ * @param params.key - The base translation key (without `_one` / `_other` suffix).
+ * @param params.count - The count value to determine plural form.
+ * @param params.params - Optional additional parameters for interpolation.
+ * @returns The resolved plural translation string.
+ *
+ * @example
+ * ```ts
+ * tPlural({ locale: 'es', namespace: 'home', key: 'categories.count', count: 1 });
+ * // "1 alojamiento"
+ *
+ * tPlural({ locale: 'es', namespace: 'home', key: 'categories.count', count: 5 });
+ * // "5 alojamientos"
+ * ```
+ */
+export function tPlural({
+    locale,
+    namespace,
+    key,
+    count,
+    params
+}: {
+    locale: SupportedLocale;
+    namespace: Namespace;
+    key: string;
+    count: number;
+    params?: Record<string, unknown>;
+}): string {
+    const wrappedT = (k: string, p?: Record<string, unknown>): string => {
+        return t({ locale, namespace, key: k, params: p });
+    };
+
+    return pluralize({ t: wrappedT, key, count, params });
 }
 
 /**

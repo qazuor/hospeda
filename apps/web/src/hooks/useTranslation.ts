@@ -5,7 +5,12 @@
 
 import type { Namespace } from '@repo/i18n';
 import { useMemo } from 'react';
-import { DEFAULT_LOCALE, type SupportedLocale, t as translateFn } from '../lib/i18n';
+import {
+    DEFAULT_LOCALE,
+    type SupportedLocale,
+    tPlural as tPluralFn,
+    t as translateFn
+} from '../lib/i18n';
 
 /**
  * Hook that provides translation functionality for React components.
@@ -76,7 +81,31 @@ export function useTranslation({
             });
         };
 
-        return { t };
+        /**
+         * Pluralization function that resolves _one/_other keys based on count.
+         *
+         * @param key - The base translation key (without _one/_other suffix).
+         * @param count - The count value to determine plural form.
+         * @param params - Optional additional parameters for interpolation.
+         * @returns The resolved plural translation string.
+         *
+         * @example
+         * ```tsx
+         * tPlural('list.totalReviews', 5) // "5 reviews"
+         * tPlural('list.totalReviews', 1) // "1 review"
+         * ```
+         */
+        const tPlural = (key: string, count: number, params?: Record<string, unknown>): string => {
+            return tPluralFn({
+                locale,
+                namespace,
+                key,
+                count,
+                params
+            });
+        };
+
+        return { t, tPlural };
     }, [locale, namespace]);
 
     return translator;

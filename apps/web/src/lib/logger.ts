@@ -1,0 +1,59 @@
+/**
+ * Frontend logger for the web application.
+ * Provides styled console output with category prefix for easy filtering.
+ * Only logs in development mode unless explicitly enabled.
+ */
+
+type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
+
+interface LoggerOptions {
+    readonly category: string;
+    readonly bgColor: string;
+    readonly textColor?: string;
+    readonly enabled?: boolean;
+}
+
+/**
+ * Creates a frontend logger with styled console output.
+ *
+ * @param options - Logger configuration options
+ * @returns Logger instance with log, info, warn, error, and debug methods
+ */
+function createFrontendLogger(options: LoggerOptions) {
+    const { category, bgColor, textColor = '#000000', enabled = true } = options;
+    const style = `color: ${textColor}; background-color: ${bgColor}; font-weight: bold; padding: 1px 5px;`;
+
+    const createLogMethod = (level: LogLevel) => {
+        return (message: string, data?: unknown) => {
+            if (!enabled) return;
+
+            const consoleMethod = console[level] ?? console.log;
+
+            if (data !== undefined) {
+                consoleMethod(`%c[${category}] ${message}`, style, data);
+            } else {
+                consoleMethod(`%c[${category}] ${message}`, style);
+            }
+        };
+    };
+
+    return {
+        log: createLogMethod('log'),
+        info: createLogMethod('info'),
+        warn: createLogMethod('warn'),
+        error: createLogMethod('error'),
+        debug: createLogMethod('debug')
+    };
+}
+
+/**
+ * Web-app-specific logger instance.
+ * Uses blue color scheme to distinguish web logs from admin (green).
+ * Only active in development or when VITE_ENABLE_LOGGING is set.
+ */
+export const webLogger = createFrontendLogger({
+    category: 'WEB',
+    bgColor: '#3b82f6',
+    textColor: '#ffffff',
+    enabled: import.meta.env.DEV || import.meta.env.VITE_ENABLE_LOGGING === 'true'
+});

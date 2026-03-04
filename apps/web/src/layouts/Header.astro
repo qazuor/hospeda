@@ -46,7 +46,7 @@ function isLinkActive(href: string): boolean {
     'z-20 w-full',
     isHero
       ? 'absolute top-0 left-0 mt-10 bg-transparent'
-      : 'relative bg-gray-900',
+      : 'relative bg-bg',
   ]}
   style="padding-top: env(safe-area-inset-top, 0px);"
 >
@@ -141,16 +141,22 @@ function isLinkActive(href: string): boolean {
 </header>
 
 <style>
+  /*
+   * Header always renders on a dark background (bg-gray-900 or transparent over
+   * a hero image), so white-alpha values are intentional and correct in both
+   * light and dark mode. CSS custom properties from --color-nav-* are used.
+   */
+
   /* Theme toggle: minimal white icon */
   .header-theme-toggle :global(button) {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-nav-text);
     border-radius: 9999px;
     padding: 0.375rem;
     transition: all 0.3s ease;
   }
 
   .header-theme-toggle :global(button:hover) {
-    color: white;
+    color: var(--color-nav-text-active);
   }
 
   /* Auth: signin link as outlined pill */
@@ -162,9 +168,9 @@ function isLinkActive(href: string): boolean {
     border-radius: 9999px;
     font-size: 0.75rem;
     font-weight: 700;
-    color: white;
+    color: var(--color-nav-text-active);
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-nav-border);
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -172,14 +178,14 @@ function isLinkActive(href: string): boolean {
   }
 
   .header-auth-section :global(a:hover) {
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-nav-border-hover);
+    background: var(--color-nav-bg-hover);
   }
 
   /* Auth: UserNav trigger */
   .header-auth-section :global(button) {
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--color-nav-text-active);
+    border: 1px solid var(--color-nav-indicator);
     border-radius: 9999px;
     padding: 0.25rem 0.625rem 0.25rem 0.25rem;
     transition: all 0.3s ease;
@@ -187,8 +193,8 @@ function isLinkActive(href: string): boolean {
   }
 
   .header-auth-section :global(button:hover) {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-nav-border-hover);
+    background: var(--color-nav-bg-hover);
   }
 
   /* UserNav initials circle */
@@ -198,7 +204,7 @@ function isLinkActive(href: string): boolean {
 
   /* UserNav name text */
   .header-auth-section :global(button span) {
-    color: white;
+    color: var(--color-nav-text-active);
     font-weight: 700;
     font-size: 0.75rem;
     letter-spacing: 0.03em;
@@ -206,6 +212,6 @@ function isLinkActive(href: string): boolean {
 
   /* UserNav chevron */
   .header-auth-section :global(button svg) {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-nav-text);
   }
 </style>

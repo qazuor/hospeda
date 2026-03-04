@@ -75,6 +75,8 @@
     --color-surface: #ffffff;
     --color-surface-alt: #f5ede0;
     --color-surface-warm: #f0e6d6;
+    --color-surface-elevated: #ffffff; /* Dropdowns, modals, popovers */
+    --color-overlay: rgba(0, 0, 0, 0.5);
     --color-header-bg: #ffffff;
 
     /* Semantic */
@@ -82,6 +84,18 @@
     --color-warning: #d4870e;
     --color-error: #c25b3a;
     --color-info: #0d7377;
+
+    /* Star rating */
+    --color-star: #facc15; /* Yellow-400 for filled stars */
+    --color-star-empty: #d1d5db; /* Gray-300 for empty stars */
+
+    /* Navigation - used for header/sticky nav on hero overlays */
+    --color-nav-text: rgb(255 255 255 / 0.6);
+    --color-nav-text-active: white;
+    --color-nav-border: rgb(255 255 255 / 0.3);
+    --color-nav-border-hover: rgb(255 255 255 / 0.6);
+    --color-nav-bg-hover: rgb(255 255 255 / 0.08);
+    --color-nav-indicator: rgb(255 255 255 / 0.25);
 
     /* Spacing (8px grid) */
     --space-xs: 0.25rem; /* 4px */
@@ -145,17 +159,41 @@
     --transition-base: 250ms ease;
     --transition-slow: 350ms ease;
 
-    /* Z-index scale */
-    --z-base: 0;
-    --z-dropdown: 1000;
-    --z-sticky: 1020;
-    --z-modal-backdrop: 1040;
-    --z-modal: 1050;
-    --z-toast: 1060;
+    /* Z-index: uses Tailwind z-scale (z-10, z-20, z-30, z-40, z-50).
+     * Layer order convention:
+     *   z-10  = elevated cards, badges, carousel controls
+     *   z-20  = sticky headers, shape dividers
+     *   z-30  = carousel indicators
+     *   z-40  = reserved
+     *   z-50  = dropdowns, modals, toasts, overlays
+     * See HeroSection.astro for per-section z documentation.
+     */
+
+    /* RGB triplets for rgba() usage in animations/effects */
+    --color-primary-rgb: 13, 115, 119;
+    --color-bg-dark-rgb: 15, 26, 46;
 
     /* Header glassmorphism RGB values (used with rgba()) */
     --header-bg-rgb: 255, 255, 255;
     --header-border-rgb: 232, 220, 200;
+
+    /* Footer gradient end color (deep night blue) */
+    --color-footer-gradient-end: #0f1a2e;
+
+    /* Star texture color (warm white for light mode) */
+    --color-star-rgb: 240, 237, 232;
+
+    /* Glass bar colors for glassmorphism overlays */
+    --glass-bg-rgb: 0, 0, 0;
+    --glass-bg-opacity: 0.35;
+    --glass-bg-blur-opacity: 0.25;
+    --glass-bg-mobile-opacity: 0.55;
+    --glass-border-rgb: 255, 255, 255;
+    --glass-border-opacity: 0.12;
+
+    /* Shimmer highlight color */
+    --shimmer-rgb: 255, 255, 255;
+    --shimmer-opacity: 0.4;
 }
 
 /* Fluid typography scale (clamp replaces discrete breakpoints) */
@@ -171,6 +209,8 @@
     --color-surface: #1a2740; /* Deep night surface */
     --color-surface-alt: #1a2740;
     --color-surface-warm: #1c1a15; /* Warm dark surface */
+    --color-surface-elevated: #243352; /* Elevated surfaces in dark mode */
+    --color-overlay: rgba(0, 0, 0, 0.7);
     --color-bg-warm: #1c1a15;
     --color-border: #2d3b52;
     --color-text: #f0ede8; /* Warm white */
@@ -183,9 +223,86 @@
     --color-primary-dark: #0d7377;
     --color-primary-light: #6dd5d8;
 
+    /* Primary scale - inverted luminance for dark surfaces */
+    --color-primary-50: #042526;
+    --color-primary-100: #063839;
+    --color-primary-200: #084a4d;
+    --color-primary-300: #0a5c5f;
+    --color-primary-400: #0d7377;
+    --color-primary-500: #3dbdc0;
+    --color-primary-600: #6dd5d8;
+    --color-primary-700: #9ed8da;
+    --color-primary-800: #c5e8e9;
+    --color-primary-900: #e8f5f5;
+    --color-primary-950: #f0fafa;
+
+    /* Secondary - amber gold adjusted for dark */
+    --color-secondary: #e09a2e;
+    --color-secondary-dark: #d4870e;
+    --color-accent: #2a2520; /* Warm dark sand */
+    --color-accent-dark: #d4785c; /* Lighter terracotta */
+    --color-accent-warm: #e09a2e; /* Brighter amber */
+    --color-bg-warm: #1c1a15;
+
+    /* Green - nature tones for dark surfaces */
+    --color-green: #52b788;
+    --color-green-dark: #2d6a4f;
+    --color-green-light: #74d4a4;
+
+    /* Terracotta - warmer and lighter for dark surfaces */
+    --color-terracotta: #d4785c;
+    --color-terracotta-dark: #c25b3a;
+    --color-terracotta-light: #e09578;
+
+    /* Semantic - brighter variants for contrast on dark backgrounds */
+    --color-success: #52b788;
+    --color-warning: #e09a2e;
+    --color-error: #e07a5e;
+    --color-info: #3dbdc0;
+
+    /* Star rating - brighter for dark backgrounds */
+    --color-star: #fbbf24; /* Amber-400 for filled stars on dark */
+    --color-star-empty: #4b5563; /* Gray-600 for empty stars on dark */
+
+    /* Navigation - inverted for dark theme */
+    --color-nav-text: rgb(255 255 255 / 0.7);
+    --color-nav-text-active: white;
+    --color-nav-border: rgb(255 255 255 / 0.2);
+    --color-nav-border-hover: rgb(255 255 255 / 0.5);
+    --color-nav-bg-hover: rgb(255 255 255 / 0.1);
+    --color-nav-indicator: rgb(255 255 255 / 0.25);
+
+    /* Shadows - higher opacity for visibility on dark surfaces */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+
+    /* RGB triplets for rgba() usage in animations/effects */
+    --color-primary-rgb: 61, 189, 192;
+    --color-bg-dark-rgb: 15, 26, 46;
+
     /* Header glassmorphism RGB for dark mode */
     --header-bg-rgb: 15, 26, 46;
     --header-border-rgb: 45, 59, 82;
+
+    /* Footer gradient end color (deeper dark for dark mode) */
+    --color-footer-gradient-end: #0a1020;
+
+    /* Star texture: lighter dots on dark backgrounds */
+    --color-star-rgb: 200, 210, 230;
+
+    /* Glass bar: lighter overlay on dark surfaces */
+    --glass-bg-rgb: var(--color-bg-dark-rgb);
+    --glass-bg-opacity: 0.55;
+    --glass-bg-blur-opacity: 0.45;
+    --glass-bg-mobile-opacity: 0.7;
+    --glass-border-rgb: 255, 255, 255;
+    --glass-border-opacity: 0.08;
+
+    /* Shimmer: subtler highlight on dark surfaces */
+    --shimmer-rgb: 255, 255, 255;
+    --shimmer-opacity: 0.15;
 }
 
 /* Dark mode: generic wave divider fill override (for SimpleCurve, Totora, etc.) */
@@ -201,4 +318,13 @@
 /* Dark mode overlay opacity increase for readability */
 [data-theme="dark"] .section-overlay {
     background-color: rgba(0, 0, 0, 0.6);
+}
+
+/* Star rating utilities */
+.text-star {
+    color: var(--color-star);
+}
+
+.text-star-empty {
+    color: var(--color-star-empty);
 }

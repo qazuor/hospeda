@@ -285,7 +285,7 @@ export function toDestinationCardProps({
         | undefined;
     const coords = locationObj?.coordinates;
     const attractions = item.attractions as
-        | Array<{ id: string; name: string; icon?: string }>
+        | Array<{ id: string; name: string; icon?: string; displayWeight?: number }>
         | undefined;
 
     return {
@@ -299,7 +299,13 @@ export function toDestinationCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         eventsCount: Number(item.eventsCount ?? 0),
-        attractions: attractions?.map((a) => ({ id: a.id, name: a.name, icon: a.icon })) ?? [],
+        attractions:
+            attractions?.map((a) => ({
+                id: a.id,
+                name: a.name,
+                icon: a.icon,
+                displayWeight: a.displayWeight
+            })) ?? [],
         gallery: mediaObj?.gallery?.map((g) => ({ url: g.url ?? '', caption: g.caption })) ?? [],
         coordinates:
             coords?.lat && coords?.long ? { lat: coords.lat, long: coords.long } : undefined,

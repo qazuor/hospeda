@@ -4,6 +4,7 @@
  */
 
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
+import { webLogger } from './logger';
 
 /**
  * Result of extracting a locale from a URL path.
@@ -295,7 +296,7 @@ export async function parseSessionUser({
         };
     } catch {
         // Non-blocking: log warning and return null on API failure
-        console.warn('[middleware] Failed to validate session against Better Auth API');
+        webLogger.warn('[middleware] Failed to validate session against Better Auth API');
         return null;
     }
 }

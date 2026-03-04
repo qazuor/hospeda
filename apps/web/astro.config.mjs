@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import vercel from '@astrojs/vercel';
+import sentry from '@sentry/astro';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
 
@@ -32,6 +33,14 @@ const HOSPEDA_API_URL =
 const HOSPEDA_SITE_URL =
     process.env.HOSPEDA_SITE_URL || process.env.PUBLIC_SITE_URL || 'http://localhost:4321';
 
+const apiHostname = (() => {
+    try {
+        return new URL(HOSPEDA_API_URL).hostname;
+    } catch {
+        return null;
+    }
+})();
+
 export default defineConfig({
     site: HOSPEDA_SITE_URL,
     output: 'server',
@@ -44,7 +53,11 @@ export default defineConfig({
         port: 4321
     },
     image: {
-        remotePatterns: [{ hostname: 'localhost' }, { hostname: '*.fly.dev' }]
+        remotePatterns: [
+            { hostname: 'localhost' },
+            { hostname: '*.vercel.app' },
+            ...(apiHostname && apiHostname !== 'localhost' ? [{ hostname: apiHostname }] : [])
+        ]
     },
     integrations: [
         react(),
@@ -54,7 +67,17 @@ export default defineConfig({
                 const excludePatterns = ['/auth/', '/mi-cuenta/'];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
             }
-        })
+        }),
+        ...(process.env.PUBLIC_SENTRY_DSN
+            ? [
+                  sentry({
+                      dsn: process.env.PUBLIC_SENTRY_DSN,
+                      sourceMapsUploadOptions: {
+                          enabled: false
+                      }
+                  })
+              ]
+            : [])
     ],
     vite: {
         plugins: [tailwindcss()],

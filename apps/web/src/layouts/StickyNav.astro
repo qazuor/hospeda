@@ -9,33 +9,22 @@ import AuthSection from '../components/auth/AuthSection.astro';
 import { ThemeToggle } from '../components/ui/ThemeToggle.client';
 import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client';
 import { StickyNavController } from '../components/ui/StickyNavController.client';
+import { t, type SupportedLocale } from '../lib/i18n';
 
 interface Props {
   locale?: string;
 }
 
 const { locale = 'es' } = Astro.props;
-
-const navLabels: Record<string, Record<string, string>> = {
-  accommodations: { es: 'Alojamientos', en: 'Accommodations', pt: 'Hospedagens' },
-  destinations: { es: 'Destinos', en: 'Destinations', pt: 'Destinos' },
-  events: { es: 'Eventos', en: 'Events', pt: 'Eventos' },
-  blog: { es: 'Blog', en: 'Blog', pt: 'Blog' },
-};
-
-const ownerCtaLabel: Record<string, string> = {
-  es: 'Publica tu alojamiento',
-  en: 'List your property',
-  pt: 'Publique seu alojamento',
-};
+const loc = locale as SupportedLocale;
 
 const ownerCtaHref = `/${locale}/propietarios/`;
 
 const navLinks = [
-  { label: navLabels.accommodations[locale] ?? navLabels.accommodations.es, href: `/${locale}/alojamientos/` },
-  { label: navLabels.destinations[locale] ?? navLabels.destinations.es, href: `/${locale}/destinos/` },
-  { label: navLabels.events[locale] ?? navLabels.events.es, href: `/${locale}/eventos/` },
-  { label: navLabels.blog[locale] ?? navLabels.blog.es, href: `/${locale}/publicaciones/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'accommodations' }), href: `/${locale}/alojamientos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'destinations' }), href: `/${locale}/destinos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'events' }), href: `/${locale}/eventos/` },
+  { label: t({ locale: loc, namespace: 'nav', key: 'blog' }), href: `/${locale}/publicaciones/` },
 ];
 
 function isLinkActive(href: string): boolean {
@@ -49,7 +38,7 @@ function isLinkActive(href: string): boolean {
 <div
   data-sticky-nav
   data-visible="false"
-  class="sticky-nav fixed top-0 left-0 z-50 w-full bg-gray-900/95 shadow-lg backdrop-blur-md"
+  class="sticky-nav fixed top-0 left-0 z-50 w-full bg-bg/95 shadow-lg backdrop-blur-md"
   style="padding-top: env(safe-area-inset-top, 0px);"
 >
   <Container size="xl">
@@ -109,7 +98,7 @@ function isLinkActive(href: string): boolean {
           ]}
           aria-current={isLinkActive(ownerCtaHref) ? 'page' : undefined}
         >
-          {ownerCtaLabel[locale] ?? ownerCtaLabel.es}
+          {t({ locale: loc, namespace: 'nav', key: 'ownerCta' })}
         </a>
       </nav>
 
@@ -129,7 +118,7 @@ function isLinkActive(href: string): boolean {
 
         <MobileMenuWrapper
           client:media="(max-width: 768px)"
-          navItems={[...navLinks, { label: ownerCtaLabel[locale] ?? ownerCtaLabel.es, href: ownerCtaHref }]}
+          navItems={[...navLinks, { label: t({ locale: loc, namespace: 'nav', key: 'ownerCta' }), href: ownerCtaHref }]}
           locale={locale as 'es' | 'en' | 'pt'}
         />
       </div>
@@ -138,6 +127,11 @@ function isLinkActive(href: string): boolean {
 </div>
 
 <style>
+  /*
+   * StickyNav always renders on bg-gray-900/95 (dark background), so white-alpha
+   * values are intentional and correct in both light and dark mode.
+   */
+
   .sticky-nav {
     opacity: 0;
     transform: translateY(-100%);
@@ -153,14 +147,14 @@ function isLinkActive(href: string): boolean {
 
   /* Theme toggle */
   .sticky-theme-toggle :global(button) {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-nav-text);
     border-radius: 9999px;
     padding: 0.375rem;
     transition: all 0.3s ease;
   }
 
   .sticky-theme-toggle :global(button:hover) {
-    color: white;
+    color: var(--color-nav-text-active);
   }
 
   /* Auth: signin link as outlined pill */
@@ -172,9 +166,9 @@ function isLinkActive(href: string): boolean {
     border-radius: 9999px;
     font-size: 0.6875rem;
     font-weight: 700;
-    color: white;
+    color: var(--color-nav-text-active);
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-nav-border);
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -182,14 +176,14 @@ function isLinkActive(href: string): boolean {
   }
 
   .sticky-auth-section :global(a:hover) {
-    border-color: rgba(255, 255, 255, 0.6);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-nav-border-hover);
+    background: var(--color-nav-bg-hover);
   }
 
   /* Auth: UserNav trigger */
   .sticky-auth-section :global(button) {
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: var(--color-nav-text-active);
+    border: 1px solid var(--color-nav-indicator);
     border-radius: 9999px;
     padding: 0.1875rem 0.5rem 0.1875rem 0.1875rem;
     transition: all 0.3s ease;
@@ -197,8 +191,8 @@ function isLinkActive(href: string): boolean {
   }
 
   .sticky-auth-section :global(button:hover) {
-    border-color: rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-nav-border-hover);
+    background: var(--color-nav-bg-hover);
   }
 
   .sticky-auth-section :global(button div) {
@@ -206,13 +200,13 @@ function isLinkActive(href: string): boolean {
   }
 
   .sticky-auth-section :global(button span) {
-    color: white;
+    color: var(--color-nav-text-active);
     font-weight: 700;
     font-size: 0.6875rem;
     letter-spacing: 0.03em;
   }
 
   .sticky-auth-section :global(button svg) {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--color-nav-text);
   }
 </style>

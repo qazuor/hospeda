@@ -186,27 +186,28 @@
 
 .card-tilt:hover {
     transform: perspective(800px) rotateX(-2deg) rotateY(2deg) translateY(-4px);
-    box-shadow: 0 20px 40px -12px rgba(13, 115, 119, 0.15);
+    box-shadow: 0 20px 40px -12px rgba(var(--color-primary-rgb), 0.15);
     will-change: transform;
 }
 
 /* Dark mode: teal glow on card hover (T-036) */
 [data-theme="dark"] .card-tilt:hover {
-    box-shadow: 0 20px 40px -12px rgba(61, 189, 192, 0.12), 0 0 20px rgba(61, 189, 192, 0.08);
+    box-shadow: 0 20px 40px -12px rgba(var(--color-primary-rgb), 0.12), 0 0 20px
+        rgba(var(--color-primary-rgb), 0.08);
 }
 
 /* Dark mode: primary button glow */
 [data-theme="dark"] .btn-glow {
-    box-shadow: 0 0 12px rgba(61, 189, 192, 0.2);
+    box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.2);
 }
 
 [data-theme="dark"] .btn-glow:hover {
-    box-shadow: 0 0 20px rgba(61, 189, 192, 0.3);
+    box-shadow: 0 0 20px rgba(var(--color-primary-rgb), 0.3);
 }
 
 /* Dark mode: ambient glow shadows instead of dark ones */
 [data-theme="dark"] .shadow-ambient {
-    box-shadow: 0 4px 20px rgba(61, 189, 192, 0.06);
+    box-shadow: 0 4px 20px rgba(var(--color-primary-rgb), 0.06);
 }
 
 /* Button ripple effect (T-035) */
@@ -223,17 +224,13 @@
     width: 20px;
     height: 20px;
     border-radius: 50%;
-    background-color: rgba(13, 115, 119, 0.3);
+    background-color: rgba(var(--color-primary-rgb), 0.3);
     transform: scale(0);
     pointer-events: none;
 }
 
 .ripple-btn.ripple-active::after {
     animation: ripple 400ms ease-out forwards;
-}
-
-[data-theme="dark"] .ripple-btn::after {
-    background-color: rgba(61, 189, 192, 0.3);
 }
 
 /* Wave underline for nav links (T-033) */
@@ -348,7 +345,7 @@
     background-image: linear-gradient(
         110deg,
         transparent 30%,
-        rgba(255, 255, 255, 0.4) 50%,
+        rgba(var(--shimmer-rgb), var(--shimmer-opacity)) 50%,
         transparent 70%
     );
     background-size: 200% 100%;
@@ -480,9 +477,10 @@
    Reusable frosted-glass card styles
    ============================================ */
 
+/* Glass bar uses --glass-* tokens defined in global.css for theme-aware glassmorphism */
 .glass-bar {
-    background-color: rgba(0, 0, 0, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: rgba(var(--glass-bg-rgb), var(--glass-bg-opacity));
+    border: 1px solid rgba(var(--glass-border-rgb), var(--glass-border-opacity));
     border-radius: 0.75rem;
 }
 
@@ -490,19 +488,8 @@
     .glass-bar {
         backdrop-filter: blur(12px) saturate(1.2);
         -webkit-backdrop-filter: blur(12px) saturate(1.2);
-        background-color: rgba(0, 0, 0, 0.25);
+        background-color: rgba(var(--glass-bg-rgb), var(--glass-bg-blur-opacity));
     }
-
-    [data-theme="dark"] .glass-bar {
-        backdrop-filter: blur(12px) saturate(1.1);
-        -webkit-backdrop-filter: blur(12px) saturate(1.1);
-        background-color: rgba(15, 26, 46, 0.45);
-    }
-}
-
-[data-theme="dark"] .glass-bar {
-    background-color: rgba(15, 26, 46, 0.55);
-    border-color: rgba(255, 255, 255, 0.08);
 }
 
 /* Mobile fallback: more opaque, no blur */
@@ -510,10 +497,6 @@
     .glass-bar {
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        background-color: rgba(0, 0, 0, 0.55);
-    }
-
-    [data-theme="dark"] .glass-bar {
-        background-color: rgba(15, 26, 46, 0.7);
+        background-color: rgba(var(--glass-bg-rgb), var(--glass-bg-mobile-opacity));
     }
 }

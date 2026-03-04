@@ -97,6 +97,8 @@ export interface SubscriptionData {
         readonly expMonth: number;
         readonly expYear: number;
     } | null;
+    readonly gracePeriodDaysRemaining?: number | null;
+    readonly gracePeriodExpiresAt?: string | null;
 }
 
 /** Protected user API endpoints */
@@ -143,6 +145,195 @@ export const userApi = {
     /** Get the authenticated user's current subscription */
     getSubscription(): Promise<ApiResult<{ subscription: SubscriptionData | null }>> {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/subscription` });
+    }
+};
+
+/** Invoice item returned by the billing invoices endpoint */
+export interface InvoiceItem {
+    readonly id: string;
+    readonly date: string;
+    readonly description: string;
+    readonly amount: number;
+    readonly currency: string;
+    readonly status: 'paid' | 'pending' | 'overdue' | 'void';
+    readonly pdfUrl?: string;
+}
+
+/** Payment item returned by the billing payments endpoint */
+export interface PaymentItem {
+    readonly id: string;
+    readonly date: string;
+    readonly amount: number;
+    readonly currency: string;
+    readonly method: string;
+    readonly status: string;
+}
+
+/** Usage summary for plan limits */
+export interface UsageSummary {
+    readonly limits: ReadonlyArray<{
+        readonly key: string;
+        readonly label: string;
+        readonly current: number;
+        readonly max: number | null;
+    }>;
+}
+
+/** User addon item */
+export interface UserAddon {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly status: 'active' | 'expiring_soon' | 'expired';
+    readonly expiresAt?: string;
+    readonly price: number;
+    readonly currency: string;
+}
+
+/** Plan item for plan listing/selection */
+export interface PlanItem {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+    readonly description: string;
+    readonly prices: ReadonlyArray<{
+        readonly billingInterval: string;
+        readonly unitAmount: number;
+        readonly currency: string;
+    }>;
+    readonly features: readonly string[];
+    readonly isCurrent?: boolean;
+}
+
+// ─── Billing (Protected) ────────────────────────────────────────────────────
+
+/** Protected billing API endpoints for user dashboard */
+export const billingApi = {
+    /**
+     * Request a plan change.
+     * @param planId - Target plan identifier
+     * @param billingInterval - Billing interval (e.g. 'monthly', 'yearly')
+     */
+    changePlan({
+        planId,
+        billingInterval
+    }: {
+        planId: string;
+        billingInterval: string;
+    }): Promise<ApiResult<{ success: boolean }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/change-plan`,
+            body: { planId, billingInterval }
+        });
+    },
+
+    /**
+     * Cancel the current subscription.
+     * @param subscriptionId - Subscription identifier to cancel
+     */
+    cancelSubscription({
+        subscriptionId
+    }: {
+        subscriptionId: string;
+    }): Promise<ApiResult<{ success: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}`
+        });
+    },
+
+    /**
+     * Reactivate a cancelled or expired subscription.
+     * @param planId - Plan to reactivate with
+     */
+    reactivateSubscription({
+        planId
+    }: {
+        planId: string;
+    }): Promise<ApiResult<{ success: boolean }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/trial/reactivate-subscription`,
+            body: { planId }
+        });
+    },
+
+    /**
+     * List user invoices with optional pagination.
+     * @param params - Optional pagination parameters
+     */
+    getInvoices(params?: {
+        page?: number;
+        pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<InvoiceItem>>> {
+        return apiClient.getList({
+            path: `${PROTECTED}/billing/invoices`,
+            params
+        });
+    },
+
+    /**
+     * List user payments with optional pagination.
+     * @param params - Optional pagination parameters
+     */
+    getPayments(params?: {
+        page?: number;
+        pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<PaymentItem>>> {
+        return apiClient.getList({
+            path: `${PROTECTED}/billing/payments`,
+            params
+        });
+    },
+
+    /** Get usage summary for current plan limits */
+    getUsageSummary(): Promise<ApiResult<UsageSummary>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/usage`
+        });
+    },
+
+    /** Get the authenticated user's active addons */
+    getMyAddons(): Promise<ApiResult<{ addons: UserAddon[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/addons/my`
+        });
+    },
+
+    /**
+     * Cancel an active addon.
+     * @param addonId - Addon identifier to cancel
+     */
+    cancelAddon({
+        addonId
+    }: {
+        addonId: string;
+    }): Promise<ApiResult<{ success: boolean }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/addons/${addonId}/cancel`,
+            body: {}
+        });
+    },
+
+    /**
+     * Create a checkout session for purchasing a plan.
+     * @param planId - Plan to purchase
+     * @param billingInterval - Billing interval (e.g. 'monthly', 'yearly')
+     */
+    createCheckout({
+        planId,
+        billingInterval
+    }: {
+        planId: string;
+        billingInterval: string;
+    }): Promise<ApiResult<{ checkoutUrl: string }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/checkout`,
+            body: { planId, billingInterval }
+        });
+    },
+
+    /** List all available plans (public endpoint, no auth required) */
+    listPlans(): Promise<ApiResult<PaginatedResponse<PlanItem>>> {
+        return apiClient.getList({ path: `${BASE}/plans` });
     }
 };
 
