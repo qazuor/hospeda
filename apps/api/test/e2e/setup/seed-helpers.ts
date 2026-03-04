@@ -16,7 +16,8 @@ export async function createTestUser(overrides?: Partial<User>): Promise<User> {
 
     const timestamp = Date.now();
     const defaultData = {
-        clerkId: (overrides as Record<string, unknown>)?.clerkId || `test_clerk_${timestamp}`,
+        authProviderId:
+            (overrides as Record<string, unknown>)?.authProviderId || `test_auth_${timestamp}`,
         email:
             (overrides as Record<string, unknown>)?.email || `test-user-${timestamp}@example.com`,
         slug: overrides?.slug || `test-user-${timestamp}`,

@@ -29,7 +29,7 @@ const API_VERSION = '/api/v1';
 const BILLING_PATH = `${API_VERSION}/billing`;
 
 // Mock JWT token for testing
-// In production, this would be a real Clerk token
+// In production, this would be a real Better Auth token
 const AUTH_TOKEN = __ENV.AUTH_TOKEN || 'mock-jwt-token-for-load-testing';
 
 // =============================================================================

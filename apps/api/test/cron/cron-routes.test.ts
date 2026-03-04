@@ -268,7 +268,7 @@ describe('Cron Routes Integration Tests', () => {
 
         describe('1.2 Valid Authentication - Authorization Header', () => {
             it.skip('should accept request with valid Bearer token in Authorization header', async () => {
-                // Note: Skipped because Bearer tokens are validated as JWT format by Clerk middleware
+                // Note: Skipped because Bearer tokens are validated as JWT format by auth middleware
                 // Cron routes should use X-Cron-Secret header instead
                 // Arrange & Act
                 const response = await app.request('/api/v1/cron', {

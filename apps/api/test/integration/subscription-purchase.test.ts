@@ -15,7 +15,7 @@
  *
  * Tech Stack:
  * - Hono app (via initApp)
- * - Mocked Clerk auth (no real auth calls)
+ * - Mocked Better Auth (no real auth calls)
  * - Mocked QZPay billing (test-only subscriptions)
  * - Vitest (describe/it/expect patterns)
  */

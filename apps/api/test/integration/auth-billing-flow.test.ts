@@ -8,7 +8,7 @@
  * - Protected routes reject unauthenticated requests
  *
  * These tests validate the path that replaced the old /auth/sync
- * and /auth/webhook Clerk endpoints.
+ * and /auth/webhook endpoints.
  *
  * @module test/integration/auth-billing-flow
  */

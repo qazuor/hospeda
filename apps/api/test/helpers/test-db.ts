@@ -142,7 +142,7 @@ export async function seedTestData(
         .values({
             id: testUserId,
             slug: testSlug,
-            authProviderUserId: `clerk_test_${testUserId}`,
+            authProviderUserId: `better_auth_test_${testUserId}`,
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',
@@ -312,7 +312,7 @@ export async function createTestUser(
         .values({
             id: testUserId,
             slug: testSlug,
-            authProviderUserId: `clerk_test_${testUserId}`,
+            authProviderUserId: `better_auth_test_${testUserId}`,
             displayName: 'Test User',
             firstName: 'Test',
             lastName: 'User',

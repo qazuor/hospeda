@@ -5,7 +5,7 @@
  * Covers billing customer creation, trial setup, entitlement checks, and expiry behavior.
  *
  * Test Flow:
- * 1. Owner registers → Clerk webhook fires
+ * 1. Owner registers → auth webhook fires
  * 2. Billing customer auto-created (via billing-customer middleware)
  * 3. 14-day trial auto-started for Basico plan
  * 4. Owner gets trial entitlements (1 accommodation, 5 photos, etc.)
@@ -14,7 +14,7 @@
  *
  * Tech Stack:
  * - Hono app (via initApp)
- * - Mocked Clerk auth (no real auth calls)
+ * - Mocked Better Auth (no real auth calls)
  * - Mocked QZPay billing (test-only subscriptions)
  * - Vitest (describe/it/expect patterns)
  */
@@ -56,7 +56,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
      * Scenario 1: Owner Registration Flow
      *
      * When a new owner registers:
-     * - Clerk webhook creates user in DB
+     * - Auth webhook creates user in DB
      * - Billing customer is auto-created
      * - User role is assigned (HOST)
      */
@@ -64,14 +64,14 @@ describe('Owner Registration and Trial Activation E2E', () => {
         it('should register new owner user via auth sync', async () => {
             // Arrange
             const mockOwnerData = {
-                provider: 'clerk',
-                providerUserId: 'clerk_test_owner_123',
+                provider: 'better_auth',
+                providerUserId: 'ba_test_owner_123',
                 email: 'owner@hospeda.com',
                 firstName: 'Test',
                 lastName: 'Owner'
             };
 
-            // Act - POST to /auth/sync (simulates Clerk webhook)
+            // Act - POST to /auth/sync (simulates auth webhook)
             const response = await app.request('/api/v1/auth/sync', {
                 method: 'POST',
                 headers: {
@@ -113,8 +113,8 @@ describe('Owner Registration and Trial Activation E2E', () => {
         it('should assign HOST role to owner users', async () => {
             // Arrange - Mock user creation response
             const mockUserData = {
-                provider: 'clerk',
-                providerUserId: 'clerk_owner_456',
+                provider: 'better_auth',
+                providerUserId: 'ba_owner_456',
                 profile: {
                     role: 'HOST' // Owner role in DB
                 }

@@ -1,6 +1,6 @@
 /**
  * Authentication integration tests
- * Tests Clerk authentication and actor system
+ * Tests Better Auth authentication and actor system
  */
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
