@@ -9,7 +9,16 @@ import type {
 import { AuthProviderEnum } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
-import { boolean, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import { LifecycleStatusPgEnum, RolePgEnum, VisibilityPgEnum } from '../enums.dbschema.ts';
@@ -95,6 +104,23 @@ export const users = pgTable(
         uniqueAuthProvider: uniqueIndex('users_auth_provider_user_id_key').on(
             table.authProvider,
             table.authProviderUserId
+        ),
+        /** Index on role for filtering users by role */
+        users_role_idx: index('users_role_idx').on(table.role),
+        /** Index on lifecycleState for filtering users by state */
+        users_lifecycleState_idx: index('users_lifecycleState_idx').on(table.lifecycleState),
+        /** Index on visibility for filtering users by visibility */
+        users_visibility_idx: index('users_visibility_idx').on(table.visibility),
+        /** Index on deletedAt for soft delete filtering (very common) */
+        users_deletedAt_idx: index('users_deletedAt_idx').on(table.deletedAt),
+        /** Index on createdAt for sorting by creation date */
+        users_createdAt_idx: index('users_createdAt_idx').on(table.createdAt),
+        /** Composite index for listing active users by role */
+        users_role_deletedAt_idx: index('users_role_deletedAt_idx').on(table.role, table.deletedAt),
+        /** Composite index for listing active users by lifecycle state */
+        users_lifecycleState_deletedAt_idx: index('users_lifecycleState_deletedAt_idx').on(
+            table.lifecycleState,
+            table.deletedAt
         )
     })
 );

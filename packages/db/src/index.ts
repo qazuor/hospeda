@@ -8,7 +8,9 @@ export {
     desc,
     asc,
     count,
+    gt,
     gte,
+    lt,
     lte,
     isNull,
     isNotNull

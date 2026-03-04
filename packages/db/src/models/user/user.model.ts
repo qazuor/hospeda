@@ -1,5 +1,5 @@
 import type { User } from '@repo/schemas';
-import { type SQL, and, count, eq, ilike, or } from 'drizzle-orm';
+import { type SQL, and, count, ilike, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
@@ -158,72 +158,65 @@ export class UserModel extends BaseModel<User> {
             finalWhereClause = searchClause;
         }
 
-        // Get users with pagination if needed
-        let usersData: User[];
+        // Use correlated subqueries to get counts in a single query instead of N+1
+        const accommodationsCountSq = sql<number>`(
+            SELECT count(*)::int FROM ${accommodations}
+            WHERE ${accommodations.createdById} = ${users.id}
+        )`.as('accommodations_count');
+
+        const eventsCountSq = sql<number>`(
+            SELECT count(*)::int FROM ${events}
+            WHERE ${events.authorId} = ${users.id}
+        )`.as('events_count');
+
+        const postsCountSq = sql<number>`(
+            SELECT count(*)::int FROM ${posts}
+            WHERE ${posts.authorId} = ${users.id}
+        )`.as('posts_count');
+
+        const baseQuery = db
+            .select({
+                user: users,
+                accommodationsCount: accommodationsCountSq,
+                eventsCount: eventsCountSq,
+                postsCount: postsCountSq
+            })
+            .from(users)
+            .where(finalWhereClause)
+            .$dynamic();
+
+        let rows: Array<{
+            user: typeof users.$inferSelect;
+            accommodationsCount: number;
+            eventsCount: number;
+            postsCount: number;
+        }>;
+
         if (isPaginated) {
             const offset = (page - 1) * pageSize;
-            if (finalWhereClause) {
-                usersData = (await db
-                    .select()
-                    .from(users)
-                    .where(finalWhereClause)
-                    .limit(pageSize)
-                    .offset(offset)) as unknown as User[];
-            } else {
-                usersData = (await db
-                    .select()
-                    .from(users)
-                    .limit(pageSize)
-                    .offset(offset)) as unknown as User[];
-            }
+            rows = await baseQuery.limit(pageSize).offset(offset);
         } else {
-            if (finalWhereClause) {
-                usersData = (await db
-                    .select()
-                    .from(users)
-                    .where(finalWhereClause)) as unknown as User[];
-            } else {
-                usersData = (await db.select().from(users)) as unknown as User[];
-            }
+            rows = await baseQuery;
         }
 
-        // Calculate counts for each user individually
-        const itemsWithCounts = await Promise.all(
-            usersData.map(async (user) => {
-                const [accommodationsCountResult, eventsCountResult, postsCountResult] =
-                    await Promise.all([
-                        db
-                            .select({ count: count() })
-                            .from(accommodations)
-                            .where(eq(accommodations.createdById, user.id)),
-                        db
-                            .select({ count: count() })
-                            .from(events)
-                            .where(eq(events.authorId, user.id)),
-                        db.select({ count: count() }).from(posts).where(eq(posts.authorId, user.id))
-                    ]);
-
-                return {
-                    ...user,
-                    accommodationsCount: accommodationsCountResult[0]?.count || 0,
-                    eventsCount: eventsCountResult[0]?.count || 0,
-                    postsCount: postsCountResult[0]?.count || 0
-                };
-            })
-        );
+        const itemsWithCounts: UserWithCounts[] = rows.map((row) => ({
+            ...(row.user as unknown as User),
+            accommodationsCount: row.accommodationsCount ?? 0,
+            eventsCount: row.eventsCount ?? 0,
+            postsCount: row.postsCount ?? 0
+        }));
 
         // Get total count for pagination
         let total = itemsWithCounts.length;
         if (isPaginated) {
-            const countQuery = db
+            const countResult = await db
                 .select({ count: count(users.id) })
                 .from(users)
                 .where(finalWhereClause);
 
-            const countResult = await countQuery;
             total = countResult[0]?.count || 0;
         }
 
-        return { items: itemsWithCounts as UserWithCounts[], total };
+        return { items: itemsWithCounts, total };
     }
 }

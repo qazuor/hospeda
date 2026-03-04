@@ -1,4 +1,5 @@
 import type { AccommodationAmenityRelation } from '@repo/schemas';
+import { count, inArray } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
@@ -11,6 +12,51 @@ export class RAccommodationAmenityModel extends BaseModel<AccommodationAmenityRe
 
     protected getTableName(): string {
         return 'rAccommodationAmenities';
+    }
+
+    /**
+     * Counts accommodations grouped by amenity ID for a batch of amenity IDs.
+     * Returns a map of amenityId -> count. Executes a single query instead of N+1.
+     * @param amenityIds - Array of amenity IDs to count accommodations for
+     * @returns Promise resolving to a Map of amenityId to accommodation count
+     */
+    async countAccommodationsByAmenityIds(
+        amenityIds: readonly string[]
+    ): Promise<Map<string, number>> {
+        if (amenityIds.length === 0) {
+            return new Map();
+        }
+        const db = getDb();
+        try {
+            const rows = await db
+                .select({
+                    amenityId: rAccommodationAmenity.amenityId,
+                    count: count()
+                })
+                .from(rAccommodationAmenity)
+                .where(inArray(rAccommodationAmenity.amenityId, amenityIds as string[]))
+                .groupBy(rAccommodationAmenity.amenityId);
+
+            const result = new Map<string, number>();
+            for (const row of rows) {
+                result.set(row.amenityId, row.count);
+            }
+            logQuery(this.entityName, 'countAccommodationsByAmenityIds', { amenityIds }, result);
+            return result;
+        } catch (error) {
+            logError(
+                this.entityName,
+                'countAccommodationsByAmenityIds',
+                { amenityIds },
+                error as Error
+            );
+            throw new DbError(
+                this.entityName,
+                'countAccommodationsByAmenityIds',
+                { amenityIds },
+                (error as Error).message
+            );
+        }
     }
 
     /**

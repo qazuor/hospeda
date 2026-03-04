@@ -69,8 +69,12 @@ describe('BaseModel', () => {
                             // count query
                             return Promise.resolve([{ count: '1' }]);
                         }
-                        // items query
-                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                        // items query - $dynamic() returns the query builder itself
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
                     }
                 })
             })
@@ -160,7 +164,11 @@ describe('BaseModel', () => {
                             return Promise.resolve([{ count: '1' }]);
                         }
                         // items query
-                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
                     }
                 })
             })
@@ -179,7 +187,11 @@ describe('BaseModel', () => {
                             return Promise.resolve([{ count: '1' }]);
                         }
                         // items query
-                        return { limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }) };
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
                     }
                 })
             })
@@ -223,7 +235,11 @@ describe('BaseModel', () => {
                             return Promise.resolve([{ count: '0' }]);
                         }
                         // items query returns empty array when no results
-                        return { limit: () => ({ offset: () => Promise.resolve([]) }) };
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
                     }
                 })
             })
@@ -314,7 +330,11 @@ describe('BaseModel', () => {
                             return Promise.resolve([{ count: '1' }]);
                         }
                         // items query
-                        return { limit: () => ({ offset: () => Promise.resolve([{ id: 123 }]) }) };
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([{ id: 123 }]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
                     }
                 })
             })
@@ -427,11 +447,13 @@ describe('BaseModel', () => {
                                 return Promise.resolve([{ count: '1' }]);
                             }
                             // items query
-                            return {
+                            const qb = {
                                 limit: () => ({
                                     offset: () => Promise.resolve([{ id: '1', name: 'test' }])
-                                })
+                                }),
+                                $dynamic: () => qb
                             };
+                            return qb;
                         }
                     })
                 })
@@ -458,9 +480,11 @@ describe('BaseModel', () => {
                                 return Promise.resolve([{ count: '1' }]);
                             }
                             // items query
-                            return {
-                                limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) })
+                            const qb = {
+                                limit: () => ({ offset: () => Promise.resolve([{ id: '1' }]) }),
+                                $dynamic: () => qb
                             };
+                            return qb;
                         }
                     })
                 })

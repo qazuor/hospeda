@@ -1,5 +1,6 @@
 import type {
     Accommodation,
+    AccommodationRatingInput,
     AccommodationSearchInput,
     DestinationSummary,
     UserSummary
@@ -265,15 +266,14 @@ export class AccommodationModel extends BaseModel<Accommodation> {
      */
     async updateStats(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number; rating: unknown }
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput }
     ): Promise<void> {
         await this.update(
             { id: accommodationId },
             {
                 reviewsCount: stats.reviewsCount,
-                averageRating: stats.averageRating
-                // TODO: rating needs to be handled separately as it's not part of the main accommodation entity
-                // rating: stats.rating
+                averageRating: stats.averageRating,
+                rating: stats.rating
             }
         );
     }
