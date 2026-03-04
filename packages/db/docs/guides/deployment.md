@@ -1064,7 +1064,7 @@ Run migrations before app deployment:
 
 Drizzle doesn't support automatic rollback, but you can manually revert.
 
-**Approach 1: Create Reverse Migration**
+#### Approach 1: Create Reverse Migration
 
 ```bash
 # 1. Create new migration that reverses changes
@@ -1084,7 +1084,7 @@ pnpm db:generate
 pnpm db:migrate
 ```
 
-**Approach 2: Restore from Backup**
+#### Approach 2: Restore From Backup
 
 ```bash
 # 1. Identify backup point (before migration)
@@ -1093,7 +1093,7 @@ neonctl backups list --project-id proj-cool-sky-12345
 # 2. Restore from backup (see Backup & Recovery section)
 ```
 
-**Approach 3: Manual SQL**
+#### Approach 3: Manual SQL
 
 ```bash
 # Connect to database
