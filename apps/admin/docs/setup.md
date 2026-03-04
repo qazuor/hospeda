@@ -55,8 +55,8 @@ cp apps/admin/.env.example apps/admin/.env
 Edit `apps/admin/.env`:
 
 ```env
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+# Better Auth Authentication
+VITE_BETTER_AUTH_URL=pk_test_...
 
 # API Configuration
 VITE_API_URL=http://localhost:3001
@@ -266,13 +266,13 @@ pnpm db:seed
 
 ---
 
-### Authentication Setup (Clerk)
+### Authentication Setup (Better Auth)
 
-The Admin Dashboard uses **Clerk** for authentication.
+The Admin Dashboard uses **Better Auth** for authentication.
 
-#### 1. Create Clerk Application
+#### 1. Create Better Auth Application
 
-1. Go to [Clerk Dashboard](https://dashboard.clerk.com/)
+1. Go to [Better Auth Dashboard](<https://Drizzle> Studio (pnpm db:studio)/)
 2. Sign up/Sign in
 3. Click "Add application"
 4. Name it "Hospeda Admin (Dev)"
@@ -280,21 +280,21 @@ The Admin Dashboard uses **Clerk** for authentication.
 
 #### 2. Get API Keys
 
-From Clerk Dashboard:
+From Better Auth Dashboard:
 
 1. Go to **API Keys** section
 2. Copy **Publishable Key**
 3. Paste in `apps/admin/.env`:
 
 ```env
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_BETTER_AUTH_URL=pk_test_...
 ```
 
 **Important**: Use `pk_test_` for development, `pk_live_` for production.
 
 #### 3. Configure Allowed Domains
 
-In Clerk Dashboard:
+In Better Auth Dashboard:
 
 1. Go to **Domains** section
 2. Add `http://localhost:3000` as allowed origin
@@ -355,9 +355,9 @@ Create `apps/admin/.env`:
 
 ```env
 # ============================================================================
-# CLERK AUTHENTICATION
+# BETTER AUTH AUTHENTICATION
 # ============================================================================
-VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+VITE_BETTER_AUTH_URL=pk_test_...
 
 # ============================================================================
 # API CONFIGURATION
@@ -387,9 +387,9 @@ Create `.env` in project root:
 DATABASE_URL=postgresql://localhost:5432/hospeda
 
 # ============================================================================
-# CLERK (Server-side keys)
+# BETTER AUTH (Server-side keys)
 # ============================================================================
-CLERK_SECRET_KEY=sk_test_...
+HOSPEDA_BETTER_AUTH_SECRET=sk_test_...
 
 # ============================================================================
 # OPTIONAL: THIRD-PARTY INTEGRATIONS
@@ -550,7 +550,7 @@ PORT=3001 pnpm dev
    psql $DATABASE_URL
    ```
 
-### Clerk Auth Not Working
+### Better Auth Auth Not Working
 
 **Problem**: "Invalid publishable key"
 
@@ -564,10 +564,10 @@ PORT=3001 pnpm dev
 1. **Check environment variable**:
 
    ```bash
-   cat apps/admin/.env | grep CLERK
+   cat apps/admin/.env | grep BETTER_AUTH
    ```
 
-1. **Verify in Clerk Dashboard**:
+1. **Verify in Better Auth Dashboard**:
 
    - Go to API Keys section
    - Copy **Publishable Key** (not Secret Key)
@@ -618,7 +618,7 @@ Run this checklist to ensure everything is working:
 - [ ] Database schema applied (`pnpm db:push`)
 - [ ] Database seeded (`pnpm db:seed`)
 - [ ] Environment variables set (`.env` files)
-- [ ] Clerk application created
+- [ ] Better Auth application created
 - [ ] API server runs (`cd apps/api && pnpm dev`)
 - [ ] Admin dashboard runs (`cd apps/admin && pnpm dev`)
 - [ ] Can sign in to admin dashboard

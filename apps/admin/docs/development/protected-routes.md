@@ -6,7 +6,7 @@ Complete guide to route protection patterns in the Hospeda Admin Dashboard.
 
 ## 📖 Overview
 
-Route protection ensures that only authenticated and authorized users can access specific pages in your application. This guide covers all patterns for implementing route protection with TanStack Router and Clerk.
+Route protection ensures that only authenticated and authorized users can access specific pages in your application. This guide covers all patterns for implementing route protection with TanStack Router and Better Auth.
 
 **What you'll learn:**
 
@@ -35,7 +35,7 @@ Route protection ensures that only authenticated and authorized users can access
 ```tsx
 // src/routes/_authed/dashboard.tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 
 export const Route = createFileRoute('/_authed/dashboard')({
   beforeLoad: async () => {
@@ -122,7 +122,7 @@ export const Route = createFileRoute('/protected')({
 
 ```tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 import { createServerFn } from '@tanstack/react-start';
 import { getWebRequest } from '@tanstack/react-start/server';
 
@@ -206,7 +206,7 @@ Protect all child routes with a layout:
 // src/routes/_authed.tsx
 import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 import { createServerFn } from '@tanstack/react-start';
 import { getWebRequest } from '@tanstack/react-start/server';
 
@@ -358,7 +358,7 @@ beforeLoad: async () => {
 ```tsx
 // src/routes/auth/signin.tsx
 import { createFileRoute } from '@tanstack/react-router';
-import { SignIn } from '@clerk/tanstack-react-start';
+import { SignIn } from '@repo/auth-ui';
 import { z } from 'zod';
 
 const searchSchema = z.object({
@@ -969,7 +969,7 @@ function ProtectedPage() {
 
 - **[TanStack Router - beforeLoad](https://tanstack.com/router/latest/docs/framework/react/guide/route-trees#beforeload)** - Official docs
 - **[TanStack Router - Redirects](https://tanstack.com/router/latest/docs/framework/react/guide/navigation#redirects)** - Redirect patterns
-- **[Clerk Server-Side](https://clerk.com/docs/backend-requests/handling/nodejs)** - Server-side auth
+- **[Better Auth Server-Side](https://better-auth.com/docs/backend-requests/handling/nodejs)** - Server-side auth
 
 ### Internal Resources
 

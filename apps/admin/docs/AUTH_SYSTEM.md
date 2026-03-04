@@ -51,7 +51,7 @@ interface AuthState {
     isLoading: boolean;
     isAuthenticated: boolean;
     user: UserSession | null;
-    clerkUser: any;
+    authUser: unknown;
     error: string | null;
 }
 
@@ -67,7 +67,7 @@ interface AuthContextValue extends AuthState {
 - Session storage with 5-minute TTL
 - Automatic session expiration handling
 - Smart refresh logic
-- Integration with Clerk authentication
+- Integration with Better Auth authentication
 - Error handling and retry logic
 
 ### **2. Optimized AuthGate (`apps/admin/src/routes/__root.tsx`)**
@@ -115,7 +115,7 @@ const initials = useUserInitials();
 
 - `hospeda_user_session`: User session data
 - `hospeda_session_timestamp`: Session creation time
-- `hospeda_clerk_state`: Clerk authentication state
+- `hospeda_auth_state`: Better Auth authentication state
 
 ### **TTL Management:**
 
@@ -253,11 +253,11 @@ function AdminOnlyComponent() {
 
 - Data cleared on browser close
 - 5-minute TTL prevents stale data
-- No sensitive data stored (tokens handled by Clerk)
+- No sensitive data stored (tokens handled by Better Auth)
 
 ### **Authentication Flow:**
 
-- Clerk handles all token management
+- Better Auth handles all token management
 - Backend validates all requests
 - Frontend only stores user metadata
 

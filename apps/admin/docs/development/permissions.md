@@ -14,7 +14,7 @@ The admin dashboard implements **Role-Based Access Control (RBAC)** to manage us
 - Role definitions and hierarchy
 - Permission checking in components
 - Permission enforcement in API routes
-- Using Clerk organizations and roles
+- Using Better Auth organizations and roles
 - Custom permission hooks
 - Conditional rendering based on permissions
 - Best practices for permission management
@@ -22,7 +22,7 @@ The admin dashboard implements **Role-Based Access Control (RBAC)** to manage us
 **Prerequisites:**
 
 - Read [Authentication Guide](./authentication.md)
-- Understanding of Clerk authentication
+- Understanding of Better Auth authentication
 - Basic knowledge of TypeScript
 - Familiarity with React hooks
 
@@ -33,7 +33,7 @@ The admin dashboard implements **Role-Based Access Control (RBAC)** to manage us
 ### Check User Role
 
 ```tsx
-import { useAuth } from '@clerk/tanstack-react-start';
+import { useAuth } from '@repo/auth-ui';
 
 export function MyComponent() {
   const { sessionClaims } = useAuth();
@@ -300,7 +300,7 @@ Create a custom hook for permission checks:
 
 ```tsx
 // src/hooks/use-permissions.ts
-import { useAuth } from '@clerk/tanstack-react-start';
+import { useAuth } from '@repo/auth-ui';
 
 type Role = 'admin' | 'manager' | 'editor' | 'viewer';
 type Permission = string;
@@ -675,7 +675,7 @@ export function AccommodationActions() {
 ```tsx
 // src/routes/_authed/_admin.tsx
 import { createFileRoute, redirect, Outlet } from '@tanstack/react-router';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 import { createServerFn } from '@tanstack/react-start';
 import { getWebRequest } from '@tanstack/react-start/server';
 
@@ -728,7 +728,7 @@ src/routes/_authed/_admin/
 ```tsx
 // src/routes/_authed/accommodations/$id.edit.tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 
 export const Route = createFileRoute('/_authed/accommodations/$id/edit')({
   beforeLoad: async () => {
@@ -765,7 +765,7 @@ export const Route = createFileRoute('/_authed/accommodations/$id/edit')({
 ```tsx
 // src/features/accommodations/api.ts
 import { createServerFn } from '@tanstack/react-start';
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 import { getWebRequest } from '@tanstack/react-start/server';
 
 export const deleteAccommodation = createServerFn({ method: 'POST' })
@@ -796,7 +796,7 @@ export const deleteAccommodation = createServerFn({ method: 'POST' })
 
 ```tsx
 // src/lib/permission-middleware.ts
-import { getAuth } from '@clerk/tanstack-react-start/server';
+import { getAuth } from '@repo/auth-ui/server';
 import { getWebRequest } from '@tanstack/react-start/server';
 
 type Role = 'admin' | 'manager' | 'editor' | 'viewer';
@@ -984,26 +984,26 @@ export function ProtectedAction() {
 
 **Symptom:** All permission checks fail even for admins
 
-**Cause:** Role not set in Clerk session claims
+**Cause:** Role not set in Better Auth session claims
 
 **Solution:**
 
-1. Configure session claims in Clerk Dashboard
+1. Configure session claims in Better Auth Dashboard
 2. Add role to user metadata:
 
 ```typescript
 // Set role when creating user
-await clerkClient.users.updateUserMetadata(userId, {
+await authClient.users.updateUserMetadata(userId, {
   publicMetadata: {
     role: 'admin',
   },
 });
 ```
 
-1. Configure Clerk to include role in session:
+1. Configure Better Auth to include role in session:
 
 ```json
-// Clerk Dashboard → Sessions → Customize session token
+// Better Auth Dashboard → Sessions → Customize session token
 {
   "role": "{{user.public_metadata.role}}"
 }
@@ -1019,8 +1019,8 @@ await clerkClient.users.updateUserMetadata(userId, {
 
 ```bash
 # Verify environment variables in production
-CLERK_SECRET_KEY=sk_live_...  # Not sk_test_!
-VITE_CLERK_PUBLISHABLE_KEY=pk_live_...  # Not pk_test_!
+HOSPEDA_BETTER_AUTH_SECRET=sk_live_...  # Not sk_test_!
+VITE_BETTER_AUTH_URL=pk_live_...  # Not pk_test_!
 ```
 
 ### Issue: "UI shows button but API rejects action"
@@ -1056,9 +1056,9 @@ export function usePermissions() {
 
 ### Official Documentation
 
-- **[Clerk Roles & Permissions](https://clerk.com/docs/organizations/roles-permissions)** - Official guide
-- **[Clerk Organizations](https://clerk.com/docs/organizations/overview)** - Organization-based permissions
-- **[Session Claims](https://clerk.com/docs/backend-requests/making/custom-session-token)** - Custom session data
+- **[Better Auth Roles & Permissions](https://better-auth.com/docs/organizations/roles-permissions)** - Official guide
+- **[Better Auth Organizations](https://better-auth.com/docs/organizations/overview)** - Organization-based permissions
+- **[Session Claims](https://better-auth.com/docs/backend-requests/making/custom-session-token)** - Custom session data
 
 ### Internal Resources
 

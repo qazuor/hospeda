@@ -16,7 +16,7 @@ Welcome to the **Hospeda Admin Dashboard** documentation! This admin application
 - 📝 **TanStack Form** - Type-safe form handling
 - 📊 **TanStack Table** - Feature-rich data tables
 - 🎨 **Shadcn UI** - Beautiful, accessible components
-- 🔐 **Clerk** - Complete authentication solution
+- 🔐 **Better Auth** - Complete authentication solution
 - 🎯 **TypeScript** - End-to-end type safety
 
 ---
@@ -62,7 +62,7 @@ For developers building features:
 - **[Forms](./development/forms.md)** - TanStack Form patterns
 - **[Tables](./development/tables.md)** - TanStack Table patterns
 - **[Data Fetching](./development/queries.md)** - TanStack Query (React Query)
-- **[Authentication](./development/authentication.md)** - Clerk integration
+- **[Authentication](./development/authentication.md)** - Better Auth integration
 - **[UI Components](./development/components.md)** - Shadcn UI & custom components
 - **[State Management](./development/state-management.md)** - Client & server state
 - **[Testing](./development/testing.md)** - Unit, integration, e2e tests
@@ -159,7 +159,7 @@ pnpm format
 
 **Authentication:**
 
-- **Clerk**: User authentication, session management
+- **Better Auth**: User authentication, session management
 - Role-based access control
 - Protected routes
 
@@ -259,8 +259,8 @@ test/
 ### Environment Variables
 
 ```env
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_...
+# Better Auth Authentication
+VITE_BETTER_AUTH_URL=pk_...
 
 # API Configuration
 VITE_API_URL=http://localhost:3001
@@ -292,7 +292,7 @@ VITE_APP_NAME=Hospeda Admin
 ### Related Technologies
 
 - **[React 19 Docs](https://react.dev)** - React fundamentals
-- **[Clerk Docs](https://clerk.com/docs)** - Authentication
+- **[Better Auth Docs](https://better-auth.com/docs)** - Authentication
 - **[Shadcn UI](https://ui.shadcn.com/)** - UI components
 - **[Tailwind CSS](https://tailwindcss.com/)** - Styling
 
@@ -335,7 +335,7 @@ VITE_APP_NAME=Hospeda Admin
 
 1. **Never expose secrets** - Use env variables
 2. **Validate all inputs** - Client and server-side
-3. **Use Clerk hooks** - For auth checks
+3. **Use Better Auth hooks** - For auth checks
 4. **Sanitize user content** - Prevent XSS
 5. **HTTPS only** - In production
 
@@ -365,13 +365,13 @@ pnpm typecheck
 pnpm dev:clean
 ```
 
-**Clerk auth not working:**
+**Better Auth auth not working:**
 
 ```bash
 # Verify environment variables
-cat .env | grep CLERK
+cat .env | grep BETTER_AUTH
 
-# Check Clerk dashboard for correct keys
+# Check Better Auth dashboard for correct keys
 ```
 
 **Build fails:**

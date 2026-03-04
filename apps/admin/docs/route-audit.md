@@ -155,7 +155,7 @@
 
 ---
 
-## Analysis: Placeholder & Stub Pages
+## Analysis: Placeholder and Stub Pages
 
 These routes exist but have incomplete or placeholder functionality:
 
@@ -186,7 +186,7 @@ Currently, only `/dashboard` uses the `.lazy.tsx` pattern for code splitting. Ot
 
 ---
 
-## Analysis: Permission & Auth Gaps
+## Analysis: Permission and Auth Gaps
 
 | # | Issue | Routes Affected | Severity |
 |---|-------|----------------|----------|

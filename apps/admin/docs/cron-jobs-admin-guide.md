@@ -1,74 +1,74 @@
-# Guía del Panel de Administración de Cron Jobs
+# Cron Jobs Admin Panel Guide
 
-## Descripción General
+## Overview
 
-El panel de administración de cron jobs permite gestionar y monitorear las tareas programadas del sistema desde la interfaz de administración de Hospeda.
+The cron jobs admin panel allows managing and monitoring scheduled tasks from the Hospeda administration interface.
 
-## Ubicación
+## Location
 
-- **Ruta**: `/billing/cron`
-- **Menú**: Facturación → Tareas Programadas
+- **Route**: `/billing/cron`
+- **Menu**: Billing - Scheduled Tasks
 
-## Características
+## Features
 
-### 1. Visualización de Jobs
+### 1. Job Visualization
 
-Muestra todos los cron jobs registrados en el sistema con:
+Displays all registered cron jobs in the system with:
 
-- **Nombre**: Identificador único del job
-- **Descripción**: Explicación de qué hace el job
-- **Programación**: Cuándo se ejecuta (ej: "Diariamente a medianoche")
-- **Estado**: Activo o Deshabilitado
+- **Name**: Unique job identifier
+- **Description**: Explanation of what the job does
+- **Schedule**: When it runs (e.g., "Daily at midnight")
+- **Status**: Active or Disabled
 
-### 2. Estadísticas del Sistema
+### 2. System Statistics
 
-Panel con métricas clave:
+Panel with key metrics:
 
-- Total de tareas programadas
-- Tareas activas
-- Tareas deshabilitadas
+- Total scheduled tasks
+- Active tasks
+- Disabled tasks
 
-### 3. Ejecución Manual
+### 3. Manual Execution
 
-Para cada job activo, se puede:
+For each active job, you can:
 
-- **Ejecutar manualmente**: Botón "Ejecutar ahora"
-- **Modo Dry Run**: Switch para ejecutar en modo prueba sin hacer cambios reales
-- **Ver resultados**: Información detallada después de la ejecución
+- **Execute manually**: "Run now" button
+- **Dry Run mode**: Toggle to run in test mode without making real changes
+- **View results**: Detailed information after execution
 
-### 4. Resultados de Ejecución
+### 4. Execution Results
 
-Después de ejecutar un job, se muestra:
+After running a job, the following is displayed:
 
-- Estado: Éxito o Error
-- Mensaje descriptivo
-- Registros procesados
-- Errores encontrados
-- Duración en milisegundos
-- Modo de ejecución (Prueba o Real)
+- Status: Success or Error
+- Descriptive message
+- Records processed
+- Errors found
+- Duration in milliseconds
+- Execution mode (Test or Real)
 
-### 5. Auto-actualización
+### 5. Auto-refresh
 
-- La lista de jobs se actualiza automáticamente cada minuto
-- Indicador visual cuando se está actualizando
+- The job list refreshes automatically every minute
+- Visual indicator when refreshing
 
-## Estructura de Archivos
+## File Structure
 
 ```
 apps/admin/src/features/cron-jobs/
 ├── components/
-│   ├── CronJobCard.tsx        # Tarjeta individual de job
-│   └── CronJobsPanel.tsx      # Panel principal
+│   ├── CronJobCard.tsx        # Individual job card
+│   └── CronJobsPanel.tsx      # Main panel
 ├── hooks.ts                   # TanStack Query hooks
-├── types.ts                   # Definiciones TypeScript
+├── types.ts                   # TypeScript definitions
 └── index.ts                   # Barrel exports
 ```
 
-## API Endpoints Utilizados
+## API Endpoints Used
 
 ### GET /api/v1/cron
 
-Lista todos los cron jobs registrados.
+Lists all registered cron jobs.
 
 **Response:**
 
@@ -85,11 +85,11 @@ Lista todos los cron jobs registrados.
 
 ### POST /api/v1/cron/:jobName
 
-Ejecuta un cron job manualmente.
+Executes a cron job manually.
 
 **Query params:**
 
-- `dryRun` (optional): Si es "true", ejecuta en modo prueba
+- `dryRun` (optional): If "true", runs in test mode
 
 **Response:**
 
@@ -109,7 +109,7 @@ Ejecuta un cron job manualmente.
 }
 ```
 
-## Tipos TypeScript
+## TypeScript Types
 
 ### CronJob
 
@@ -137,24 +137,24 @@ interface CronJobResult {
 }
 ```
 
-## Hooks Disponibles
+## Available Hooks
 
 ### useCronJobsQuery()
 
-Obtiene la lista de todos los cron jobs.
+Fetches the list of all cron jobs.
 
 ```typescript
 const { data, isLoading, error } = useCronJobsQuery();
 ```
 
-**Características:**
+**Features:**
 
-- Stale time: 5 minutos
-- Refetch interval: 1 minuto (auto-refresh)
+- Stale time: 5 minutes
+- Refetch interval: 1 minute (auto-refresh)
 
 ### useTriggerCronJobMutation()
 
-Ejecuta un cron job manualmente.
+Executes a cron job manually.
 
 ```typescript
 const { mutate, isPending } = useTriggerCronJobMutation();
@@ -169,11 +169,11 @@ mutate(
 );
 ```
 
-## Componentes
+## Components
 
 ### CronJobCard
 
-Tarjeta que muestra un cron job individual con capacidad de ejecución manual.
+Card that displays an individual cron job with manual execution capability.
 
 **Props:**
 
@@ -183,88 +183,88 @@ interface CronJobCardProps {
 }
 ```
 
-**Características:**
+**Features:**
 
-- Muestra información del job
-- Switch para modo Dry Run
-- Botón de ejecución manual
-- Muestra último resultado
-- Estados de loading y error
+- Displays job information
+- Dry Run mode toggle
+- Manual execution button
+- Shows last result
+- Loading and error states
 
 ### CronJobsPanel
 
-Panel principal que muestra todos los jobs y estadísticas.
+Main panel that displays all jobs and statistics.
 
-**Características:**
+**Features:**
 
-- Estadísticas del sistema
-- Lista de todos los jobs
-- Auto-refresh con indicador
-- Estados de loading, error y empty
+- System statistics
+- List of all jobs
+- Auto-refresh with indicator
+- Loading, error, and empty states
 
-## Permisos
+## Permissions
 
-El acceso a esta página está protegido por la autenticación del admin. Solo usuarios autenticados con acceso al panel de administración pueden ver y usar esta funcionalidad.
+Access to this page is protected by admin authentication. Only authenticated users with admin panel access can view and use this functionality.
 
-## Notas Importantes
+## Important Notes
 
-1. **Dry Run**: Siempre está activado por defecto para evitar cambios accidentales
-2. **Jobs deshabilitados**: No se pueden ejecutar manualmente
-3. **Auto-refresh**: La lista se actualiza sola, no es necesario recargar la página
-4. **Errores**: Se muestran de forma clara con mensajes descriptivos
+1. **Dry Run**: Always enabled by default to prevent accidental changes
+2. **Disabled jobs**: Cannot be executed manually
+3. **Auto-refresh**: The list updates automatically; no need to reload the page
+4. **Errors**: Displayed clearly with descriptive messages
 
-## Casos de Uso
+## Use Cases
 
-### Ejecutar job en modo prueba
+### Run a job in test mode
 
-1. Ir a `/billing/cron`
-2. Encontrar el job deseado
-3. Verificar que "Modo de prueba (Dry Run)" esté activado
-4. Click en "Ejecutar ahora"
-5. Ver resultados en la tarjeta
+1. Go to `/billing/cron`
+2. Find the desired job
+3. Verify that "Test mode (Dry Run)" is enabled
+4. Click "Run now"
+5. View results on the card
 
-### Ejecutar job en modo real
+### Run a job in real mode
 
-1. Ir a `/billing/cron`
-2. Encontrar el job deseado
-3. Desactivar el switch "Modo de prueba (Dry Run)"
-4. Click en "Ejecutar ahora"
-5. Confirmar que entiendes que esto hará cambios reales
-6. Ver resultados en la tarjeta
+1. Go to `/billing/cron`
+2. Find the desired job
+3. Disable the "Test mode (Dry Run)" toggle
+4. Click "Run now"
+5. Confirm that you understand this will make real changes
+6. View results on the card
 
-### Monitorear estado del sistema
+### Monitor system status
 
-1. Ir a `/billing/cron`
-2. Revisar las tarjetas de estadísticas en la parte superior
-3. Ver qué jobs están activos/deshabilitados
-4. La página se actualiza automáticamente cada minuto
+1. Go to `/billing/cron`
+2. Review the statistics cards at the top
+3. See which jobs are active/disabled
+4. The page refreshes automatically every minute
 
 ## Troubleshooting
 
-### El job no aparece en la lista
+### Job does not appear in the list
 
-- Verificar que el job esté registrado en `apps/api/src/cron/registry.ts`
-- Verificar que el servidor API esté corriendo
-- Revisar la consola del navegador para errores
+- Verify that the job is registered in `apps/api/src/cron/registry.ts`
+- Verify that the API server is running
+- Check the browser console for errors
 
-### No se puede ejecutar un job
+### Cannot execute a job
 
-- Verificar que el job esté habilitado
-- Verificar que la API esté respondiendo
-- Revisar permisos de autenticación
+- Verify that the job is enabled
+- Verify that the API is responding
+- Check authentication permissions
 
-### Los resultados no aparecen
+### Results are not showing
 
-- Verificar la respuesta de la API en Network tab
-- Revisar errores en la consola
-- Verificar que el endpoint `/api/v1/cron/:jobName` esté funcionando
+- Check the API response in the Network tab
+- Review errors in the console
+- Verify that the `/api/v1/cron/:jobName` endpoint is working
 
-## Desarrollo Futuro
+## Future Development
 
-Posibles mejoras:
+Possible improvements:
 
-- Historial de ejecuciones
-- Gráficos de performance
-- Notificaciones de errores
-- Programación dinámica de jobs
-- Logs detallados por ejecución
+- Execution history
+- Performance charts
+- Error notifications
+- Dynamic job scheduling
+- Detailed per-execution logs

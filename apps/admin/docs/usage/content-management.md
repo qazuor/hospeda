@@ -4,14 +4,14 @@ Complete guide to creating, editing, and publishing content in the Hospeda Admin
 
 ---
 
-## =� Overview
+## Overview
 
 Content management is the heart of the Hospeda platform. This comprehensive guide covers everything you need to create, edit, publish, and manage accommodations, destinations, events, and other content.
 
-**What you'll learn:**
+**What you will learn:**
 
 - Creating and editing accommodations, destinations, and events
-- Content workflow (draft � review � publish)
+- Content workflow (draft, review, publish)
 - SEO optimization
 - Image and media management
 - Scheduling and publishing
@@ -25,33 +25,32 @@ Content management is the heart of the Hospeda platform. This comprehensive guid
 
 ---
 
-## <� Managing Accommodations
+## Managing Accommodations
 
 ### Accommodations Overview
 
-**Access:** Sidebar � Accommodations
+**Access:** Sidebar - Accommodations
 
 **The accommodations list shows:**
 
 ```text
-
-  Accommodations                      [+ Add Accommodation]
-$
-  [Search...]  =
-  [Filters �]  [Status �]  [Export �]   
-$
-  Name            City         Type    Status    Actions   
-    
-  Hotel Central   Buenos Aires Hotel   Published  �        
-  Beach House     Mar del Plata House   Draft      �        
-  Mountain Cabin  Bariloche    Cabin   Scheduled  �        
-  ...                                                       
-
+
+  Accommodations                      [+ Add Accommodation]
+
+  [Search...]
+  [Filters]  [Status]  [Export]
+
+  Name            City         Type    Status    Actions
+
+  Hotel Central   Buenos Aires Hotel   Published
+  Beach House     Mar del Plata House   Draft
+  Mountain Cabin  Bariloche    Cabin   Scheduled
+
 ```
 
 ### Creating an Accommodation
 
-**Access:** Accommodations � Add Accommodation
+**Access:** Accommodations - Add Accommodation
 
 #### Step 1: Basic Information
 
@@ -67,7 +66,7 @@ Content management is the heart of the Hospeda platform. This comprehensive guid
 ```text
 Name: Hotel Central
 Type: Hotel
-Destination: Concepci�n del Uruguay
+Destination: Concepcion del Uruguay
 Description: Charming boutique hotel in the heart of the city.
 Located just two blocks from the main plaza...
 ```
@@ -89,9 +88,9 @@ Located just two blocks from the main plaza...
 
 **Tips:**
 
--  Enter complete address for accurate map placement
--  Verify coordinates match location
--  Use drag-and-drop to adjust pin if needed
+- Enter complete address for accurate map placement
+- Verify coordinates match location
+- Use drag-and-drop to adjust pin if needed
 
 #### Step 3: Pricing
 
@@ -181,11 +180,11 @@ Monthly Rate: $400,000 ARS/month
 
 **Best practices:**
 
--  High resolution, well-lit photos
--  Show different angles and rooms
--  Include exterior and interior shots
--  Highlight unique features
--  Use professional photography if possible
+- High resolution, well-lit photos
+- Show different angles and rooms
+- Include exterior and interior shots
+- Highlight unique features
+- Use professional photography if possible
 
 **Upload process:**
 
@@ -241,13 +240,13 @@ Monthly Rate: $400,000 ARS/month
 
 - Target length: 50-60 characters
 - Include location and type
-- Example: "Hotel Central - Boutique Hotel in Concepci�n del Uruguay"
+- Example: "Hotel Central - Boutique Hotel in Concepcion del Uruguay"
 
 **Meta Description:**
 
 - Target length: 150-160 characters
 - Compelling summary with keywords
-- Example: "Experience comfort at Hotel Central, a charming boutique hotel in the heart of Concepci�n del Uruguay. Modern amenities, excellent location, great rates."
+- Example: "Experience comfort at Hotel Central, a charming boutique hotel in the heart of Concepcion del Uruguay. Modern amenities, excellent location, great rates."
 
 **URL Slug:**
 
@@ -260,7 +259,7 @@ Monthly Rate: $400,000 ARS/month
 
 - 5-10 relevant keywords
 - Include location, type, features
-- Example: "hotel, boutique, Concepci�n del Uruguay, accommodation, city center"
+- Example: "hotel, boutique, Concepcion del Uruguay, accommodation, city center"
 
 #### Step 9: Publishing Options
 
@@ -288,19 +287,19 @@ Monthly Rate: $400,000 ARS/month
 
 **Before publishing:**
 
-1.  Preview accommodation page
-2.  Verify all required fields
-3.  Check images display correctly
-4.  Test contact information
-5.  Review SEO settings
+1. Preview accommodation page
+2. Verify all required fields
+3. Check images display correctly
+4. Test contact information
+5. Review SEO settings
 
 ---
 
-## =� Managing Destinations
+## Managing Destinations
 
 ### Destinations Overview
 
-**Access:** Sidebar � Destinations
+**Access:** Sidebar - Destinations
 
 **Destinations are:**
 
@@ -311,13 +310,13 @@ Monthly Rate: $400,000 ARS/month
 
 ### Creating a Destination
 
-**Access:** Destinations � Add Destination
+**Access:** Destinations - Add Destination
 
 #### Required Information
 
 **Basic:**
 
-- **Name*** - Destination name (e.g., "Concepci�n del Uruguay")
+- **Name*** - Destination name (e.g., "Concepcion del Uruguay")
 - **Type*** - City, Town, Region, Province
 - **Province*** - Province/state
 - **Description*** - Compelling overview (minimum 200 characters)
@@ -396,11 +395,11 @@ Monthly Rate: $400,000 ARS/month
 
 ---
 
-## <� Managing Events
+## Managing Events
 
 ### Events Overview
 
-**Access:** Sidebar � Events
+**Access:** Sidebar - Events
 
 **Events include:**
 
@@ -412,7 +411,7 @@ Monthly Rate: $400,000 ARS/month
 
 ### Creating an Event
 
-**Access:** Events � Add Event
+**Access:** Events - Add Event
 
 #### Basic Information
 
@@ -430,7 +429,7 @@ Monthly Rate: $400,000 ARS/month
 ```text
 Title: Fiesta Nacional de la Playa Grande
 Type: Festival
-Destination: Concepci�n del Uruguay
+Destination: Concepcion del Uruguay
 Start: 2024-02-15 18:00
 End: 2024-02-18 23:59
 ```
@@ -474,17 +473,17 @@ End: 2024-02-18 23:59
 
 **Best practices:**
 
--  Use official event poster as main image
--  Show crowd/atmosphere
--  Highlight performers/attractions
--  Include venue shots
+- Use official event poster as main image
+- Show crowd/atmosphere
+- Highlight performers/attractions
+- Include venue shots
 
 #### Event SEO
 
 **SEO Title:**
 
 - "[Event Name] [Year] - [Destination] - Dates, Schedule & Tickets"
-- Example: "Fiesta Nacional de la Playa Grande 2024 - Concepci�n del Uruguay"
+- Example: "Fiesta Nacional de la Playa Grande 2024 - Concepcion del Uruguay"
 
 **Meta Description:**
 
@@ -498,7 +497,7 @@ End: 2024-02-18 23:59
 
 ---
 
-## =� Content Status Workflow
+## Content Status Workflow
 
 ### Content Statuses
 
@@ -606,30 +605,30 @@ End: 2024-02-18 23:59
 **For users with Editor role:**
 
 ```text
-1. Create content � Save as Draft
-2. Continue editing � Save Draft
-3. Ready to publish � Submit for Review
+1. Create content - Save as Draft
+2. Continue editing - Save Draft
+3. Ready to publish - Submit for Review
 4. Wait for Manager approval
-5. If approved � Published
-   If rejected � Edit and resubmit
+5. If approved - Published
+   If rejected - Edit and resubmit
 ```
 
 **Editor limitations:**
 
-- L Cannot publish directly
-- L Cannot schedule
--  Can save drafts
--  Can submit for review
--  Can edit own drafts
+- Cannot publish directly
+- Cannot schedule
+- Can save drafts
+- Can submit for review
+- Can edit own drafts
 
 #### Manager/Admin Workflow
 
 **For users with Manager or Admin role:**
 
 ```text
-1. Create content � Save as Draft
-2. Continue editing � Save Draft
-3. Ready to publish � Publish or Schedule
+1. Create content - Save as Draft
+2. Continue editing - Save Draft
+3. Ready to publish - Publish or Schedule
 ```
 
 **Or review Editor submissions:**
@@ -637,18 +636,18 @@ End: 2024-02-18 23:59
 ```text
 1. Receive notification of pending review
 2. Review content
-3. Approve � Publish or Schedule
-   Reject � Provide feedback
-   Edit � Make changes and Publish
+3. Approve - Publish or Schedule
+   Reject - Provide feedback
+   Edit - Make changes and Publish
 ```
 
 **Manager/Admin privileges:**
 
--  Can publish directly
--  Can schedule
--  Can approve others' content
--  Can edit published content
--  Can unpublish content
+- Can publish directly
+- Can schedule
+- Can approve others' content
+- Can edit published content
+- Can unpublish content
 
 ### Review and Approval
 
@@ -670,9 +669,9 @@ End: 2024-02-18 23:59
 
 **Manager options:**
 
--  **Approve** - Publish immediately or schedule
--  **Edit and Approve** - Make changes and publish
-- L **Reject** - Send back with feedback
+- **Approve** - Publish immediately or schedule
+- **Edit and Approve** - Make changes and publish
+- **Reject** - Send back with feedback
 
 **Rejection feedback example:**
 
@@ -697,7 +696,7 @@ Please resubmit when complete.
 
 ---
 
-## =� Image Management
+## Image Management
 
 ### Uploading Images
 
@@ -755,18 +754,18 @@ Please resubmit when complete.
 
 - Click trash icon
 - Confirm deletion
-- � Cannot be undone
+- Cannot be undone
 - Ensure not referenced elsewhere
 
 ### Image Optimization
 
 **Automatic optimizations:**
 
--  Resize to optimal dimensions
--  Compress to reduce file size
--  Generate thumbnails
--  Convert to WebP (modern browsers)
--  Create responsive variants
+- Resize to optimal dimensions
+- Compress to reduce file size
+- Generate thumbnails
+- Convert to WebP (modern browsers)
+- Create responsive variants
 
 **Manual optimizations:**
 
@@ -781,7 +780,7 @@ Please resubmit when complete.
 
 - Accessibility (screen readers)
 - SEO (alt text)
-- Context (what's shown in image)
+- Context (what is shown in image)
 
 **Example captions:**
 
@@ -794,15 +793,15 @@ Breakfast: "Continental breakfast buffet"
 
 **Best practices:**
 
--  Descriptive and specific
--  Include key features
--  10-20 words optimal
-- L Don't use "image of" or "photo of"
-- L Don't keyword stuff
+- Descriptive and specific
+- Include key features
+- 10-20 words optimal
+- Do not use "image of" or "photo of"
+- Do not keyword stuff
 
 ---
 
-## =� Scheduling Content
+## Scheduling Content
 
 ### Why Schedule Content?
 
@@ -867,11 +866,11 @@ Timezone: America/Argentina/Buenos_Aires
 
 ---
 
-## = Bulk Operations
+## Bulk Operations
 
 ### Bulk Content Actions
 
-**Access:** Content list � Select items � Actions menu
+**Access:** Content list - Select items - Actions menu
 
 **Available bulk actions:**
 
@@ -888,7 +887,7 @@ Timezone: America/Argentina/Buenos_Aires
 **Steps:**
 
 1. Select accommodations (checkboxes)
-2. Actions � Change Status
+2. Actions - Change Status
 3. Select "Published"
 4. Confirm changes
 5. All items publish immediately
@@ -914,7 +913,7 @@ This will make the following items public:
 **Steps:**
 
 1. Select items
-2. Actions � Bulk Edit
+2. Actions - Bulk Edit
 3. Select fields to update
 4. Enter new values
 5. Preview changes
@@ -938,8 +937,8 @@ Field: Price per Night
 Action: Increase by 10%
 
 Preview:
-- Hotel Central: $15,000 � $16,500
-- Beach House: $20,000 � $22,000
+- Hotel Central: $15,000 -> $16,500
+- Beach House: $20,000 -> $22,000
 ... (18 more)
 
 [Cancel]  [Apply Changes]
@@ -947,12 +946,12 @@ Preview:
 
 ### Bulk Delete
 
-#### ⚠️ Use with caution
+**Use with caution.**
 
 **Steps:**
 
 1. Select items to delete
-2. Actions � Delete
+2. Actions - Delete
 3. Choose delete type:
    - Soft delete (archive)
    - Hard delete (permanent)
@@ -961,10 +960,10 @@ Preview:
 
 **Safety measures:**
 
--  Requires typing "DELETE" to confirm
--  Shows count and list of items
--  Cannot be undone (hard delete)
--  Soft delete recommended
+- Requires typing "DELETE" to confirm
+- Shows count and list of items
+- Cannot be undone (hard delete)
+- Soft delete recommended
 
 ### Bulk Import/Export
 
@@ -981,7 +980,7 @@ Preview:
 
 1. Apply filters (optional)
 2. Select items or Select All
-3. Actions � Export
+3. Actions - Export
 4. Choose format: CSV or Excel
 5. Choose fields to include
 6. Download file
@@ -1016,35 +1015,33 @@ Preview:
 
 ```csv
 name,type,destination,price,description,address
-"Hotel Central","hotel","Concepci�n del Uruguay",15000,"Charming boutique hotel...","San Martin 123"
+"Hotel Central","hotel","Concepcion del Uruguay",15000,"Charming boutique hotel...","San Martin 123"
 "Beach House","house","Mar del Plata",20000,"Beautiful beach house...","Playa Grande 456"
 ```
 
 **Validation:**
 
--  Required fields checked
--  Data types validated
--  Duplicate detection
-- � Invalid rows reported
-- � Can skip errors or abort
+- Required fields checked
+- Data types validated
+- Duplicate detection
+- Invalid rows reported
+- Can skip errors or abort
 
 ---
 
-## =
-
- SEO Best Practices
+## SEO Best Practices
 
 ### On-Page SEO
 
 **Every content item should have:**
 
--  Unique, descriptive title
--  Compelling meta description
--  Clean URL slug
--  Relevant keywords
--  High-quality images with alt text
--  Complete, detailed description
--  Internal links to related content
+- Unique, descriptive title
+- Compelling meta description
+- Clean URL slug
+- Relevant keywords
+- High-quality images with alt text
+- Complete, detailed description
+- Internal links to related content
 
 ### Title Optimization
 
@@ -1056,10 +1053,10 @@ name,type,destination,price,description,address
 
 **Examples:**
 
--  "Boutique Hotel in City Center - Hotel Central Concepci�n del Uruguay"
--  "Beach House Rental Mar del Plata - Oceanfront Vacation Home"
-- L "Hotel" (too generic)
-- L "The best hotel in the entire world!!!" (keyword stuffing)
+- Good: "Boutique Hotel in City Center - Hotel Central Concepcion del Uruguay"
+- Good: "Beach House Rental Mar del Plata - Oceanfront Vacation Home"
+- Bad: "Hotel" (too generic)
+- Bad: "The best hotel in the entire world!!!" (keyword stuffing)
 
 **Title guidelines:**
 
@@ -1086,9 +1083,9 @@ name,type,destination,price,description,address
 
 **Examples:**
 
--  "Charming boutique hotel in Concepci�n del Uruguay city center. Modern rooms, rooftop terrace, excellent location. Book your stay today!"
-- L "hotel accommodation place to stay" (too generic)
-- L "BEST HOTEL EVER CLICK NOW!!!" (spammy)
+- Good: "Charming boutique hotel in Concepcion del Uruguay city center. Modern rooms, rooftop terrace, excellent location. Book your stay today!"
+- Bad: "hotel accommodation place to stay" (too generic)
+- Bad: "BEST HOTEL EVER CLICK NOW!!!" (spammy)
 
 **Meta description guidelines:**
 
@@ -1102,7 +1099,7 @@ name,type,destination,price,description,address
 
 **Alt text requirements:**
 
-- Describe what's in the image
+- Describe what is in the image
 - Include relevant keywords naturally
 - 10-20 words optimal
 - Be specific and descriptive
@@ -1117,10 +1114,10 @@ name,type,destination,price,description,address
 **Examples:**
 
 ```text
- hotel-central-double-room-city-view.jpg
- mar-del-plata-beach-house-exterior.jpg
-L IMG_1234.jpg
-L photo.jpg
+Good: hotel-central-double-room-city-view.jpg
+Good: mar-del-plata-beach-house-exterior.jpg
+Bad: IMG_1234.jpg
+Bad: photo.jpg
 ```
 
 ### Internal Linking
@@ -1141,7 +1138,7 @@ L photo.jpg
 
 ---
 
-##  Content Quality Checklist
+## Content Quality Checklist
 
 ### Before Publishing - Accommodations
 
@@ -1252,14 +1249,14 @@ L photo.jpg
 
 ---
 
-## =� Content Tips and Tricks
+## Content Tips and Tricks
 
 ### Writing Great Descriptions
 
 **Engaging opening:**
 
--  "Discover tranquility at Mountain Cabin, your perfect escape..."
-- L "This is a cabin with rooms and a kitchen."
+- Good: "Discover tranquility at Mountain Cabin, your perfect escape..."
+- Bad: "This is a cabin with rooms and a kitchen."
 
 **Highlight unique features:**
 
@@ -1302,14 +1299,14 @@ L photo.jpg
 
 **Photo tips:**
 
--  Natural light is best
--  Clean and tidy spaces
--  No people in photos (usually)
--  Horizontal orientation
--  Multiple angles of each room
-- L Flash photography (harsh shadows)
-- L Cluttered spaces
-- L Extreme filters (be authentic)
+- Natural light is best
+- Clean and tidy spaces
+- No people in photos (usually)
+- Horizontal orientation
+- Multiple angles of each room
+- No flash photography (harsh shadows)
+- No cluttered spaces
+- No extreme filters (be authentic)
 
 ### Seasonal Content Strategy
 
@@ -1343,7 +1340,7 @@ L photo.jpg
 
 ---
 
-## <� Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -1351,52 +1348,52 @@ L photo.jpg
 
 **Check:**
 
--  Your role (need Manager or Admin)
--  Content status (can't publish archived)
--  Required fields completed
--  Images uploaded (if required)
+- Your role (need Manager or Admin)
+- Content status (cannot publish archived)
+- Required fields completed
+- Images uploaded (if required)
 
 #### "Images Won't Upload"
 
 **Solutions:**
 
--  Check file size (max 5MB)
--  Check format (JPG, PNG, WebP only)
--  Check internet connection
--  Try different browser
--  Compress images before upload
+- Check file size (max 5MB)
+- Check format (JPG, PNG, WebP only)
+- Check internet connection
+- Try different browser
+- Compress images before upload
 
 #### "Content Not Appearing on Website"
 
 **Check:**
 
--  Status is "Published" (not Draft or Scheduled)
--  Visibility is "Public" (not Unlisted or Private)
--  Published date is in the past
--  Clear browser cache (Ctrl + Shift + R)
--  Wait a few minutes for indexing
+- Status is "Published" (not Draft or Scheduled)
+- Visibility is "Public" (not Unlisted or Private)
+- Published date is in the past
+- Clear browser cache (Ctrl + Shift + R)
+- Wait a few minutes for indexing
 
 #### "SEO Preview Not Showing Correctly"
 
 **Solutions:**
 
--  Save changes first
--  Refresh preview
--  Check social media cards separately
--  Test with real sharing (use link debuggers)
+- Save changes first
+- Refresh preview
+- Check social media cards separately
+- Test with real sharing (use link debuggers)
 
 #### "Bulk Operation Failed"
 
 **Check:**
 
--  All selected items meet criteria
--  You have required permissions
--  No items are locked or being edited
--  Try smaller batches
+- All selected items meet criteria
+- You have required permissions
+- No items are locked or being edited
+- Try smaller batches
 
 ---
 
-## =� Related Documentation
+## Related Documentation
 
 **Learn more:**
 
@@ -1411,4 +1408,4 @@ L photo.jpg
 
 ---
 
- Back to [Usage Documentation](./README.md)
+Back to [Usage Documentation](./README.md)

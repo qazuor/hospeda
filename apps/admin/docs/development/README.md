@@ -108,7 +108,7 @@ This section provides **comprehensive development guides** for engineers buildin
 
 **[Authentication Guide](./authentication.md)**
 
-- Clerk integration
+- Better Auth integration
 - Protected routes with beforeLoad
 - Role-based access control (RBAC)
 - Session management
@@ -251,7 +251,7 @@ This section provides **comprehensive development guides** for engineers buildin
 
 **Authentication:**
 
-- Clerk (Auth provider)
+- Better Auth (Auth provider)
 - Protected routes
 - Role-based access control
 
@@ -437,7 +437,7 @@ Before starting development:
 - **[TanStack Form](https://tanstack.com/form)** - Form docs
 - **[TanStack Table](https://tanstack.com/table)** - Table docs
 - **[React 19](https://react.dev)** - React docs
-- **[Clerk](https://clerk.com/docs)** - Auth docs
+- **[Better Auth](https://www.better-auth.com)** - Auth docs
 - **[Shadcn UI](https://ui.shadcn.com/)** - Component docs
 - **[Tailwind CSS](https://tailwindcss.com/)** - Styling docs
 

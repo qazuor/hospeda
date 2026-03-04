@@ -288,7 +288,7 @@ const { data, refetch } = useQuery({
 ```text
 View component hierarchy:
 └── App
-    ├── ClerkProvider
+    ├── AuthProvider
     │   └── QueryClientProvider
     │       └── AuthedLayout
     │           ├── Header
@@ -476,7 +476,7 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   window.debug = {
     queryClient,
     router,
-    user: () => window.Clerk?.user,
+    user: () => window.__betterAuth?.user,
   };
 }
 

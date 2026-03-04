@@ -1,1340 +1,824 @@
-# Creating Pages Tutorial
+# Creating Admin Pages
 
-Step-by-step tutorial for building complete CRUD pages in the Hospeda Admin Dashboard.
+> Step-by-step guide for adding new pages to the Hospeda admin dashboard (`apps/admin`).
 
----
+## Overview
 
-## 📖 Overview
+The admin dashboard uses TanStack Start with file-based routing. Pages are located in `src/routes/` and follow a feature-based architecture with TanStack Query hooks for data fetching, Shadcn UI for components, and Better Auth for authentication.
 
-This tutorial will guide you through creating a complete set of admin pages with **full CRUD functionality** (Create, Read, Update, Delete). We'll build a "Products" management feature as an example that you can adapt to any entity.
+## File-Based Routing
 
-**What you'll build:**
+### Route Structure
 
-- List page with data table
-- Detail/view page
-- Create page with form
-- Edit page with form
-- Complete data fetching and mutations
-- Loading and error states
-- Route protection
-
-**Time to complete:** ~30-45 minutes
-
-**Prerequisites:**
-
-- Read [Routing Guide](./routing.md)
-- Read [Architecture Overview](../architecture.md)
-- Basic understanding of React and TypeScript
-- Admin dev server running (`pnpm dev`)
-
----
-
-## 🎯 What We're Building
-
-We'll create a "Products" management feature with these pages:
-
-```text
-/products              → List all products
-/products/:id          → View product details
-/products/new          → Create new product
-/products/:id/edit     → Edit existing product
+```
+src/routes/
+├── __root.tsx                          # Root layout (QueryClient, QZPay, Toast)
+├── _authed.tsx                         # Auth layout (beforeLoad guard + AppLayout)
+├── _authed/
+│   ├── dashboard.tsx                   # /dashboard
+│   ├── dashboard.lazy.tsx              # Lazy-loaded dashboard component
+│   ├── accommodations/
+│   │   ├── index.tsx                   # /accommodations (list)
+│   │   ├── $id.tsx                     # /accommodations/:id (view)
+│   │   └── $id_.edit.tsx              # /accommodations/:id/edit (edit form)
+│   ├── destinations/
+│   │   ├── index.tsx
+│   │   ├── $id.tsx
+│   │   └── $id_.edit.tsx
+│   ├── billing/
+│   │   ├── plans.tsx
+│   │   ├── subscriptions.tsx
+│   │   ├── cron.tsx
+│   │   └── metrics.tsx
+│   ├── access/
+│   │   └── users/
+│   │       ├── $id_.edit.tsx
+│   │       └── ...
+│   └── content/
+│       ├── accommodation-amenities/
+│       ├── accommodation-features/
+│       └── destination-attractions/
+├── auth/
+│   └── index.tsx                       # /auth/signin (public)
+└── index.tsx                           # / (redirect to dashboard)
 ```
 
-**Features:**
+### Route Naming Conventions
 
-- Data table with sorting and pagination
-- Search and filters
-- Form validation with Zod
-- Optimistic updates
-- Loading states
-- Error handling
-- Type safety throughout
+- `index.tsx` .. Index route for the directory (list pages)
+- `$id.tsx` .. Dynamic parameter route (view pages)
+- `$id_.edit.tsx` .. Dynamic parameter with suffix (edit pages)
+- `_authed.tsx` .. Layout route with auth guard (prefix `_`)
+- `*.lazy.tsx` .. Lazy-loaded route component (code splitting)
+- All routes under `_authed/` require authentication automatically
 
----
+## Architecture: Two Approaches
 
-## 📁 Step 1: Project Structure
+The admin app uses two approaches for pages, depending on complexity.
 
-### Create Feature Folder
+### Approach 1: Entity List System (Recommended for CRUD Pages)
 
-First, create the feature folder structure:
+For standard entity listing pages, use the `createEntityListPage` factory. This handles table rendering, pagination, search, filters, and view toggling automatically.
 
-```bash
-# From project root
-mkdir -p apps/admin/src/features/products/{components,hooks}
-touch apps/admin/src/features/products/queries.ts
-touch apps/admin/src/features/products/types.ts
-touch apps/admin/src/features/products/index.ts
+### Approach 2: Custom Pages
+
+For specialized pages (dashboards, metrics, settings), create custom page components directly in the route file or in `src/features/`.
+
+## Step-by-Step: Adding an Entity List Page
+
+### 1. Create Feature Directory
+
+```
+src/features/my-entities/
+├── config/
+│   ├── my-entities.config.ts       # Entity list configuration
+│   ├── my-entities.columns.ts      # Table column definitions
+│   └── index.ts                    # Re-exports
+├── hooks/
+│   ├── myEntityQueryKeys.ts        # Query key factory
+│   ├── useMyEntityQuery.ts         # TanStack Query hooks
+│   └── useMyEntityPage.ts          # Page-level hook (view/edit)
+├── schemas/
+│   └── my-entity.schema.ts         # Client-side schemas
+├── types/
+│   └── my-entity.types.ts          # TypeScript types
+└── server/
+    └── my-entity-server-functions.ts  # Server functions (if needed)
 ```
 
-**Resulting structure:**
+### 2. Define Entity Configuration
 
-```text
-src/features/products/
-├── components/          # Product-specific components
-├── hooks/              # Product-specific hooks
-├── queries.ts          # Data fetching functions
-├── types.ts            # Product types
-└── index.ts            # Barrel exports
-```
-
-### Create Route Files
-
-```bash
-mkdir -p apps/admin/src/routes/products
-touch apps/admin/src/routes/products/index.tsx
-touch apps/admin/src/routes/products/\$id.tsx
-touch apps/admin/src/routes/products/new.tsx
-touch apps/admin/src/routes/products/\$id.edit.tsx
-```
-
-**Resulting structure:**
-
-```text
-src/routes/products/
-├── index.tsx           # List page
-├── $id.tsx             # Detail page
-├── $id.edit.tsx        # Edit page
-└── new.tsx             # Create page
-```
-
----
-
-## 📊 Step 2: Define Types
-
-Define types in `src/features/products/types.ts`:
-
-```ts
-// src/features/products/types.ts
-
-export type Product = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  stock: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type CreateProductData = Omit<
-  Product,
-  'id' | 'createdAt' | 'updatedAt'
->;
-
-export type UpdateProductData = Partial<CreateProductData>;
-
-export type ProductFilters = {
-  category?: string;
-  isActive?: boolean;
-  search?: string;
-};
-
-export type ProductListResponse = {
-  products: Product[];
-  total: number;
-  page: number;
-  limit: number;
-};
-```
-
----
-
-## 🔌 Step 3: Data Fetching Functions
-
-Create data fetching functions in `src/features/products/queries.ts`:
-
-```ts
-// src/features/products/queries.ts
-import { fetchAPI } from '@/lib/api';
-import type {
-  Product,
-  CreateProductData,
-  UpdateProductData,
-  ProductListResponse,
-  ProductFilters,
-} from './types';
-
-type GetProductsOptions = {
-  page?: number;
-  limit?: number;
-  filters?: ProductFilters;
-  signal?: AbortSignal;
-};
-
-export async function getProducts({
-  page = 1,
-  limit = 20,
-  filters,
-  signal,
-}: GetProductsOptions = {}): Promise<ProductListResponse> {
-  const params = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-
-  if (filters?.category) {
-    params.append('category', filters.category);
-  }
-
-  if (filters?.isActive !== undefined) {
-    params.append('isActive', filters.isActive.toString());
-  }
-
-  if (filters?.search) {
-    params.append('search', filters.search);
-  }
-
-  return fetchAPI(`/api/v1/products?${params.toString()}`, { signal });
-}
-
-export async function getProduct(
-  id: string,
-  options?: { signal?: AbortSignal }
-): Promise<Product> {
-  return fetchAPI(`/api/v1/products/${id}`, { signal: options?.signal });
-}
-
-export async function createProduct(data: CreateProductData): Promise<Product> {
-  return fetchAPI('/api/v1/products', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-export async function updateProduct(
-  id: string,
-  data: UpdateProductData
-): Promise<Product> {
-  return fetchAPI(`/api/v1/products/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(data),
-  });
-}
-
-export async function deleteProduct(id: string): Promise<void> {
-  return fetchAPI(`/api/v1/products/${id}`, {
-    method: 'DELETE',
-  });
-}
-```
-
----
-
-## 📋 Step 4: List Page
-
-Create the list page in `src/routes/products/index.tsx`:
-
-```tsx
-// src/routes/products/index.tsx
-import { createFileRoute, Link } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { z } from 'zod';
-import { getProducts } from '@/features/products/queries';
-import { Button } from '@/components/ui/button';
-import { ProductsTable } from '@/features/products/components/ProductsTable';
-
-// Validate search params
-const searchSchema = z.object({
-  page: z.number().int().positive().optional().default(1),
-  limit: z.number().int().positive().optional().default(20),
-  category: z.string().optional(),
-  isActive: z.boolean().optional(),
-  search: z.string().optional(),
-});
-
-export const Route = createFileRoute('/products/')({
-  validateSearch: searchSchema,
-  component: ProductsPage,
-});
-
-function ProductsPage() {
-  const search = Route.useSearch();
-
-  // Fetch products
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['products', search],
-    queryFn: ({ signal }) =>
-      getProducts({
-        page: search.page,
-        limit: search.limit,
-        filters: {
-          category: search.category,
-          isActive: search.isActive,
-          search: search.search,
-        },
-        signal,
-      }),
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Loading products...</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-red-600">
-          Error loading products: {error.message}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Products</h1>
-          <p className="text-muted-foreground">
-            Manage your product catalog
-          </p>
-        </div>
-        <Link to="/products/new">
-          <Button>Create Product</Button>
-        </Link>
-      </div>
-
-      {/* Table */}
-      <ProductsTable data={data} />
-    </div>
-  );
-}
-```
-
-### Create the Table Component
-
-Create `src/features/products/components/ProductsTable.tsx`:
-
-```tsx
-// src/features/products/components/ProductsTable.tsx
-import { Link } from '@tanstack/react-router';
+```typescript
+// src/features/my-entities/config/my-entities.config.ts
+import { createEntityListPage } from '@/components/entity-list';
+import type { EntityConfig } from '@/components/entity-list/types';
+import { EntityType } from '@/components/table/DataTable';
+import type { z } from 'zod';
 import {
-  useReactTable,
-  getCoreRowModel,
-  flexRender,
-  type ColumnDef,
-} from '@tanstack/react-table';
-import type { Product, ProductListResponse } from '../types';
-import { Button } from '@/components/ui/button';
+    type MyEntity,
+    MyEntityListItemSchema
+} from '../schemas/my-entity.schema';
+import { createMyEntitiesColumns } from './my-entities.columns';
 
-const columns: ColumnDef<Product>[] = [
-  {
-    accessorKey: 'name',
-    header: 'Name',
-  },
-  {
-    accessorKey: 'category',
-    header: 'Category',
-  },
-  {
-    accessorKey: 'price',
-    header: 'Price',
-    cell: ({ row }) => {
-      const price = row.original.price;
-      return `$${price.toFixed(2)}`;
-    },
-  },
-  {
-    accessorKey: 'stock',
-    header: 'Stock',
-  },
-  {
-    accessorKey: 'isActive',
-    header: 'Status',
-    cell: ({ row }) => {
-      return row.original.isActive ? (
-        <span className="text-green-600">Active</span>
-      ) : (
-        <span className="text-gray-400">Inactive</span>
-      );
-    },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const product = row.original;
-      return (
-        <div className="flex gap-2">
-          <Link to="/products/$id" params={{ id: product.id }}>
-            <Button variant="outline" size="sm">
-              View
-            </Button>
-          </Link>
-          <Link to="/products/$id/edit" params={{ id: product.id }}>
-            <Button variant="outline" size="sm">
-              Edit
-            </Button>
-          </Link>
-        </div>
-      );
-    },
-  },
-];
+export const myEntitiesConfig: EntityConfig<MyEntity> = {
+    // Metadata
+    name: 'my-entities',
+    entityKey: 'myEntity',
+    entityType: EntityType.MY_ENTITY,
 
-type ProductsTableProps = {
-  data: ProductListResponse;
+    // API -- always use /api/v1/admin/* endpoints
+    apiEndpoint: '/api/v1/admin/my-entities',
+
+    // Routes
+    basePath: '/my-entities',
+    detailPath: '/my-entities/[id]',
+
+    // Schemas
+    listItemSchema: MyEntityListItemSchema as unknown as z.ZodSchema<MyEntity>,
+
+    // Search
+    searchConfig: {
+        minChars: 3,
+        debounceMs: 400,
+        enabled: true
+    },
+
+    // View
+    viewConfig: {
+        defaultView: 'table',
+        allowViewToggle: true,
+        gridConfig: {
+            maxFields: 12,
+            columns: { mobile: 1, tablet: 2, desktop: 3 }
+        }
+    },
+
+    // Pagination -- uses page + pageSize (NOT limit)
+    paginationConfig: {
+        defaultPageSize: 20,
+        allowedPageSizes: [10, 20, 30, 50]
+    },
+
+    // Layout
+    layoutConfig: {
+        showBreadcrumbs: true,
+        showCreateButton: true,
+        createButtonPath: '/my-entities/new'
+    },
+
+    // Columns
+    createColumns: createMyEntitiesColumns
 };
 
-export function ProductsTable({ data }: ProductsTableProps) {
-  const table = useReactTable({
-    data: data.products,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-  });
+// Generate the component and route
+const { component, route } = createEntityListPage(myEntitiesConfig);
 
-  return (
-    <div className="rounded-md border">
-      <table className="w-full">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id} className="border-b bg-muted/50">
-              {headerGroup.headers.map((header) => (
-                <th
-                  key={header.id}
-                  className="p-4 text-left font-medium"
-                >
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext()
-                  )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id} className="border-b">
-              {row.getVisibleCells().map((cell) => (
-                <td key={cell.id} className="p-4">
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
+export {
+    component as MyEntitiesPageComponent,
+    route as MyEntitiesRoute
+};
+```
 
-      {/* Pagination info */}
-      <div className="flex items-center justify-between p-4">
-        <div className="text-sm text-muted-foreground">
-          Showing {data.products.length} of {data.total} products
-        </div>
-      </div>
-    </div>
-  );
+### 3. Define Table Columns
+
+```typescript
+// src/features/my-entities/config/my-entities.columns.ts
+import type { ColumnDef } from '@tanstack/react-table';
+import type { MyEntity } from '../schemas/my-entity.schema';
+
+export function createMyEntitiesColumns(): ColumnDef<MyEntity>[] {
+    return [
+        {
+            accessorKey: 'name',
+            header: 'Name'
+        },
+        {
+            accessorKey: 'status',
+            header: 'Status',
+            cell: ({ row }) => (
+                <Badge variant={row.original.status === 'active' ? 'default' : 'secondary'}>
+                    {row.original.status}
+                </Badge>
+            )
+        },
+        {
+            accessorKey: 'createdAt',
+            header: 'Created',
+            cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString()
+        }
+    ];
 }
 ```
 
----
+### 4. Create Route File
 
-## 👁️ Step 5: Detail Page
+```typescript
+// src/routes/_authed/my-entities/index.tsx
+import { MyEntitiesRoute } from '@/features/my-entities/config/my-entities.config';
+import { createFileRoute } from '@tanstack/react-router';
 
-Create the detail page in `src/routes/products/$id.tsx`:
+// HACK: Prevent TypeScript error for TanStack Router auto-generated import
+createFileRoute;
 
-```tsx
-// src/routes/products/$id.tsx
-import { createFileRoute, Link, notFound } from '@tanstack/react-router';
-import { useQuery } from '@tanstack/react-query';
-import { getProduct } from '@/features/products/queries';
-import { Button } from '@/components/ui/button';
-
-export const Route = createFileRoute('/products/$id')({
-  loader: async ({ params, context }) => {
-    // Prefetch on server
-    const product = await getProduct(params.id);
-
-    if (!product) {
-      throw notFound();
-    }
-
-    return { product };
-  },
-
-  component: ProductDetailPage,
-
-  notFoundComponent: () => {
-    return (
-      <div className="flex flex-col items-center justify-center p-8">
-        <h2 className="text-2xl font-bold">Product Not Found</h2>
-        <p className="mt-2 text-muted-foreground">
-          The product you're looking for doesn't exist.
-        </p>
-        <Link to="/products" className="mt-4">
-          <Button>Back to Products</Button>
-        </Link>
-      </div>
-    );
-  },
-});
-
-function ProductDetailPage() {
-  const { id } = Route.useParams();
-
-  // Client-side query with initial data from loader
-  const { data: product, isLoading } = useQuery({
-    queryKey: ['products', id],
-    queryFn: ({ signal }) => getProduct(id, { signal }),
-    initialData: Route.useLoaderData().product,
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Loading product...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">{product.name}</h1>
-          <p className="text-muted-foreground">{product.category}</p>
-        </div>
-        <div className="flex gap-2">
-          <Link to="/products">
-            <Button variant="outline">Back</Button>
-          </Link>
-          <Link to="/products/$id/edit" params={{ id }}>
-            <Button>Edit</Button>
-          </Link>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Details */}
-        <div className="space-y-4 rounded-lg border p-6">
-          <h2 className="text-xl font-semibold">Details</h2>
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Description
-            </div>
-            <div className="mt-1">{product.description}</div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">
-                Price
-              </div>
-              <div className="mt-1 text-lg font-semibold">
-                ${product.price.toFixed(2)}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">
-                Stock
-              </div>
-              <div className="mt-1 text-lg font-semibold">
-                {product.stock} units
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Status
-            </div>
-            <div className="mt-1">
-              {product.isActive ? (
-                <span className="text-green-600 font-medium">Active</span>
-              ) : (
-                <span className="text-gray-400">Inactive</span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Metadata */}
-        <div className="space-y-4 rounded-lg border p-6">
-          <h2 className="text-xl font-semibold">Metadata</h2>
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Product ID
-            </div>
-            <div className="mt-1 font-mono text-sm">{product.id}</div>
-          </div>
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Created At
-            </div>
-            <div className="mt-1">
-              {new Date(product.createdAt).toLocaleString()}
-            </div>
-          </div>
-
-          <div>
-            <div className="text-sm font-medium text-muted-foreground">
-              Last Updated
-            </div>
-            <div className="mt-1">
-              {new Date(product.updatedAt).toLocaleString()}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+export const Route = MyEntitiesRoute;
 ```
 
----
+### 5. Create Query Hooks
 
-## ✏️ Step 6: Create/Edit Forms
-
-### Create Form Component
-
-Create `src/features/products/components/ProductForm.tsx`:
-
-```tsx
-// src/features/products/components/ProductForm.tsx
-import { useForm } from '@tanstack/react-form';
-import { zodValidator } from '@tanstack/zod-form-adapter';
-import { z } from 'zod';
-import type { Product, CreateProductData } from '../types';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-
-// Validation schema
-const productSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(100),
-  description: z.string().min(1, 'Description is required'),
-  price: z.number().positive('Price must be positive'),
-  category: z.string().min(1, 'Category is required'),
-  stock: z.number().int().nonnegative('Stock must be non-negative'),
-  isActive: z.boolean(),
-});
-
-type ProductFormProps = {
-  product?: Product;
-  onSubmit: (data: CreateProductData) => Promise<void>;
-  submitLabel?: string;
+```typescript
+// src/features/my-entities/hooks/myEntityQueryKeys.ts
+export const myEntityQueryKeys = {
+    all: ['my-entities'] as const,
+    lists: () => [...myEntityQueryKeys.all, 'list'] as const,
+    list: (filters?: Record<string, unknown>) =>
+        [...myEntityQueryKeys.lists(), filters] as const,
+    details: () => [...myEntityQueryKeys.all, 'detail'] as const,
+    detail: (id: string) => [...myEntityQueryKeys.details(), id] as const,
+    search: (query: string, filters?: Record<string, unknown>) =>
+        [...myEntityQueryKeys.all, 'search', query, filters] as const
 };
 
-export function ProductForm({
-  product,
-  onSubmit,
-  submitLabel = 'Save',
-}: ProductFormProps) {
-  const form = useForm({
-    defaultValues: {
-      name: product?.name ?? '',
-      description: product?.description ?? '',
-      price: product?.price ?? 0,
-      category: product?.category ?? '',
-      stock: product?.stock ?? 0,
-      isActive: product?.isActive ?? true,
-    },
-    onSubmit: async ({ value }) => {
-      await onSubmit(value);
-    },
-    validatorAdapter: zodValidator(),
-  });
-
-  return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        form.handleSubmit();
-      }}
-      className="space-y-6"
-    >
-      {/* Name */}
-      <form.Field
-        name="name"
-        validators={{
-          onChange: productSchema.shape.name,
-        }}
-      >
-        {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor={field.name}>Name *</Label>
-            <Input
-              id={field.name}
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Product name"
-            />
-            {field.state.meta.errors && (
-              <div className="text-sm text-red-600">
-                {field.state.meta.errors.join(', ')}
-              </div>
-            )}
-          </div>
-        )}
-      </form.Field>
-
-      {/* Description */}
-      <form.Field
-        name="description"
-        validators={{
-          onChange: productSchema.shape.description,
-        }}
-      >
-        {(field) => (
-          <div className="space-y-2">
-            <Label htmlFor={field.name}>Description *</Label>
-            <Textarea
-              id={field.name}
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              placeholder="Product description"
-              rows={4}
-            />
-            {field.state.meta.errors && (
-              <div className="text-sm text-red-600">
-                {field.state.meta.errors.join(', ')}
-              </div>
-            )}
-          </div>
-        )}
-      </form.Field>
-
-      {/* Price and Category */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <form.Field
-          name="price"
-          validators={{
-            onChange: productSchema.shape.price,
-          }}
-        >
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Price *</Label>
-              <Input
-                id={field.name}
-                type="number"
-                step="0.01"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(parseFloat(e.target.value))}
-                placeholder="0.00"
-              />
-              {field.state.meta.errors && (
-                <div className="text-sm text-red-600">
-                  {field.state.meta.errors.join(', ')}
-                </div>
-              )}
-            </div>
-          )}
-        </form.Field>
-
-        <form.Field
-          name="category"
-          validators={{
-            onChange: productSchema.shape.category,
-          }}
-        >
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Category *</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Product category"
-              />
-              {field.state.meta.errors && (
-                <div className="text-sm text-red-600">
-                  {field.state.meta.errors.join(', ')}
-                </div>
-              )}
-            </div>
-          )}
-        </form.Field>
-      </div>
-
-      {/* Stock and Status */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <form.Field
-          name="stock"
-          validators={{
-            onChange: productSchema.shape.stock,
-          }}
-        >
-          {(field) => (
-            <div className="space-y-2">
-              <Label htmlFor={field.name}>Stock *</Label>
-              <Input
-                id={field.name}
-                type="number"
-                value={field.state.value}
-                onChange={(e) => field.handleChange(parseInt(e.target.value))}
-                placeholder="0"
-              />
-              {field.state.meta.errors && (
-                <div className="text-sm text-red-600">
-                  {field.state.meta.errors.join(', ')}
-                </div>
-              )}
-            </div>
-          )}
-        </form.Field>
-
-        <form.Field name="isActive">
-          {(field) => (
-            <div className="flex items-center space-x-2 pt-8">
-              <input
-                id={field.name}
-                type="checkbox"
-                checked={field.state.value}
-                onChange={(e) => field.handleChange(e.target.checked)}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor={field.name} className="font-normal">
-                Product is active
-              </Label>
-            </div>
-          )}
-        </form.Field>
-      </div>
-
-      {/* Submit */}
-      <div className="flex gap-2">
-        <Button type="submit" disabled={form.state.isSubmitting}>
-          {form.state.isSubmitting ? 'Saving...' : submitLabel}
-        </Button>
-      </div>
-    </form>
-  );
+export function invalidateMyEntityLists() {
+    return myEntityQueryKeys.lists();
 }
 ```
 
-### Create Page
+```typescript
+// src/features/my-entities/hooks/useMyEntityQuery.ts
+import { fetchApi } from '@/lib/api/client';
+import { isApiError } from '@/lib/errors';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    myEntityQueryKeys,
+    invalidateMyEntityLists
+} from './myEntityQueryKeys';
 
-Create `src/routes/products/new.tsx`:
-
-```tsx
-// src/routes/products/new.tsx
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createProduct } from '@/features/products/queries';
-import { ProductForm } from '@/features/products/components/ProductForm';
-import { Button } from '@/components/ui/button';
-
-export const Route = createFileRoute('/products/new')({
-  component: CreateProductPage,
-});
-
-function CreateProductPage() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: createProduct,
-    onSuccess: (product) => {
-      // Invalidate list query
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-
-      // Navigate to detail page
-      navigate({
-        to: '/products/$id',
-        params: { id: product.id },
-      });
-    },
-  });
-
-  return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Create Product</h1>
-          <p className="text-muted-foreground">
-            Add a new product to your catalog
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: '/products' })}
-        >
-          Cancel
-        </Button>
-      </div>
-
-      {/* Form */}
-      <div className="max-w-2xl">
-        <div className="rounded-lg border p-6">
-          {mutation.isError && (
-            <div className="mb-4 rounded-md bg-red-50 p-4 text-red-600">
-              Error creating product: {mutation.error.message}
-            </div>
-          )}
-
-          <ProductForm
-            onSubmit={(data) => mutation.mutateAsync(data)}
-            submitLabel="Create Product"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
-### Edit Page
-
-Create `src/routes/products/$id.edit.tsx`:
-
-```tsx
-// src/routes/products/$id.edit.tsx
-import { createFileRoute, useNavigate, notFound } from '@tanstack/react-router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getProduct, updateProduct } from '@/features/products/queries';
-import { ProductForm } from '@/features/products/components/ProductForm';
-import { Button } from '@/components/ui/button';
-
-export const Route = createFileRoute('/products/$id/edit')({
-  loader: async ({ params }) => {
-    const product = await getProduct(params.id);
-
-    if (!product) {
-      throw notFound();
-    }
-
-    return { product };
-  },
-
-  component: EditProductPage,
-});
-
-function EditProductPage() {
-  const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  // Get product data
-  const { data: product, isLoading } = useQuery({
-    queryKey: ['products', id],
-    queryFn: ({ signal }) => getProduct(id, { signal }),
-    initialData: Route.useLoaderData().product,
-  });
-
-  // Update mutation
-  const mutation = useMutation({
-    mutationFn: (data: typeof product) => updateProduct(id, data),
-    onSuccess: (updatedProduct) => {
-      // Invalidate queries
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      queryClient.invalidateQueries({ queryKey: ['products', id] });
-
-      // Navigate to detail page
-      navigate({
-        to: '/products/$id',
-        params: { id: updatedProduct.id },
-      });
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="text-lg">Loading product...</div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Edit Product</h1>
-          <p className="text-muted-foreground">{product.name}</p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => navigate({ to: '/products/$id', params: { id } })}
-        >
-          Cancel
-        </Button>
-      </div>
-
-      {/* Form */}
-      <div className="max-w-2xl">
-        <div className="rounded-lg border p-6">
-          {mutation.isError && (
-            <div className="mb-4 rounded-md bg-red-50 p-4 text-red-600">
-              Error updating product: {mutation.error.message}
-            </div>
-          )}
-
-          <ProductForm
-            product={product}
-            onSubmit={(data) => mutation.mutateAsync(data)}
-            submitLabel="Update Product"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-```
-
----
-
-## ✅ Step 7: Add to Navigation
-
-Add the Products link to your sidebar navigation:
-
-```tsx
-// src/components/layouts/Sidebar.tsx (or wherever your nav is)
-import { Link } from '@tanstack/react-router';
-
-export function Sidebar() {
-  return (
-    <nav>
-      {/* Other nav items */}
-      <Link
-        to="/products"
-        className="flex items-center gap-2 rounded-md px-3 py-2 hover:bg-accent"
-      >
-        <PackageIcon />
-        <span>Products</span>
-      </Link>
-    </nav>
-  );
-}
-```
-
----
-
-## 🧪 Step 8: Test Your Pages
-
-### Manual Testing Checklist
-
-**List page (`/products`):**
-
-- [ ] Page loads without errors
-- [ ] Products display in table
-- [ ] "Create Product" button visible
-- [ ] Can click "View" to see product detail
-- [ ] Can click "Edit" to edit product
-- [ ] Pagination info shows correctly
-
-**Detail page (`/products/:id`):**
-
-- [ ] Product details display correctly
-- [ ] All fields show proper values
-- [ ] "Edit" button navigates to edit page
-- [ ] "Back" button returns to list
-
-**Create page (`/products/new`):**
-
-- [ ] Form displays all fields
-- [ ] Validation works (try submitting empty)
-- [ ] Can successfully create product
-- [ ] Redirects to detail page after creation
-- [ ] New product appears in list
-
-**Edit page (`/products/:id/edit`):**
-
-- [ ] Form pre-fills with product data
-- [ ] Can update fields
-- [ ] Validation works
-- [ ] Can successfully save changes
-- [ ] Changes reflect in detail page
-
-### Automated Testing
-
-Add tests in `test/routes/products/`:
-
-```tsx
-// test/routes/products/index.test.tsx
-import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi } from 'vitest';
-
-vi.mock('@/features/products/queries', () => ({
-  getProducts: vi.fn().mockResolvedValue({
-    products: [
-      {
-        id: '1',
-        name: 'Test Product',
-        category: 'Test',
-        price: 99.99,
-        stock: 10,
-        isActive: true,
-      },
-    ],
-    total: 1,
-    page: 1,
-    limit: 20,
-  }),
-}));
-
-describe('Products List Page', () => {
-  it('should render products table', async () => {
-    const queryClient = new QueryClient();
-
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ProductsPage />
-      </QueryClientProvider>
-    );
-
-    expect(await screen.findByText('Test Product')).toBeInTheDocument();
-  });
-});
-```
-
----
-
-## 🎨 Enhancements (Optional)
-
-### Add Delete Functionality
-
-Add delete button to detail page:
-
-```tsx
-// In ProductDetailPage component
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { deleteProduct } from '@/features/products/queries';
-
-function ProductDetailPage() {
-  const { id } = Route.useParams();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteProduct(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['products'] });
-      navigate({ to: '/products' });
-    },
-  });
-
-  const handleDelete = () => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      deleteMutation.mutate();
-    }
-  };
-
-  return (
-    <div>
-      {/* ... existing code ... */}
-      <Button variant="destructive" onClick={handleDelete}>
-        Delete Product
-      </Button>
-    </div>
-  );
-}
-```
-
-### Add Search
-
-Add search input to list page:
-
-```tsx
-import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { Input } from '@/components/ui/input';
-
-function ProductsPage() {
-  const navigate = useNavigate();
-  const search = Route.useSearch();
-  const [searchValue, setSearchValue] = useState(search.search ?? '');
-
-  const handleSearch = () => {
-    navigate({
-      search: (prev) => ({ ...prev, search: searchValue, page: 1 }),
+/**
+ * Hook for fetching a single entity by ID
+ */
+export const useMyEntityQuery = (
+    id: string,
+    options?: { enabled?: boolean }
+) => {
+    return useQuery({
+        queryKey: myEntityQueryKeys.detail(id),
+        queryFn: async () => {
+            const response = await fetchApi({
+                path: `/api/v1/admin/my-entities/${id}`
+            });
+            // API returns: { success: true, data: MyEntity, metadata: {...} }
+            const apiResponse = response.data as {
+                success: boolean;
+                data: MyEntityCore;
+                metadata: unknown;
+            };
+            return apiResponse.data;
+        },
+        enabled: options?.enabled ?? Boolean(id),
+        staleTime: 5 * 60 * 1000,
+        gcTime: 10 * 60 * 1000,
+        retry: (failureCount, error) => {
+            if (isApiError(error) && error.status === 404) return false;
+            return failureCount < 3;
+        }
     });
-  };
+};
 
-  return (
-    <div>
-      <div className="flex gap-2">
-        <Input
-          placeholder="Search products..."
-          value={searchValue}
-          onChange={(e) => setSearchValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-        />
-        <Button onClick={handleSearch}>Search</Button>
-      </div>
-      {/* ... rest of component ... */}
-    </div>
-  );
-}
+/**
+ * Mutation hook for creating entities
+ */
+export const useCreateMyEntityMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data: CreateMyEntityInput) => {
+            const response = await fetchApi({
+                path: '/api/v1/admin/my-entities',
+                method: 'POST',
+                body: data
+            });
+            return response.data as MyEntityCore;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: invalidateMyEntityLists()
+            });
+        }
+    });
+};
+
+/**
+ * Mutation hook for updating entities (with optimistic updates)
+ */
+export const useUpdateMyEntityMutation = (id: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (data: Partial<MyEntityCore>) => {
+            const response = await fetchApi({
+                path: `/api/v1/admin/my-entities/${id}`,
+                method: 'PATCH',
+                body: data
+            });
+            const apiResponse = response.data as {
+                success: boolean;
+                data: MyEntityCore;
+                metadata: unknown;
+            };
+            return apiResponse.data;
+        },
+        onMutate: async (newData) => {
+            await queryClient.cancelQueries({
+                queryKey: myEntityQueryKeys.detail(id)
+            });
+            const previous = queryClient.getQueryData(
+                myEntityQueryKeys.detail(id)
+            );
+            queryClient.setQueryData(
+                myEntityQueryKeys.detail(id),
+                (old: MyEntityCore | undefined) =>
+                    old ? { ...old, ...newData } : old
+            );
+            return { previous };
+        },
+        onError: (_err, _newData, context) => {
+            if (context?.previous) {
+                queryClient.setQueryData(
+                    myEntityQueryKeys.detail(id),
+                    context.previous
+                );
+            }
+        },
+        onSuccess: (updated) => {
+            queryClient.setQueryData(
+                myEntityQueryKeys.detail(id),
+                updated
+            );
+            queryClient.invalidateQueries({
+                queryKey: invalidateMyEntityLists()
+            });
+        }
+    });
+};
+
+/**
+ * Mutation hook for deleting entities
+ */
+export const useDeleteMyEntityMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (id: string) => {
+            await fetchApi({
+                path: `/api/v1/admin/my-entities/${id}`,
+                method: 'DELETE'
+            });
+        },
+        onSuccess: (_, deletedId) => {
+            queryClient.removeQueries({
+                queryKey: myEntityQueryKeys.detail(deletedId)
+            });
+            queryClient.invalidateQueries({
+                queryKey: invalidateMyEntityLists()
+            });
+        }
+    });
+};
 ```
 
----
+### 6. Create View and Edit Routes
 
-## 💡 Best Practices
+```typescript
+// src/routes/_authed/my-entities/$id.tsx
+import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
+import { useMyEntityPage } from '@/features/my-entities/hooks/useMyEntityPage';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { createFileRoute } from '@tanstack/react-router';
 
-### Do's
-
-**✅ Keep route files thin**
-
-```tsx
-// ✅ Good - logic in feature folder
-import { ProductsTable } from '@/features/products/components/ProductsTable';
-import { getProducts } from '@/features/products/queries';
-
-export const Route = createFileRoute('/products/')({
-  component: ProductsPage,
+export const Route = createFileRoute('/_authed/my-entities/$id')({
+    component: MyEntityViewPage,
+    loader: async ({ params }) => ({ myEntityId: params.id }),
+    errorComponent: createErrorComponent('MyEntity'),
+    pendingComponent: createPendingComponent()
 });
 
-function ProductsPage() {
-  // Just composition, no business logic
-  return <ProductsTable />;
+function MyEntityViewPage() {
+    const { id } = Route.useParams();
+    const entityData = useMyEntityPage(id);
+
+    return (
+        <EntityPageBase
+            entityType="myEntity"
+            entityId={id}
+            initialMode="view"
+            entityData={entityData}
+        >
+            <EntityViewContent
+                entityType="myEntity"
+                entityId={id}
+                sections={entityData.sections}
+                entity={entityData.entity || {}}
+                userPermissions={entityData.userPermissions}
+            />
+        </EntityPageBase>
+    );
 }
 ```
 
-**✅ Use loaders for SSR**
+```typescript
+// src/routes/_authed/my-entities/$id_.edit.tsx
+import { createFileRoute } from '@tanstack/react-router';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+// ... edit page component
 
-```tsx
-// ✅ Good - data fetched on server
-export const Route = createFileRoute('/products/$id')({
-  loader: async ({ params }) => {
-    return { product: await getProduct(params.id) };
-  },
-  component: ProductDetail,
+export const Route = createFileRoute('/_authed/my-entities/$id/edit')({
+    component: MyEntityEditPage,
+    loader: async ({ params }) => ({ myEntityId: params.id }),
+    errorComponent: createErrorComponent('MyEntity'),
+    pendingComponent: createPendingComponent()
 });
 ```
 
-**✅ Handle loading and error states**
+### 7. Add Navigation
 
-```tsx
-// ✅ Good - user feedback
-if (isLoading) return <Spinner />;
-if (error) return <ErrorMessage error={error} />;
+Register your section in the sidebar navigation.
+
+**Option A: Add to an existing section** (e.g., Content):
+
+```typescript
+// src/config/sections/content.section.tsx
+// Add a new sidebar group inside the existing section's sidebar.items array:
+
+sidebar.group(
+    'my-entities',
+    'My Entities',
+    [
+        sidebar.link(
+            'my-entities-list',
+            'List',
+            '/my-entities',
+            <ListIcon className="h-4 w-4" />,
+            [PermissionEnum.MY_ENTITY_VIEW_ALL]
+        ),
+        sidebar.link(
+            'my-entities-new',
+            'Create New',
+            '/my-entities/new',
+            <AddIcon className="h-4 w-4" />,
+            [PermissionEnum.MY_ENTITY_CREATE]
+        )
+    ],
+    <MyEntityIcon className="h-4 w-4" />
+),
 ```
 
-### Don'ts
+Also add the routes to the section's `routes` array:
 
-**❌ Don't put business logic in routes**
-
-```tsx
-// ❌ Bad - business logic in route
-function ProductsPage() {
-  const [products, setProducts] = useState([]);
-
-  useEffect(() => {
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then(setProducts);
-  }, []);
-
-  // Complex filtering, sorting, etc...
-}
+```typescript
+routes: [
+    // ... existing routes
+    '/my-entities',
+    '/my-entities/**',
+],
 ```
 
-**❌ Don't skip error handling**
+**Option B: Create a new section:**
 
-```tsx
-// ❌ Bad - no error handling
-function ProductDetail() {
-  const { data } = useQuery({ queryKey: ['product'], queryFn: getProduct });
+```typescript
+// src/config/sections/my-section.section.tsx
+import { createSection, sidebar } from '@/lib/sections';
+import { ListIcon, AddIcon, MyIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 
-  // What if data is undefined?
-  return <div>{data.name}</div>;
-}
-```
-
-**❌ Don't forget to invalidate queries**
-
-```tsx
-// ❌ Bad - cache not updated
-const mutation = useMutation({
-  mutationFn: createProduct,
-  // List won't show new product!
+export const mySection = createSection({
+    id: 'my-section',
+    label: 'My Section',
+    labelKey: 'admin-menu.mySection.title',
+    icon: <MyIcon className="h-5 w-5" />,
+    permissions: [PermissionEnum.MY_ENTITY_VIEW_ALL],
+    routes: ['/my-entities', '/my-entities/**'],
+    defaultRoute: '/my-entities',
+    sidebar: {
+        title: 'My Section',
+        titleKey: 'admin-menu.mySection.title',
+        items: [
+            sidebar.group(
+                'my-entities',
+                'My Entities',
+                [
+                    sidebar.link(
+                        'my-entities-list',
+                        'List',
+                        '/my-entities',
+                        <ListIcon className="h-4 w-4" />,
+                        [PermissionEnum.MY_ENTITY_VIEW_ALL]
+                    ),
+                    sidebar.link(
+                        'my-entities-new',
+                        'Create New',
+                        '/my-entities/new',
+                        <AddIcon className="h-4 w-4" />,
+                        [PermissionEnum.MY_ENTITY_CREATE]
+                    )
+                ],
+                <MyIcon className="h-4 w-4" />,
+                true // expanded by default
+            )
+        ]
+    }
 });
 ```
 
----
+Then register it in `src/config/sections/index.tsx`:
 
-## 🐛 Troubleshooting
+```typescript
+import { mySection } from './my-section.section';
+
+export const sections: SectionConfig[] = [
+    dashboardSection,
+    contentSection,
+    mySection,           // Add here
+    billingSection,
+    administrationSection,
+    analyticsSection
+];
+```
+
+## Auth Guards
+
+### Layout-Level Auth (Automatic)
+
+The `_authed.tsx` layout handles authentication for all child routes:
+
+- Redirects unauthenticated users to `/auth/signin`
+- Verifies the user has an admin-panel-eligible role (SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, SPONSOR)
+- Forces password change if `passwordChangeRequired` is set
+- Wraps all content in `AuthProvider` and `AppLayout`
+
+### Route-Level Permission Checks
+
+For routes that require specific permissions beyond basic admin access:
+
+```typescript
+export const Route = createFileRoute('/_authed/my-entities/')({
+    beforeLoad: ({ context }) => {
+        const authState = context as AuthState;
+        if (!authState.permissions.includes(PermissionEnum.MY_ENTITY_VIEW_ALL)) {
+            throw redirect({ to: '/dashboard' });
+        }
+    },
+    component: MyEntitiesPage
+});
+```
+
+## API Communication
+
+### Key Rules
+
+- Admin uses ONLY `/api/v1/admin/*` endpoints
+- One exception: `/api/v1/public/auth/me` for checking the current session
+- Always use `fetchApi` from `@/lib/api/client` (handles `credentials: 'include'` automatically)
+- Use `page` + `pageSize` for pagination (NOT `limit`)
+- API responses follow the format: `{ success: boolean, data: T, metadata: {...} }`
+- List responses nest data as: `{ success: true, data: { items: T[], pagination: {...} } }`
+
+### The fetchApi Client
+
+```typescript
+import { fetchApi } from '@/lib/api/client';
+
+// GET request
+const response = await fetchApi({ path: '/api/v1/admin/my-entities' });
+
+// POST request
+const response = await fetchApi({
+    path: '/api/v1/admin/my-entities',
+    method: 'POST',
+    body: { name: 'New Entity' }
+});
+
+// PATCH request
+const response = await fetchApi({
+    path: `/api/v1/admin/my-entities/${id}`,
+    method: 'PATCH',
+    body: updates
+});
+
+// DELETE request
+await fetchApi({
+    path: `/api/v1/admin/my-entities/${id}`,
+    method: 'DELETE'
+});
+```
+
+The base URL is read from `VITE_API_URL` environment variable (defaults to `http://localhost:3001`).
+
+## Step-by-Step: Adding a Custom Page
+
+For non-CRUD pages (dashboards, metrics, settings), skip the entity list system and create a direct route.
+
+### 1. Create Route File
+
+```typescript
+// src/routes/_authed/my-custom-page.tsx
+import { createFileRoute } from '@tanstack/react-router';
+
+export const Route = createFileRoute('/_authed/my-custom-page')({
+    component: MyCustomPage
+});
+
+function MyCustomPage() {
+    return (
+        <div className="space-y-6">
+            <div>
+                <h1 className="font-bold text-2xl tracking-tight">
+                    My Custom Page
+                </h1>
+                <p className="text-muted-foreground">
+                    Description of what this page does.
+                </p>
+            </div>
+
+            {/* Page content */}
+        </div>
+    );
+}
+```
+
+### 2. Add Data Fetching
+
+```typescript
+import { useQuery } from '@tanstack/react-query';
+import { fetchApi } from '@/lib/api/client';
+
+function MyCustomPage() {
+    const { data, isLoading, error } = useQuery({
+        queryKey: ['my-custom-data'],
+        queryFn: async () => {
+            const response = await fetchApi({
+                path: '/api/v1/admin/my-custom-endpoint'
+            });
+            const apiResponse = response.data as {
+                success: boolean;
+                data: MyCustomData;
+            };
+            return apiResponse.data;
+        }
+    });
+
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error loading data</div>;
+
+    return (
+        <div className="space-y-6">
+            {/* Render data */}
+        </div>
+    );
+}
+```
+
+## Form Validation
+
+Use Zod schemas for runtime validation in forms:
+
+```typescript
+import { z } from 'zod';
+
+const entitySchema = z.object({
+    name: z.string().min(1, 'Name is required').max(100),
+    description: z.string().min(1, 'Description is required'),
+    price: z.number().positive('Price must be positive'),
+    category: z.string().min(1, 'Category is required'),
+    isActive: z.boolean(),
+});
+```
+
+## UI Components
+
+Use Shadcn UI components from `src/components/ui/`:
+
+- `button`, `input`, `select`, `textarea`, `switch`, `label` .. Form elements
+- `dialog`, `alert-dialog` .. Modals and confirmations
+- `dropdown-menu`, `popover`, `command` .. Menus and popovers
+- `badge`, `card`, `progress` .. Visual elements
+- `DataTable` (from `src/components/table/`) .. Data tables with TanStack Table
+
+Use wrapped components from `src/components/ui-wrapped/` when available (Badge, Button, Card, Checkbox, Select, Switch, Tabs, Textarea, Label, Accordion).
+
+Use layout components from `src/components/layout/`:
+
+- `MainPageLayout` .. Standard page wrapper
+- `BasePageLayout` .. Base layout with less structure
+- `SidebarPageLayout` .. Layout with sidebar
+- `Breadcrumbs` .. Breadcrumb navigation
+- `PageTabs` .. Tab navigation within entity detail pages
+
+Use feedback components from `src/components/feedback/`:
+
+- `EmptyState` .. Empty state with icon and action
+- `ComingSoon` .. Placeholder for unfinished pages
+
+**Never install another UI library. Use Shadcn UI exclusively.**
+
+## Icons
+
+All icons come from `@repo/icons` (Phosphor Icons wrappers). Never add inline `<svg>` elements.
+
+```typescript
+import { ListIcon, AddIcon, MyEntityIcon } from '@repo/icons';
+
+<ListIcon className="h-4 w-4" />
+<AddIcon className="h-4 w-4" />
+```
+
+## Environment Variables
+
+Admin uses `VITE_` prefixed variables (Vite convention):
+
+```bash
+VITE_API_URL=http://localhost:3001    # API base URL
+VITE_DEBUG_ACTOR_ID=...               # Debug: override auth user ID
+```
+
+## Best Practices
+
+### Do
+
+- **Keep route files thin** .. logic belongs in feature folders
+- **Use loaders for SSR** .. prefetch data on the server when possible
+- **Handle loading and error states** .. always provide user feedback
+- **Always invalidate queries after mutations** .. keep UI in sync with server
+- **Use `Route.useParams()` instead of `useParams()`** .. get type-safe params from the specific route
+
+### Do Not
+
+- **Do not put business logic in routes** .. extract to feature hooks
+- **Do not skip error handling** .. always check for undefined data
+- **Do not forget to invalidate queries** .. stale cache causes bugs
+- **Do not use `useEffect` for data fetching** .. use TanStack Query
+
+## Troubleshooting
 
 ### Issue: "Route not found"
 
-**Solution:** Verify file path matches route definition:
+Verify file path matches route definition:
 
-```tsx
-// File: src/routes/products/index.tsx
-export const Route = createFileRoute('/products/')({
-  // Must match file location
+```typescript
+// File: src/routes/_authed/my-entities/index.tsx
+export const Route = createFileRoute('/_authed/my-entities/')({
+    // Must match file location
 ```
 
 ### Issue: "Type errors with params"
 
-**Solution:** Use correct hooks from Route object:
+Use correct hooks from Route object:
 
-```tsx
-// ❌ Wrong
+```typescript
+// Wrong
 const { id } = useParams();
 
-// ✅ Correct
+// Correct
 const { id } = Route.useParams();
 ```
 
 ### Issue: "Form not submitting"
 
-**Solution:** Check form.handleSubmit() is called:
+Check `form.handleSubmit()` is called:
 
-```tsx
+```typescript
 <form
-  onSubmit={(e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    form.handleSubmit(); // ← Don't forget this!
-  }}
+    onSubmit={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        form.handleSubmit(); // Do not forget this
+    }}
 >
 ```
 
 ### Issue: "Data not updating after mutation"
 
-**Solution:** Invalidate queries after mutations:
+Invalidate queries after mutations:
 
-```tsx
+```typescript
 const mutation = useMutation({
-  mutationFn: updateProduct,
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ['products'] });
-  },
+    mutationFn: updateProduct,
+    onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: ['products'] });
+    },
 });
 ```
 
----
+## Common Gotchas
 
-## 📖 Next Steps
+- **Pagination uses `page` + `pageSize`**, not `limit`. The `PaginationQuerySchema` on the API side rejects unknown params.
+- **API response nesting**: List endpoints return `{ data: { items: [], pagination: {} } }`. Single entity endpoints return `{ data: Entity }`. Always extract `.data` from the response.
+- **Auth cookies**: `fetchApi` already sets `credentials: 'include'`. Do not add custom auth headers.
+- **Route file naming**: The `$id_.edit.tsx` pattern (with underscore after `$id`) creates `/my-entities/:id/edit`. Without the underscore, `$id.edit.tsx` would look for a literal `.edit` in the URL.
+- **createFileRoute hack**: In entity list routes, you must reference `createFileRoute` to prevent TypeScript errors from TanStack Router's code generation.
+- **Section permissions**: Use `PermissionEnum` values from `@repo/schemas`. Never check roles directly in route guards.
 
-Now that you've built a complete CRUD feature:
+## Checklist
 
-1. **Read more guides:**
-   - [Forms](./forms.md) - Advanced form patterns
-   - [Tables](./tables.md) - Table features (sorting, filtering)
-   - [Queries](./queries.md) - Advanced data fetching
+- [ ] Feature directory created in `src/features/` (for entity pages)
+- [ ] Route file created in `src/routes/_authed/`
+- [ ] Entity config with `createEntityListPage` (for list pages)
+- [ ] Query keys factory defined
+- [ ] TanStack Query hooks for fetching and mutations
+- [ ] Uses `/api/v1/admin/*` endpoints exclusively
+- [ ] Auth guard via `_authed` layout (automatic)
+- [ ] Permission checks in `beforeLoad` if entity-specific access needed
+- [ ] Table columns defined with `ColumnDef`
+- [ ] UI uses Shadcn components only
+- [ ] Icons from `@repo/icons` only
+- [ ] Loading, error, and empty states handled
+- [ ] Navigation link added to sidebar section config
+- [ ] Section routes array updated to include new paths
+- [ ] Form validation with Zod schemas
+- [ ] Tests added for new routes
 
-1. **Add more features:**
-   - Filters and advanced search
-   - Sorting and pagination
-   - Image uploads
-   - Bulk operations
+## Related
 
-1. **Improve UX:**
-   - Loading skeletons
-   - Optimistic updates
-   - Toast notifications
-   - Keyboard shortcuts
-
----
-
-⬅️ Back to [Development Documentation](./README.md)
+- [Admin App CLAUDE.md](../../CLAUDE.md)
+- [API Route Architecture](../../../api/docs/route-architecture.md)
+- [Development Documentation](./README.md)

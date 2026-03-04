@@ -30,7 +30,7 @@ The **Hospeda Admin Dashboard** is built on **TanStack Start**, a modern full-st
 ┌─────────────────────────────────────────────────────────────┐
 │                     Browser (Client)                        │
 │  ┌────────────┐  ┌────────────┐  ┌────────────┐           │
-│  │   React    │  │  TanStack  │  │   Clerk    │           │
+│  │   React    │  │  TanStack  │  │   Better Auth    │           │
 │  │ Components │  │   Query    │  │  (Auth)    │           │
 │  └────────────┘  └────────────┘  └────────────┘           │
 │         │                │                │                 │
@@ -265,7 +265,7 @@ export const Route = createFileRoute('/accommodations/$id')({
 ```tsx
 // src/routes/_authenticated/dashboard.tsx
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { useAuth } from '@clerk/tanstack-react-start';
+import { useAuth } from '@repo/auth-ui';
 
 export const Route = createFileRoute('/_authenticated/dashboard')({
   beforeLoad: async ({ context }) => {
@@ -608,13 +608,13 @@ export function AccommodationsTable({ data }: { data: Accommodation[] }) {
 
 ---
 
-## 🔐 Authentication (Clerk)
+## 🔐 Authentication (Better Auth)
 
 ### Setup
 
 ```tsx
 // src/routes/__root.tsx
-import { ClerkProvider } from '@clerk/tanstack-react-start';
+import { AuthProvider } from '@repo/auth-ui';
 import { createRootRoute, Outlet } from '@tanstack/react-router';
 
 export const Route = createRootRoute({
@@ -623,11 +623,11 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <ClerkProvider
-      publishableKey={import.meta.env.VITE_CLERK_PUBLISHABLE_KEY}
+    <AuthProvider
+      publishableKey={import.meta.env.VITE_BETTER_AUTH_URL}
     >
       <Outlet />
-    </ClerkProvider>
+    </AuthProvider>
   );
 }
 ```
@@ -635,7 +635,7 @@ function RootComponent() {
 ### Using Auth
 
 ```tsx
-import { useAuth, useUser } from '@clerk/tanstack-react-start';
+import { useAuth, useUser } from '@repo/auth-ui';
 
 export function UserProfile() {
   const { isSignedIn, userId } = useAuth();

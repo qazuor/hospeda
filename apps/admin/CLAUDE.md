@@ -571,6 +571,12 @@ export function Button({ variant, size, className, ...props }) {
 9. **Use TypeScript strict mode** - no `any` types (biome enforces this)
 10. **Use `useMemo` with whole objects as deps** - not individual properties (biome `useExhaustiveDependencies`)
 
+## Related Documentation
+
+- [Adding Admin Pages](docs/development/creating-pages.md)
+- [Dependency Policy](../../docs/guides/dependency-policy.md)
+- [Authentication Guide](../../docs/security/authentication.md)
+
 <claude-mem-context>
 # Recent Activity
 

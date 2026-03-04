@@ -13,7 +13,7 @@ Full-featured admin dashboard for managing accommodations, destinations, events,
 - **Data**: TanStack Query (server state), TanStack Table (data grids)
 - **Forms**: TanStack Form with Zod validation
 - **UI**: React 19, Tailwind CSS, Shadcn/Radix UI
-- **Authentication**: Clerk with RBAC
+- **Authentication**: Better Auth with RBAC
 - **Deployment**: Vercel
 
 ## Quick Start
@@ -39,7 +39,7 @@ The admin dashboard will be available at `http://localhost:3000`
 - 🎨 **Modern UI**: Shadcn components with Radix UI primitives
 - 📊 **Data Tables**: Sortable, filterable tables with TanStack Table
 - 📝 **Smart Forms**: TanStack Form with Zod validation
-- 🔐 **RBAC**: Role-based access control with Clerk
+- 🔐 **RBAC**: Role-based access control with Better Auth
 - ⚡ **Fast**: SSR with React Server Components
 - 🔄 **Real-time**: Optimistic updates with TanStack Query
 - 🧪 **Tested**: Comprehensive test coverage
@@ -87,9 +87,9 @@ Copy `.env.example` to `.env` and configure:
 # API Configuration
 VITE_API_URL=http://localhost:3001
 
-# Clerk Authentication
-VITE_CLERK_PUBLISHABLE_KEY=pk_...
-CLERK_SECRET_KEY=sk_...
+# Better Auth Authentication
+VITE_BETTER_AUTH_URL=http://localhost:3001/api/auth
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
 
 # App Configuration
 VITE_APP_NAME=Hospeda Admin
@@ -109,7 +109,7 @@ Topics covered in detailed docs:
 - **[Data Fetching](./docs/development/data-fetching.md)**: TanStack Query patterns
 - **[Forms](./docs/development/forms.md)**: TanStack Form with validation
 - **[Tables](./docs/development/tables.md)**: TanStack Table implementation
-- **[Authentication](./docs/AUTH_SYSTEM.md)**: Clerk integration and RBAC
+- **[Authentication](./docs/AUTH_SYSTEM.md)**: Better Auth integration and RBAC
 - **[Deployment](./docs/development/deployment.md)**: Vercel deployment guide
 
 For cross-app documentation:
@@ -143,6 +143,12 @@ src/
 ├── hooks/             # Custom React hooks
 └── contexts/          # React contexts
 ```
+
+---
+
+## Related Documentation
+
+- [Adding Admin Pages Guide](../../docs/guides/adding-admin-pages.md)
 
 ---
 
