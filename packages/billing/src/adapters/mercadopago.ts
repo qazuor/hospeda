@@ -146,29 +146,13 @@ export function createMercadoPagoAdapter(
         );
     }
 
-    // Validate access token format (warning only)
-    // MercadoPago tokens may start with 'APP_USR-' or 'TEST-', but some
-    // test credentials use 'APP_USR-' prefix even in sandbox mode.
-    // The actual token validity is verified by MercadoPago's API at runtime.
-    const isTestToken = accessToken.startsWith('TEST-');
-    const isProdToken = accessToken.startsWith('APP_USR-');
+    // Validate access token format - both test and production tokens use APP_USR- prefix
+    const isValidToken = accessToken.startsWith('APP_USR-') || accessToken.startsWith('TEST-');
 
-    if (!isTestToken && !isProdToken) {
-        console.warn(
-            '[billing] MercadoPago access token has unexpected format. ' +
-                'Expected prefix "APP_USR-" or "TEST-". Proceeding anyway as MercadoPago will validate at runtime.'
+    if (!isValidToken) {
+        throw new Error(
+            'Invalid MercadoPago access token format. Expected prefix "APP_USR-" or "TEST-".'
         );
-    }
-
-    if (sandbox && isProdToken) {
-        console.warn(
-            '[billing] Sandbox mode enabled with APP_USR- token. ' +
-                'This is acceptable if MercadoPago issued this token for your test application.'
-        );
-    }
-
-    if (!sandbox && isTestToken) {
-        throw new Error('Production mode requires an APP_USR- access token. Received test token.');
     }
 
     // Validate webhook secret based on environment

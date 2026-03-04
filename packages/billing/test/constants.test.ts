@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     COMPLEX_TRIAL_DAYS,
     DEFAULT_CURRENCY,
+    DUNNING_GRACE_PERIOD_DAYS,
+    DUNNING_RETRY_INTERVALS,
     ENTITLEMENT_CACHE_TTL_MS,
     MAX_PAYMENT_RETRY_ATTEMPTS,
     MERCADO_PAGO_DEFAULT_TIMEOUT_MS,
@@ -50,6 +52,39 @@ describe('Billing Constants', () => {
         it('should have retry attempts within a reasonable range (1-10)', () => {
             expect(MAX_PAYMENT_RETRY_ATTEMPTS).toBeGreaterThanOrEqual(1);
             expect(MAX_PAYMENT_RETRY_ATTEMPTS).toBeLessThanOrEqual(10);
+        });
+    });
+
+    describe('Dunning configuration', () => {
+        it('should define dunning grace period as a positive integer', () => {
+            expect(DUNNING_GRACE_PERIOD_DAYS).toBeGreaterThan(0);
+            expect(Number.isInteger(DUNNING_GRACE_PERIOD_DAYS)).toBe(true);
+        });
+
+        it('should have dunning grace period within a reasonable range (1-30)', () => {
+            expect(DUNNING_GRACE_PERIOD_DAYS).toBeGreaterThanOrEqual(1);
+            expect(DUNNING_GRACE_PERIOD_DAYS).toBeLessThanOrEqual(30);
+        });
+
+        it('should define dunning retry intervals as a non-empty array of positive integers', () => {
+            expect(DUNNING_RETRY_INTERVALS.length).toBeGreaterThan(0);
+            for (const interval of DUNNING_RETRY_INTERVALS) {
+                expect(interval).toBeGreaterThan(0);
+                expect(Number.isInteger(interval)).toBe(true);
+            }
+        });
+
+        it('should have retry intervals in ascending order', () => {
+            for (let i = 1; i < DUNNING_RETRY_INTERVALS.length; i++) {
+                expect(DUNNING_RETRY_INTERVALS[i]).toBeGreaterThan(
+                    DUNNING_RETRY_INTERVALS[i - 1] as number
+                );
+            }
+        });
+
+        it('should have last retry interval not exceeding the grace period', () => {
+            const lastInterval = DUNNING_RETRY_INTERVALS[DUNNING_RETRY_INTERVALS.length - 1];
+            expect(lastInterval).toBeLessThanOrEqual(DUNNING_GRACE_PERIOD_DAYS);
         });
     });
 

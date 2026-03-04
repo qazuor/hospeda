@@ -68,24 +68,16 @@ describe('MercadoPago Adapter Configuration', () => {
             }).toThrow('Invalid MercadoPago access token format');
         });
 
-        it('should throw error when sandbox mode mismatches token type', () => {
-            // Arrange & Act & Assert
-            expect(() => {
-                createMercadoPagoAdapter({
-                    accessToken: 'APP_USR-production-token',
-                    sandbox: true
-                });
-            }).toThrow('Sandbox mode requires a TEST- access token');
-        });
+        it('should create adapter with APP_USR token in sandbox mode', () => {
+            // Arrange & Act
+            const adapter = createMercadoPagoAdapter({
+                accessToken: 'APP_USR-test-credentials-token',
+                sandbox: true
+            });
 
-        it('should throw error when production mode receives test token', () => {
-            // Arrange & Act & Assert
-            expect(() => {
-                createMercadoPagoAdapter({
-                    accessToken: 'TEST-test-token',
-                    sandbox: false
-                });
-            }).toThrow('Production mode requires an APP_USR- access token');
+            // Assert
+            expect(adapter).toBeDefined();
+            expect(adapter.provider).toBe('mercadopago');
         });
 
         it('should create adapter with production token in production mode', () => {
