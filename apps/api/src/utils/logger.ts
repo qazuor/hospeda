@@ -2,9 +2,25 @@
  * This module configures and extends the base logger for api specific logging.
  * It introduces a custom `permission` log method to standardize how access control
  * checks are recorded throughout the api application.
+ *
+ * NOTE: We load dotenv here because this module executes at import time (side-effect)
+ * and may run before env.ts has loaded .env.local. Without this, process.env vars
+ * like API_LOG_EXPAND_OBJECTS would be undefined when registerCategory runs.
  */
 
+import { existsSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
+import { config } from 'dotenv';
+
+// Ensure .env.local is loaded before reading env vars
+const _loggerDirname = dirname(fileURLToPath(import.meta.url));
+const _rootDir = resolve(_loggerDirname, '../../../..');
+const _envLocal = resolve(_rootDir, '.env.local');
+if (existsSync(_envLocal)) {
+    config({ path: _envLocal });
+}
 
 // Safe environment access for logger initialization
 const safeGetEnvBoolean = (key: string, defaultValue: boolean): boolean => {
@@ -22,11 +38,11 @@ const safeGetEnvNumber = (key: string, defaultValue: number): number => {
 
 const apiLogger = logger.registerCategory('API', 'API', {
     color: LoggerColors.BLUE,
-    truncateLongText: safeGetEnvBoolean('LOG_TRUNCATE_TEXT', true),
-    truncateLongTextAt: safeGetEnvNumber('LOG_TRUNCATE_AT', 1000),
-    save: safeGetEnvBoolean('LOG_SAVE', false),
-    expandObjectLevels: safeGetEnvBoolean('LOG_EXPAND_OBJECTS', false) ? -1 : 0,
-    stringifyObj: safeGetEnvBoolean('LOG_STRINGIFY', false)
+    truncateLongText: safeGetEnvBoolean('API_LOG_TRUNCATE_TEXT', true),
+    truncateLongTextAt: safeGetEnvNumber('API_LOG_TRUNCATE_AT', 1000),
+    save: safeGetEnvBoolean('API_LOG_SAVE', false),
+    expandObjectLevels: safeGetEnvBoolean('API_LOG_EXPAND_OBJECTS', false) ? -1 : 0,
+    stringifyObj: safeGetEnvBoolean('API_LOG_STRINGIFY', false)
 });
 
 /**

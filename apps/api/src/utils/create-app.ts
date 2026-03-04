@@ -77,11 +77,16 @@ export function createRouter() {
     });
 }
 
-export default function createApp() {
+export function createApp() {
     const app = createRouter();
 
     // Set up global error handler
     app.onError(createErrorHandler());
+
+    // Health check endpoint - registered BEFORE the middleware chain
+    // so load balancers and monitoring systems get fast responses
+    // without going through rate limiting, auth, CORS, or any other middleware
+    app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
     // Early stage: Request setup and logging
     app.use(wrapMiddleware(requestId()))

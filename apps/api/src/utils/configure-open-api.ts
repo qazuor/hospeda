@@ -4,7 +4,7 @@ import type { AppOpenAPI } from '../types';
 import { env } from './env';
 import { apiLogger } from './logger';
 
-export default function configureOpenAPI(app: AppOpenAPI) {
+export function configureOpenAPI(app: AppOpenAPI) {
     try {
         apiLogger.debug('🔧 Configuring OpenAPI endpoint...');
 

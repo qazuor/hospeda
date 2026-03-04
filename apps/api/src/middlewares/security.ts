@@ -151,9 +151,11 @@ export const originVerificationMiddleware = async (c: Context, next: Next) => {
         allowedOrigins.some((allowed) => {
             if (allowed === requestOrigin) return true;
             // Support wildcard subdomains (e.g., *.example.com)
+            // Must check for leading dot to prevent sibling domain matching
+            // (e.g., evil-example.com should NOT match *.example.com)
             if (allowed.startsWith('*.')) {
-                const domain = allowed.slice(2);
-                return requestOrigin?.endsWith(domain);
+                const baseDomain = allowed.slice(1); // Keep the leading dot: ".example.com"
+                return requestOrigin?.endsWith(baseDomain) ?? false;
             }
             return false;
         });

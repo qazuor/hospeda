@@ -269,7 +269,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         plugins: [
             admin({
-                defaultRole: 'USER',
+                defaultRole: 'HOST',
                 adminRoles: ['SUPER_ADMIN', 'ADMIN'],
                 roles: {
                     SUPER_ADMIN: fullAdminRole,
@@ -305,7 +305,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             data: {
                                 ...user,
                                 slug,
-                                role: 'USER',
+                                role: 'HOST',
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
                                 lifecycleState: 'ACTIVE'
@@ -330,10 +330,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
                             if (customerId && user.role === 'HOST') {
                                 const trialService = new TrialService(billing);
-                                await trialService.startTrial({
-                                    customerId,
-                                    userType: 'owner'
-                                });
+                                await trialService.startTrial({ customerId });
                                 logger.info(
                                     { userId: user.id, customerId },
                                     'Trial started for new HOST user'
@@ -402,6 +399,12 @@ function parseTrustedOrigins(): string[] {
 
     // Default development origins
     if (origins.length === 0) {
+        if (process.env.NODE_ENV === 'production') {
+            console.error(
+                '[AUTH SECURITY] HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL are not configured. ' +
+                    'Falling back to localhost origins in PRODUCTION. This is a security risk.'
+            );
+        }
         origins.push('http://localhost:3000', 'http://localhost:4321');
     }
 

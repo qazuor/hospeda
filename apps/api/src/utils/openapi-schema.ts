@@ -12,9 +12,11 @@ import { z } from '@hono/zod-openapi';
  */
 export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTypeAny {
     // Handle ZodEffects (schemas with .refine(), .transform(), etc.)
-    // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
+    // Zod has no public ZodEffects class export; typeName + _def.schema are the only way
+    // to detect and unwrap refined schemas for OpenAPI conversion.
+    // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
     if ((schema as any)._def?.typeName === 'ZodEffects') {
-        // biome-ignore lint/suspicious/noExplicitAny: Need to access internal Zod structure
+        // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
         const innerSchema = (schema as any)._def.schema;
         // Convert the inner schema and preserve the effects
         const _convertedInner = createOpenAPISchema(innerSchema);
@@ -32,7 +34,9 @@ export function createOpenAPISchema<T extends z.ZodTypeAny>(schema: T): z.ZodTyp
             // "Unrecognized key" errors when the picked keys don't exist in the base schema.
             // This happens when access schemas pick flattened field names (e.g., "city")
             // that are actually nested inside composite objects (e.g., "location.city").
-            // biome-ignore lint/suspicious/noExplicitAny: Zod internals access
+            // Zod v3/v4 store the object shape in _def.shape (function or Proxy).
+            // There is no public API to extract keys from a ZodObject without _def access.
+            // biome-ignore lint/suspicious/noExplicitAny: Zod internal _def access for schema introspection
             const def = (schema as any)._def;
 
             // Try to get shape as a plain object (works for non-pick/omit schemas)

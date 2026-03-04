@@ -6,6 +6,7 @@ import { ServiceError } from '@repo/service-core';
  */
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type {
     ApiErrorResponse,
     ApiResponse,
@@ -108,7 +109,6 @@ const formatErrorResponse = (
 
 /**
  * Helper function to add headers to responses
- * TODO: Preserve CORS headers that were set by CORS middleware
  */
 const addResponseHeaders = (c: Context): Record<string, string> => {
     const responseConfig = getResponseConfig();
@@ -233,8 +233,7 @@ export const sendFormattedResponse = <T>(
     const response = formatSuccessResponse(data, status, pagination, requestId);
     const headers = addResponseHeaders(c);
 
-    // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-    return c.json(response, status as any, headers);
+    return c.json(response, status as ContentfulStatusCode, headers);
 };
 
 /**
@@ -340,19 +339,26 @@ export const createErrorHandler = () => {
             statusCode = 500;
         }
 
+        // Strip error details from 5xx responses in production to prevent information leakage.
+        // API_DEBUG_ERRORS=true overrides this to show full details for production debugging.
+        const isProduction = process.env.NODE_ENV === 'production';
+        const debugErrors = process.env.API_DEBUG_ERRORS === 'true';
+        const hideDetails = isProduction && !debugErrors && statusCode >= 500;
+        const safeDetails = hideDetails ? undefined : errorDetails;
+        const safeMessage = hideDetails ? responseConfig.errorMessage : errorMessage;
+
         const requestId = c.get('requestId');
         const formattedError = formatErrorResponse(
             errorCode,
-            errorMessage,
+            safeMessage,
             statusCode,
-            errorDetails,
+            safeDetails,
             requestId
         );
 
         // Add response headers (includes preserved CORS headers)
         const headers = addResponseHeaders(c);
 
-        // biome-ignore lint/suspicious/noExplicitAny: Hono version compatibility issues
-        return c.json(formattedError, statusCode as any, headers);
+        return c.json(formattedError, statusCode as ContentfulStatusCode, headers);
     };
 };

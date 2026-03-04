@@ -12,6 +12,8 @@ import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { apiLogger } from './utils/logger';
+import { disconnectRedis } from './utils/redis';
+import { destroyUserPermissionsCache } from './utils/user-permissions-cache';
 
 // Validate environment variables before starting the server
 validateApiEnv();
@@ -73,6 +75,12 @@ const startServer = async (): Promise<void> => {
                 // Flush Sentry events
                 await closeSentry(2000);
 
+                // Clear in-memory caches
+                destroyUserPermissionsCache();
+
+                // Close Redis connection
+                await disconnectRedis();
+
                 // Close database connection
                 await closeDatabase();
 
@@ -121,9 +129,21 @@ startServer();
  * (e.g., Sentry, DataDog) to track and fix issues.
  */
 
-// Handle uncaught exceptions
-// WARNING: The process state might be corrupted after an uncaught exception.
-// Consider adding health checks to verify the server is still functioning correctly.
+/**
+ * Handle uncaught exceptions.
+ *
+ * SPEC-020 US-14 originally required process.exit(1) here for the Fly.io VM deployment,
+ * where a long-running Node process with corrupted state could silently serve bad responses.
+ *
+ * After migrating to Vercel serverless (commit 437513a1), process.exit() is intentionally
+ * omitted because:
+ *   - Each request runs in an isolated function invocation.
+ *   - Calling process.exit() kills the function mid-request, causing 502 errors.
+ *   - The serverless runtime automatically manages process lifecycle and cold starts.
+ *
+ * WARNING: If the API is re-deployed on a long-running VM (Docker, EC2, etc.),
+ * process.exit(1) MUST be re-enabled to prevent corrupted state from persisting.
+ */
 process.on('uncaughtException', (error) => {
     apiLogger.error(
         `🚨 UNCAUGHT EXCEPTION - Process state may be corrupted: ${error.message}`,

@@ -1,19 +1,228 @@
 /**
- * Rate limiting middleware with differentiated limits per endpoint type
- * Implements different rate limits for auth, public, admin, and general endpoints
+ * Rate limiting middleware with differentiated limits per endpoint type.
+ * Uses Redis when available for multi-instance support, falls back to in-memory Map.
  */
 import type { Context, Next } from 'hono';
 import { getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+import { getRedisClient } from '../utils/redis';
 
-// In-memory store for rate limiting
-const rateLimitStore = new Map<string, { count: number; windowStart: number }>();
+/** Rate limit entry stored in-memory or serialized to Redis */
+interface RateLimitEntry {
+    readonly count: number;
+    readonly windowStart: number;
+}
+
+/** Abstract rate limit store interface */
+interface RateLimitStore {
+    get(key: string): Promise<RateLimitEntry | undefined>;
+    set(key: string, entry: RateLimitEntry, windowMs: number): Promise<void>;
+    has(key: string): Promise<boolean>;
+    clear(): Promise<void>;
+    deleteByIp(ip: string): Promise<void>;
+}
+
+// ─── In-Memory Store ──────────────────────────────────────────────────────────
+
+const memoryStore = new Map<string, RateLimitEntry>();
+
+/** Interval in ms between cleanup sweeps of expired in-memory entries */
+const CLEANUP_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+
+/** Maximum entry lifetime before cleanup (matches longest window: public 1 hour) */
+const MAX_ENTRY_LIFETIME_MS = 60 * 60 * 1000;
+
+/**
+ * Removes expired entries from the in-memory store to prevent memory leaks.
+ * An entry is considered expired when its windowStart is older than MAX_ENTRY_LIFETIME_MS.
+ */
+export function cleanupExpiredEntries(): void {
+    const now = Date.now();
+    for (const [key, entry] of memoryStore.entries()) {
+        if (now - entry.windowStart > MAX_ENTRY_LIFETIME_MS) {
+            memoryStore.delete(key);
+        }
+    }
+}
+
+/** Handle for the periodic cleanup interval (undefined in test env) */
+let cleanupInterval: ReturnType<typeof setInterval> | undefined;
+
+if (process.env.NODE_ENV !== 'test') {
+    cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL_MS);
+    cleanupInterval.unref(); // Don't prevent process exit
+}
+
+/**
+ * Stops the periodic cleanup interval. Call during graceful shutdown.
+ */
+export function stopCleanupInterval(): void {
+    if (cleanupInterval) {
+        clearInterval(cleanupInterval);
+        cleanupInterval = undefined;
+    }
+}
+
+const inMemoryStore: RateLimitStore = {
+    async get(key: string) {
+        return memoryStore.get(key);
+    },
+    async set(key: string, entry: RateLimitEntry) {
+        memoryStore.set(key, entry);
+    },
+    async has(key: string) {
+        return memoryStore.has(key);
+    },
+    async clear() {
+        memoryStore.clear();
+    },
+    async deleteByIp(ip: string) {
+        for (const key of memoryStore.keys()) {
+            if (key.endsWith(`:${ip}`)) {
+                memoryStore.delete(key);
+            }
+        }
+    }
+};
+
+// ─── Redis Store ──────────────────────────────────────────────────────────────
+
+const REDIS_KEY_PREFIX = 'rl:';
+
+const createRedisStore = (): RateLimitStore => ({
+    async get(key: string): Promise<RateLimitEntry | undefined> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return inMemoryStore.get(key);
+
+            const data = await redis.get(`${REDIS_KEY_PREFIX}${key}`);
+            if (!data) return undefined;
+            return JSON.parse(data) as RateLimitEntry;
+        } catch {
+            return inMemoryStore.get(key);
+        }
+    },
+    async set(key: string, entry: RateLimitEntry, windowMs: number): Promise<void> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                await inMemoryStore.set(key, entry, windowMs);
+                return;
+            }
+
+            const ttlSeconds = Math.ceil(windowMs / 1000);
+            await redis.set(`${REDIS_KEY_PREFIX}${key}`, JSON.stringify(entry), 'EX', ttlSeconds);
+        } catch {
+            await inMemoryStore.set(key, entry, windowMs);
+        }
+    },
+    async has(key: string): Promise<boolean> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return inMemoryStore.has(key);
+
+            const exists = await redis.exists(`${REDIS_KEY_PREFIX}${key}`);
+            return exists === 1;
+        } catch {
+            return inMemoryStore.has(key);
+        }
+    },
+    async clear(): Promise<void> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                await inMemoryStore.clear();
+                return;
+            }
+
+            // Use SCAN to find and delete all rate limit keys
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await redis.scan(
+                    cursor,
+                    'MATCH',
+                    `${REDIS_KEY_PREFIX}*`,
+                    'COUNT',
+                    100
+                );
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    await redis.del(...keys);
+                }
+            } while (cursor !== '0');
+        } catch {
+            await inMemoryStore.clear();
+        }
+    },
+    async deleteByIp(ip: string): Promise<void> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) {
+                await inMemoryStore.deleteByIp(ip);
+                return;
+            }
+
+            let cursor = '0';
+            do {
+                const [nextCursor, keys] = await redis.scan(
+                    cursor,
+                    'MATCH',
+                    `${REDIS_KEY_PREFIX}*:${ip}`,
+                    'COUNT',
+                    100
+                );
+                cursor = nextCursor;
+                if (keys.length > 0) {
+                    await redis.del(...keys);
+                }
+            } while (cursor !== '0');
+        } catch {
+            await inMemoryStore.deleteByIp(ip);
+        }
+    }
+});
+
+// Active store (lazy-initialized)
+let activeStore: RateLimitStore | undefined;
+
+const getStore = (): RateLimitStore => {
+    if (!activeStore) {
+        const redisUrl = process.env.HOSPEDA_REDIS_URL;
+        if (!redisUrl && process.env.NODE_ENV === 'production') {
+            apiLogger.warn(
+                'HOSPEDA_REDIS_URL not configured in production. ' +
+                    'Rate limiting uses in-memory store which is ineffective in serverless environments.'
+            );
+        }
+        activeStore = redisUrl ? createRedisStore() : inMemoryStore;
+    }
+    return activeStore;
+};
 
 /**
  * Clears the rate limit store (useful for testing)
  */
-export const clearRateLimitStore = () => {
-    rateLimitStore.clear();
+export const clearRateLimitStore = async () => {
+    await getStore().clear();
+    memoryStore.clear();
+};
+
+/**
+ * Clears rate limit entries for a specific IP address only.
+ * Used during signout to clear only the requesting user's rate limits.
+ *
+ * @param params - Object containing the IP address to clear
+ */
+export const clearRateLimitForIp = async ({ ip }: { ip: string }): Promise<void> => {
+    await getStore().deleteByIp(ip);
+};
+
+/**
+ * Resets the store selection (useful for testing)
+ */
+export const resetRateLimitStore = () => {
+    activeStore = undefined;
+    memoryStore.clear();
 };
 
 /**
@@ -83,11 +292,11 @@ const getRateLimitConfig = (endpointType: 'auth' | 'public' | 'admin' | 'general
 };
 
 /**
- * Rate limiting middleware with environment-based configuration
- * @returns Configured rate limiting middleware
+ * Rate limiting middleware with environment-based configuration.
+ * Uses Redis when HOSPEDA_REDIS_URL is configured, otherwise falls back to in-memory.
  */
 export const rateLimitMiddleware = async (c: Context, next: Next) => {
-    // ✅ Skip rate limiting in test environment UNLESS explicitly testing it
+    // Skip rate limiting in test environment UNLESS explicitly testing it
     if (process.env.NODE_ENV === 'test' && !process.env.TESTING_RATE_LIMIT) {
         await next();
         return;
@@ -125,26 +334,34 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         }
     } else {
         // When not trusting proxies, all requests share a single rate limit bucket
-        // This is safer but less granular - should configure trust_proxy in production
-        // Log warning on first request only to avoid spam
-        if (!rateLimitStore.has('__proxy_warning_logged__')) {
+        const store = getStore();
+        const warningLogged = await store.has('__proxy_warning_logged__');
+        if (!warningLogged) {
             apiLogger.warn(
                 'Rate limiting: API_RATE_LIMIT_TRUST_PROXY is false. ' +
                     'All requests share one rate limit bucket. ' +
                     'Set to true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)'
             );
-            rateLimitStore.set('__proxy_warning_logged__', { count: 1, windowStart: Date.now() });
+            await store.set(
+                '__proxy_warning_logged__',
+                { count: 1, windowStart: Date.now() },
+                config.windowMs
+            );
         }
         // Use a generic identifier when we cannot trust the IP
         clientIp = 'untrusted-proxy';
     }
 
+    const store = getStore();
     const now = Date.now();
     const windowStart = Math.floor(now / config.windowMs) * config.windowMs;
     const resetTime = windowStart + config.windowMs;
 
+    // Composite key: endpointType + IP for proper per-tier rate limiting
+    const storeKey = `${endpointType}:${clientIp}`;
+
     // Get current rate limit data
-    const currentData = rateLimitStore.get(clientIp);
+    const currentData = await store.get(storeKey);
     let count = 0;
 
     if (currentData && currentData.windowStart === windowStart) {
@@ -203,7 +420,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     }
 
     // Update rate limit data
-    rateLimitStore.set(clientIp, { count: count + 1, windowStart });
+    await store.set(storeKey, { count: count + 1, windowStart }, config.windowMs);
 
     // Set rate limit headers for successful requests
     if (config.standardHeaders) {

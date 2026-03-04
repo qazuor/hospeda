@@ -28,10 +28,11 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             const publicPaths = ['/api/v1/health', '/api/v1/public/health'];
             const isPublicPath = publicPaths.some((publicPath) => path.startsWith(publicPath));
 
-            // Allow routes to opt-out of validation via route options
-            // Route factories attach options on context as `routeOptions`
-            // biome-ignore lint/suspicious/noExplicitAny: Context extension used by route factories
-            const routeOptions = (c as any).routeOptions as
+            // Allow routes to opt-out of validation via route options.
+            // Route factories attach routeOptions directly on the context object
+            // (not through c.set/c.get) as a non-standard property. This pattern
+            // is intentional and there is no ContextVariableMap entry for it.
+            const routeOptions = (c as unknown as Record<string, unknown>).routeOptions as
                 | { skipValidation?: boolean }
                 | undefined;
             if (routeOptions?.skipValidation || isPublicPath) {
@@ -97,19 +98,11 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                 }
             }
 
-            // 5. Validate request body size
-            const contentLength = c.req.header('content-length');
-            if (contentLength) {
-                const size = Number.parseInt(contentLength, 10);
-                if (size > config.maxBodySize) {
-                    throw new ValidationError(
-                        ValidationErrorCode.REQUEST_TOO_LARGE,
-                        validationMessages[ValidationErrorCode.REQUEST_TOO_LARGE]
-                    );
-                }
-            }
+            // Note: Body size validation is handled by Hono's bodyLimit middleware
+            // in create-app.ts at the stream level, which also covers chunked
+            // transfer encoding (Content-Length header check is bypassable).
 
-            // 6. Sanitize headers (if not skipped)
+            // 5. Sanitize headers (if not skipped)
             if (!options.skipSanitization) {
                 const headers = c.req.raw.headers;
                 const sanitizedHeaders = sanitizeHeaders(Object.fromEntries(headers.entries()));
@@ -212,8 +205,3 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
 };
 
 export const validationMiddleware = () => createValidationMiddleware();
-
-export const automaticValidation = createMiddleware(async (_c: Context, next: Next) => {
-    // TODO: Implement automatic validation when Hono types are better understood
-    await next();
-});

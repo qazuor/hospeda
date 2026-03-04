@@ -55,190 +55,223 @@ for (const envFile of envFiles) {
  * API-specific environment schema
  * Combines common schemas with API-specific requirements
  */
-const ApiEnvSchema = z.object({
-    // Server Configuration
-    NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-    API_PORT: z.coerce.number().positive().default(3001),
-    API_HOST: z.string().default('localhost'),
+const ApiEnvSchema = z
+    .object({
+        // Server Configuration
+        NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+        API_PORT: z.coerce.number().positive().default(3001),
+        API_HOST: z.string().default('localhost'),
 
-    // Required URLs
-    HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
-    HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
+        // Required URLs
+        HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
+        HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-    // Authentication (Better Auth) - Secret is required
-    // Use DISABLE_AUTH=true in test environment to bypass authentication
-    HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required'),
+        // Authentication (Better Auth) - Secret is required
+        // Use DISABLE_AUTH=true in test environment to bypass authentication
+        HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required'),
 
-    // Social OAuth providers (optional)
-    HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
-    HOSPEDA_GOOGLE_CLIENT_SECRET: z.string().optional(),
-    HOSPEDA_FACEBOOK_CLIENT_ID: z.string().optional(),
-    HOSPEDA_FACEBOOK_CLIENT_SECRET: z.string().optional(),
+        // Social OAuth providers (optional)
+        HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
+        HOSPEDA_GOOGLE_CLIENT_SECRET: z.string().optional(),
+        HOSPEDA_FACEBOOK_CLIENT_ID: z.string().optional(),
+        HOSPEDA_FACEBOOK_CLIENT_SECRET: z.string().optional(),
 
-    // Trusted origins for auth
-    HOSPEDA_SITE_URL: z.string().url().optional(),
-    HOSPEDA_ADMIN_URL: z.string().url().optional(),
+        // Trusted origins for auth
+        HOSPEDA_SITE_URL: z.string().url().optional(),
+        HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
-    // Test environment flags (explicit opt-in required)
-    DISABLE_AUTH: z.coerce.boolean().default(false),
-    ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
+        // Test environment flags (explicit opt-in required)
+        DISABLE_AUTH: z.coerce.boolean().default(false),
+        ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
 
-    // Logging Configuration (API-specific)
-    API_LOG_LEVEL: z
-        .string()
-        .transform((val) => val.toLowerCase())
-        .pipe(z.enum(['debug', 'info', 'warn', 'error']))
-        .default('info'),
-    API_ENABLE_REQUEST_LOGGING: z.coerce.boolean().default(true),
-    API_LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
-    API_LOG_INCLUDE_LEVEL: z.coerce.boolean().default(true),
-    API_LOG_USE_COLORS: z.coerce.boolean().default(true),
-    API_LOG_SAVE: z.coerce.boolean().default(false),
-    API_LOG_EXPAND_OBJECTS: z.coerce.boolean().default(false),
-    API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
-    API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
-    API_LOG_STRINGIFY: z.coerce.boolean().default(false),
+        // Logging Configuration (API-specific)
+        API_LOG_LEVEL: z
+            .string()
+            .transform((val) => val.toLowerCase())
+            .pipe(z.enum(['debug', 'info', 'warn', 'error']))
+            .default('info'),
+        API_ENABLE_REQUEST_LOGGING: z.coerce.boolean().default(true),
+        API_LOG_INCLUDE_TIMESTAMPS: z.coerce.boolean().default(true),
+        API_LOG_INCLUDE_LEVEL: z.coerce.boolean().default(true),
+        API_LOG_USE_COLORS: z.coerce.boolean().default(true),
+        API_LOG_SAVE: z.coerce.boolean().default(false),
+        API_LOG_EXPAND_OBJECTS: z.coerce.boolean().default(false),
+        API_LOG_TRUNCATE_TEXT: z.coerce.boolean().default(true),
+        API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
+        API_LOG_STRINGIFY: z.coerce.boolean().default(false),
 
-    // CORS Configuration (API-specific)
-    API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),
-    API_CORS_ALLOW_CREDENTIALS: z.coerce.boolean().default(true),
-    API_CORS_MAX_AGE: z.coerce.number().default(86400),
-    API_CORS_ALLOW_METHODS: z.string().default('GET,POST,PUT,DELETE,PATCH,OPTIONS'),
-    API_CORS_ALLOW_HEADERS: z
-        .string()
-        .default('Content-Type,Authorization,X-Requested-With,x-actor-id,x-user-id'),
-    API_CORS_EXPOSE_HEADERS: z.string().default('Content-Length,X-Request-ID'),
+        // CORS Configuration (API-specific)
+        API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),
+        API_CORS_ALLOW_CREDENTIALS: z.coerce.boolean().default(true),
+        API_CORS_MAX_AGE: z.coerce.number().default(86400),
+        API_CORS_ALLOW_METHODS: z.string().default('GET,POST,PUT,DELETE,PATCH,OPTIONS'),
+        API_CORS_ALLOW_HEADERS: z.string().default('Content-Type,Authorization,X-Requested-With'),
+        API_CORS_EXPOSE_HEADERS: z.string().default('Content-Length,X-Request-ID'),
 
-    // Cache Configuration (API-specific)
-    API_CACHE_ENABLED: z.coerce.boolean().default(true),
-    API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
-    API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60),
-    API_CACHE_DEFAULT_STALE_IF_ERROR: z.coerce.number().default(86400),
-    API_CACHE_PUBLIC_ENDPOINTS: z.string().default('/api/v1/public/accommodations,/health'),
-    API_CACHE_PRIVATE_ENDPOINTS: z.string().default('/api/v1/public/users'),
-    API_CACHE_NO_CACHE_ENDPOINTS: z.string().default('/health/db,/docs'),
-    API_CACHE_ETAG_ENABLED: z.coerce.boolean().default(true),
-    API_CACHE_LAST_MODIFIED_ENABLED: z.coerce.boolean().default(true),
+        // Cache Configuration (API-specific)
+        API_CACHE_ENABLED: z.coerce.boolean().default(true),
+        API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
+        API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60),
+        API_CACHE_DEFAULT_STALE_IF_ERROR: z.coerce.number().default(86400),
+        API_CACHE_PUBLIC_ENDPOINTS: z.string().default('/api/v1/public/accommodations,/health'),
+        API_CACHE_PRIVATE_ENDPOINTS: z.string().default('/api/v1/public/users'),
+        API_CACHE_NO_CACHE_ENDPOINTS: z.string().default('/health/db,/docs'),
+        API_CACHE_ETAG_ENABLED: z.coerce.boolean().default(true),
+        API_CACHE_LAST_MODIFIED_ENABLED: z.coerce.boolean().default(true),
 
-    // Compression Configuration (API-specific)
-    API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
-    API_COMPRESSION_LEVEL: z.coerce.number().min(1).max(9).default(6),
-    API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
-    API_COMPRESSION_CHUNK_SIZE: z.coerce.number().default(16384),
-    API_COMPRESSION_FILTER: z
-        .string()
-        .default('text/*,application/json,application/xml,application/javascript'),
-    API_COMPRESSION_EXCLUDE_ENDPOINTS: z.string().default('/health/db,/docs'),
-    API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
+        // Compression Configuration (API-specific)
+        API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
+        API_COMPRESSION_LEVEL: z.coerce.number().min(1).max(9).default(6),
+        API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
+        API_COMPRESSION_CHUNK_SIZE: z.coerce.number().default(16384),
+        API_COMPRESSION_FILTER: z
+            .string()
+            .default('text/*,application/json,application/xml,application/javascript'),
+        API_COMPRESSION_EXCLUDE_ENDPOINTS: z.string().default('/health/db,/docs'),
+        API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
-    // Rate Limiting Configuration (API-specific)
-    API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
-    API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
-    API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
-    API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: z.coerce.boolean().default(false),
-    API_RATE_LIMIT_SKIP_FAILED_REQUESTS: z.coerce.boolean().default(false),
-    API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
-    API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
-    // Trusted proxy configuration for rate limiting
-    // When true, trusts x-forwarded-for, x-real-ip, cf-connecting-ip headers
-    // Should only be true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)
-    API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(false),
-    // Comma-separated list of trusted proxy IPs/CIDRs (optional, for future strict mode)
-    API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
+        // Rate Limiting Configuration (API-specific)
+        API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
+        API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
+        API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+        API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
+        API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: z.coerce.boolean().default(false),
+        API_RATE_LIMIT_SKIP_FAILED_REQUESTS: z.coerce.boolean().default(false),
+        API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
+        API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
+        API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
+        // Trusted proxy configuration for rate limiting
+        // When true, trusts x-forwarded-for, x-real-ip, cf-connecting-ip headers
+        // Should only be true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)
+        API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(false),
+        // Comma-separated list of trusted proxy IPs/CIDRs (optional, for future strict mode)
+        API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
-    // Auth Rate Limiting
-    API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000), // 5 minutes
-    API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50),
-    API_RATE_LIMIT_AUTH_MESSAGE: z
-        .string()
-        .default('Too many authentication requests, please try again later.'),
+        // Auth Rate Limiting
+        API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
+        API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000), // 5 minutes
+        API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50),
+        API_RATE_LIMIT_AUTH_MESSAGE: z
+            .string()
+            .default('Too many authentication requests, please try again later.'),
 
-    // Public API Rate Limiting
-    API_RATE_LIMIT_PUBLIC_ENABLED: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000), // 1 hour
-    API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000),
-    API_RATE_LIMIT_PUBLIC_MESSAGE: z
-        .string()
-        .default('Too many API requests, please try again later.'),
+        // Public API Rate Limiting
+        API_RATE_LIMIT_PUBLIC_ENABLED: z.coerce.boolean().default(true),
+        API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000), // 1 hour
+        API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000),
+        API_RATE_LIMIT_PUBLIC_MESSAGE: z
+            .string()
+            .default('Too many API requests, please try again later.'),
 
-    // Admin Rate Limiting
-    API_RATE_LIMIT_ADMIN_ENABLED: z.coerce.boolean().default(true),
-    API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000), // 10 minutes
-    API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200),
-    API_RATE_LIMIT_ADMIN_MESSAGE: z
-        .string()
-        .default('Too many admin requests, please try again later.'),
+        // Admin Rate Limiting
+        API_RATE_LIMIT_ADMIN_ENABLED: z.coerce.boolean().default(true),
+        API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000), // 10 minutes
+        API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200),
+        API_RATE_LIMIT_ADMIN_MESSAGE: z
+            .string()
+            .default('Too many admin requests, please try again later.'),
 
-    // Security Configuration (API-specific)
-    API_SECURITY_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_CSRF_ORIGIN: z.string().optional(),
-    API_SECURITY_CSRF_ORIGINS: z.string().default('http://localhost:3000,http://localhost:5173'),
-    API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
-    API_SECURITY_CONTENT_SECURITY_POLICY: z
-        .string()
-        .default(
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
-        ),
-    API_SECURITY_STRICT_TRANSPORT_SECURITY: z
-        .string()
-        .default('max-age=31536000; includeSubDomains'),
-    API_SECURITY_X_FRAME_OPTIONS: z.string().default('SAMEORIGIN'),
-    API_SECURITY_X_CONTENT_TYPE_OPTIONS: z.string().default('nosniff'),
-    API_SECURITY_X_XSS_PROTECTION: z.string().default('1; mode=block'),
-    API_SECURITY_REFERRER_POLICY: z.string().default('strict-origin-when-cross-origin'),
-    API_SECURITY_PERMISSIONS_POLICY: z.string().default('camera=(), microphone=(), geolocation=()'),
+        // Security Configuration (API-specific)
+        API_SECURITY_ENABLED: z.coerce.boolean().default(true),
+        API_SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
+        API_SECURITY_CSRF_ORIGIN: z.string().optional(),
+        API_SECURITY_CSRF_ORIGINS: z
+            .string()
+            .default('http://localhost:3000,http://localhost:5173'),
+        API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
+        API_SECURITY_CONTENT_SECURITY_POLICY: z
+            .string()
+            .default(
+                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+            ),
+        API_SECURITY_STRICT_TRANSPORT_SECURITY: z
+            .string()
+            .default('max-age=31536000; includeSubDomains'),
+        API_SECURITY_X_FRAME_OPTIONS: z.string().default('SAMEORIGIN'),
+        API_SECURITY_X_CONTENT_TYPE_OPTIONS: z.string().default('nosniff'),
+        API_SECURITY_X_XSS_PROTECTION: z.string().default('1; mode=block'),
+        API_SECURITY_REFERRER_POLICY: z.string().default('strict-origin-when-cross-origin'),
+        API_SECURITY_PERMISSIONS_POLICY: z
+            .string()
+            .default('camera=(), microphone=(), geolocation=()'),
 
-    // Response Configuration (API-specific)
-    API_RESPONSE_FORMAT_ENABLED: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_VERSION: z.coerce.boolean().default(true),
-    API_RESPONSE_API_VERSION: z.string().default('1.0.0'),
-    API_RESPONSE_INCLUDE_REQUEST_ID: z.coerce.boolean().default(true),
-    API_RESPONSE_INCLUDE_METADATA: z.coerce.boolean().default(true),
-    API_RESPONSE_SUCCESS_MESSAGE: z.string().default('Success'),
-    API_RESPONSE_ERROR_MESSAGE: z.string().default('An error occurred'),
+        // Response Configuration (API-specific)
+        API_RESPONSE_FORMAT_ENABLED: z.coerce.boolean().default(true),
+        API_RESPONSE_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
+        API_RESPONSE_INCLUDE_VERSION: z.coerce.boolean().default(true),
+        API_RESPONSE_API_VERSION: z.string().default('1.0.0'),
+        API_RESPONSE_INCLUDE_REQUEST_ID: z.coerce.boolean().default(true),
+        API_RESPONSE_INCLUDE_METADATA: z.coerce.boolean().default(true),
+        API_RESPONSE_SUCCESS_MESSAGE: z.string().default('Success'),
+        API_RESPONSE_ERROR_MESSAGE: z.string().default('An error occurred'),
 
-    // Validation Configuration (API-specific)
-    API_VALIDATION_MAX_BODY_SIZE: z.coerce.number().default(10485760), // 10MB
-    API_VALIDATION_MAX_REQUEST_TIME: z.coerce.number().default(30000), // 30 seconds
-    API_VALIDATION_ALLOWED_CONTENT_TYPES: z
-        .string()
-        .default('application/json,multipart/form-data'),
-    API_VALIDATION_REQUIRED_HEADERS: z.string().default('user-agent'),
-    API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
-    API_VALIDATION_AUTH_HEADERS: z.string().default('authorization'),
-    API_VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
-    API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().default(1000),
-    API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
-    API_VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
+        // Validation Configuration (API-specific)
+        API_VALIDATION_MAX_BODY_SIZE: z.coerce.number().default(10485760), // 10MB
+        API_VALIDATION_MAX_REQUEST_TIME: z.coerce.number().default(30000), // 30 seconds
+        API_VALIDATION_ALLOWED_CONTENT_TYPES: z
+            .string()
+            .default('application/json,multipart/form-data'),
+        API_VALIDATION_REQUIRED_HEADERS: z.string().default('user-agent'),
+        API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
+        API_VALIDATION_AUTH_HEADERS: z.string().default('authorization'),
+        API_VALIDATION_SANITIZE_ENABLED: z.coerce.boolean().default(true),
+        API_VALIDATION_SANITIZE_MAX_STRING_LENGTH: z.coerce.number().default(1000),
+        API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
+        API_VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
 
-    // Metrics Configuration (API-specific)
-    API_METRICS_ENABLED: z.coerce.boolean().default(true),
-    API_METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
-    API_METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().default(2000),
+        // Metrics Configuration (API-specific)
+        API_METRICS_ENABLED: z.coerce.boolean().default(true),
+        API_METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
+        API_METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().default(2000),
 
-    // Database Pool Configuration
-    DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
-    DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
-    DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
+        // Database Pool Configuration
+        DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
+        DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
+        DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
 
-    // Linear Integration (Bug Reports)
-    HOSPEDA_LINEAR_API_KEY: z.string().optional(),
-    HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
+        // Linear Integration (Bug Reports)
+        HOSPEDA_LINEAR_API_KEY: z.string().optional(),
+        HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
 
-    // Exchange Rate API Integration (optional, needed only for ExchangeRate-API source)
-    HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
+        // Exchange Rate API Integration (optional, needed only for ExchangeRate-API source)
+        HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
 
-    // Optional configurations
-    HOSPEDA_REDIS_URL: z.string().optional(),
-    TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
-    DEBUG_TESTS: z.coerce.boolean().default(false),
-    COMMIT_SHA: z.string().default('unknown')
-});
+        // Cron Configuration
+        /** Shared secret for authenticating cron HTTP requests. Required in production for cron endpoints to function. */
+        CRON_SECRET: z.string().optional(),
+
+        // Optional configurations
+        HOSPEDA_REDIS_URL: z.string().optional(),
+        /** When true, show detailed error messages and stack traces even in production 5xx responses */
+        API_DEBUG_ERRORS: z.coerce.boolean().default(false),
+        TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
+        DEBUG_TESTS: z.coerce.boolean().default(false),
+        COMMIT_SHA: z.string().default('unknown')
+    })
+    .superRefine((data, ctx) => {
+        if (
+            data.NODE_ENV === 'production' &&
+            (!data.CRON_SECRET || data.CRON_SECRET.trim() === '')
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['CRON_SECRET'],
+                message: 'CRON_SECRET is required in production environment'
+            });
+        }
+
+        if (
+            data.NODE_ENV === 'production' &&
+            (!data.HOSPEDA_REDIS_URL || data.HOSPEDA_REDIS_URL.trim() === '')
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_REDIS_URL'],
+                message:
+                    'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
+            });
+        }
+    });
 
 /**
  * Helper to safely access process.env with defaults during module initialization
@@ -313,10 +346,7 @@ export const getCorsConfig = () => ({
         safeEnv.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
     ),
     allowHeaders: parseCommaSeparated(
-        safeEnv.get(
-            'API_CORS_ALLOW_HEADERS',
-            'Content-Type,Authorization,X-Requested-With,x-actor-id,x-user-id'
-        )
+        safeEnv.get('API_CORS_ALLOW_HEADERS', 'Content-Type,Authorization,X-Requested-With')
     ),
     exposeHeaders: parseCommaSeparated(
         safeEnv.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
@@ -472,11 +502,20 @@ export const getDatabasePoolConfig = () => {
  * Creates the API environment validation function.
  * @remarks
  * Uses the ApiEnvSchema to validate environment variables at startup.
+ * `ApiEnvSchema` uses `.superRefine()` which produces a `ZodEffects` type.
+ * `ZodEffects` extends `ZodType` (the base of `ZodSchema<T>`) but TypeScript
+ * does not infer the constraint automatically across Zod v4 type boundaries.
  * @see ApiEnvSchema
  * @see createStartupValidator
  */
-// biome-ignore lint/suspicious/noExplicitAny: Required for Zod schema compatibility with createStartupValidator
-const _validateApiEnv = createStartupValidator(ApiEnvSchema as any, 'API');
+const _validateApiEnv = createStartupValidator(
+    // .superRefine() wraps ApiEnvSchema in ZodEffects, which TypeScript cannot assign to
+    // the `ZodSchema<T>` generic expected by createStartupValidator. No Zod utility exists
+    // to unwrap or re-type ZodEffects as ZodSchema.
+    // biome-ignore lint/suspicious/noExplicitAny: ZodEffects from .superRefine() is not assignable to ZodSchema<T> in Zod v4
+    ApiEnvSchema as any,
+    'API'
+);
 
 /**
  * The validated API environment object.

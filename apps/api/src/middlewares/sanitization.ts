@@ -340,6 +340,16 @@ export const sanitizeObjectStrings = <T extends Record<string, unknown>>(
             } else {
                 result[key] = sanitizeString(value, level);
             }
+        } else if (Array.isArray(value)) {
+            result[key] = value.map((item) =>
+                typeof item === 'object' && item !== null && !(item instanceof Date)
+                    ? sanitizeObjectStrings(item as Record<string, unknown>, level)
+                    : typeof item === 'string'
+                      ? sanitizeString(item, level)
+                      : item
+            );
+        } else if (typeof value === 'object' && value !== null && !(value instanceof Date)) {
+            result[key] = sanitizeObjectStrings(value as Record<string, unknown>, level);
         } else {
             result[key] = value;
         }

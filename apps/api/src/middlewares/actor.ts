@@ -17,7 +17,7 @@ import { z } from 'zod';
 import { createGuestActor } from '../utils/actor';
 import { apiLogger } from '../utils/logger';
 import { getPermissionsForRole } from '../utils/role-permissions-cache';
-import { userCache } from '../utils/user-cache';
+import { getUserPermissions } from '../utils/user-permissions-cache';
 
 /**
  * Schema for validating mock actor permissions.
@@ -143,9 +143,8 @@ export const actorMiddleware = (): MiddlewareHandler => {
                     // Resolve permissions from role_permission table (cached)
                     const rolePermissions = await getPermissionsForRole(userRole);
 
-                    // Also merge any user-specific permissions from the user record
-                    const dbUser = await userCache.getUser(user.id);
-                    const userPermissions = dbUser?.permissions || [];
+                    // Also merge any user-specific permissions from user_permission table (cached)
+                    const userPermissions = await getUserPermissions({ userId: user.id });
 
                     // Combine role-based and user-specific permissions (deduplicated)
                     const allPermissions = [

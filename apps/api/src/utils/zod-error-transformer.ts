@@ -5,6 +5,74 @@
 
 import type { ZodError, ZodIssue } from 'zod';
 
+/**
+ * Extended ZodIssue with properties specific to size constraint errors (too_small / too_big).
+ * Zod attaches these at runtime but they are not part of the public ZodIssue union type.
+ */
+type ZodSizeIssue = ZodIssue & {
+    /** Minimum value for too_small errors */
+    minimum?: number;
+    /** Maximum value for too_big errors */
+    maximum?: number;
+    /** Whether the boundary is inclusive */
+    inclusive?: boolean;
+    /** Origin type: 'string' | 'number' | 'array' | 'date' */
+    origin?: string;
+    /** Direct type discriminant (older Zod versions) */
+    type?: string;
+};
+
+/**
+ * Extended ZodIssue with properties for type mismatch errors (invalid_type).
+ */
+type ZodTypeIssue = ZodIssue & {
+    /** Expected type name */
+    expected?: string;
+    /** Received type name */
+    received?: string;
+};
+
+/**
+ * Extended ZodIssue with format information for invalid_format errors (Zod v4).
+ */
+type ZodFormatIssue = ZodIssue & {
+    /** Format that failed validation, e.g. 'email' | 'url' | 'uuid' */
+    format?: string;
+};
+
+/**
+ * Extended ZodIssue with validation information for invalid_string errors.
+ */
+type ZodStringValidationIssue = ZodIssue & {
+    /** Validation type that failed, e.g. 'email' | 'url' | 'uuid' | 'regex' */
+    validation?: string;
+};
+
+/**
+ * Extended ZodIssue with allowed values for invalid_value errors.
+ */
+type ZodValueIssue = ZodIssue & {
+    /** List of valid values */
+    values?: unknown[];
+};
+
+/**
+ * Extended ZodIssue with miscellaneous extra properties that Zod may attach.
+ */
+type ZodMiscIssue = ZodIssue & {
+    exact?: unknown;
+    options?: unknown[];
+    keys?: string[];
+};
+
+/**
+ * Internal params object that may carry an internal _inferredType marker.
+ * This type is only used within extractErrorParams / transformZodError.
+ */
+interface ParamsWithInternal extends Record<string, unknown> {
+    _inferredType?: string;
+}
+
 export interface TransformedValidationError {
     field: string;
     message: string;
@@ -94,54 +162,46 @@ const ZOD_ERROR_MESSAGE_MAP: Record<string, string> = {
 /**
  * Extracts parameters from Zod error for better error context
  */
-const extractErrorParams = (error: ZodIssue): Record<string, unknown> => {
-    const params: Record<string, unknown> = {};
-
-    // Manual extraction based on Zod error code patterns
-    // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-    const errorAny = error as any;
-
-    // Extract 'type' property - NOTE: In Zod errors, this is not always at the top level
-    // For too_small/too_big errors, we need to infer the type from the context
+const extractErrorParams = (error: ZodIssue): ParamsWithInternal => {
+    const params: ParamsWithInternal = {};
 
     // Extract type - use for internal logic but don't include in params output
     let inferredType: string | undefined;
-    if (errorAny.type !== undefined) {
-        inferredType = errorAny.type;
-    } else {
-        // For string validation errors, type is usually 'string'
-        // For number validation errors, type is usually 'number'
-        // We can infer from the validation context
-        if (error.code === 'too_small' || error.code === 'too_big') {
-            // Use origin property if available, otherwise infer from context
-            if (errorAny.origin) {
-                inferredType = errorAny.origin;
-            } else {
-                inferredType = 'string'; // fallback
-            }
+
+    if (error.code === 'too_small' || error.code === 'too_big') {
+        const sizeIssue = error as ZodSizeIssue;
+        // Use type or origin property if available (Zod attaches them at runtime)
+        if (sizeIssue.type !== undefined) {
+            inferredType = sizeIssue.type;
+        } else if (sizeIssue.origin !== undefined) {
+            inferredType = sizeIssue.origin;
+        } else {
+            inferredType = 'string'; // fallback
         }
     }
 
-    // Store inferred type for use in message generation (not in params)
-    // biome-ignore lint/suspicious/noExplicitAny: Need to add internal property to params
-    (params as any)._inferredType = inferredType;
+    // Store inferred type for use in message generation (not in public params)
+    params._inferredType = inferredType;
 
     // For 'too_small' errors, Zod provides: minimum, type, inclusive
     if (error.code === 'too_small') {
-        if (errorAny.minimum !== undefined) params.min = errorAny.minimum;
-        if (errorAny.inclusive !== undefined) params.inclusive = errorAny.inclusive;
+        const sizeIssue = error as ZodSizeIssue;
+        if (sizeIssue.minimum !== undefined) params.min = sizeIssue.minimum;
+        if (sizeIssue.inclusive !== undefined) params.inclusive = sizeIssue.inclusive;
     }
 
     // For 'too_big' errors, Zod provides: maximum, type, inclusive
     if (error.code === 'too_big') {
-        if (errorAny.maximum !== undefined) params.max = errorAny.maximum;
-        if (errorAny.inclusive !== undefined) params.inclusive = errorAny.inclusive;
+        const sizeIssue = error as ZodSizeIssue;
+        if (sizeIssue.maximum !== undefined) params.max = sizeIssue.maximum;
+        if (sizeIssue.inclusive !== undefined) params.inclusive = sizeIssue.inclusive;
     }
 
     // For 'invalid_type' errors, Zod provides: expected, received
     if (error.code === 'invalid_type') {
-        if (errorAny.expected !== undefined) params.expected = errorAny.expected;
-        if (errorAny.received !== undefined) params.received = errorAny.received;
+        const typeIssue = error as ZodTypeIssue;
+        if (typeIssue.expected !== undefined) params.expected = typeIssue.expected;
+        if (typeIssue.received !== undefined) params.received = typeIssue.received;
 
         // FALLBACK: Parse received from message if not in properties
         if (!params.received && error.message.includes('received ')) {
@@ -152,10 +212,11 @@ const extractErrorParams = (error: ZodIssue): Record<string, unknown> => {
         }
     }
 
-    // For other error types
-    if (errorAny.exact !== undefined) params.exact = errorAny.exact;
-    if (errorAny.options !== undefined) params.options = errorAny.options;
-    if (errorAny.keys !== undefined) params.keys = errorAny.keys;
+    // For miscellaneous extra properties that Zod may attach
+    const miscIssue = error as ZodMiscIssue;
+    if (miscIssue.exact !== undefined) params.exact = miscIssue.exact;
+    if (miscIssue.options !== undefined) params.options = miscIssue.options;
+    if (miscIssue.keys !== undefined) params.keys = miscIssue.keys;
 
     return params; // Return params WITH _inferredType (cleaning happens in transformZodError)
 };
@@ -227,9 +288,8 @@ const generateUserFriendlyMessage = (
         }
 
         case 'invalid_format': {
-            // Handle invalid_format errors (like email validation)
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const format = (error as any).format;
+            // Handle invalid_format errors (like email validation, Zod v4)
+            const format = (error as ZodFormatIssue).format;
             if (format === 'email') {
                 return `${fieldName} must be a valid email address`;
             }
@@ -243,8 +303,7 @@ const generateUserFriendlyMessage = (
         }
 
         case 'invalid_string': {
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const validation = (error as any).validation;
+            const validation = (error as ZodStringValidationIssue).validation;
             if (validation) {
                 if (validation === 'email') {
                     return `${fieldName} must be a valid email address`;
@@ -269,8 +328,7 @@ const generateUserFriendlyMessage = (
         }
 
         case 'invalid_value': {
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const values = (error as any).values;
+            const values = (error as ZodValueIssue).values;
             const optionsText = Array.isArray(values) ? values.join(', ') : 'valid options';
             return `${fieldName} must be one of: ${optionsText}`;
         }
@@ -365,9 +423,8 @@ const generateSuggestion = (
         }
 
         case 'invalid_format': {
-            // Handle invalid_format errors (like email validation)
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const format = (error as any).format;
+            // Handle invalid_format errors (like email validation, Zod v4)
+            const format = (error as ZodFormatIssue).format;
 
             if (format === 'email') {
                 return 'Use format: name@domain.com';
@@ -382,8 +439,7 @@ const generateSuggestion = (
         }
 
         case 'invalid_string': {
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const validation = (error as any).validation;
+            const validation = (error as ZodStringValidationIssue).validation;
             if (validation) {
                 if (validation === 'email') {
                     return 'Use format: name@domain.com';
@@ -409,8 +465,7 @@ const generateSuggestion = (
         }
 
         case 'invalid_value': {
-            // biome-ignore lint/suspicious/noExplicitAny: ZodIssue types vary by error type
-            const values = (error as any).values;
+            const values = (error as ZodValueIssue).values;
             if (Array.isArray(values)) {
                 const limitedOptions =
                     values.slice(0, 3).join(', ') + (values.length > 3 ? '...' : '');
@@ -505,8 +560,8 @@ const generateOverallMessage = (summary: ValidationErrorSummary): string => {
  * Transforms a ZodError into our enhanced standardized format
  */
 export const transformZodError = (error: ZodError): ValidationErrorResponse => {
-    // biome-ignore lint/suspicious/noExplicitAny: ZodError types are complex and this is the correct way to access errors
-    const details: TransformedValidationError[] = (error as any).issues.map(
+    // ZodError.issues is the public API for accessing validation issues
+    const details: TransformedValidationError[] = error.issues.map(
         (err: ZodIssue, _index: number) => {
             const zodCode = err.code;
             const fieldPath = err.path.join('.');
@@ -517,12 +572,8 @@ export const transformZodError = (error: ZodError): ValidationErrorResponse => {
                 ZOD_ERROR_MESSAGE_MAP[zodCode] || 'validationError.field.unknown';
 
             const paramsWithInternal = extractErrorParams(err);
-            // biome-ignore lint/suspicious/noExplicitAny: Need to access internal property
-            const inferredType = (paramsWithInternal as any)._inferredType; // Guardar ANTES de limpiar
-
-            // Crear params limpios para el resultado final
-            // biome-ignore lint/suspicious/noExplicitAny: Need to access internal property
-            const { _inferredType, ...params } = paramsWithInternal as any;
+            // Destructure _inferredType before passing params to public functions
+            const { _inferredType: inferredType, ...params } = paramsWithInternal;
 
             const userFriendlyMessage = generateUserFriendlyMessage(
                 err,

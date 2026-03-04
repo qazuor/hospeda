@@ -64,7 +64,10 @@ export function enforceAccommodationLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current accommodation count for this user
+            // Get current accommodation count for this user.
+            // Type assertion needed: BaseCrudService.count() accepts z.infer<TSearchSchema>
+            // but TypeScript cannot narrow the generic at the call site without importing
+            // the concrete schema type. The filter shape matches AccommodationSearchSchema.
             const accommodationService = new AccommodationService({ logger: apiLogger });
             const countResult = await accommodationService.count(actor, {
                 ownerId: actor.id
@@ -199,12 +202,19 @@ export function enforcePhotoLimit(): AppMiddleware {
                 return;
             }
 
-            // Get photo count from accommodation data
-            // Note: photosCount may not exist yet in the schema, default to 0
+            // Count photos from the accommodation's media JSONB field.
+            // Media structure: { featuredImage?: Image, gallery?: Image[] }
             const accommodation = accommodationResult.data;
-            const currentPhotoCount = accommodation
-                ? (accommodation as { photosCount?: number }).photosCount || 0
-                : 0;
+            let currentPhotoCount = 0;
+            if (accommodation?.media && typeof accommodation.media === 'object') {
+                const media = accommodation.media as {
+                    featuredImage?: unknown;
+                    gallery?: unknown[];
+                };
+                const galleryCount = Array.isArray(media.gallery) ? media.gallery.length : 0;
+                const featuredCount = media.featuredImage ? 1 : 0;
+                currentPhotoCount = galleryCount + featuredCount;
+            }
 
             // Check limit
             const limitCheck = checkLimit({
@@ -299,10 +309,11 @@ export function enforcePromotionLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current active promotion count for this user
+            // Get current active promotion count for this user.
+            // Type assertion needed: BaseCrudService.count() accepts z.infer<TSearchSchema>
+            // but TypeScript cannot narrow the generic at the call site without importing
+            // the concrete schema type. The filter shape matches OwnerPromotionSearchSchema.
             const promotionService = new OwnerPromotionService({ logger: apiLogger });
-
-            // Count active promotions (isActive = true)
             const countResult = await promotionService.count(actor, {
                 isActive: true,
                 ownerId: actor.id
@@ -543,10 +554,18 @@ export function enforcePropertiesLimit(): AppMiddleware {
                 return;
             }
 
-            // BLOCKED: No complex/properties table or service exists yet.
-            // When the complex feature is implemented, replace with:
-            //   const complexService = new ComplexService({ logger: apiLogger });
-            //   const countResult = await complexService.countProperties(actor, { complexId });
+            // FUTURE FEATURE: Complex accommodations (hotels/hostels) with room/unit management.
+            // This limit enforces the maximum number of rooms/units within a single complex
+            // accommodation. The accommodation type (simple vs complex) is defined on the
+            // accommodation entity, and complex types will have a related rooms/units table.
+            //
+            // When the complex accommodation feature is implemented, replace with:
+            //   const roomService = new AccommodationRoomService({ logger: apiLogger });
+            //   const countResult = await roomService.countByAccommodation(actor, { accommodationId: complexId });
+            //   const currentPropertyCount = countResult.data?.count || 0;
+            //
+            // Note: The accommodation-level limit (how many accommodations a user can have)
+            // is already enforced by enforceAccommodationLimit() above.
             const currentPropertyCount = 0;
 
             // Check limit
@@ -645,10 +664,20 @@ export function enforceStaffAccountsLimit(): AppMiddleware {
                 return;
             }
 
-            // BLOCKED: No staff accounts table or service exists yet.
-            // When the staff management feature is implemented, replace with:
-            //   const staffService = new StaffService({ logger: apiLogger });
-            //   const countResult = await staffService.countStaffForUser(actor, { userId: actor.id });
+            // FUTURE FEATURE: Staff account management.
+            // In v1, each accommodation is managed by a single user (the owner).
+            // Staff accounts will be implemented in a future version to allow owners
+            // to invite team members (receptionists, managers) with granular permissions.
+            //
+            // Implementation plan:
+            //   1. Create staff_invitations table (owner_user_id, email, role, status, etc.)
+            //   2. Create StaffService with invite/accept/revoke flows
+            //   3. Replace this stub with:
+            //      const staffService = new StaffService({ logger: apiLogger });
+            //      const countResult = await staffService.countAcceptedByOwner(actor, { ownerId: actor.id });
+            //      const currentCount = countResult.data?.count || 0;
+            //
+            // Until then, the limit is never reached (count is always 0).
             const currentCount = 0;
 
             // Check limit

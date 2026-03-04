@@ -50,6 +50,10 @@
         {
             "path": "/api/v1/cron/exchange-rate-fetch",
             "schedule": "*/15 * * * *"
+        },
+        {
+            "path": "/api/v1/cron/dunning",
+            "schedule": "0 6 * * *"
         }
     ],
     "functions": {

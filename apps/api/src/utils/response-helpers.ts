@@ -7,6 +7,7 @@ import { DbError } from '@repo/db/utils';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { apiLogger } from './logger';
 
 /**
@@ -166,6 +167,32 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 code: error.code,
                 message: error.message,
                 details: process.env.NODE_ENV === 'development' ? error.details : undefined
+            },
+            c,
+            statusCode
+        );
+    }
+
+    // Check for Hono HTTPException (thrown by route handlers for known errors)
+    if (error instanceof HTTPException) {
+        const statusCode = error.status;
+        const message = error.message;
+
+        // Map HTTP status to error code
+        const httpStatusToCode: Record<number, string> = {
+            400: ServiceErrorCode.VALIDATION_ERROR,
+            401: ServiceErrorCode.UNAUTHORIZED,
+            403: ServiceErrorCode.FORBIDDEN,
+            404: ServiceErrorCode.NOT_FOUND,
+            409: ServiceErrorCode.ALREADY_EXISTS
+        };
+        const code = httpStatusToCode[statusCode] ?? ServiceErrorCode.INTERNAL_ERROR;
+
+        return createErrorResponse(
+            {
+                code,
+                message,
+                details: undefined
             },
             c,
             statusCode
