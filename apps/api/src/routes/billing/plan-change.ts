@@ -7,6 +7,11 @@
  * Routes:
  * - POST /api/v1/billing/subscriptions/change-plan - Change subscription plan (authenticated)
  *
+ * @remarks
+ * **BILL-13 Decision (v1):** Plan changes are only supported for active subscriptions.
+ * Canceled or expired subscriptions cannot be reactivated through a plan change.
+ * Users in those states must contact support for manual reactivation before changing plans.
+ *
  * @module routes/billing/plan-change
  */
 
@@ -19,31 +24,54 @@ import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
 
 /**
- * Map BillingIntervalEnum to QZPay interval format
- * QZPay uses 'month' | 'year', while our enum uses 'monthly' | 'annual'
+ * Mapped QZPay interval with count for multi-month periods.
  */
-function mapBillingIntervalToQZPay(
-    interval: BillingIntervalEnum
-): 'month' | 'year' | 'week' | 'day' {
+interface QZPayIntervalMapping {
+    /** QZPay interval unit */
+    readonly interval: 'month' | 'year' | 'week' | 'day';
+    /** Number of interval units per billing period (e.g., 3 for quarterly) */
+    readonly intervalCount: number;
+}
+
+/**
+ * Map BillingIntervalEnum to QZPay interval format with count.
+ *
+ * QZPay uses 'month' | 'year' with an optional count, while our enum
+ * uses 'monthly' | 'annual' | 'quarterly' | 'semi_annual'.
+ *
+ * @param interval - Hospeda billing interval enum value
+ * @returns QZPay interval unit and count
+ */
+/**
+ * Supported billing interval values for plan changes.
+ * Used to validate interval before mapping to QZPay format.
+ */
+const SUPPORTED_INTERVALS = new Set(['monthly', 'annual', 'quarterly', 'semi_annual', 'one_time']);
+
+function mapBillingIntervalToQZPay(interval: BillingIntervalEnum): QZPayIntervalMapping {
     const intervalStr = interval as string;
+
+    if (!SUPPORTED_INTERVALS.has(intervalStr)) {
+        throw new HTTPException(422, {
+            message: `Unsupported billing interval '${intervalStr}'. Supported intervals: ${[...SUPPORTED_INTERVALS].join(', ')}`
+        });
+    }
 
     switch (intervalStr) {
         case 'monthly':
-            return 'month';
+            return { interval: 'month', intervalCount: 1 };
         case 'annual':
-            return 'year';
+            return { interval: 'year', intervalCount: 1 };
         case 'quarterly':
-            // Map quarterly to month with interval count (handled elsewhere)
-            return 'month';
+            return { interval: 'month', intervalCount: 3 };
         case 'semi_annual':
-            // Map semi-annual to month with interval count (handled elsewhere)
-            return 'month';
+            return { interval: 'month', intervalCount: 6 };
         case 'one_time':
-            // One-time payments could be treated as a single month
-            return 'month';
+            return { interval: 'month', intervalCount: 1 };
         default:
-            // Fallback
-            return 'month';
+            throw new HTTPException(422, {
+                message: `Unsupported billing interval '${intervalStr}'. Supported intervals: ${[...SUPPORTED_INTERVALS].join(', ')}`
+            });
     }
 }
 
@@ -135,10 +163,14 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         }
 
         // 5. Find the price matching the requested billing interval
-        // Map our enum to QZPay's interval format
-        const qzpayInterval = mapBillingIntervalToQZPay(billingInterval);
+        // Map our enum to QZPay's interval format (includes intervalCount for quarterly/semi_annual)
+        const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
+            mapBillingIntervalToQZPay(billingInterval);
 
-        const targetPrice = targetPlan.prices.find((p) => p.billingInterval === qzpayInterval);
+        const targetPrice = targetPlan.prices.find(
+            (p) =>
+                p.billingInterval === qzpayInterval && (p.intervalCount ?? 1) === qzpayIntervalCount
+        );
 
         if (!targetPrice) {
             throw new HTTPException(400, {
@@ -243,4 +275,4 @@ const planChangeRouter = createRouter();
 
 planChangeRouter.route('/', changePlanRoute);
 
-export default planChangeRouter;
+export { planChangeRouter };

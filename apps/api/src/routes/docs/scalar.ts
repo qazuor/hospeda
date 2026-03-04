@@ -30,6 +30,8 @@ const scalarRoute = createRoute({
 });
 
 app.openapi(scalarRoute, async (c) => {
+    // Scalar() returns a middleware whose return type does not match the OpenAPI route handler
+    // signature. @scalar/hono-api-reference does not export a typed OpenAPI variant.
     const scalarMiddleware = Scalar({
         url: '/docs/openapi.json',
         theme: 'moon',
@@ -41,7 +43,8 @@ app.openapi(scalarRoute, async (c) => {
         hideDarkModeToggle: true,
         slug: 'api-1',
         title: 'API #1'
-        // biome-ignore lint/suspicious/noExplicitAny: Scalar middleware has type compatibility issues with Hono versions
+        // (Same typing issue as the Scalar() call above.)
+        // biome-ignore lint/suspicious/noExplicitAny: Hono middleware type incompatibility with apiReference return type
     }) as any;
 
     return scalarMiddleware(c, () => Promise.resolve());

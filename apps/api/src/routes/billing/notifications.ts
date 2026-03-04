@@ -93,4 +93,4 @@ const notificationsRouter = createRouter();
 
 notificationsRouter.route('/', cleanupRoute);
 
-export default notificationsRouter;
+export { notificationsRouter };

@@ -13,6 +13,7 @@ import {
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { enforceFavoritesLimit } from '../../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -78,5 +79,8 @@ export const createUserBookmarkRoute = createProtectedRoute({
         }
 
         return { toggled: true, bookmark: result.data };
+    },
+    options: {
+        middlewares: [enforceFavoritesLimit()]
     }
 });

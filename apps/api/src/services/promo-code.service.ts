@@ -1,44 +1,45 @@
 /**
  * Promo Code Service
  *
- * Service for managing promo codes with database integration.
- * Provides:
- * - CRUD operations for promo codes (via Drizzle ORM)
- * - Validation (expiry, max uses, plan restrictions, first-purchase condition, min amount)
- * - Application of promo codes to checkout sessions
- * - Atomic usage count increment
+ * Facade that delegates to specialized modules:
+ * - `promo-code.crud`       – CRUD database operations
+ * - `promo-code.redemption` – Atomic redemption and usage tracking
+ * - `promo-code.validation` – Business-rule validation
+ *
+ * All types used by the modules are re-exported from here so that
+ * consumers can import everything from a single entry point.
  *
  * @module services/promo-code
  */
 
-import type { QZPayBilling } from '@qazuor/qzpay-core';
 import {
-    type QZPayBillingPromoCode,
-    and,
-    billingPromoCodeUsage,
-    billingPromoCodes,
-    count,
-    desc,
-    eq,
-    getDb,
-    ilike,
-    isNull,
-    lte,
-    or,
-    sql,
-    withTransaction
-} from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
-import { getQZPayBilling } from '../middlewares/billing';
-import { apiLogger } from '../utils/logger';
+    createPromoCode,
+    deletePromoCode,
+    getPromoCodeByCode,
+    getPromoCodeById,
+    listPromoCodes,
+    updatePromoCode
+} from './promo-code.crud';
+import {
+    applyPromoCode,
+    incrementPromoCodeUsage,
+    recordPromoCodeUsage,
+    tryRedeemAtomically
+} from './promo-code.redemption';
+import type { RecordUsageInput } from './promo-code.redemption';
+import { validatePromoCode } from './promo-code.validation';
+
+// ---------------------------------------------------------------------------
+// Types (re-exported so consumers and sub-modules can import from here)
+// ---------------------------------------------------------------------------
 
 /**
- * Discount type for promo codes
+ * Discount type for promo codes.
  */
 export type DiscountType = 'percentage' | 'fixed';
 
 /**
- * Promo code creation input
+ * Promo code creation input.
  */
 export interface CreatePromoCodeInput {
     /** The promo code string (will be uppercased) */
@@ -64,7 +65,7 @@ export interface CreatePromoCodeInput {
 }
 
 /**
- * Promo code update input
+ * Promo code update input.
  */
 export interface UpdatePromoCodeInput {
     /** Optional description */
@@ -78,7 +79,7 @@ export interface UpdatePromoCodeInput {
 }
 
 /**
- * Promo code filters for listing
+ * Promo code filters for listing.
  */
 export interface ListPromoCodesFilters {
     /** Filter by active status */
@@ -94,7 +95,7 @@ export interface ListPromoCodesFilters {
 }
 
 /**
- * Validation context for promo codes
+ * Validation context for promo codes.
  */
 export interface PromoCodeValidationContext {
     /** Target plan ID */
@@ -106,7 +107,7 @@ export interface PromoCodeValidationContext {
 }
 
 /**
- * Validation result
+ * Validation result.
  */
 export interface PromoCodeValidationResult {
     /** Whether the code is valid */
@@ -120,7 +121,7 @@ export interface PromoCodeValidationResult {
 }
 
 /**
- * Promo code entity (matches expected QZPay structure)
+ * Promo code entity (matches expected QZPay structure).
  */
 export interface PromoCode {
     id: string;
@@ -132,973 +133,142 @@ export interface PromoCode {
     maxUses?: number;
     timesRedeemed: number;
     metadata?: Record<string, unknown>;
+    /** Plan IDs this code is restricted to (from DB column, not metadata) */
+    validPlans?: string[];
+    /** Whether this code is only for new customers (from DB column, not metadata) */
+    newCustomersOnly?: boolean;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
 }
 
+// ---------------------------------------------------------------------------
+// Facade class
+// ---------------------------------------------------------------------------
+
 /**
  * Promo Code Service
  *
- * Manages promo codes with database integration via Drizzle ORM.
- * Provides CRUD operations and validation logic.
+ * Thin facade over the promo-code sub-modules. Preserves the original class
+ * interface so all existing callers continue to work without changes.
  */
 export class PromoCodeService {
-    private billing: QZPayBilling | null;
-
-    constructor() {
-        this.billing = getQZPayBilling();
-    }
-
     /**
-     * Ensure billing is configured
-     *
-     * @throws Error if billing is not configured
-     */
-    private ensureBilling(): QZPayBilling {
-        if (!this.billing) {
-            throw new Error('Billing service not configured');
-        }
-        return this.billing;
-    }
-
-    /**
-     * Map database promo code to PromoCode response format
-     *
-     * @param dbPromoCode - Database promo code record
-     * @returns Mapped PromoCode
-     */
-    private mapDbToPromoCode(dbPromoCode: QZPayBillingPromoCode): PromoCode {
-        return {
-            id: dbPromoCode.id,
-            code: dbPromoCode.code,
-            type: dbPromoCode.type as 'percentage' | 'fixed',
-            value: dbPromoCode.value,
-            active: dbPromoCode.active ?? false,
-            expiresAt: dbPromoCode.expiresAt?.toISOString(),
-            maxUses: dbPromoCode.maxUses ?? undefined,
-            timesRedeemed: dbPromoCode.usedCount ?? 0,
-            metadata: (dbPromoCode.config as Record<string, unknown>) ?? undefined,
-            createdAt: dbPromoCode.createdAt.toISOString(),
-            updatedAt: dbPromoCode.createdAt.toISOString() // QZPay schema doesn't have updatedAt
-        };
-    }
-
-    /**
-     * Create a new promo code
+     * Create a new promo code.
      *
      * @param input - Promo code creation data
-     * @returns Created promo code
+     * @returns Created promo code or error
      */
     async create(input: CreatePromoCodeInput) {
-        try {
-            const db = getDb();
-            const code = input.code.toUpperCase();
-
-            apiLogger.info({ code }, 'Creating promo code in database');
-
-            // Build config object
-            const config: Record<string, unknown> = {};
-            if (input.description) {
-                config.description = input.description;
-            }
-            if (input.minAmount) {
-                config.minAmount = input.minAmount;
-            }
-
-            // Insert promo code
-            const result = await db
-                .insert(billingPromoCodes)
-                .values({
-                    code,
-                    type: input.discountType,
-                    value: input.discountValue,
-                    config: Object.keys(config).length > 0 ? config : null,
-                    maxUses: input.maxUses ?? null,
-                    usedCount: 0,
-                    validPlans: input.planRestrictions ?? null,
-                    newCustomersOnly: input.firstPurchaseOnly ?? false,
-                    active: input.isActive ?? true,
-                    expiresAt: input.expiryDate ?? null,
-                    livemode: process.env.NODE_ENV === 'production'
-                })
-                .returning();
-
-            const promoCode = result[0];
-
-            if (!promoCode) {
-                throw new Error('Failed to create promo code');
-            }
-
-            apiLogger.info({ id: promoCode.id }, 'Promo code created successfully');
-
-            return {
-                success: true,
-                data: this.mapDbToPromoCode(promoCode)
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to create promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to create promo code'
-                }
-            };
-        }
+        return createPromoCode(input);
     }
 
     /**
-     * Get promo code by code string
+     * Get promo code by its code string.
      *
-     * @param code - Promo code string
-     * @returns Promo code or not found error
+     * @param code - Promo code string (case-insensitive)
+     * @returns Promo code or NOT_FOUND error
      */
     async getByCode(code: string) {
-        try {
-            const db = getDb();
-            const normalizedCode = code.toUpperCase();
-
-            apiLogger.debug({ code: normalizedCode }, 'Looking up promo code in database');
-
-            const [dbPromoCode] = await db
-                .select()
-                .from(billingPromoCodes)
-                .where(eq(billingPromoCodes.code, normalizedCode))
-                .limit(1);
-
-            if (dbPromoCode) {
-                apiLogger.info({ code: normalizedCode }, 'Promo code found in database');
-                return {
-                    success: true,
-                    data: this.mapDbToPromoCode(dbPromoCode)
-                };
-            }
-
-            apiLogger.info({ code: normalizedCode }, 'Promo code not found');
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.NOT_FOUND,
-                    message: 'Promo code not found'
-                }
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to get promo code by code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to retrieve promo code'
-                }
-            };
-        }
+        return getPromoCodeByCode(code);
     }
 
     /**
-     * Get promo code by ID
+     * Get promo code by database ID.
      *
-     * @param id - Promo code ID
-     * @returns Promo code or null
+     * @param id - Promo code UUID
+     * @returns Promo code or NOT_FOUND error
      */
     async getById(id: string) {
-        try {
-            const db = getDb();
-
-            apiLogger.debug({ id }, 'Looking up promo code by ID');
-
-            const [promoCode] = await db
-                .select()
-                .from(billingPromoCodes)
-                .where(eq(billingPromoCodes.id, id))
-                .limit(1);
-
-            if (!promoCode) {
-                apiLogger.info({ id }, 'Promo code not found');
-                return {
-                    success: false,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            apiLogger.info({ id }, 'Promo code found');
-
-            return {
-                success: true,
-                data: this.mapDbToPromoCode(promoCode)
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to get promo code by ID',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to retrieve promo code'
-                }
-            };
-        }
+        return getPromoCodeById(id);
     }
 
     /**
-     * Update promo code
+     * Update mutable fields of a promo code.
      *
-     * @param id - Promo code ID
-     * @param input - Update data
-     * @returns Updated promo code
+     * @param id - Promo code UUID
+     * @param input - Fields to update
+     * @returns Updated promo code or error
      */
     async update(id: string, input: UpdatePromoCodeInput) {
-        try {
-            const db = getDb();
-
-            apiLogger.info({ id }, 'Updating promo code');
-
-            // Build update object
-            const updateData: Partial<QZPayBillingPromoCode> = {};
-
-            if (input.description !== undefined) {
-                // Merge with existing config
-                const [existing] = await db
-                    .select()
-                    .from(billingPromoCodes)
-                    .where(eq(billingPromoCodes.id, id))
-                    .limit(1);
-
-                if (!existing) {
-                    return {
-                        success: false,
-                        error: {
-                            code: ServiceErrorCode.NOT_FOUND,
-                            message: 'Promo code not found'
-                        }
-                    };
-                }
-
-                const config = (existing.config as Record<string, unknown>) ?? {};
-                config.description = input.description;
-                updateData.config = config;
-            }
-
-            if (input.expiryDate !== undefined) {
-                updateData.expiresAt = input.expiryDate;
-            }
-
-            if (input.maxUses !== undefined) {
-                updateData.maxUses = input.maxUses;
-            }
-
-            if (input.isActive !== undefined) {
-                updateData.active = input.isActive;
-            }
-
-            const [updatedPromoCode] = await db
-                .update(billingPromoCodes)
-                .set(updateData)
-                .where(eq(billingPromoCodes.id, id))
-                .returning();
-
-            if (!updatedPromoCode) {
-                return {
-                    success: false,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            apiLogger.info({ id }, 'Promo code updated successfully');
-
-            return {
-                success: true,
-                data: this.mapDbToPromoCode(updatedPromoCode)
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to update promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to update promo code'
-                }
-            };
-        }
+        return updatePromoCode(id, input);
     }
 
     /**
-     * Soft delete promo code (sets active = false)
+     * Soft-delete a promo code (sets active = false).
      *
-     * @param id - Promo code ID
-     * @returns Success status
+     * @param id - Promo code UUID
+     * @returns Success or NOT_FOUND error
      */
     async delete(id: string) {
-        try {
-            const db = getDb();
-
-            apiLogger.info({ id }, 'Deleting promo code (soft delete)');
-
-            const [deletedPromoCode] = await db
-                .update(billingPromoCodes)
-                .set({ active: false })
-                .where(eq(billingPromoCodes.id, id))
-                .returning();
-
-            if (!deletedPromoCode) {
-                return {
-                    success: false,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            apiLogger.info({ id }, 'Promo code deleted successfully');
-
-            return {
-                success: true,
-                data: undefined
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to delete promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to delete promo code'
-                }
-            };
-        }
+        return deletePromoCode(id);
     }
 
     /**
-     * List promo codes with filters
+     * List promo codes with optional filters and pagination.
      *
      * @param filters - Filter and pagination options
      * @returns Paginated list of promo codes
      */
     async list(filters: ListPromoCodesFilters = {}) {
-        try {
-            const db = getDb();
-            const { page = 1, pageSize = 20, active, expired, codeSearch } = filters;
-
-            apiLogger.debug({ filters }, 'Listing promo codes');
-
-            // Build where conditions
-            const conditions = [];
-
-            if (active !== undefined) {
-                conditions.push(eq(billingPromoCodes.active, active));
-            }
-
-            if (expired !== undefined) {
-                if (expired) {
-                    // Show only expired codes
-                    conditions.push(lte(billingPromoCodes.expiresAt, new Date()));
-                } else {
-                    // Show only non-expired codes (null or future date)
-                    conditions.push(
-                        or(
-                            isNull(billingPromoCodes.expiresAt),
-                            sql`${billingPromoCodes.expiresAt} > NOW()`
-                        )
-                    );
-                }
-            }
-
-            if (codeSearch) {
-                conditions.push(ilike(billingPromoCodes.code, `%${codeSearch}%`));
-            }
-
-            const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-            // Get total count
-            const countResult = await db
-                .select({ value: count() })
-                .from(billingPromoCodes)
-                .where(whereClause);
-
-            const total = countResult[0]?.value ?? 0;
-
-            // Get paginated results
-            const items = await db
-                .select()
-                .from(billingPromoCodes)
-                .where(whereClause)
-                .orderBy(desc(billingPromoCodes.createdAt))
-                .limit(pageSize)
-                .offset((page - 1) * pageSize);
-
-            const mappedItems = items.map((item) => this.mapDbToPromoCode(item));
-
-            apiLogger.info({ total, page, pageSize }, 'Promo codes listed successfully');
-
-            return {
-                success: true,
-                data: {
-                    items: mappedItems,
-                    pagination: {
-                        page,
-                        pageSize,
-                        total,
-                        totalPages: Math.ceil(total / pageSize)
-                    }
-                }
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to list promo codes',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to list promo codes'
-                }
-            };
-        }
+        return listPromoCodes(filters);
     }
 
     /**
-     * Validate a promo code for specific context
-     *
-     * Checks:
-     * - Code exists and is not deleted
-     * - Not expired
-     * - Usage count < max uses
-     * - First purchase requirement (if applicable)
-     * - Plan restrictions (if applicable)
-     * - Minimum amount (if applicable)
+     * Validate a promo code for a specific checkout context.
      *
      * @param code - Promo code string
-     * @param context - Validation context
-     * @returns Validation result
+     * @param context - Validation context (planId, userId, amount)
+     * @returns Validation result with optional discount preview
      */
     async validate(
         code: string,
         context: PromoCodeValidationContext
     ): Promise<PromoCodeValidationResult> {
-        try {
-            const normalizedCode = code.toUpperCase();
-
-            apiLogger.debug(
-                { code: normalizedCode, planId: context.planId, userId: context.userId },
-                'Validating promo code'
-            );
-
-            // Try to get from database first
-            const dbResult = await this.getByCode(normalizedCode);
-
-            let promoData: PromoCode | null = null;
-
-            if (dbResult.success && dbResult.data) {
-                promoData = dbResult.data;
-            } else {
-                return {
-                    valid: false,
-                    errorCode: 'PROMO_CODE_NOT_FOUND',
-                    errorMessage: 'Promo code not found'
-                };
-            }
-
-            // Check if code is active
-            if (!promoData.active) {
-                apiLogger.info({ code: normalizedCode }, 'Promo code is inactive');
-                return {
-                    valid: false,
-                    errorCode: 'PROMO_CODE_INACTIVE',
-                    errorMessage: 'This promo code is no longer active'
-                };
-            }
-
-            // Check expiry date
-            if (promoData.expiresAt && new Date() > new Date(promoData.expiresAt)) {
-                apiLogger.info(
-                    { code: normalizedCode, expiresAt: promoData.expiresAt },
-                    'Promo code expired'
-                );
-                return {
-                    valid: false,
-                    errorCode: 'PROMO_CODE_EXPIRED',
-                    errorMessage: 'This promo code has expired'
-                };
-            }
-
-            // Check max uses
-            if (promoData.maxUses && promoData.timesRedeemed >= promoData.maxUses) {
-                apiLogger.info(
-                    {
-                        code: normalizedCode,
-                        maxUses: promoData.maxUses,
-                        timesRedeemed: promoData.timesRedeemed
-                    },
-                    'Promo code max uses exceeded'
-                );
-                return {
-                    valid: false,
-                    errorCode: 'PROMO_CODE_MAX_USES',
-                    errorMessage: 'This promo code has reached its maximum number of uses'
-                };
-            }
-
-            // Check plan restrictions
-            if (promoData.metadata?.restrictedToPlans && context.planId) {
-                const restrictedPlans = promoData.metadata.restrictedToPlans as string[];
-                if (!restrictedPlans.includes(context.planId)) {
-                    apiLogger.info(
-                        {
-                            code: normalizedCode,
-                            planId: context.planId,
-                            restrictedPlans
-                        },
-                        'Promo code not valid for this plan'
-                    );
-                    return {
-                        valid: false,
-                        errorCode: 'PROMO_CODE_PLAN_RESTRICTION',
-                        errorMessage: 'This promo code is not valid for the selected plan'
-                    };
-                }
-            }
-
-            // Check new user requirement (log warning since we can't verify without customer history)
-            if (promoData.metadata?.newUserOnly) {
-                apiLogger.warn(
-                    { code: normalizedCode, userId: context.userId },
-                    'Cannot verify newUserOnly requirement without customer history - accepting code'
-                );
-            }
-
-            // Check minimum amount
-            if (context.amount !== undefined && promoData.metadata?.minAmount) {
-                const minAmount = promoData.metadata.minAmount as number;
-                if (context.amount < minAmount) {
-                    apiLogger.info(
-                        { code: normalizedCode, amount: context.amount, minAmount },
-                        'Amount below minimum for promo code'
-                    );
-                    return {
-                        valid: false,
-                        errorCode: 'PROMO_CODE_MIN_AMOUNT',
-                        errorMessage: `Minimum amount of ${minAmount} required to use this promo code`
-                    };
-                }
-            }
-
-            // Calculate discount preview if amount provided
-            let discountAmount: number | undefined;
-            if (context.amount !== undefined) {
-                if (promoData.type === 'percentage') {
-                    discountAmount = Math.round((context.amount * promoData.value) / 100);
-                } else {
-                    // Fixed amount discount
-                    discountAmount = Math.min(promoData.value, context.amount);
-                }
-            }
-
-            apiLogger.info(
-                {
-                    code: normalizedCode,
-                    type: promoData.type,
-                    value: promoData.value,
-                    discountAmount
-                },
-                'Promo code is valid'
-            );
-
-            return {
-                valid: true,
-                discountAmount
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to validate promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                valid: false,
-                errorCode: 'PROMO_CODE_VALIDATION_ERROR',
-                errorMessage: 'Failed to validate promo code'
-            };
-        }
+        return validatePromoCode(code, context);
     }
 
     /**
-     * Apply promo code to a checkout session
+     * Apply a promo code for a billing customer.
      *
-     * Uses atomic redemption with row locking to prevent race conditions.
+     * Validates, atomically redeems, and records usage.
      *
      * @param code - Promo code string
-     * @param checkoutId - Checkout session ID
-     * @param amount - Optional amount to apply discount to
-     * @returns Discount calculation result
+     * @param customerId - Billing customer ID
+     * @param amount - Optional original amount in cents
+     * @returns Discount calculation result or error
      */
-    async apply(code: string, checkoutId: string, amount?: number) {
-        this.ensureBilling();
-
-        const normalizedCode = code.toUpperCase();
-
-        apiLogger.info({ code: normalizedCode, checkoutId }, 'Applying promo code to checkout');
-
-        try {
-            // Get promo code from database
-            const result = await this.getByCode(normalizedCode);
-
-            if (!result.success || !result.data) {
-                return {
-                    success: false as const,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            const promoCode = result.data;
-
-            // Check if active
-            if (!promoCode.active) {
-                return {
-                    success: false as const,
-                    error: {
-                        code: ServiceErrorCode.VALIDATION_ERROR,
-                        message: 'This promo code is no longer active'
-                    }
-                };
-            }
-
-            // Check expiry
-            if (promoCode.expiresAt && new Date() > new Date(promoCode.expiresAt)) {
-                return {
-                    success: false as const,
-                    error: {
-                        code: ServiceErrorCode.VALIDATION_ERROR,
-                        message: 'This promo code has expired'
-                    }
-                };
-            }
-
-            // Calculate discount first (needed for both DB and local codes)
-            let discountAmount = 0;
-            const effectiveAmount = amount || 0;
-
-            if (effectiveAmount > 0) {
-                if (promoCode.type === 'percentage') {
-                    discountAmount = Math.round((effectiveAmount * promoCode.value) / 100);
-                } else {
-                    discountAmount = Math.min(promoCode.value, effectiveAmount);
-                }
-            }
-
-            const finalAmount = Math.max(0, effectiveAmount - discountAmount);
-
-            // Use atomic redemption with row locking to prevent race conditions
-            const redeemResult = await this.tryRedeemAtomically(promoCode.id);
-
-            if (!redeemResult.success) {
-                return {
-                    success: false as const,
-                    error: {
-                        code: ServiceErrorCode.VALIDATION_ERROR,
-                        message:
-                            redeemResult.error?.message ||
-                            'This promo code has reached its maximum number of uses'
-                    }
-                };
-            }
-
-            // Record usage (separate from the atomic increment)
-            await this.recordUsage({
-                promoCodeId: promoCode.id,
-                customerId: checkoutId,
-                discountAmount,
-                currency: 'ARS'
-            });
-
-            apiLogger.info(
-                {
-                    code: normalizedCode,
-                    checkoutId,
-                    originalAmount: effectiveAmount,
-                    discountAmount,
-                    finalAmount,
-                    discountType: promoCode.type,
-                    discountValue: promoCode.value
-                },
-                'Promo code applied successfully'
-            );
-
-            return {
-                success: true as const,
-                data: {
-                    code: promoCode.code,
-                    type: promoCode.type,
-                    value: promoCode.value,
-                    discountAmount,
-                    finalAmount,
-                    originalAmount: effectiveAmount
-                }
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to apply promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false as const,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: error instanceof Error ? error.message : 'Failed to apply promo code'
-                }
-            };
-        }
+    async apply(code: string, customerId: string, amount?: number) {
+        return applyPromoCode(code, customerId, amount);
     }
 
     /**
-     * Increment usage count atomically
+     * Increment usage count atomically.
      *
-     * @param id - Promo code ID
-     * @returns Success status
+     * @param id - Promo code UUID
+     * @returns Success or error
      */
     async incrementUsage(id: string) {
-        try {
-            const db = getDb();
-
-            apiLogger.info({ id }, 'Incrementing promo code usage');
-
-            const [updated] = await db
-                .update(billingPromoCodes)
-                .set({
-                    usedCount: sql`${billingPromoCodes.usedCount} + 1`
-                })
-                .where(eq(billingPromoCodes.id, id))
-                .returning();
-
-            if (!updated) {
-                return {
-                    success: false,
-                    error: {
-                        code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Promo code not found'
-                    }
-                };
-            }
-
-            apiLogger.info(
-                { id, newCount: updated.usedCount },
-                'Promo code usage incremented successfully'
-            );
-
-            return {
-                success: true,
-                data: undefined
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to increment promo code usage',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to increment usage count'
-                }
-            };
-        }
+        return incrementPromoCodeUsage(id);
     }
 
     /**
      * Atomically try to redeem a promo code with row locking.
      *
-     * This method prevents race conditions by:
-     * 1. Selecting the promo code row with FOR UPDATE (row lock)
-     * 2. Checking if max_uses limit allows another redemption
-     * 3. Incrementing used_count atomically within the same transaction
-     *
-     * @param promoCodeId - Promo code ID to redeem
-     * @returns Result with the updated promo code or error if max uses exceeded
+     * @param promoCodeId - Promo code UUID to redeem
+     * @returns Updated promo code row or error
      */
-    async tryRedeemAtomically(promoCodeId: string): Promise<{
-        success: boolean;
-        data?: QZPayBillingPromoCode;
-        error?: { code: string; message: string };
-    }> {
-        try {
-            apiLogger.info({ promoCodeId }, 'Attempting atomic promo code redemption');
-
-            const result = await withTransaction(async (tx) => {
-                // Step 1: Lock the row with FOR UPDATE to prevent concurrent modifications
-                const queryResult = await tx.execute<QZPayBillingPromoCode>(
-                    sql`SELECT * FROM ${billingPromoCodes}
-                        WHERE id = ${promoCodeId}
-                        FOR UPDATE`
-                );
-                const lockedPromoCode = queryResult.rows?.[0];
-
-                if (!lockedPromoCode) {
-                    return {
-                        success: false,
-                        error: {
-                            code: ServiceErrorCode.NOT_FOUND,
-                            message: 'Promo code not found'
-                        }
-                    };
-                }
-
-                // Step 2: Check if we can still redeem (max_uses check with locked data)
-                const currentUsed = lockedPromoCode.usedCount ?? 0;
-                const maxUses = lockedPromoCode.maxUses;
-
-                if (maxUses !== null && currentUsed >= maxUses) {
-                    apiLogger.warn(
-                        {
-                            promoCodeId,
-                            currentUsed,
-                            maxUses
-                        },
-                        'Promo code max uses exceeded (detected with lock)'
-                    );
-                    return {
-                        success: false,
-                        error: {
-                            code: 'PROMO_CODE_MAX_USES',
-                            message: 'This promo code has reached its maximum number of uses'
-                        }
-                    };
-                }
-
-                // Step 3: Increment usage atomically within the transaction
-                const [updated] = await tx
-                    .update(billingPromoCodes)
-                    .set({
-                        usedCount: sql`${billingPromoCodes.usedCount} + 1`
-                    })
-                    .where(eq(billingPromoCodes.id, promoCodeId))
-                    .returning();
-
-                if (!updated) {
-                    throw new Error('Failed to update promo code usage count');
-                }
-
-                apiLogger.info(
-                    {
-                        promoCodeId,
-                        previousUsed: currentUsed,
-                        newUsed: updated.usedCount,
-                        maxUses
-                    },
-                    'Promo code redeemed atomically'
-                );
-
-                return {
-                    success: true,
-                    data: updated
-                };
-            });
-
-            return result;
-        } catch (error) {
-            apiLogger.error(
-                'Failed to atomically redeem promo code',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to redeem promo code'
-                }
-            };
-        }
+    async tryRedeemAtomically(promoCodeId: string) {
+        return tryRedeemAtomically(promoCodeId);
     }
 
     /**
-     * Record promo code usage
+     * Record a promo code usage event in the audit table.
      *
      * @param data - Usage record data
-     * @returns Created usage record
+     * @returns Created usage record or error
      */
-    async recordUsage(data: {
-        promoCodeId: string;
-        customerId: string;
-        subscriptionId?: string;
-        discountAmount: number;
-        currency: string;
-    }) {
-        try {
-            const db = getDb();
-
-            apiLogger.info(
-                { promoCodeId: data.promoCodeId, customerId: data.customerId },
-                'Recording promo code usage'
-            );
-
-            const result = await db
-                .insert(billingPromoCodeUsage)
-                .values({
-                    promoCodeId: data.promoCodeId,
-                    customerId: data.customerId,
-                    subscriptionId: data.subscriptionId ?? null,
-                    discountAmount: data.discountAmount,
-                    currency: data.currency,
-                    livemode: process.env.NODE_ENV === 'production'
-                })
-                .returning();
-
-            const usage = result[0];
-
-            if (!usage) {
-                throw new Error('Failed to record promo code usage');
-            }
-
-            apiLogger.info({ id: usage.id }, 'Promo code usage recorded successfully');
-
-            return {
-                success: true,
-                data: usage
-            };
-        } catch (error) {
-            apiLogger.error(
-                'Failed to record promo code usage',
-                error instanceof Error ? error.message : String(error)
-            );
-
-            return {
-                success: false,
-                error: {
-                    code: ServiceErrorCode.INTERNAL_ERROR,
-                    message: 'Failed to record promo code usage'
-                }
-            };
-        }
+    async recordUsage(data: RecordUsageInput) {
+        return recordPromoCodeUsage(data);
     }
 }

@@ -212,6 +212,10 @@ export const getUserAddonsRoute = createProtectedRoute({
  * Cancel recurring add-on (authenticated)
  *
  * POST /api/v1/billing/addons/:id/cancel
+ *
+ * Ownership verification is delegated to the service layer.
+ * cancelAddon() in addon.service.ts verifies that the addon
+ * belongs to the requesting user's customer via getUserAddons() lookup.
  */
 export const cancelAddonRoute = createProtectedRoute({
     method: 'post',
@@ -275,5 +279,3 @@ addonsRouter.route('/', getAddonRoute);
 addonsRouter.route('/', purchaseAddonRoute);
 addonsRouter.route('/', getUserAddonsRoute);
 addonsRouter.route('/', cancelAddonRoute);
-
-export default addonsRouter;

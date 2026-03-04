@@ -26,18 +26,21 @@ import { createBillingRoutes } from '@qazuor/qzpay-hono';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling, requireBilling } from '../../middlewares/billing';
+import { billingAdminGuardMiddleware } from '../../middlewares/billing-admin-guard.middleware';
+import { billingOwnershipMiddleware } from '../../middlewares/billing-ownership.middleware';
+import { pastDueGraceMiddleware } from '../../middlewares/past-due-grace.middleware';
 import { sentryBillingMiddleware } from '../../middlewares/sentry';
 import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
-import addonsRouter from './addons';
-import metricsRouter from './metrics';
-import notificationsRouter from './notifications';
-import planChangeRouter from './plan-change';
-import promoCodesRouter from './promo-codes';
-import settingsRouter from './settings';
-import trialRouter from './trial';
-import usageRouter from './usage';
+import { addonsRouter } from './addons';
+import { metricsRouter } from './metrics';
+import { notificationsRouter } from './notifications';
+import { planChangeRouter } from './plan-change';
+import { promoCodesRouter } from './promo-codes';
+import { settingsRouter } from './settings';
+import { trialRouter } from './trial';
+import { usageRouter } from './usage';
 
 /**
  * Authentication middleware for billing routes.
@@ -154,9 +157,22 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Apply Sentry billing context middleware
     router.use('*', sentryBillingMiddleware());
 
-    // Mount QZPay pre-built billing routes
+    // Grace period enforcement: blocks past_due users with expired grace from billing operations.
+    // Recovery paths (reactivation, checkout) are exempt - see GRACE_EXEMPT_PATH_SUFFIXES
+    // in past-due-grace.middleware.ts.
+    router.use('*', pastDueGraceMiddleware());
+
+    // Mount QZPay pre-built billing routes with ownership verification.
+    // The ownership middleware ensures users can only access their own billing
+    // resources (customers, subscriptions, invoices, payments, entitlements).
+    // Applied here (not globally) because custom routes already enforce ownership
+    // through c.get('billingCustomerId') and admin routes are on separate paths.
     const qzpayRoutes = createQZPayBillingRouter();
-    router.route('/', qzpayRoutes);
+    const qzpayWrapper = createRouter();
+    qzpayWrapper.use('*', billingAdminGuardMiddleware());
+    qzpayWrapper.use('*', billingOwnershipMiddleware());
+    qzpayWrapper.route('/', qzpayRoutes);
+    router.route('/', qzpayWrapper);
 
     // Mount custom promo code routes
     router.route('/promo-codes', promoCodesRouter);
@@ -170,8 +186,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
-    // Mount custom metrics routes
-    router.route('/metrics', metricsRouter);
+    // Mount custom metrics routes (admin-only access)
+    const metricsWrapper = createRouter();
+    metricsWrapper.use('*', billingAdminGuardMiddleware());
+    metricsWrapper.route('/', metricsRouter);
+    router.route('/metrics', metricsWrapper);
 
     // Mount custom settings routes
     router.route('/settings', settingsRouter);

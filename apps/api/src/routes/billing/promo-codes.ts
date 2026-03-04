@@ -276,20 +276,18 @@ export const applyPromoCodeRoute = createProtectedRoute({
             throw new Error('Billing customer not found. Please contact support.');
         }
 
-        // Verify ownership: ensure user is applying promo code to their own checkout
-        // The checkoutId should match the billingCustomerId for security
-        // Admins/super_admins can apply promo codes for any checkout
+        // Verify ownership: ensure user is applying promo code to their own billing account
         if (
             actor.role !== RoleEnum.ADMIN &&
             actor.role !== RoleEnum.SUPER_ADMIN &&
-            body.checkoutId !== billingCustomerId
+            body.customerId !== billingCustomerId
         ) {
-            throw new Error("Cannot apply promo code to another user's checkout");
+            throw new Error("Cannot apply promo code to another user's billing account");
         }
 
         const result = await service.apply(
             body.code as string,
-            body.checkoutId as string,
+            body.customerId as string,
             body.amount as number | undefined
         );
 
@@ -298,7 +296,7 @@ export const applyPromoCodeRoute = createProtectedRoute({
         }
 
         return {
-            id: body.checkoutId as string,
+            id: body.customerId as string,
             promoCode: body.code as string,
             amount: result.data.finalAmount,
             discountAmount: result.data.discountAmount
@@ -321,5 +319,3 @@ promoCodesRouter.route('/', updatePromoCodeRoute);
 promoCodesRouter.route('/', deletePromoCodeRoute);
 promoCodesRouter.route('/', validatePromoCodeRoute);
 promoCodesRouter.route('/', applyPromoCodeRoute);
-
-export default promoCodesRouter;

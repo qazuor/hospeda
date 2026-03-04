@@ -364,5 +364,3 @@ metricsRouter.route('/', getDashboardMetricsRoute);
 metricsRouter.route('/', getRecentActivityRoute);
 metricsRouter.route('/', getSystemUsageRoute);
 metricsRouter.route('/', getApproachingLimitsRoute);
-
-export default metricsRouter;

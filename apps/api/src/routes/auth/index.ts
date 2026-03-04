@@ -6,6 +6,7 @@
  */
 import { createRouter } from '../../utils/create-app';
 import { cacheStatsRoute } from './cache-stats';
+import { changePasswordRoute } from './change-password';
 import { authMeRoute } from './me';
 import { authSignOutRoute } from './signout';
 import { authStatusRoute } from './status';
@@ -17,6 +18,11 @@ app.route('/', authMeRoute);
 app.route('/', authSignOutRoute);
 
 export const authRoutes = app;
+
+// Protected auth routes (require authentication)
+const protectedApp = createRouter();
+protectedApp.route('/', changePasswordRoute);
+export const protectedAuthRoutes = protectedApp;
 
 // Admin-only cache monitoring (separate router to mount under /admin/)
 const adminApp = createRouter();

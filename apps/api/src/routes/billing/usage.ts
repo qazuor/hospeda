@@ -216,4 +216,4 @@ const usageRouter = createRouter();
 usageRouter.route('/', getUserUsageSummaryRoute);
 usageRouter.route('/', getUsageForLimitRoute);
 
-export default usageRouter;
+export { usageRouter };

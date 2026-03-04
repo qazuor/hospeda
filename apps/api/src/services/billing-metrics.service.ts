@@ -315,6 +315,8 @@ export class BillingMetricsService {
         livemode = true
     ): Promise<ServiceResult<RevenueDataPoint[]>> {
         try {
+            // Validate months is a positive integer within safe bounds
+            const safeMonths = Math.max(1, Math.min(120, Math.floor(Number(months))));
             const db = getDb();
 
             const result = await db.execute(sql`
@@ -325,7 +327,7 @@ export class BillingMetricsService {
                 FROM billing_payments
                 WHERE status = 'completed'
                 AND livemode = ${livemode}
-                AND created_at >= NOW() - INTERVAL '${sql.raw(months.toString())} months'
+                AND created_at >= NOW() - make_interval(months => ${safeMonths})
                 GROUP BY DATE_TRUNC('month', created_at)
                 ORDER BY DATE_TRUNC('month', created_at) ASC
             `);

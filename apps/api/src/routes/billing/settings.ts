@@ -205,4 +205,4 @@ settingsRouter.route('/', getBillingSettingsRoute);
 settingsRouter.route('/', updateBillingSettingsRoute);
 settingsRouter.route('/', resetBillingSettingsRoute);
 
-export default settingsRouter;
+export { settingsRouter };

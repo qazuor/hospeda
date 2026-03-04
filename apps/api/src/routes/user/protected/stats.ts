@@ -65,13 +65,21 @@ export const userStatsRoute = createProtectedRoute({
             accommodationReviewService.listByUser(actor, {
                 userId: actor.id,
                 page: 1,
-                pageSize: 1
+                pageSize: 1,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
             }),
-            destinationReviewService.listByUser(actor, { userId: actor.id, page: 1, pageSize: 1 })
+            destinationReviewService.listByUser(actor, {
+                userId: actor.id,
+                page: 1,
+                pageSize: 1,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            })
         ]);
 
         const accReviewTotal = accReviewResult.data?.total ?? 0;
-        const destReviewTotal = destReviewResult.data?.total ?? 0;
+        const destReviewTotal = destReviewResult.data?.pagination?.total ?? 0;
         const reviewCount = accReviewTotal + destReviewTotal;
 
         /** Resolve billing plan info - failure is non-fatal */

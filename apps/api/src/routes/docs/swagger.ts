@@ -30,7 +30,10 @@ const swaggerRoute = createRoute({
 });
 
 app.openapi(swaggerRoute, async (c) => {
-    // biome-ignore lint/suspicious/noExplicitAny: Swagger middleware has type compatibility issues with Hono versions
+    // swaggerUI() returns a Hono v3-style middleware signature that is incompatible
+    // with OpenAPI route handler types. Casting is the only workaround until @hono/swagger-ui
+    // exports a typed OpenAPI handler variant.
+    // biome-ignore lint/suspicious/noExplicitAny: Hono middleware type incompatibility with swaggerUI return type
     const swaggerMiddleware = swaggerUI({ url: '/docs/openapi.json' }) as any;
     return swaggerMiddleware(c, () => Promise.resolve());
 });

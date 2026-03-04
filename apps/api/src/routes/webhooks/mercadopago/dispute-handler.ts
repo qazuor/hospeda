@@ -26,9 +26,7 @@
  */
 
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
-import { NotificationType } from '@repo/notifications';
-import { apiLogger } from '../../../utils/logger';
-import { sendNotification } from '../../../utils/notification-helper';
+import { processDisputeEvent } from './dispute-logic';
 import { markEventProcessedByProviderId } from './utils';
 
 /**
@@ -40,58 +38,14 @@ import { markEventProcessedByProviderId } from './utils';
  * @param c - Hono context
  * @param event - Parsed QZPay webhook event
  */
-export const handleDisputeOpened: QZPayWebhookHandler = async (c, event) => {
+export const handleDisputeOpened: QZPayWebhookHandler = async (_c, event) => {
     const eventData = event.data as Record<string, unknown> | undefined;
 
-    apiLogger.warn(
-        {
-            eventId: event.id,
-            eventType: event.type,
-            requestId: c.get('requestId'),
-            disputeId: eventData?.id,
-            paymentId: eventData?.payment_id ?? eventData?.paymentId,
-            status: eventData?.status,
-            amount: eventData?.amount ?? eventData?.transaction_amount,
-            reason: eventData?.reason
-        },
-        'MercadoPago webhook: Dispute/chargeback received. Manual resolution required via MercadoPago Dashboard > Actividad > Disputas.'
-    );
-
-    // Send admin notification for disputes (BILL-17)
-    const adminEmails =
-        process.env.ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) || [];
-
-    for (const adminEmail of adminEmails) {
-        if (adminEmail) {
-            const idempotencyKey = `dispute:${event.id}:${new Date().toISOString().slice(0, 10)}`;
-
-            sendNotification({
-                type: NotificationType.ADMIN_SYSTEM_EVENT,
-                recipientEmail: adminEmail,
-                recipientName: 'Admin',
-                userId: null,
-                severity: 'critical',
-                idempotencyKey,
-                eventDetails: {
-                    eventType: event.type,
-                    disputeId: eventData?.id,
-                    paymentId: eventData?.payment_id ?? eventData?.paymentId,
-                    status: eventData?.status,
-                    amount: eventData?.amount ?? eventData?.transaction_amount,
-                    reason: eventData?.reason
-                }
-            }).catch((error) => {
-                apiLogger.debug(
-                    {
-                        eventId: event.id,
-                        adminEmail,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'Admin dispute notification failed (will retry)'
-                );
-            });
-        }
-    }
+    await processDisputeEvent({
+        eventData,
+        eventType: event.type,
+        eventId: String(event.id)
+    });
 
     await markEventProcessedByProviderId({
         providerEventId: String(event.id)

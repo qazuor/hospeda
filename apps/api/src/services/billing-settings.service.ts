@@ -2,8 +2,8 @@
  * Billing Settings Service
  *
  * Manages billing configuration settings for the Hospeda platform.
- * Settings are stored in the billing_audit_logs table as special entries
- * (action: 'billing_settings_update') to leverage the existing schema without migration.
+ * Settings are stored in the `billing_settings` table (key-value pattern).
+ * Updates are also recorded in `billing_audit_logs` for audit trail.
  *
  * Features:
  * - Trial configuration (owner/complex trial days, auto-block)
@@ -15,7 +15,7 @@
  * @module services/billing-settings
  */
 
-import { and, billingAuditLogs, desc, eq, getDb } from '@repo/db';
+import { billingAuditLogs, billingSettings, eq, getDb } from '@repo/db';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -71,6 +71,9 @@ const DEFAULT_SETTINGS: BillingSettings = {
     sendSubscriptionCancelledNotification: true
 };
 
+/** Key used for the global settings row in billing_settings table */
+const SETTINGS_KEY = 'global';
+
 /** Module-level singleton instance */
 let instance: BillingSettingsService | null = null;
 
@@ -104,8 +107,9 @@ export function resetBillingSettingsService(): void {
  */
 export class BillingSettingsService {
     /**
-     * Get current billing settings
-     * Returns merged settings (custom + defaults for missing keys)
+     * Get current billing settings.
+     * Reads from the `billing_settings` table (key='global').
+     * Returns merged settings (custom + defaults for missing keys).
      *
      * @returns Current billing settings
      */
@@ -113,42 +117,24 @@ export class BillingSettingsService {
         try {
             const db = getDb();
 
-            // Query latest settings entry from audit logs
-            const settingsEntries = await db
+            const [row] = await db
                 .select()
-                .from(billingAuditLogs)
-                .where(
-                    and(
-                        eq(billingAuditLogs.action, 'billing_settings_update'),
-                        eq(billingAuditLogs.entityType, 'settings'),
-                        eq(billingAuditLogs.entityId, 'global')
-                    )
-                )
-                .orderBy(desc(billingAuditLogs.createdAt))
+                .from(billingSettings)
+                .where(eq(billingSettings.key, SETTINGS_KEY))
                 .limit(1);
 
-            // If no custom settings found, return defaults
-            if (!settingsEntries || settingsEntries.length === 0) {
+            if (!row) {
                 apiLogger.debug('No custom billing settings found, using defaults');
                 return DEFAULT_SETTINGS;
             }
 
-            const latestEntry = settingsEntries[0];
-            if (!latestEntry) {
-                apiLogger.debug('No settings entry found, using defaults');
-                return DEFAULT_SETTINGS;
-            }
-
-            // Parse changes as settings object
-            const customSettings =
-                latestEntry.changes as unknown as Partial<BillingSettings> | null;
+            const customSettings = row.value as Partial<BillingSettings> | null;
 
             if (!customSettings || typeof customSettings !== 'object') {
-                apiLogger.warn('Invalid settings format, using defaults');
+                apiLogger.warn('Invalid settings format in billing_settings, using defaults');
                 return DEFAULT_SETTINGS;
             }
 
-            // Merge with defaults to fill any missing keys
             const mergedSettings: BillingSettings = {
                 ...DEFAULT_SETTINGS,
                 ...customSettings
@@ -159,12 +145,7 @@ export class BillingSettingsService {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
-            apiLogger.error(
-                {
-                    error: errorMessage
-                },
-                'Failed to get billing settings'
-            );
+            apiLogger.error({ error: errorMessage }, 'Failed to get billing settings');
 
             // Return safe defaults on error
             return DEFAULT_SETTINGS;
@@ -172,8 +153,9 @@ export class BillingSettingsService {
     }
 
     /**
-     * Update billing settings (partial update)
-     * Merges with current settings and validates values
+     * Update billing settings (partial update).
+     * Merges with current settings, validates, upserts into `billing_settings`,
+     * and records an audit trail in `billing_audit_logs`.
      *
      * @param patch - Partial settings to update
      * @param actorId - ID of user performing the update (optional)
@@ -184,21 +166,36 @@ export class BillingSettingsService {
         actorId?: string
     ): Promise<BillingSettings> {
         try {
-            // Get current settings
             const currentSettings = await this.getSettings();
 
-            // Merge with patch
             const updatedSettings: BillingSettings = {
                 ...currentSettings,
                 ...patch
             };
 
-            // Validate values
             this.validateSettings(updatedSettings);
 
             const db = getDb();
 
-            // Insert new audit log entry with updated settings
+            // Upsert into billing_settings (primary storage)
+            await db
+                .insert(billingSettings)
+                .values({
+                    key: SETTINGS_KEY,
+                    value: updatedSettings as unknown as Record<string, unknown>,
+                    updatedBy: actorId ?? null,
+                    updatedAt: new Date()
+                })
+                .onConflictDoUpdate({
+                    target: billingSettings.key,
+                    set: {
+                        value: updatedSettings as unknown as Record<string, unknown>,
+                        updatedBy: actorId ?? null,
+                        updatedAt: new Date()
+                    }
+                });
+
+            // Record in audit log for trail (not as primary storage)
             await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_update',
                 entityType: 'settings',
@@ -239,7 +236,8 @@ export class BillingSettingsService {
     }
 
     /**
-     * Reset billing settings to defaults
+     * Reset billing settings to defaults.
+     * Updates `billing_settings` with DEFAULT_SETTINGS and records an audit entry.
      *
      * @param actorId - ID of user performing the reset (optional)
      * @returns Default billing settings
@@ -248,7 +246,25 @@ export class BillingSettingsService {
         try {
             const db = getDb();
 
-            // Insert new audit log entry with default settings
+            // Upsert defaults into billing_settings
+            await db
+                .insert(billingSettings)
+                .values({
+                    key: SETTINGS_KEY,
+                    value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
+                    updatedBy: actorId ?? null,
+                    updatedAt: new Date()
+                })
+                .onConflictDoUpdate({
+                    target: billingSettings.key,
+                    set: {
+                        value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
+                        updatedBy: actorId ?? null,
+                        updatedAt: new Date()
+                    }
+                });
+
+            // Record in audit log
             await db.insert(billingAuditLogs).values({
                 action: 'billing_settings_reset',
                 entityType: 'settings',
@@ -262,12 +278,7 @@ export class BillingSettingsService {
                 userAgent: null
             });
 
-            apiLogger.info(
-                {
-                    actorId
-                },
-                'Billing settings reset to defaults'
-            );
+            apiLogger.info({ actorId }, 'Billing settings reset to defaults');
 
             return DEFAULT_SETTINGS;
         } catch (error) {

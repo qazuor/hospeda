@@ -2,49 +2,27 @@
  * Main health check route
  * Returns the health status of the API
  */
-import { createRoute } from '@hono/zod-openapi';
 import { HealthResponseSchema } from '@repo/schemas';
-import { createRouter } from '../../utils/create-app';
+import { createSimpleRoute } from '../../utils/route-factory';
 
-const app = createRouter();
-
-// Health check route
-const healthRoute = createRoute({
+export const healthRoutes = createSimpleRoute({
     method: 'get',
     path: '/',
     summary: 'Health check',
     description: 'Returns the health status of the API',
     tags: ['Health'],
-    responses: {
-        200: {
-            description: 'API is healthy',
-            content: {
-                'application/json': {
-                    schema: HealthResponseSchema
-                }
-            }
-        }
-    }
-});
-
-app.openapi(healthRoute, (c) => {
-    const uptime = process.uptime();
-    const data = {
+    responseSchema: HealthResponseSchema,
+    handler: () => ({
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
-        uptime,
+        uptime: process.uptime(),
         version: '1.0.0',
         environment: process.env.NODE_ENV || 'development'
-    };
-
-    return c.json({
-        success: true,
-        data,
-        metadata: {
-            timestamp: new Date().toISOString(),
-            requestId: c.get('requestId') || 'unknown'
-        }
-    });
+    }),
+    options: {
+        skipAuth: true,
+        skipValidation: true,
+        cacheTTL: 10,
+        customRateLimit: { requests: 1000, windowMs: 60000 }
+    }
 });
-
-export { app as healthRoutes };

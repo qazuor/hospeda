@@ -1,4 +1,5 @@
-import { AuthMeResponseSchema } from '@repo/schemas';
+import { UserModel } from '@repo/db';
+import { AuthMeResponseSchema, RoleEnum } from '@repo/schemas';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
@@ -19,7 +20,30 @@ export const authMeRoute = createSimpleRoute({
             // Check if user is authenticated by checking if actor is not a guest
             const isAuthenticated = actor.role !== 'GUEST';
 
-            const result = { actor, isAuthenticated };
+            // Only expose permissions to admin-level users.
+            // Regular users and guests receive an empty permissions array.
+            const isAdminUser =
+                actor.role === RoleEnum.SUPER_ADMIN ||
+                actor.role === RoleEnum.ADMIN ||
+                actor.role === RoleEnum.CLIENT_MANAGER;
+
+            const filteredActor = isAdminUser ? actor : { ...actor, permissions: [] as string[] };
+
+            // Check passwordChangeRequired flag for authenticated admin users
+            let passwordChangeRequired = false;
+            if (isAuthenticated && isAdminUser) {
+                try {
+                    const userModel = new UserModel();
+                    const dbUser = await userModel.findById(actor.id);
+                    if (dbUser?.adminInfo?.passwordChangeRequired) {
+                        passwordChangeRequired = true;
+                    }
+                } catch {
+                    // Non-blocking: default false
+                }
+            }
+
+            const result = { actor: filteredActor, isAuthenticated, passwordChangeRequired };
             apiLogger.debug({ message: 'AuthMe: Returning result', result });
             return result;
         } catch (error) {

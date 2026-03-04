@@ -1,5 +1,5 @@
 import { AuthSignOutResponseSchema } from '@repo/schemas';
-import { clearRateLimitStore } from '../../middlewares/rate-limit';
+import { clearRateLimitForIp } from '../../middlewares/rate-limit';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
@@ -32,8 +32,12 @@ export const authSignOutRoute = createSimpleRoute({
                 apiLogger.debug('Sign out called without user ID - no cache to clear');
             }
 
-            clearRateLimitStore();
-            apiLogger.debug('Rate limit store cleared during sign out');
+            const ip =
+                c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+                c.req.header('x-real-ip') ||
+                'unknown';
+            await clearRateLimitForIp({ ip });
+            apiLogger.debug(`Rate limit entries cleared for IP ${ip} during sign out`);
 
             return {
                 message: 'Sign out successful',

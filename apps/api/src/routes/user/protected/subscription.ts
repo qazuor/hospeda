@@ -3,7 +3,8 @@
  * Returns the current billing subscription for the authenticated user.
  * @route GET /api/v1/protected/users/me/subscription
  */
-import { getPlanBySlug } from '@repo/billing';
+import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
+import { PAYMENT_GRACE_PERIOD_DAYS, getPlanBySlug } from '@repo/billing';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -57,7 +58,9 @@ const SubscriptionResponseSchema = z.object({
                     expYear: z.number()
                 })
                 .nullable()
-                .optional()
+                .optional(),
+            gracePeriodDaysRemaining: z.number().nullable().optional(),
+            gracePeriodExpiresAt: z.string().nullable().optional()
         })
         .nullable()
 });
@@ -121,17 +124,8 @@ export const userSubscriptionRoute = createProtectedRoute({
             return { subscription: null };
         }
 
-        // Retrieve subscriptions for the customer
-        let subscriptions: {
-            id: string;
-            planId: string;
-            status: string;
-            currentPeriodStart?: Date | string | null;
-            currentPeriodEnd?: Date | string | null;
-            cancelAtPeriodEnd?: boolean | null;
-            trialStart?: Date | string | null;
-            trialEnd?: Date | string | null;
-        }[] = [];
+        // Retrieve subscriptions for the customer (with helper methods)
+        let subscriptions: QZPaySubscriptionWithHelpers[] = [];
 
         try {
             subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
@@ -155,10 +149,7 @@ export const userSubscriptionRoute = createProtectedRoute({
         // Find the most recent active, trial, or past_due subscription
         const activeSubscription = subscriptions.find(
             (sub) =>
-                sub.status === 'active' ||
-                sub.status === 'trialing' ||
-                sub.status === 'trial' ||
-                sub.status === 'past_due'
+                sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due'
         );
 
         if (!activeSubscription) {
@@ -201,6 +192,41 @@ export const userSubscriptionRoute = createProtectedRoute({
             return new Date(value).toISOString();
         };
 
+        // Compute grace period info for past_due subscriptions.
+        // QZPay is the source of truth for grace period calculation.
+        // See: docs/billing/grace-period-source-of-truth.md
+        let gracePeriodDaysRemaining: number | null = null;
+        let gracePeriodExpiresAt: string | null = null;
+
+        if (mappedStatus === 'past_due' && typeof activeSubscription.isPastDue === 'function') {
+            try {
+                const daysRemaining = activeSubscription.daysRemainingInGrace() ?? 0;
+                gracePeriodDaysRemaining = Math.max(0, daysRemaining);
+
+                const expiresAt = new Date();
+                expiresAt.setDate(expiresAt.getDate() + gracePeriodDaysRemaining);
+                gracePeriodExpiresAt = expiresAt.toISOString();
+
+                apiLogger.debug(
+                    {
+                        userId: actor.id,
+                        customerId: customer.id,
+                        gracePeriodDaysRemaining,
+                        referenceGraceDays: PAYMENT_GRACE_PERIOD_DAYS
+                    },
+                    'Computed grace period info for past_due subscription'
+                );
+            } catch (graceError) {
+                apiLogger.warn(
+                    {
+                        userId: actor.id,
+                        error: graceError instanceof Error ? graceError.message : String(graceError)
+                    },
+                    'Failed to compute grace period info'
+                );
+            }
+        }
+
         return {
             subscription: {
                 planSlug: resolvedPlanSlug,
@@ -211,7 +237,9 @@ export const userSubscriptionRoute = createProtectedRoute({
                 cancelAtPeriodEnd: activeSubscription.cancelAtPeriodEnd ?? false,
                 trialEndsAt: toIsoString(activeSubscription.trialEnd),
                 monthlyPriceArs,
-                paymentMethod: null
+                paymentMethod: null,
+                gracePeriodDaysRemaining,
+                gracePeriodExpiresAt
             }
         };
     },

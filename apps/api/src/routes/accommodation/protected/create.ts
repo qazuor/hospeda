@@ -12,6 +12,7 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -46,5 +47,8 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         }
 
         return result.data;
+    },
+    options: {
+        middlewares: [enforceAccommodationLimit()]
     }
 });

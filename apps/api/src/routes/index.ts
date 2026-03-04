@@ -50,7 +50,7 @@ import { adminPostSponsorRoutes } from './postSponsor';
 
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { cronRoutes } from '../cron';
-import { adminAuthRoutes, authRoutes } from './auth';
+import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
@@ -58,7 +58,7 @@ import { publicBillingRoutes } from './billing/public';
 import { contactRoutes } from './contact';
 import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
-import { exchangeRateRoutes } from './exchange-rates';
+import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { protectedExchangeRateRoutes } from './exchange-rates/protected/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -140,6 +140,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Owner promotions
         app.route('/api/v1/public/owner-promotions', publicOwnerPromotionRoutes);
 
+        // Exchange rates (public read-only)
+        app.route('/api/v1/public/exchange-rates', publicExchangeRateRoutes);
+
         // Other public routes (read-only)
         app.route('/api/v1/public/sponsorship-levels', publicSponsorshipLevelRoutes);
         app.route('/api/v1/public/sponsorship-packages', publicSponsorshipPackageRoutes);
@@ -154,6 +157,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         apiLogger.debug('🔗 Registering protected routes...');
 
+        app.route('/api/v1/protected/auth', protectedAuthRoutes);
         app.route('/api/v1/protected/users', protectedUserRoutes);
         app.route('/api/v1/protected/user-bookmarks', protectedUserBookmarkRoutes);
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
@@ -167,6 +171,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/event-organizers', protectedEventOrganizerRoutes);
         app.route('/api/v1/protected/owner-promotions', protectedOwnerPromotionRoutes);
         app.route('/api/v1/protected/sponsorships', protectedSponsorshipRoutes);
+        app.route('/api/v1/protected/exchange-rates', protectedExchangeRateRoutes);
 
         apiLogger.debug('✅ Protected routes registered successfully');
 
@@ -203,9 +208,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Admin cron job management
         app.route('/api/v1/admin/cron', adminCronRoutes);
 
-        // Exchange rates admin (mounts both public list + protected management routes)
-        app.route('/api/v1/admin/exchange-rates', publicExchangeRateRoutes);
-        app.route('/api/v1/admin/exchange-rates', protectedExchangeRateRoutes);
+        // Exchange rates admin (admin-only management routes)
+        app.route('/api/v1/admin/exchange-rates', adminExchangeRateRoutes);
 
         // Admin billing, webhooks, and auth monitoring
         app.route('/api/v1/admin/billing', adminBillingRoutes);
@@ -218,7 +222,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // OTHER ROUTES - Exchange rates, billing, reports
         // ═══════════════════════════════════════════════════════════════════════
 
-        app.route('/api/v1', exchangeRateRoutes);
         app.route('/api/v1/reports', reportRoutes);
         app.route('/api/v1/billing', createBillingRoutesHandler());
 
@@ -238,8 +241,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         throw error;
     }
 
-    // Documentation routes
-    app.route('/docs', docsIndexRoutes);
-    app.route('/docs', swaggerRoutes);
-    app.route('/docs', scalarRoutes);
+    // Documentation routes (disabled in production for security)
+    if (process.env.NODE_ENV !== 'production') {
+        app.route('/docs', docsIndexRoutes);
+        app.route('/docs', swaggerRoutes);
+        app.route('/docs', scalarRoutes);
+    } else {
+        apiLogger.info('Documentation routes disabled in production');
+    }
 };

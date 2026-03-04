@@ -632,8 +632,7 @@ export class TrialService {
 
             // Reject if any subscription is active or trialing
             const activeOrTrialing = subscriptions.find(
-                (sub) =>
-                    sub.status === 'active' || sub.status === 'trialing' || sub.status === 'trial'
+                (sub) => sub.status === 'active' || sub.status === 'trialing'
             );
 
             if (activeOrTrialing) {
@@ -644,9 +643,7 @@ export class TrialService {
             }
 
             // Find a canceled subscription to reactivate from
-            const canceledSub = subscriptions.find(
-                (sub) => sub.status === 'canceled' || sub.status === 'cancelled'
-            );
+            const canceledSub = subscriptions.find((sub) => sub.status === 'canceled');
 
             if (!canceledSub) {
                 throw new Error('No canceled subscription found to reactivate');
@@ -656,7 +653,7 @@ export class TrialService {
 
             // Cancel all existing canceled subscriptions (idempotent cleanup)
             for (const sub of subscriptions) {
-                if (sub.status === 'canceled' || sub.status === 'cancelled') {
+                if (sub.status === 'canceled') {
                     try {
                         await this.billing.subscriptions.cancel(sub.id);
                     } catch {

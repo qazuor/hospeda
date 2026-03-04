@@ -102,27 +102,47 @@ export class BillingCustomerSyncService {
             // Customer doesn't exist - create new one
             apiLogger.info({ userId, email }, 'Creating new billing customer');
 
-            const newCustomer = await this.billing.customers.create({
-                externalId: userId,
-                email,
-                name: name || null,
-                metadata: {
-                    source: 'better-auth',
-                    createdBy: 'billing-customer-sync-service'
+            try {
+                const newCustomer = await this.billing.customers.create({
+                    externalId: userId,
+                    email,
+                    name: name || null,
+                    metadata: {
+                        source: 'better-auth',
+                        createdBy: 'billing-customer-sync-service'
+                    }
+                });
+
+                this.cacheCustomer(userId, newCustomer.id);
+
+                apiLogger.info(
+                    {
+                        userId,
+                        customerId: newCustomer.id
+                    },
+                    'Billing customer created successfully'
+                );
+
+                return newCustomer.id;
+            } catch (createError) {
+                // Handle race condition: another concurrent request may have
+                // created the customer between our check and our insert.
+                // Re-fetch to get the customer that won the race.
+                if (isDuplicateKeyError(createError)) {
+                    apiLogger.info(
+                        { userId },
+                        'Duplicate key on customer create, re-fetching (race condition)'
+                    );
+
+                    const raceWinner = await this.billing.customers.getByExternalId(userId);
+                    if (raceWinner) {
+                        this.cacheCustomer(userId, raceWinner.id);
+                        return raceWinner.id;
+                    }
                 }
-            });
 
-            this.cacheCustomer(userId, newCustomer.id);
-
-            apiLogger.info(
-                {
-                    userId,
-                    customerId: newCustomer.id
-                },
-                'Billing customer created successfully'
-            );
-
-            return newCustomer.id;
+                throw createError;
+            }
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -351,4 +371,28 @@ export class BillingCustomerSyncService {
             entries
         };
     }
+}
+
+/**
+ * Check if an error is a PostgreSQL unique constraint violation.
+ *
+ * PostgreSQL error code 23505 indicates a unique_violation. This is used
+ * to detect race conditions where two concurrent requests both try to
+ * create a customer for the same user.
+ *
+ * @param error - The error to check
+ * @returns true if the error is a duplicate key / unique constraint violation
+ */
+function isDuplicateKeyError(error: unknown): boolean {
+    if (error instanceof Error) {
+        const pgError = error as Error & { code?: string };
+        // PostgreSQL unique_violation error code
+        if (pgError.code === '23505') {
+            return true;
+        }
+        // Fallback: check error message for common duplicate key patterns
+        const message = error.message.toLowerCase();
+        return message.includes('duplicate key') || message.includes('unique constraint');
+    }
+    return false;
 }
