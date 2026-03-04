@@ -16,7 +16,6 @@ import { runExampleSeeds } from './example/index.js';
 import { runRequiredSeeds } from './required/index.js';
 import { closeSeedDb, initSeedDb } from './utils/db.js';
 import { resetDatabase } from './utils/dbReset';
-// import { runMigrations } from './utils/migrateRunner.js';
 import { errorHistory } from './utils/errorHistory.js';
 import { STATUS_ICONS } from './utils/icons.js';
 import { logger } from './utils/logger.js';
@@ -35,8 +34,6 @@ type SeedOptions = {
     example?: boolean;
     /** Whether to reset the database before seeding */
     reset?: boolean;
-    /** Whether to run migrations before seeding */
-    migrate?: boolean;
     /** Whether to rollback on error (incompatible with continueOnError) */
     rollbackOnError?: boolean;
     /** Whether to continue processing when encountering errors */
@@ -71,7 +68,7 @@ type SeedOptions = {
  * @throws {Error} When seeding fails and continueOnError is false
  */
 export async function runSeed(options: SeedOptions): Promise<void> {
-    const { required, example, reset, migrate, exclude = [], continueOnError = false } = options;
+    const { required, example, reset, exclude = [], continueOnError = false } = options;
 
     // Start execution timer and error tracking
     summaryTracker.startTimer();
@@ -90,7 +87,6 @@ export async function runSeed(options: SeedOptions): Promise<void> {
     const seedContext = createSeedContext({
         continueOnError,
         resetDatabase: reset || false,
-        runMigrations: migrate || false,
         exclude
     });
 
@@ -119,22 +115,6 @@ export async function runSeed(options: SeedOptions): Promise<void> {
                 );
                 throw error;
             }
-        }
-
-        if (migrate) {
-            // TODO: Implement migration runner
-            // await runMigrations();
-            logger.warn(`${STATUS_ICONS.Warning} Migration runner not implemented yet`);
-            errorHistory.recordWarning(
-                'Migrations',
-                'System',
-                'Migration runner not implemented yet'
-            );
-            summaryTracker.trackProcessStep(
-                'Migrations',
-                'warning',
-                'Migration runner not implemented'
-            );
         }
 
         // Validate all manifests once at the beginning

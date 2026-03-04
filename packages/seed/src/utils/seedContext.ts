@@ -24,12 +24,6 @@ export interface SeedContext {
     resetDatabase: boolean;
 
     /**
-     * Whether to run migrations before seeding
-     * @default false
-     */
-    runMigrations: boolean;
-
-    /**
      * Entities to exclude from seeding
      * @default []
      */
@@ -67,7 +61,6 @@ export const defaultSeedContext: SeedContext = {
     continueOnError: false,
     validateManifests: true,
     resetDatabase: false,
-    runMigrations: false,
     exclude: [],
     idMapper: new IdMapper()
 };

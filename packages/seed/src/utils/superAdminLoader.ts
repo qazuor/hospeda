@@ -9,8 +9,15 @@ import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
 import { summaryTracker } from './summaryTracker.js';
 
-/** Default password for seed super admin (override via SEED_SUPER_ADMIN_PASSWORD env var) */
-const DEFAULT_SEED_PASSWORD = 'SuperAdmin123!';
+/**
+ * Generates a cryptographically random password for the super admin seed.
+ * Used when SEED_SUPER_ADMIN_PASSWORD env var is not set.
+ */
+const generateRandomPassword = (): string => {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
+    return Buffer.from(bytes).toString('base64url');
+};
 
 /**
  * Normalizes user data by removing schema and ID fields that shouldn't be sent to the service.
@@ -43,7 +50,14 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
     }
 
     // Hash the password with bcrypt (matching Better Auth's expected format)
-    const password = process.env.SEED_SUPER_ADMIN_PASSWORD || DEFAULT_SEED_PASSWORD;
+    const envPassword = process.env.SEED_SUPER_ADMIN_PASSWORD;
+    const password = envPassword || generateRandomPassword();
+    if (!envPassword) {
+        logger.warn(
+            `${STATUS_ICONS.Warning} SEED_SUPER_ADMIN_PASSWORD not set. Generated random password for super admin. Set the env var for a predictable password.`
+        );
+        logger.info(`🔑 Generated password: ${password}`);
+    }
     const hashedPassword = await hash(password, 10);
 
     await db.insert(accounts).values({
@@ -115,10 +129,15 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             };
         }
 
-        // Create super admin user
+        // Create super admin user with forced password change on first login
         const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
         const createdUser = await userModel.create({
-            ...(normalizedSuperAdminInput as Record<string, unknown>)
+            ...(normalizedSuperAdminInput as Record<string, unknown>),
+            adminInfo: {
+                notes: undefined,
+                favorite: false,
+                passwordChangeRequired: true
+            }
         });
 
         if (!createdUser) {
