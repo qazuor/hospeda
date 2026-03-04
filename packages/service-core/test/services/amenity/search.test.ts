@@ -31,7 +31,7 @@ describe('AmenityService.search', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findAll']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_CREATE] });
     });
 
     it('should return a paginated list of amenities (success)', async () => {
@@ -42,7 +42,7 @@ describe('AmenityService.search', () => {
         expect(result.data?.total).toBe(1);
     });
 
-    it('should succeed even if actor lacks ACCOMMODATION_FEATURES_EDIT permission (public search)', async () => {
+    it('should succeed even if actor lacks AMENITY_CREATE permission (public search)', async () => {
         actor = createActor({ permissions: [] });
         asMock(amenityModelMock.findAll).mockResolvedValue(paginated);
         const result = await service.search(actor, searchParams);

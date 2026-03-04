@@ -82,7 +82,7 @@ describe('AccommodationService.search', () => {
             pageSize: 2,
             sortOrder: 'asc',
             type: entities[0].type,
-            excludeRestricted: true
+            excludeRestricted: false
         });
     });
 
@@ -166,7 +166,7 @@ describe('AccommodationService.search', () => {
             page: 99,
             pageSize: 10,
             sortOrder: 'asc',
-            excludeRestricted: true
+            excludeRestricted: false
         });
     });
 });

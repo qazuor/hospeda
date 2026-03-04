@@ -29,7 +29,7 @@ describe('AmenityService.update', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_UPDATE] });
     });
 
     it('should update an amenity (success)', async () => {
@@ -40,7 +40,7 @@ describe('AmenityService.update', () => {
         expect(result.data).toMatchObject(updateInput);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should return FORBIDDEN if actor lacks AMENITY_UPDATE permission', async () => {
         actor = createActor({ permissions: [] });
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
         const result = await service.update(actor, amenity.id, updateInput);

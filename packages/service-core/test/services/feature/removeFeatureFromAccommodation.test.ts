@@ -33,8 +33,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
         updatedAt: new Date(),
         deletedAt: null
     };
-    const mockFeature = { id: featureId };
-
     beforeEach(() => {
         vi.clearAllMocks();
         vi.restoreAllMocks();
@@ -49,7 +47,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should remove a feature from an accommodation (success)', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockResolvedValueOnce({
             ...mockRelation,
@@ -67,20 +64,7 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return NOT_FOUND if feature does not exist', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(null);
-
-        const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
-            accommodationId,
-            featureId
-        });
-
-        expect(result.error).toBeDefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
-    });
-
-    it('should return NOT_FOUND if relation does not exist', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
+    it('should return NOT_FOUND if relation does not exist (implies feature not linked)', async () => {
         (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
 
         const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
@@ -93,7 +77,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should return INTERNAL_ERROR if softDelete fails', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockResolvedValueOnce(null);
 
@@ -107,7 +90,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
 
         const result = await service.removeFeatureFromAccommodation(actorNoPerms, {
@@ -128,17 +110,7 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
     });
 
-    it('should return INTERNAL_ERROR if feature model throws', async () => {
-        (featureModel.findOne as Mock).mockRejectedValueOnce(new Error('DB error'));
-        const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
-            accommodationId,
-            featureId
-        });
-        expectInternalError(result);
-    });
-
-    it('should return INTERNAL_ERROR if related model throws', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
+    it('should return INTERNAL_ERROR if related model findOne throws', async () => {
         (relatedModel.findOne as Mock).mockRejectedValueOnce(new Error('DB error'));
         const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
             accommodationId,
@@ -148,7 +120,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should return INTERNAL_ERROR if softDelete throws', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockRejectedValueOnce(new Error('DB error'));
         const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
@@ -159,7 +130,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should allow idempotent removal (already deleted relation)', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
         const result = await service.removeFeatureFromAccommodation(actorWithPerms, {
             accommodationId,
@@ -179,7 +149,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
 
     it('should return FORBIDDEN for actor with unrelated permissions', async () => {
         const unrelatedActor = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         const result = await service.removeFeatureFromAccommodation(unrelatedActor, {
             accommodationId,
@@ -189,7 +158,6 @@ describe('FeatureService.removeFeatureFromAccommodation', () => {
     });
 
     it('should allow minimal input (only required fields)', async () => {
-        (featureModel.findOne as Mock).mockResolvedValueOnce(mockFeature);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockResolvedValueOnce({
             ...mockRelation,

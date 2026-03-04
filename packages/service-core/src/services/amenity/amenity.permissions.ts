@@ -6,39 +6,39 @@ import { hasPermission } from '../../utils';
 
 /**
  * Checks if the actor can create an amenity.
- * TODO: Review if a specific amenity.create permission should exist. Using ACCOMMODATION_FEATURES_EDIT as placeholder.
+ * Requires AMENITY_CREATE permission.
  */
 export const checkCanCreateAmenity = (actor: Actor): void => {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+    if (!hasPermission(actor, PermissionEnum.AMENITY_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+            'Forbidden: missing AMENITY_CREATE permission'
         );
     }
 };
 
 /**
  * Checks if the actor can update an amenity.
- * TODO: Review if a specific amenity.update permission should exist. Using ACCOMMODATION_FEATURES_EDIT as placeholder.
+ * Requires AMENITY_UPDATE permission.
  */
 export const checkCanUpdateAmenity = (actor: Actor, _amenity: Amenity): void => {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+    if (!hasPermission(actor, PermissionEnum.AMENITY_UPDATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+            'Forbidden: missing AMENITY_UPDATE permission'
         );
     }
 };
 
 /**
  * Checks if the actor can delete an amenity.
- * TODO: Review if a specific amenity.delete permission should exist. Using ACCOMMODATION_FEATURES_EDIT as placeholder.
+ * Requires AMENITY_DELETE permission.
  */
 export const checkCanDeleteAmenity = (actor: Actor, _amenity: Amenity): void => {
-    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_FEATURES_EDIT)) {
+    if (!hasPermission(actor, PermissionEnum.AMENITY_DELETE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Forbidden: missing ACCOMMODATION_FEATURES_EDIT permission'
+            'Forbidden: missing AMENITY_DELETE permission'
         );
     }
 };

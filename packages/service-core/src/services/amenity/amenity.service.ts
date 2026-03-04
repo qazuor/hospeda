@@ -150,25 +150,39 @@ export class AmenityService extends BaseCrudRelatedService<
                 if (!amenity) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
                 }
-                const { items: relations } = await this.relatedModel.findAll({ amenityId });
-                const accommodationIds = relations.map((r) => r.accommodationId);
-                if (accommodationIds.length === 0) {
-                    return { accommodations: [] };
-                }
-                const accommodationModel = this.accommodationModel ?? new AccommodationModel();
-                const { items: accommodations } = await accommodationModel.findAll({
-                    id: accommodationIds
-                });
+                // Single query with JOIN instead of 3 sequential queries
+                const { items: relationsWithAccommodation } =
+                    await this.relatedModel.findAllWithRelations(
+                        { accommodation: true },
+                        { amenityId },
+                        { page: 1, pageSize: 100 }
+                    );
 
                 // Map to AccommodationSummary format with required fields
-                const mappedAccommodations = accommodations.map((acc) => ({
-                    id: acc.id,
-                    slug: acc.slug ?? '',
-                    name: acc.name,
-                    summary: acc.summary ?? '',
-                    isFeatured: acc.isFeatured,
-                    averageRating: acc.averageRating ?? 0
-                }));
+                const mappedAccommodations = relationsWithAccommodation
+                    .filter((r) => 'accommodation' in r && r.accommodation != null)
+                    .map((r) => {
+                        const acc = (
+                            r as AccommodationAmenityRelation & {
+                                accommodation: {
+                                    id: string;
+                                    slug?: string;
+                                    name: string;
+                                    summary?: string;
+                                    isFeatured: boolean;
+                                    averageRating?: number;
+                                };
+                            }
+                        ).accommodation;
+                        return {
+                            id: acc.id,
+                            slug: acc.slug ?? '',
+                            name: acc.name,
+                            summary: acc.summary ?? '',
+                            isFeatured: acc.isFeatured,
+                            averageRating: acc.averageRating ?? 0
+                        };
+                    });
 
                 return { accommodations: mappedAccommodations };
             }
@@ -192,14 +206,19 @@ export class AmenityService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 checkCanGetAmenitiesForAccommodation(actor);
                 const { accommodationId } = validatedParams;
-                // Find all relations with this accommodationId
-                const { items: relations } = await this.relatedModel.findAll({ accommodationId });
-                const amenityIds = relations.map((r) => r.amenityId);
-                if (amenityIds.length === 0) {
-                    return { amenities: [] };
-                }
-                // Find all amenities by their IDs
-                const { items: amenities } = await this.model.findAll({ id: amenityIds });
+                // Single query with JOIN instead of 2 sequential queries
+                const { items: relationsWithAmenity } =
+                    await this.relatedModel.findAllWithRelations(
+                        { amenity: true },
+                        { accommodationId },
+                        { page: 1, pageSize: 100 }
+                    );
+
+                const amenities = relationsWithAmenity
+                    .filter((r) => 'amenity' in r && r.amenity != null)
+                    .map((r) => (r as AccommodationAmenityRelation & { amenity: Amenity }).amenity)
+                    .sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50));
+
                 return { amenities };
             }
         });
@@ -280,12 +299,7 @@ export class AmenityService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canRemoveAmenityFromAccommodation(actor);
                 const { accommodationId, amenityId } = validatedParams;
-                // Verify amenity exists
-                const amenity = await this.model.findOne({ id: amenityId as AmenityId });
-                if (!amenity) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Amenity not found');
-                }
-                // Verify relation exists
+                // Verify relation exists (implies amenity exists, no separate check needed)
                 const existing = await this.relatedModel.findOne({
                     accommodationId: accommodationId as AccommodationId,
                     amenityId: amenityId as AmenityId
@@ -331,6 +345,7 @@ export class AmenityService extends BaseCrudRelatedService<
 
     /**
      * Searches for amenities with accommodation counts.
+     * Uses a single batch COUNT query instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters
      * @returns Amenities with accommodation counts
@@ -344,18 +359,14 @@ export class AmenityService extends BaseCrudRelatedService<
 
         const result = await this.model.findAll(filterParams, { page, pageSize });
 
-        // Get accommodation counts for each amenity
-        const itemsWithCounts = await Promise.all(
-            result.items.map(async (amenity) => {
-                const { items: relations } = await this.relatedModel.findAll({
-                    amenityId: amenity.id as AmenityId
-                });
-                return {
-                    ...amenity,
-                    accommodationCount: relations.length
-                };
-            })
-        );
+        // Batch fetch accommodation counts in a single query instead of N+1
+        const amenityIds = result.items.map((amenity) => amenity.id as string);
+        const countsMap = await this.relatedModel.countAccommodationsByAmenityIds(amenityIds);
+
+        const itemsWithCounts = result.items.map((amenity) => ({
+            ...amenity,
+            accommodationCount: countsMap.get(amenity.id as string) ?? 0
+        }));
 
         return {
             data: itemsWithCounts,

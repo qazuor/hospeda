@@ -1,7 +1,7 @@
-import { AccommodationModel, EventModel, PostModel, UserModel } from '@repo/db';
+import { UserModel } from '@repo/db';
 import type { User } from '@repo/schemas';
 import {
-    RoleEnum,
+    PermissionEnum,
     ServiceErrorCode,
     type UserAddPermissionInput,
     UserAddPermissionInputSchema,
@@ -25,6 +25,7 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
+import { hasPermission } from '../../utils/permission';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -76,55 +77,61 @@ export class UserService extends BaseCrudService<
     }
 
     /**
-     * Permission: Only super admin can create users.
+     * Permission: Requires USER_CREATE permission to create users.
      */
     protected _canCreate(actor: Actor): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only super admin can create users');
+        if (!hasPermission(actor, PermissionEnum.USER_CREATE)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Requires USER_CREATE permission to create users'
+            );
         }
     }
 
     /**
-     * Permission: Only super admin can delete users.
+     * Permission: Requires USER_DELETE permission to delete users.
      */
     protected _canDelete(actor: Actor): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only super admin can delete users');
+        if (!hasPermission(actor, PermissionEnum.USER_DELETE)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Requires USER_DELETE permission to delete users'
+            );
         }
     }
 
     /**
-     * Permission: Only super admin can restore users.
+     * Permission: Requires USER_RESTORE permission to restore users.
      */
     protected _canRestore(actor: Actor): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_RESTORE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin can restore users'
+                'Requires USER_RESTORE permission to restore users'
             );
         }
     }
 
     /**
-     * Permission: Only self or super admin can update a user.
+     * Permission: Self or actor with USER_READ_ALL permission can update.
      */
     protected _canUpdate(actor: Actor, entity: User): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.id) {
+        if (actor.id !== entity.id && !hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only self or super admin can update user'
+                'Only self or users with USER_READ_ALL can update user'
             );
         }
     }
 
     /**
-     * Permission: Only super admin or admin can search/list/count users.
+     * Permission: Requires USER_READ_ALL permission to search/list/count users.
      */
     protected _canSearch(actor: Actor): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN && actor.role !== RoleEnum.ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin or admin can search users'
+                'Requires USER_READ_ALL permission to search users'
             );
         }
     }
@@ -136,65 +143,61 @@ export class UserService extends BaseCrudService<
     }
 
     /**
-     * Permission: Only super admin can manage roles and permissions.
+     * Permission: Requires USER_UPDATE_ROLES permission to manage permissions.
      */
     protected _canManagePermissions(actor: Actor): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_UPDATE_ROLES)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin can manage permissions'
+                'Requires USER_UPDATE_ROLES permission to manage permissions'
             );
         }
     }
 
     /**
-     * Permission: Only super admin can soft delete users (stub).
+     * Permission: Requires USER_DELETE permission to soft delete users.
      */
     protected _canSoftDelete(actor: Actor, _entity: User): void {
-        // TODO: Implement soft delete permission logic if needed
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_DELETE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin can soft delete users'
+                'Requires USER_DELETE permission to soft delete users'
             );
         }
     }
 
     /**
-     * Permission: Only super admin can hard delete users (stub).
+     * Permission: Requires USER_HARD_DELETE permission to hard delete users.
      */
     protected _canHardDelete(actor: Actor, _entity: User): void {
-        // TODO: Implement hard delete permission logic if needed
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_HARD_DELETE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin can hard delete users'
+                'Requires USER_HARD_DELETE permission to hard delete users'
             );
         }
     }
 
     /**
-     * Permission: Only self or super admin can view a user (stub).
+     * Permission: Self or actor with USER_READ_ALL permission can view.
      */
     protected _canView(actor: Actor, entity: User): void {
-        // TODO: Adjust logic if public view is allowed
-        if (actor.role !== RoleEnum.SUPER_ADMIN && actor.id !== entity.id) {
+        if (actor.id !== entity.id && !hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only self or super admin can view user'
+                'Only self or users with USER_READ_ALL can view user'
             );
         }
     }
 
     /**
-     * Permission: Only super admin can update visibility (stub).
+     * Permission: Requires USER_READ_ALL permission to update visibility.
      */
     protected _canUpdateVisibility(actor: Actor, _entity: User, _newVisibility: unknown): void {
-        // TODO: Implement visibility update permission logic if needed
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super admin can update user visibility'
+                'Requires USER_READ_ALL permission to update user visibility'
             );
         }
     }
@@ -426,6 +429,8 @@ export class UserService extends BaseCrudService<
 
     /**
      * Searches for users with accommodation, event, and post counts.
+     * Uses the efficient findAllWithCounts method that fetches counts via
+     * correlated subqueries instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters
      * @returns Users with counts
@@ -434,30 +439,15 @@ export class UserService extends BaseCrudService<
         this._canSearch(actor);
         const { page, pageSize } = params;
 
-        const result = await this.model.findAll(params, { page, pageSize });
+        // Use findAllWithCounts which fetches users + counts in a single query
+        const result = await this.model.findAllWithCounts(params, { page, pageSize });
 
-        // Get counts for each user
-        const accommodationModel = new AccommodationModel();
-        const eventModel = new EventModel();
-        const postModel = new PostModel();
-
-        const itemsWithCounts = await Promise.all(
-            result.items.map(async (user) => {
-                const [accommodationResult, eventResult, postResult] = await Promise.all([
-                    accommodationModel.findAll({ ownerId: user.id }),
-                    eventModel.findAll({ organizerId: user.id }),
-                    postModel.findAll({ authorId: user.id })
-                ]);
-
-                return {
-                    ...user,
-                    accommodationCount:
-                        accommodationResult.total || accommodationResult.items.length,
-                    eventsCount: eventResult.total || eventResult.items.length,
-                    postsCount: postResult.total || postResult.items.length
-                };
-            })
-        );
+        const itemsWithCounts = result.items.map((user) => ({
+            ...user,
+            accommodationCount: user.accommodationsCount,
+            eventsCount: user.eventsCount,
+            postsCount: user.postsCount
+        }));
 
         return {
             data: itemsWithCounts,

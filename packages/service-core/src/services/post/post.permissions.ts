@@ -1,5 +1,5 @@
 import type { Post } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
 
 /**
@@ -27,12 +27,9 @@ export function checkCanCreatePost(actor: Actor): void {
  * @throws ServiceError if forbidden
  */
 export function checkCanUpdatePost(actor: Actor, post: Post): void {
-    // Admins or editors can update any post, users only their own
-    if (
-        actor.permissions.includes(PermissionEnum.POST_UPDATE) ||
-        (actor.id === post.authorId &&
-            (actor.role === RoleEnum.USER || actor.role === RoleEnum.EDITOR))
-    ) {
+    // Users with POST_UPDATE permission can update any post.
+    // Authors can update their own posts.
+    if (actor.permissions.includes(PermissionEnum.POST_UPDATE) || actor.id === post.authorId) {
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot update post');
@@ -43,11 +40,9 @@ export function checkCanUpdatePost(actor: Actor, post: Post): void {
  * @throws ServiceError if forbidden
  */
 export function checkCanDeletePost(actor: Actor, post: Post): void {
-    if (
-        actor.permissions.includes(PermissionEnum.POST_DELETE) ||
-        (actor.id === post.authorId &&
-            (actor.role === RoleEnum.USER || actor.role === RoleEnum.EDITOR))
-    ) {
+    // Users with POST_DELETE permission can delete any post.
+    // Authors can delete their own posts.
+    if (actor.permissions.includes(PermissionEnum.POST_DELETE) || actor.id === post.authorId) {
         return;
     }
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot delete post');
@@ -89,8 +84,8 @@ export function checkCanViewPost(actor: Actor, post: Post): void {
  * @throws ServiceError if forbidden
  */
 export function checkCanLikePost(actor: Actor): void {
-    // For now, any authenticated user can like
-    if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+    // Any authenticated user can like
+    if (!actor || !actor.id) {
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot like post');
     }
 }
@@ -100,8 +95,8 @@ export function checkCanLikePost(actor: Actor): void {
  * @throws ServiceError if forbidden
  */
 export function checkCanCommentPost(actor: Actor): void {
-    // For now, any authenticated user can comment
-    if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+    // Any authenticated user can comment
+    if (!actor || !actor.id) {
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: cannot comment on post');
     }
 }

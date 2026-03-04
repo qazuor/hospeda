@@ -25,7 +25,7 @@ describe('AmenityService.count', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['count']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_CREATE] });
     });
 
     it('should return the count of amenities (success)', async () => {
@@ -35,7 +35,7 @@ describe('AmenityService.count', () => {
         expect(result.data?.count).toBe(1);
     });
 
-    it('should succeed even if actor lacks ACCOMMODATION_FEATURES_EDIT permission (public count)', async () => {
+    it('should succeed even if actor lacks AMENITY_CREATE permission (public count)', async () => {
         actor = createActor({ permissions: [] });
         asMock(amenityModelMock.count).mockResolvedValue(1);
         const result = await service.count(actor, countParams);

@@ -94,19 +94,20 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: DestinationReviewSearchInput,
+        params: DestinationReviewSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<DestinationReview>> {
-        // TODO: Implement search logic using Drizzle ORM
-        throw new Error('Not implemented');
+        const { page, pageSize, ...filters } = params;
+        return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
     }
 
     protected async _executeCount(
-        _params: DestinationReviewSearchInput,
+        params: DestinationReviewSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
-        // TODO: Implement count logic using Drizzle ORM
-        throw new Error('Not implemented');
+        const { page: _p, pageSize: _ps, ...filters } = params;
+        const count = await this.model.count({ ...filters, deletedAt: null });
+        return { count };
     }
 
     /**
@@ -128,11 +129,25 @@ export class DestinationReviewService extends BaseCrudService<
         return entity;
     }
 
+    /**
+     * Captures the destinationId before soft delete so stats can be recalculated after deletion.
+     */
+    private _lastDeletedDestinationId: string | undefined;
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        const review = await this.model.findOne({ id });
+        this._lastDeletedDestinationId = review?.destinationId;
+        return id;
+    }
+
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        // TODO: Implement logic to update stats after delete if needed
+        if (this._lastDeletedDestinationId) {
+            await this.recalculateAndUpdateDestinationStats(this._lastDeletedDestinationId);
+            this._lastDeletedDestinationId = undefined;
+        }
         return result;
     }
 

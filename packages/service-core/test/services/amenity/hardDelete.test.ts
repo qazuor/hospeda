@@ -23,7 +23,7 @@ describe('AmenityService.hardDelete', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'hardDelete']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_DELETE] });
     });
 
     it('should hard delete an amenity (success)', async () => {
@@ -34,7 +34,7 @@ describe('AmenityService.hardDelete', () => {
         expect(result.data?.count).toBe(1);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should return FORBIDDEN if actor lacks AMENITY_DELETE permission', async () => {
         actor = createActor({ permissions: [] });
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
         const result = await service.hardDelete(actor, amenity.id);

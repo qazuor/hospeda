@@ -144,7 +144,12 @@ describe('BaseService: list', () => {
 
     it('should use the list normalizer if provided', async () => {
         // Arrange
-        const normalizer = vi.fn((data) => ({ ...data, normalized: true }));
+        // The normalizer modifies a known ListOptions field (pageSize) so the change
+        // propagates through the code path that extracts known fields before calling findAll.
+        const normalizer = vi.fn((data: { page?: number; pageSize?: number }) => ({
+            ...data,
+            pageSize: 20
+        }));
         const localModelMock: BaseModel<TestEntity> = createBaseModelMock<TestEntity>();
         asMock(localModelMock.findAll).mockResolvedValue({ items: [mockEntity], total: 1 });
         class ServiceWithNormalizer extends TestService {
@@ -164,6 +169,9 @@ describe('BaseService: list', () => {
 
         // Assert
         expect(normalizer).toHaveBeenCalledWith(options, mockActor);
-        expect(localModelMock.findAll).toHaveBeenCalledWith({}, { ...options, normalized: true });
+        expect(localModelMock.findAll).toHaveBeenCalledWith(
+            {},
+            { page: 1, pageSize: 20, sortBy: undefined, sortOrder: undefined }
+        );
     });
 });

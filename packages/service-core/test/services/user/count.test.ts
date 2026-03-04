@@ -5,10 +5,10 @@
  * Covers: success (admin, super admin), forbidden, validation error, internal error, lifecycle hook errors.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
-import { createUser } from '../../factories/userFactory';
+import { createActor, createSuperAdminActor } from '../../factories/actorFactory';
 import {
     expectForbiddenError,
     expectInternalError,
@@ -18,16 +18,18 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.ADMIN) => createUser({ role });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
 describe('UserService.count', () => {
     let service: UserService;
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const admin = getActor(RoleEnum.ADMIN);
-    const superAdmin = getActor(RoleEnum.SUPER_ADMIN);
-    const user = getActor(RoleEnum.USER);
+    const admin = createActor({
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.USER_READ_ALL]
+    });
+    const superAdmin = createSuperAdminActor();
+    const user = createActor({ role: RoleEnum.USER, permissions: [] });
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['count']);

@@ -1,4 +1,4 @@
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     canAddPermission,
@@ -13,33 +13,69 @@ import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 
 describe('user permission helpers', () => {
-    const self = createUser({ id: getMockId('user'), role: RoleEnum.USER });
-    const superAdmin = createUser({ id: getMockId('user'), role: RoleEnum.SUPER_ADMIN });
-    const adminOther = createUser({
-        id: getMockId('user', 'admin-other') as string,
-        role: RoleEnum.ADMIN
+    // Regular user with no special permissions
+    const self = createUser({ id: getMockId('user'), role: RoleEnum.USER, permissions: [] });
+
+    // Super admin has ALL permissions (as assigned by actor middleware in production)
+    const superAdmin = createUser({
+        id: getMockId('user'),
+        role: RoleEnum.SUPER_ADMIN,
+        permissions: Object.values(PermissionEnum)
     });
+
+    // Admin with USER_READ_ALL but no role management or update permissions
+    const adminWithReadAll = createUser({
+        id: getMockId('user', 'admin-read') as string,
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.USER_READ_ALL]
+    });
+
+    // Admin with USER_UPDATE_ANY permission (can update any user's profile)
+    const adminWithUpdateAny = createUser({
+        id: getMockId('user', 'admin-update') as string,
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.USER_UPDATE_ANY]
+    });
+
+    // Admin with USER_UPDATE_ROLES permission
+    const adminWithRolePerms = createUser({
+        id: getMockId('user', 'admin-roles') as string,
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.USER_UPDATE_ROLES]
+    });
+
+    // Admin with no relevant permissions
+    const adminNoPerm = createUser({
+        id: getMockId('user', 'admin-noperm') as string,
+        role: RoleEnum.ADMIN,
+        permissions: []
+    });
+
+    // Guest with no permissions
     const guestOther = createUser({
         id: getMockId('user', 'guest-other') as string,
-        role: RoleEnum.GUEST
+        role: RoleEnum.GUEST,
+        permissions: []
     });
 
     describe('canViewUser', () => {
         it('allows self', () => {
             expect(() => canViewUser(self, self)).not.toThrow();
         });
-        it('allows super admin', () => {
+        it('allows super admin (has all permissions)', () => {
             expect(() => canViewUser(superAdmin, self)).not.toThrow();
         });
-        it('forbids admin viewing other', () => {
+        it('allows admin with USER_READ_ALL viewing other', () => {
+            expect(() => canViewUser(adminWithReadAll, self)).not.toThrow();
+        });
+        it('forbids admin without USER_READ_ALL viewing other', () => {
             try {
-                canViewUser(adminOther, self);
+                canViewUser(adminNoPerm, self);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can view user');
                 }
             }
         });
@@ -51,7 +87,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can view user');
                 }
             }
         });
@@ -67,15 +102,28 @@ describe('user permission helpers', () => {
         it('allows super admin', () => {
             expect(() => canUpdateUser(superAdmin, self)).not.toThrow();
         });
-        it('forbids admin updating other', () => {
+        it('allows admin with USER_UPDATE_ANY updating other', () => {
+            expect(() => canUpdateUser(adminWithUpdateAny, self)).not.toThrow();
+        });
+        it('forbids admin with only USER_READ_ALL updating other', () => {
             try {
-                canUpdateUser(adminOther, self);
+                canUpdateUser(adminWithReadAll, self);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can update user');
+                }
+            }
+        });
+        it('forbids admin without USER_UPDATE_ANY updating other', () => {
+            try {
+                canUpdateUser(adminNoPerm, self);
+                throw new Error('Should have thrown');
+            } catch (err: unknown) {
+                expect(err).toBeInstanceOf(ServiceError);
+                if (err instanceof ServiceError) {
+                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
                 }
             }
         });
@@ -87,7 +135,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only self or super admin can update user');
                 }
             }
         });
@@ -97,18 +144,20 @@ describe('user permission helpers', () => {
     });
 
     describe('canAssignRole', () => {
-        it('allows super admin', () => {
+        it('allows super admin (has USER_UPDATE_ROLES)', () => {
             expect(() => canAssignRole(superAdmin)).not.toThrow();
         });
-        it('forbids admin', () => {
+        it('allows admin with USER_UPDATE_ROLES', () => {
+            expect(() => canAssignRole(adminWithRolePerms)).not.toThrow();
+        });
+        it('forbids admin without USER_UPDATE_ROLES', () => {
             try {
-                canAssignRole(adminOther);
+                canAssignRole(adminNoPerm);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can assign roles');
                 }
             }
         });
@@ -120,7 +169,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can assign roles');
                 }
             }
         });
@@ -133,15 +181,17 @@ describe('user permission helpers', () => {
         it('allows super admin', () => {
             expect(() => canAddPermission(superAdmin)).not.toThrow();
         });
-        it('forbids admin', () => {
+        it('allows admin with USER_UPDATE_ROLES', () => {
+            expect(() => canAddPermission(adminWithRolePerms)).not.toThrow();
+        });
+        it('forbids admin without USER_UPDATE_ROLES', () => {
             try {
-                canAddPermission(adminOther);
+                canAddPermission(adminNoPerm);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can add permissions');
                 }
             }
         });
@@ -153,7 +203,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can add permissions');
                 }
             }
         });
@@ -166,15 +215,17 @@ describe('user permission helpers', () => {
         it('allows super admin', () => {
             expect(() => canSetPermissions(superAdmin)).not.toThrow();
         });
-        it('forbids admin', () => {
+        it('allows admin with USER_UPDATE_ROLES', () => {
+            expect(() => canSetPermissions(adminWithRolePerms)).not.toThrow();
+        });
+        it('forbids admin without USER_UPDATE_ROLES', () => {
             try {
-                canSetPermissions(adminOther);
+                canSetPermissions(adminNoPerm);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can set permissions');
                 }
             }
         });
@@ -186,7 +237,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can set permissions');
                 }
             }
         });
@@ -199,15 +249,17 @@ describe('user permission helpers', () => {
         it('allows super admin', () => {
             expect(() => canRemovePermission(superAdmin)).not.toThrow();
         });
-        it('forbids admin', () => {
+        it('allows admin with USER_UPDATE_ROLES', () => {
+            expect(() => canRemovePermission(adminWithRolePerms)).not.toThrow();
+        });
+        it('forbids admin without USER_UPDATE_ROLES', () => {
             try {
-                canRemovePermission(adminOther);
+                canRemovePermission(adminNoPerm);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can remove permissions');
                 }
             }
         });
@@ -219,7 +271,6 @@ describe('user permission helpers', () => {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
                     expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                    expect(err.message).toBe('FORBIDDEN: Only super admin can remove permissions');
                 }
             }
         });

@@ -55,10 +55,10 @@ describe('AmenityService.getAccommodationsByAmenity', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(amenity);
-        (model.findAll as Mock).mockResolvedValueOnce({
-            items: [{ accommodationId: accommodation.id }]
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [{ accommodationId: accommodation.id, accommodation }],
+            total: 1
         });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [accommodation] });
 
         const result = (await service.getAccommodationsByAmenity(actorWithPerms, {
             amenityId,
@@ -83,8 +83,10 @@ describe('AmenityService.getAccommodationsByAmenity', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(amenity);
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [],
+            total: 0
+        });
 
         const result = (await service.getAccommodationsByAmenity(actorWithPerms, {
             amenityId,

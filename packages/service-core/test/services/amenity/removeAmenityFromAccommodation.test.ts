@@ -31,8 +31,6 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
         updatedAt: new Date(),
         deletedAt: null
     };
-    const mockAmenity = { id: amenityId };
-
     beforeEach(() => {
         vi.clearAllMocks();
         vi.restoreAllMocks();
@@ -47,7 +45,6 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
     });
 
     it('should remove an amenity from an accommodation (success)', async () => {
-        (amenityModel.findOne as Mock).mockResolvedValueOnce(mockAmenity);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockResolvedValueOnce({
             ...mockRelation,
@@ -65,20 +62,7 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return NOT_FOUND if amenity does not exist', async () => {
-        (amenityModel.findOne as Mock).mockResolvedValueOnce(null);
-
-        const result = await service.removeAmenityFromAccommodation(actorWithPerms, {
-            accommodationId,
-            amenityId
-        });
-
-        expect(result.error).toBeDefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
-    });
-
     it('should return NOT_FOUND if relation does not exist', async () => {
-        (amenityModel.findOne as Mock).mockResolvedValueOnce(mockAmenity);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(null);
 
         const result = await service.removeAmenityFromAccommodation(actorWithPerms, {
@@ -91,7 +75,6 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
     });
 
     it('should return INTERNAL_ERROR if softDelete fails', async () => {
-        (amenityModel.findOne as Mock).mockResolvedValueOnce(mockAmenity);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
         (relatedModel.softDelete as Mock).mockResolvedValueOnce(null);
 
@@ -105,7 +88,6 @@ describe('AmenityService.removeAmenityFromAccommodation', () => {
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
-        (amenityModel.findOne as Mock).mockResolvedValueOnce(mockAmenity);
         (relatedModel.findOne as Mock).mockResolvedValueOnce(mockRelation);
 
         const result = await service.removeAmenityFromAccommodation(actorNoPerms, {

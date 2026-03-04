@@ -8,6 +8,7 @@ import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createUser, createUserForCreation } from '../../factories/userFactory';
 import {
     expectForbiddenError,
@@ -18,7 +19,6 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN) => createUser({ role });
 const getUserForCreation = (overrides = {}) => createUserForCreation({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -29,7 +29,7 @@ describe('UserService.create', () => {
     let service: UserService;
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
-    const actor = getActor(RoleEnum.SUPER_ADMIN);
+    const actor = createSuperAdminActor();
     const input = getUserForCreation({ displayName: 'Test User', role: RoleEnum.USER });
 
     beforeEach(() => {
@@ -52,9 +52,9 @@ describe('UserService.create', () => {
         );
     });
 
-    it('should return FORBIDDEN if actor is not super admin', async () => {
-        // Arrange
-        const forbiddenActor = getActor(RoleEnum.ADMIN);
+    it('should return FORBIDDEN if actor lacks USER_CREATE permission', async () => {
+        // Arrange - admin actor without USER_CREATE permission
+        const forbiddenActor = createActor({ role: RoleEnum.ADMIN, permissions: [] });
         // Act
         const result = await service.create(forbiddenActor, input);
         // Assert

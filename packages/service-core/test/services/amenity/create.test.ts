@@ -38,7 +38,7 @@ describe('AmenityService.create', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['create', 'findOne']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_CREATE] });
     });
 
     it('should create an amenity (success)', async () => {
@@ -49,7 +49,7 @@ describe('AmenityService.create', () => {
         expect(result.data).toMatchObject(input);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should return FORBIDDEN if actor lacks AMENITY_CREATE permission', async () => {
         actor = createActor({ permissions: [] });
         const result = await service.create(actor, input);
         expectForbiddenError(result);

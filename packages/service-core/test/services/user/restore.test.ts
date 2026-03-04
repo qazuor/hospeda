@@ -8,6 +8,7 @@ import { UserModel } from '@repo/db';
 import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -19,7 +20,6 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN, id?: string) => createUser({ role, id });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -31,9 +31,9 @@ describe('UserService.restore', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-1') as string;
-    const superAdmin = getActor(RoleEnum.SUPER_ADMIN);
-    const admin = getActor(RoleEnum.ADMIN);
-    const user = getActor(RoleEnum.USER);
+    const superAdmin = createSuperAdminActor();
+    const admin = createActor({ role: RoleEnum.ADMIN, permissions: [] });
+    const user = createActor({ role: RoleEnum.USER, permissions: [] });
     const inputId = userId;
 
     beforeEach(() => {

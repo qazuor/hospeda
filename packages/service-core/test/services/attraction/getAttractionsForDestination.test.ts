@@ -77,6 +77,76 @@ describe('AttractionService.getAttractionsForDestination', () => {
         expect(result.error).toBeUndefined();
     });
 
+    it('should return attractions sorted by displayWeight DESC', async () => {
+        const attractionLow = {
+            id: getMockId('feature', 'attr-low') as AttractionIdType,
+            name: 'Low Weight',
+            displayWeight: 10
+        };
+        const attractionMid = {
+            id: getMockId('feature', 'attr-mid') as AttractionIdType,
+            name: 'Mid Weight',
+            displayWeight: 50
+        };
+        const attractionHigh = {
+            id: getMockId('feature', 'attr-high') as AttractionIdType,
+            name: 'High Weight',
+            displayWeight: 90
+        };
+        const relLow = { destinationId, attractionId: attractionLow.id };
+        const relMid = { destinationId, attractionId: attractionMid.id };
+        const relHigh = { destinationId, attractionId: attractionHigh.id };
+
+        asMock(destinationModel.findOne).mockResolvedValue(destination);
+        asMock(relatedModel.findAll).mockResolvedValue({ items: [relMid, relLow, relHigh] });
+        // Return in random order - service should sort them
+        asMock(model.findAll).mockResolvedValue({
+            items: [attractionMid, attractionLow, attractionHigh]
+        });
+
+        const result = await service.getAttractionsForDestination(actorWithPerms, {
+            destinationId,
+            page: 1,
+            pageSize: 10
+        });
+
+        const attractions = result.data?.attractions;
+        expect(attractions).toHaveLength(3);
+        expect(attractions?.[0]?.displayWeight).toBe(90);
+        expect(attractions?.[1]?.displayWeight).toBe(50);
+        expect(attractions?.[2]?.displayWeight).toBe(10);
+    });
+
+    it('should handle attractions with undefined displayWeight using default of 50', async () => {
+        const attractionNoWeight = {
+            id: getMockId('feature', 'attr-no') as AttractionIdType,
+            name: 'No Weight'
+        };
+        const attractionHigh = {
+            id: getMockId('feature', 'attr-high2') as AttractionIdType,
+            name: 'High Weight',
+            displayWeight: 90
+        };
+        const relNo = { destinationId, attractionId: attractionNoWeight.id };
+        const relHigh = { destinationId, attractionId: attractionHigh.id };
+
+        asMock(destinationModel.findOne).mockResolvedValue(destination);
+        asMock(relatedModel.findAll).mockResolvedValue({ items: [relNo, relHigh] });
+        asMock(model.findAll).mockResolvedValue({
+            items: [attractionNoWeight, attractionHigh]
+        });
+
+        const result = await service.getAttractionsForDestination(actorWithPerms, {
+            destinationId,
+            page: 1,
+            pageSize: 10
+        });
+
+        expect(result.data?.attractions).toHaveLength(2);
+        // High weight (90) should be first, undefined defaults to 50
+        expect(result.data?.attractions?.[0]?.displayWeight).toBe(90);
+    });
+
     it('should return INTERNAL_ERROR if model throws', async () => {
         asMock(destinationModel.findOne).mockResolvedValue(destination);
         asMock(relatedModel.findAll).mockRejectedValue(new Error('DB error'));

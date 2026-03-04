@@ -5,15 +5,15 @@
  * Covers: success (admin, super admin), forbidden, internal error, lifecycle hook errors, normalizer usage, pagination.
  */
 import { UserModel } from '@repo/db';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.ADMIN) => createUser({ role });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 const paginated = (items: unknown[], page = 1, pageSize = 10) => ({
@@ -30,9 +30,12 @@ describe('UserService.list', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let entities: ReturnType<typeof getUser>[];
-    const admin = getActor(RoleEnum.ADMIN);
-    const superAdmin = getActor(RoleEnum.SUPER_ADMIN);
-    const user = getActor(RoleEnum.USER);
+    const admin = createActor({
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.USER_READ_ALL]
+    });
+    const superAdmin = createSuperAdminActor();
+    const user = createActor({ role: RoleEnum.USER, permissions: [] });
 
     beforeEach(() => {
         userModelMock = createTypedModelMock(UserModel, ['findAllWithCounts']);

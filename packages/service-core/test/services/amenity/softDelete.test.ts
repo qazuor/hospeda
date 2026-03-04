@@ -23,7 +23,9 @@ describe('AmenityService.softDelete', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'softDelete']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({
+            permissions: [PermissionEnum.AMENITY_DELETE, PermissionEnum.AMENITY_UPDATE]
+        });
     });
 
     it('should soft delete an amenity (success)', async () => {
@@ -34,7 +36,7 @@ describe('AmenityService.softDelete', () => {
         expect(result.data?.count).toBe(1);
     });
 
-    it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
+    it('should return FORBIDDEN if actor lacks AMENITY_DELETE permission', async () => {
         actor = createActor({ permissions: [] });
         asMock(amenityModelMock.findById).mockResolvedValue(amenity);
         const result = await service.softDelete(actor, amenity.id);

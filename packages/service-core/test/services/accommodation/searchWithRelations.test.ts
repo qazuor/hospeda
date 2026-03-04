@@ -107,7 +107,7 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: true
+            excludeRestricted: false
         });
     });
 
@@ -177,7 +177,7 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: true
+            excludeRestricted: false
         });
     });
 
@@ -218,7 +218,7 @@ describe('AccommodationService.searchWithRelations', () => {
             amenities: undefined,
             isFeatured: undefined,
             isAvailable: undefined,
-            excludeRestricted: true
+            excludeRestricted: false
         });
     });
 

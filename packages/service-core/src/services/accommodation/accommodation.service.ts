@@ -28,6 +28,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationRatingInput,
     type AccommodationSearchInput,
     type AccommodationSearchResult,
     AccommodationSearchSchema,
@@ -42,7 +43,7 @@ import {
     type CountResponse,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
-    RoleEnum,
+    PermissionEnum,
     ServiceErrorCode,
     type Success,
     type WithOwnerIdParams,
@@ -52,6 +53,7 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
+import { hasPermission } from '../../utils/permission';
 import { DestinationService } from '../destination/destination.service';
 import { generateSlug } from './accommodation.helpers';
 import {
@@ -288,8 +290,7 @@ export class AccommodationService extends BaseCrudService<
     protected async _executeSearch(params: AccommodationSearchInput, actor: Actor) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
-            actor.role === RoleEnum.ADMIN ||
-            actor.role === RoleEnum.SUPER_ADMIN;
+            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         return this.model.search({
             ...params,
@@ -307,8 +308,7 @@ export class AccommodationService extends BaseCrudService<
     protected async _executeCount(params: AccommodationSearchInput, actor: Actor) {
         const hasVipAccess =
             actor.entitlements?.has('vip_promotions_access') ||
-            actor.role === RoleEnum.ADMIN ||
-            actor.role === RoleEnum.SUPER_ADMIN;
+            hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
         return this.model.countByFilters({
             ...params,
@@ -351,8 +351,7 @@ export class AccommodationService extends BaseCrudService<
 
                 const hasVipAccess =
                     validatedActor.entitlements?.has('vip_promotions_access') ||
-                    validatedActor.role === RoleEnum.ADMIN ||
-                    validatedActor.role === RoleEnum.SUPER_ADMIN;
+                    hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 // Convert AccommodationSearchInput to model parameters format
                 const modelParams = {
@@ -419,8 +418,7 @@ export class AccommodationService extends BaseCrudService<
 
                 const hasVipAccess =
                     actor.entitlements?.has('vip_promotions_access') ||
-                    actor.role === RoleEnum.ADMIN ||
-                    actor.role === RoleEnum.SUPER_ADMIN;
+                    hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
@@ -610,8 +608,7 @@ export class AccommodationService extends BaseCrudService<
 
                 const hasVipAccess =
                     actor.entitlements?.has('vip_promotions_access') ||
-                    actor.role === RoleEnum.ADMIN ||
-                    actor.role === RoleEnum.SUPER_ADMIN;
+                    hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL);
 
                 const items = await this.model.findTopRated({
                     limit: validated.pageSize,
@@ -944,16 +941,16 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Updates the stats (reviewsCount, averageRating) for the accommodation from a review service.
+     * Updates the stats (reviewsCount, averageRating, rating) for the accommodation from a review service.
      */
     async updateStatsFromReview(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number }
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput }
     ): Promise<void> {
         await this.model.updateById(accommodationId, {
             reviewsCount: stats.reviewsCount,
-            averageRating: stats.averageRating
-            // rating: stats.rating // Field not available in schema
+            averageRating: stats.averageRating,
+            rating: stats.rating
         });
     }
 }

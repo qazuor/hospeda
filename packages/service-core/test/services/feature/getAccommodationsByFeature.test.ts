@@ -44,10 +44,10 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAll as Mock).mockResolvedValueOnce({
-            items: [{ accommodationId: accommodation.id }]
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [{ accommodationId: accommodation.id, accommodation }],
+            total: 1
         });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [accommodation] });
 
         const result = await service.getAccommodationsByFeature(actorWithPerms, {
             featureId
@@ -67,8 +67,10 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [],
+            total: 0
+        });
 
         const result = await service.getAccommodationsByFeature(actorWithPerms, {
             featureId
@@ -157,8 +159,10 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             model as unknown as AccommodationModel
         );
         (model.findOne as Mock).mockResolvedValueOnce(feature);
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [],
+            total: 0
+        });
         const minimalInput = { featureId };
         const result = await service.getAccommodationsByFeature(actorWithPerms, minimalInput);
         expect(result.data).toHaveProperty('accommodations');

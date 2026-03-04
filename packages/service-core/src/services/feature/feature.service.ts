@@ -189,6 +189,7 @@ export class FeatureService extends BaseCrudRelatedService<
 
     /**
      * Searches for features with accommodation counts.
+     * Uses a single batch COUNT query instead of N+1 individual queries.
      * @param actor - The actor performing the action
      * @param params - The search parameters with optional filters
      * @returns Features with accommodation counts
@@ -217,18 +218,14 @@ export class FeatureService extends BaseCrudRelatedService<
 
         const { items, total } = await this.model.findAll(where, { page, pageSize });
 
-        // Get accommodation counts for each feature
-        const itemsWithCounts = await Promise.all(
-            items.map(async (feature) => {
-                const { items: relations } = await this.relatedModel.findAll({
-                    featureId: feature.id as FeatureIdType
-                });
-                return {
-                    ...feature,
-                    accommodationCount: relations.length
-                };
-            })
-        );
+        // Batch fetch accommodation counts in a single query instead of N+1
+        const featureIds = items.map((feature) => feature.id as string);
+        const countsMap = await this.relatedModel.countAccommodationsByFeatureIds(featureIds);
+
+        const itemsWithCounts = items.map((feature) => ({
+            ...feature,
+            accommodationCount: countsMap.get(feature.id as string) ?? 0
+        }));
 
         return {
             items: itemsWithCounts,
@@ -302,12 +299,7 @@ export class FeatureService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canRemoveFeatureFromAccommodation(actor);
                 const { accommodationId, featureId } = validatedParams;
-                // Verify feature exists
-                const feature = await this.model.findOne({ id: featureId as FeatureIdType });
-                if (!feature) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
-                }
-                // Verify relation exists
+                // Verify relation exists (implies feature exists, no separate check needed)
                 const existing = await this.relatedModel.findOne({
                     accommodationId: accommodationId as AccommodationIdType,
                     featureId: featureId as FeatureIdType
@@ -353,14 +345,19 @@ export class FeatureService extends BaseCrudRelatedService<
             execute: async (validatedParams, actor) => {
                 this._canList(actor);
                 const { accommodationId } = validatedParams;
-                // Find all relations with this accommodationId
-                const { items: relations } = await this.relatedModel.findAll({ accommodationId });
-                const featureIds = relations.map((r) => r.featureId);
-                if (featureIds.length === 0) {
-                    return { features: [] };
-                }
-                // Find all features by their IDs
-                const { items: features } = await this.model.findAll({ id: featureIds });
+                // Single query with JOIN instead of 2 sequential queries
+                const { items: relationsWithFeature } =
+                    await this.relatedModel.findAllWithRelations(
+                        { feature: true },
+                        { accommodationId },
+                        { page: 1, pageSize: 100 }
+                    );
+
+                const features = relationsWithFeature
+                    .filter((r) => 'feature' in r && r.feature != null)
+                    .map((r) => (r as AccommodationFeature & { feature: Feature }).feature)
+                    .sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50));
+
                 return { features };
             }
         });
@@ -384,15 +381,25 @@ export class FeatureService extends BaseCrudRelatedService<
                 if (!feature) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature not found');
                 }
-                const { items: relations } = await this.relatedModel.findAll({ featureId });
-                const accommodationIds = relations.map((r) => r.accommodationId);
-                if (accommodationIds.length === 0) {
-                    return { accommodations: [] };
-                }
-                const accommodationModel = this.accommodationModel ?? new AccommodationModel();
-                const { items: accommodations } = await accommodationModel.findAll({
-                    id: accommodationIds
-                });
+                // Single query with JOIN instead of 3 sequential queries
+                const { items: relationsWithAccommodation } =
+                    await this.relatedModel.findAllWithRelations(
+                        { accommodation: true },
+                        { featureId },
+                        { page: 1, pageSize: 100 }
+                    );
+
+                const accommodations = relationsWithAccommodation
+                    .filter((r) => 'accommodation' in r && r.accommodation != null)
+                    .map(
+                        (r) =>
+                            (
+                                r as AccommodationFeature & {
+                                    accommodation: Accommodation;
+                                }
+                            ).accommodation
+                    );
+
                 return { accommodations };
             }
         });

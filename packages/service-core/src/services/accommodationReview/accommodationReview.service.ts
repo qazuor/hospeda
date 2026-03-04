@@ -103,19 +103,20 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     protected async _executeSearch(
-        _params: AccommodationReviewSearchParams,
+        params: AccommodationReviewSearchParams,
         _actor: Actor
     ): Promise<PaginatedListOutput<AccommodationReview>> {
-        // TODO: Implement search logic using Drizzle ORM
-        throw new Error('Not implemented');
+        const { page, pageSize, ...filters } = params;
+        return this.model.findAll({ ...filters, deletedAt: null }, { page, pageSize });
     }
 
     protected async _executeCount(
-        _params: AccommodationReviewSearchParams,
+        params: AccommodationReviewSearchParams,
         _actor: Actor
     ): Promise<CountResponse> {
-        // TODO: Implement count logic using Drizzle ORM
-        throw new Error('Not implemented');
+        const { page: _p, pageSize: _ps, ...filters } = params;
+        const count = await this.model.count({ ...filters, deletedAt: null });
+        return { count };
     }
 
     /**
@@ -137,20 +138,25 @@ export class AccommodationReviewService extends BaseCrudService<
         return entity;
     }
 
+    /**
+     * Captures the accommodationId before soft delete so stats can be recalculated after deletion.
+     */
+    private _lastDeletedAccommodationId: string | undefined;
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        const review = await this.model.findOne({ id });
+        this._lastDeletedAccommodationId = review?.accommodationId;
+        return id;
+    }
+
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<CountResponse> {
-        // Find the deleted review (assume last deleted)
-        // If you have the review ID, use it; otherwise, you may need to pass it explicitly
-        // For now, recalculate stats for all accommodations (safe fallback)
-        // TODO: Optimize to get the accommodationId of the deleted review
-        // Option 1: If you have the review ID, fetch it (example below):
-        // const deletedReview = await this.model.findById(reviewId);
-        // if (deletedReview) await this.recalculateAndUpdateAccommodationStats(deletedReview.accommodationId);
-        // Option 2: If not, skip or log
-        // For now, do nothing (or log)
-        // To be implemented: pass the entity or reviewId to this hook for precise update
+        if (this._lastDeletedAccommodationId) {
+            await this.recalculateAndUpdateAccommodationStats(this._lastDeletedAccommodationId);
+            this._lastDeletedAccommodationId = undefined;
+        }
         return result;
     }
 

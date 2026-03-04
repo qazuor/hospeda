@@ -30,7 +30,7 @@ describe('AmenityService.setFeaturedStatus', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+        actor = createActor({ permissions: [PermissionEnum.AMENITY_UPDATE] });
     });
 
     it('should set isFeatured to true (success)', async () => {

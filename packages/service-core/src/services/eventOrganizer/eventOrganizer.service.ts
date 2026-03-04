@@ -11,11 +11,13 @@ import {
     EventOrganizerCreateInputSchema,
     EventOrganizerSearchInputSchema,
     EventOrganizerUpdateInputSchema,
+    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
@@ -80,28 +82,32 @@ export class EventOrganizerService extends BaseCrudService<
         checkCanUpdateEventOrganizer(actor);
     }
     protected async _canView(_actor: Actor, _entity: EventOrganizer) {
-        // TODO: Implement fine-grained view permissions if needed
+        // Public: all users can view event organizers
         return;
     }
     protected async _canList(_actor: Actor) {
-        // TODO: Implement list permissions if needed
+        // Public: all users can list event organizers
         return;
     }
     protected async _canSearch(_actor: Actor) {
-        // TODO: Implement search permissions if needed
+        // Public: all users can search event organizers
         return;
     }
     protected async _canCount(_actor: Actor) {
-        // TODO: Implement count permissions if needed
+        // Public: all users can count event organizers
         return;
     }
     protected async _canUpdateVisibility(
-        _actor: Actor,
+        actor: Actor,
         _entity: EventOrganizer,
         _newVisibility: VisibilityEnum
     ) {
-        // TODO: Implement visibility update permissions if needed
-        return;
+        if (!hasPermission(actor, PermissionEnum.EVENT_ORGANIZER_MANAGE)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Forbidden: missing EVENT_ORGANIZER_MANAGE permission'
+            );
+        }
     }
 
     // --- Core Logic ---
@@ -161,16 +167,14 @@ export class EventOrganizerService extends BaseCrudService<
 
     /**
      * Gets the number of events organized by this event organizer.
-     * TODO: Implement once EventModel supports counting by organizerId
+     * Note: Returns 0 until EventModel supports counting by organizerId.
      * @param actor - The actor performing the action
      * @param id - The event organizer ID
      * @returns Count of events for this organizer
      */
     public async getEventCount(actor: Actor, id: string): Promise<{ count: number }> {
-        // Check permissions
         await this._canView(actor, { id } as EventOrganizer);
 
-        // Verify organizer exists
         const organizer = await this.model.findById(id);
         if (!organizer) {
             throw new ServiceError(
@@ -179,14 +183,16 @@ export class EventOrganizerService extends BaseCrudService<
             );
         }
 
-        // TODO: When EventModel supports counting by organizerId, implement this properly
-        // For now, return 0 as placeholder
+        // Placeholder: EventModel does not yet support counting by organizerId
+        this.logger.warn(
+            `[EventOrganizerService.getEventCount] Returning placeholder count=0 for organizer ${id}`
+        );
         return { count: 0 };
     }
 
     /**
      * Gets statistics for an event organizer.
-     * TODO: Implement once EventModel supports aggregations by organizerId
+     * Note: Returns zeroed stats until EventModel supports aggregations by organizerId.
      * @param actor - The actor performing the action
      * @param id - The event organizer ID
      * @returns Statistics for this organizer
@@ -200,10 +206,8 @@ export class EventOrganizerService extends BaseCrudService<
         upcomingEvents: number;
         pastEvents: number;
     }> {
-        // Check permissions
         await this._canView(actor, { id } as EventOrganizer);
 
-        // Verify organizer exists
         const organizer = await this.model.findById(id);
         if (!organizer) {
             throw new ServiceError(
@@ -212,8 +216,10 @@ export class EventOrganizerService extends BaseCrudService<
             );
         }
 
-        // TODO: When EventModel supports aggregations by organizerId, implement this properly
-        // For now, return placeholder values
+        // Placeholder: EventModel does not yet support aggregations by organizerId
+        this.logger.warn(
+            `[EventOrganizerService.getStats] Returning placeholder stats for organizer ${id}`
+        );
         return {
             totalEvents: 0,
             activeEvents: 0,

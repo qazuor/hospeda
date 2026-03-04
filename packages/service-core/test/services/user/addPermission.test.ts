@@ -9,6 +9,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it } from 'vitest';
 import type { Actor } from '../../../src';
 import { UserService } from '../../../src/services/user/user.service';
+import { createActor, createSuperAdminActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import {
@@ -22,7 +23,6 @@ import {
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
-const getActor = (role: RoleEnum = RoleEnum.SUPER_ADMIN) => createUser({ role });
 const getUser = (overrides = {}) => createUser({ ...overrides });
 const asMock = <T>(fn: T) => fn as unknown as Mock;
 
@@ -34,7 +34,7 @@ describe('UserService.addPermission', () => {
     let userModelMock: UserModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     const userId = getMockId('user', 'user-1');
-    const actor = getActor(RoleEnum.SUPER_ADMIN);
+    const actor = createSuperAdminActor();
     const input = { userId: userId, permission: PermissionEnum.USER_CREATE };
 
     beforeEach(() => {
@@ -90,7 +90,7 @@ describe('UserService.addPermission', () => {
         // Arrange
         const user = getUser({ id: userId, permissions: [] });
         asMock(userModelMock.findById).mockResolvedValue({ ...user, id: userId });
-        const forbiddenActor = getActor(RoleEnum.ADMIN);
+        const forbiddenActor = createActor({ role: RoleEnum.ADMIN, permissions: [] });
         // Act
         const result = await service.addPermission(forbiddenActor, input);
         // Assert

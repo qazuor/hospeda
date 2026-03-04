@@ -41,8 +41,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
             model as unknown as AmenityModel,
             model as unknown as RAccommodationAmenityModel
         );
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [{ amenityId: amenity.id }] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [amenity] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [{ amenityId: amenity.id, amenity }],
+            total: 1
+        });
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
             accommodationId,
@@ -62,8 +64,10 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
             model as unknown as AmenityModel,
             model as unknown as RAccommodationAmenityModel
         );
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [],
+            total: 0
+        });
 
         const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
             accommodationId,
@@ -111,5 +115,81 @@ describe('AmenityService.getAmenitiesForAccommodation', () => {
         })) as ServiceOutput<AmenityListWrapper>;
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    it('should return amenities sorted by displayWeight DESC', async () => {
+        const model = createModelMock();
+        const service = new AmenityService(
+            ctx,
+            model as unknown as AmenityModel,
+            model as unknown as RAccommodationAmenityModel
+        );
+        const amenityLow = AmenityFactoryBuilder.create({
+            id: getMockAmenityId('am-low'),
+            displayWeight: 10
+        });
+        const amenityMid = AmenityFactoryBuilder.create({
+            id: getMockAmenityId('am-mid'),
+            displayWeight: 50
+        });
+        const amenityHigh = AmenityFactoryBuilder.create({
+            id: getMockAmenityId('am-high'),
+            displayWeight: 90
+        });
+
+        // Return in random order - service should sort them
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [
+                { amenityId: amenityMid.id, amenity: amenityMid },
+                { amenityId: amenityLow.id, amenity: amenityLow },
+                { amenityId: amenityHigh.id, amenity: amenityHigh }
+            ],
+            total: 3
+        });
+
+        const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
+            accommodationId,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
+
+        const amenities = result.data?.amenities;
+        expect(amenities).toHaveLength(3);
+        expect(amenities?.[0]?.displayWeight).toBe(90);
+        expect(amenities?.[1]?.displayWeight).toBe(50);
+        expect(amenities?.[2]?.displayWeight).toBe(10);
+    });
+
+    it('should handle amenities with undefined displayWeight using default of 50', async () => {
+        const model = createModelMock();
+        const service = new AmenityService(
+            ctx,
+            model as unknown as AmenityModel,
+            model as unknown as RAccommodationAmenityModel
+        );
+        const amenityNoWeight = AmenityFactoryBuilder.create({ id: getMockAmenityId('am-no') });
+        (amenityNoWeight as any).displayWeight = undefined;
+        const amenityHigh = AmenityFactoryBuilder.create({
+            id: getMockAmenityId('am-high'),
+            displayWeight: 90
+        });
+
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [
+                { amenityId: amenityNoWeight.id, amenity: amenityNoWeight },
+                { amenityId: amenityHigh.id, amenity: amenityHigh }
+            ],
+            total: 2
+        });
+
+        const result = (await service.getAmenitiesForAccommodation(actorWithPerms, {
+            accommodationId,
+            page: 1,
+            pageSize: 10
+        })) as ServiceOutput<AmenityListWrapper>;
+
+        expect(result.data?.amenities).toHaveLength(2);
+        // High weight (90) should be first, undefined defaults to 50
+        expect(result.data?.amenities?.[0]?.displayWeight).toBe(90);
     });
 });

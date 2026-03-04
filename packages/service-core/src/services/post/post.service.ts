@@ -31,7 +31,6 @@ import {
     PostCreateInputSchema,
     PostListInputSchema as PostFilterInputSchema,
     PostUpdateInputSchema as PostUpdateSchema,
-    RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -325,7 +324,7 @@ export class PostService extends BaseCrudService<
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canSearch(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        if (!actor || !actor.id) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: not authenticated');
         }
     }
@@ -336,7 +335,7 @@ export class PostService extends BaseCrudService<
      * @throws {ServiceError} If the permission check fails.
      */
     protected _canCount(actor: Actor): void {
-        if (!actor || !actor.id || actor.role === RoleEnum.GUEST) {
+        if (!actor || !actor.id) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: not authenticated');
         }
     }
@@ -353,12 +352,7 @@ export class PostService extends BaseCrudService<
         _entity: Post,
         _newVisibility: VisibilityEnum
     ): void {
-        if (
-            !actor ||
-            !actor.id ||
-            actor.role === RoleEnum.GUEST ||
-            !actor.permissions.includes(PermissionEnum.POST_UPDATE)
-        ) {
+        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.POST_UPDATE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Forbidden: not allowed to update visibility'
@@ -407,7 +401,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
@@ -443,7 +437,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
@@ -479,7 +473,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if ('visibility' in validated && validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (
@@ -522,7 +516,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
@@ -560,7 +554,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {
@@ -596,7 +590,7 @@ export class PostService extends BaseCrudService<
                 // If no visibility is specified, default to PUBLIC for guest users
                 if (validated.visibility) {
                     where.visibility = validated.visibility;
-                } else if (!actor.id || actor.role === RoleEnum.GUEST) {
+                } else if (!actor.id) {
                     where.visibility = 'PUBLIC';
                 }
                 if (validated.fromDate || validated.toDate) {

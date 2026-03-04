@@ -46,7 +46,7 @@ export function calculateInverseRate(input: { rate: number }): number {
  * @param input - Object containing amount, currency, and optional locale
  * @param input.amount - The amount to format
  * @param input.currency - The currency code (ISO 4217)
- * @param input.locale - The locale for formatting (default: 'es-AR')
+ * @param input.locale - The locale for formatting (default: 'es')
  * @returns Formatted currency string
  *
  * @example
@@ -60,7 +60,7 @@ export function formatConvertedAmount(input: {
     currency: string;
     locale?: string;
 }): string {
-    return new Intl.NumberFormat(input.locale ?? 'es-AR', {
+    return new Intl.NumberFormat(input.locale ?? 'es', {
         style: 'currency',
         currency: input.currency,
         minimumFractionDigits: 2,

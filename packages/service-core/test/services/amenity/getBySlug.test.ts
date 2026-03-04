@@ -9,8 +9,7 @@ import { AmenityFactoryBuilder } from '../../factories/amenityFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
-const createViewActor = () =>
-    createActor({ permissions: [PermissionEnum.ACCOMMODATION_FEATURES_EDIT] });
+const createViewActor = () => createActor({ permissions: [PermissionEnum.AMENITY_CREATE] });
 const createEntity = () => AmenityFactoryBuilder.create({ deletedAt: undefined });
 
 describe('AmenityService.getBySlug', () => {

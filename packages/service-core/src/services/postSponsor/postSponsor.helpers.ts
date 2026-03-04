@@ -4,48 +4,41 @@
  */
 
 /**
- * Generates a unique slug for a post sponsor based on name.
- * Ensures uniqueness by checking with the PostSponsorModel.
- *
- * @param name - Sponsor name
- * @returns {Promise<string>} The unique slug
- */
-export const generatePostSponsorSlug = async (name: string): Promise<string> => {
-    // TODO: Implement slug generation logic
-    return name
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, '');
-};
-
-/**
  * Validates sponsor contact information.
- * Checks if required contact fields are present and valid.
+ * Checks that at least one contact method is present.
  *
  * @param contact - Contact information to validate
- * @returns {boolean} Whether the contact info is valid
+ * @returns Whether the contact info is valid (has at least one contact method)
  */
 export const validateSponsorContact = (contact: unknown): boolean => {
-    // TODO: Implement contact validation logic
-    return !!contact;
+    if (!contact || typeof contact !== 'object') return false;
+    const c = contact as Record<string, unknown>;
+    return !!(c.email || c.phone || c.personalEmail || c.workEmail || c.mobilePhone);
 };
 
 /**
  * Normalizes sponsor social media links.
- * Validates and standardizes social media URLs and handles.
+ * Trims all string values in the social media information object.
  *
  * @param social - Raw social media information object
- * @returns Normalized social media information
+ * @returns Normalized social media information with trimmed string values
  *
  * @example
  * ```typescript
  * const normalized = normalizeSocialInfo({
- *   twitter: '@company',
- *   linkedin: 'linkedin.com/company/test'
+ *   twitter: '  @company  ',
+ *   linkedin: ' linkedin.com/company/test '
  * });
+ * // Result: { twitter: '@company', linkedin: 'linkedin.com/company/test' }
  * ```
  */
 export const normalizeSocialInfo = (social: unknown): unknown => {
-    // TODO: Implement social media normalization logic
-    return social;
+    if (!social || typeof social !== 'object') return social;
+    const normalized = { ...(social as Record<string, unknown>) };
+    for (const [key, value] of Object.entries(normalized)) {
+        if (typeof value === 'string') {
+            normalized[key] = value.trim();
+        }
+    }
+    return normalized;
 };

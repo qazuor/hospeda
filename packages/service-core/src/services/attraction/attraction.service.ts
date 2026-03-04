@@ -347,9 +347,12 @@ export class AttractionService extends BaseCrudRelatedService<
                     (r: DestinationAttractionRelation) => r.attractionId
                 );
 
-                // Fetch all attractions in one query
+                // Fetch all attractions in one query, sorted by displayWeight DESC
                 const { items: attractions } = await this.model.findAll({ id: attractionIds });
-                return { attractions };
+                const sorted = [...attractions].sort(
+                    (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
+                );
+                return { attractions: sorted };
             }
         });
     }

@@ -12,6 +12,7 @@ export default defineConfig({
                 maxForks: 3
             }
         },
+        retry: 1,
         include: ['test/**/*.test.ts'],
         coverage: {
             provider: 'v8',

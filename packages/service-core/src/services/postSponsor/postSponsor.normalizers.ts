@@ -1,6 +1,7 @@
 import type { PostSponsorCreateInput, PostSponsorUpdateInput } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { normalizeContactInfo } from '../../utils';
+import { normalizeSocialInfo } from './postSponsor.helpers';
 
 /**
  * Normalizes the input data for creating a post sponsor.
@@ -22,9 +23,11 @@ export const normalizeCreateInput = (
         ...data,
         name: data.name.trim(),
         description: data.description.trim(),
-        logo: data.logo, // TODO: normalize image if necessary
+        logo: data.logo,
         contactInfo: normalizedContactInfo,
-        socialNetworks: data.socialNetworks, // TODO: normalize social if necessary
+        socialNetworks: data.socialNetworks
+            ? (normalizeSocialInfo(data.socialNetworks) as typeof data.socialNetworks)
+            : undefined,
         type: data.type
     };
 };
@@ -44,11 +47,14 @@ export const normalizeUpdateInput = (
 
     if (data.name) result.name = data.name.trim();
     if (data.description) result.description = data.description.trim();
-    if (data.logo) result.logo = data.logo; // TODO: normalize image if necessary
+    if (data.logo) result.logo = data.logo;
     if (data.contactInfo) {
         result.contactInfo = normalizeContactInfo(data.contactInfo) as typeof data.contactInfo;
     }
-    if (data.socialNetworks) result.socialNetworks = data.socialNetworks; // TODO: normalize social if necessary
+    if (data.socialNetworks)
+        result.socialNetworks = normalizeSocialInfo(
+            data.socialNetworks
+        ) as typeof data.socialNetworks;
     if (data.type) result.type = data.type;
 
     return result;
