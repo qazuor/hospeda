@@ -3,15 +3,26 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatDate } from '../utils/index.js';
 
 /**
  * Props for TrialExpired email template
  */
+/** Default features lost when trial expires */
+export const DEFAULT_TRIAL_FEATURES = [
+    'Publicaciones ilimitadas',
+    'Estadísticas avanzadas',
+    'Soporte prioritario',
+    'Destacados en búsquedas'
+] as const;
+
 export interface TrialExpiredProps {
     recipientName: string;
     planName: string;
     trialEndDate: string;
     upgradeUrl: string;
+    /** Features lost when trial expires. Defaults to DEFAULT_TRIAL_FEATURES. */
+    features?: readonly string[];
 }
 
 /**
@@ -24,9 +35,10 @@ export function TrialExpired({
     recipientName,
     planName,
     trialEndDate,
-    upgradeUrl
+    upgradeUrl,
+    features = DEFAULT_TRIAL_FEATURES
 }: TrialExpiredProps) {
-    const formattedEndDate = formatDate(trialEndDate);
+    const formattedEndDate = formatDate({ dateString: trialEndDate });
 
     return (
         <EmailLayout previewText={`Tu período de prueba de ${planName} ha finalizado`}>
@@ -53,10 +65,14 @@ export function TrialExpired({
             <Text style={styles.paragraph}>Funcionalidades que ya no están disponibles:</Text>
 
             <Section style={styles.featureList}>
-                <Text style={styles.featureItem}>• Publicaciones ilimitadas</Text>
-                <Text style={styles.featureItem}>• Estadísticas avanzadas</Text>
-                <Text style={styles.featureItem}>• Soporte prioritario</Text>
-                <Text style={styles.featureItem}>• Destacados en búsquedas</Text>
+                {features.map((feature) => (
+                    <Text
+                        key={feature}
+                        style={styles.featureItem}
+                    >
+                        • {feature}
+                    </Text>
+                ))}
             </Section>
 
             <Text style={styles.paragraph}>
@@ -74,19 +90,6 @@ export function TrialExpired({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

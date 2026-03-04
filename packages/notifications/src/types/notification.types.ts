@@ -64,9 +64,13 @@ export interface PaymentNotificationPayload extends BaseNotificationPayload {
 export interface SubscriptionEventPayload extends BaseNotificationPayload {
     type: NotificationType.RENEWAL_REMINDER | NotificationType.PLAN_CHANGE_CONFIRMATION;
     planName: string;
-    amount: number;
-    currency: string;
+    /** Amount in centavos. Optional for renewal reminders when plan price cannot be resolved. */
+    amount?: number;
+    /** Currency code (e.g. 'ARS'). Optional when amount is not available. */
+    currency?: string;
     renewalDate?: string;
+    /** Days remaining until renewal. Used in email templates for contextual messaging. */
+    daysRemaining?: number;
     oldPlanName?: string;
     newPlanName?: string;
 }

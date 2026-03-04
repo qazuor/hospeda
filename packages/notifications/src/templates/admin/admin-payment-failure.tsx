@@ -2,6 +2,7 @@ import { Section, Text } from '@react-email/components';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency } from '../utils/index.js';
 
 /**
  * Props for AdminPaymentFailure email template
@@ -31,7 +32,10 @@ export function AdminPaymentFailure({
     const currency = eventDetails.currency as string | undefined;
     const failureReason = eventDetails.failureReason as string | undefined;
 
-    const formattedAmount = amount && currency ? formatCurrency(amount, currency) : 'N/A';
+    const formattedAmount =
+        amount !== undefined && currency !== undefined
+            ? formatCurrency({ amount, currency })
+            : 'N/A';
 
     return (
         <EmailLayout previewText="[Admin] Fallo de pago detectado">
@@ -111,22 +115,6 @@ function SeverityBadge({ severity }: { severity: 'info' | 'warning' | 'critical'
     };
 
     return <Text style={badgeStyles[severity]}>{labels[severity]}</Text>;
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
 }
 
 const styles = {

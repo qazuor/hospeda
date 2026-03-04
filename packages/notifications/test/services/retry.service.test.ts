@@ -322,6 +322,97 @@ describe('RetryService', () => {
         });
     });
 
+    describe('processRetries', () => {
+        it('should invoke onPermanentFailure callback when max retries reached', async () => {
+            // Arrange
+            const onPermanentFailure = vi.fn().mockResolvedValue(undefined);
+            const serviceWithCallback = new RetryService(mockRedis, { onPermanentFailure });
+
+            const failedNotification: RetryableNotification = {
+                ...mockNotification,
+                attemptCount: NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS - 1
+            };
+
+            (mockRedis.zrangebyscore as Mock).mockResolvedValue([
+                JSON.stringify(failedNotification)
+            ]);
+            vi.spyOn(console, 'info').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const sendFn = vi.fn().mockResolvedValue({ success: false, error: 'Still failing' });
+
+            // Act
+            const stats = await serviceWithCallback.processRetries(sendFn);
+
+            // Assert
+            expect(stats.permanentlyFailed).toBe(1);
+            expect(onPermanentFailure).toHaveBeenCalledTimes(1);
+            expect(onPermanentFailure).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    id: mockNotification.id,
+                    attemptCount: NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS,
+                    lastError: 'Still failing'
+                })
+            );
+
+            vi.restoreAllMocks();
+        });
+
+        it('should not crash if onPermanentFailure callback throws', async () => {
+            // Arrange
+            const onPermanentFailure = vi.fn().mockRejectedValue(new Error('DB write failed'));
+            const serviceWithCallback = new RetryService(mockRedis, { onPermanentFailure });
+
+            const failedNotification: RetryableNotification = {
+                ...mockNotification,
+                attemptCount: NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS - 1
+            };
+
+            (mockRedis.zrangebyscore as Mock).mockResolvedValue([
+                JSON.stringify(failedNotification)
+            ]);
+            vi.spyOn(console, 'info').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const sendFn = vi.fn().mockResolvedValue({ success: false, error: 'Still failing' });
+
+            // Act
+            const stats = await serviceWithCallback.processRetries(sendFn);
+
+            // Assert
+            expect(stats.permanentlyFailed).toBe(1);
+            expect(onPermanentFailure).toHaveBeenCalledTimes(1);
+
+            vi.restoreAllMocks();
+        });
+
+        it('should not call onPermanentFailure when not configured', async () => {
+            // Arrange
+            const serviceWithoutCallback = new RetryService(mockRedis);
+
+            const failedNotification: RetryableNotification = {
+                ...mockNotification,
+                attemptCount: NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS - 1
+            };
+
+            (mockRedis.zrangebyscore as Mock).mockResolvedValue([
+                JSON.stringify(failedNotification)
+            ]);
+            vi.spyOn(console, 'info').mockImplementation(() => {});
+            vi.spyOn(console, 'error').mockImplementation(() => {});
+
+            const sendFn = vi.fn().mockResolvedValue({ success: false, error: 'Failing' });
+
+            // Act - should not throw
+            const stats = await serviceWithoutCallback.processRetries(sendFn);
+
+            // Assert
+            expect(stats.permanentlyFailed).toBe(1);
+
+            vi.restoreAllMocks();
+        });
+    });
+
     describe('integration scenarios', () => {
         it('should handle complete retry lifecycle', async () => {
             // Arrange

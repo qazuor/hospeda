@@ -3,16 +3,19 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for PlanChangeConfirmation email template
  */
 export interface PlanChangeConfirmationProps {
     recipientName: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     oldPlanName?: string;
     newPlanName?: string;
-    amount: number;
-    currency: string;
+    amount?: number;
+    currency?: string;
     renewalDate?: string;
 }
 
@@ -24,14 +27,16 @@ export interface PlanChangeConfirmationProps {
  */
 export function PlanChangeConfirmation({
     recipientName,
+    baseUrl,
     oldPlanName,
     newPlanName,
     amount,
     currency,
     renewalDate
 }: PlanChangeConfirmationProps) {
-    const formattedAmount = formatCurrency(amount, currency);
-    const formattedRenewalDate = renewalDate ? formatDate(renewalDate) : undefined;
+    const formattedAmount =
+        amount !== undefined && currency ? formatCurrency({ amount, currency }) : undefined;
+    const formattedRenewalDate = renewalDate ? formatDate({ dateString: renewalDate }) : undefined;
 
     return (
         <EmailLayout previewText="Cambio de plan confirmado">
@@ -48,10 +53,12 @@ export function PlanChangeConfirmation({
                         value={`${oldPlanName} → ${newPlanName}`}
                     />
                 )}
-                <InfoRow
-                    label="Nuevo monto"
-                    value={formattedAmount}
-                />
+                {formattedAmount && (
+                    <InfoRow
+                        label="Nuevo monto"
+                        value={formattedAmount}
+                    />
+                )}
                 {formattedRenewalDate && (
                     <InfoRow
                         label="Fecha efectiva"
@@ -66,7 +73,7 @@ export function PlanChangeConfirmation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/subscription">Ver mi plan</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mi plan</Button>
             </Section>
 
             <Text style={styles.footerNote}>
@@ -74,35 +81,6 @@ export function PlanChangeConfirmation({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

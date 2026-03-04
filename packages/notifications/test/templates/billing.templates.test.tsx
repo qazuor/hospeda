@@ -40,6 +40,7 @@ describe('Billing Email Templates', () => {
             amount: 10000, // $100.00 ARS
             currency: 'ARS',
             planName: 'Plan Standard',
+            baseUrl: 'https://hospeda.com.ar',
             paymentMethod: 'Tarjeta de crédito'
         };
 
@@ -125,7 +126,7 @@ describe('Billing Email Templates', () => {
 
             // Assert
             expect(html).toContain('Ver recibo');
-            expect(html).toContain('/mi-cuenta/billing');
+            expect(html).toContain('/es/mi-cuenta/suscripcion');
         });
     });
 
@@ -134,6 +135,7 @@ describe('Billing Email Templates', () => {
             recipientName: 'María González',
             amount: 15000,
             currency: 'ARS',
+            baseUrl: 'https://hospeda.com.ar',
             failureReason: 'Fondos insuficientes',
             retryDate: '2024-12-25'
         };
@@ -202,6 +204,7 @@ describe('Billing Email Templates', () => {
             planName: 'Plan Premium',
             amount: 20000,
             currency: 'ARS',
+            baseUrl: 'https://hospeda.com.ar',
             renewalDate: '2024-12-31'
         };
 
@@ -259,7 +262,8 @@ describe('Billing Email Templates', () => {
             oldPlanName: 'Plan Básico',
             newPlanName: 'Plan Premium',
             amount: 25000,
-            currency: 'ARS'
+            currency: 'ARS',
+            baseUrl: 'https://hospeda.com.ar'
         };
 
         it('should render without errors', () => {
@@ -312,6 +316,7 @@ describe('Billing Email Templates', () => {
             planName: 'Plan Enterprise',
             amount: 50000,
             currency: 'ARS',
+            baseUrl: 'https://hospeda.com.ar',
             billingPeriod: 'monthly',
             nextBillingDate: '2025-01-31'
         };

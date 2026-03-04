@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatDate } from '../utils/index.js';
 
 /**
  * Props for TrialEndingReminder email template
@@ -28,7 +29,7 @@ export function TrialEndingReminder({
     daysRemaining,
     upgradeUrl
 }: TrialEndingReminderProps) {
-    const formattedEndDate = formatDate(trialEndDate);
+    const formattedEndDate = formatDate({ dateString: trialEndDate });
     const daysText = daysRemaining === 1 ? '1 día' : `${daysRemaining} días`;
 
     return (
@@ -77,19 +78,6 @@ export function TrialEndingReminder({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

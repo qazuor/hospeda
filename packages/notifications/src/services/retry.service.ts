@@ -18,12 +18,26 @@ export interface RetryableNotification {
 }
 
 /**
+ * Configuration options for RetryService
+ */
+export interface RetryServiceOptions {
+    /** Callback invoked when a notification permanently fails after exhausting all retries */
+    onPermanentFailure?: (notification: RetryableNotification) => Promise<void>;
+}
+
+/**
  * RetryService
  * Manages retry queue for failed notifications using Redis sorted set
  * with exponential backoff strategy
  */
 export class RetryService {
-    constructor(private redis: Redis | null) {}
+    private readonly redis: Redis | null;
+    private readonly options: RetryServiceOptions;
+
+    constructor(redis: Redis | null, options?: RetryServiceOptions) {
+        this.redis = redis;
+        this.options = options ?? {};
+    }
 
     /**
      * Enqueue a failed notification for retry
@@ -216,8 +230,11 @@ export class RetryService {
                                 `[RetryService] Max retries (${NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS}) reached for notification ${notification.id}, marking as permanently failed`
                             );
 
-                            // TODO: Mark as permanently failed in database
-                            // This would require a database dependency - for now just log
+                            await this.invokePermanentFailureCallback({
+                                ...notification,
+                                attemptCount: newAttemptCount,
+                                lastError: errorMessage
+                            });
                         } else {
                             // Re-enqueue for another retry
                             const updatedNotification: RetryableNotification = {
@@ -248,6 +265,12 @@ export class RetryService {
                     const newAttemptCount = notification.attemptCount + 1;
                     if (RetryService.isMaxRetriesReached(newAttemptCount)) {
                         permanentlyFailed++;
+                        await this.invokePermanentFailureCallback({
+                            ...notification,
+                            attemptCount: newAttemptCount,
+                            lastError:
+                                error instanceof Error ? error.message : 'Unknown processing error'
+                        });
                     } else {
                         const updatedNotification: RetryableNotification = {
                             ...notification,
@@ -273,6 +296,27 @@ export class RetryService {
         } catch (error) {
             console.error('[RetryService] Failed to process retries:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Invokes the onPermanentFailure callback if configured.
+     * Errors from the callback are logged but do not propagate.
+     */
+    private async invokePermanentFailureCallback(
+        notification: RetryableNotification
+    ): Promise<void> {
+        if (!this.options.onPermanentFailure) {
+            return;
+        }
+
+        try {
+            await this.options.onPermanentFailure(notification);
+        } catch (callbackError) {
+            console.error(
+                `[RetryService] onPermanentFailure callback failed for notification ${notification.id}:`,
+                callbackError
+            );
         }
     }
 }

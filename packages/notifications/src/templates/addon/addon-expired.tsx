@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonExpired email template
@@ -10,6 +11,8 @@ import { EmailLayout } from '../components/layout.js';
 export interface AddonExpiredProps {
     recipientName: string;
     addonName: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     expirationDate?: string;
 }
 
@@ -19,8 +22,15 @@ export interface AddonExpiredProps {
  *
  * @param props - Addon expiration data
  */
-export function AddonExpired({ recipientName, addonName, expirationDate }: AddonExpiredProps) {
-    const formattedExpirationDate = expirationDate ? formatDate(expirationDate) : undefined;
+export function AddonExpired({
+    recipientName,
+    addonName,
+    baseUrl,
+    expirationDate
+}: AddonExpiredProps) {
+    const formattedExpirationDate = expirationDate
+        ? formatDate({ dateString: expirationDate })
+        : undefined;
 
     return (
         <EmailLayout previewText={`Tu complemento ${addonName} ha vencido`}>
@@ -52,7 +62,7 @@ export function AddonExpired({ recipientName, addonName, expirationDate }: Addon
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/addons">Comprar de nuevo</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Comprar de nuevo</Button>
             </Section>
 
             <Text style={styles.footerNote}>
@@ -61,19 +71,6 @@ export function AddonExpired({ recipientName, addonName, expirationDate }: Addon
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

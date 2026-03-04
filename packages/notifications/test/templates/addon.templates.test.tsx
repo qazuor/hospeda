@@ -27,6 +27,7 @@ describe('Addon Email Templates', () => {
         const validProps: AddonExpirationWarningProps = {
             recipientName: 'Laura Fernández',
             addonName: 'Soporte Prioritario',
+            baseUrl: 'https://hospeda.com.ar',
             daysRemaining: 5,
             expirationDate: '2024-12-31'
         };
@@ -123,7 +124,7 @@ describe('Addon Email Templates', () => {
 
             // Assert
             expect(html).toContain('Renovar ahora');
-            expect(html).toContain('/mi-cuenta/addons');
+            expect(html).toContain('/es/mi-cuenta/suscripcion');
         });
 
         it('should include unsubscribe option', () => {
@@ -140,6 +141,7 @@ describe('Addon Email Templates', () => {
         const validProps: AddonExpiredProps = {
             recipientName: 'Roberto Silva',
             addonName: 'Análisis Avanzado',
+            baseUrl: 'https://hospeda.com.ar',
             expirationDate: '2024-12-15'
         };
 
@@ -202,7 +204,7 @@ describe('Addon Email Templates', () => {
 
             // Assert
             expect(html).toContain('Comprar de nuevo');
-            expect(html).toContain('/mi-cuenta/addons');
+            expect(html).toContain('/es/mi-cuenta/suscripcion');
         });
     });
 
@@ -210,6 +212,7 @@ describe('Addon Email Templates', () => {
         const validProps: AddonRenewalConfirmationProps = {
             recipientName: 'Sofía Torres',
             addonName: 'Soporte 24/7',
+            baseUrl: 'https://hospeda.com.ar',
             amount: 5000,
             currency: 'ARS'
         };

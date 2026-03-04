@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency } from '../utils/index.js';
 
 /**
  * Props for PaymentSuccess email template
@@ -12,6 +13,8 @@ export interface PaymentSuccessProps {
     amount: number;
     currency: string;
     planName: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     paymentMethod?: string;
 }
 
@@ -26,9 +29,10 @@ export function PaymentSuccess({
     amount,
     currency,
     planName,
+    baseUrl,
     paymentMethod
 }: PaymentSuccessProps) {
-    const formattedAmount = formatCurrency(amount, currency);
+    const formattedAmount = formatCurrency({ amount, currency });
 
     return (
         <EmailLayout previewText="Pago procesado exitosamente">
@@ -62,28 +66,12 @@ export function PaymentSuccess({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/billing">Ver recibo</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver recibo</Button>
             </Section>
 
             <Text style={styles.footerNote}>Este correo confirma el pago de tu suscripción.</Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
 }
 
 const styles = {

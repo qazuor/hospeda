@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonRenewalConfirmation email template
@@ -10,6 +11,8 @@ import { EmailLayout } from '../components/layout.js';
 export interface AddonRenewalConfirmationProps {
     recipientName: string;
     addonName: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     amount?: number;
     currency?: string;
     expirationDate?: string;
@@ -24,12 +27,16 @@ export interface AddonRenewalConfirmationProps {
 export function AddonRenewalConfirmation({
     recipientName,
     addonName,
+    baseUrl,
     amount,
     currency,
     expirationDate
 }: AddonRenewalConfirmationProps) {
-    const formattedAmount = amount && currency ? formatCurrency(amount, currency) : undefined;
-    const formattedExpirationDate = expirationDate ? formatDate(expirationDate) : undefined;
+    const formattedAmount =
+        amount !== undefined && currency ? formatCurrency({ amount, currency }) : undefined;
+    const formattedExpirationDate = expirationDate
+        ? formatDate({ dateString: expirationDate })
+        : undefined;
 
     return (
         <EmailLayout previewText={`Renovación confirmada: ${addonName}`}>
@@ -66,41 +73,12 @@ export function AddonRenewalConfirmation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/addons">Ver mis complementos</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mis complementos</Button>
             </Section>
 
             <Text style={styles.footerNote}>Gracias por confiar en nuestros servicios.</Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

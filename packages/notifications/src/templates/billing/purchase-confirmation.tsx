@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for PurchaseConfirmation email template
@@ -12,6 +13,8 @@ export interface PurchaseConfirmationProps {
     planName: string;
     amount: number;
     currency: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     billingPeriod?: string;
     nextBillingDate?: string;
 }
@@ -27,11 +30,14 @@ export function PurchaseConfirmation({
     planName,
     amount,
     currency,
+    baseUrl,
     billingPeriod,
     nextBillingDate
 }: PurchaseConfirmationProps) {
-    const formattedAmount = formatCurrency(amount, currency);
-    const formattedNextBilling = nextBillingDate ? formatDate(nextBillingDate) : undefined;
+    const formattedAmount = formatCurrency({ amount, currency });
+    const formattedNextBilling = nextBillingDate
+        ? formatDate({ dateString: nextBillingDate })
+        : undefined;
 
     return (
         <EmailLayout previewText={`Confirmación de compra: ${planName}`}>
@@ -73,7 +79,7 @@ export function PurchaseConfirmation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta">Ver mi cuenta</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta`}>Ver mi cuenta</Button>
             </Section>
 
             <Text style={styles.footerNote}>
@@ -81,35 +87,6 @@ export function PurchaseConfirmation({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

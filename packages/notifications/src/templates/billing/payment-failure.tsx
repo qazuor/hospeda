@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for PaymentFailure email template
@@ -11,6 +12,8 @@ export interface PaymentFailureProps {
     recipientName: string;
     amount: number;
     currency: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     failureReason?: string;
     retryDate?: string;
 }
@@ -25,11 +28,12 @@ export function PaymentFailure({
     recipientName,
     amount,
     currency,
+    baseUrl,
     failureReason,
     retryDate
 }: PaymentFailureProps) {
-    const formattedAmount = formatCurrency(amount, currency);
-    const formattedRetryDate = retryDate ? formatDate(retryDate) : undefined;
+    const formattedAmount = formatCurrency({ amount, currency });
+    const formattedRetryDate = retryDate ? formatDate({ dateString: retryDate }) : undefined;
 
     return (
         <EmailLayout previewText="Error al procesar tu pago">
@@ -66,7 +70,7 @@ export function PaymentFailure({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/billing/payment-method">
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>
                     Actualizar método de pago
                 </Button>
             </Section>
@@ -76,35 +80,6 @@ export function PaymentFailure({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

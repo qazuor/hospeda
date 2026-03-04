@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for RenewalReminder email template
@@ -10,8 +11,12 @@ import { EmailLayout } from '../components/layout.js';
 export interface RenewalReminderProps {
     recipientName: string;
     planName: string;
-    amount: number;
-    currency: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
+    /** Amount in centavos. Omitted when plan price cannot be resolved. */
+    amount?: number;
+    /** Currency code (e.g. 'ARS'). Omitted when amount is not available. */
+    currency?: string;
     renewalDate?: string;
 }
 
@@ -24,12 +29,16 @@ export interface RenewalReminderProps {
 export function RenewalReminder({
     recipientName,
     planName,
+    baseUrl,
     amount,
     currency,
     renewalDate
 }: RenewalReminderProps) {
-    const formattedAmount = formatCurrency(amount, currency);
-    const formattedRenewalDate = renewalDate ? formatDate(renewalDate) : 'próximamente';
+    const formattedAmount =
+        amount !== undefined && currency ? formatCurrency({ amount, currency }) : undefined;
+    const formattedRenewalDate = renewalDate
+        ? formatDate({ dateString: renewalDate })
+        : 'próximamente';
 
     return (
         <EmailLayout
@@ -49,10 +58,12 @@ export function RenewalReminder({
                     label="Plan"
                     value={planName}
                 />
-                <InfoRow
-                    label="Monto"
-                    value={formattedAmount}
-                />
+                {formattedAmount && (
+                    <InfoRow
+                        label="Monto"
+                        value={formattedAmount}
+                    />
+                )}
                 <InfoRow
                     label="Fecha de renovación"
                     value={formattedRenewalDate}
@@ -65,7 +76,7 @@ export function RenewalReminder({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/subscription">Gestionar suscripción</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Gestionar suscripción</Button>
             </Section>
 
             <Text style={styles.footerNote}>
@@ -73,35 +84,6 @@ export function RenewalReminder({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format currency amount in Argentine Peso format
- * @param amount - Amount in cents
- * @param currency - Currency code (ARS, USD, etc.)
- */
-function formatCurrency(amount: number, currency: string): string {
-    const amountInUnits = amount / 100;
-    const formatted = amountInUnits.toLocaleString('es-AR', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    });
-
-    const currencySymbol = currency === 'ARS' ? '$' : currency === 'USD' ? 'USD ' : '';
-    return `${currencySymbol}${formatted}`;
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {

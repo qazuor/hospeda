@@ -3,6 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
+import { formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonExpirationWarning email template
@@ -10,6 +11,8 @@ import { EmailLayout } from '../components/layout.js';
 export interface AddonExpirationWarningProps {
     recipientName: string;
     addonName: string;
+    /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
+    baseUrl: string;
     daysRemaining?: number;
     expirationDate?: string;
 }
@@ -23,10 +26,13 @@ export interface AddonExpirationWarningProps {
 export function AddonExpirationWarning({
     recipientName,
     addonName,
+    baseUrl,
     daysRemaining,
     expirationDate
 }: AddonExpirationWarningProps) {
-    const formattedExpirationDate = expirationDate ? formatDate(expirationDate) : undefined;
+    const formattedExpirationDate = expirationDate
+        ? formatDate({ dateString: expirationDate })
+        : undefined;
     const daysText = daysRemaining === 1 ? '1 día' : `${daysRemaining} días`;
 
     return (
@@ -68,7 +74,7 @@ export function AddonExpirationWarning({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href="{{base_url}}/mi-cuenta/addons">Renovar ahora</Button>
+                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Renovar ahora</Button>
             </Section>
 
             <Text style={styles.footerNote}>
@@ -77,19 +83,6 @@ export function AddonExpirationWarning({
             </Text>
         </EmailLayout>
     );
-}
-
-/**
- * Format date in Spanish locale
- * @param dateString - ISO date string
- */
-function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
 }
 
 const styles = {
