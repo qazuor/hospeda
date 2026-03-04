@@ -1,3 +1,4 @@
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { ChatIcon, DeleteIcon, EditIcon } from '@repo/icons';
 /**
  * User reviews list component with tab filtering, inline edit, and delete support.
@@ -16,6 +17,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import { apiClient } from '../../lib/api/client';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 import { ReviewEditForm } from './ReviewEditForm.client';
 import type { EditFormState } from './ReviewEditForm.client';
@@ -57,7 +59,7 @@ function StarRating({ rating, label }: { rating: number; label: string }) {
                 return (
                     <span
                         key={starKey}
-                        className={`text-sm ${i < rating ? 'text-yellow-500' : 'text-gray-300'}`}
+                        className={`text-sm ${i < rating ? 'text-star' : 'text-text-tertiary'}`}
                         aria-hidden="true"
                     >
                         &#9733;
@@ -166,7 +168,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 }
             } catch (error) {
                 addToast({ type: 'error', message: t('reviews.fetchError') });
-                console.error('Error fetching reviews:', error);
+                webLogger.error('Error fetching reviews:', error);
             } finally {
                 setIsLoading(false);
             }
@@ -213,7 +215,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 addToast({ type: 'error', message: t('reviews.updateError') });
             }
         } catch (error) {
-            console.error('Error updating review:', error);
+            webLogger.error('Error updating review:', error);
             addToast({ type: 'error', message: t('reviews.updateError') });
         } finally {
             setSavingIds((prev) => {
@@ -253,7 +255,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 addToast({ type: 'error', message: t('reviews.deleteError') });
             }
         } catch (error) {
-            console.error('Error deleting review:', error);
+            webLogger.error('Error deleting review:', error);
             addToast({ type: 'error', message: t('reviews.deleteError') });
         } finally {
             setDeletingIds((prev) => {
@@ -281,7 +283,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
     return (
         <div className="user-reviews-list">
             {/* Tab Navigation */}
-            <div className="mb-6 border-gray-200 border-b">
+            <div className="mb-6 border-border border-b">
                 <nav
                     className="flex gap-4"
                     role="tablist"
@@ -298,7 +300,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                             className={`border-b-2 px-4 py-3 font-medium text-sm transition-colors ${
                                 activeTab === tab.id
                                     ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                                    : 'border-transparent text-text-secondary hover:border-border hover:text-text'
                             }`}
                         >
                             {tab.label}
@@ -317,7 +319,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 {isLoading && reviews.length === 0 && (
                     <div className="flex items-center justify-center py-12">
                         <div className="h-12 w-12 animate-spin rounded-full border-primary border-b-2" />
-                        <span className="ml-3 text-gray-600">{t('reviews.loading')}</span>
+                        <span className="ml-3 text-text-secondary">{t('reviews.loading')}</span>
                     </div>
                 )}
 
@@ -327,12 +329,14 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                         <ChatIcon
                             size="xl"
                             weight="regular"
-                            className="mb-4 text-gray-400"
+                            className="mb-4 text-text-tertiary"
                         />
-                        <h3 className="mb-2 font-semibold text-gray-900 text-lg">
+                        <h3 className="mb-2 font-semibold text-lg text-text">
                             {t('reviews.empty')}
                         </h3>
-                        <p className="max-w-md text-gray-600 text-sm">{t('reviews.emptyAction')}</p>
+                        <p className="max-w-md text-sm text-text-secondary">
+                            {t('reviews.emptyAction')}
+                        </p>
                     </div>
                 )}
 
@@ -348,7 +352,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                             return (
                                 <div
                                     key={review.id}
-                                    className={`rounded-lg border border-gray-200 p-4 transition-shadow ${
+                                    className={`rounded-lg border border-border p-4 transition-shadow ${
                                         isEditing
                                             ? 'border-primary/30 shadow-md'
                                             : 'hover:shadow-md'
@@ -377,27 +381,28 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                         rating={review.rating}
                                                         label={t('reviews.ratingLabel')}
                                                     />
-                                                    <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-600 text-xs">
+                                                    <span className="rounded-full bg-surface-alt px-2 py-0.5 text-text-secondary text-xs">
                                                         {review.accommodationId
                                                             ? t('reviews.accommodationReview')
                                                             : t('reviews.destinationReview')}
                                                     </span>
                                                 </div>
-                                                <h3 className="mb-1 font-semibold text-base text-gray-900">
+                                                <h3 className="mb-1 font-semibold text-base text-text">
                                                     {review.title}
                                                 </h3>
-                                                <p className="line-clamp-3 text-gray-600 text-sm">
+                                                <p className="line-clamp-3 text-sm text-text-secondary">
                                                     {review.content}
                                                 </p>
-                                                <p className="mt-2 text-gray-500 text-xs">
-                                                    {new Date(review.createdAt).toLocaleDateString(
-                                                        locale,
-                                                        {
+                                                <p className="mt-2 text-text-tertiary text-xs">
+                                                    {formatDate({
+                                                        date: review.createdAt,
+                                                        locale: toBcp47Locale(locale),
+                                                        options: {
                                                             year: 'numeric',
                                                             month: 'long',
                                                             day: 'numeric'
                                                         }
-                                                    )}
+                                                    })}
                                                 </p>
                                             </div>
                                             {/* Edit / Delete buttons */}
@@ -408,7 +413,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                     disabled={isDisabled}
                                                     aria-label={t('reviews.editButton')}
                                                     title={t('reviews.editButton')}
-                                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-50"
+                                                    className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-primary/10 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-50"
                                                 >
                                                     <EditIcon
                                                         size="sm"
@@ -426,7 +431,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                             : t('reviews.deleteButton')
                                                     }
                                                     title={t('reviews.deleteButton')}
-                                                    className="rounded-md p-1.5 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50"
+                                                    className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50 dark:focus:ring-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                                                 >
                                                     {isDeleting ? (
                                                         <div

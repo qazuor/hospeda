@@ -10,6 +10,7 @@ import { useState } from 'react';
 import type { ReactElement } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 
 /**
  * Props for the ShareButtons component.
@@ -77,7 +78,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
             });
         } catch (error) {
             // User cancelled or share failed - silently ignore
-            console.error('Share failed:', error);
+            webLogger.error('Share failed:', error);
         }
     };
 
@@ -94,7 +95,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                 setCopied(false);
             }, 2000);
         } catch (error) {
-            console.error('Copy failed:', error);
+            webLogger.error('Copy failed:', error);
         }
     };
 
@@ -144,7 +145,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={t('accessibility.shareOnWhatsApp')}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white transition-colors hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500 focus-visible:outline-offset-2"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-green-500 text-white transition-colors hover:bg-green-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-green-500 focus-visible:outline-offset-2 dark:bg-green-600 dark:hover:bg-green-500"
                     >
                         <WhatsappIcon
                             size={20}
@@ -158,7 +159,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={t('accessibility.shareOnFacebook')}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white transition-colors hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 focus-visible:outline-offset-2 dark:bg-blue-700 dark:hover:bg-blue-600"
                     >
                         <FacebookIcon
                             size={20}
@@ -172,7 +173,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={t('accessibility.shareOnTwitter')}
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-black text-white transition-colors hover:bg-gray-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-black focus-visible:outline-offset-2 dark:bg-zinc-800 dark:hover:bg-zinc-700"
                     >
                         <span className="sr-only">Share on Twitter</span>
                         <TwitterIcon
@@ -188,7 +189,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
                 type="button"
                 onClick={handleCopyToClipboard}
                 aria-label={copied ? t('accessibility.linkCopied') : t('accessibility.copyLink')}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-200 text-gray-700 transition-colors hover:bg-gray-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-gray-400 focus-visible:outline-offset-2"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-surface-alt text-text-secondary transition-colors hover:bg-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-border focus-visible:outline-offset-2"
             >
                 {copied ? (
                     <CheckIcon
@@ -207,7 +208,7 @@ export function ShareButtons(props: ShareButtonsProps): ReactElement {
 
             {copied && (
                 <span
-                    className="font-medium text-green-600 text-sm"
+                    className="font-medium text-green-600 text-sm dark:text-green-400"
                     aria-live="polite"
                 >
                     Copied!

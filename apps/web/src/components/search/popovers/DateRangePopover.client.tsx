@@ -9,6 +9,7 @@ import {
     useInteractions,
     useRole
 } from '@floating-ui/react';
+import { formatDate } from '@repo/i18n';
 import type { JSX } from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { FIELD_TRIGGER, FOCUS_RING, POPOVER_BASE } from '../search-bar-constants';
@@ -42,7 +43,7 @@ function formatDateShort({
         // Parse YYYY-MM-DD parts to avoid UTC timezone shift
         const [year, month, day] = date.split('-').map(Number);
         const local = new Date(year as number, (month as number) - 1, day);
-        return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(local);
+        return formatDate({ date: local, locale, options: { day: 'numeric', month: 'short' } });
     } catch {
         return date;
     }
@@ -138,7 +139,7 @@ export function DateRangePopover({
                     value={checkIn}
                     min={todayIso}
                     onChange={handleCheckInChange}
-                    className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:[color-scheme:dark]"
                 />
             </div>
             <div className="flex flex-col gap-1">
@@ -155,7 +156,7 @@ export function DateRangePopover({
                     value={checkOut}
                     min={checkIn || todayIso}
                     onChange={handleCheckOutChange}
-                    className="rounded-lg border border-border bg-white px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:[color-scheme:dark]"
                 />
             </div>
         </div>

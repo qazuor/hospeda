@@ -1,3 +1,4 @@
+import { formatCurrency, toBcp47Locale } from '@repo/i18n';
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { getApiUrl } from '../../lib/env';
@@ -189,15 +190,6 @@ const localeToCurrency: Readonly<Record<string, 'ARS' | 'USD' | 'BRL'>> = {
 };
 
 /**
- * Currency formatters
- */
-const formatters: Readonly<Record<'ARS' | 'USD' | 'BRL', Intl.NumberFormat>> = {
-    ARS: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }),
-    USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
-    BRL: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' })
-};
-
-/**
  * PriceDisplay component
  *
  * Displays a price in ARS with optional conversion to USD or BRL based on locale or user preference.
@@ -254,13 +246,21 @@ export function PriceDisplay({
      * So: amount_in_currency = amountARS / conversionRates[currency]
      */
     const convertedAmount = amountARS / conversionRates[resolvedCurrency];
-    const formattedPrice = formatters[resolvedCurrency].format(convertedAmount);
+    const currencyLocale = toBcp47Locale(locale);
+    const formattedPrice = formatCurrency({
+        value: convertedAmount,
+        locale: currencyLocale,
+        currency: resolvedCurrency
+    });
 
     /**
      * ARS reference value (for disclaimer)
      */
-    const arsFormatter = formatters.ARS;
-    const arsFormatted = arsFormatter.format(amountARS);
+    const arsFormatted = formatCurrency({
+        value: amountARS,
+        locale: toBcp47Locale('es'),
+        currency: 'ARS'
+    });
 
     /**
      * Determine if disclaimer should be shown
@@ -271,7 +271,7 @@ export function PriceDisplay({
         <span className={`price-display ${className}`.trim()}>
             <span className="price-value">{formattedPrice}</span>
             {shouldShowDisclaimer && (
-                <span className="price-disclaimer mt-1 block text-gray-500 text-xs">
+                <span className="price-disclaimer mt-1 block text-text-tertiary text-xs">
                     Precio aproximado. Valor de referencia en ARS: {arsFormatted}
                 </span>
             )}

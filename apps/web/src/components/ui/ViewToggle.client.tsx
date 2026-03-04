@@ -68,21 +68,21 @@ export function ViewToggle({
     const getButtonStyles = (view: 'grid' | 'map') => {
         const isActive = activeView === view;
         return `${baseButtonStyles} ${
-            isActive ? 'bg-primary text-white' : 'bg-transparent text-gray-700 hover:bg-gray-100'
+            isActive ? 'bg-primary text-white' : 'bg-transparent text-text hover:bg-surface-alt'
         }`;
     };
 
     return (
         <fieldset
             aria-label={t('accessibility.viewToggle')}
-            className={`inline-flex rounded-lg border border-gray-300 ${className}`.trim()}
+            className={`inline-flex rounded-lg border border-border ${className}`.trim()}
         >
             <button
                 type="button"
                 onClick={() => handleViewChange('grid')}
                 aria-pressed={activeView === 'grid'}
                 aria-label={t('accessibility.gridView')}
-                className={`${getButtonStyles('grid')} rounded-l-lg border-gray-300 border-r`}
+                className={`${getButtonStyles('grid')} rounded-l-lg border-border border-r`}
             >
                 <GridIcon
                     size={20}

@@ -3,6 +3,7 @@
  * @description Shared utility functions and types for accommodation card components.
  * Used by AccommodationCardFeatured.astro and AccommodationCardDetailed.astro.
  */
+import { formatNumber, toBcp47Locale } from '@repo/i18n';
 
 /**
  * Shared interface for accommodation card location data.
@@ -93,26 +94,31 @@ export function formatRating({
 }
 
 /**
- * Formats a price object into a display string using Argentine locale formatting.
+ * Formats a price object into a display string using the given locale.
  *
  * Returns `undefined` when no price or amount is provided, allowing callers
  * to fall back to a "consult price" i18n key.
  *
- * @param params - Object containing optional price data
+ * @param params - Object containing optional price data and locale
  * @param params.price - Optional price data with amount, currency, and period
+ * @param params.locale - Short locale code (e.g. 'es', 'en', 'pt')
  * @returns Formatted price string (e.g., "$12.500") or `undefined`
  *
  * @example
- * formatPrice({ price: { amount: 12500, currency: 'ARS' } }) // => '$12.500'
- * formatPrice({ price: undefined }) // => undefined
- * formatPrice({ price: { amount: 0, currency: 'ARS' } }) // => undefined
+ * formatPrice({ price: { amount: 12500, currency: 'ARS' }, locale: 'es' }) // => '$12.500'
+ * formatPrice({ price: undefined, locale: 'es' }) // => undefined
+ * formatPrice({ price: { amount: 0, currency: 'ARS' }, locale: 'es' }) // => undefined
  */
 export function formatPrice({
-    price
+    price,
+    locale = 'es'
 }: {
     readonly price: CardPriceData | undefined;
+    readonly locale?: string;
 }): string | undefined {
-    return price?.amount ? `$${price.amount.toLocaleString('es-AR')}` : undefined;
+    return price?.amount
+        ? `$${formatNumber({ value: price.amount, locale: toBcp47Locale(locale) })}`
+        : undefined;
 }
 
 /**

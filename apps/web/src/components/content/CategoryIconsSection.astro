@@ -6,7 +6,7 @@
  */
 import SectionWrapper from '../ui/SectionWrapper.astro';
 import SectionHeader from '../ui/SectionHeader.astro';
-import { t, type SupportedLocale } from '../../lib/i18n';
+import { t, tPlural, type SupportedLocale } from '../../lib/i18n';
 import {
   BuildingIcon,
   HomeIcon,
@@ -46,21 +46,19 @@ const { locale = 'es', categories } = Astro.props;
 
 /** Default 6 category items */
 const defaultCategories: CategoryItem[] = [
-  { key: 'HOTEL', label: t({ locale, namespace: 'home', key: 'categories.hotel', fallback: 'Hotel' }), color: 'bg-blue-500' },
-  { key: 'CABIN', label: t({ locale, namespace: 'home', key: 'categories.cabin', fallback: 'Cabaña' }), color: 'bg-green-600' },
-  { key: 'CAMPING', label: t({ locale, namespace: 'home', key: 'categories.camping', fallback: 'Camping' }), color: 'bg-amber-600' },
-  { key: 'APARTMENT', label: t({ locale, namespace: 'home', key: 'categories.apartment', fallback: 'Departamento' }), color: 'bg-purple-500' },
-  { key: 'BNB', label: t({ locale, namespace: 'home', key: 'categories.bnb', fallback: 'B&B' }), color: 'bg-rose-500' },
-  { key: 'RURAL', label: t({ locale, namespace: 'home', key: 'categories.rural', fallback: 'Rural' }), color: 'bg-emerald-600' },
+  { key: 'HOTEL', label: t({ locale, namespace: 'home', key: 'categories.hotel', fallback: 'Hotel' }), color: 'bg-primary dark:bg-primary-dark' },
+  { key: 'CABIN', label: t({ locale, namespace: 'home', key: 'categories.cabin', fallback: 'Cabaña' }), color: 'bg-green dark:bg-green-dark' },
+  { key: 'CAMPING', label: t({ locale, namespace: 'home', key: 'categories.camping', fallback: 'Camping' }), color: 'bg-secondary dark:bg-secondary-dark' },
+  { key: 'APARTMENT', label: t({ locale, namespace: 'home', key: 'categories.apartment', fallback: 'Departamento' }), color: 'bg-info dark:bg-primary-700' },
+  { key: 'BNB', label: t({ locale, namespace: 'home', key: 'categories.bnb', fallback: 'B&B' }), color: 'bg-terracotta dark:bg-terracotta-dark' },
+  { key: 'RURAL', label: t({ locale, namespace: 'home', key: 'categories.rural', fallback: 'Rural' }), color: 'bg-green-dark dark:bg-green' },
 ];
 
 const displayCategories = categories ?? defaultCategories;
 
 /** Pluralize accommodation count */
 const formatCount = (count: number): string =>
-  count === 1
-    ? t({ locale, namespace: 'home', key: 'categories.countSingular', fallback: `${count} alojamiento`, params: { count } })
-    : t({ locale, namespace: 'home', key: 'categories.countPlural', fallback: `${count} alojamientos`, params: { count } });
+  tPlural({ locale, namespace: 'home', key: 'categories.count', count });
 ---
 
 <SectionWrapper variant="warm">
@@ -81,7 +79,7 @@ const formatCount = (count: number): string =>
         <div class:list={['flex h-16 w-16 items-center justify-center rounded-xl', item.color]}>
           {(() => {
             const IconComponent = CATEGORY_ICONS[item.key] ?? BuildingIcon;
-            return <IconComponent size={32} className="text-white" aria-hidden="true" />;
+            return <IconComponent size={32} className="text-nav-text-active" aria-hidden="true" />;
           })()}
         </div>
         <div class="text-center">

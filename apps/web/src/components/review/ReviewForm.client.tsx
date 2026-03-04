@@ -196,7 +196,7 @@ export function ReviewForm({
                 <StarIcon
                     size={32}
                     weight={isFilled ? 'fill' : 'regular'}
-                    className={isFilled ? 'text-yellow-400' : 'text-gray-300'}
+                    className={isFilled ? 'text-star' : 'text-star-empty'}
                     aria-hidden="true"
                 />
             </button>
@@ -214,7 +214,7 @@ export function ReviewForm({
             <div>
                 <span
                     id="rating-label"
-                    className="mb-2 block font-medium text-gray-700 text-sm"
+                    className="mb-2 block font-medium text-sm text-text"
                 >
                     {t('form.ratingLabel')}
                 </span>
@@ -229,7 +229,7 @@ export function ReviewForm({
                 </div>
                 {errors.rating && (
                     <p
-                        className="mt-2 text-red-600 text-sm"
+                        className="mt-2 text-error text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -242,7 +242,7 @@ export function ReviewForm({
             <div>
                 <label
                     htmlFor="review-title"
-                    className="mb-2 block font-medium text-gray-700 text-sm"
+                    className="mb-2 block font-medium text-sm text-text"
                 >
                     {t('form.titleLabel')}
                 </label>
@@ -255,12 +255,12 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.title}
                     aria-describedby={errors.title ? 'title-error' : undefined}
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-md border border-border bg-surface px-4 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {errors.title && (
                     <p
                         id="title-error"
-                        className="mt-2 text-red-600 text-sm"
+                        className="mt-2 text-error text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -273,7 +273,7 @@ export function ReviewForm({
             <div>
                 <label
                     htmlFor="review-content"
-                    className="mb-2 block font-medium text-gray-700 text-sm"
+                    className="mb-2 block font-medium text-sm text-text"
                 >
                     {t('form.contentLabel')}
                 </label>
@@ -286,12 +286,12 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.content}
                     aria-describedby={errors.content ? 'content-error' : undefined}
-                    className="resize-vertical w-full rounded-md border border-gray-300 px-4 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="resize-vertical w-full rounded-md border border-border bg-surface px-4 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {errors.content && (
                     <p
                         id="content-error"
-                        className="mt-2 text-red-600 text-sm"
+                        className="mt-2 text-error text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -306,7 +306,7 @@ export function ReviewForm({
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="rounded-md border border-gray-300 px-6 py-2 text-gray-700 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="rounded-md border border-border px-6 py-2 text-text transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('form.cancelButton')}
                     </button>

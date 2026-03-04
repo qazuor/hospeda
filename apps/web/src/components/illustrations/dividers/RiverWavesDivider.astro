@@ -143,5 +143,6 @@ const { fill = 'currentColor', class: className } = Astro.props;
   [data-theme="dark"] .wave-layer-2 { fill: var(--color-primary-900); }
   [data-theme="dark"] .wave-layer-3 { fill: var(--color-primary-800); }
   [data-theme="dark"] .wave-layer-4 { fill: var(--color-primary-700); }
+  /* !important needed to override inline fill attribute from component prop */
   [data-theme="dark"] .wave-layer-5 { fill: var(--color-bg) !important; }
 </style>

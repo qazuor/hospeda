@@ -1,3 +1,4 @@
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { FavoriteIcon } from '@repo/icons';
 /**
  * User favorites list component with tab navigation
@@ -14,6 +15,7 @@ import { type FormEvent, useEffect, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { userBookmarksApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
 interface UserFavoritesListProps {
@@ -36,91 +38,30 @@ interface TabConfig {
     label: string;
 }
 
-/**
- * Get localized tab labels
- */
-function getTabLabels(locale: 'es' | 'en' | 'pt'): Record<EntityType, string> {
-    const labels = {
-        es: {
-            ACCOMMODATION: 'Alojamientos',
-            DESTINATION: 'Destinos',
-            EVENT: 'Eventos',
-            POST: 'Blog'
-        },
-        en: {
-            ACCOMMODATION: 'Accommodations',
-            DESTINATION: 'Destinations',
-            EVENT: 'Events',
-            POST: 'Blog'
-        },
-        pt: {
-            ACCOMMODATION: 'Acomodações',
-            DESTINATION: 'Destinos',
-            EVENT: 'Eventos',
-            POST: 'Blog'
-        }
-    };
-    return labels[locale];
-}
-
-/**
- * Get localized messages
- */
-function getMessages(locale: 'es' | 'en' | 'pt') {
-    const messages = {
-        es: {
-            empty: 'No tienes favoritos en esta categoría',
-            emptyAction: 'Comienza explorando contenido para guardar tus favoritos',
-            delete: 'Eliminar',
-            deleteSuccess: 'Favorito eliminado correctamente',
-            deleteError: 'Error al eliminar el favorito',
-            loadMore: 'Cargar más',
-            loading: 'Cargando...',
-            fetchError: 'Error al cargar los favoritos'
-        },
-        en: {
-            empty: 'You have no favorites in this category',
-            emptyAction: 'Start exploring content to save your favorites',
-            delete: 'Delete',
-            deleteSuccess: 'Favorite deleted successfully',
-            deleteError: 'Error deleting favorite',
-            loadMore: 'Load more',
-            loading: 'Loading...',
-            fetchError: 'Error loading favorites'
-        },
-        pt: {
-            empty: 'Você não tem favoritos nesta categoria',
-            emptyAction: 'Comece explorando conteúdo para salvar seus favoritos',
-            delete: 'Excluir',
-            deleteSuccess: 'Favorito excluído com sucesso',
-            deleteError: 'Erro ao excluir favorito',
-            loadMore: 'Carregar mais',
-            loading: 'Carregando...',
-            fetchError: 'Erro ao carregar favoritos'
-        }
-    };
-    return messages[locale];
-}
+/** Maps entity types to i18n tab label keys */
+const TAB_LABEL_KEYS: Readonly<Record<EntityType, string>> = {
+    ACCOMMODATION: 'favorites.tabs.accommodation',
+    DESTINATION: 'favorites.tabs.destination',
+    EVENT: 'favorites.tabs.event',
+    POST: 'favorites.tabs.post'
+} as const;
 
 /**
  * User favorites list component
  */
 export function UserFavoritesList({ locale }: UserFavoritesListProps) {
-    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
     const [activeTab, setActiveTab] = useState<EntityType>('ACCOMMODATION');
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [total, setTotal] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
     const [page, setPage] = useState(1);
 
-    const tabLabels = getTabLabels(locale);
-    const messages = getMessages(locale);
-
     const tabs: TabConfig[] = [
-        { id: 'ACCOMMODATION', label: tabLabels.ACCOMMODATION },
-        { id: 'DESTINATION', label: tabLabels.DESTINATION },
-        { id: 'EVENT', label: tabLabels.EVENT },
-        { id: 'POST', label: tabLabels.POST }
+        { id: 'ACCOMMODATION', label: t(TAB_LABEL_KEYS.ACCOMMODATION) },
+        { id: 'DESTINATION', label: t(TAB_LABEL_KEYS.DESTINATION) },
+        { id: 'EVENT', label: t(TAB_LABEL_KEYS.EVENT) },
+        { id: 'POST', label: t(TAB_LABEL_KEYS.POST) }
     ];
 
     /**
@@ -144,11 +85,11 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                     setPage(currentPage + 1);
                 }
             } else {
-                addToast({ type: 'error', message: messages.fetchError });
+                addToast({ type: 'error', message: t('favorites.fetchError') });
             }
         } catch (error) {
-            addToast({ type: 'error', message: messages.fetchError });
-            console.error('Error fetching bookmarks:', error);
+            addToast({ type: 'error', message: t('favorites.fetchError') });
+            webLogger.error('Error fetching bookmarks:', error);
         } finally {
             setIsLoading(false);
         }
@@ -176,17 +117,17 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
             const result = await userBookmarksApi.delete({ id: bookmarkId });
 
             if (result.ok) {
-                addToast({ type: 'success', message: messages.deleteSuccess });
+                addToast({ type: 'success', message: t('favorites.deleteSuccess') });
             } else {
                 setBookmarks(previousBookmarks);
                 setTotal((prev) => prev + 1);
-                addToast({ type: 'error', message: messages.deleteError });
+                addToast({ type: 'error', message: t('favorites.deleteError') });
             }
         } catch (error) {
             setBookmarks(previousBookmarks);
             setTotal((prev) => prev + 1);
-            addToast({ type: 'error', message: messages.deleteError });
-            console.error('Error deleting bookmark:', error);
+            addToast({ type: 'error', message: t('favorites.deleteError') });
+            webLogger.error('Error deleting bookmark:', error);
         }
     };
 
@@ -208,7 +149,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
     return (
         <div className="user-favorites-list">
             {/* Tab Navigation */}
-            <div className="mb-6 border-gray-200 border-b">
+            <div className="mb-6 border-border border-b">
                 <nav
                     className="flex gap-4"
                     role="tablist"
@@ -225,7 +166,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                             className={`px-4 py-3 font-medium text-sm transition-colors border-b-2${
                                 activeTab === tab.id
                                     ? 'border-primary text-primary'
-                                    : 'border-transparent text-gray-600 hover:border-gray-300 hover:text-gray-900'
+                                    : 'border-transparent text-text-secondary hover:border-border hover:text-text'
                             }
 							`}
                         >
@@ -245,7 +186,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                 {isLoading && bookmarks.length === 0 && (
                     <div className="flex items-center justify-center py-12">
                         <div className="h-12 w-12 animate-spin rounded-full border-primary border-b-2" />
-                        <span className="ml-3 text-gray-600">{messages.loading}</span>
+                        <span className="ml-3 text-text-secondary">{t('favorites.loading')}</span>
                     </div>
                 )}
 
@@ -255,12 +196,14 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                         <FavoriteIcon
                             size="xl"
                             weight="regular"
-                            className="mb-4 text-gray-400"
+                            className="mb-4 text-text-tertiary"
                         />
-                        <h3 className="mb-2 font-semibold text-gray-900 text-lg">
-                            {messages.empty}
+                        <h3 className="mb-2 font-semibold text-lg text-text">
+                            {t('favorites.empty')}
                         </h3>
-                        <p className="max-w-md text-gray-600 text-sm">{messages.emptyAction}</p>
+                        <p className="max-w-md text-sm text-text-secondary">
+                            {t('favorites.emptyAction')}
+                        </p>
                     </div>
                 )}
 
@@ -270,37 +213,38 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                         {bookmarks.map((bookmark) => (
                             <div
                                 key={bookmark.id}
-                                className="rounded-lg border border-gray-200 p-4 transition-shadow hover:shadow-md"
+                                className="rounded-lg border border-border p-4 transition-shadow hover:shadow-md"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0 flex-1">
-                                        <h3 className="mb-1 truncate font-semibold text-base text-gray-900">
+                                        <h3 className="mb-1 truncate font-semibold text-base text-text">
                                             {bookmark.name ||
-                                                `${tabLabels[bookmark.entityType]} #${bookmark.entityId.slice(0, 8)}`}
+                                                `${t(TAB_LABEL_KEYS[bookmark.entityType])} #${bookmark.entityId.slice(0, 8)}`}
                                         </h3>
                                         {bookmark.description && (
-                                            <p className="line-clamp-2 text-gray-600 text-sm">
+                                            <p className="line-clamp-2 text-sm text-text-secondary">
                                                 {bookmark.description}
                                             </p>
                                         )}
-                                        <p className="mt-2 text-gray-500 text-xs">
-                                            {new Date(bookmark.createdAt).toLocaleDateString(
-                                                locale,
-                                                {
+                                        <p className="mt-2 text-text-tertiary text-xs">
+                                            {formatDate({
+                                                date: bookmark.createdAt,
+                                                locale: toBcp47Locale(locale),
+                                                options: {
                                                     year: 'numeric',
                                                     month: 'long',
                                                     day: 'numeric'
                                                 }
-                                            )}
+                                            })}
                                         </p>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(bookmark.id)}
-                                        className="flex-shrink-0 rounded-md px-3 py-1.5 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 hover:text-red-700"
-                                        aria-label={`${messages.delete} ${bookmark.name || bookmark.entityId}`}
+                                        className="flex-shrink-0 rounded-md px-3 py-1.5 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
+                                        aria-label={`${t('favorites.delete')} ${bookmark.name || bookmark.entityId}`}
                                     >
-                                        {messages.delete}
+                                        {t('favorites.delete')}
                                     </button>
                                 </div>
                             </div>
@@ -316,7 +260,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                             onClick={handleLoadMore}
                             className="rounded-lg bg-primary px-6 py-2.5 font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
-                            {messages.loadMore}
+                            {t('favorites.loadMore')}
                         </button>
                     </div>
                 )}

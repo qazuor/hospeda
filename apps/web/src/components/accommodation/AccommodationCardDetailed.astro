@@ -99,7 +99,7 @@ if (beds) specs.push(`${beds} ${bedsLabel}`);
 if (bathrooms) specs.push(`${bathrooms} ${bathsLabel}`);
 const specsLine = specs.join(' · ');
 
-const formattedPrice = formatPrice({ price });
+const formattedPrice = formatPrice({ price, locale: safeLocale });
 ---
 
 <article class="group relative overflow-hidden rounded-xl transition-shadow duration-300 hover:shadow-lg">
@@ -159,7 +159,7 @@ const formattedPrice = formatPrice({ price });
             <div class="flex items-center gap-1 text-sm">
                 {hasReviews ? (
                     <>
-                        <span class="text-amber-500" aria-hidden="true">&#9733;</span>
+                        <span class="text-warning" aria-hidden="true">&#9733;</span>
                         <span class="font-medium text-text">{formattedRating}</span>
                         <span class="text-text-tertiary">({reviewsCount})</span>
                     </>
@@ -183,15 +183,22 @@ const formattedPrice = formatPrice({ price });
 </article>
 
 <style>
-    /* Favorite button - icon only, no container background */
-    :global(.card-v2-favorite) {
-        background: none !important;
-        padding: 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
+    /*
+     * Favorite button - icon only, no container background.
+     * Using a double attribute+class selector raises specificity above
+     * Tailwind's single-class utilities (e.g. rounded-full, p-2,
+     * hover:bg-gray-100) without resorting to !important.
+     * The [class] attribute selector adds one attribute-level weight on top
+     * of the class selector, making it [0,2,0] vs Tailwind's [0,1,0].
+     */
+    :global(.card-v2-favorite[class]) {
+        background: none;
+        padding: 0;
+        border: none;
+        border-radius: 0;
     }
-    :global(.card-v2-favorite:hover) {
-        background: none !important;
+    :global(.card-v2-favorite[class]:hover) {
+        background: none;
     }
 
     /* Hide scrollbar for carousel */

@@ -259,7 +259,7 @@ export function HeroSearchBar({
                 >
                     <div className="flex flex-col gap-2 rounded-[20px] border-2 border-white/20 bg-white/10 p-3 shadow-xl backdrop-blur-md">
                         {/* Destination */}
-                        <div className="rounded-xl bg-white/95 shadow-sm">
+                        <div className="rounded-xl bg-white/95 shadow-sm dark:bg-gray-800/95">
                             <DestinationPopover
                                 destinations={destinations}
                                 selected={formState.destinations as string[]}
@@ -267,21 +267,23 @@ export function HeroSearchBar({
                                 isLoading={isLoadingDestinations}
                                 destinationPlaceholder={labels.destinationPlaceholder}
                                 loadingText={labels.loadingText}
+                                locale={locale}
                             />
                         </div>
 
                         {/* Type */}
-                        <div className="rounded-xl bg-white/95 shadow-sm">
+                        <div className="rounded-xl bg-white/95 shadow-sm dark:bg-gray-800/95">
                             <TypePopover
                                 selected={formState.types}
                                 onToggle={handleTypeToggle}
                                 typeLabels={labels.typeLabels}
                                 typePlaceholder={labels.typePlaceholder}
+                                locale={locale}
                             />
                         </div>
 
                         {/* Dates */}
-                        <div className="rounded-xl bg-white/95 shadow-sm">
+                        <div className="rounded-xl bg-white/95 shadow-sm dark:bg-gray-800/95">
                             <DateRangePopover
                                 checkIn={formState.checkIn}
                                 checkOut={formState.checkOut}
@@ -295,7 +297,7 @@ export function HeroSearchBar({
                         </div>
 
                         {/* Guests */}
-                        <div className="rounded-xl bg-white/95 shadow-sm">
+                        <div className="rounded-xl bg-white/95 shadow-sm dark:bg-gray-800/95">
                             <GuestsPopover
                                 adults={formState.adults}
                                 childrenCount={formState.children}
@@ -330,7 +332,7 @@ export function HeroSearchBar({
                 noValidate
                 className="w-full"
             >
-                <div className="flex items-stretch overflow-hidden rounded-[20px] border-2 border-primary-light bg-white shadow-xl">
+                <div className="flex items-stretch overflow-hidden rounded-[20px] border-2 border-primary-light bg-surface shadow-xl">
                     {/* Destination */}
                     <div className="flex min-w-0 flex-1 border-border border-r">
                         <DestinationPopover
@@ -340,6 +342,7 @@ export function HeroSearchBar({
                             isLoading={isLoadingDestinations}
                             destinationPlaceholder={labels.destinationPlaceholder}
                             loadingText={labels.loadingText}
+                            locale={locale}
                         />
                     </div>
 
@@ -350,6 +353,7 @@ export function HeroSearchBar({
                             onToggle={handleTypeToggle}
                             typeLabels={labels.typeLabels}
                             typePlaceholder={labels.typePlaceholder}
+                            locale={locale}
                         />
                     </div>
 

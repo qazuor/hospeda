@@ -66,7 +66,7 @@ export function ImageCarousel({
 
     if (count === 0) {
         return (
-            <div className="aspect-[4/3] w-full bg-gray-200">
+            <div className="aspect-[4/3] w-full bg-surface-alt">
                 <img
                     src="/images/placeholder-accommodation.svg"
                     alt={alt}
@@ -121,7 +121,7 @@ export function ImageCarousel({
                 <button
                     type="button"
                     onClick={goPrev}
-                    className="-translate-y-1/2 absolute top-1/2 left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-gray-800 opacity-0 shadow-sm transition-opacity hover:bg-white group-hover/carousel:opacity-100"
+                    className="-translate-y-1/2 absolute top-1/2 left-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-surface/80 text-text opacity-0 shadow-sm transition-opacity hover:bg-surface group-hover/carousel:opacity-100"
                     aria-label={t('accessibility.previousImage')}
                 >
                     <svg
@@ -145,7 +145,7 @@ export function ImageCarousel({
                 <button
                     type="button"
                     onClick={goNext}
-                    className="-translate-y-1/2 absolute top-1/2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-white/80 text-gray-800 opacity-0 shadow-sm transition-opacity hover:bg-white group-hover/carousel:opacity-100"
+                    className="-translate-y-1/2 absolute top-1/2 right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full bg-surface/80 text-text opacity-0 shadow-sm transition-opacity hover:bg-surface group-hover/carousel:opacity-100"
                     aria-label={t('accessibility.nextImage')}
                 >
                     <svg
@@ -178,7 +178,7 @@ export function ImageCarousel({
                             goTo(i);
                         }}
                         className={`h-1.5 rounded-full transition-all ${
-                            i === activeIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/60'
+                            i === activeIndex ? 'w-4 bg-nav-text-active' : 'w-1.5 bg-nav-text'
                         }`}
                         aria-label={t('accessibility.goToImage', undefined, { number: i + 1 })}
                     />

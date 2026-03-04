@@ -137,14 +137,14 @@ export function Modal({
             }}
             aria-modal="true"
             aria-labelledby="modal-title"
-            className={`rounded-lg border border-gray-200 bg-white p-0 shadow-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm open:animate-fade-in ${className}`.trim()}
+            className={`rounded-lg border border-border bg-surface p-0 shadow-xl backdrop:bg-black/50 backdrop:backdrop-blur-sm open:animate-fade-in ${className}`.trim()}
         >
             <div className="flex max-h-[90vh] w-full min-w-[320px] max-w-2xl flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between border-gray-200 border-b px-6 py-4">
+                <div className="flex items-center justify-between border-border border-b px-6 py-4">
                     <h2
                         id="modal-title"
-                        className="font-semibold text-gray-900 text-xl"
+                        className="font-semibold text-text text-xl"
                     >
                         {title}
                     </h2>
@@ -152,7 +152,7 @@ export function Modal({
                         type="button"
                         onClick={onClose}
                         aria-label={t('accessibility.closeModal')}
-                        className="inline-flex items-center justify-center rounded-md p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="inline-flex items-center justify-center rounded-md p-2 text-text-secondary transition-colors hover:bg-surface-alt hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         <CloseIcon
                             size="sm"

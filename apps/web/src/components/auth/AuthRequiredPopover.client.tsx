@@ -104,7 +104,7 @@ export function AuthRequiredPopover({
             {/* Arrow pointing up */}
             <div
                 aria-hidden="true"
-                className="-top-1.5 absolute right-3.5 z-[1] h-3 w-3 rotate-45 border-primary-100 border-t border-l bg-primary-50"
+                className="-top-1.5 absolute right-3.5 h-3 w-3 rotate-45 border-primary-100 border-t border-l bg-primary-50"
             />
 
             {/* Close button */}

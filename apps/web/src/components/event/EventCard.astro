@@ -5,6 +5,7 @@
  * name, dates, location, and summary.
  * Data-source agnostic - receives typed props, not DB entities.
  */
+import { formatDate as i18nFormatDate, toBcp47Locale } from '@repo/i18n';
 import Badge from '../ui/Badge.astro';
 import { CalendarIcon, FavoriteIcon, LocationIcon } from '@repo/icons';
 import { t } from '../../lib/i18n';
@@ -28,11 +29,14 @@ const detailUrl = `/${locale}/eventos/${event.slug}/`;
  * Format date range for display.
  * Returns formatted start date and end date (if different).
  */
-const formatDateRange = (start: string, end: string | undefined, currentLocale: string): string => {
+const bcp47Locale = toBcp47Locale(locale);
+
+const formatDateRange = (start: string, end: string | undefined, _currentLocale: string): string => {
   const startDate = new Date(start);
-  const startFormatted = startDate.toLocaleDateString(currentLocale, {
-    month: 'short',
-    day: 'numeric',
+  const startFormatted = i18nFormatDate({
+    date: startDate,
+    locale: bcp47Locale,
+    options: { month: 'short', day: 'numeric' }
   });
 
   if (!end) {
@@ -40,9 +44,10 @@ const formatDateRange = (start: string, end: string | undefined, currentLocale: 
   }
 
   const endDate = new Date(end);
-  const endFormatted = endDate.toLocaleDateString(currentLocale, {
-    month: 'short',
-    day: 'numeric',
+  const endFormatted = i18nFormatDate({
+    date: endDate,
+    locale: bcp47Locale,
+    options: { month: 'short', day: 'numeric' }
   });
 
   if (startDate.toDateString() === endDate.toDateString()) {
@@ -55,7 +60,7 @@ const formatDateRange = (start: string, end: string | undefined, currentLocale: 
 const dateDisplay = formatDateRange(event.date.start, event.date.end, locale);
 
 /** i18n helper for event card translations */
-const tCard = (key: string) => t({ locale, namespace: 'event', key: `card.${key}` });
+const tCard = (key: string) => t({ locale, namespace: 'events', key: `card.${key}` });
 
 /** Format event category for display via i18n */
 const categoryLabel = tCard(`categories.${event.category}`) || event.category;
@@ -66,14 +71,18 @@ const featuredLabel = tCard('featured');
 /** Favorite button aria-label */
 const addToFavoritesLabel = tCard('addToFavorites').replace('{name}', event.name);
 
-/** Date panel accent colors: rotate based on index % 3 */
-const panelColors = ['bg-blue-500', 'bg-green-500', 'bg-sky-500'] as const;
+/** Date panel accent colors: rotate based on index % 3 using theme tokens */
+const panelColors = [
+    'bg-primary dark:bg-primary-dark',
+    'bg-green dark:bg-green-dark',
+    'bg-info dark:bg-primary-700',
+] as const;
 const panelColor = panelColors[index % 3];
 
 /** Extract day and abbreviated month for date-panel variant */
 const startDate = new Date(event.date.start);
 const dayNumber = startDate.getDate();
-const monthAbbrev = startDate.toLocaleDateString(locale, { month: 'short' });
+const monthAbbrev = i18nFormatDate({ date: startDate, locale: bcp47Locale, options: { month: 'short' } });
 
 const isDatePanel = variant === 'date-panel';
 ---

@@ -1,7 +1,9 @@
+import * as Sentry from '@sentry/astro';
 import { useState } from 'react';
 import type { JSX } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
 
@@ -22,16 +24,22 @@ export interface NewsletterCTAProps {
 /**
  * Toggle newsletter subscription via API.
  *
- * TODO: Implement real newsletter toggle endpoint in apps/api
- * (e.g. POST /api/v1/protected/newsletter/toggle).
- * Currently returns a stub success response so the UI doesn't crash.
- *
- * @returns Promise resolving to success status
+ * @returns Promise resolving to the new subscription state
  */
-async function toggleNewsletterSubscription(): Promise<{ success: boolean }> {
-    // TODO: Replace stub with real API call once the newsletter endpoint exists
-    console.warn('[NewsletterCTA] Newsletter toggle endpoint not implemented yet');
-    return { success: true };
+async function toggleNewsletterSubscription(): Promise<{ subscribed: boolean }> {
+    const apiUrl = import.meta.env.PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/v1/protected/users/me/newsletter/toggle`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!response.ok) {
+        throw new Error(`Newsletter toggle failed: ${response.status}`);
+    }
+
+    const json = (await response.json()) as { success: boolean; data: { subscribed: boolean } };
+    return { subscribed: json.data.subscribed };
 }
 
 /**
@@ -94,14 +102,18 @@ export function NewsletterCTA({
         setIsToggling(true);
 
         try {
-            await toggleNewsletterSubscription();
+            const result = await toggleNewsletterSubscription();
+            // Use server-confirmed state
+            setSubscribed(result.subscribed);
 
             // Show success toast
             addToast({
                 type: 'success',
-                message: newState ? t('successSubscribe') : t('successUnsubscribe')
+                message: result.subscribed ? t('successSubscribe') : t('successUnsubscribe')
             });
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('NewsletterCTA: toggle subscription failed', error);
+            Sentry.captureException(error);
             // Revert on error
             setSubscribed(previousState);
 
@@ -116,9 +128,9 @@ export function NewsletterCTA({
     }
 
     return (
-        <div className={`relative rounded-lg bg-white p-6 shadow-md ${className}`.trim()}>
-            <h3 className="mb-2 font-semibold text-gray-900 text-lg">{t('title')}</h3>
-            <p className="mb-4 text-gray-600 text-sm">{t('description')}</p>
+        <div className={`relative rounded-lg bg-surface p-6 shadow-md ${className}`.trim()}>
+            <h3 className="mb-2 font-semibold text-lg text-text">{t('title')}</h3>
+            <p className="mb-4 text-sm text-text-secondary">{t('description')}</p>
 
             {isAuthenticated ? (
                 // Authenticated user: Show toggle
@@ -133,9 +145,9 @@ export function NewsletterCTA({
                             checked={subscribed}
                             onChange={handleToggle}
                             disabled={isToggling}
-                            className="h-5 w-5 rounded border-gray-300 text-primary transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-5 w-5 rounded border-border text-primary transition-colors focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
-                        <span className="text-gray-700 text-sm">
+                        <span className="text-sm text-text">
                             {subscribed ? t('subscribed') : t('subscribe')}
                         </span>
                     </label>

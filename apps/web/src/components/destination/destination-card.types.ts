@@ -2,7 +2,7 @@
  * Types and helpers for DestinationCard and related destination components.
  */
 import type { SupportedLocale } from '../../lib/i18n';
-import { t } from '../../lib/i18n';
+import { t, tPlural } from '../../lib/i18n';
 
 /** Data shape for destination cards and related components (preview, map) */
 export interface DestinationCardData {
@@ -19,11 +19,12 @@ export interface DestinationCardData {
     readonly reviewsCount?: number;
     /** Number of events. Hidden when 0. */
     readonly eventsCount?: number;
-    /** Top attractions to display as badges. */
+    /** Top attractions to display as badges. Ordered by displayWeight DESC from the service layer. */
     readonly attractions?: ReadonlyArray<{
         readonly id: string;
         readonly name: string;
         readonly icon?: string;
+        readonly displayWeight?: number;
     }>;
     /** Gallery images for hover preview. */
     readonly gallery?: ReadonlyArray<{ readonly url: string; readonly caption?: string }>;
@@ -54,36 +55,20 @@ export function computeCardText({
     const detailUrl = `/${locale}/destinos/${detailPath}/`;
 
     const accCount = destination.accommodationsCount;
-    const accText =
-        accCount === 1
-            ? t({
-                  locale,
-                  namespace: 'destinations',
-                  key: 'featured.card.accommodationSingular',
-                  params: { count: accCount }
-              })
-            : t({
-                  locale,
-                  namespace: 'destinations',
-                  key: 'featured.card.accommodationPlural',
-                  params: { count: accCount }
-              });
+    const accText = tPlural({
+        locale,
+        namespace: 'destinations',
+        key: 'featured.card.accommodation',
+        count: accCount
+    });
 
     const evtCount = destination.eventsCount ?? 0;
-    const evtText =
-        evtCount === 1
-            ? t({
-                  locale,
-                  namespace: 'destinations',
-                  key: 'featured.card.eventSingular',
-                  params: { count: evtCount }
-              })
-            : t({
-                  locale,
-                  namespace: 'destinations',
-                  key: 'featured.card.eventPlural',
-                  params: { count: evtCount }
-              });
+    const evtText = tPlural({
+        locale,
+        namespace: 'destinations',
+        key: 'featured.card.event',
+        count: evtCount
+    });
 
     const featuredLabel = t({
         locale,

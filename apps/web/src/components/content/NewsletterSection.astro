@@ -46,7 +46,7 @@ const { locale = 'es', isAuthenticated = false, isSubscribed = false } = Astro.p
           {t({ locale, namespace: 'home', key: 'newsletter.alreadySubscribed', fallback: 'Ya estas suscripto a nuestro newsletter.' })}
         </p>
       ) : (
-        <div class="newsletter-postcard">
+        <div class="newsletter-postcard" data-postcard>
           <NewsletterCTA client:visible locale={locale} />
         </div>
       )}
@@ -55,27 +55,36 @@ const { locale = 'es', isAuthenticated = false, isSubscribed = false } = Astro.p
 </SectionWrapper>
 
 <style>
-  /* Postcard address line styling for newsletter input */
-  .newsletter-postcard :global(input[type="email"]) {
-    border-bottom: 2px dashed rgba(255, 255, 255, 0.4) !important;
-    border-top: none !important;
-    border-left: none !important;
-    border-right: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    color: white !important;
-    font-family: var(--font-accent) !important;
-    font-size: 1.125rem !important;
+  /*
+   * Postcard address line styling for newsletter input.
+   * The [data-postcard] attribute selector combined with the element
+   * type selector gives sufficient specificity to override Tailwind
+   * utility classes without needing !important.
+   *
+   * This section always renders on a dark gradient background
+   * (from-primary-800 via-primary-700 to-primary-900), so white-alpha
+   * values are intentional in both light and dark themes.
+   */
+  :global([data-postcard] input[type="email"]) {
+    border-bottom: 2px dashed rgb(255 255 255 / 0.4);
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    border-radius: 0;
+    background: transparent;
+    color: white;
+    font-family: var(--font-accent);
+    font-size: 1.125rem;
   }
 
-  .newsletter-postcard :global(input[type="email"])::placeholder {
-    color: rgba(255, 255, 255, 0.6) !important;
-    font-family: var(--font-accent) !important;
+  :global([data-postcard] input[type="email"]::placeholder) {
+    color: rgb(255 255 255 / 0.6);
+    font-family: var(--font-accent);
   }
 
-  .newsletter-postcard :global(input[type="email"]:focus) {
-    border-bottom-color: white !important;
-    outline: none !important;
-    box-shadow: none !important;
+  :global([data-postcard] input[type="email"]:focus) {
+    border-bottom-color: white;
+    outline: none;
+    box-shadow: none;
   }
 </style>

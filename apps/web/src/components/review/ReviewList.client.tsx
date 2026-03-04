@@ -1,3 +1,4 @@
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { AddIcon, ChatIcon, CheckCircleIcon, StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -114,7 +115,10 @@ export function ReviewList({
     onSortChange,
     className = ''
 }: ReviewListProps): JSX.Element {
-    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'review' });
+    const { t, tPlural } = useTranslation({
+        locale: locale as SupportedLocale,
+        namespace: 'review'
+    });
     const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     /**
@@ -135,7 +139,7 @@ export function ReviewList({
                             key={starId}
                             size={20}
                             weight={isFilled ? 'fill' : 'regular'}
-                            className={isFilled ? 'text-yellow-400' : 'text-gray-300'}
+                            className={isFilled ? 'text-star' : 'text-star-empty'}
                             aria-hidden="true"
                         />
                     );
@@ -151,7 +155,7 @@ export function ReviewList({
         return (
             <article
                 key={review.id}
-                className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                className="rounded-lg border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
             >
                 {/* Author and Rating */}
                 <div className="mb-4 flex items-start justify-between">
@@ -169,9 +173,9 @@ export function ReviewList({
                         )}
                         <div>
                             <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-gray-900">{review.authorName}</h3>
+                                <h3 className="font-semibold text-text">{review.authorName}</h3>
                                 {review.verified && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 font-medium text-green-700 text-xs">
+                                    <span className="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 font-medium text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
                                         <CheckCircleIcon
                                             size={12}
                                             weight="fill"
@@ -183,17 +187,18 @@ export function ReviewList({
                                 )}
                             </div>
                             <time
-                                className="text-gray-500 text-sm"
+                                className="text-sm text-text-secondary"
                                 dateTime={review.date}
                             >
-                                {new Date(review.date).toLocaleDateString(
-                                    locale === 'es' ? 'es-AR' : locale === 'pt' ? 'pt-BR' : 'en-US',
-                                    {
+                                {formatDate({
+                                    date: review.date,
+                                    locale: toBcp47Locale(locale),
+                                    options: {
                                         year: 'numeric',
                                         month: 'long',
                                         day: 'numeric'
                                     }
-                                )}
+                                })}
                             </time>
                         </div>
                     </div>
@@ -201,8 +206,8 @@ export function ReviewList({
                 </div>
 
                 {/* Review Content */}
-                <h4 className="mb-2 font-semibold text-gray-900">{review.title}</h4>
-                <p className="text-gray-600 leading-relaxed">{review.content}</p>
+                <h4 className="mb-2 font-semibold text-text">{review.title}</h4>
+                <p className="text-text-secondary leading-relaxed">{review.content}</p>
             </article>
         );
     };
@@ -215,13 +220,13 @@ export function ReviewList({
                     <ChatIcon
                         size={48}
                         weight="duotone"
-                        className="mx-auto text-gray-400"
+                        className="mx-auto text-text-tertiary"
                         aria-hidden="true"
                     />
-                    <h3 className="mt-4 font-semibold text-gray-900 text-lg">
-                        {t('list.noReviews')}
-                    </h3>
-                    <p className="mt-2 text-gray-500 text-sm">{t('list.noReviewsDescription')}</p>
+                    <h3 className="mt-4 font-semibold text-lg text-text">{t('list.noReviews')}</h3>
+                    <p className="mt-2 text-sm text-text-secondary">
+                        {t('list.noReviewsDescription')}
+                    </p>
                     {isAuthenticated && onWriteReview && (
                         <button
                             type="button"
@@ -241,13 +246,9 @@ export function ReviewList({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="font-bold text-2xl text-gray-900">{t('list.title')}</h2>
-                    <p className="mt-1 text-gray-500 text-sm">
-                        {t(
-                            totalCount === 1 ? 'list.totalReviews_one' : 'list.totalReviews_other',
-                            undefined,
-                            { count: totalCount }
-                        )}
+                    <h2 className="font-bold text-2xl text-text">{t('list.title')}</h2>
+                    <p className="mt-1 text-sm text-text-secondary">
+                        {tPlural('list.totalReviews', totalCount)}
                     </p>
                 </div>
 
@@ -256,7 +257,7 @@ export function ReviewList({
                     <div className="flex items-center gap-2">
                         <label
                             htmlFor="sort-select"
-                            className="font-medium text-gray-700 text-sm"
+                            className="font-medium text-sm text-text"
                         >
                             {t('list.sortBy')}:
                         </label>
@@ -266,7 +267,7 @@ export function ReviewList({
                             onChange={(e) =>
                                 onSortChange?.(e.target.value as 'newest' | 'highest' | 'lowest')
                             }
-                            className="block rounded-md border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="block rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                         >
                             <option value="newest">{t('list.sortNewest')}</option>
                             <option value="highest">{t('list.sortHighest')}</option>
@@ -302,7 +303,7 @@ export function ReviewList({
                     <button
                         type="button"
                         onClick={onLoadMore}
-                        className="inline-flex items-center rounded-md border-2 border-primary bg-white px-6 py-3 text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="inline-flex items-center rounded-md border-2 border-primary bg-surface px-6 py-3 text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('list.loadMore')}
                     </button>

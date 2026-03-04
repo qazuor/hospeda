@@ -13,6 +13,7 @@
  * <PriceDisplay amountARS={15000} locale="pt" showDisclaimer={true} />
  * ```
  */
+import { formatCurrency, toBcp47Locale } from '@repo/i18n';
 import { exchangeRatesApi } from '../../lib/api/endpoints-protected';
 
 interface Props {
@@ -116,27 +117,18 @@ const localeToCurrency: Record<string, 'ARS' | 'USD' | 'BRL'> = {
 const resolvedCurrency = userCurrency || localeToCurrency[locale] || 'ARS';
 
 /**
- * Currency formatters
- */
-const formatters: Record<'ARS' | 'USD' | 'BRL', Intl.NumberFormat> = {
-  ARS: new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }),
-  USD: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }),
-  BRL: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }),
-};
-
-/**
  * Convert ARS to target currency and format.
  * CONVERSION_RATES[currency] = ARS per 1 unit of currency.
  * So: amount_in_currency = amountARS / CONVERSION_RATES[currency]
  */
 const convertedAmount = amountARS / CONVERSION_RATES[resolvedCurrency];
-const formattedPrice = formatters[resolvedCurrency].format(convertedAmount);
+const currencyLocale = toBcp47Locale(locale);
+const formattedPrice = formatCurrency({ value: convertedAmount, locale: currencyLocale, currency: resolvedCurrency });
 
 /**
  * ARS reference value (for disclaimer)
  */
-const arsFormatter = formatters.ARS;
-const arsFormatted = arsFormatter.format(amountARS);
+const arsFormatted = formatCurrency({ value: amountARS, locale: toBcp47Locale('es'), currency: 'ARS' });
 
 /**
  * Determine if disclaimer should be shown
@@ -147,7 +139,7 @@ const shouldShowDisclaimer = showDisclaimer && resolvedCurrency !== 'ARS';
 <span class:list={['price-display', className]}>
   <span class="price-value">{formattedPrice}</span>
   {shouldShowDisclaimer && (
-    <span class="price-disclaimer text-xs text-gray-500 block mt-1">
+    <span class="price-disclaimer text-xs text-text-tertiary block mt-1">
       Precio aproximado. Valor de referencia en ARS: {arsFormatted}
     </span>
   )}

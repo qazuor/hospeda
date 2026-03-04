@@ -8,6 +8,7 @@
  * session cookie against the Better Auth API. This component reads
  * that value and renders either the UserNav dropdown or a sign-in link.
  */
+import { t, type SupportedLocale } from '../../lib/i18n';
 import { UserNav } from './UserNav.client';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 }
 
 const { locale = 'es' } = Astro.props;
+const loc = locale as SupportedLocale;
 
 const user = Astro.locals.user;
 const isAuthenticated = !!user;
@@ -35,6 +37,6 @@ const isAuthenticated = !!user;
     href={`/${locale}/auth/signin/`}
     class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
   >
-    Iniciar Sesion
+    {t({ locale: loc, namespace: 'common', key: 'auth.signIn' })}
   </a>
 )}

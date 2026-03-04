@@ -96,7 +96,7 @@ export const TestimonialCarousel = ({
                 {starPositions.map((position) => (
                     <span
                         key={position}
-                        className={position <= safeRating ? 'text-amber-400' : 'text-amber-400/30'}
+                        className={position <= safeRating ? 'text-star' : 'text-star-empty'}
                         aria-hidden="true"
                     >
                         {position <= safeRating ? '\u2605' : '\u2606'}
@@ -161,13 +161,13 @@ export const TestimonialCarousel = ({
                                         <img
                                             src={testimonial.image}
                                             alt={`${testimonial.author} avatar`}
-                                            className="h-14 w-14 rounded-full object-cover ring-2 ring-white"
+                                            className="h-14 w-14 rounded-full object-cover ring-2 ring-white dark:ring-gray-700"
                                             loading="lazy"
                                             onError={() => handleImageError(testimonial.id)}
                                         />
                                     ) : (
                                         <span
-                                            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 font-semibold text-lg text-primary ring-2 ring-white"
+                                            className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/15 font-semibold text-lg text-primary ring-2 ring-white dark:ring-gray-700"
                                             aria-hidden="true"
                                         >
                                             {getInitials(testimonial.author)}
@@ -197,7 +197,7 @@ export const TestimonialCarousel = ({
                     <button
                         type="button"
                         onClick={goToPrev}
-                        className="-left-4 -translate-y-1/2 absolute top-1/2 rounded-full bg-surface p-2 shadow-md transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="-left-4 -translate-y-1/2 absolute top-1/2 rounded-full bg-surface p-2 shadow-md transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                         aria-label={t('testimonials.prevAriaLabel', 'Testimonial anterior')}
                     >
                         <svg
@@ -218,7 +218,7 @@ export const TestimonialCarousel = ({
                     <button
                         type="button"
                         onClick={goToNext}
-                        className="-right-4 -translate-y-1/2 absolute top-1/2 rounded-full bg-surface p-2 shadow-md transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="-right-4 -translate-y-1/2 absolute top-1/2 rounded-full bg-surface p-2 shadow-md transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                         aria-label={t('testimonials.nextAriaLabel', 'Siguiente testimonial')}
                     >
                         <svg
@@ -248,7 +248,7 @@ export const TestimonialCarousel = ({
                             type="button"
                             onClick={() => setCurrentIndex(idx)}
                             className={`h-2.5 w-2.5 rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
-                                idx === currentIndex ? 'bg-primary' : 'bg-gray-300'
+                                idx === currentIndex ? 'bg-primary' : 'bg-border'
                             }`}
                             aria-label={t(
                                 'testimonials.dotAriaLabel',

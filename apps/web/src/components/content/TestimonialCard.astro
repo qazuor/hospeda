@@ -52,7 +52,7 @@ const initials = author
     <cite class="not-italic">
       <div class="flex items-center gap-3">
         <span
-          class="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl font-semibold text-primary ring-2 ring-white"
+          class="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-primary/15 text-2xl font-semibold text-primary ring-2 ring-white dark:ring-gray-700"
           aria-hidden="true"
         >
           {initials}
@@ -74,7 +74,7 @@ const initials = author
           {safeRating && (
             <div class="mt-0.5 flex items-center gap-0.5" aria-label={`${safeRating} de 5 estrellas`}>
               {Array.from({ length: 5 }).map((_, i) => (
-                <span class={i < safeRating ? 'text-amber-400' : 'text-amber-400/30'} aria-hidden="true">
+                <span class={i < safeRating ? 'text-star' : 'text-star-empty'} aria-hidden="true">
                   {i < safeRating ? '★' : '☆'}
                 </span>
               ))}

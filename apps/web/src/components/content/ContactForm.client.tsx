@@ -1,8 +1,10 @@
+import * as Sentry from '@sentry/astro';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
 /**
@@ -175,7 +177,9 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 message: ''
             });
             setErrors({});
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('ContactForm: submit failed', error);
+            Sentry.captureException(error);
             // Error: show toast
             addToast({
                 type: 'error',
@@ -208,7 +212,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             <div>
                 <label
                     htmlFor="contact-name"
-                    className="mb-1 block font-medium text-gray-700 text-sm"
+                    className="mb-1 block font-medium text-sm text-text"
                 >
                     {t('form.name')}
                 </label>
@@ -222,16 +226,16 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-required="true"
                     aria-invalid={!!errors.name}
                     aria-describedby={errors.name ? 'name-error' : undefined}
-                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.name
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-primary focus:ring-primary'
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.name && (
                     <p
                         id="name-error"
-                        className="mt-1 text-red-600 text-sm"
+                        className="mt-1 text-red-600 text-sm dark:text-red-400"
                         role="alert"
                         aria-live="polite"
                     >
@@ -244,7 +248,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             <div>
                 <label
                     htmlFor="contact-email"
-                    className="mb-1 block font-medium text-gray-700 text-sm"
+                    className="mb-1 block font-medium text-sm text-text"
                 >
                     {t('form.email')}
                 </label>
@@ -258,16 +262,16 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-required="true"
                     aria-invalid={!!errors.email}
                     aria-describedby={errors.email ? 'email-error' : undefined}
-                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.email
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-primary focus:ring-primary'
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.email && (
                     <p
                         id="email-error"
-                        className="mt-1 text-red-600 text-sm"
+                        className="mt-1 text-red-600 text-sm dark:text-red-400"
                         role="alert"
                         aria-live="polite"
                     >
@@ -280,7 +284,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             <div>
                 <label
                     htmlFor="contact-subject"
-                    className="mb-1 block font-medium text-gray-700 text-sm"
+                    className="mb-1 block font-medium text-sm text-text"
                 >
                     {t('form.subject')}
                 </label>
@@ -294,16 +298,16 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-required="true"
                     aria-invalid={!!errors.subject}
                     aria-describedby={errors.subject ? 'subject-error' : undefined}
-                    className={`w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.subject
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-primary focus:ring-primary'
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.subject && (
                     <p
                         id="subject-error"
-                        className="mt-1 text-red-600 text-sm"
+                        className="mt-1 text-red-600 text-sm dark:text-red-400"
                         role="alert"
                         aria-live="polite"
                     >
@@ -316,7 +320,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             <div>
                 <label
                     htmlFor="contact-message"
-                    className="mb-1 block font-medium text-gray-700 text-sm"
+                    className="mb-1 block font-medium text-sm text-text"
                 >
                     {t('form.message')}
                 </label>
@@ -330,16 +334,16 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-required="true"
                     aria-invalid={!!errors.message}
                     aria-describedby={errors.message ? 'message-error' : undefined}
-                    className={`resize-vertical w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:bg-gray-100 ${
+                    className={`resize-vertical w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.message
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                            : 'border-gray-300 focus:border-primary focus:ring-primary'
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.message && (
                     <p
                         id="message-error"
-                        className="mt-1 text-red-600 text-sm"
+                        className="mt-1 text-red-600 text-sm dark:text-red-400"
                         role="alert"
                         aria-live="polite"
                     >
@@ -352,7 +356,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isSubmitting ? t('form.submitting') : t('form.submit')}
             </button>

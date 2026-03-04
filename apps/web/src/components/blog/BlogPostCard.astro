@@ -5,6 +5,7 @@
  * reading time, date, summary, and optional tag pills.
  * Data-source agnostic - receives typed props, not DB entities.
  */
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 import Badge from '../ui/Badge.astro';
 import type { BlogPostCardData } from '../../lib/api/transforms';
 
@@ -18,10 +19,10 @@ const { post, variant = 'default', locale = 'es' } = Astro.props;
 const detailUrl = `/${locale}/publicaciones/${post.slug}/`;
 
 /** Format date for display */
-const publishedDate = new Date(post.publishedAt).toLocaleDateString(locale === 'es' ? 'es-AR' : 'en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
+const publishedDate = formatDate({
+  date: new Date(post.publishedAt),
+  locale: toBcp47Locale(locale),
+  options: { year: 'numeric', month: 'short', day: 'numeric' },
 });
 
 /** Category labels for display */
@@ -44,13 +45,13 @@ const categoryLabel = categoryLabels[post.category] ?? post.category;
 
 /** Per-category color mapping for badge backgrounds */
 const categoryColorMap: Record<string, string> = {
-  CARNIVAL: 'bg-pink-500',
-  TIPS: 'bg-green-500',
-  GASTRONOMY: 'bg-orange-500',
-  FOOD: 'bg-orange-500',
-  NATURE: 'bg-green-500',
-  BEACH: 'bg-teal-500',
-  CULTURE: 'bg-purple-500',
+  CARNIVAL: 'bg-terracotta dark:bg-terracotta-dark',
+  TIPS: 'bg-green dark:bg-green-dark',
+  GASTRONOMY: 'bg-secondary dark:bg-secondary-dark',
+  FOOD: 'bg-secondary dark:bg-secondary-dark',
+  NATURE: 'bg-green dark:bg-green-dark',
+  BEACH: 'bg-primary dark:bg-primary-dark',
+  CULTURE: 'bg-info dark:bg-primary-700',
 };
 const categoryColorClass = categoryColorMap[post.category] ?? 'bg-primary';
 

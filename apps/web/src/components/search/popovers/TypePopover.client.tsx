@@ -13,6 +13,8 @@ import type { AccommodationTypeEnum } from '@repo/schemas';
 import { Command } from 'cmdk';
 import type { JSX } from 'react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from '../../../hooks/useTranslation';
+import type { SupportedLocale } from '../../../lib/i18n';
 import { ACCOMMODATION_TYPE_OPTIONS, FIELD_TRIGGER, FOCUS_RING } from '../search-bar-constants';
 
 // ---------------------------------------------------------------------------
@@ -25,6 +27,7 @@ interface TypePopoverProps {
     readonly typeLabels: Readonly<Record<AccommodationTypeEnum, string>>;
     readonly typePlaceholder: string;
     readonly isMobile?: boolean;
+    readonly locale?: SupportedLocale;
 }
 
 // ---------------------------------------------------------------------------
@@ -54,7 +57,7 @@ function Checkbox({ checked }: { readonly checked: boolean }): JSX.Element {
         );
     }
     return (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-gray-300 bg-white" />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-border bg-surface" />
     );
 }
 
@@ -130,7 +133,7 @@ function TypeList({
                             key={value}
                             value={typeLabels[value]}
                             onSelect={() => onToggle(value)}
-                            className={`data-[selected=true]:-outline-offset-2 flex cursor-pointer items-center gap-3 border-gray-100 border-t px-4 py-3 text-sm transition-colors first:border-t-0 data-[selected=true]:bg-primary/8 data-[selected=true]:outline data-[selected=true]:outline-2 data-[selected=true]:outline-primary/30 ${isSelected ? 'text-primary' : 'text-gray-700'}
+                            className={`data-[selected=true]:-outline-offset-2 flex cursor-pointer items-center gap-3 border-border border-t px-4 py-3 text-sm transition-colors first:border-t-0 data-[selected=true]:bg-primary/8 data-[selected=true]:outline data-[selected=true]:outline-2 data-[selected=true]:outline-primary/30 ${isSelected ? 'text-primary' : 'text-text'}
                             `}
                         >
                             <Checkbox checked={isSelected} />
@@ -177,8 +180,10 @@ export function TypePopover({
     onToggle,
     typeLabels,
     typePlaceholder,
-    isMobile = false
+    isMobile = false,
+    locale = 'es'
 }: TypePopoverProps): JSX.Element {
+    const { tPlural } = useTranslation({ locale, namespace: 'home' });
     const [isOpen, setIsOpen] = useState(false);
 
     const { refs, floatingStyles, context } = useFloating({
@@ -213,7 +218,7 @@ export function TypePopover({
             ? typePlaceholder
             : selected.length === 1
               ? firstSelectedLabel
-              : `${firstSelectedLabel} & ${selected.length - 1} more`;
+              : `${firstSelectedLabel} ${tPlural('searchBar.moreSelected', selected.length - 1, { count: selected.length - 1 })}`;
 
     if (isMobile) {
         return (
@@ -221,7 +226,7 @@ export function TypePopover({
                 <span className="font-semibold text-text-secondary text-xs uppercase tracking-wide">
                     {typePlaceholder}
                 </span>
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <div className="overflow-hidden rounded-xl border border-border bg-surface">
                     <TypeList
                         selected={selected}
                         onToggle={handleToggle}
@@ -262,7 +267,7 @@ export function TypePopover({
                     className="z-50"
                     {...getFloatingProps()}
                 >
-                    <div className="min-w-[280px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+                    <div className="min-w-[280px] overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
                         <TypeList
                             selected={selected}
                             onToggle={handleToggle}

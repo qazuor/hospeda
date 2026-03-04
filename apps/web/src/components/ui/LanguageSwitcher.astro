@@ -1,0 +1,60 @@
+---
+/**
+ * Global language switcher component.
+ * Renders locale links that swap the URL's locale prefix while preserving the rest of the path.
+ * Works for both authenticated and unauthenticated users.
+ */
+import { SUPPORTED_LOCALES, type SupportedLocale } from '../../lib/i18n';
+
+interface Props {
+    /** Current active locale */
+    locale: SupportedLocale;
+    /** Additional CSS classes */
+    class?: string;
+}
+
+const { locale: currentLocale, class: className } = Astro.props;
+
+const currentPath = Astro.url.pathname;
+
+/** Locale display labels */
+const localeLabels: Record<SupportedLocale, string> = {
+    es: 'ES',
+    en: 'EN',
+    pt: 'PT',
+};
+
+/** Build URL with swapped locale prefix */
+function buildLocaleUrl({ targetLocale }: { readonly targetLocale: SupportedLocale }): string {
+    const segments = currentPath.split('/').filter(Boolean);
+    if (segments.length > 0 && SUPPORTED_LOCALES.includes(segments[0] as SupportedLocale)) {
+        segments[0] = targetLocale;
+    } else {
+        segments.unshift(targetLocale);
+    }
+    return `/${segments.join('/')}/`;
+}
+---
+
+<nav aria-label="Language" class:list={['inline-flex items-center gap-1', className]}>
+    {SUPPORTED_LOCALES.map((loc) => {
+        const isActive = loc === currentLocale;
+        const url = buildLocaleUrl({ targetLocale: loc });
+        return isActive ? (
+            <span
+                class="rounded px-1.5 py-0.5 text-xs font-semibold text-white"
+                aria-current="true"
+            >
+                {localeLabels[loc]}
+            </span>
+        ) : (
+            <a
+                href={url}
+                hreflang={loc}
+                class="rounded px-1.5 py-0.5 text-xs text-primary-200/60 transition-colors hover:text-white"
+            >
+                {localeLabels[loc]}
+            </a>
+        );
+    })}
+</nav>

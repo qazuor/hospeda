@@ -3,6 +3,7 @@
  * Animates a number from 0 to targetValue when entering the viewport.
  * Used by StatisticsSection on the owners page.
  */
+import { formatNumber, toBcp47Locale } from '@repo/i18n';
 import { useCountUp, useViewportTrigger } from '../../hooks/useCountUp';
 
 interface CounterAnimationProps {
@@ -14,6 +15,8 @@ interface CounterAnimationProps {
     readonly prefix?: string;
     /** Descriptive label shown below the number */
     readonly label: string;
+    /** Locale for number formatting */
+    readonly locale?: string;
 }
 
 /**
@@ -24,7 +27,8 @@ export const CounterAnimation = ({
     targetValue,
     suffix = '',
     prefix = '',
-    label
+    label,
+    locale = 'es'
 }: CounterAnimationProps) => {
     const [elementRef, isVisible] = useViewportTrigger<HTMLDivElement>();
     const { value, isComplete } = useCountUp({
@@ -34,7 +38,8 @@ export const CounterAnimation = ({
         easing: 'quart'
     });
 
-    const formattedValue = value.toLocaleString('es-AR');
+    const bcp47 = toBcp47Locale(locale);
+    const formattedValue = formatNumber({ value, locale: bcp47 });
 
     return (
         <div
@@ -53,7 +58,7 @@ export const CounterAnimation = ({
                 className="sr-only"
             >
                 {isComplete
-                    ? `${prefix}${targetValue.toLocaleString('es-AR')}${suffix} ${label}`
+                    ? `${prefix}${formatNumber({ value: targetValue, locale: bcp47 })}${suffix} ${label}`
                     : ''}
             </span>
             <div className="mt-2 font-medium text-sm text-white/80 uppercase tracking-wider">

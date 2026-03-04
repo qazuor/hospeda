@@ -85,11 +85,11 @@ export function AccordionFAQ({
                 return (
                     <details
                         key={itemId}
-                        className="group rounded-lg border border-gray-200 transition-all duration-200 hover:border-gray-300"
+                        className="group rounded-lg border border-border transition-all duration-200 hover:border-border"
                         open={isOpen}
                     >
                         <summary
-                            className="flex w-full cursor-pointer select-none list-none items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-gray-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="flex w-full cursor-pointer select-none list-none items-center justify-between rounded-lg px-4 py-3 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                             aria-expanded={isOpen ? 'true' : 'false'}
                             aria-controls={contentId}
                             onClick={(e) => {
@@ -103,11 +103,9 @@ export function AccordionFAQ({
                                 }
                             }}
                         >
-                            <span className="pr-4 font-semibold text-gray-900">
-                                {item.question}
-                            </span>
+                            <span className="pr-4 font-semibold text-text">{item.question}</span>
                             <span
-                                className={`flex-shrink-0 text-gray-500 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                                className={`flex-shrink-0 text-text-secondary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                                 aria-hidden="true"
                             >
                                 <ChevronDownIcon size="sm" />
@@ -115,7 +113,7 @@ export function AccordionFAQ({
                         </summary>
                         <section
                             id={contentId}
-                            className="px-4 pt-1 pb-4 text-gray-600 leading-relaxed"
+                            className="px-4 pt-1 pb-4 text-text-secondary leading-relaxed"
                             aria-labelledby={itemId}
                         >
                             {item.answer}

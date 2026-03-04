@@ -75,10 +75,10 @@ const FallbackIcon = LocationIcon;
                                 reviewsCount={destination.reviewsCount}
                                 size="sm"
                                 locale={locale}
-                                class="shrink-0 [&_span]:text-white/70"
+                                class="shrink-0 [&_span]:text-nav-text"
                             />
                         )}
-                        <div class="flex items-center gap-3 text-xs text-white/80">
+                        <div class="flex items-center gap-3 text-xs text-nav-text">
                             <span class="inline-flex items-center gap-1">
                                 <AccommodationIcon size={14} className="shrink-0" aria-hidden="true" />
                                 {accText}
@@ -118,7 +118,7 @@ const FallbackIcon = LocationIcon;
                         );
                     })}
                     {extraAttractionCount > 0 && (
-                        <span class="inline-flex items-center justify-center rounded-full bg-primary-50 px-2 py-0.5 text-xs font-medium text-primary-600">
+                        <span class="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary dark:bg-primary/20">
                             +{extraAttractionCount}
                         </span>
                     )}
@@ -136,8 +136,8 @@ const FallbackIcon = LocationIcon;
         justify-content: center;
         border-radius: 9999px;
         padding: 5px;
-        color: var(--color-primary-600, #0a5c5f);
-        background: var(--color-primary-50, #e8f5f5);
+        color: var(--color-primary-600);
+        background: var(--color-primary-50);
         transition:
             color 0.2s,
             background 0.2s,
@@ -146,8 +146,8 @@ const FallbackIcon = LocationIcon;
     }
 
     .dest-attraction-badge:hover {
-        color: var(--color-primary-800, #063839);
-        background: var(--color-primary-100, #c5e8e9);
+        color: var(--color-primary-800);
+        background: var(--color-primary-100);
         transform: translateY(-1px);
     }
 
@@ -163,8 +163,8 @@ const FallbackIcon = LocationIcon;
         line-height: 1.2;
         font-weight: 500;
         white-space: nowrap;
-        color: #fff;
-        background: var(--color-primary-700, #084a4d);
+        color: var(--color-surface);
+        background: var(--color-primary-700);
         border-radius: 6px;
         pointer-events: none;
         opacity: 0;

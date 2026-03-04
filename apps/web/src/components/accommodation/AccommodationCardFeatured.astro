@@ -55,7 +55,7 @@ const typeLabel =
     accommodation.type;
 
 /** Formatted price or undefined when no price is set */
-const formattedPrice = formatPrice({ price: accommodation.price });
+const formattedPrice = formatPrice({ price: accommodation.price, locale: safeLocale });
 
 /** Localized labels for price consultation and no-rating states */
 const consultPriceLabel = t({ locale: safeLocale, namespace: "accommodations", key: "card.consultPrice" });
@@ -157,7 +157,7 @@ const FallbackIcon = AccommodationIcon;
 
         <!-- Single star rating (always visible) -->
         <div class="card-rating mt-2 flex items-center gap-1.5 text-sm">
-            <span style={`color: ${starColor}`} aria-hidden="true" class="text-2xl leading-none">&#9733;</span>
+            <span style={`--star-color: ${starColor}`} aria-hidden="true" class="star-icon text-2xl leading-none">&#9733;</span>
             {
                 hasReviews ? (
                     <>
@@ -184,7 +184,7 @@ const FallbackIcon = AccommodationIcon;
                         );
                     })}
                     {extraBadgeCount > 0 && (
-                        <span class="inline-flex items-center justify-center rounded-full bg-primary-50 px-2 py-1 text-xs font-medium text-primary-600">
+                        <span class="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary dark:bg-primary/20">
                             +{extraBadgeCount}
                         </span>
                     )}
@@ -229,15 +229,30 @@ const FallbackIcon = AccommodationIcon;
 
     /* Icon tooltip styles loaded from styles/components.css */
 
-    /* Favorite button - icon only, no container background */
-    :global(.card-favorite-btn) {
-        background: none !important;
-        padding: 0 !important;
-        border: none !important;
-        border-radius: 0 !important;
+    /* Star rating: use CSS custom property set per-element, with dark mode override */
+    .star-icon {
+        color: var(--star-color);
     }
 
-    :global(.card-favorite-btn:hover) {
-        background: none !important;
+    [data-theme="dark"] .star-icon {
+        color: var(--color-star);
+    }
+
+    /*
+     * Favorite button - icon only, no container background.
+     * The [data-slot="favorite-button"] ancestor selector provides an
+     * attribute-level specificity boost so these rules win over Tailwind's
+     * single-class utilities (rounded-full, p-2, hover:bg-gray-100)
+     * without needing !important.
+     */
+    :global([data-slot="favorite-button"] .card-favorite-btn) {
+        background: none;
+        padding: 0;
+        border: none;
+        border-radius: 0;
+    }
+
+    :global([data-slot="favorite-button"] .card-favorite-btn:hover) {
+        background: none;
     }
 </style>

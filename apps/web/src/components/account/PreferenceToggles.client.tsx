@@ -1,8 +1,10 @@
+import * as Sentry from '@sentry/astro';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
 /**
@@ -124,7 +126,9 @@ export function PreferenceToggles({
                 message: t('preferences.notificationsSaved'),
                 duration: 3000
             });
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('PreferenceToggles: save notifications failed', error);
+            Sentry.captureException(error);
             addToast({
                 type: 'error',
                 message: t('preferences.errorMessage'),
@@ -174,7 +178,9 @@ export function PreferenceToggles({
                     window.location.href = newPath;
                 }
             }
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('PreferenceToggles: save language failed', error);
+            Sentry.captureException(error);
             addToast({
                 type: 'error',
                 message: t('preferences.errorMessage'),
@@ -205,7 +211,7 @@ export function PreferenceToggles({
                             id="notification-email"
                             checked={notifications.allowEmails}
                             onChange={() => handleNotificationToggle('allowEmails')}
-                            className="mt-1 h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="mt-1 h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             aria-describedby="notification-email-description"
                         />
                         <div className="flex-1">
@@ -231,7 +237,7 @@ export function PreferenceToggles({
                             id="notification-sms"
                             checked={notifications.allowSms}
                             onChange={() => handleNotificationToggle('allowSms')}
-                            className="mt-1 h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="mt-1 h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             aria-describedby="notification-sms-description"
                         />
                         <div className="flex-1">
@@ -257,7 +263,7 @@ export function PreferenceToggles({
                             id="notification-push"
                             checked={notifications.allowPush}
                             onChange={() => handleNotificationToggle('allowPush')}
-                            className="mt-1 h-4 w-4 cursor-pointer rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="mt-1 h-4 w-4 cursor-pointer rounded border-border text-primary focus:ring-2 focus:ring-primary focus:ring-offset-2"
                             aria-describedby="notification-push-description"
                         />
                         <div className="flex-1">
@@ -283,7 +289,7 @@ export function PreferenceToggles({
                         type="button"
                         onClick={handleSaveNotifications}
                         disabled={isSavingNotifications}
-                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
                     >
                         {isSavingNotifications
                             ? t('preferences.saving')
@@ -314,7 +320,7 @@ export function PreferenceToggles({
                         id="language-select"
                         value={language}
                         onChange={(e) => setLanguage(e.target.value)}
-                        className="w-full max-w-xs rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                        className="w-full max-w-xs rounded-md border border-border bg-surface px-3 py-2 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                     >
                         <option value="es">{t('preferences.languageEs')}</option>
                         <option value="en">{t('preferences.languageEn')}</option>
@@ -328,7 +334,7 @@ export function PreferenceToggles({
                         type="button"
                         onClick={handleSaveLanguage}
                         disabled={isSavingLanguage}
-                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
                     >
                         {isSavingLanguage ? t('preferences.saving') : t('preferences.saveButton')}
                     </button>

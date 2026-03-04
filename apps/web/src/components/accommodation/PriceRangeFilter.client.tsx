@@ -99,7 +99,7 @@ export function PriceRangeFilter({
                 <div>
                     <label
                         htmlFor="price-min"
-                        className="mb-1 block text-gray-700 text-sm"
+                        className="mb-1 block text-sm text-text-secondary"
                     >
                         {t('sidebar.priceMin')}
                     </label>
@@ -110,13 +110,13 @@ export function PriceRangeFilter({
                         onChange={handleMinChange}
                         placeholder="0"
                         min="0"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>
                 <div>
                     <label
                         htmlFor="price-max"
-                        className="mb-1 block text-gray-700 text-sm"
+                        className="mb-1 block text-sm text-text-secondary"
                     >
                         {t('sidebar.priceMax')}
                     </label>
@@ -127,7 +127,7 @@ export function PriceRangeFilter({
                         onChange={handleMaxChange}
                         placeholder="0"
                         min="0"
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>
             </div>

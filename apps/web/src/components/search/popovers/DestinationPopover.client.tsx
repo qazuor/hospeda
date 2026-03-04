@@ -13,6 +13,8 @@ import {
 import { Command } from 'cmdk';
 import type { JSX } from 'react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from '../../../hooks/useTranslation';
+import type { SupportedLocale } from '../../../lib/i18n';
 import { FIELD_TRIGGER, FOCUS_RING } from '../search-bar-constants';
 import type { DestinationOption } from '../search-bar-types';
 
@@ -28,6 +30,7 @@ interface DestinationPopoverProps {
     readonly destinationPlaceholder: string;
     readonly loadingText: string;
     readonly isMobile?: boolean;
+    readonly locale?: SupportedLocale;
 }
 
 // ---------------------------------------------------------------------------
@@ -37,8 +40,8 @@ interface DestinationPopoverProps {
 function SkeletonRow(): JSX.Element {
     return (
         <div className="flex animate-pulse items-center gap-3 px-4 py-3">
-            <div className="h-5 w-5 rounded bg-gray-200" />
-            <div className="h-4 flex-1 rounded bg-gray-200" />
+            <div className="h-5 w-5 rounded bg-surface-alt dark:bg-surface-elevated" />
+            <div className="h-4 flex-1 rounded bg-surface-alt dark:bg-surface-elevated" />
         </div>
     );
 }
@@ -70,7 +73,7 @@ function Checkbox({ checked }: { readonly checked: boolean }): JSX.Element {
         );
     }
     return (
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-gray-300 bg-white" />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-border bg-surface" />
     );
 }
 
@@ -155,18 +158,18 @@ function DestinationList({
         >
             {/* Search input - pill shape with gray bg */}
             <div className="p-3">
-                <div className="flex items-center gap-2 rounded-full bg-gray-100 px-4 py-2">
+                <div className="flex items-center gap-2 rounded-full bg-surface-alt px-4 py-2">
                     <Command.Input
                         autoFocus
                         placeholder={destinationPlaceholder}
-                        className="flex-1 bg-transparent text-gray-700 text-sm outline-none placeholder:text-gray-400"
+                        className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-tertiary"
                     />
                     <svg
                         width="16"
                         height="16"
                         viewBox="0 0 256 256"
                         fill="currentColor"
-                        className="shrink-0 text-gray-400"
+                        className="shrink-0 text-text-tertiary"
                         aria-hidden="true"
                     >
                         <path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z" />
@@ -175,7 +178,7 @@ function DestinationList({
             </div>
 
             <Command.List className="max-h-[280px] overflow-y-auto">
-                <Command.Empty className="px-4 py-6 text-center text-gray-400 text-sm">
+                <Command.Empty className="px-4 py-6 text-center text-sm text-text-tertiary">
                     {loadingText}
                 </Command.Empty>
                 {destinations.map((dest) => {
@@ -185,7 +188,7 @@ function DestinationList({
                             key={dest.id}
                             value={dest.name}
                             onSelect={() => onToggle(dest.id)}
-                            className={`data-[selected=true]:-outline-offset-2 flex cursor-pointer items-center gap-3 border-gray-100 border-t px-4 py-3 text-sm transition-colors data-[selected=true]:bg-primary/8 data-[selected=true]:outline data-[selected=true]:outline-2 data-[selected=true]:outline-primary/30 ${isSelected ? 'text-primary' : 'text-gray-700'}
+                            className={`data-[selected=true]:-outline-offset-2 flex cursor-pointer items-center gap-3 border-border border-t px-4 py-3 text-sm transition-colors data-[selected=true]:bg-primary/8 data-[selected=true]:outline data-[selected=true]:outline-2 data-[selected=true]:outline-primary/30 ${isSelected ? 'text-primary' : 'text-text'}
                             `}
                         >
                             <Checkbox checked={isSelected} />
@@ -227,8 +230,10 @@ export function DestinationPopover({
     isLoading,
     destinationPlaceholder,
     loadingText,
-    isMobile = false
+    isMobile = false,
+    locale = 'es'
 }: DestinationPopoverProps): JSX.Element {
+    const { tPlural } = useTranslation({ locale, namespace: 'home' });
     const [isOpen, setIsOpen] = useState(false);
 
     const { refs, floatingStyles, context } = useFloating({
@@ -271,7 +276,7 @@ export function DestinationPopover({
                 : destinationPlaceholder
             : selected.length === 1
               ? (destinations.find((d) => d.id === selected[0])?.name ?? destinationPlaceholder)
-              : `${destinations.find((d) => d.id === selected[0])?.name ?? ''} & ${selected.length - 1} more`;
+              : `${destinations.find((d) => d.id === selected[0])?.name ?? ''} ${tPlural('searchBar.moreSelected', selected.length - 1, { count: selected.length - 1 })}`;
 
     if (isMobile) {
         return (
@@ -279,7 +284,7 @@ export function DestinationPopover({
                 <span className="font-semibold text-text-secondary text-xs uppercase tracking-wide">
                     {destinationPlaceholder}
                 </span>
-                <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                <div className="overflow-hidden rounded-xl border border-border bg-surface">
                     <DestinationList
                         destinations={destinations}
                         selected={selected}
@@ -323,7 +328,7 @@ export function DestinationPopover({
                     className="z-50"
                     {...getFloatingProps()}
                 >
-                    <div className="min-w-[280px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg">
+                    <div className="min-w-[280px] overflow-hidden rounded-2xl border border-border bg-surface shadow-lg">
                         <DestinationList
                             destinations={destinations}
                             selected={selected}

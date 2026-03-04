@@ -1,0 +1,105 @@
+---
+/**
+ * TouristDestination JSON-LD component for destination pages.
+ * Generates schema.org TouristDestination structured data.
+ *
+ * @example
+ * ```astro
+ * ---
+ * import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
+ * ---
+ *
+ * <PlaceJsonLd
+ *   name="Concepción del Uruguay"
+ *   description="Ciudad histórica en Entre Ríos, Argentina"
+ *   url="https://hospeda.com/es/destinos/concepcion-del-uruguay"
+ *   image="https://hospeda.com/images/cdu.jpg"
+ *   address={{
+ *     addressLocality: 'Concepción del Uruguay',
+ *     addressRegion: 'Entre Ríos',
+ *     addressCountry: 'AR',
+ *   }}
+ * />
+ * ```
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/**
+ * Address interface for destination structured data.
+ */
+export interface PlaceAddress {
+  /**
+   * City or locality name
+   */
+  addressLocality: string;
+
+  /**
+   * State or region name
+   */
+  addressRegion?: string;
+
+  /**
+   * Country code (ISO 3166-1 alpha-2)
+   */
+  addressCountry: string;
+}
+
+/**
+ * Props interface for PlaceJsonLd component.
+ */
+export interface Props {
+  /**
+   * Name of the destination
+   */
+  name: string;
+
+  /**
+   * Description of the destination
+   */
+  description: string;
+
+  /**
+   * Canonical URL of the destination page
+   */
+  url: string;
+
+  /**
+   * Hero image URL for the destination
+   */
+  image?: string;
+
+  /**
+   * Address information for the destination
+   */
+  address?: PlaceAddress;
+}
+
+const { name, description, url, image, address } = Astro.props;
+
+/**
+ * Build TouristDestination structured data object
+ */
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'TouristDestination',
+  name,
+  description,
+  url,
+};
+
+if (image) {
+  structuredData.image = image;
+}
+
+if (address) {
+  structuredData.address = {
+    '@type': 'PostalAddress',
+    addressLocality: address.addressLocality,
+    addressCountry: address.addressCountry,
+    ...(address.addressRegion && { addressRegion: address.addressRegion }),
+  };
+}
+---
+
+<JsonLd data={structuredData} />

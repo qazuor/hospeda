@@ -1,16 +1,19 @@
 ---
 import { CheckIcon } from '@repo/icons';
+import { sanitizeHtml } from '@/lib/sanitize-html';
 
 /**
  * Displays a grid of amenities with icons and names.
  * Compact layout for inline display within detail pages.
  * Uses semantic list markup for accessibility.
+ * Sanitizes icon HTML to prevent XSS from API-sourced content.
  */
 
 interface AmenityItem {
   name: string;
   icon?: string;
   slug: string;
+  displayWeight?: number;
 }
 
 interface Props {
@@ -19,14 +22,19 @@ interface Props {
 }
 
 const { amenities, class: className } = Astro.props;
+
+/** Sort amenities by displayWeight DESC for consistent display order */
+const sortedAmenities = [...amenities].sort(
+  (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
+);
 ---
 
 <ul class:list={['grid grid-cols-2 gap-3 sm:grid-cols-3', className]} role="list">
-  {amenities.map((amenity) => (
+  {sortedAmenities.map((amenity) => (
     <li class="flex items-center gap-2 text-sm text-text-secondary">
       <span class="flex-shrink-0 text-primary" aria-hidden="true">
         {amenity.icon ? (
-          <Fragment set:html={amenity.icon} />
+          <Fragment set:html={sanitizeHtml({ html: amenity.icon })} />
         ) : (
           <CheckIcon size={16} weight="bold" className="text-primary" />
         )}

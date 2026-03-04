@@ -3,6 +3,7 @@
  * Displays tags for active filters with "x" links to remove each one.
  * Pure Astro component (no JS). Each tag is a link that removes the query param.
  */
+import { formatNumber, toBcp47Locale } from '@repo/i18n';
 import { t as translate, getTranslations, type SupportedLocale } from '../../lib/i18n';
 
 interface Props {
@@ -54,7 +55,7 @@ function displayValue(key: string, value: string): string {
         return t[key] ?? key;
     }
     if (key === 'minRating') return `${value}+★`;
-    if (key === 'minPrice' || key === 'maxPrice') return `$${Number(value).toLocaleString('es-AR')}`;
+    if (key === 'minPrice' || key === 'maxPrice') return `$${formatNumber({ value: Number(value), locale: toBcp47Locale(locale) })}`;
     if (key === 'minGuests' || key === 'minBedrooms' || key === 'minBathrooms') return `${value}+`;
     return value;
 }

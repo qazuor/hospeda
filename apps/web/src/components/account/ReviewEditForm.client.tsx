@@ -88,7 +88,7 @@ export function ReviewEditForm({
         >
             {/* Star rating selector */}
             <div>
-                <span className="mb-1 block font-medium text-gray-700 text-xs">
+                <span className="mb-1 block font-medium text-text text-xs">
                     {messages.ratingEditLabel}
                 </span>
                 <div
@@ -110,8 +110,8 @@ export function ReviewEditForm({
                                 })}
                                 onClick={() => handleRatingChange(star)}
                                 className={`text-xl transition-colors ${
-                                    star <= form.rating ? 'text-yellow-500' : 'text-gray-300'
-                                } rounded hover:text-yellow-400 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1`}
+                                    star <= form.rating ? 'text-star' : 'text-star-empty'
+                                } rounded hover:text-star focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1`}
                             >
                                 &#9733;
                             </button>
@@ -124,7 +124,7 @@ export function ReviewEditForm({
             <div>
                 <label
                     htmlFor={`edit-title-${review.id}`}
-                    className="mb-1 block font-medium text-gray-700 text-xs"
+                    className="mb-1 block font-medium text-text text-xs"
                 >
                     {messages.titleLabel}
                 </label>
@@ -136,7 +136,7 @@ export function ReviewEditForm({
                     onChange={handleFieldChange}
                     required
                     maxLength={200}
-                    className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 />
             </div>
 
@@ -144,7 +144,7 @@ export function ReviewEditForm({
             <div>
                 <label
                     htmlFor={`edit-content-${review.id}`}
-                    className="mb-1 block font-medium text-gray-700 text-xs"
+                    className="mb-1 block font-medium text-text text-xs"
                 >
                     {messages.contentLabel}
                 </label>
@@ -156,7 +156,7 @@ export function ReviewEditForm({
                     required
                     rows={3}
                     maxLength={2000}
-                    className="w-full resize-none rounded-md border border-gray-300 px-3 py-1.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full resize-none rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 />
             </div>
 
@@ -166,7 +166,7 @@ export function ReviewEditForm({
                     type="button"
                     onClick={onCancel}
                     disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 font-medium text-gray-700 text-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-1 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 font-medium text-sm text-text hover:bg-surface-alt focus:outline-none focus:ring-2 focus:ring-border focus:ring-offset-1 disabled:opacity-50"
                 >
                     <CancelIcon
                         size="sm"

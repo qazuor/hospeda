@@ -256,7 +256,7 @@ export function FilterSidebar({
                 <StarIcon
                     size={24}
                     weight={isFilled ? 'fill' : 'regular'}
-                    className={isFilled ? 'text-yellow-400' : 'text-gray-300'}
+                    className={isFilled ? 'text-star' : 'text-star-empty'}
                     aria-hidden="true"
                 />
             </button>
@@ -268,8 +268,8 @@ export function FilterSidebar({
             className={`${className}`.trim()}
             aria-label={t('sidebar.filters')}
         >
-            <div className="rounded-lg border border-gray-200 bg-white p-6">
-                <h2 className="mb-6 font-bold text-gray-900 text-xl">{t('sidebar.filters')}</h2>
+            <div className="rounded-lg border border-border bg-surface p-6">
+                <h2 className="mb-6 font-bold text-text text-xl">{t('sidebar.filters')}</h2>
 
                 <ActiveFilterChips
                     filters={filters}
@@ -299,11 +299,9 @@ export function FilterSidebar({
                                     type="checkbox"
                                     checked={filters.types.includes(type)}
                                     onChange={() => toggleType(type)}
-                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                                    className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
                                 />
-                                <span className="ml-3 text-gray-700 text-sm">
-                                    {t(`types.${type}`)}
-                                </span>
+                                <span className="ml-3 text-sm text-text">{t(`types.${type}`)}</span>
                             </label>
                         ))}
                     </div>
@@ -330,7 +328,7 @@ export function FilterSidebar({
                         id="destination"
                         value={filters.destination}
                         onChange={(e) => updateFilters({ destination: e.target.value })}
-                        className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                         <option value="">{t('sidebar.allDestinations')}</option>
                         {DESTINATIONS.map((dest) => (
@@ -360,9 +358,9 @@ export function FilterSidebar({
                                     type="checkbox"
                                     checked={filters.amenities.includes(amenity)}
                                     onChange={() => toggleAmenity(amenity)}
-                                    className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-2 focus:ring-primary"
+                                    className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
                                 />
-                                <span className="ml-3 text-gray-700 text-sm">
+                                <span className="ml-3 text-sm text-text">
                                     {t(`sidebar.${amenity}`)}
                                 </span>
                             </label>

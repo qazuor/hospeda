@@ -22,6 +22,10 @@ import { webLogger } from '../../lib/logger';
 interface SubscriptionCardProps {
     readonly locale: 'es' | 'en' | 'pt';
     readonly upgradeHref: string;
+    readonly onChangePlan?: () => void;
+    readonly onCancelSubscription?: () => void;
+    readonly onReactivate?: () => void;
+    readonly onUpdatePayment?: () => void;
 }
 
 /** Stable keys for skeleton feature rows (avoids index key lint warning) */
@@ -158,6 +162,9 @@ function UpgradeCta({ heading, description, buttonText, href }: UpgradeCtaProps)
 /** Translation function type used by sub-components */
 type TFunction = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
 
+/** Callback type for subscription action buttons */
+type ActionCallback = () => void;
+
 /**
  * Loaded state for an authenticated user with an active paid subscription.
  */
@@ -168,6 +175,10 @@ interface ActiveSubscriptionViewProps {
     readonly t: TFunction;
     readonly features: readonly string[];
     readonly statusLabels: Record<string, string>;
+    readonly onChangePlan?: ActionCallback;
+    readonly onCancelSubscription?: ActionCallback;
+    readonly onReactivate?: ActionCallback;
+    readonly onUpdatePayment?: ActionCallback;
 }
 
 function ActiveSubscriptionView({
@@ -176,7 +187,11 @@ function ActiveSubscriptionView({
     upgradeHref,
     t,
     features,
-    statusLabels
+    statusLabels,
+    onChangePlan,
+    onCancelSubscription,
+    onReactivate,
+    onUpdatePayment
 }: ActiveSubscriptionViewProps) {
     const {
         planName,
@@ -222,14 +237,21 @@ function ActiveSubscriptionView({
                 </p>
             )}
 
-            {/* Past due warning */}
+            {/* Past due warning with grace period countdown */}
             {status === 'past_due' && (
                 <div
                     className="rounded-md bg-red-50 px-3 py-2 dark:bg-red-900/20"
                     role="alert"
                 >
                     <p className="font-medium text-red-700 text-sm dark:text-red-300">
-                        {t('subscription.pastDueNotice')}
+                        {subscription.gracePeriodDaysRemaining != null &&
+                        subscription.gracePeriodDaysRemaining > 0
+                            ? t('subscription.pastDueNoticeWithDays', undefined, {
+                                  days: subscription.gracePeriodDaysRemaining
+                              })
+                            : subscription.gracePeriodDaysRemaining === 0
+                              ? t('subscription.pastDueNoticeLastDay')
+                              : t('subscription.pastDueNotice')}
                     </p>
                     <a
                         href={upgradeHref}
@@ -297,6 +319,64 @@ function ActiveSubscriptionView({
                     />
                 </>
             )}
+
+            {/* Action buttons based on subscription status */}
+            {!isFree && (
+                <>
+                    <hr className="border-border" />
+                    <div className="flex flex-wrap gap-3">
+                        {status === 'active' && (
+                            <>
+                                {onChangePlan && (
+                                    <button
+                                        type="button"
+                                        onClick={onChangePlan}
+                                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    >
+                                        {t('subscription.changePlanButton')}
+                                    </button>
+                                )}
+                                {onCancelSubscription && (
+                                    <button
+                                        type="button"
+                                        onClick={onCancelSubscription}
+                                        className="rounded-md border border-red-300 px-4 py-2 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
+                                    >
+                                        {t('subscription.cancelButton')}
+                                    </button>
+                                )}
+                            </>
+                        )}
+                        {status === 'trial' && onChangePlan && (
+                            <button
+                                type="button"
+                                onClick={onChangePlan}
+                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                                {t('subscription.viewPlansButton')}
+                            </button>
+                        )}
+                        {(status === 'cancelled' || status === 'expired') && onReactivate && (
+                            <button
+                                type="button"
+                                onClick={onReactivate}
+                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                                {t('subscription.reactivateButton')}
+                            </button>
+                        )}
+                        {status === 'past_due' && onUpdatePayment && (
+                            <button
+                                type="button"
+                                onClick={onUpdatePayment}
+                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                            >
+                                {t('subscription.updatePaymentButton')}
+                            </button>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
@@ -354,7 +434,14 @@ function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewPr
  * Displays the authenticated user's current subscription plan and status.
  * Fetches data on mount and shows appropriate loading, error, or loaded states.
  */
-export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps) {
+export function SubscriptionCard({
+    locale,
+    upgradeHref,
+    onChangePlan,
+    onCancelSubscription,
+    onReactivate,
+    onUpdatePayment
+}: SubscriptionCardProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(false);
     const [data, setData] = useState<SubscriptionData | null>(null);
@@ -509,6 +596,10 @@ export function SubscriptionCard({ locale, upgradeHref }: SubscriptionCardProps)
                     t={t}
                     features={features}
                     statusLabels={statusLabels}
+                    onChangePlan={onChangePlan}
+                    onCancelSubscription={onCancelSubscription}
+                    onReactivate={onReactivate}
+                    onUpdatePayment={onUpdatePayment}
                 />
             ) : (
                 <FreePlanView

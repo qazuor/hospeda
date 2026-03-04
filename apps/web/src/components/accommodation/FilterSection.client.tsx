@@ -60,12 +60,12 @@ export function FilterSection({
     withBorder = true
 }: FilterSectionProps): JSX.Element {
     return (
-        <div className={withBorder ? 'mb-6 border-gray-200 border-b pb-6' : ''}>
+        <div className={withBorder ? 'mb-6 border-border border-b pb-6' : ''}>
             <button
                 type="button"
                 onClick={onToggle}
                 aria-expanded={isExpanded}
-                className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 {title}
                 <ChevronDownIcon

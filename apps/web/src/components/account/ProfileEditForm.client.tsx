@@ -1,8 +1,10 @@
+import * as Sentry from '@sentry/astro';
 import { type ChangeEvent, type FormEvent, useState } from 'react';
 import type { JSX } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
 /**
@@ -159,7 +161,9 @@ export function ProfileEditForm({
             } else {
                 throw new Error('API returned unsuccessful result');
             }
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('ProfileEditForm: save profile failed', error);
+            Sentry.captureException(error);
             // On error, show error toast
             addToast({
                 type: 'error',
@@ -175,7 +179,8 @@ export function ProfileEditForm({
      * Character count indicator for bio field
      */
     const bioCharCount = bio.length;
-    const bioCharCountColor = bioCharCount > 500 ? 'text-red-600' : 'text-text-tertiary';
+    const bioCharCountColor =
+        bioCharCount > 500 ? 'text-red-600 dark:text-red-400' : 'text-text-tertiary';
 
     return (
         <form
@@ -211,7 +216,7 @@ export function ProfileEditForm({
                     {errors.name && (
                         <p
                             id="name-error"
-                            className="mt-1 text-red-600 text-sm"
+                            className="mt-1 text-red-600 text-sm dark:text-red-400"
                             role="alert"
                         >
                             {errors.name}
@@ -281,7 +286,7 @@ export function ProfileEditForm({
                     {errors.bio && (
                         <p
                             id="bio-error"
-                            className="mt-1 text-red-600 text-sm"
+                            className="mt-1 text-red-600 text-sm dark:text-red-400"
                             role="alert"
                         >
                             {errors.bio}
@@ -302,7 +307,7 @@ export function ProfileEditForm({
                     type="submit"
                     disabled={isSubmitting}
                     aria-busy={isSubmitting}
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-semibold text-base text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-gray-300 sm:w-auto"
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-semibold text-base text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary sm:w-auto"
                 >
                     {isSubmitting ? (
                         <>

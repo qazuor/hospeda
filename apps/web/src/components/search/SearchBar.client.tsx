@@ -132,7 +132,7 @@ export function SearchBar({
             <div className="pointer-events-none absolute left-3 flex items-center">
                 <SearchIcon
                     size={20}
-                    className="text-gray-400"
+                    className="text-text-tertiary"
                     aria-hidden="true"
                 />
             </div>
@@ -144,7 +144,7 @@ export function SearchBar({
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
-                className="w-full rounded-lg border border-gray-300 py-2 pr-20 pl-10 text-base text-gray-900 placeholder-gray-500 transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+                className="w-full rounded-lg border border-border bg-surface py-2 pr-20 pl-10 text-base text-text placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
                 aria-label={t('accessibility.search')}
             />
 
@@ -153,12 +153,12 @@ export function SearchBar({
                 <button
                     type="button"
                     onClick={handleClear}
-                    className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-gray-300 text-gray-700 transition-colors hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+                    className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-surface-alt text-text-secondary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
                     aria-label={t('accessibility.clearSearch')}
                 >
                     <CloseIcon
                         size={12}
-                        className="text-gray-700"
+                        className="text-text-secondary"
                         aria-hidden="true"
                     />
                 </button>
@@ -169,7 +169,7 @@ export function SearchBar({
                 type="button"
                 onClick={handleSearch}
                 disabled={!hasQuery}
-                className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-gray-300"
+                className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
                 aria-label={t('accessibility.search')}
             >
                 <SearchIcon

@@ -1,7 +1,9 @@
 import { FavoriteIcon } from '@repo/icons';
+import * as Sentry from '@sentry/astro';
 import { useEffect, useState } from 'react';
 import type { JSX } from 'react';
 import { z } from 'zod';
+import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 import { AuthRequiredPopover } from '../auth/AuthRequiredPopover.client';
 
@@ -229,7 +231,9 @@ export function FavoriteButton({
             const result = await toggleFavorite({ entityId, entityType, entityName });
             // Sync with server response in case optimistic state diverged
             setIsFavorited(result.toggled);
-        } catch (_error) {
+        } catch (error) {
+            webLogger.error('FavoriteButton: toggle favorite failed', error);
+            Sentry.captureException(error);
             // Revert state on error
             setIsFavorited(previousState);
 
@@ -252,14 +256,14 @@ export function FavoriteButton({
                 type="button"
                 onClick={handleClick}
                 aria-label={ariaLabel}
-                className={`inline-flex items-center justify-center rounded-full p-2 transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${className}`.trim()}
+                className={`inline-flex items-center justify-center rounded-full p-2 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${className}`.trim()}
             >
                 {/* Heart icon */}
                 <FavoriteIcon
                     size={24}
                     weight={isFavorited ? 'fill' : 'regular'}
                     className={`transition-colors ${
-                        isFavorited ? 'text-red-500' : 'text-gray-600'
+                        isFavorited ? 'text-red-500 dark:text-red-400' : 'text-text-secondary'
                     }`}
                     aria-hidden="true"
                 />

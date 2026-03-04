@@ -119,7 +119,7 @@ export function MapView({
         >
             {/* Placeholder Map Container */}
             <div
-                className="relative overflow-hidden rounded-lg border border-gray-300 bg-gradient-to-br from-gray-100 to-gray-200"
+                className="relative overflow-hidden rounded-lg border border-border bg-gradient-to-br from-surface-alt to-surface-elevated"
                 style={{ height }}
                 role="img"
                 aria-label={t('accessibility.mapShowingLocations', undefined, {
@@ -127,7 +127,7 @@ export function MapView({
                 })}
             >
                 {/* Map Loading Indicator */}
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-gray-600">
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-text-secondary">
                     {/* Map Icon */}
                     <MapIcon
                         size={48}
@@ -136,19 +136,14 @@ export function MapView({
                         aria-hidden="true"
                     />
                     <span className="font-medium text-sm">{t('map.loading')}</span>
-                    <span className="text-gray-500 text-xs">
+                    <span className="text-text-tertiary text-xs">
                         Center: {center[0].toFixed(4)}, {center[1].toFixed(4)} | Zoom: {zoom}
                     </span>
                 </div>
 
                 {/* Decorative Grid Pattern */}
                 <div
-                    className="absolute inset-0 opacity-10"
-                    style={{
-                        backgroundImage:
-                            'linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)',
-                        backgroundSize: '20px 20px'
-                    }}
+                    className="absolute inset-0 opacity-10 [background-image:linear-gradient(var(--color-border)_1px,transparent_1px),linear-gradient(90deg,var(--color-border)_1px,transparent_1px)] [background-size:20px_20px]"
                     aria-hidden="true"
                 />
             </div>
@@ -156,17 +151,17 @@ export function MapView({
             {/* Marker List (Placeholder) */}
             {markers.length > 0 && (
                 <section
-                    className="mt-4 rounded-lg border border-gray-200 bg-white p-4"
+                    className="mt-4 rounded-lg border border-border bg-surface p-4"
                     aria-label={t('accessibility.mapMarkers')}
                 >
-                    <h3 className="mb-3 font-semibold text-gray-900 text-sm">
+                    <h3 className="mb-3 font-semibold text-sm text-text">
                         {t('map.locationsTitle', undefined, { count: markers.length })}
                     </h3>
                     <ul className="space-y-2">
                         {markers.map((marker) => (
                             <li
                                 key={marker.id}
-                                className="flex items-start gap-2 rounded border border-gray-200 bg-gray-50 p-3 text-sm transition-colors hover:bg-gray-100"
+                                className="flex items-start gap-2 rounded border border-border bg-surface-alt p-3 text-sm transition-colors hover:bg-surface-elevated"
                             >
                                 {/* Marker Icon */}
                                 <LocationIcon
@@ -177,12 +172,12 @@ export function MapView({
                                 />
 
                                 <div className="flex-1">
-                                    <div className="font-medium text-gray-900">{marker.title}</div>
-                                    <div className="mt-0.5 text-gray-500 text-xs">
+                                    <div className="font-medium text-text">{marker.title}</div>
+                                    <div className="mt-0.5 text-text-tertiary text-xs">
                                         {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
                                     </div>
                                     {marker.popup && (
-                                        <div className="mt-1 text-gray-600 text-xs">
+                                        <div className="mt-1 text-text-secondary text-xs">
                                             {marker.popup}
                                         </div>
                                     )}
@@ -195,14 +190,14 @@ export function MapView({
 
             {/* Empty State */}
             {markers.length === 0 && (
-                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
+                <div className="mt-4 rounded-lg border border-border bg-surface-alt p-6 text-center">
                     <LocationIcon
                         size={32}
                         weight="duotone"
-                        className="mx-auto text-gray-400"
+                        className="mx-auto text-text-tertiary"
                         aria-hidden="true"
                     />
-                    <p className="mt-2 text-gray-600 text-sm">{t('map.noLocations')}</p>
+                    <p className="mt-2 text-sm text-text-secondary">{t('map.noLocations')}</p>
                 </div>
             )}
         </div>

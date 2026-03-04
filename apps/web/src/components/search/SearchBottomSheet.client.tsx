@@ -1,6 +1,7 @@
 import type { AccommodationTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
+import type { SupportedLocale } from '../../lib/i18n';
 import { DateRangePopover } from './popovers/DateRangePopover.client';
 import { DestinationPopover } from './popovers/DestinationPopover.client';
 import { GuestsPopover } from './popovers/GuestsPopover.client';
@@ -20,7 +21,7 @@ interface SearchBottomSheetProps {
     readonly destinations: readonly DestinationOption[];
     readonly isLoadingDestinations: boolean;
     readonly labels: HeroSearchBarLabels;
-    readonly locale: string;
+    readonly locale: SupportedLocale;
     readonly onDestinationToggle: (id: string) => void;
     readonly onTypeToggle: (type: AccommodationTypeEnum) => void;
     readonly onCheckInChange: (value: string) => void;
@@ -133,6 +134,7 @@ export function SearchBottomSheet({
                             destinationPlaceholder={labels.destinationPlaceholder}
                             loadingText={labels.loadingText}
                             isMobile
+                            locale={locale}
                         />
                         <TypePopover
                             selected={formState.types}
@@ -140,6 +142,7 @@ export function SearchBottomSheet({
                             typeLabels={labels.typeLabels}
                             typePlaceholder={labels.typePlaceholder}
                             isMobile
+                            locale={locale}
                         />
                         <DateRangePopover
                             checkIn={formState.checkIn}

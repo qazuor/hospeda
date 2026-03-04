@@ -73,9 +73,9 @@ export function ImageGallery({
     if (images.length === 0) {
         return (
             <div
-                className={`flex min-h-[400px] items-center justify-center rounded-lg bg-gray-100 ${className}`.trim()}
+                className={`flex min-h-[400px] items-center justify-center rounded-lg bg-surface-alt ${className}`.trim()}
             >
-                <p className="text-gray-500">No images available</p>
+                <p className="text-text-secondary">No images available</p>
             </div>
         );
     }
@@ -87,9 +87,9 @@ export function ImageGallery({
     if (!currentImage) {
         return (
             <div
-                className={`flex min-h-[400px] items-center justify-center rounded-lg bg-gray-100 ${className}`.trim()}
+                className={`flex min-h-[400px] items-center justify-center rounded-lg bg-surface-alt ${className}`.trim()}
             >
-                <p className="text-gray-500">Invalid image index</p>
+                <p className="text-text-secondary">Invalid image index</p>
             </div>
         );
     }
@@ -175,7 +175,7 @@ export function ImageGallery({
                             key={`${image.src}-${index}`}
                             type="button"
                             onClick={() => setSelectedIndex(index)}
-                            className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary${selectedIndex === index ? 'border-primary shadow-md' : 'border-gray-300 hover:border-gray-400'}
+                            className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-md border-2 transition-all focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-primary${selectedIndex === index ? 'border-primary shadow-md' : 'border-border hover:border-text-tertiary'}
 							`.trim()}
                             aria-label={`View ${image.alt}`}
                             aria-pressed={selectedIndex === index}
@@ -195,7 +195,7 @@ export function ImageGallery({
             {isLightboxOpen && (
                 // biome-ignore lint/a11y/useKeyWithClickEvents: Lightbox overlay click is optional convenience; keyboard users can close with Escape key or close button
                 <div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-overlay"
                     data-testid="lightbox"
                     onClick={handleCloseLightbox}
                 >
@@ -209,21 +209,21 @@ export function ImageGallery({
                         <button
                             type="button"
                             onClick={handleCloseLightbox}
-                            className="absolute top-4 right-4 z-10 rounded-md p-2 text-white transition-colors hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
+                            className="absolute top-4 right-4 z-10 rounded-md p-2 text-nav-text-active transition-colors hover:text-nav-text focus:outline focus:outline-2 focus:outline-nav-text-active"
                             aria-label={t('accessibility.closeLightbox')}
                             data-testid="close-button"
                         >
                             <CloseIcon
                                 size={32}
                                 weight="bold"
-                                className="text-white"
+                                className="text-nav-text-active"
                                 aria-hidden="true"
                             />
                         </button>
 
                         {/* Image Counter */}
                         <div
-                            className="absolute top-4 left-4 rounded-md bg-black bg-opacity-50 px-3 py-1 font-medium text-sm text-white"
+                            className="absolute top-4 left-4 rounded-md bg-overlay px-3 py-1 font-medium text-nav-text-active text-sm"
                             data-testid="image-counter"
                         >
                             {selectedIndex + 1} / {images.length}
@@ -244,14 +244,14 @@ export function ImageGallery({
                                 <button
                                     type="button"
                                     onClick={handlePrevious}
-                                    className="-translate-y-1/2 absolute top-1/2 left-4 rounded-full bg-black bg-opacity-50 p-3 text-white transition-all hover:bg-opacity-70 hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
+                                    className="-translate-y-1/2 absolute top-1/2 left-4 rounded-full bg-overlay p-3 text-nav-text-active transition-all hover:text-nav-text focus:outline focus:outline-2 focus:outline-nav-text-active"
                                     aria-label={t('accessibility.previousImage')}
                                     data-testid="prev-button"
                                 >
                                     <PreviousIcon
                                         size={24}
                                         weight="bold"
-                                        className="text-white"
+                                        className="text-nav-text-active"
                                         aria-hidden="true"
                                     />
                                 </button>
@@ -260,14 +260,14 @@ export function ImageGallery({
                                 <button
                                     type="button"
                                     onClick={handleNext}
-                                    className="-translate-y-1/2 absolute top-1/2 right-4 rounded-full bg-black bg-opacity-50 p-3 text-white transition-all hover:bg-opacity-70 hover:text-gray-300 focus:outline focus:outline-2 focus:outline-white"
+                                    className="-translate-y-1/2 absolute top-1/2 right-4 rounded-full bg-overlay p-3 text-nav-text-active transition-all hover:text-nav-text focus:outline focus:outline-2 focus:outline-nav-text-active"
                                     aria-label={t('accessibility.nextImage')}
                                     data-testid="next-button"
                                 >
                                     <NextIcon
                                         size={24}
                                         weight="bold"
-                                        className="text-white"
+                                        className="text-nav-text-active"
                                         aria-hidden="true"
                                     />
                                 </button>

@@ -54,6 +54,7 @@ const displayStats = stats ?? defaultStats;
           suffix={stat.suffix}
           prefix={stat.prefix}
           label={stat.label}
+          locale={locale}
           class="[&_.counter-number]:font-serif [&_.counter-number]:text-4xl [&_.counter-number]:font-bold [&_.counter-number]:text-white sm:[&_.counter-number]:text-5xl"
         />
       </div>
@@ -62,15 +63,21 @@ const displayStats = stats ?? defaultStats;
 </SectionWrapper>
 
 <style>
+  /*
+   * Glassmorphism with progressive enhancement.
+   * This section always renders on a dark background (photo or primary-900),
+   * so white-alpha and black-alpha values are intentional in both themes.
+   */
+
   /* Glassmorphism with progressive enhancement */
   .glassmorphism-card {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgb(255 255 255 / 0.08);
   }
 
   @supports (backdrop-filter: blur(1px)) {
     .glassmorphism-card {
       backdrop-filter: blur(12px);
-      background-color: rgba(255, 255, 255, 0.1);
+      background-color: rgb(255 255 255 / 0.1);
     }
   }
 
@@ -78,7 +85,7 @@ const displayStats = stats ?? defaultStats;
   @media (max-width: 639px) {
     .glassmorphism-card {
       backdrop-filter: none;
-      background-color: rgba(0, 0, 0, 0.4);
+      background-color: rgb(0 0 0 / 0.4);
     }
   }
 </style>

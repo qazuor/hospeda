@@ -93,7 +93,7 @@ export function Tabs({ tabs, defaultTab, className = '' }: TabsProps): React.JSX
             {/* Tab List */}
             <div
                 role="tablist"
-                className="flex border-gray-200 border-b"
+                className="flex border-border border-b"
             >
                 {tabs.map((tab) => {
                     const isActive = tab.id === activeTab;
@@ -111,7 +111,7 @@ export function Tabs({ tabs, defaultTab, className = '' }: TabsProps): React.JSX
                             className={`px-4 py-2 font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary${
                                 isActive
                                     ? 'border-primary border-b-2 text-primary'
-                                    : 'border-transparent border-b-2 text-gray-600 hover:border-gray-300 hover:text-gray-800'
+                                    : 'border-transparent border-b-2 text-text-secondary hover:border-border hover:text-text'
                             }
 							`}
                         >

@@ -107,9 +107,9 @@ export function ActiveFilterChips({
     if (activeFilterCount === 0) return null;
 
     return (
-        <div className="mb-6 rounded-lg bg-gray-50 p-4">
+        <div className="mb-6 rounded-lg bg-surface-alt p-4">
             <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-semibold text-gray-700 text-sm">
+                <h3 className="font-semibold text-sm text-text-secondary">
                     {t('sidebar.activeFilters')}
                 </h3>
                 <button
@@ -124,7 +124,7 @@ export function ActiveFilterChips({
                 {filters.types.map((type) => (
                     <span
                         key={type}
-                        className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm"
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text"
                     >
                         {t(`types.${type}`)}
                         <button
@@ -133,7 +133,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t(`types.${type}`)
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}
@@ -144,7 +144,7 @@ export function ActiveFilterChips({
                     </span>
                 ))}
                 {filters.priceMin !== null && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text">
                         {t('sidebar.priceMin')}: ${filters.priceMin}
                         <button
                             type="button"
@@ -152,7 +152,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t('sidebar.priceMin')
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}
@@ -163,7 +163,7 @@ export function ActiveFilterChips({
                     </span>
                 )}
                 {filters.priceMax !== null && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text">
                         {t('sidebar.priceMax')}: ${filters.priceMax}
                         <button
                             type="button"
@@ -171,7 +171,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t('sidebar.priceMax')
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}
@@ -182,7 +182,7 @@ export function ActiveFilterChips({
                     </span>
                 )}
                 {filters.destination && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text">
                         {DESTINATIONS.find((d) => d.value === filters.destination)?.label}
                         <button
                             type="button"
@@ -190,7 +190,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t('sidebar.destination')
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}
@@ -203,7 +203,7 @@ export function ActiveFilterChips({
                 {filters.amenities.map((amenity) => (
                     <span
                         key={amenity}
-                        className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm"
+                        className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text"
                     >
                         {t(`sidebar.${amenity}`)}
                         <button
@@ -212,7 +212,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t(`sidebar.${amenity}`)
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}
@@ -223,7 +223,7 @@ export function ActiveFilterChips({
                     </span>
                 ))}
                 {filters.minRating !== null && (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-3 py-1 text-sm text-text">
                         {filters.minRating}+ {t('sidebar.stars')}
                         <button
                             type="button"
@@ -231,7 +231,7 @@ export function ActiveFilterChips({
                             aria-label={t('sidebar.removeFilter', undefined, {
                                 name: t('sidebar.rating')
                             })}
-                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="rounded hover:text-red-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 dark:hover:text-red-400"
                         >
                             <CloseIcon
                                 size={16}

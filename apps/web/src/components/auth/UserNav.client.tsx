@@ -164,7 +164,7 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                 aria-expanded={isOpen}
                 aria-haspopup="menu"
                 aria-label={tUi('accessibility.userMenuFor', undefined, { name: user.name })}
-                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                className="inline-flex items-center gap-2 rounded-lg px-3 py-2 font-medium text-sm text-text-secondary transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 {/* Avatar or Initials */}
                 {user.avatarUrl ? (
@@ -201,12 +201,12 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                     ref={menuRef}
                     role="menu"
                     aria-label={tUi('accessibility.userMenu')}
-                    className="absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-gray-200 bg-white py-2 shadow-lg"
+                    className="absolute top-full right-0 z-50 mt-2 w-64 rounded-lg border border-border bg-surface-elevated py-2 shadow-lg"
                 >
                     {/* User Info Header */}
-                    <div className="border-gray-200 border-b px-4 py-3">
-                        <p className="truncate font-semibold text-gray-900 text-sm">{user.name}</p>
-                        <p className="truncate text-gray-500 text-xs">{user.email}</p>
+                    <div className="border-border border-b px-4 py-3">
+                        <p className="truncate font-semibold text-sm text-text">{user.name}</p>
+                        <p className="truncate text-text-tertiary text-xs">{user.email}</p>
                     </div>
 
                     {/* Menu Items */}
@@ -214,35 +214,35 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta' })}
                             role="menuitem"
-                            className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
+                            className="block px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt focus-visible:outline-none"
                         >
                             {t('userMenu.myAccount')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
                             role="menuitem"
-                            className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
+                            className="block px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt focus-visible:outline-none"
                         >
                             {t('userMenu.favorites')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/resenas' })}
                             role="menuitem"
-                            className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
+                            className="block px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt focus-visible:outline-none"
                         >
                             {t('userMenu.myReviews')}
                         </a>
                         <a
                             href={buildUrl({ locale, path: 'mi-cuenta/preferencias' })}
                             role="menuitem"
-                            className="block px-4 py-2 text-gray-700 text-sm transition-colors hover:bg-gray-100 focus-visible:bg-gray-100 focus-visible:outline-none"
+                            className="block px-4 py-2 text-sm text-text-secondary transition-colors hover:bg-surface-alt focus-visible:bg-surface-alt focus-visible:outline-none"
                         >
                             {t('userMenu.preferences')}
                         </a>
                     </div>
 
                     {/* Separator */}
-                    <hr className="my-1 border-gray-200" />
+                    <hr className="my-1 border-border" />
 
                     {/* Sign Out Button */}
                     <div className="py-1">
@@ -250,7 +250,7 @@ export function UserNav({ user, locale = 'es', className = '' }: UserNavProps): 
                             type="button"
                             onClick={() => void handleSignOut()}
                             role="menuitem"
-                            className="block w-full px-4 py-2 text-left text-red-600 text-sm transition-colors hover:bg-red-50 focus-visible:bg-red-50 focus-visible:outline-none"
+                            className="block w-full px-4 py-2 text-left text-error text-sm transition-colors hover:bg-error/10 focus-visible:bg-error/10 focus-visible:outline-none"
                         >
                             {t('userMenu.signOut')}
                         </button>

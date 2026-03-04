@@ -8,8 +8,8 @@
  *
  * Z-index layering:
  *   z-0  - carousel images
- *   z-[1] - dark gradient overlay
- *   z-10 - text content + search bar
+ *   z-10 - dark gradient overlay
+ *   z-10 - text content + search bar (same level, content follows gradient in DOM)
  *   z-20 - shape divider (CSS mask with var(--color-bg))
  *   z-30 - carousel dot indicators (must be above everything)
  */
@@ -70,7 +70,7 @@ const hasRotatingPhrases = rotatingPhrases.length > 0 && useCarousel;
   <div class="absolute inset-0">
     {hasRotatingPhrases ? (
       <HeroCarouselWithPhrases
-        client:load
+        client:idle
         images={images}
         phrases={rotatingPhrases}
         interval={carouselInterval}
@@ -79,7 +79,7 @@ const hasRotatingPhrases = rotatingPhrases.length > 0 && useCarousel;
       />
     ) : useCarousel ? (
       <HeroCarouselWithPhrases
-        client:load
+        client:idle
         images={images}
         phrases={[]}
         interval={carouselInterval}
@@ -99,7 +99,7 @@ const hasRotatingPhrases = rotatingPhrases.length > 0 && useCarousel;
 
   <!-- Layer 1: Dark gradient overlay -->
   <div
-    class="absolute inset-0 z-[1] bg-gradient-to-b from-black/60 via-black/40 to-black/70"
+    class="absolute inset-0 z-10 bg-gradient-to-b from-black/60 via-black/40 to-black/70"
     aria-hidden="true"
   />
 
@@ -141,7 +141,7 @@ const hasRotatingPhrases = rotatingPhrases.length > 0 && useCarousel;
       <!-- Right column: search bar + stats -->
       <div class="hero-animate hero-animate-delay-4 w-full xl:w-[420px] xl:flex-shrink-0 2xl:w-[460px]">
         <HeroSearchBar
-          client:load
+          client:idle
           locale={locale}
           apiBaseUrl={apiBaseUrl}
           labels={searchLabels}

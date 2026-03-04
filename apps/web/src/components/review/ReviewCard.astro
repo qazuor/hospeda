@@ -4,6 +4,7 @@
  * Displays user review with rating, content, and optional entity reference.
  * Data-source agnostic - receives typed props, not DB entities.
  */
+import { formatDate, toBcp47Locale } from '@repo/i18n';
 interface ReviewCardData {
   title: string;
   content: string;
@@ -26,10 +27,10 @@ const { review, showEntity = false, locale = 'es' } = Astro.props;
 
 // Format date
 const createdDate = new Date(review.createdAt);
-const formattedDate = createdDate.toLocaleDateString(locale === 'es' ? 'es-AR' : 'en-US', {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
+const formattedDate = formatDate({
+  date: createdDate,
+  locale: toBcp47Locale(locale),
+  options: { year: 'numeric', month: 'short', day: 'numeric' },
 });
 
 // Build entity URL if needed

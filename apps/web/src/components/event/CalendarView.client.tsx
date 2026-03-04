@@ -1,5 +1,8 @@
+import { toBcp47Locale } from '@repo/i18n';
 import type React from 'react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from '../../hooks/useTranslation';
+import type { SupportedLocale } from '../../lib/i18n';
 
 /**
  * Interface for a calendar event.
@@ -26,61 +29,32 @@ export interface CalendarViewProps {
 }
 
 /**
- * Day names by locale.
+ * Generates localized short day names (Mon-Sun) using Intl.DateTimeFormat.
+ * Week starts on Monday (ISO 8601).
  */
-const DAY_NAMES: Record<string, readonly string[]> = {
-    es: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
-    en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    pt: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
-};
+function getDayNames(locale: string): readonly string[] {
+    const intlLocale = toBcp47Locale(locale);
+    const formatter = new Intl.DateTimeFormat(intlLocale, { weekday: 'short' });
+    // Jan 5, 2026 is a Monday
+    return Array.from({ length: 7 }, (_, i) => {
+        const date = new Date(2026, 0, 5 + i);
+        const name = formatter.format(date);
+        return name.charAt(0).toUpperCase() + name.slice(1).replace('.', '');
+    });
+}
 
 /**
- * Month names by locale.
+ * Generates localized full month names using Intl.DateTimeFormat.
  */
-const MONTH_NAMES: Record<string, readonly string[]> = {
-    es: [
-        'Enero',
-        'Febrero',
-        'Marzo',
-        'Abril',
-        'Mayo',
-        'Junio',
-        'Julio',
-        'Agosto',
-        'Septiembre',
-        'Octubre',
-        'Noviembre',
-        'Diciembre'
-    ],
-    en: [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December'
-    ],
-    pt: [
-        'Janeiro',
-        'Fevereiro',
-        'Março',
-        'Abril',
-        'Maio',
-        'Junho',
-        'Julho',
-        'Agosto',
-        'Setembro',
-        'Outubro',
-        'Novembro',
-        'Dezembro'
-    ]
-};
+function getMonthNames(locale: string): readonly string[] {
+    const intlLocale = toBcp47Locale(locale);
+    const formatter = new Intl.DateTimeFormat(intlLocale, { month: 'long' });
+    return Array.from({ length: 12 }, (_, i) => {
+        const date = new Date(2026, i, 1);
+        const name = formatter.format(date);
+        return name.charAt(0).toUpperCase() + name.slice(1);
+    });
+}
 
 /**
  * Interface for a calendar cell.
@@ -117,7 +91,7 @@ function formatDateForAriaLabel(date: Date, locale: 'es' | 'en' | 'pt'): string 
     const day = date.getDate();
     const monthIndex = date.getMonth();
     const year = date.getFullYear();
-    const monthName = MONTH_NAMES[locale]?.[monthIndex] || '';
+    const monthName = getMonthNames(locale)[monthIndex] ?? '';
 
     if (locale === 'es') {
         return `${day} de ${monthName.toLowerCase()} de ${year}`;
@@ -255,6 +229,7 @@ export function CalendarView({
 }: CalendarViewProps): React.JSX.Element {
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
+    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'events' });
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
@@ -363,11 +338,11 @@ export function CalendarView({
     }, [year, month, events]);
 
     // Month name and navigation labels
-    const monthName = MONTH_NAMES[locale]?.[month] || '';
-    const prevMonthLabel =
-        locale === 'es' ? 'Mes anterior' : locale === 'en' ? 'Previous month' : 'Mês anterior';
-    const nextMonthLabel =
-        locale === 'es' ? 'Mes siguiente' : locale === 'en' ? 'Next month' : 'Próximo mês';
+    const dayNames = useMemo(() => getDayNames(locale), [locale]);
+    const monthNames = useMemo(() => getMonthNames(locale), [locale]);
+    const monthName = monthNames[month] ?? '';
+    const prevMonthLabel = t('calendar.prevMonth');
+    const nextMonthLabel = t('calendar.nextMonth');
 
     return (
         <div className={className}>
@@ -377,12 +352,12 @@ export function CalendarView({
                     type="button"
                     onClick={handlePrevMonth}
                     aria-label={prevMonthLabel}
-                    className="rounded p-2 transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    className="rounded p-2 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
                     <span aria-hidden="true">←</span>
                 </button>
 
-                <h2 className="font-bold text-xl">
+                <h2 className="font-bold text-text text-xl">
                     {monthName} {year}
                 </h2>
 
@@ -390,7 +365,7 @@ export function CalendarView({
                     type="button"
                     onClick={handleNextMonth}
                     aria-label={nextMonthLabel}
-                    className="rounded p-2 transition-colors hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    className="rounded p-2 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
                     <span aria-hidden="true">→</span>
                 </button>
@@ -400,14 +375,14 @@ export function CalendarView({
             {/* biome-ignore lint/a11y/useSemanticElements: div with role="grid" is the standard WAI-ARIA calendar pattern */}
             <div
                 role="grid"
-                className="overflow-hidden rounded-lg border border-gray-200"
+                className="overflow-hidden rounded-lg border border-border"
             >
                 {/* Day names header */}
-                <div className="grid grid-cols-7 border-gray-200 border-b bg-gray-50">
-                    {DAY_NAMES[locale]?.map((dayName) => (
+                <div className="grid grid-cols-7 border-border border-b bg-surface-alt">
+                    {dayNames.map((dayName) => (
                         <div
                             key={dayName}
-                            className="p-2 text-center font-semibold text-gray-700 text-sm"
+                            className="p-2 text-center font-semibold text-sm text-text-secondary"
                         >
                             {dayName}
                         </div>
@@ -430,17 +405,17 @@ export function CalendarView({
                                 data-calendar-cell
                                 onClick={() => handleDateClick(cell.dateString)}
                                 onKeyDown={(e) => handleKeyDown(e, cell, index)}
-                                className={`relative h-14 border-gray-200 border-r border-b p-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary${cell.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'}
-									${cell.isToday ? 'bg-blue-50 font-bold' : ''}
-									${isSelected ? 'bg-primary font-bold text-white' : 'hover:bg-gray-50'}
-									${cell.isToday && !isSelected ? 'ring-2 ring-blue-500 ring-inset' : ''}
+                                className={`relative h-14 border-border border-r border-b p-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${cell.isCurrentMonth ? 'text-text' : 'text-text-tertiary'}
+									${cell.isToday ? 'bg-blue-50 font-bold dark:bg-blue-950/40' : ''}
+									${isSelected ? 'bg-primary font-bold text-white dark:text-white' : 'hover:bg-surface-alt'}
+									${cell.isToday && !isSelected ? 'ring-2 ring-blue-500 ring-inset dark:ring-blue-400' : ''}
 								`}
                             >
                                 <span className="flex flex-col items-center justify-center">
                                     <span>{cell.date.getDate()}</span>
                                     {cell.hasEvent && (
                                         <span
-                                            className={`mt-1 h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-primary'}`}
+                                            className={`mt-1 h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white dark:bg-gray-100' : 'bg-primary'}`}
                                             aria-hidden="true"
                                         />
                                     )}

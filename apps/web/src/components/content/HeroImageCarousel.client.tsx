@@ -142,8 +142,8 @@ export function HeroImageCarousel({
         showDots && portalTarget
             ? createPortal(
                   <nav
-                      className="-translate-x-1/2 pointer-events-auto absolute left-1/2 flex items-center gap-3 rounded-full px-4 py-2"
-                      style={{ top: 'calc(100svh - 4rem)', backgroundColor: 'rgba(0,0,0,0.7)' }}
+                      className="-translate-x-1/2 pointer-events-auto absolute left-1/2 flex items-center gap-3 rounded-full bg-black/70 px-4 py-2"
+                      style={{ top: 'calc(100svh - 4rem)' }}
                       aria-label={t('accessibility.carouselNavigation')}
                   >
                       {images.map((src, index) => {
@@ -153,10 +153,9 @@ export function HeroImageCarousel({
                                   key={`dot-${src}`}
                                   type="button"
                                   onClick={() => goToIndex(index)}
-                                  className={`carousel-dot relative overflow-hidden rounded-full transition-all duration-500 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-white focus-visible:outline-offset-2 ${
+                                  className={`carousel-dot relative overflow-hidden rounded-full bg-nav-text transition-all duration-500 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-nav-text-active focus-visible:outline-offset-2 ${
                                       isActive ? 'h-4 w-12' : 'h-4 w-4'
                                   }`}
-                                  style={{ backgroundColor: '#ffffff' }}
                                   aria-label={t('accessibility.goToImageOfTotal', undefined, {
                                       current: index + 1,
                                       total: images.length
@@ -166,7 +165,7 @@ export function HeroImageCarousel({
                                   {/* Progress fill inside active dot */}
                                   {isActive && !prefersReducedMotion && (
                                       <span
-                                          className="absolute inset-0 origin-left rounded-full bg-white/60"
+                                          className="absolute inset-0 origin-left rounded-full bg-nav-text-active/60"
                                           style={
                                               isPaused
                                                   ? { transform: 'scaleX(0.5)' }
@@ -210,7 +209,7 @@ export function HeroImageCarousel({
                         style={{
                             opacity: isActive ? 1 : 0,
                             transition: `opacity ${fadeDuration} cubic-bezier(0.4, 0, 0.2, 1)`,
-                            zIndex: isActive ? 1 : 0
+                            zIndex: isActive ? 10 : 0
                         }}
                         aria-hidden={!isActive}
                     />
