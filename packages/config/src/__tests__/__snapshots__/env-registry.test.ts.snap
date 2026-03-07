@@ -1,0 +1,23 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ENV_REGISTRY > var count per category > should match expected distribution across categories 1`] = `
+{
+  "api-config": 91,
+  "auth": 6,
+  "billing": 1,
+  "build": 1,
+  "cache": 1,
+  "client-admin": 18,
+  "client-web": 5,
+  "core": 3,
+  "cron": 2,
+  "database": 5,
+  "debugging": 1,
+  "docker": 5,
+  "email": 4,
+  "integrations": 5,
+  "monitoring": 3,
+  "system": 7,
+  "testing": 5,
+}
+`;
