@@ -11,8 +11,8 @@ import { config } from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load test environment
-const envPath = resolve(__dirname, '../.env.test');
+// Load test environment from the API app directory (source of truth for DB config)
+const envPath = resolve(__dirname, '../apps/api/.env.test');
 const result = config({ path: envPath });
 
 if (result.error) {
