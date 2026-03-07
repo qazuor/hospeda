@@ -67,11 +67,14 @@ function getNotificationService(): NotificationService | null {
             return null;
         }
 
-        // Create Resend client
-        const resendClient = createResendClient();
+        // Create Resend client with validated env config
+        const resendClient = createResendClient({ apiKey: env.HOSPEDA_RESEND_API_KEY });
 
-        // Create email transport
-        const emailTransport = new ResendEmailTransport(resendClient);
+        // Create email transport with validated env config
+        const emailTransport = new ResendEmailTransport(resendClient, {
+            fromEmail: env.HOSPEDA_RESEND_FROM_EMAIL ?? 'noreply@hospeda.ar',
+            fromName: env.HOSPEDA_RESEND_FROM_NAME ?? 'Hospeda'
+        });
 
         // Create preference service with mock functions
         const preferenceService = new PreferenceService({
@@ -86,13 +89,14 @@ function getNotificationService(): NotificationService | null {
         // Get database instance
         const db = getDb();
 
-        // Create NotificationService instance
+        // Create NotificationService instance with siteUrl from validated env
         notificationServiceInstance = new NotificationService({
             emailTransport,
             preferenceService,
             retryService,
             db,
-            logger: apiLogger
+            logger: apiLogger,
+            siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.ar'
         });
 
         apiLogger.info('NotificationService initialized successfully');
