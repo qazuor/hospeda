@@ -23,3 +23,9 @@ export {
     parseExchangeRateSchema,
     type ExchangeRateConfig
 } from './sections/exchange-rate.schema.js';
+
+export {
+    FeedbackSchema,
+    parseFeedbackSchema,
+    type FeedbackConfig
+} from './sections/feedback.schema.js';

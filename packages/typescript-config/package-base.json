@@ -18,6 +18,8 @@
             "@repo/utils/*": ["../utils/src/*"],
             "@repo/service-core": ["../service-core/src/index.ts"],
             "@repo/service-core/*": ["../service-core/src/*"],
+            "@repo/feedback": ["../feedback/src/index.ts"],
+            "@repo/feedback/*": ["../feedback/src/*"],
             "@repo/seed": ["../seed/src/index.ts"],
             "@repo/seed/*": ["../seed/src/*"]
         }

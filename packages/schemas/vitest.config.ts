@@ -1,6 +1,12 @@
+import path from 'node:path';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+    resolve: {
+        alias: {
+            '@repo/feedback/schemas': path.resolve(__dirname, '../feedback/src/schemas/index.ts')
+        }
+    },
     test: {
         globals: true,
         environment: 'node',
