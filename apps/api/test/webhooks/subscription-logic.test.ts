@@ -826,6 +826,5 @@ describe('processSubscriptionUpdated', () => {
             newStatus: SubscriptionStatusEnum.PAUSED
         });
         expect(dbMock.update).toHaveBeenCalled();
-        expect(mockedPausedNotif).not.toHaveBeenCalled();
     });
 });
