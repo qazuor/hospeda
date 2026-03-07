@@ -4,8 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { createStartupValidator } from '@repo/config';
 import { createLogger } from '@repo/logger';
 /**
- * Environment configuration with validation
- * Uses @repo/config for centralized environment variable management
+ * Environment configuration with validation.
+ * Uses @repo/config for centralized environment variable management.
+ *
+ * Config helpers (getCacheConfig, getCorsConfig, etc.) live in
+ * `env-config-helpers.ts` and are re-exported from here for backward
+ * compatibility.
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
@@ -14,10 +18,8 @@ import { z } from 'zod';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Create a logger for env loading - uses basic config since env isn't loaded yet
 const envLogger = createLogger('env');
 
-// Load environment variables from root directory
 const rootDir = resolve(__dirname, '../../../..');
 const envFiles = [resolve(rootDir, '.env.local'), resolve(rootDir, '.env')];
 
@@ -25,14 +27,8 @@ if (process.env.NODE_ENV === 'test') {
     envFiles.unshift(resolve(rootDir, '.env.test'));
 }
 
-// Load environment variables
-
 for (const envFile of envFiles) {
-    // Only try to load files that actually exist
-    if (!existsSync(envFile)) {
-        continue;
-    }
-
+    if (!existsSync(envFile)) continue;
     try {
         const result = config({ path: envFile });
         if (result?.error) {
@@ -52,39 +48,91 @@ for (const envFile of envFiles) {
 }
 
 /**
- * API-specific environment schema
- * Combines common schemas with API-specific requirements
+ * Maps legacy env var names to their new HOSPEDA_* names.
+ * Only applies when the new name is NOT already set.
+ * These mappings will be removed after migration is complete (Phase 7).
+ */
+const LEGACY_ENV_MAPPINGS: Record<string, string> = {
+    DISABLE_AUTH: 'HOSPEDA_DISABLE_AUTH',
+    ALLOW_MOCK_ACTOR: 'HOSPEDA_ALLOW_MOCK_ACTOR',
+    CRON_SECRET: 'HOSPEDA_CRON_SECRET',
+    API_DEBUG_ERRORS: 'HOSPEDA_API_DEBUG_ERRORS',
+    TESTING_RATE_LIMIT: 'HOSPEDA_TESTING_RATE_LIMIT',
+    DEBUG_TESTS: 'HOSPEDA_DEBUG_TESTS',
+    COMMIT_SHA: 'HOSPEDA_COMMIT_SHA',
+    DB_POOL_MAX_CONNECTIONS: 'HOSPEDA_DB_POOL_MAX_CONNECTIONS',
+    DB_POOL_IDLE_TIMEOUT_MS: 'HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS',
+    DB_POOL_CONNECTION_TIMEOUT_MS: 'HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS',
+    MERCADO_PAGO_ACCESS_TOKEN: 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
+    RESEND_API_KEY: 'HOSPEDA_RESEND_API_KEY',
+    RESEND_FROM_EMAIL: 'HOSPEDA_RESEND_FROM_EMAIL',
+    RESEND_FROM_NAME: 'HOSPEDA_RESEND_FROM_NAME',
+    CRON_ADAPTER: 'HOSPEDA_CRON_ADAPTER',
+    SENTRY_DSN: 'HOSPEDA_SENTRY_DSN',
+    SENTRY_RELEASE: 'HOSPEDA_SENTRY_RELEASE',
+    SENTRY_PROJECT: 'HOSPEDA_SENTRY_PROJECT',
+    ADMIN_NOTIFICATION_EMAILS: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
+    WEB_URL: 'HOSPEDA_SITE_URL',
+    TESTING_ORIGIN_VERIFICATION: 'HOSPEDA_TESTING_ORIGIN_VERIFICATION'
+};
+
+/** Apply legacy env var mappings to process.env (new name takes precedence) */
+for (const [oldName, newName] of Object.entries(LEGACY_ENV_MAPPINGS)) {
+    if (!process.env[newName] && process.env[oldName]) {
+        process.env[newName] = process.env[oldName];
+    }
+}
+
+/**
+ * API-specific environment schema.
+ * All variables use the HOSPEDA_* prefix for consistency.
+ * Legacy names are mapped via LEGACY_ENV_MAPPINGS above.
  */
 const ApiEnvSchema = z
     .object({
-        // Server Configuration
+        // Server
         NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
         API_PORT: z.coerce.number().positive().default(3001),
         API_HOST: z.string().default('localhost'),
 
-        // Required URLs
+        // Required
         HOSPEDA_API_URL: z.string().url('Must be a valid API URL'),
         HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
-        // Authentication (Better Auth) - Secret is required
-        // Use DISABLE_AUTH=true in test environment to bypass authentication
+        // Authentication
         HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required'),
+        /** Better Auth base URL used in auth.ts initialization */
+        HOSPEDA_BETTER_AUTH_URL: z.string().url().optional(),
 
-        // Social OAuth providers (optional)
+        // OAuth providers
         HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
         HOSPEDA_GOOGLE_CLIENT_SECRET: z.string().optional(),
         HOSPEDA_FACEBOOK_CLIENT_ID: z.string().optional(),
         HOSPEDA_FACEBOOK_CLIENT_SECRET: z.string().optional(),
 
-        // Trusted origins for auth
+        // Trusted origins
         HOSPEDA_SITE_URL: z.string().url().optional(),
         HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
-        // Test environment flags (explicit opt-in required)
-        DISABLE_AUTH: z.coerce.boolean().default(false),
-        ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
+        // Test / debug flags (explicit opt-in; use HOSPEDA_* names)
+        /** Set true to bypass authentication in test/dev environments */
+        HOSPEDA_DISABLE_AUTH: z.coerce.boolean().default(false),
+        /** Set true to allow mock actor injection in test/dev environments */
+        HOSPEDA_ALLOW_MOCK_ACTOR: z.coerce.boolean().default(false),
+        /** Set true to show detailed error messages and stack traces in 5xx responses */
+        HOSPEDA_API_DEBUG_ERRORS: z.coerce.boolean().default(false),
+        /** Set true to enable rate limiting in test environments */
+        HOSPEDA_TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
+        /** Set true to enable verbose debug output during tests */
+        HOSPEDA_DEBUG_TESTS: z.coerce.boolean().default(false),
+        /** Set true to enforce origin verification in testing */
+        HOSPEDA_TESTING_ORIGIN_VERIFICATION: z.coerce.boolean().default(false),
 
-        // Logging Configuration (API-specific)
+        // Build metadata
+        /** Git commit SHA for health endpoint and Sentry release tagging */
+        HOSPEDA_COMMIT_SHA: z.string().default('unknown'),
+
+        // Logging
         API_LOG_LEVEL: z
             .string()
             .transform((val) => val.toLowerCase())
@@ -100,7 +148,7 @@ const ApiEnvSchema = z
         API_LOG_TRUNCATE_AT: z.coerce.number().default(1000),
         API_LOG_STRINGIFY: z.coerce.boolean().default(false),
 
-        // CORS Configuration (API-specific)
+        // CORS
         API_CORS_ORIGINS: z.string().default('http://localhost:3000,http://localhost:4321'),
         API_CORS_ALLOW_CREDENTIALS: z.coerce.boolean().default(true),
         API_CORS_MAX_AGE: z.coerce.number().default(86400),
@@ -108,7 +156,7 @@ const ApiEnvSchema = z
         API_CORS_ALLOW_HEADERS: z.string().default('Content-Type,Authorization,X-Requested-With'),
         API_CORS_EXPOSE_HEADERS: z.string().default('Content-Length,X-Request-ID'),
 
-        // Cache Configuration (API-specific)
+        // Cache
         API_CACHE_ENABLED: z.coerce.boolean().default(true),
         API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
         API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE: z.coerce.number().default(60),
@@ -119,7 +167,7 @@ const ApiEnvSchema = z
         API_CACHE_ETAG_ENABLED: z.coerce.boolean().default(true),
         API_CACHE_LAST_MODIFIED_ENABLED: z.coerce.boolean().default(true),
 
-        // Compression Configuration (API-specific)
+        // Compression
         API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
         API_COMPRESSION_LEVEL: z.coerce.number().min(1).max(9).default(6),
         API_COMPRESSION_THRESHOLD: z.coerce.number().default(1024),
@@ -130,9 +178,9 @@ const ApiEnvSchema = z
         API_COMPRESSION_EXCLUDE_ENDPOINTS: z.string().default('/health/db,/docs'),
         API_COMPRESSION_ALGORITHMS: z.string().default('gzip,deflate'),
 
-        // Rate Limiting Configuration (API-specific)
+        // Rate Limiting - global
         API_RATE_LIMIT_ENABLED: z.coerce.boolean().default(true),
-        API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
+        API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
         API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
         API_RATE_LIMIT_KEY_GENERATOR: z.string().default('ip'),
         API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS: z.coerce.boolean().default(false),
@@ -140,38 +188,31 @@ const ApiEnvSchema = z
         API_RATE_LIMIT_STANDARD_HEADERS: z.coerce.boolean().default(true),
         API_RATE_LIMIT_LEGACY_HEADERS: z.coerce.boolean().default(false),
         API_RATE_LIMIT_MESSAGE: z.string().default('Too many requests, please try again later.'),
-        // Trusted proxy configuration for rate limiting
-        // When true, trusts x-forwarded-for, x-real-ip, cf-connecting-ip headers
-        // Should only be true when behind a trusted reverse proxy (Vercel, Cloudflare, etc.)
+        /** Trust x-forwarded-for / cf-connecting-ip. Only enable behind a trusted proxy. */
         API_RATE_LIMIT_TRUST_PROXY: z.coerce.boolean().default(false),
-        // Comma-separated list of trusted proxy IPs/CIDRs (optional, for future strict mode)
         API_RATE_LIMIT_TRUSTED_PROXIES: z.string().default(''),
 
-        // Auth Rate Limiting
+        // Rate Limiting - auth / public / admin tiers
         API_RATE_LIMIT_AUTH_ENABLED: z.coerce.boolean().default(true),
-        API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000), // 5 minutes
+        API_RATE_LIMIT_AUTH_WINDOW_MS: z.coerce.number().default(300000),
         API_RATE_LIMIT_AUTH_MAX_REQUESTS: z.coerce.number().default(50),
         API_RATE_LIMIT_AUTH_MESSAGE: z
             .string()
             .default('Too many authentication requests, please try again later.'),
-
-        // Public API Rate Limiting
         API_RATE_LIMIT_PUBLIC_ENABLED: z.coerce.boolean().default(true),
-        API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000), // 1 hour
+        API_RATE_LIMIT_PUBLIC_WINDOW_MS: z.coerce.number().default(3600000),
         API_RATE_LIMIT_PUBLIC_MAX_REQUESTS: z.coerce.number().default(1000),
         API_RATE_LIMIT_PUBLIC_MESSAGE: z
             .string()
             .default('Too many API requests, please try again later.'),
-
-        // Admin Rate Limiting
         API_RATE_LIMIT_ADMIN_ENABLED: z.coerce.boolean().default(true),
-        API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000), // 10 minutes
+        API_RATE_LIMIT_ADMIN_WINDOW_MS: z.coerce.number().default(600000),
         API_RATE_LIMIT_ADMIN_MAX_REQUESTS: z.coerce.number().default(200),
         API_RATE_LIMIT_ADMIN_MESSAGE: z
             .string()
             .default('Too many admin requests, please try again later.'),
 
-        // Security Configuration (API-specific)
+        // Security
         API_SECURITY_ENABLED: z.coerce.boolean().default(true),
         API_SECURITY_CSRF_ENABLED: z.coerce.boolean().default(true),
         API_SECURITY_CSRF_ORIGIN: z.string().optional(),
@@ -195,7 +236,7 @@ const ApiEnvSchema = z
             .string()
             .default('camera=(), microphone=(), geolocation=()'),
 
-        // Response Configuration (API-specific)
+        // Response format
         API_RESPONSE_FORMAT_ENABLED: z.coerce.boolean().default(true),
         API_RESPONSE_INCLUDE_TIMESTAMP: z.coerce.boolean().default(true),
         API_RESPONSE_INCLUDE_VERSION: z.coerce.boolean().default(true),
@@ -205,9 +246,9 @@ const ApiEnvSchema = z
         API_RESPONSE_SUCCESS_MESSAGE: z.string().default('Success'),
         API_RESPONSE_ERROR_MESSAGE: z.string().default('An error occurred'),
 
-        // Validation Configuration (API-specific)
-        API_VALIDATION_MAX_BODY_SIZE: z.coerce.number().default(10485760), // 10MB
-        API_VALIDATION_MAX_REQUEST_TIME: z.coerce.number().default(30000), // 30 seconds
+        // Validation
+        API_VALIDATION_MAX_BODY_SIZE: z.coerce.number().default(10485760),
+        API_VALIDATION_MAX_REQUEST_TIME: z.coerce.number().default(30000),
         API_VALIDATION_ALLOWED_CONTENT_TYPES: z
             .string()
             .default('application/json,multipart/form-data'),
@@ -219,47 +260,63 @@ const ApiEnvSchema = z
         API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS: z.coerce.boolean().default(true),
         API_VALIDATION_SANITIZE_ALLOWED_CHARS: z.string().default('[\\w\\s\\-.,!?@#$%&*()+=]'),
 
-        // Metrics Configuration (API-specific)
+        // Metrics
         API_METRICS_ENABLED: z.coerce.boolean().default(true),
         API_METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
         API_METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().default(2000),
 
-        // Database Pool Configuration
-        DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
-        DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
-        DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
+        // Database pool (HOSPEDA_* names; legacy DB_POOL_* mapped above)
+        HOSPEDA_DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
+        HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
+        HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
 
-        // Linear Integration (Bug Reports)
+        // Linear integration
         HOSPEDA_LINEAR_API_KEY: z.string().optional(),
         HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
 
-        // Exchange Rate API Integration (optional, needed only for ExchangeRate-API source)
+        // Exchange rates
         HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
+        /** DolarAPI base URL for ARS exchange rates */
+        HOSPEDA_DOLAR_API_BASE_URL: z.string().url().optional(),
+        /** ExchangeRate-API base URL for multi-currency rates */
+        HOSPEDA_EXCHANGE_RATE_API_BASE_URL: z.string().url().optional(),
 
-        // Cron Configuration
-        /** Shared secret for authenticating cron HTTP requests. Required in production for cron endpoints to function. */
-        CRON_SECRET: z.string().optional(),
+        // Cron
+        /** Shared secret for authenticating cron HTTP requests. Required in production. */
+        HOSPEDA_CRON_SECRET: z.string().optional(),
+        /** Cron adapter: manual (default), vercel, or node-cron */
+        HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'node-cron']).default('manual'),
 
-        // Optional configurations
-        HOSPEDA_REDIS_URL: z.string().optional(),
-        /** When true, show detailed error messages and stack traces even in production 5xx responses */
-        API_DEBUG_ERRORS: z.coerce.boolean().default(false),
-        TESTING_RATE_LIMIT: z.coerce.boolean().default(false),
-        DEBUG_TESTS: z.coerce.boolean().default(false),
-        COMMIT_SHA: z.string().default('unknown')
+        // Billing
+        /** MercadoPago access token for payment processing */
+        HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string().optional(),
+
+        // Email / Notifications
+        HOSPEDA_RESEND_API_KEY: z.string().optional(),
+        HOSPEDA_RESEND_FROM_EMAIL: z.string().optional(),
+        HOSPEDA_RESEND_FROM_NAME: z.string().optional(),
+        /** Comma-separated list of admin emails for system notifications */
+        HOSPEDA_ADMIN_NOTIFICATION_EMAILS: z.string().optional(),
+
+        // Sentry
+        HOSPEDA_SENTRY_DSN: z.string().optional(),
+        HOSPEDA_SENTRY_RELEASE: z.string().optional(),
+        HOSPEDA_SENTRY_PROJECT: z.string().optional(),
+
+        // Infrastructure
+        HOSPEDA_REDIS_URL: z.string().optional()
     })
     .superRefine((data, ctx) => {
         if (
             data.NODE_ENV === 'production' &&
-            (!data.CRON_SECRET || data.CRON_SECRET.trim() === '')
+            (!data.HOSPEDA_CRON_SECRET || data.HOSPEDA_CRON_SECRET.trim() === '')
         ) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                path: ['CRON_SECRET'],
-                message: 'CRON_SECRET is required in production environment'
+                path: ['HOSPEDA_CRON_SECRET'],
+                message: 'HOSPEDA_CRON_SECRET is required in production environment'
             });
         }
-
         if (
             data.NODE_ENV === 'production' &&
             (!data.HOSPEDA_REDIS_URL || data.HOSPEDA_REDIS_URL.trim() === '')
@@ -274,244 +331,14 @@ const ApiEnvSchema = z
     });
 
 /**
- * Helper to safely access process.env with defaults during module initialization
- */
-const safeEnv = {
-    get: (key: string, defaultValue = ''): string => process.env[key] || defaultValue,
-    getBoolean: (key: string, defaultValue = false): boolean => {
-        const value = process.env[key];
-        if (value === undefined) return defaultValue;
-        return value === 'true';
-    },
-    getNumber: (key: string, defaultValue = 0): number => {
-        const value = process.env[key];
-        if (value === undefined) return defaultValue;
-        const parsed = Number(value);
-        return Number.isNaN(parsed) ? defaultValue : parsed;
-    }
-};
-
-/**
- * Parse comma-separated string into array
- */
-export const parseCommaSeparated = (value: string | undefined): string[] => {
-    if (!value || typeof value !== 'string') return [];
-    return value.split(',').map((item) => item.trim());
-};
-
-/**
- * Cache configuration helper
- */
-export const getCacheConfig = () => ({
-    enabled: safeEnv.getBoolean('API_CACHE_ENABLED', true),
-    defaultMaxAge: safeEnv.getNumber('API_CACHE_DEFAULT_MAX_AGE', 300),
-    defaultStaleWhileRevalidate: safeEnv.getNumber('API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE', 60),
-    defaultStaleIfError: safeEnv.getNumber('API_CACHE_DEFAULT_STALE_IF_ERROR', 86400),
-    // Aliases for backward compatibility
-    maxAge: safeEnv.getNumber('API_CACHE_DEFAULT_MAX_AGE', 300),
-    staleWhileRevalidate: safeEnv.getNumber('API_CACHE_DEFAULT_STALE_WHILE_REVALIDATE', 60),
-    staleIfError: safeEnv.getNumber('API_CACHE_DEFAULT_STALE_IF_ERROR', 86400),
-    publicEndpoints: parseCommaSeparated(
-        safeEnv.get('API_CACHE_PUBLIC_ENDPOINTS', '/api/v1/public/accommodations,/health')
-    ),
-    privateEndpoints: parseCommaSeparated(
-        safeEnv.get('API_CACHE_PRIVATE_ENDPOINTS', '/api/v1/public/users')
-    ),
-    noCacheEndpoints: parseCommaSeparated(
-        safeEnv.get('API_CACHE_NO_CACHE_ENDPOINTS', '/health/db,/docs')
-    ),
-    etagEnabled: safeEnv.getBoolean('API_CACHE_ETAG_ENABLED', true),
-    lastModifiedEnabled: safeEnv.getBoolean('API_CACHE_LAST_MODIFIED_ENABLED', true)
-});
-
-/**
- * Parse CORS origins from environment variable
- */
-export const parseCorsOrigins = (origins: string | undefined): string[] => {
-    if (!origins || typeof origins !== 'string')
-        return ['http://localhost:3000', 'http://localhost:4321'];
-    return origins.split(',').map((origin) => origin.trim());
-};
-
-/**
- * CORS configuration helper
- */
-export const getCorsConfig = () => ({
-    origins: parseCorsOrigins(
-        safeEnv.get('API_CORS_ORIGINS', 'http://localhost:3000,http://localhost:4321')
-    ),
-    allowCredentials: safeEnv.getBoolean('API_CORS_ALLOW_CREDENTIALS', true),
-    maxAge: safeEnv.getNumber('API_CORS_MAX_AGE', 86400),
-    allowMethods: parseCommaSeparated(
-        safeEnv.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
-    ),
-    allowHeaders: parseCommaSeparated(
-        safeEnv.get('API_CORS_ALLOW_HEADERS', 'Content-Type,Authorization,X-Requested-With')
-    ),
-    exposeHeaders: parseCommaSeparated(
-        safeEnv.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
-    )
-});
-
-/**
- * Compression configuration helper
- */
-export const getCompressionConfig = () => ({
-    enabled: safeEnv.getBoolean('API_COMPRESSION_ENABLED', true),
-    level: safeEnv.getNumber('API_COMPRESSION_LEVEL', 6),
-    threshold: safeEnv.getNumber('API_COMPRESSION_THRESHOLD', 1024),
-    chunkSize: safeEnv.getNumber('API_COMPRESSION_CHUNK_SIZE', 16384),
-    filter: safeEnv.get(
-        'API_COMPRESSION_FILTER',
-        'text/*,application/json,application/xml,application/javascript'
-    ),
-    excludeEndpoints: parseCommaSeparated(
-        safeEnv.get('API_COMPRESSION_EXCLUDE_ENDPOINTS', '/health/db,/docs')
-    ),
-    algorithms: safeEnv.get('API_COMPRESSION_ALGORITHMS', 'gzip,deflate')
-});
-
-/**
- * Rate limiting configuration helper
- */
-export const getRateLimitConfig = () => ({
-    enabled: safeEnv.getBoolean('API_RATE_LIMIT_ENABLED', true),
-    windowMs: safeEnv.getNumber('API_RATE_LIMIT_WINDOW_MS', 900000),
-    maxRequests: safeEnv.getNumber('API_RATE_LIMIT_MAX_REQUESTS', 100),
-    keyGenerator: safeEnv.get('API_RATE_LIMIT_KEY_GENERATOR', 'ip'),
-    skipSuccessfulRequests: safeEnv.getBoolean('API_RATE_LIMIT_SKIP_SUCCESSFUL_REQUESTS', false),
-    skipFailedRequests: safeEnv.getBoolean('API_RATE_LIMIT_SKIP_FAILED_REQUESTS', false),
-    standardHeaders: safeEnv.getBoolean('API_RATE_LIMIT_STANDARD_HEADERS', true),
-    legacyHeaders: safeEnv.getBoolean('API_RATE_LIMIT_LEGACY_HEADERS', false),
-    message: safeEnv.get('API_RATE_LIMIT_MESSAGE', 'Too many requests, please try again later.'),
-    // Trusted proxy configuration
-    trustProxy: safeEnv.getBoolean('API_RATE_LIMIT_TRUST_PROXY', false),
-    trustedProxies: parseCommaSeparated(safeEnv.get('API_RATE_LIMIT_TRUSTED_PROXIES', '')),
-
-    // Auth-specific
-    authEnabled: safeEnv.getBoolean('API_RATE_LIMIT_AUTH_ENABLED', true),
-    authWindowMs: safeEnv.getNumber('API_RATE_LIMIT_AUTH_WINDOW_MS', 300000),
-    authMaxRequests: safeEnv.getNumber('API_RATE_LIMIT_AUTH_MAX_REQUESTS', 50),
-    authMessage: safeEnv.get(
-        'API_RATE_LIMIT_AUTH_MESSAGE',
-        'Too many authentication requests, please try again later.'
-    ),
-
-    // Public API-specific
-    publicEnabled: safeEnv.getBoolean('API_RATE_LIMIT_PUBLIC_ENABLED', true),
-    publicWindowMs: safeEnv.getNumber('API_RATE_LIMIT_PUBLIC_WINDOW_MS', 3600000),
-    publicMaxRequests: safeEnv.getNumber('API_RATE_LIMIT_PUBLIC_MAX_REQUESTS', 1000),
-    publicMessage: safeEnv.get(
-        'API_RATE_LIMIT_PUBLIC_MESSAGE',
-        'Too many API requests, please try again later.'
-    ),
-
-    // Admin-specific
-    adminEnabled: safeEnv.getBoolean('API_RATE_LIMIT_ADMIN_ENABLED', true),
-    adminWindowMs: safeEnv.getNumber('API_RATE_LIMIT_ADMIN_WINDOW_MS', 600000),
-    adminMaxRequests: safeEnv.getNumber('API_RATE_LIMIT_ADMIN_MAX_REQUESTS', 200),
-    adminMessage: safeEnv.get(
-        'API_RATE_LIMIT_ADMIN_MESSAGE',
-        'Too many admin requests, please try again later.'
-    )
-});
-
-/**
- * Security configuration helper
- */
-export const getSecurityConfig = () => ({
-    enabled: safeEnv.getBoolean('API_SECURITY_ENABLED', true),
-    csrfEnabled: safeEnv.getBoolean('API_SECURITY_CSRF_ENABLED', true),
-    csrfOrigin: safeEnv.get('API_SECURITY_CSRF_ORIGIN'),
-    csrfOrigins: parseCommaSeparated(
-        safeEnv.get('API_SECURITY_CSRF_ORIGINS', 'http://localhost:3000,http://localhost:5173')
-    ),
-    headersEnabled: safeEnv.getBoolean('API_SECURITY_HEADERS_ENABLED', true),
-    contentSecurityPolicy: safeEnv.get(
-        'API_SECURITY_CONTENT_SECURITY_POLICY',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
-    ),
-    strictTransportSecurity: safeEnv.get(
-        'API_SECURITY_STRICT_TRANSPORT_SECURITY',
-        'max-age=31536000; includeSubDomains'
-    ),
-    xFrameOptions: safeEnv.get('API_SECURITY_X_FRAME_OPTIONS', 'SAMEORIGIN'),
-    xContentTypeOptions: safeEnv.get('API_SECURITY_X_CONTENT_TYPE_OPTIONS', 'nosniff'),
-    xXssProtection: safeEnv.get('API_SECURITY_X_XSS_PROTECTION', '1; mode=block'),
-    referrerPolicy: safeEnv.get('API_SECURITY_REFERRER_POLICY', 'strict-origin-when-cross-origin'),
-    permissionsPolicy: safeEnv.get(
-        'API_SECURITY_PERMISSIONS_POLICY',
-        'camera=(), microphone=(), geolocation=()'
-    )
-});
-
-/**
- * Validation configuration helper
- */
-export const getValidationConfig = () => ({
-    maxBodySize: safeEnv.getNumber('API_VALIDATION_MAX_BODY_SIZE', 10485760),
-    maxRequestTime: safeEnv.getNumber('API_VALIDATION_MAX_REQUEST_TIME', 30000),
-    allowedContentTypes: parseCommaSeparated(
-        safeEnv.get('API_VALIDATION_ALLOWED_CONTENT_TYPES', 'application/json,multipart/form-data')
-    ),
-    requiredHeaders: parseCommaSeparated(
-        safeEnv.get('API_VALIDATION_REQUIRED_HEADERS', 'user-agent')
-    ),
-    authEnabled: safeEnv.getBoolean('API_VALIDATION_AUTH_ENABLED', true),
-    authHeaders: parseCommaSeparated(safeEnv.get('API_VALIDATION_AUTH_HEADERS', 'authorization')),
-    sanitizeEnabled: safeEnv.getBoolean('API_VALIDATION_SANITIZE_ENABLED', true),
-    sanitizeMaxStringLength: safeEnv.getNumber('API_VALIDATION_SANITIZE_MAX_STRING_LENGTH', 1000),
-    sanitizeRemoveHtmlTags: safeEnv.getBoolean('API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS', true),
-    sanitizeAllowedChars: safeEnv.get(
-        'API_VALIDATION_SANITIZE_ALLOWED_CHARS',
-        '[\\w\\s\\-.,!?@#$%&*()+=]'
-    )
-});
-
-/**
- * Response configuration helper
- */
-export const getResponseConfig = () => ({
-    formatEnabled: safeEnv.getBoolean('API_RESPONSE_FORMAT_ENABLED', true),
-    includeTimestamp: safeEnv.getBoolean('API_RESPONSE_INCLUDE_TIMESTAMP', true),
-    includeVersion: safeEnv.getBoolean('API_RESPONSE_INCLUDE_VERSION', true),
-    apiVersion: safeEnv.get('API_RESPONSE_API_VERSION', '1.0.0'),
-    includeRequestId: safeEnv.getBoolean('API_RESPONSE_INCLUDE_REQUEST_ID', true),
-    includeMetadata: safeEnv.getBoolean('API_RESPONSE_INCLUDE_METADATA', true),
-    successMessage: safeEnv.get('API_RESPONSE_SUCCESS_MESSAGE', 'Success'),
-    errorMessage: safeEnv.get('API_RESPONSE_ERROR_MESSAGE', 'An error occurred')
-});
-
-/**
- * Database pool configuration helper.
- * In serverless environments (Vercel), defaults to max 3 connections
- * to stay within Neon pooler limits.
- */
-export const getDatabasePoolConfig = () => {
-    const isServerless = !!process.env.VERCEL;
-    const defaultMax = isServerless ? 3 : 10;
-
-    return {
-        max: safeEnv.getNumber('DB_POOL_MAX_CONNECTIONS', defaultMax),
-        idleTimeoutMillis: safeEnv.getNumber('DB_POOL_IDLE_TIMEOUT_MS', 30000),
-        connectionTimeoutMillis: safeEnv.getNumber('DB_POOL_CONNECTION_TIMEOUT_MS', 2000)
-    };
-};
-
-/**
  * Creates the API environment validation function.
  * @remarks
- * Uses the ApiEnvSchema to validate environment variables at startup.
  * `ApiEnvSchema` uses `.superRefine()` which produces a `ZodEffects` type.
- * `ZodEffects` extends `ZodType` (the base of `ZodSchema<T>`) but TypeScript
- * does not infer the constraint automatically across Zod v4 type boundaries.
- * @see ApiEnvSchema
+ * `ZodEffects` extends `ZodType` but TypeScript does not infer the constraint
+ * automatically across Zod v4 type boundaries.
  * @see createStartupValidator
  */
 const _validateApiEnv = createStartupValidator(
-    // .superRefine() wraps ApiEnvSchema in ZodEffects, which TypeScript cannot assign to
-    // the `ZodSchema<T>` generic expected by createStartupValidator. No Zod utility exists
-    // to unwrap or re-type ZodEffects as ZodSchema.
     // biome-ignore lint/suspicious/noExplicitAny: ZodEffects from .superRefine() is not assignable to ZodSchema<T> in Zod v4
     ApiEnvSchema as any,
     'API'
@@ -519,14 +346,13 @@ const _validateApiEnv = createStartupValidator(
 
 /**
  * The validated API environment object.
- * @remarks
- * This object is populated after calling {@link validateApiEnv}.
+ * Populated after calling {@link validateApiEnv}.
  */
 export let env: z.infer<typeof ApiEnvSchema>;
 
 /**
- * Validate and populate the environment object
- * Must be called before using the env object
+ * Validate and populate the environment object.
+ * Must be called before accessing {@link env}.
  */
 export const validateApiEnv = (): void => {
     env = _validateApiEnv() as z.infer<typeof ApiEnvSchema>;
@@ -534,3 +360,17 @@ export const validateApiEnv = (): void => {
 
 // Export the schema for testing
 export { ApiEnvSchema };
+
+// Re-export config helpers for backward compatibility
+export {
+    parseCommaSeparated,
+    parseCorsOrigins,
+    getCacheConfig,
+    getCorsConfig,
+    getCompressionConfig,
+    getRateLimitConfig,
+    getSecurityConfig,
+    getValidationConfig,
+    getResponseConfig,
+    getDatabasePoolConfig
+} from './env-config-helpers.js';
