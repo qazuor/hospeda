@@ -20,11 +20,11 @@ const __dirname = dirname(__filename);
 
 const envLogger = createLogger('env');
 
-const rootDir = resolve(__dirname, '../../../..');
-const envFiles = [resolve(rootDir, '.env.local'), resolve(rootDir, '.env')];
+const appDir = resolve(__dirname, '../..');
+const envFiles = [resolve(appDir, '.env.local')];
 
 if (process.env.NODE_ENV === 'test') {
-    envFiles.unshift(resolve(rootDir, '.env.test'));
+    envFiles.unshift(resolve(appDir, '.env.test'));
 }
 
 for (const envFile of envFiles) {
