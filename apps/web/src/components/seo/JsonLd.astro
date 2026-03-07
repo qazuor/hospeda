@@ -15,7 +15,8 @@ interface Props {
 
 const { data } = Astro.props;
 
-const jsonLdContent = JSON.stringify(data, null, 0);
+// Escape < as \u003c to prevent </script> injection (stored XSS via JSON-LD)
+const jsonLdContent = JSON.stringify(data, null, 0).replace(/</g, '\\u003c');
 ---
 
 <script type="application/ld+json" set:html={jsonLdContent} />
