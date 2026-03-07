@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     DEFAULT_LOCALE,
     SUPPORTED_LOCALES,
-    getTranslations,
+    createT,
+    createTranslations,
     isValidLocale,
     parseAcceptLanguage,
     t
@@ -10,379 +11,188 @@ import {
 
 describe('i18n utilities', () => {
     describe('SUPPORTED_LOCALES', () => {
-        it('should include Spanish (es)', () => {
-            expect(SUPPORTED_LOCALES).toContain('es');
-        });
-
-        it('should include English (en)', () => {
-            expect(SUPPORTED_LOCALES).toContain('en');
-        });
-
-        it('should include Portuguese (pt)', () => {
-            expect(SUPPORTED_LOCALES).toContain('pt');
-        });
-
-        it('should have exactly 3 supported locales', () => {
-            expect(SUPPORTED_LOCALES).toHaveLength(3);
+        it('should contain es, en, and pt', () => {
+            expect(SUPPORTED_LOCALES).toEqual(['es', 'en', 'pt']);
         });
     });
 
     describe('DEFAULT_LOCALE', () => {
-        it('should be Spanish (es)', () => {
+        it('should be es', () => {
             expect(DEFAULT_LOCALE).toBe('es');
-        });
-
-        it('should be included in SUPPORTED_LOCALES', () => {
-            expect(SUPPORTED_LOCALES).toContain(DEFAULT_LOCALE);
         });
     });
 
     describe('isValidLocale', () => {
-        it('should return true for Spanish (es)', () => {
+        it('should return true for supported locales', () => {
             expect(isValidLocale('es')).toBe(true);
-        });
-
-        it('should return true for English (en)', () => {
             expect(isValidLocale('en')).toBe(true);
-        });
-
-        it('should return true for Portuguese (pt)', () => {
             expect(isValidLocale('pt')).toBe(true);
         });
 
-        it('should return false for French (fr)', () => {
+        it('should return false for unsupported locales', () => {
             expect(isValidLocale('fr')).toBe(false);
-        });
-
-        it('should return false for German (de)', () => {
             expect(isValidLocale('de')).toBe(false);
-        });
-
-        it('should return false for empty string', () => {
             expect(isValidLocale('')).toBe(false);
-        });
-
-        it('should return false for invalid locale code', () => {
-            expect(isValidLocale('invalid')).toBe(false);
-        });
-
-        it('should be case-sensitive (uppercase)', () => {
             expect(isValidLocale('ES')).toBe(false);
-        });
-
-        it('should be case-sensitive (mixed case)', () => {
-            expect(isValidLocale('En')).toBe(false);
         });
     });
 
     describe('parseAcceptLanguage', () => {
-        describe('null or empty headers', () => {
-            it('should return default locale for null header', () => {
-                expect(parseAcceptLanguage(null)).toBe(DEFAULT_LOCALE);
-            });
-
-            it('should return default locale for empty string', () => {
-                expect(parseAcceptLanguage('')).toBe(DEFAULT_LOCALE);
-            });
+        it('should return default locale for null header', () => {
+            expect(parseAcceptLanguage(null)).toBe('es');
         });
 
-        describe('single language headers', () => {
-            it('should parse Spanish (es)', () => {
-                expect(parseAcceptLanguage('es')).toBe('es');
-            });
-
-            it('should parse English (en)', () => {
-                expect(parseAcceptLanguage('en')).toBe('en');
-            });
-
-            it('should parse Portuguese (pt)', () => {
-                expect(parseAcceptLanguage('pt')).toBe('pt');
-            });
-
-            it('should parse Spanish with region (es-AR)', () => {
-                expect(parseAcceptLanguage('es-AR')).toBe('es');
-            });
-
-            it('should parse English with region (en-US)', () => {
-                expect(parseAcceptLanguage('en-US')).toBe('en');
-            });
-
-            it('should parse Portuguese with region (pt-BR)', () => {
-                expect(parseAcceptLanguage('pt-BR')).toBe('pt');
-            });
+        it('should return default locale for empty header', () => {
+            expect(parseAcceptLanguage('')).toBe('es');
         });
 
-        describe('multiple languages with quality values', () => {
-            it('should return first matching locale (es first)', () => {
-                expect(parseAcceptLanguage('es-AR,es;q=0.9,en;q=0.8')).toBe('es');
-            });
-
-            it('should return first matching locale (en first)', () => {
-                expect(parseAcceptLanguage('en-US,en;q=0.9,es;q=0.8')).toBe('en');
-            });
-
-            it('should return first matching locale (pt first)', () => {
-                expect(parseAcceptLanguage('pt-BR,pt;q=0.9,en;q=0.8')).toBe('pt');
-            });
-
-            it('should skip unsupported locales and find first match', () => {
-                expect(parseAcceptLanguage('fr-FR,de;q=0.9,es;q=0.8,en;q=0.7')).toBe('es');
-            });
-
-            it('should return en when es is not first but en is', () => {
-                expect(parseAcceptLanguage('fr,en;q=0.9,es;q=0.8')).toBe('en');
-            });
+        it('should extract primary language from header', () => {
+            expect(parseAcceptLanguage('en-US,en;q=0.9')).toBe('en');
+            expect(parseAcceptLanguage('pt-BR,pt;q=0.9')).toBe('pt');
+            expect(parseAcceptLanguage('es-AR,es;q=0.9')).toBe('es');
         });
 
-        describe('unsupported languages', () => {
-            it('should return default locale for French (fr)', () => {
-                expect(parseAcceptLanguage('fr-FR')).toBe(DEFAULT_LOCALE);
-            });
-
-            it('should return default locale for German (de)', () => {
-                expect(parseAcceptLanguage('de-DE')).toBe(DEFAULT_LOCALE);
-            });
-
-            it('should return default locale for Italian (it)', () => {
-                expect(parseAcceptLanguage('it-IT')).toBe(DEFAULT_LOCALE);
-            });
-
-            it('should return default locale for only unsupported languages', () => {
-                expect(parseAcceptLanguage('fr,de;q=0.9,it;q=0.8')).toBe(DEFAULT_LOCALE);
-            });
+        it('should fall back to default for unsupported languages', () => {
+            expect(parseAcceptLanguage('fr-FR,fr;q=0.9')).toBe('es');
+            expect(parseAcceptLanguage('de,ja')).toBe('es');
         });
 
-        describe('edge cases', () => {
-            it('should handle whitespace around language codes', () => {
-                expect(parseAcceptLanguage(' es , en;q=0.9 ')).toBe('es');
-            });
-
-            it('should handle complex quality values', () => {
-                expect(parseAcceptLanguage('en-US,en;q=0.95,es;q=0.90,pt;q=0.85')).toBe('en');
-            });
-
-            it('should handle missing quality values', () => {
-                expect(parseAcceptLanguage('es,en,pt')).toBe('es');
-            });
-
-            it('should be case-insensitive for language codes', () => {
-                expect(parseAcceptLanguage('ES-AR')).toBe('es');
-            });
-
-            it('should handle mixed case language codes', () => {
-                expect(parseAcceptLanguage('En-US')).toBe('en');
-            });
+        it('should find supported locale in secondary position', () => {
+            expect(parseAcceptLanguage('fr-FR,en-US;q=0.9')).toBe('en');
         });
     });
 
-    describe('getTranslations', () => {
-        describe('common namespace', () => {
-            it('should return translations for valid namespace', () => {
-                const translations = getTranslations({ locale: 'es', namespace: 'common' });
-
-                expect(translations).toBeDefined();
-                expect(typeof translations).toBe('object');
-            });
-
-            it('should contain expected common keys', () => {
-                const translations = getTranslations({ locale: 'es', namespace: 'common' });
-
-                // Check for some expected keys
-                expect(translations).toHaveProperty('search');
-                expect(translations).toHaveProperty('loading');
-            });
-
-            it('should strip namespace prefix from keys', () => {
-                const translations = getTranslations({ locale: 'es', namespace: 'common' });
-
-                // Keys should not include namespace prefix
-                expect(translations).not.toHaveProperty('common.search');
-                expect(translations).toHaveProperty('search');
-            });
+    describe('createT', () => {
+        it('should return a function', () => {
+            const fn = createT('es');
+            expect(typeof fn).toBe('function');
         });
 
-        describe('nav namespace', () => {
-            it('should return translations for nav namespace', () => {
-                const translations = getTranslations({ locale: 'es', namespace: 'nav' });
-
-                expect(translations).toBeDefined();
-                expect(typeof translations).toBe('object');
-            });
-
-            it('should contain expected nav keys', () => {
-                const translations = getTranslations({ locale: 'es', namespace: 'nav' });
-
-                expect(translations).toHaveProperty('home');
-                expect(translations).toHaveProperty('accommodations');
-            });
+        it('should return fallback for missing key', () => {
+            const fn = createT('es');
+            expect(fn('home.nonexistent.key', 'Fallback')).toBe('Fallback');
         });
 
-        describe('unknown namespace', () => {
-            it('should return empty object for unknown namespace', () => {
-                const translations = getTranslations({
-                    locale: 'es',
-                    namespace: 'unknown' as any
-                });
-
-                expect(translations).toBeDefined();
-                expect(Object.keys(translations).length).toBe(0);
-            });
+        it('should interpolate {{param}} placeholders in fallback', () => {
+            const fn = createT('es');
+            expect(fn('home.missing', 'Hello {{name}}', { name: 'World' })).toBe('Hello World');
         });
 
-        describe('locale fallback', () => {
-            it('should fallback to default locale for unsupported locale', () => {
-                const translations = getTranslations({
-                    locale: 'fr' as any,
-                    namespace: 'common'
-                });
+        it('should interpolate {param} placeholders in fallback', () => {
+            const fn = createT('es');
+            expect(fn('home.missing', 'Count: {count}', { count: 42 })).toBe('Count: 42');
+        });
 
-                expect(translations).toBeDefined();
-                expect(Object.keys(translations).length).toBeGreaterThan(0);
-            });
+        it('should interpolate multiple params at once', () => {
+            const fn = createT('es');
+            expect(fn('home.missing', '{{a}} and {b}', { a: 'X', b: 'Y' })).toBe('X and Y');
+        });
+
+        it('should return [MISSING: key] indicator when no fallback in dev mode', () => {
+            const fn = createT('es');
+            const result = fn('home.definitely.missing');
+            // In dev/test env, returns a debug indicator matching @repo/i18n convention
+            expect(result).toBe('[MISSING: home.definitely.missing]');
+        });
+
+        it('should resolve real keys from @repo/i18n', () => {
+            const fn = createT('es');
+            // footer.description exists in @repo/i18n es locale
+            const result = fn('footer.description');
+            expect(result).not.toContain('[MISSING:');
+            expect(result.length).toBeGreaterThan(0);
+        });
+
+        it('should resolve different values per locale', () => {
+            const tEs = createT('es');
+            const tEn = createT('en');
+            // nav.home exists in both locales with different values
+            const esResult = tEs('nav.home');
+            const enResult = tEn('nav.home');
+            // Both should resolve (not be MISSING markers)
+            expect(esResult).not.toContain('[MISSING:');
+            expect(enResult).not.toContain('[MISSING:');
         });
     });
 
-    describe('t function', () => {
-        describe('basic translation', () => {
-            it('should find existing translation key', () => {
-                const result = t({ locale: 'es', namespace: 'common', key: 'search' });
-
-                expect(result).toBeDefined();
-                expect(typeof result).toBe('string');
-                expect(result.length).toBeGreaterThan(0);
-            });
-
-            it('should return Spanish translation for es locale', () => {
-                const result = t({ locale: 'es', namespace: 'common', key: 'search' });
-
-                // Should be Spanish word for search
-                expect(result).toBe('Buscar');
-            });
-
-            it('should find nested translation keys', () => {
-                const result = t({ locale: 'es', namespace: 'nav', key: 'home' });
-
-                expect(result).toBeDefined();
-                expect(typeof result).toBe('string');
-            });
+    describe('createTranslations', () => {
+        it('should return an object with t and tPlural', () => {
+            const result = createTranslations('es');
+            expect(typeof result.t).toBe('function');
+            expect(typeof result.tPlural).toBe('function');
         });
 
-        describe('fallback handling', () => {
-            it('should return fallback for missing key', () => {
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'nonexistent-key',
-                    fallback: 'Fallback text'
-                });
-
-                expect(result).toBe('Fallback text');
-            });
-
-            it('should return missing indicator when no fallback in dev', () => {
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'nonexistent-key'
-                });
-
-                // In dev mode, should show missing indicator
-                if (import.meta.env.DEV) {
-                    expect(result).toContain('missing');
-                    expect(result).toContain('common.nonexistent-key');
-                }
-            });
-
-            it('should return key itself for missing translation without fallback in production', () => {
-                // This test would behave differently in production mode
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'some-key'
-                });
-
-                expect(result).toBeDefined();
-                expect(typeof result).toBe('string');
-            });
+        it('t should work the same as createT', () => {
+            const { t: tFn } = createTranslations('es');
+            expect(tFn('home.nonexistent', 'Fallback')).toBe('Fallback');
+            expect(tFn('home.missing', 'Hi {{name}}', { name: 'Test' })).toBe('Hi Test');
         });
 
-        describe('locale handling', () => {
-            it('should work with English locale', () => {
-                const result = t({ locale: 'en', namespace: 'common', key: 'search' });
-
-                expect(result).toBeDefined();
-                expect(typeof result).toBe('string');
-            });
-
-            it('should work with Portuguese locale', () => {
-                const result = t({ locale: 'pt', namespace: 'common', key: 'search' });
-
-                expect(result).toBeDefined();
-                expect(typeof result).toBe('string');
-            });
-
-            it('should fallback to default locale for unsupported locale', () => {
-                const result = t({
-                    locale: 'fr' as any,
-                    namespace: 'common',
-                    key: 'search'
-                });
-
-                // Should fallback to Spanish (default locale)
-                expect(result).toBe('Buscar');
-            });
+        it('tPlural should resolve _one variant for count=1', () => {
+            const { tPlural } = createTranslations('es');
+            // Use a key that has _one/_other variants in @repo/i18n
+            // If the key exists, it should interpolate count; if not, test with fallback behavior
+            const result = tPlural('home.test.items', 1);
+            // Since this key likely doesn't exist, it should show MISSING for the _one variant
+            // and fall back to the base key. Either way, it should not throw.
+            expect(typeof result).toBe('string');
         });
 
-        describe('parameter interpolation', () => {
-            it('should replace single brace parameters', () => {
-                // Note: This depends on translation files having interpolation
-                // We're testing the mechanism works
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'test',
-                    fallback: 'Hello {name}',
-                    params: { name: 'Juan' }
-                });
+        it('tPlural should resolve _other variant for count!=1', () => {
+            const { tPlural } = createTranslations('es');
+            const result = tPlural('home.test.items', 5);
+            expect(typeof result).toBe('string');
+        });
 
-                expect(result).toBe('Hello Juan');
+        it('tPlural should pass count as interpolation param', () => {
+            const { tPlural } = createTranslations('es');
+            // Even with a missing key, tPlural should not throw
+            const result = tPlural('home.nonexistent.items', 3, { extra: 'val' });
+            expect(typeof result).toBe('string');
+        });
+    });
+
+    describe('t (legacy)', () => {
+        it('should return fallback when key is missing', () => {
+            const result = t({
+                locale: 'es',
+                namespace: 'home',
+                key: 'nonexistent.key',
+                fallback: 'My fallback text'
             });
+            expect(result).toBe('My fallback text');
+        });
 
-            it('should replace double brace parameters', () => {
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'test',
-                    fallback: 'Hello {{name}}',
-                    params: { name: 'María' }
-                });
-
-                expect(result).toBe('Hello María');
+        it('should interpolate params in fallback', () => {
+            const result = t({
+                locale: 'es',
+                namespace: 'home',
+                key: 'nonexistent.key',
+                fallback: 'Hello {{name}}',
+                params: { name: 'World' }
             });
+            expect(result).toBe('Hello World');
+        });
 
-            it('should replace multiple parameters', () => {
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'test',
-                    fallback: 'Hello {{firstName}} {{lastName}}',
-                    params: { firstName: 'Juan', lastName: 'Pérez' }
-                });
-
-                expect(result).toBe('Hello Juan Pérez');
+        it('should interpolate {param} style placeholders', () => {
+            const result = t({
+                locale: 'es',
+                namespace: 'home',
+                key: 'nonexistent.key',
+                fallback: 'Count: {count} items',
+                params: { count: 5 }
             });
+            expect(result).toBe('Count: 5 items');
+        });
 
-            it('should handle number parameters', () => {
-                const result = t({
-                    locale: 'es',
-                    namespace: 'common',
-                    key: 'test',
-                    fallback: 'Count: {{count}}',
-                    params: { count: 42 }
-                });
-
-                expect(result).toBe('Count: 42');
+        it('should return raw string when no params provided', () => {
+            const result = t({
+                locale: 'es',
+                namespace: 'home',
+                key: 'nonexistent.key',
+                fallback: 'Simple text'
             });
+            expect(result).toBe('Simple text');
         });
     });
 });

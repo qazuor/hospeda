@@ -2,109 +2,73 @@
 /**
  * Sign in page - allows users to log in to their account.
  * NOTE: This page must NOT be prerendered because it reads `returnUrl` from query params.
- * Uses the SignInClient React island for interactive authentication via Better Auth.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
+ *
+ * @route /[lang]/auth/signin/
+ * @rendering SSR
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import Container from '../../../components/ui/Container.astro';
 import { SignInClient } from '../../../components/auth/SignIn.client';
 import { getLocaleFromParams } from '../../../lib/page-helpers';
-import { t } from '../../../lib/i18n';
+import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-/**
- * Redirect authenticated users to home page.
- * Auth pages should not be accessible when already signed in.
- */
+const typedLocale = locale as SupportedLocale;
+
+/** Redirect authenticated users to home page. */
 if (Astro.locals.user) {
-	return Astro.redirect(`/${locale}/`);
+    return Astro.redirect(buildUrl({ locale: typedLocale }));
 }
 
-const title = t({ locale, namespace: 'auth-ui', key: 'pages.signin.title' });
-const description = t({ locale, namespace: 'auth-ui', key: 'pages.signin.description' });
+const t = createT(typedLocale);
+const title = t('auth-ui.pages.signin.title', 'Iniciar sesion');
+const description = t('auth-ui.pages.signin.description', 'Inicia sesion en tu cuenta de Hospeda');
 
-/**
- * Localized labels
- */
-const labels = {
-	es: {
-		noAccount: '¿No tienes cuenta?',
-		signUp: 'Registrarse',
-		forgotPassword: '¿Olvidaste tu contraseña?',
-	},
-	en: {
-		noAccount: "Don't have an account?",
-		signUp: 'Sign Up',
-		forgotPassword: 'Forgot password?',
-	},
-	pt: {
-		noAccount: 'Não tem uma conta?',
-		signUp: 'Registrar',
-		forgotPassword: 'Esqueceu a senha?',
-	},
+const labels: Record<SupportedLocale, { noAccount: string; signUp: string; forgotPassword: string }> = {
+    es: { noAccount: 'No tienes cuenta?', signUp: 'Registrarse', forgotPassword: 'Olvidaste tu contrasena?' },
+    en: { noAccount: "Don't have an account?", signUp: 'Sign Up', forgotPassword: 'Forgot password?' },
+    pt: { noAccount: 'Nao tem uma conta?', signUp: 'Registrar', forgotPassword: 'Esqueceu a senha?' },
 };
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const currentLabels = labels[locale];
+const currentLabels = labels[typedLocale];
 
-/**
- * Build an absolute redirect URL so Better Auth OAuth redirects
- * return to the web app (port 4321) instead of the API (port 3001).
- * For email sign-in the client-side window.location.replace also works
- * with absolute URLs.
- */
-const returnPath = Astro.url.searchParams.get('returnUrl') || `/${locale}/mi-cuenta`;
+const returnPath = Astro.url.searchParams.get('returnUrl') || buildUrl({ locale: typedLocale, path: 'mi-cuenta' });
 const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || Astro.url.origin;
 const redirectTo = new URL(returnPath, siteOrigin).href;
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+    <SEOHead slot="head" title={title} description={description} canonical={canonicalUrl} locale={locale} noindex={true} />
 
-	<Container>
-		<div class="flex min-h-screen items-center justify-center py-12">
-			<div class="w-full max-w-md">
-				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
-					<SignInClient
-						client:load
-						redirectTo={redirectTo}
-						showOAuth={true}
-					/>
+    <div class="flex min-h-screen items-center justify-center py-12 px-4">
+        <div class="w-full max-w-md">
+            <div class="rounded-xl border border-border bg-card p-8 shadow-lg">
+                <SignInClient client:load redirectTo={redirectTo} showOAuth={true} />
 
-					<!-- Forgot password link -->
-					<div class="mt-4 text-center">
-						<a
-							href={`/${locale}/auth/forgot-password/`}
-							class="text-sm text-primary transition-colors hover:text-primary-dark"
-						>
-							{currentLabels.forgotPassword}
-						</a>
-					</div>
+                <div class="mt-4 text-center">
+                    <a
+                        href={buildUrl({ locale: typedLocale, path: 'auth/forgot-password' })}
+                        class="text-sm text-primary transition-colors hover:text-primary/80"
+                    >
+                        {currentLabels.forgotPassword}
+                    </a>
+                </div>
 
-					<!-- Sign up link -->
-					<div class="mt-4 text-center">
-						<span class="text-sm text-text-secondary">{currentLabels.noAccount}</span>
-						{' '}
-						<a
-							href={`/${locale}/auth/signup/`}
-							class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
-						>
-							{currentLabels.signUp}
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	</Container>
+                <div class="mt-4 text-center">
+                    <span class="text-sm text-muted-foreground">{currentLabels.noAccount}</span>
+                    {' '}
+                    <a
+                        href={buildUrl({ locale: typedLocale, path: 'auth/signup' })}
+                        class="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                        {currentLabels.signUp}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </BaseLayout>

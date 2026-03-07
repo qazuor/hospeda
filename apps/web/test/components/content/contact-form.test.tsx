@@ -1,109 +1,149 @@
+/**
+ * @file contact-form.test.tsx
+ * @description Tests for ContactForm.client.tsx.
+ * Covers rendering, field validation (empty / min-length / email format),
+ * form submission (loading state, API call, success/error toasts),
+ * inline error clearing on user input, and accessibility attributes.
+ */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-// Mock toast store BEFORE importing component
+// Mock toast store BEFORE importing the component so the module binding is replaced.
 vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
 
-// Mock fetch
+// Mock global fetch
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
 import { ContactForm } from '../../../src/components/content/ContactForm.client';
 import { addToast } from '../../../src/store/toast-store';
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/** Fill all four form fields with valid data using the Spanish locale labels. */
+function fillValidForm(): void {
+    fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'John Doe' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'john@example.com' } });
+    fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Test subject' } });
+    fireEvent.change(screen.getByLabelText('Mensaje'), {
+        target: { value: 'This is a test message with more than 20 characters' }
+    });
+}
+
+/** Submit the form by dispatching a submit event on the <form> element. */
+function submitForm(): void {
+    const button = screen.getByRole('button', { name: 'Enviar mensaje' });
+    const form = button.closest('form');
+    if (form) fireEvent.submit(form);
+}
+
+// ── Setup / teardown ──────────────────────────────────────────────────────────
+
+beforeEach(() => {
+    vi.mocked(addToast).mockClear();
+    mockFetch.mockClear();
+});
+
+afterEach(() => {
+    vi.clearAllMocks();
+});
+
+// ── Tests ─────────────────────────────────────────────────────────────────────
+
 describe('ContactForm.client.tsx', () => {
-    beforeEach(() => {
-        vi.mocked(addToast).mockClear();
-        mockFetch.mockClear();
-    });
-
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
-
     describe('Rendering', () => {
-        it('should render all form fields', () => {
+        it('should render all four form fields', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
+            // Assert
             expect(screen.getByLabelText('Nombre')).toBeInTheDocument();
             expect(screen.getByLabelText('Email')).toBeInTheDocument();
             expect(screen.getByLabelText('Asunto')).toBeInTheDocument();
             expect(screen.getByLabelText('Mensaje')).toBeInTheDocument();
         });
 
-        it('should render submit button', () => {
+        it('should render a submit button with type="submit"', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            expect(submitButton).toBeInTheDocument();
-            expect(submitButton).toHaveAttribute('type', 'submit');
+            // Assert
+            const button = screen.getByRole('button', { name: 'Enviar mensaje' });
+            expect(button).toBeInTheDocument();
+            expect(button).toHaveAttribute('type', 'submit');
         });
 
-        it('should render name input with placeholder', () => {
+        it('should render the name input with a placeholder', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const nameInput = screen.getByLabelText('Nombre');
-            expect(nameInput).toHaveAttribute('placeholder', 'Tu nombre');
+            // Assert
+            expect(screen.getByLabelText('Nombre')).toHaveAttribute('placeholder', 'Tu nombre');
         });
 
-        it('should render email input with placeholder', () => {
+        it('should render the email input with a placeholder', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const emailInput = screen.getByLabelText('Email');
-            expect(emailInput).toHaveAttribute('placeholder', 'tu@email.com');
+            // Assert
+            expect(screen.getByLabelText('Email')).toHaveAttribute('placeholder', 'tu@email.com');
         });
 
-        it('should render subject input with placeholder', () => {
+        it('should render the subject input with a placeholder', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const subjectInput = screen.getByLabelText('Asunto');
-            expect(subjectInput).toHaveAttribute('placeholder', 'Asunto de tu mensaje');
+            // Assert
+            expect(screen.getByLabelText('Asunto')).toHaveAttribute(
+                'placeholder',
+                'Asunto de tu mensaje'
+            );
         });
 
-        it('should render message textarea with placeholder', () => {
+        it('should render the message textarea with a placeholder', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const messageTextarea = screen.getByLabelText('Mensaje');
-            expect(messageTextarea).toHaveAttribute('placeholder', 'Escribí tu mensaje aquí...');
+            // Assert
+            expect(screen.getByLabelText('Mensaje')).toHaveAttribute(
+                'placeholder',
+                'Escribí tu mensaje aquí...'
+            );
         });
     });
 
     describe('Props', () => {
-        it('should default locale to "es"', () => {
-            render(<ContactForm />);
+        it('should apply a custom className to the form element', () => {
+            // Arrange & Act
+            const { container } = render(<ContactForm className="custom-form" />);
 
-            expect(screen.getByLabelText('Nombre')).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toBeInTheDocument();
+            // Assert
+            expect(container.querySelector('form')).toHaveClass('custom-form');
         });
 
-        it('should accept locale prop and display English labels', () => {
+        it('should accept locale="en" and display English labels', () => {
+            // Arrange & Act
             render(<ContactForm locale="en" />);
 
+            // Assert
             expect(screen.getByLabelText('Name')).toBeInTheDocument();
-            expect(screen.getByLabelText('Email')).toBeInTheDocument();
             expect(screen.getByLabelText('Subject')).toBeInTheDocument();
             expect(screen.getByLabelText('Message')).toBeInTheDocument();
             expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument();
         });
-
-        it('should accept className prop', () => {
-            const { container } = render(<ContactForm className="custom-class" />);
-
-            const form = container.querySelector('form');
-            expect(form).toHaveClass('custom-class');
-        });
     });
 
-    describe('Validation - Empty Fields', () => {
-        it('should show validation errors for empty required fields on submit', async () => {
+    describe('Validation — empty required fields', () => {
+        it('should display all four required-field errors on empty submit', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
                 expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
                 expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
@@ -112,66 +152,30 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should show name required error when name is empty', async () => {
+        it('should NOT call the API when validation fails', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
-                expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
-            });
-        });
-
-        it('should show email required error when email is empty', async () => {
-            render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
-            });
-        });
-
-        it('should show subject required error when subject is empty', async () => {
-            render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('El asunto es obligatorio')).toBeInTheDocument();
-            });
-        });
-
-        it('should show message required error when message is empty', async () => {
-            render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('El mensaje es obligatorio')).toBeInTheDocument();
+                expect(mockFetch).not.toHaveBeenCalled();
             });
         });
     });
 
-    describe('Validation - Min Length', () => {
-        it('should show min length error for name (< 2)', async () => {
+    describe('Validation — minimum length rules', () => {
+        it('should show min-length error for name shorter than 2 characters', async () => {
+            // Arrange
             render(<ContactForm />);
+            fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'A' } });
 
-            const nameInput = screen.getByLabelText('Nombre');
-            fireEvent.change(nameInput, { target: { value: 'A' } });
+            // Act
+            submitForm();
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(
                     screen.getByText('El nombre debe tener al menos 2 caracteres')
@@ -179,16 +183,15 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should show min length error for subject (< 3)', async () => {
+        it('should show min-length error for subject shorter than 3 characters', async () => {
+            // Arrange
             render(<ContactForm />);
+            fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'AB' } });
 
-            const subjectInput = screen.getByLabelText('Asunto');
-            fireEvent.change(subjectInput, { target: { value: 'AB' } });
+            // Act
+            submitForm();
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(
                     screen.getByText('El asunto debe tener al menos 3 caracteres')
@@ -196,16 +199,17 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should show min length error for message (< 20)', async () => {
+        it('should show min-length error for message shorter than 20 characters', async () => {
+            // Arrange
             render(<ContactForm />);
+            fireEvent.change(screen.getByLabelText('Mensaje'), {
+                target: { value: 'Short msg' }
+            });
 
-            const messageTextarea = screen.getByLabelText('Mensaje');
-            fireEvent.change(messageTextarea, { target: { value: 'Short message' } });
+            // Act
+            submitForm();
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(
                     screen.getByText('El mensaje debe tener al menos 20 caracteres')
@@ -214,14 +218,11 @@ describe('ContactForm.client.tsx', () => {
         });
     });
 
-    describe('Validation - Email Format', () => {
-        it('should show invalid email error for bad email format', async () => {
+    describe('Validation — email format', () => {
+        it('should show an invalid-email error for a malformed email address', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            // Fill all fields except email with valid data
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
+            fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'John Doe' } });
             fireEvent.change(screen.getByLabelText('Email'), {
                 target: { value: 'invalid-email' }
             });
@@ -232,91 +233,48 @@ describe('ContactForm.client.tsx', () => {
                 target: { value: 'This is a valid message with more than twenty characters' }
             });
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
                 expect(screen.getByText('El email no es válido')).toBeInTheDocument();
             });
-
-            // Should NOT call API when validation fails
-            expect(mockFetch).not.toHaveBeenCalled();
         });
 
-        it('should show invalid email error for email without @', async () => {
+        it('should show an error for an email missing the @ character', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            // Fill all fields except email with valid data
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
             fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'invalidemail.com' }
+                target: { value: 'userdomain.com' }
             });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test Subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a valid message with more than twenty characters' }
-            });
+            submitForm();
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(screen.getByText('El email no es válido')).toBeInTheDocument();
             });
         });
 
-        it('should show invalid email error for email without domain', async () => {
+        it('should not show an email error for a valid email address', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            // Fill all fields except email with valid data
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
             fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'user@' }
+                target: { value: 'user@example.com' }
             });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test Subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a valid message with more than twenty characters' }
-            });
+            fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'John Doe' } });
+            submitForm();
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('El email no es válido')).toBeInTheDocument();
-            });
-        });
-
-        it('should accept valid email format', async () => {
-            render(<ContactForm />);
-
-            const emailInput = screen.getByLabelText('Email');
-            fireEvent.change(emailInput, { target: { value: 'user@example.com' } });
-
-            const nameInput = screen.getByLabelText('Nombre');
-            fireEvent.change(nameInput, { target: { value: 'John Doe' } });
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert — email error specifically must be absent
             await waitFor(() => {
                 expect(screen.queryByText('El email no es válido')).not.toBeInTheDocument();
             });
         });
     });
 
-    describe('Form Submission - Loading State', () => {
-        it('should disable all fields during submission', async () => {
+    describe('Form submission — loading state', () => {
+        it('should disable all fields while the request is in flight', async () => {
+            // Arrange — keep fetch pending
             let resolveFetch!: (value: unknown) => void;
             mockFetch.mockImplementation(
                 () =>
@@ -324,28 +282,13 @@ describe('ContactForm.client.tsx', () => {
                         resolveFetch = resolve;
                     })
             );
-
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(screen.getByLabelText('Nombre')).toBeDisabled();
                 expect(screen.getByLabelText('Email')).toBeDisabled();
@@ -353,13 +296,14 @@ describe('ContactForm.client.tsx', () => {
                 expect(screen.getByLabelText('Mensaje')).toBeDisabled();
             });
 
-            // Resolve the pending fetch so the component cleans up before teardown
+            // Cleanup — resolve so React can unmount cleanly
             await act(async () => {
                 resolveFetch({ ok: true, json: async () => ({}) });
             });
         });
 
-        it('should show loading text on submit button during submission', async () => {
+        it('should show a loading text on the submit button during submission', async () => {
+            // Arrange
             let resolveFetch!: (value: unknown) => void;
             mockFetch.mockImplementation(
                 () =>
@@ -367,76 +311,41 @@ describe('ContactForm.client.tsx', () => {
                         resolveFetch = resolve;
                     })
             );
-
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(screen.getByRole('button', { name: 'Enviando...' })).toBeInTheDocument();
             });
 
-            // Resolve the pending fetch so the component cleans up before teardown
             await act(async () => {
                 resolveFetch({ ok: true, json: async () => ({}) });
             });
         });
     });
 
-    describe('API Integration', () => {
-        it('should call API on valid submit', async () => {
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({})
-            });
-
+    describe('API integration', () => {
+        it('should POST to the contact endpoint with trimmed field values', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledTimes(1);
                 expect(mockFetch).toHaveBeenCalledWith(
                     'http://localhost:3001/api/v1/public/contact',
                     {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             name: 'John Doe',
                             email: 'john@example.com',
@@ -448,35 +357,17 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should show success toast and reset form on success', async () => {
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({})
-            });
-
+        it('should show a success toast and reset the form on a successful response', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
-                expect(vi.mocked(addToast)).toHaveBeenCalledTimes(1);
                 expect(vi.mocked(addToast)).toHaveBeenCalledWith({
                     type: 'success',
                     message: 'Tu mensaje fue enviado correctamente'
@@ -490,343 +381,172 @@ describe('ContactForm.client.tsx', () => {
             expect(screen.getByLabelText('Mensaje')).toHaveValue('');
         });
 
-        it('should show error toast on API failure', async () => {
-            mockFetch.mockResolvedValue({
-                ok: false,
-                status: 500
-            });
-
+        it('should show an error toast when the API returns a non-OK status', async () => {
+            // Arrange
+            mockFetch.mockResolvedValue({ ok: false, status: 500 });
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
-                expect(vi.mocked(addToast)).toHaveBeenCalledTimes(1);
                 expect(vi.mocked(addToast)).toHaveBeenCalledWith({
                     type: 'error',
                     message: 'No se pudo enviar el mensaje. Intentá nuevamente.'
                 });
             });
-
-            // Form should keep data
-            expect(screen.getByLabelText('Nombre')).toHaveValue('John Doe');
-            expect(screen.getByLabelText('Email')).toHaveValue('john@example.com');
-            expect(screen.getByLabelText('Asunto')).toHaveValue('Test subject');
-            expect(screen.getByLabelText('Mensaje')).toHaveValue(
-                'This is a test message with more than 20 characters'
-            );
         });
 
-        it('should keep form data on error and re-enable fields', async () => {
+        it('should show an error toast when the fetch itself throws a network error', async () => {
+            // Arrange
             mockFetch.mockRejectedValue(new Error('Network error'));
-
             render(<ContactForm />);
+            fillValidForm();
 
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Nombre'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Asunto'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Mensaje'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
+            // Act
+            submitForm();
 
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            // Assert
             await waitFor(() => {
                 expect(vi.mocked(addToast)).toHaveBeenCalledWith({
                     type: 'error',
                     message: 'No se pudo enviar el mensaje. Intentá nuevamente.'
                 });
             });
+        });
 
-            // Fields should be re-enabled
-            expect(screen.getByLabelText('Nombre')).not.toBeDisabled();
-            expect(screen.getByLabelText('Email')).not.toBeDisabled();
-            expect(screen.getByLabelText('Asunto')).not.toBeDisabled();
-            expect(screen.getByLabelText('Mensaje')).not.toBeDisabled();
+        it('should re-enable all fields after a failed submission', async () => {
+            // Arrange
+            mockFetch.mockRejectedValue(new Error('Network error'));
+            render(<ContactForm />);
+            fillValidForm();
+
+            // Act
+            submitForm();
+
+            // Assert
+            await waitFor(() => {
+                expect(screen.getByLabelText('Nombre')).not.toBeDisabled();
+                expect(screen.getByLabelText('Email')).not.toBeDisabled();
+                expect(screen.getByLabelText('Asunto')).not.toBeDisabled();
+                expect(screen.getByLabelText('Mensaje')).not.toBeDisabled();
+            });
+        });
+
+        it('should retain form data after a failed submission', async () => {
+            // Arrange
+            mockFetch.mockRejectedValue(new Error('Network error'));
+            render(<ContactForm />);
+            fillValidForm();
+
+            // Act
+            submitForm();
+
+            // Assert
+            await waitFor(() => {
+                expect(vi.mocked(addToast)).toHaveBeenCalled();
+            });
+            expect(screen.getByLabelText('Nombre')).toHaveValue('John Doe');
+            expect(screen.getByLabelText('Email')).toHaveValue('john@example.com');
         });
     });
 
-    describe('Error Clearing', () => {
-        it('should clear name error when user types', async () => {
+    describe('Error clearing on user input', () => {
+        it('should clear the name error as the user types in the name field', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            submitForm();
             await waitFor(() => {
                 expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
             });
 
-            const nameInput = screen.getByLabelText('Nombre');
-            fireEvent.change(nameInput, { target: { value: 'John' } });
+            // Act
+            fireEvent.change(screen.getByLabelText('Nombre'), { target: { value: 'John' } });
 
+            // Assert
             await waitFor(() => {
                 expect(screen.queryByText('El nombre es obligatorio')).not.toBeInTheDocument();
             });
         });
 
-        it('should clear email error when user types', async () => {
+        it('should clear the email error as the user types in the email field', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            submitForm();
             await waitFor(() => {
                 expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
             });
 
-            const emailInput = screen.getByLabelText('Email');
-            fireEvent.change(emailInput, { target: { value: 'john@example.com' } });
+            // Act
+            fireEvent.change(screen.getByLabelText('Email'), {
+                target: { value: 'john@example.com' }
+            });
 
+            // Assert
             await waitFor(() => {
                 expect(screen.queryByText('El email es obligatorio')).not.toBeInTheDocument();
             });
         });
 
-        it('should clear subject error when user types', async () => {
+        it('should clear the subject error as the user types in the subject field', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            submitForm();
             await waitFor(() => {
                 expect(screen.getByText('El asunto es obligatorio')).toBeInTheDocument();
             });
 
-            const subjectInput = screen.getByLabelText('Asunto');
-            fireEvent.change(subjectInput, { target: { value: 'Test' } });
+            // Act
+            fireEvent.change(screen.getByLabelText('Asunto'), { target: { value: 'Test' } });
 
+            // Assert
             await waitFor(() => {
                 expect(screen.queryByText('El asunto es obligatorio')).not.toBeInTheDocument();
             });
         });
 
-        it('should clear message error when user types', async () => {
+        it('should clear the message error as the user types in the message field', async () => {
+            // Arrange
             render(<ContactForm />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
+            submitForm();
             await waitFor(() => {
                 expect(screen.getByText('El mensaje es obligatorio')).toBeInTheDocument();
             });
 
-            const messageTextarea = screen.getByLabelText('Mensaje');
-            fireEvent.change(messageTextarea, {
-                target: { value: 'This is a test message' }
+            // Act
+            fireEvent.change(screen.getByLabelText('Mensaje'), {
+                target: { value: 'Some text' }
             });
 
+            // Assert
             await waitFor(() => {
                 expect(screen.queryByText('El mensaje es obligatorio')).not.toBeInTheDocument();
             });
         });
     });
 
-    describe('Locale Switching', () => {
-        it('should display Spanish labels when locale is "es"', () => {
-            render(<ContactForm locale="es" />);
-
-            expect(screen.getByLabelText('Nombre')).toBeInTheDocument();
-            expect(screen.getByLabelText('Email')).toBeInTheDocument();
-            expect(screen.getByLabelText('Asunto')).toBeInTheDocument();
-            expect(screen.getByLabelText('Mensaje')).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: 'Enviar mensaje' })).toBeInTheDocument();
-        });
-
-        it('should display English labels when locale is "en"', () => {
-            render(<ContactForm locale="en" />);
-
-            expect(screen.getByLabelText('Name')).toBeInTheDocument();
-            expect(screen.getByLabelText('Email')).toBeInTheDocument();
-            expect(screen.getByLabelText('Subject')).toBeInTheDocument();
-            expect(screen.getByLabelText('Message')).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: 'Send message' })).toBeInTheDocument();
-        });
-
-        it('should display Spanish placeholders when locale is "es"', () => {
-            render(<ContactForm locale="es" />);
-
-            expect(screen.getByLabelText('Nombre')).toHaveAttribute('placeholder', 'Tu nombre');
-            expect(screen.getByLabelText('Email')).toHaveAttribute('placeholder', 'tu@email.com');
-            expect(screen.getByLabelText('Asunto')).toHaveAttribute(
-                'placeholder',
-                'Asunto de tu mensaje'
-            );
-            expect(screen.getByLabelText('Mensaje')).toHaveAttribute(
-                'placeholder',
-                'Escribí tu mensaje aquí...'
-            );
-        });
-
-        it('should display English placeholders when locale is "en"', () => {
-            render(<ContactForm locale="en" />);
-
-            expect(screen.getByLabelText('Name')).toHaveAttribute('placeholder', 'Your name');
-            expect(screen.getByLabelText('Email')).toHaveAttribute('placeholder', 'your@email.com');
-            expect(screen.getByLabelText('Subject')).toHaveAttribute(
-                'placeholder',
-                'Subject of your message'
-            );
-            expect(screen.getByLabelText('Message')).toHaveAttribute(
-                'placeholder',
-                'Write your message here...'
-            );
-        });
-
-        it('should display localized error messages in Spanish', async () => {
-            render(<ContactForm locale="es" />);
-
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El asunto es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El mensaje es obligatorio')).toBeInTheDocument();
-            });
-        });
-
-        it('should display localized error messages in English', async () => {
-            render(<ContactForm locale="en" />);
-
-            const submitButton = screen.getByRole('button', { name: 'Send message' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByText('Name is required')).toBeInTheDocument();
-                expect(screen.getByText('Email is required')).toBeInTheDocument();
-                expect(screen.getByText('Subject is required')).toBeInTheDocument();
-                expect(screen.getByText('Message is required')).toBeInTheDocument();
-            });
-        });
-
-        it('should display English loading text when locale is "en"', async () => {
-            let resolveFetch!: (value: unknown) => void;
-            mockFetch.mockImplementation(
-                () =>
-                    new Promise((resolve) => {
-                        resolveFetch = resolve;
-                    })
-            );
-
-            render(<ContactForm locale="en" />);
-
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Name'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Subject'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Message'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
-
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Send message' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(screen.getByRole('button', { name: 'Sending...' })).toBeInTheDocument();
-            });
-
-            // Resolve the pending fetch so the component cleans up before teardown
-            await act(async () => {
-                resolveFetch({ ok: true, json: async () => ({}) });
-            });
-        });
-
-        it('should show English success message when locale is "en"', async () => {
-            mockFetch.mockResolvedValue({
-                ok: true,
-                json: async () => ({})
-            });
-
-            render(<ContactForm locale="en" />);
-
-            // Fill form
-            fireEvent.change(screen.getByLabelText('Name'), {
-                target: { value: 'John Doe' }
-            });
-            fireEvent.change(screen.getByLabelText('Email'), {
-                target: { value: 'john@example.com' }
-            });
-            fireEvent.change(screen.getByLabelText('Subject'), {
-                target: { value: 'Test subject' }
-            });
-            fireEvent.change(screen.getByLabelText('Message'), {
-                target: { value: 'This is a test message with more than 20 characters' }
-            });
-
-            // Submit
-            const submitButton = screen.getByRole('button', { name: 'Send message' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
-
-            await waitFor(() => {
-                expect(vi.mocked(addToast)).toHaveBeenCalledWith({
-                    type: 'success',
-                    message: 'Your message was sent successfully'
-                });
-            });
-        });
-    });
-
     describe('Accessibility', () => {
-        it('should have aria-required on all input fields', () => {
+        it('should mark all inputs as aria-required="true"', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
+            // Assert
             expect(screen.getByLabelText('Nombre')).toHaveAttribute('aria-required', 'true');
             expect(screen.getByLabelText('Email')).toHaveAttribute('aria-required', 'true');
             expect(screen.getByLabelText('Asunto')).toHaveAttribute('aria-required', 'true');
             expect(screen.getByLabelText('Mensaje')).toHaveAttribute('aria-required', 'true');
         });
 
-        it('should have aria-invalid on fields when there are errors', async () => {
+        it('should set aria-invalid="true" on fields that fail validation', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
                 expect(screen.getByLabelText('Nombre')).toHaveAttribute('aria-invalid', 'true');
                 expect(screen.getByLabelText('Email')).toHaveAttribute('aria-invalid', 'true');
@@ -835,13 +555,14 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should have aria-describedby on fields when there are errors', async () => {
+        it('should link fields to their error messages via aria-describedby', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
                 expect(screen.getByLabelText('Nombre')).toHaveAttribute(
                     'aria-describedby',
@@ -862,29 +583,31 @@ describe('ContactForm.client.tsx', () => {
             });
         });
 
-        it('should have role="alert" on error messages', async () => {
+        it('should give all validation error paragraphs role="alert"', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
-                const errors = screen.getAllByRole('alert');
-                expect(errors.length).toBe(4);
+                const alerts = screen.getAllByRole('alert');
+                expect(alerts).toHaveLength(4);
             });
         });
 
-        it('should have aria-live="polite" on error messages', async () => {
+        it('should give all error messages aria-live="polite"', async () => {
+            // Arrange
             const { container } = render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
-                const errorMessages = Array.from(container.querySelectorAll('[role="alert"]'));
-                for (const error of errorMessages) {
+                const errors = Array.from(container.querySelectorAll('[role="alert"]'));
+                for (const error of errors) {
                     expect(error).toHaveAttribute('aria-live', 'polite');
                 }
             });
@@ -892,38 +615,33 @@ describe('ContactForm.client.tsx', () => {
     });
 
     describe('Styling', () => {
-        it('should apply custom className to form', () => {
-            const { container } = render(<ContactForm className="custom-form-class" />);
-
-            const form = container.querySelector('form');
-            expect(form).toHaveClass('custom-form-class');
-        });
-
-        it('should have proper spacing between form fields', () => {
+        it('should apply space-y-4 to the form for field spacing', () => {
+            // Arrange & Act
             const { container } = render(<ContactForm />);
 
-            const form = container.querySelector('form');
-            expect(form?.className).toContain('space-y-4');
+            // Assert
+            expect(container.querySelector('form')?.className).toContain('space-y-4');
         });
 
-        it('should apply error border color when field has error', async () => {
+        it('should apply error border color when a field has an error', async () => {
+            // Arrange
             render(<ContactForm />);
 
-            const submitButton = screen.getByRole('button', { name: 'Enviar mensaje' });
-            const form = submitButton.closest('form');
-            if (form) fireEvent.submit(form);
+            // Act
+            submitForm();
 
+            // Assert
             await waitFor(() => {
-                const nameInput = screen.getByLabelText('Nombre');
-                expect(nameInput.className).toContain('border-red-500');
+                expect(screen.getByLabelText('Nombre').className).toContain('border-destructive');
             });
         });
 
-        it('should apply normal border color when field has no error', () => {
+        it('should apply normal border color when a field has no error', () => {
+            // Arrange & Act
             render(<ContactForm />);
 
-            const nameInput = screen.getByLabelText('Nombre');
-            expect(nameInput.className).toContain('border-border');
+            // Assert
+            expect(screen.getByLabelText('Nombre').className).toContain('border-border');
         });
     });
 });

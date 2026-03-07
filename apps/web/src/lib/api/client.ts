@@ -24,7 +24,6 @@ const config: ApiClientConfig = {
 
 /**
  * Serialize query parameters into a URL search string.
- * Filters out undefined/null values.
  */
 function serializeParams(params?: Record<string, unknown>): string {
     if (!params) return '';
@@ -131,7 +130,6 @@ async function request<T>({
 
 /**
  * API client with typed HTTP methods.
- * All public endpoints are under /api/v1/public/*.
  */
 export const apiClient = {
     /** GET request returning typed data */
@@ -187,9 +185,6 @@ const MAX_PAGE_SIZE = 100;
 
 /**
  * Fetch all items from a paginated list endpoint by iterating through pages.
- * Used by getStaticPaths to collect every record when the total exceeds MAX_PAGE_SIZE.
- *
- * @returns All items collected across pages, or an empty array on failure.
  */
 export async function fetchAllPages<T>({
     fetcher,
@@ -208,7 +203,6 @@ export async function fetchAllPages<T>({
     const { items, pagination } = firstResult.data;
     const allItems: T[] = [...items];
 
-    // Fetch remaining pages in parallel
     if (pagination.totalPages > 1) {
         const pageNumbers = Array.from({ length: pagination.totalPages - 1 }, (_, i) => i + 2);
         const results = await Promise.all(

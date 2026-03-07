@@ -1,164 +1,216 @@
 ---
 /**
- * Mobile carousel for destination cards with CSS scroll-snap.
- * Renders cards in a horizontal scroll container with peek effect,
- * edge fade gradients, and a progress bar indicator.
- * Only visible on mobile (<sm breakpoint).
- * Uses vanilla JS for progress updates, no external dependencies.
+ * @file DestinationCarousel.astro
+ * @description Mobile-only horizontal carousel for destination cards.
+ * Renders slotted cards in a CSS scroll-snap container with:
+ * - Peek effect: each card occupies ~85% of viewport width so the next
+ *   card peeks at the right edge.
+ * - Edge fade gradients on both sides.
+ * - Accessible progress bar (role="progressbar") updated via vanilla JS.
+ * - Keyboard navigation with ArrowLeft/Right, Home, End.
+ *
+ * Only visible on mobile (below `sm` breakpoint). The grid layout
+ * should be used for larger viewports.
+ *
+ * Vanilla JS handles scroll and keyboard events; no React/Vue required.
  */
-import { t, type SupportedLocale } from '../../lib/i18n';
+
+import { createT, type SupportedLocale } from '../../lib/i18n';
 
 interface Props {
-  /** Total number of cards in the carousel */
-  count: number;
-  locale?: SupportedLocale;
-  class?: string;
+    /** Total number of destination cards slotted into the carousel. */
+    count: number;
+    /** Current locale used for aria-labels. Defaults to "es". */
+    locale?: SupportedLocale;
+    /** Additional CSS classes to apply to the root element. */
+    class?: string;
 }
 
 const { count, locale = 'es', class: className } = Astro.props;
 
-const carouselLabel = t({ locale, namespace: 'destinations', key: 'featured.carousel.label', fallback: 'Destinos destacados' });
-const progressLabel = t({ locale, namespace: 'destinations', key: 'featured.carousel.progressLabel', fallback: 'Carousel progress' });
-const initialWidth = count > 0 ? Math.round(100 / count) : 100;
+const t = createT(locale);
+
+const carouselLabel  = t('destinations.featured.carousel.label',         'Destinos destacados');
+const progressLabel  = t('destinations.featured.carousel.progressLabel', 'Progreso del carrusel');
+const initialWidth   = count > 0 ? Math.round(100 / count) : 100;
 ---
 
 <div
-  class:list={['destination-carousel', className]}
-  role="region"
-  aria-label={carouselLabel}
-  aria-roledescription="carousel"
+    class:list={['destination-carousel', className]}
+    role="region"
+    aria-label={carouselLabel}
+    aria-roledescription="carousel"
 >
-  {/* Scroll container with edge fades */}
-  <div class="carousel-scroll-wrapper relative">
-    {/* Left edge fade */}
-    <div class="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-bg-warm to-transparent" aria-hidden="true" />
+    <!-- Scroll container with edge fade gradients -->
+    <div class="carousel-scroll-wrapper relative">
 
-    <div
-      class="carousel-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 scrollbar-none"
-      data-carousel-track
-    >
-      <slot />
-    </div>
-
-    {/* Right edge fade */}
-    <div class="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-bg-warm to-transparent" aria-hidden="true" />
-  </div>
-
-  {/* Progress bar */}
-  {count > 1 && (
-    <div class="mt-3 px-4" role="progressbar" aria-label={progressLabel} aria-valuemin={0} aria-valuemax={100} aria-valuenow={initialWidth}>
-      <div class="h-0.5 w-full rounded-full bg-border">
+        <!-- Left edge fade -->
         <div
-          class="carousel-progress-fill h-full rounded-full bg-primary transition-all duration-200"
-          style={`width: ${initialWidth}%`}
-          data-carousel-progress
+            class="pointer-events-none absolute left-0 top-0 z-10 h-full w-6 bg-gradient-to-r from-background to-transparent"
+            aria-hidden="true"
         />
-      </div>
+
+        <!-- Scroll track: snap-mandatory ensures cards align to snap points -->
+        <div
+            class="carousel-track flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 scrollbar-none"
+            data-carousel-track
+        >
+            <slot />
+        </div>
+
+        <!-- Right edge fade -->
+        <div
+            class="pointer-events-none absolute right-0 top-0 z-10 h-full w-6 bg-gradient-to-l from-background to-transparent"
+            aria-hidden="true"
+        />
     </div>
-  )}
+
+    <!-- Progress bar — only rendered when there are multiple cards -->
+    {count > 1 && (
+        <div
+            class="mt-3 px-4"
+            role="progressbar"
+            aria-label={progressLabel}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={initialWidth}
+        >
+            <div class="h-0.5 w-full rounded-full bg-border">
+                <div
+                    class="carousel-progress-fill h-full rounded-full bg-primary transition-all duration-200"
+                    style={`width: ${initialWidth}%`}
+                    data-carousel-progress
+                />
+            </div>
+        </div>
+    )}
 </div>
 
 <style>
-  /* Hide scrollbar while maintaining scroll functionality */
-  .scrollbar-none {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-none::-webkit-scrollbar {
-    display: none;
-  }
+    /* Hide scrollbar while preserving scroll functionality */
+    .scrollbar-none {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+        display: none;
+    }
 
-  /* Each card takes ~85% of viewport width for peek effect */
-  .carousel-track > :global(*) {
-    flex: 0 0 85%;
-    scroll-snap-align: start;
-  }
+    /* Each card occupies ~85% of viewport width for the peek effect */
+    .carousel-track > :global(*) {
+        flex: 0 0 85%;
+        scroll-snap-align: start;
+    }
 
-  /* First card: add left padding for centering */
-  .carousel-track > :global(*:first-child) {
-    margin-left: 1rem;
-  }
+    /* Left margin on the first card for visual centering */
+    .carousel-track > :global(*:first-child) {
+        margin-left: 1rem;
+    }
 
-  /* Last card: add right padding so it can fully snap */
-  .carousel-track > :global(*:last-child) {
-    margin-right: 1rem;
-  }
+    /* Right margin on the last card so it can fully snap into view */
+    .carousel-track > :global(*:last-child) {
+        margin-right: 1rem;
+    }
 </style>
 
 <script>
-  import { resolveKeyboardNavigation } from './destination-carousel.utils';
+    import { resolveKeyboardNavigation } from './destination-carousel.utils';
 
-  let carouselController: AbortController | null = null;
-  let carouselScrollTimeout: ReturnType<typeof setTimeout> | null = null;
+    let carouselController: AbortController | null = null;
+    let carouselScrollTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  function initCarousel(): void {
-    carouselController?.abort();
-    carouselController = new AbortController();
-    const { signal } = carouselController;
+    /** Initialize all carousels found in the document. */
+    function initCarousel(): void {
+        carouselController?.abort();
+        carouselController = new AbortController();
+        const { signal } = carouselController;
 
-    const carousels = document.querySelectorAll('.destination-carousel');
+        const carousels = document.querySelectorAll('.destination-carousel');
 
-    for (const carousel of carousels) {
-      const track = carousel.querySelector('[data-carousel-track]') as HTMLElement | null;
-      const progressFill = carousel.querySelector('[data-carousel-progress]') as HTMLElement | null;
-      const progressBar = progressFill?.parentElement?.parentElement as HTMLElement | null;
+        for (const carousel of carousels) {
+            const track       = carousel.querySelector('[data-carousel-track]') as HTMLElement | null;
+            const progressFill = carousel.querySelector('[data-carousel-progress]') as HTMLElement | null;
+            const progressBar  = progressFill?.parentElement?.parentElement as HTMLElement | null;
 
-      if (!track) continue;
+            if (!track) continue;
 
-      const updateProgress = (): void => {
-        if (!progressFill || !progressBar) return;
+            /**
+             * Recalculate the progress bar fill width based on the current scroll position.
+             * The fill grows from (1/count) at start to 100% at the end.
+             */
+            const updateProgress = (): void => {
+                if (!progressFill || !progressBar) return;
 
-        const maxScroll = track.scrollWidth - track.clientWidth;
-        if (maxScroll <= 0) {
-          progressFill.style.width = '100%';
-          progressBar.setAttribute('aria-valuenow', '100');
-          return;
+                const maxScroll = track.scrollWidth - track.clientWidth;
+                if (maxScroll <= 0) {
+                    progressFill.style.width = '100%';
+                    progressBar.setAttribute('aria-valuenow', '100');
+                    return;
+                }
+
+                const children  = Array.from(track.children) as HTMLElement[];
+                const count     = children.length;
+                const baseWidth = count > 0 ? 100 / count : 100;
+                const ratio     = track.scrollLeft / maxScroll;
+                const fillWidth = baseWidth + ratio * (100 - baseWidth);
+                const rounded   = Math.round(fillWidth);
+
+                progressFill.style.width = `${rounded}%`;
+                progressBar.setAttribute('aria-valuenow', String(rounded));
+            };
+
+            /* Passive scroll listener: debounced at 50 ms for performance */
+            track.addEventListener(
+                'scroll',
+                () => {
+                    if (carouselScrollTimeout !== null) clearTimeout(carouselScrollTimeout);
+                    carouselScrollTimeout = setTimeout(updateProgress, 50);
+                },
+                { passive: true, signal }
+            );
+
+            /* Keyboard navigation: ArrowLeft/Right/Up/Down, Home, End */
+            carousel.addEventListener(
+                'keydown',
+                (e) => {
+                    const event    = e as KeyboardEvent;
+                    const children = Array.from(track.children) as HTMLElement[];
+                    if (children.length === 0) return;
+
+                    const itemWidth    = children[0].offsetWidth + (parseFloat(getComputedStyle(track).gap) || 16);
+                    const currentIndex = Math.round(track.scrollLeft / itemWidth);
+                    const { targetIndex } = resolveKeyboardNavigation({
+                        key: event.key,
+                        currentIndex,
+                        itemCount: children.length
+                    });
+
+                    if (targetIndex !== null) {
+                        event.preventDefault();
+                        children[targetIndex].scrollIntoView({
+                            behavior: 'smooth',
+                            inline:   'start',
+                            block:    'nearest'
+                        });
+                    }
+                },
+                { signal }
+            );
         }
+    }
 
-        const children = Array.from(track.children) as HTMLElement[];
-        const count = children.length;
-        const baseWidth = count > 0 ? 100 / count : 100;
-        const scrollRatio = track.scrollLeft / maxScroll;
-        const fillWidth = baseWidth + scrollRatio * (100 - baseWidth);
-        const rounded = Math.round(fillWidth);
+    initCarousel();
 
-        progressFill.style.width = `${rounded}%`;
-        progressBar.setAttribute('aria-valuenow', String(rounded));
-      };
+    /* Re-initialize after view transitions (Astro page-load) */
+    document.addEventListener('astro:page-load', initCarousel);
 
-      /* Scroll-based progress updates (passive for performance) */
-      track.addEventListener('scroll', () => {
-        if (carouselScrollTimeout !== null) clearTimeout(carouselScrollTimeout);
-        carouselScrollTimeout = setTimeout(updateProgress, 50);
-      }, { passive: true, signal });
-
-      /* Keyboard navigation: Arrow keys scroll between cards */
-      carousel.addEventListener('keydown', (e) => {
-        const event = e as KeyboardEvent;
-        const children = Array.from(track.children) as HTMLElement[];
-        if (children.length === 0) return;
-
-        const scrollLeft = track.scrollLeft;
-        const itemWidth = children[0].offsetWidth + (parseFloat(getComputedStyle(track).gap) || 16);
-        const currentIndex = Math.round(scrollLeft / itemWidth);
-        const { targetIndex } = resolveKeyboardNavigation({ key: event.key, currentIndex, itemCount: children.length });
-
-        if (targetIndex !== null) {
-          event.preventDefault();
-          children[targetIndex].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+    /* Clean up before the old DOM is swapped out */
+    document.addEventListener('astro:before-swap', () => {
+        if (carouselScrollTimeout !== null) {
+            clearTimeout(carouselScrollTimeout);
+            carouselScrollTimeout = null;
         }
-      }, { signal });
-    }
-  }
-
-  initCarousel();
-  document.addEventListener('astro:page-load', initCarousel);
-  document.addEventListener('astro:before-swap', () => {
-    if (carouselScrollTimeout !== null) {
-      clearTimeout(carouselScrollTimeout);
-      carouselScrollTimeout = null;
-    }
-    carouselController?.abort();
-    carouselController = null;
-  });
+        carouselController?.abort();
+        carouselController = null;
+    });
 </script>

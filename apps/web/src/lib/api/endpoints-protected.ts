@@ -14,7 +14,7 @@ import type { ApiResult, PaginatedResponse } from './types';
 
 const BASE = '/api/v1/public';
 
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// --- Auth ---
 
 /** Auth-related public endpoints */
 export const authApi = {
@@ -24,7 +24,7 @@ export const authApi = {
     }
 };
 
-// ─── Protected Endpoints (require authentication) ────────────────────────────
+// --- Protected Endpoints (require authentication) ---
 
 const PROTECTED = '/api/v1/protected';
 
@@ -205,7 +205,7 @@ export interface PlanItem {
     readonly isCurrent?: boolean;
 }
 
-// ─── Billing (Protected) ────────────────────────────────────────────────────
+// --- Billing (Protected) ---
 
 /** Protected billing API endpoints for user dashboard */
 export const billingApi = {
@@ -337,7 +337,7 @@ export const billingApi = {
     }
 };
 
-// ─── Tags ────────────────────────────────────────────────────────────────────
+// --- Tags ---
 
 /** Public tag response (subset of full Tag) */
 interface TagPublicResponse {
@@ -354,7 +354,7 @@ export const tagsApi = {
     }
 };
 
-// ─── Plans (Billing) ─────────────────────────────────────────────────────────
+// --- Plans (Billing) ---
 
 /** Public billing plan API endpoints */
 export const plansApi = {
@@ -367,7 +367,7 @@ export const plansApi = {
     }
 };
 
-// ─── Exchange Rates ───────────────────────────────────────────────────────────
+// --- Exchange Rates ---
 
 /**
  * Exchange rate item returned by the public exchange-rates endpoint.

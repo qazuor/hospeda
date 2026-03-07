@@ -1,7 +1,6 @@
 /**
- * Frontend logger for the web application.
+ * Frontend logger for the Hospeda web application.
  * Provides styled console output with category prefix for easy filtering.
- * Only logs in development mode unless explicitly enabled.
  */
 
 type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
@@ -15,9 +14,6 @@ interface LoggerOptions {
 
 /**
  * Creates a frontend logger with styled console output.
- *
- * @param options - Logger configuration options
- * @returns Logger instance with log, info, warn, error, and debug methods
  */
 function createFrontendLogger(options: LoggerOptions) {
     const { category, bgColor, textColor = '#000000', enabled = true } = options;
@@ -47,12 +43,10 @@ function createFrontendLogger(options: LoggerOptions) {
 }
 
 /**
- * Web-app-specific logger instance.
- * Uses blue color scheme to distinguish web logs from admin (green).
- * Only active in development or when VITE_ENABLE_LOGGING is set.
+ * Hospeda web logger instance.
  */
 export const webLogger = createFrontendLogger({
-    category: 'WEB',
+    category: 'HOSPEDA-WEB',
     bgColor: '#3b82f6',
     textColor: '#ffffff',
     enabled: import.meta.env.DEV || import.meta.env.VITE_ENABLE_LOGGING === 'true'

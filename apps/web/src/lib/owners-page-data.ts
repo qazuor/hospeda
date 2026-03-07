@@ -60,7 +60,7 @@ export interface OwnerFinalCtaContent {
     readonly ctaSecondary: string;
 }
 
-// ─── Hero ───────────────────────────────────────────────────────────────────────
+// --- Hero ---
 
 /** Localized hero section content */
 export const OWNER_HERO: Record<SupportedLocale, OwnerHeroContent> = {
@@ -87,7 +87,7 @@ export const OWNER_HERO: Record<SupportedLocale, OwnerHeroContent> = {
     }
 };
 
-// ─── Benefits ───────────────────────────────────────────────────────────────────
+// --- Benefits ---
 
 /** Localized benefits section content */
 export const OWNER_BENEFITS: Record<SupportedLocale, OwnerBenefitsContent> = {
@@ -222,7 +222,7 @@ export const OWNER_BENEFITS: Record<SupportedLocale, OwnerBenefitsContent> = {
     }
 };
 
-// ─── How It Works ───────────────────────────────────────────────────────────────
+// --- How It Works ---
 
 /** Localized how-it-works section content */
 export const OWNER_HOW_IT_WORKS: Record<SupportedLocale, OwnerHowItWorksContent> = {
@@ -303,7 +303,7 @@ export const OWNER_HOW_IT_WORKS: Record<SupportedLocale, OwnerHowItWorksContent>
     }
 };
 
-// ─── FAQ ────────────────────────────────────────────────────────────────────────
+// --- FAQ ---
 
 /** Localized FAQ section content */
 export const OWNER_FAQ: Record<SupportedLocale, OwnerFaqContent> = {
@@ -384,7 +384,7 @@ export const OWNER_FAQ: Record<SupportedLocale, OwnerFaqContent> = {
     }
 };
 
-// ─── Final CTA ──────────────────────────────────────────────────────────────────
+// --- Final CTA ---
 
 /** Localized final CTA section content */
 export const OWNER_FINAL_CTA: Record<SupportedLocale, OwnerFinalCtaContent> = {

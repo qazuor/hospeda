@@ -1,30 +1,36 @@
 /**
  * Client-side destination search and filter island.
  *
- * Provides text search, destination type filter, and cascading parent filter.
- * When any filter is active, fetches filtered results from the API and renders
- * its own results grid, hiding the server-rendered default grid.
+ * Provides text search, destination type filter (dropdown), and cascading
+ * parent destination filter. When any filter is active, fetches filtered
+ * results from the API and renders its own results grid, hiding the
+ * server-rendered default grid.
  *
  * URL params are managed via history.pushState for bookmarkability.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useTranslation } from '../../hooks/useTranslation';
+import { getApiUrl } from '../../lib/env';
 import type { SupportedLocale } from '../../lib/i18n';
 import { DestinationCardClient, type DestinationItem } from './DestinationCard.client';
 import { DESTINATION_TYPES, DestinationFilterPanel } from './DestinationFilterPanel.client';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-/** Props passed from Astro frontmatter */
+/** Props passed from Astro frontmatter. */
 interface DestinationFiltersProps {
+    /** Initial text search query from URL params. */
     readonly initialQuery?: string;
+    /** Initial destination type filter from URL params. */
     readonly initialType?: string;
+    /** Initial parent destination id from URL params. */
     readonly initialParentId?: string;
+    /** Active locale for translations and URL generation. */
     readonly locale: string;
 }
 
-/** API paginated response shape */
+/** Paginated API response metadata. */
 interface PaginationInfo {
     readonly page: number;
     readonly pageSize: number;
@@ -36,13 +42,11 @@ interface PaginationInfo {
 
 const PAGE_SIZE = 12;
 
-// ─── API helpers ─────────────────────────────────────────────────────────────
-
-import { getApiUrl } from '../../lib/env';
-
 const API_BASE = `${getApiUrl()}/api/v1/public`;
 
-/** Zod schema for validating the destinations API response */
+// ─── Zod schema ──────────────────────────────────────────────────────────────
+
+/** Validates the destinations list API response shape. */
 const destinationsResponseSchema = z
     .object({
         data: z
@@ -68,7 +72,15 @@ const destinationsResponseSchema = z
     })
     .passthrough();
 
-/** Fetch destinations with optional filters */
+// ─── API helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetches destinations from the public API with optional filter params.
+ *
+ * @param params - Query parameters to forward to the API.
+ * @returns Parsed list of destination items and pagination metadata.
+ * @throws When the fetch fails or the response does not match the expected shape.
+ */
 async function fetchDestinations(params: {
     q?: string;
     destinationType?: string;
@@ -92,16 +104,25 @@ async function fetchDestinations(params: {
     if (!parsed.success) {
         throw new Error(`Invalid API response: ${parsed.error.message}`);
     }
-    const body = parsed.data;
     return {
-        items: body.data.items as unknown as DestinationItem[],
-        pagination: body.data.pagination as PaginationInfo
+        items: parsed.data.data.items as unknown as DestinationItem[],
+        pagination: parsed.data.data.pagination as PaginationInfo
     };
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-/** Destination search and filter panel with client-side results rendering. */
+/**
+ * Destination search and filter island with client-side results rendering.
+ *
+ * Manages text search, destination type, and cascading parent filters.
+ * Syncs active filters to URL params via `history.pushState`.
+ * When filters are active, hides the server-rendered grid and renders
+ * filtered results directly. When all filters are cleared, the server
+ * grid is restored.
+ *
+ * @param props - {@link DestinationFiltersProps}
+ */
 export function DestinationFilters({
     initialQuery = '',
     initialType = '',
@@ -143,7 +164,7 @@ export function DestinationFilters({
                     url.searchParams.delete(key);
                 }
             }
-            // Reset page when filters change
+            // Reset page when filters change.
             url.searchParams.delete('page');
             window.history.pushState({}, '', url.toString());
         },
@@ -214,7 +235,6 @@ export function DestinationFilters({
             return;
         }
 
-        // Determine the parent type level
         const typeIndex = DESTINATION_TYPES.indexOf(
             selectedType as (typeof DESTINATION_TYPES)[number]
         );
@@ -337,20 +357,20 @@ export function DestinationFilters({
             {isLoading && (
                 <div className="flex items-center justify-center py-12">
                     <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                    <span className="ml-3 text-text-secondary">{t('search.loading')}</span>
+                    <span className="ml-3 text-muted-foreground">{t('search.loading')}</span>
                 </div>
             )}
 
             {/* Error State */}
             {error && !isLoading && (
                 <div className="mx-auto flex max-w-md flex-col items-center justify-center px-6 py-12 text-center">
-                    <h3 className="mb-3 font-semibold text-text text-xl">
+                    <h3 className="mb-3 font-semibold text-foreground text-xl">
                         {t('search.errorLoading')}
                     </h3>
                     <button
                         type="button"
                         onClick={handleClearFilters}
-                        className="mt-4 rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark"
+                        className="mt-4 rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
                     >
                         {t('search.clearFilters')}
                     </button>
@@ -381,16 +401,16 @@ export function DestinationFilters({
                     </section>
                 ) : (
                     <div className="mx-auto flex max-w-md flex-col items-center justify-center px-6 py-12 text-center">
-                        <h3 className="mb-3 font-semibold text-text text-xl">
+                        <h3 className="mb-3 font-semibold text-foreground text-xl">
                             {t('search.noResults')}
                         </h3>
-                        <p className="mb-6 text-base text-text-secondary">
+                        <p className="mb-6 text-base text-muted-foreground">
                             {t('search.noResultsMessage')}
                         </p>
                         <button
                             type="button"
                             onClick={handleClearFilters}
-                            className="rounded-lg bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark"
+                            className="rounded-lg bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90"
                         >
                             {t('search.clearFilters')}
                         </button>

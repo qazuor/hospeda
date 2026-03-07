@@ -1,66 +1,82 @@
 ---
 /**
- * Search results page - displays search results grouped by entity type.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
- * This page uses noindex to prevent search result pages from being indexed by search engines.
+ * Search results page.
+ * Displays results grouped by entity type (accommodations, destinations, events, posts)
+ * based on a query string from the URL. Uses noindex to prevent search engine indexing.
+ *
+ * Rendering: SSR (on-demand) — content depends on the `?q` query param at request time.
+ * Route: /[lang]/busqueda/
  */
+export const prerender = false;
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEOHead from '../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../components/ui/Breadcrumb.astro';
-import Container from '../../components/ui/Container.astro';
-import Section from '../../components/ui/Section.astro';
-import EmptyState from '../../components/ui/EmptyState.astro';
-import GenericErrorState from '../../components/error/GenericErrorState.astro';
-import AccommodationCardFeatured from '../../components/accommodation/AccommodationCardFeatured.astro';
-import DestinationCard from '../../components/destination/DestinationCard.astro';
-import EventCard from '../../components/event/EventCard.astro';
-import BlogPostCard from '../../components/blog/BlogPostCard.astro';
-import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
-import { t as i18nT } from '../../lib/i18n';
-import { accommodationsApi, destinationsApi, eventsApi, postsApi } from '../../lib/api/endpoints';
-import { toAccommodationCardProps, toDestinationCardProps, toEventCardProps, toPostCardProps } from '../../lib/api/transforms';
+import Breadcrumb from '../../components/shared/Breadcrumb.astro';
+import EmptyState from '../../components/shared/EmptyState.astro';
+import AccommodationCard from '../../components/shared/AccommodationCard.astro';
+import DestinationCard from '../../components/shared/DestinationCard.astro';
+import EventCard from '../../components/shared/EventCard.astro';
+import FeaturedArticleCard from '../../components/shared/FeaturedArticleCard.astro';
 import { SearchIcon } from '@repo/icons';
+import {
+    getLocaleFromParams,
+    HOME_BREADCRUMB
+} from '../../lib/page-helpers';
+import { createT } from '../../lib/i18n';
+import { buildUrl, buildUrlWithParams } from '../../lib/urls';
+import { accommodationsApi, destinationsApi, eventsApi, postsApi } from '../../lib/api/endpoints';
+import {
+    toAccommodationCardProps,
+    toDestinationCardProps,
+    toEventCardProps,
+    toPostCardProps
+} from '../../lib/api/transforms';
 
 const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+if (!locale) return Astro.redirect('/es/busqueda/');
+
+/** Translation helper bound to this locale. */
+const t = createT(locale);
+
+/** Search query extracted from URL search params. */
+const query = Astro.url.searchParams.get('q') ?? '';
+
+const pageTitle = t('search.resultsPage.title', 'Busqueda');
+const pageDescription = t('search.resultsPage.description', 'Resultados de busqueda en Hospeda');
+const searchHeading = t('search.resultsPage.heading', 'Resultados para');
+const searchPlaceholder = t('search.resultsPage.placeholder', 'Busca alojamientos, destinos, eventos...');
+const catAccommodations = t('search.resultsPage.categories.accommodations', 'Alojamientos');
+const catDestinations = t('search.resultsPage.categories.destinations', 'Destinos');
+const catEvents = t('search.resultsPage.categories.events', 'Eventos');
+const catPosts = t('search.resultsPage.categories.posts', 'Publicaciones');
+const emptyStateTitle = t('search.resultsPage.emptyState', 'No encontramos resultados');
+const emptySuggestion = t('search.resultsPage.emptySuggestion', 'Proba con otros terminos o explora el sitio');
+const popularSearchesHeading = t('search.resultsPage.popularSearches', 'Busquedas populares');
+const viewAllAccommodations = t('search.resultsPage.viewAll.accommodations', 'Ver todos los alojamientos');
+const viewAllDestinations = t('search.resultsPage.viewAll.destinations', 'Ver todos los destinos');
+const viewAllEvents = t('search.resultsPage.viewAll.events', 'Ver todos los eventos');
+const viewAllPosts = t('search.resultsPage.viewAll.posts', 'Ver todas las publicaciones');
+const resultsFoundLabel = t('search.resultsPage.resultsFound', 'Resultados encontrados');
+const noResultsLabel = t('search.resultsPage.noResults', 'No se encontraron resultados');
 
 /**
- * Get search query from URL parameters
+ * Popular search terms resolved from i18n.
+ * Filtered to exclude entries with empty labels.
  */
-const query = Astro.url.searchParams.get('q') || '';
-
-/** Helper to translate search results page keys */
-const tSearch = (key: string) => i18nT({ locale, namespace: 'search', key: `resultsPage.${key}` });
-
-/** Localized page text via i18n */
-const pageTitle = tSearch('title');
-const pageDescription = tSearch('description');
-const searchHeading = tSearch('heading');
-const searchPlaceholder = tSearch('placeholder');
-const catAccommodations = tSearch('categories.accommodations');
-const catDestinations = tSearch('categories.destinations');
-const catEvents = tSearch('categories.events');
-const catPosts = tSearch('categories.posts');
-const emptyStateText = tSearch('emptyState');
-const emptySuggestion = tSearch('emptySuggestion');
-const popularSearchesHeading = tSearch('popularSearches');
-const viewAllAccommodations = tSearch('viewAll.accommodations');
-const viewAllDestinations = tSearch('viewAll.destinations');
-const viewAllEvents = tSearch('viewAll.events');
-const viewAllPosts = tSearch('viewAll.posts');
-const resultsFound = tSearch('resultsFound');
-const noResultsFound = tSearch('noResults');
+const popularSearches = [0, 1, 2, 3]
+    .map((i) => ({
+        label: t(`search.resultsPage.popular.${i}.label`, ''),
+        href: buildUrlWithParams({
+            locale,
+            path: 'busqueda',
+            params: { q: t(`search.resultsPage.popular.${i}.query`, '') }
+        })
+    }))
+    .filter((s) => Boolean(s.label));
 
 /**
- * Popular search terms - localized via i18n
- */
-const popularSearches = [0, 1, 2, 3].map((i) => ({
-	label: tSearch(`popular.${i}.label`),
-	href: `/${locale}/busqueda/?q=${tSearch(`popular.${i}.query`)}`,
-}));
-
-/**
- * Fetch search results from API when query is present
+ * Fetch search results in parallel when a query is present.
+ * Each fetch is independent so a single failing endpoint does not block the rest.
  */
 let accommodations: Record<string, unknown>[] = [];
 let destinations: Record<string, unknown>[] = [];
@@ -69,263 +85,291 @@ let posts: Record<string, unknown>[] = [];
 let apiError = false;
 
 if (query) {
-	const [accommodationsResult, destinationsResult, eventsResult, postsResult] = await Promise.all([
-		accommodationsApi.list({ q: query, pageSize: 6 }),
-		destinationsApi.list({ q: query, pageSize: 6 }),
-		eventsApi.list({ q: query, pageSize: 6 }),
-		postsApi.list({ q: query, pageSize: 6 }),
-	]);
+    const [accResult, destResult, evtResult, postResult] = await Promise.all([
+        accommodationsApi.list({ q: query, pageSize: 6 }),
+        destinationsApi.list({ q: query, pageSize: 6 }),
+        eventsApi.list({ q: query, pageSize: 6 }),
+        postsApi.list({ q: query, pageSize: 6 })
+    ]);
 
-	accommodations = accommodationsResult.ok ? accommodationsResult.data.items : [];
-	destinations = destinationsResult.ok ? destinationsResult.data.items : [];
-	events = eventsResult.ok ? eventsResult.data.items : [];
-	posts = postsResult.ok ? postsResult.data.items : [];
-	apiError = !accommodationsResult.ok && !destinationsResult.ok && !eventsResult.ok && !postsResult.ok;
+    accommodations = accResult.ok
+        ? (accResult.data.items as Record<string, unknown>[])
+        : [];
+    destinations = destResult.ok
+        ? (destResult.data.items as Record<string, unknown>[])
+        : [];
+    events = evtResult.ok
+        ? (evtResult.data.items as Record<string, unknown>[])
+        : [];
+    posts = postResult.ok
+        ? (postResult.data.items as Record<string, unknown>[])
+        : [];
+
+    apiError = !accResult.ok && !destResult.ok && !evtResult.ok && !postResult.ok;
 }
 
-const totalResults = accommodations.length + destinations.length + events.length + posts.length;
+const totalResults =
+    accommodations.length + destinations.length + events.length + posts.length;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
- * Breadcrumb navigation items
+ * Breadcrumb navigation items.
  */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: pageTitle, href: `/${locale}/busqueda/` },
-];
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    { label: pageTitle, href: buildUrl({ locale, path: 'busqueda' }) }
+] as const;
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={pageTitle}
-		description={pageDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+    <SEOHead
+        slot="head"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="website"
+        noindex={true}
+    />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="container mx-auto max-w-7xl px-4 py-8">
+        <Breadcrumb items={breadcrumbItems} />
 
-		<Section>
-			<div class="mx-auto max-w-6xl">
-				<!-- Search Header -->
-				{
-					query && (
-						<article id="search-header" class="mb-8">
-							<h1 class="text-3xl font-bold text-text-primary md:text-4xl">
-								{searchHeading} <span class="text-primary">"{query}"</span>
-							</h1>
-						</article>
-					)
-				}
+        <section class="mx-auto max-w-6xl py-8">
+            <!-- Search heading (only when a query is present) -->
+            {query && (
+                <header class="mb-8">
+                    <h1 class="text-3xl font-bold text-foreground md:text-4xl">
+                        {searchHeading}{' '}
+                        <span class="text-primary">"{query}"</span>
+                    </h1>
+                </header>
+            )}
 
-				<!-- Search Input Form -->
-				<article id="search-form" class="mb-12">
-					<form method="GET" action={`/${locale}/busqueda`} class="mx-auto max-w-3xl">
-						<div class="relative">
-							<div class="absolute left-4 top-1/2 -translate-y-1/2">
-								<SearchIcon size={20} className="text-text-tertiary" aria-hidden="true" />
-							</div>
-							<input
-								type="search"
-								name="q"
-								value={query}
-								placeholder={searchPlaceholder}
-								class="w-full rounded-lg border border-border bg-bg py-3 pl-12 pr-4 text-text-primary placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-								aria-label={searchPlaceholder}
-								required
-							/>
-						</div>
-					</form>
-				</article>
+            <!-- Search input form -->
+            <div class="mb-12">
+                <form
+                    method="GET"
+                    action={buildUrl({ locale, path: 'busqueda' })}
+                    class="mx-auto max-w-3xl"
+                >
+                    <div class="relative">
+                        <div class="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+                            <SearchIcon
+                                size={20}
+                                className="text-muted-foreground"
+                                aria-hidden="true"
+                            />
+                        </div>
+                        <input
+                            type="search"
+                            name="q"
+                            value={query}
+                            placeholder={searchPlaceholder}
+                            class="w-full rounded-xl border border-border bg-background py-3 pl-12 pr-4 text-foreground placeholder:text-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            aria-label={searchPlaceholder}
+                            required
+                        />
+                    </div>
+                </form>
+            </div>
 
-				{
-					query ? (
-						<>
-							{/* Show total results count */}
-							<div class="mb-8 text-center">
-								<p class="text-lg text-text-secondary">
-									{totalResults > 0
-										? `${resultsFound} ${totalResults}`
-										: noResultsFound
-									}
-								</p>
-							</div>
+            {query ? (
+                <>
+                    <!-- Results count -->
+                    <div class="mb-8 text-center">
+                        <p class="text-lg text-muted-foreground">
+                            {totalResults > 0
+                                ? `${resultsFoundLabel}: ${totalResults}`
+                                : noResultsLabel}
+                        </p>
+                    </div>
 
-							{/* Search Results */}
-							{totalResults > 0 ? (
-								<article id="search-results" class="space-y-12">
-									{/* Accommodations Results */}
-									{accommodations.length > 0 && (
-										<section id="accommodations-results">
-											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{catAccommodations}{' '}
-												<span class="text-text-tertiary">({accommodations.length})</span>
-											</h2>
-											<div
-												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-												role="region"
-												aria-label={catAccommodations}
-											>
-												{accommodations.map((accommodation) => (
-													<AccommodationCardFeatured
-														accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })}
-														locale={locale}
-													/>
-												))}
-											</div>
-											<div class="mt-4 text-center">
-												<a
-													href={`/${locale}/alojamientos/?q=${encodeURIComponent(query)}`}
-													class="text-sm text-primary hover:underline"
-												>
-													{viewAllAccommodations}
-												</a>
-											</div>
-										</section>
-									)}
+                    {totalResults > 0 ? (
+                        <div class="space-y-12">
+                            <!-- Accommodations results -->
+                            {accommodations.length > 0 && (
+                                <section aria-labelledby="accommodations-heading">
+                                    <h2
+                                        id="accommodations-heading"
+                                        class="mb-6 text-2xl font-semibold text-foreground"
+                                    >
+                                        {catAccommodations}{' '}
+                                        <span class="text-muted-foreground">({accommodations.length})</span>
+                                    </h2>
+                                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                        {accommodations.map((item) => (
+                                            <AccommodationCard
+                                                card={toAccommodationCardProps({ item })}
+                                                locale={locale}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div class="mt-4 text-center">
+                                        <a
+                                            href={buildUrlWithParams({
+                                                locale,
+                                                path: 'alojamientos',
+                                                params: { q: query }
+                                            })}
+                                            class="text-sm text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                        >
+                                            {viewAllAccommodations}
+                                        </a>
+                                    </div>
+                                </section>
+                            )}
 
-									{/* Destinations Results */}
-									{destinations.length > 0 && (
-										<section id="destinations-results">
-											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{catDestinations}{' '}
-												<span class="text-text-tertiary">({destinations.length})</span>
-											</h2>
-											<div
-												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-												role="region"
-												aria-label={catDestinations}
-											>
-												{destinations.map((destination) => (
-													<DestinationCard
-														destination={toDestinationCardProps({ item: destination as Record<string, unknown> })}
-														locale={locale}
-													/>
-												))}
-											</div>
-											<div class="mt-4 text-center">
-												<a
-													href={`/${locale}/destinos/?q=${encodeURIComponent(query)}`}
-													class="text-sm text-primary hover:underline"
-												>
-													{viewAllDestinations}
-												</a>
-											</div>
-										</section>
-									)}
+                            <!-- Destinations results -->
+                            {destinations.length > 0 && (
+                                <section aria-labelledby="destinations-heading">
+                                    <h2
+                                        id="destinations-heading"
+                                        class="mb-6 text-2xl font-semibold text-foreground"
+                                    >
+                                        {catDestinations}{' '}
+                                        <span class="text-muted-foreground">({destinations.length})</span>
+                                    </h2>
+                                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                        {destinations.map((item, index) => (
+                                            <DestinationCard
+                                                card={toDestinationCardProps({ item })}
+                                                index={index}
+                                                locale={locale}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div class="mt-4 text-center">
+                                        <a
+                                            href={buildUrlWithParams({
+                                                locale,
+                                                path: 'destinos',
+                                                params: { q: query }
+                                            })}
+                                            class="text-sm text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                        >
+                                            {viewAllDestinations}
+                                        </a>
+                                    </div>
+                                </section>
+                            )}
 
-									{/* Events Results */}
-									{events.length > 0 && (
-										<section id="events-results">
-											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{catEvents}{' '}
-												<span class="text-text-tertiary">({events.length})</span>
-											</h2>
-											<div
-												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-												role="region"
-												aria-label={catEvents}
-											>
-												{events.map((event) => (
-													<EventCard
-														event={toEventCardProps({ item: event as Record<string, unknown> })}
-														locale={locale}
-													/>
-												))}
-											</div>
-											<div class="mt-4 text-center">
-												<a
-													href={`/${locale}/eventos/?q=${encodeURIComponent(query)}`}
-													class="text-sm text-primary hover:underline"
-												>
-													{viewAllEvents}
-												</a>
-											</div>
-										</section>
-									)}
+                            <!-- Events results -->
+                            {events.length > 0 && (
+                                <section aria-labelledby="events-heading">
+                                    <h2
+                                        id="events-heading"
+                                        class="mb-6 text-2xl font-semibold text-foreground"
+                                    >
+                                        {catEvents}{' '}
+                                        <span class="text-muted-foreground">({events.length})</span>
+                                    </h2>
+                                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                        {events.map((item) => (
+                                            <EventCard
+                                                card={toEventCardProps({ item })}
+                                                locale={locale}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div class="mt-4 text-center">
+                                        <a
+                                            href={buildUrlWithParams({
+                                                locale,
+                                                path: 'eventos',
+                                                params: { q: query }
+                                            })}
+                                            class="text-sm text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                        >
+                                            {viewAllEvents}
+                                        </a>
+                                    </div>
+                                </section>
+                            )}
 
-									{/* Posts Results */}
-									{posts.length > 0 && (
-										<section id="posts-results">
-											<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-												{catPosts}{' '}
-												<span class="text-text-tertiary">({posts.length})</span>
-											</h2>
-											<div
-												class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
-												role="region"
-												aria-label={catPosts}
-											>
-												{posts.map((post) => (
-													<BlogPostCard
-														post={toPostCardProps({ item: post as Record<string, unknown> })}
-														locale={locale}
-													/>
-												))}
-											</div>
-											<div class="mt-4 text-center">
-												<a
-													href={`/${locale}/publicaciones/?q=${encodeURIComponent(query)}`}
-													class="text-sm text-primary hover:underline"
-												>
-													{viewAllPosts}
-												</a>
-											</div>
-										</section>
-									)}
-								</article>
-							) : apiError ? (
-								<GenericErrorState
-									title={emptyStateText}
-									message={emptySuggestion}
-									retryHref={`/${locale}/busqueda/?q=${encodeURIComponent(query)}`}
-									homeHref={`/${locale}/`}
-									locale={locale}
-								/>
-							) : (
-								<EmptyState
-									title={emptyStateText}
-									message={emptySuggestion}
-								/>
-							)}
-						</>
-					) : (
-						<>
-							<!-- Empty State (no query) -->
-							<article id="empty-state" class="py-12 text-center">
-								<div class="mx-auto max-w-2xl">
-									<h1 class="mb-4 text-3xl font-bold text-text-primary">
-										{emptyStateText}
-									</h1>
-									<p class="mb-8 text-lg text-text-secondary">{emptySuggestion}</p>
+                            <!-- Posts results -->
+                            {posts.length > 0 && (
+                                <section aria-labelledby="posts-heading">
+                                    <h2
+                                        id="posts-heading"
+                                        class="mb-6 text-2xl font-semibold text-foreground"
+                                    >
+                                        {catPosts}{' '}
+                                        <span class="text-muted-foreground">({posts.length})</span>
+                                    </h2>
+                                    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                                        {posts.map((item) => (
+                                            <FeaturedArticleCard
+                                                article={toPostCardProps({ item })}
+                                                locale={locale}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div class="mt-4 text-center">
+                                        <a
+                                            href={buildUrlWithParams({
+                                                locale,
+                                                path: 'publicaciones',
+                                                params: { q: query }
+                                            })}
+                                            class="text-sm text-primary hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                        >
+                                            {viewAllPosts}
+                                        </a>
+                                    </div>
+                                </section>
+                            )}
+                        </div>
+                    ) : apiError ? (
+                        <EmptyState
+                            title={emptyStateTitle}
+                            message={emptySuggestion}
+                            cta={{
+                                label: t('search.resultsPage.retryLabel', 'Intentar de nuevo'),
+                                href: buildUrlWithParams({
+                                    locale,
+                                    path: 'busqueda',
+                                    params: { q: query }
+                                })
+                            }}
+                        />
+                    ) : (
+                        <EmptyState
+                            title={emptyStateTitle}
+                            message={emptySuggestion}
+                        />
+                    )}
+                </>
+            ) : (
+                <!-- No query: show popular searches -->
+                <div class="py-12 text-center">
+                    <div class="mx-auto max-w-2xl">
+                        <h1 class="mb-4 text-3xl font-bold text-foreground">
+                            {emptyStateTitle}
+                        </h1>
+                        <p class="mb-8 text-lg text-muted-foreground">{emptySuggestion}</p>
 
-									<!-- Popular Searches -->
-									<div class="mt-12">
-										<h2 class="mb-6 text-xl font-semibold text-text-primary">
-											{popularSearchesHeading}
-										</h2>
-										<div class="flex flex-wrap justify-center gap-3">
-											{popularSearches.map((search) => (
-												<a
-													href={search.href}
-													class="rounded-full bg-bg px-4 py-2 text-sm font-medium text-text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-												>
-													{search.label}
-												</a>
-											))}
-										</div>
-									</div>
-								</div>
-							</article>
-						</>
-					)
-				}
-			</div>
-		</Section>
-	</Container>
+                        {popularSearches.length > 0 && (
+                            <div class="mt-12">
+                                <h2 class="mb-6 text-xl font-semibold text-foreground">
+                                    {popularSearchesHeading}
+                                </h2>
+                                <div class="flex flex-wrap justify-center gap-3">
+                                    {popularSearches.map((search) => (
+                                        <a
+                                            href={search.href}
+                                            class="rounded-full border border-border bg-card px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                        >
+                                            {search.label}
+                                        </a>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+        </section>
+    </div>
 </BaseLayout>

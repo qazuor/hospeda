@@ -1,73 +1,73 @@
 ---
 /**
- * Subscription page - displays current plan, billing information,
- * usage overview, add-ons, invoices, and payment history.
- * Protected page under /mi-cuenta/ requiring authentication.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
+ * Subscription page.
+ * Wraps SubscriptionDashboard React island for plan management and billing.
+ *
+ * Rendering: SSR (on-demand). Auth-protected via middleware; also guards
+ * directly in frontmatter and redirects to signin if user is absent.
+ *
+ * Route: /[lang]/mi-cuenta/suscripcion
  */
+
+import type { SupportedLocale } from '../../../lib/i18n';
+import { createT } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
-import Container from '../../../components/ui/Container.astro';
-import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
-import { t } from '../../../lib/i18n';
+import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
 import { SubscriptionDashboard } from '../../../components/account/SubscriptionDashboard.client';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-/** Auth guard: redirect unauthenticated users to sign in */
+/**
+ * Auth guard: middleware protects /mi-cuenta/* but we also check here
+ * to ensure a clean redirect with the correct locale.
+ */
 const user = Astro.locals.user;
 if (!user) {
-	return Astro.redirect(`/${locale}/auth/signin`);
+  return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
 
-const title = t({ locale, namespace: 'account', key: 'pages.subscription.title' });
-const description = t({ locale, namespace: 'account', key: 'pages.subscription.description' });
-const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' });
-const headingText = t({ locale, namespace: 'account', key: 'pages.subscription.heading' });
-const headingDesc = t({ locale, namespace: 'account', key: 'pages.subscription.headingDesc' });
+const t = createT(locale as SupportedLocale);
+
+const title = t('account.pages.subscription.title', 'Mi suscripción');
+const description = t(
+  'account.pages.subscription.description',
+  'Administrá tu plan y método de pago'
+);
+const accountLabel = t('account.pages.accountLabel', 'Mi Cuenta');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-/**
- * Breadcrumb navigation items
- */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
-	{ label: title, href: `/${locale}/mi-cuenta/suscripcion/` },
+  { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+  { label: accountLabel, href: buildUrl({ locale, path: 'mi-cuenta' }) },
+  { label: title, href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }) },
 ];
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+  <SEOHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonicalUrl}
+    locale={locale}
+    type="website"
+    noindex={true}
+  />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+  <div class="container mx-auto max-w-3xl px-4 py-8">
+    <Breadcrumb items={breadcrumbItems} />
 
-		<div class="mx-auto max-w-3xl py-8">
-			<div class="mb-8">
-				<h1 class="mb-2 text-3xl font-bold text-text-primary">
-					{headingText}
-				</h1>
-				<p class="text-text-secondary">
-					{headingDesc}
-				</p>
-			</div>
+    <header class="mb-8">
+      <h1 class="mb-2 text-3xl font-bold text-foreground">{title}</h1>
+      <p class="text-muted-foreground">{description}</p>
+    </header>
 
-			<SubscriptionDashboard
-				client:idle
-				locale={locale}
-			/>
-		</div>
-	</Container>
+    <!-- SubscriptionDashboard handles plan, addons, invoices, and payment history -->
+    <SubscriptionDashboard client:load locale={locale} />
+  </div>
 </BaseLayout>

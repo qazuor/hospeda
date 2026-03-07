@@ -1,13 +1,12 @@
-import '@testing-library/jest-dom';
+/**
+ * @file Vitest setup for the web app.
+ * Provides DOM matchers (toBeInTheDocument, toHaveClass, etc.) and
+ * automatic cleanup between tests.
+ */
+import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
-/**
- * Cleanup after each test
- *
- * This ensures that components are unmounted and DOM is cleaned up
- * between tests to prevent side effects and memory leaks.
- */
 afterEach(() => {
     cleanup();
 });

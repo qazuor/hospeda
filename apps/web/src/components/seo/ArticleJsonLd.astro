@@ -1,92 +1,40 @@
 ---
 /**
- * Article JSON-LD component for blog posts.
+ * @file ArticleJsonLd.astro
+ * @description Article JSON-LD component for blog posts.
  * Generates schema.org Article structured data.
- *
- * @example
- * ```astro
- * ---
- * import ArticleJsonLd from '@/components/seo/ArticleJsonLd.astro';
- * ---
- *
- * <ArticleJsonLd
- *   headline="Los mejores destinos turísticos del Litoral argentino"
- *   description="Descubre los lugares más hermosos para visitar en Entre Ríos y alrededores"
- *   url="https://hospeda.com/blog/destinos-litoral"
- *   image="https://hospeda.com/images/blog/destinos-litoral.jpg"
- *   datePublished="2026-02-13T10:00:00-03:00"
- *   dateModified="2026-02-13T15:30:00-03:00"
- *   author={{
- *     name: 'María González',
- *     url: 'https://hospeda.com/autores/maria-gonzalez',
- *   }}
- * />
- * ```
  */
 
-import type { Props as JsonLdProps } from './JsonLd.astro';
 import JsonLd from './JsonLd.astro';
 
-/**
- * Article author interface
- */
+/** Article author interface */
 export interface ArticleAuthor {
-  /**
-   * Author name
-   */
-  name: string;
-
-  /**
-   * Author profile URL
-   */
-  url?: string;
+  /** Author name */
+  readonly name: string;
+  /** Author profile URL */
+  readonly url?: string;
 }
 
-/**
- * Props interface for ArticleJsonLd component.
- */
-export interface Props {
-  /**
-   * Article headline/title
-   */
-  headline: string;
-
-  /**
-   * Article description
-   */
-  description: string;
-
-  /**
-   * URL of the article page
-   */
-  url: string;
-
-  /**
-   * Image URL for the article
-   */
-  image?: string;
-
-  /**
-   * Publication date in ISO 8601 format
-   */
-  datePublished: string;
-
-  /**
-   * Last modification date in ISO 8601 format
-   */
-  dateModified?: string;
-
-  /**
-   * Article author information
-   */
-  author: ArticleAuthor;
+/** Props interface for ArticleJsonLd component. */
+interface Props {
+  /** Article headline/title */
+  readonly headline: string;
+  /** Article description */
+  readonly description: string;
+  /** URL of the article page */
+  readonly url: string;
+  /** Image URL for the article */
+  readonly image?: string;
+  /** Publication date in ISO 8601 format */
+  readonly datePublished: string;
+  /** Last modification date in ISO 8601 format */
+  readonly dateModified?: string;
+  /** Article author information */
+  readonly author: ArticleAuthor;
 }
 
 const { headline, description, url, image, datePublished, dateModified, author } = Astro.props;
 
-/**
- * Build Article structured data object
- */
 const structuredData: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'Article',
@@ -106,7 +54,6 @@ const structuredData: Record<string, unknown> = {
   },
 };
 
-// Add optional properties
 if (image) {
   structuredData.image = image;
 }

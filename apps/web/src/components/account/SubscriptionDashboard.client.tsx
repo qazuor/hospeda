@@ -31,6 +31,13 @@ interface SubscriptionDashboardProps {
 
 /**
  * Full subscription dashboard with plan card, actions, usage, addons, and history.
+ *
+ * Fetches the user's current subscription on mount to determine which sections
+ * to render. Paid-plan sections (usage, addons, invoices, payments) are only
+ * shown when the user has an active non-free subscription.
+ *
+ * @param props - Component props.
+ * @param props.locale - Active locale for i18n and date/currency formatting.
  */
 export function SubscriptionDashboard({ locale }: SubscriptionDashboardProps) {
     const { t } = useTranslation({ locale, namespace: 'account' });

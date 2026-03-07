@@ -1,655 +1,299 @@
 /**
- * SEO Validation Test Suite
+ * @file seo-validation.test.ts
+ * @description Source-content tests for SEOHead.astro meta tag completeness.
  *
- * Validates SEO best practices across all key pages and components.
- * Tests read page source files and SEO component source files to verify correct implementation.
+ * Validates that the component emits all required SEO meta tags:
+ * title, description, canonical, Open Graph, Twitter Card, hreflang.
+ * Also checks that representative pages in the app wire SEOHead correctly.
  */
+
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-const srcDir = resolve(__dirname, '../../src');
-const publicDir = resolve(__dirname, '../../public');
-const rootDir = resolve(__dirname, '../..');
+// ---------------------------------------------------------------------------
+// Source files under test
+// ---------------------------------------------------------------------------
 
-/**
- * Helper to read page file
- */
-function readPage(relativePath: string): string {
-    return readFileSync(resolve(srcDir, relativePath), 'utf8');
-}
+const seoHeadSrc = readFileSync(
+    resolve(__dirname, '../../src/components/seo/SEOHead.astro'),
+    'utf8'
+);
 
-/**
- * Helper to read component file
- */
-function readComponent(relativePath: string): string {
-    return readFileSync(resolve(srcDir, relativePath), 'utf8');
-}
+const homepageSrc = readFileSync(resolve(__dirname, '../../src/pages/[lang]/index.astro'), 'utf8');
 
-/**
- * Helper to read public file
- */
-function readPublicFile(relativePath: string): string {
-    return readFileSync(resolve(publicDir, relativePath), 'utf8');
-}
+const contactoSrc = readFileSync(
+    resolve(__dirname, '../../src/pages/[lang]/contacto.astro'),
+    'utf8'
+);
 
-/**
- * Helper to read root config file
- */
-function readRootConfig(relativePath: string): string {
-    return readFileSync(resolve(rootDir, relativePath), 'utf8');
-}
+const mapaSiteSrc = readFileSync(
+    resolve(__dirname, '../../src/pages/[lang]/mapa-del-sitio.astro'),
+    'utf8'
+);
 
-describe('SEO Component Validation', () => {
-    describe('SEOHead Component', () => {
-        let seoHeadContent: string;
+const page404Src = readFileSync(resolve(__dirname, '../../src/pages/404.astro'), 'utf8');
 
-        beforeAll(() => {
-            seoHeadContent = readComponent('components/seo/SEOHead.astro');
-        });
+// ---------------------------------------------------------------------------
+// Title tag
+// ---------------------------------------------------------------------------
 
-        it('should have title tag', () => {
-            expect(seoHeadContent).toContain('<title>');
-            expect(seoHeadContent).toContain('{fullTitle}');
-        });
-
-        it('should have meta description tag', () => {
-            expect(seoHeadContent).toContain('<meta name="description"');
-            expect(seoHeadContent).toContain('content={description}');
-        });
-
-        it('should have canonical link tag', () => {
-            expect(seoHeadContent).toContain('<link rel="canonical"');
-            expect(seoHeadContent).toContain('href={canonical}');
-        });
-
-        it('should have robots meta tag support', () => {
-            expect(seoHeadContent).toContain('<meta name="robots"');
-            expect(seoHeadContent).toContain('content="noindex,nofollow"');
-            expect(seoHeadContent).toContain('{noindex &&');
-        });
-
-        describe('Open Graph tags', () => {
-            it('should have og:type', () => {
-                expect(seoHeadContent).toContain('<meta property="og:type"');
-                expect(seoHeadContent).toContain('content={type}');
-            });
-
-            it('should have og:url', () => {
-                expect(seoHeadContent).toContain('<meta property="og:url"');
-                expect(seoHeadContent).toContain('content={canonical}');
-            });
-
-            it('should have og:title', () => {
-                expect(seoHeadContent).toContain('<meta property="og:title"');
-                expect(seoHeadContent).toContain('content={fullTitle}');
-            });
-
-            it('should have og:description', () => {
-                expect(seoHeadContent).toContain('<meta property="og:description"');
-                expect(seoHeadContent).toContain('content={description}');
-            });
-
-            it('should have og:locale', () => {
-                expect(seoHeadContent).toContain('<meta property="og:locale"');
-                expect(seoHeadContent).toContain('content={ogLocale}');
-            });
-
-            it('should have og:site_name', () => {
-                expect(seoHeadContent).toContain('<meta property="og:site_name"');
-                expect(seoHeadContent).toContain('content="Hospeda"');
-            });
-
-            it('should support custom og:image', () => {
-                expect(seoHeadContent).toContain('<meta property="og:image"');
-                expect(seoHeadContent).toContain('{image &&');
-            });
-        });
-
-        describe('Twitter Card tags', () => {
-            it('should have twitter:card', () => {
-                expect(seoHeadContent).toContain('<meta name="twitter:card"');
-                expect(seoHeadContent).toContain('content="summary_large_image"');
-            });
-
-            it('should have twitter:title', () => {
-                expect(seoHeadContent).toContain('<meta name="twitter:title"');
-                expect(seoHeadContent).toContain('content={fullTitle}');
-            });
-
-            it('should have twitter:description', () => {
-                expect(seoHeadContent).toContain('<meta name="twitter:description"');
-                expect(seoHeadContent).toContain('content={description}');
-            });
-
-            it('should support custom twitter:image', () => {
-                expect(seoHeadContent).toContain('<meta name="twitter:image"');
-                expect(seoHeadContent).toContain('{image &&');
-            });
-        });
-
-        describe('Hreflang tags', () => {
-            it('should have hreflang for Spanish', () => {
-                expect(seoHeadContent).toContain('<link rel="alternate" hreflang="es"');
-            });
-
-            it('should have hreflang for English', () => {
-                expect(seoHeadContent).toContain('<link rel="alternate" hreflang="en"');
-            });
-
-            it('should have hreflang x-default', () => {
-                expect(seoHeadContent).toContain('<link rel="alternate" hreflang="x-default"');
-            });
-        });
-
-        describe('Props interface', () => {
-            it('should accept title prop', () => {
-                expect(seoHeadContent).toContain('title: string');
-            });
-
-            it('should accept description prop', () => {
-                expect(seoHeadContent).toContain('description: string');
-            });
-
-            it('should accept canonical prop', () => {
-                expect(seoHeadContent).toContain('canonical: string');
-            });
-
-            it('should accept optional image prop', () => {
-                expect(seoHeadContent).toContain('image?: string');
-            });
-
-            it('should accept optional noindex prop', () => {
-                expect(seoHeadContent).toContain('noindex?: boolean');
-            });
-
-            it('should accept locale prop with type checking', () => {
-                expect(seoHeadContent).toContain('locale?: SupportedLocale');
-            });
-
-            it('should accept type prop for OG type', () => {
-                expect(seoHeadContent).toContain("type?: 'website' | 'article'");
-            });
-        });
+describe('SEOHead.astro — title tag', () => {
+    it('renders a <title> element', () => {
+        expect(seoHeadSrc).toContain('<title>');
+        expect(seoHeadSrc).toContain('</title>');
     });
 
-    describe('JsonLd Component', () => {
-        let jsonLdContent: string;
-
-        beforeAll(() => {
-            jsonLdContent = readComponent('components/seo/JsonLd.astro');
-        });
-
-        it('should have script tag with application/ld+json type', () => {
-            expect(jsonLdContent).toContain('<script type="application/ld+json"');
-        });
-
-        it('should serialize data as JSON', () => {
-            expect(jsonLdContent).toContain('JSON.stringify');
-        });
-
-        it('should accept data prop', () => {
-            expect(jsonLdContent).toContain('data: Record<string, unknown>');
-        });
+    it('appends " | Hospeda" site name suffix to the provided title', () => {
+        expect(seoHeadSrc).toContain('`${title} | Hospeda`');
+        expect(seoHeadSrc).toContain('const fullTitle');
     });
 
-    describe('LodgingBusinessJsonLd Component', () => {
-        let lodgingContent: string;
-
-        beforeAll(() => {
-            lodgingContent = readComponent('components/seo/LodgingBusinessJsonLd.astro');
-        });
-
-        it('should have @type LodgingBusiness', () => {
-            expect(lodgingContent).toContain("'@type': 'LodgingBusiness'");
-        });
-
-        it('should have required name property', () => {
-            expect(lodgingContent).toContain('name: string');
-            expect(lodgingContent).toContain('name,');
-        });
-
-        it('should have required description property', () => {
-            expect(lodgingContent).toContain('description: string');
-            expect(lodgingContent).toContain('description,');
-        });
-
-        it('should have required url property', () => {
-            expect(lodgingContent).toContain('url: string');
-            expect(lodgingContent).toContain('url,');
-        });
-
-        it('should have optional image property', () => {
-            expect(lodgingContent).toContain('image?: string');
-        });
-
-        it('should have address property with PostalAddress type', () => {
-            expect(lodgingContent).toContain("'@type': 'PostalAddress'");
-            expect(lodgingContent).toContain('streetAddress:');
-            expect(lodgingContent).toContain('addressLocality:');
-            expect(lodgingContent).toContain('addressRegion:');
-            expect(lodgingContent).toContain('addressCountry:');
-        });
-
-        it('should support optional priceRange', () => {
-            expect(lodgingContent).toContain('priceRange?: string');
-        });
-
-        it('should support optional starRating', () => {
-            expect(lodgingContent).toContain('starRating?: number');
-            expect(lodgingContent).toContain("'@type': 'Rating'");
-        });
-
-        it('should support optional amenities array', () => {
-            expect(lodgingContent).toContain('amenities?: string[]');
-            expect(lodgingContent).toContain('amenityFeature');
-        });
-
-        it('should use JsonLd component', () => {
-            expect(lodgingContent).toContain("import JsonLd from './JsonLd.astro'");
-            expect(lodgingContent).toContain('<JsonLd data={structuredData}');
-        });
+    it('uses the combined fullTitle for the <title> element', () => {
+        expect(seoHeadSrc).toContain('{fullTitle}');
     });
 
-    describe('EventJsonLd Component', () => {
-        let eventContent: string;
-
-        beforeAll(() => {
-            eventContent = readComponent('components/seo/EventJsonLd.astro');
-        });
-
-        it('should have @type Event', () => {
-            expect(eventContent).toContain("'@type': 'Event'");
-        });
-
-        it('should have required name property', () => {
-            expect(eventContent).toContain('name: string');
-            expect(eventContent).toContain('name,');
-        });
-
-        it('should have required description property', () => {
-            expect(eventContent).toContain('description: string');
-        });
-
-        it('should have required startDate property', () => {
-            expect(eventContent).toContain('startDate: string');
-            expect(eventContent).toContain('startDate,');
-        });
-
-        it('should have optional endDate property', () => {
-            expect(eventContent).toContain('endDate?: string');
-        });
-
-        it('should have location property with Place type', () => {
-            expect(eventContent).toContain("'@type': 'Place'");
-            expect(eventContent).toContain('location:');
-        });
-
-        it('should support optional organizer', () => {
-            expect(eventContent).toContain('organizer?: string');
-            expect(eventContent).toContain("'@type': 'Organization'");
-        });
-
-        it('should use JsonLd component', () => {
-            expect(eventContent).toContain("import JsonLd from './JsonLd.astro'");
-            expect(eventContent).toContain('<JsonLd data={structuredData}');
-        });
-    });
-
-    describe('ArticleJsonLd Component', () => {
-        let articleContent: string;
-
-        beforeAll(() => {
-            articleContent = readComponent('components/seo/ArticleJsonLd.astro');
-        });
-
-        it('should have @type Article', () => {
-            expect(articleContent).toContain("'@type': 'Article'");
-        });
-
-        it('should have required headline property', () => {
-            expect(articleContent).toContain('headline: string');
-            expect(articleContent).toContain('headline,');
-        });
-
-        it('should have required datePublished property', () => {
-            expect(articleContent).toContain('datePublished: string');
-            expect(articleContent).toContain('datePublished,');
-        });
-
-        it('should have optional dateModified property', () => {
-            expect(articleContent).toContain('dateModified?: string');
-        });
-
-        it('should have author with Person type', () => {
-            expect(articleContent).toContain('author: ArticleAuthor');
-            expect(articleContent).toContain("'@type': 'Person'");
-        });
-
-        it('should have publisher with Organization type', () => {
-            expect(articleContent).toContain("'@type': 'Organization'");
-            expect(articleContent).toContain("name: 'Hospeda'");
-        });
-
-        it('should have optional image property', () => {
-            expect(articleContent).toContain('image?: string');
-        });
-
-        it('should use JsonLd component', () => {
-            expect(articleContent).toContain("import JsonLd from './JsonLd.astro'");
-            expect(articleContent).toContain('<JsonLd data={structuredData}');
-        });
+    it('accepts a required title prop', () => {
+        expect(seoHeadSrc).toContain('title:');
+        expect(seoHeadSrc).toContain('/** Page title');
     });
 });
 
-describe('Page-Level SEO Checks', () => {
-    describe('Homepage', () => {
-        let homepageContent: string;
+// ---------------------------------------------------------------------------
+// Meta description
+// ---------------------------------------------------------------------------
 
-        beforeAll(() => {
-            homepageContent = readPage('pages/[lang]/index.astro');
-        });
-
-        it('should import BaseLayout', () => {
-            expect(homepageContent).toContain('import BaseLayout');
-            expect(homepageContent).toContain('BaseLayout.astro');
-        });
-
-        it('should use BaseLayout with title prop', () => {
-            expect(homepageContent).toContain('<BaseLayout');
-            expect(homepageContent).toContain('title={pageTitle}');
-        });
-
-        it('should use BaseLayout with description prop', () => {
-            expect(homepageContent).toContain('description={pageDescription}');
-        });
-
-        it('should use BaseLayout with locale prop', () => {
-            expect(homepageContent).toContain('locale={locale}');
-        });
-
-        it('should have localized title', () => {
-            expect(homepageContent).toContain("key: 'page.title'");
-        });
-
-        it('should have localized description', () => {
-            expect(homepageContent).toContain("key: 'page.description'");
-        });
+describe('SEOHead.astro — meta description', () => {
+    it('renders a <meta name="description"> tag', () => {
+        expect(seoHeadSrc).toContain('name="description"');
     });
 
-    describe('Accommodation Detail Page', () => {
-        let accommodationContent: string;
-
-        beforeAll(() => {
-            accommodationContent = readPage('pages/[lang]/alojamientos/[slug].astro');
-        });
-
-        it('should import SEOHead', () => {
-            expect(accommodationContent).toContain(
-                "import SEOHead from '../../../components/seo/SEOHead.astro'"
-            );
-        });
-
-        it('should import LodgingBusinessJsonLd', () => {
-            expect(accommodationContent).toContain(
-                "import LodgingBusinessJsonLd from '../../../components/seo/LodgingBusinessJsonLd.astro'"
-            );
-        });
-
-        it('should use SEOHead component', () => {
-            expect(accommodationContent).toContain('<SEOHead');
-            expect(accommodationContent).toContain('slot="head"');
-        });
-
-        it('should use LodgingBusinessJsonLd component', () => {
-            expect(accommodationContent).toContain('<LodgingBusinessJsonLd');
-        });
-
-        it('should pass dynamic title to SEOHead', () => {
-            expect(accommodationContent).toContain('title={accommodation.name}');
-        });
-
-        it('should pass dynamic description to SEOHead', () => {
-            expect(accommodationContent).toContain('description={');
-        });
-
-        it('should pass locale to SEOHead', () => {
-            expect(accommodationContent).toContain('locale={locale}');
-        });
-
-        it('should pass image to SEOHead', () => {
-            expect(accommodationContent).toContain('image={accommodationImage}');
-        });
+    it('sets description content from the description prop', () => {
+        expect(seoHeadSrc).toContain('content={description}');
     });
 
-    describe('Blog Post Detail Page', () => {
-        let blogPostContent: string;
-
-        beforeAll(() => {
-            blogPostContent = readPage('pages/[lang]/publicaciones/[slug].astro');
-        });
-
-        it('should import SEOHead', () => {
-            expect(blogPostContent).toContain(
-                "import SEOHead from '../../../components/seo/SEOHead.astro'"
-            );
-        });
-
-        it('should import ArticleJsonLd', () => {
-            expect(blogPostContent).toContain(
-                "import ArticleJsonLd from '../../../components/seo/ArticleJsonLd.astro'"
-            );
-        });
-
-        it('should use SEOHead component', () => {
-            expect(blogPostContent).toContain('<SEOHead');
-            expect(blogPostContent).toContain('slot="head"');
-        });
-
-        it('should use ArticleJsonLd component', () => {
-            expect(blogPostContent).toContain('<ArticleJsonLd');
-        });
-
-        it('should pass dynamic title from post', () => {
-            expect(blogPostContent).toContain('title={post.title}');
-        });
-
-        it('should set type to article', () => {
-            expect(blogPostContent).toContain('type="article"');
-        });
-    });
-
-    describe('Event Detail Page', () => {
-        let eventContent: string;
-
-        beforeAll(() => {
-            eventContent = readPage('pages/[lang]/eventos/[slug].astro');
-        });
-
-        it('should import SEOHead', () => {
-            expect(eventContent).toContain(
-                "import SEOHead from '../../../components/seo/SEOHead.astro'"
-            );
-        });
-
-        it('should import EventJsonLd', () => {
-            expect(eventContent).toContain(
-                "import EventJsonLd from '../../../components/seo/EventJsonLd.astro'"
-            );
-        });
-
-        it('should use SEOHead component', () => {
-            expect(eventContent).toContain('<SEOHead');
-        });
-
-        it('should use EventJsonLd component', () => {
-            expect(eventContent).toContain('<EventJsonLd');
-        });
-
-        it('should pass dynamic title', () => {
-            expect(eventContent).toContain('title={pageTitle}');
-        });
-    });
-
-    describe('Destination Detail Page', () => {
-        let destinationContent: string;
-
-        beforeAll(() => {
-            destinationContent = readPage('pages/[lang]/destinos/[...path].astro');
-        });
-
-        it('should import SEOHead', () => {
-            expect(destinationContent).toContain(
-                "import SEOHead from '../../../components/seo/SEOHead.astro'"
-            );
-        });
-
-        it('should use SEOHead component', () => {
-            expect(destinationContent).toContain('<SEOHead');
-        });
-
-        it('should pass dynamic title from destination name', () => {
-            expect(destinationContent).toContain('title={destinationName}');
-        });
-
-        it('should pass locale to SEOHead', () => {
-            expect(destinationContent).toContain('locale={locale}');
-        });
-
-        it('should pass image to SEOHead', () => {
-            expect(destinationContent).toContain('image={destinationHeroImage}');
-        });
-    });
-
-    describe('Accommodation List Page', () => {
-        let accommodationListContent: string;
-
-        beforeAll(() => {
-            accommodationListContent = readPage('pages/[lang]/alojamientos/[slug].astro');
-        });
-
-        it('should use BaseLayout or SEOHead', () => {
-            const hasBaseLayout = accommodationListContent.includes('BaseLayout');
-            const hasSEOHead = accommodationListContent.includes('SEOHead');
-            expect(hasBaseLayout || hasSEOHead).toBe(true);
-        });
-    });
-
-    describe('Event List Page', () => {
-        let eventListContent: string;
-
-        beforeAll(() => {
-            eventListContent = readPage('pages/[lang]/eventos/index.astro');
-        });
-
-        it('should use BaseLayout', () => {
-            expect(eventListContent).toContain('BaseLayout');
-        });
+    it('accepts a required description prop', () => {
+        expect(seoHeadSrc).toContain('description:');
+        expect(seoHeadSrc).toContain('/** Meta description');
     });
 });
 
-describe('Canonical URL Validation', () => {
-    describe('SEOHead Component', () => {
-        let seoHeadContent: string;
+// ---------------------------------------------------------------------------
+// Canonical link
+// ---------------------------------------------------------------------------
 
-        beforeAll(() => {
-            seoHeadContent = readComponent('components/seo/SEOHead.astro');
-        });
-
-        it('should generate canonical URL from canonical prop', () => {
-            expect(seoHeadContent).toContain('canonical: string');
-            expect(seoHeadContent).toContain('<link rel="canonical" href={canonical}');
-        });
-
-        it('should include locale in hreflang URLs', () => {
-            expect(seoHeadContent).toContain('generateAlternateUrl');
-            expect(seoHeadContent).toContain('targetLocale: string');
-        });
+describe('SEOHead.astro — canonical link', () => {
+    it('renders a <link rel="canonical"> tag', () => {
+        expect(seoHeadSrc).toContain('rel="canonical"');
     });
 
-    describe('BaseLayout Component', () => {
-        let baseLayoutContent: string;
+    it('sets the canonical href from the canonical prop', () => {
+        expect(seoHeadSrc).toContain('href={canonical}');
+    });
 
-        beforeAll(() => {
-            baseLayoutContent = readComponent('layouts/BaseLayout.astro');
-        });
-
-        it('should have canonical URL generation', () => {
-            expect(baseLayoutContent).toContain('canonicalUrl');
-            expect(baseLayoutContent).toContain('Astro.url');
-        });
-
-        it('should use canonical URL in link tag', () => {
-            expect(baseLayoutContent).toContain('<link rel="canonical"');
-        });
-
-        it('should use Astro.site for base URL', () => {
-            expect(baseLayoutContent).toContain('Astro.site');
-        });
+    it('accepts a required canonical prop', () => {
+        expect(seoHeadSrc).toContain('canonical:');
+        expect(seoHeadSrc).toContain('/** Canonical URL');
     });
 });
 
-describe('robots.txt Validation', () => {
-    let robotsTxtContent: string;
+// ---------------------------------------------------------------------------
+// Robots meta tag
+// ---------------------------------------------------------------------------
 
-    beforeAll(() => {
-        robotsTxtContent = readPublicFile('robots.txt');
+describe('SEOHead.astro — robots meta tag', () => {
+    it('renders robots noindex tag only when noindex prop is true', () => {
+        expect(seoHeadSrc).toContain('noindex &&');
+        expect(seoHeadSrc).toContain('name="robots"');
+        expect(seoHeadSrc).toContain('content="noindex,nofollow"');
     });
 
-    it('should have User-agent directive', () => {
-        expect(robotsTxtContent).toContain('User-agent:');
-    });
-
-    it('should have Sitemap directive', () => {
-        expect(robotsTxtContent).toContain('Sitemap:');
-    });
-
-    it('should disallow auth pages', () => {
-        expect(robotsTxtContent).toContain('Disallow:');
-        expect(robotsTxtContent).toContain('/auth/');
-    });
-
-    it('should disallow account pages', () => {
-        expect(robotsTxtContent).toContain('/mi-cuenta/');
+    it('defaults noindex to false (no noindex tag on regular pages)', () => {
+        expect(seoHeadSrc).toContain('noindex = false');
     });
 });
 
-describe('Sitemap Configuration', () => {
-    let astroConfigContent: string;
+// ---------------------------------------------------------------------------
+// Open Graph meta tags
+// ---------------------------------------------------------------------------
 
-    beforeAll(() => {
-        astroConfigContent = readRootConfig('astro.config.mjs');
+describe('SEOHead.astro — Open Graph meta tags', () => {
+    it('renders og:type meta tag', () => {
+        expect(seoHeadSrc).toContain('property="og:type"');
     });
 
-    it('should have sitemap integration', () => {
-        expect(astroConfigContent).toContain("from '@astrojs/sitemap'");
-        expect(astroConfigContent).toContain('sitemap(');
+    it('renders og:url meta tag using the canonical URL', () => {
+        expect(seoHeadSrc).toContain('property="og:url"');
+        // canonical is reused as og:url
+        expect(seoHeadSrc).toContain('content={canonical}');
     });
 
-    it('should filter auth and account pages', () => {
-        expect(astroConfigContent).toContain('filter:');
-        expect(astroConfigContent).toContain('/auth/');
-        expect(astroConfigContent).toContain('/mi-cuenta/');
+    it('renders og:title using the full title with site suffix', () => {
+        expect(seoHeadSrc).toContain('property="og:title"');
+        expect(seoHeadSrc).toContain('content={fullTitle}');
+    });
+
+    it('renders og:description meta tag', () => {
+        expect(seoHeadSrc).toContain('property="og:description"');
+    });
+
+    it('renders og:locale meta tag', () => {
+        expect(seoHeadSrc).toContain('property="og:locale"');
+        expect(seoHeadSrc).toContain('content={ogLocale}');
+    });
+
+    it('renders og:site_name set to "Hospeda"', () => {
+        expect(seoHeadSrc).toContain('property="og:site_name"');
+        expect(seoHeadSrc).toContain('content="Hospeda"');
+    });
+
+    it('conditionally renders og:image when image prop is provided', () => {
+        expect(seoHeadSrc).toContain('property="og:image"');
+        expect(seoHeadSrc).toContain('{image &&');
+    });
+
+    it('accepts website and article as valid og:type values', () => {
+        expect(seoHeadSrc).toContain("'website' | 'article'");
+    });
+
+    it('defaults og:type to website', () => {
+        expect(seoHeadSrc).toContain("type = 'website'");
     });
 });
 
-describe('Viewport and Charset', () => {
-    let baseLayoutContent: string;
+// ---------------------------------------------------------------------------
+// Twitter Card meta tags
+// ---------------------------------------------------------------------------
 
-    beforeAll(() => {
-        baseLayoutContent = readComponent('layouts/BaseLayout.astro');
+describe('SEOHead.astro — Twitter Card meta tags', () => {
+    it('renders twitter:card set to summary_large_image', () => {
+        expect(seoHeadSrc).toContain('name="twitter:card"');
+        expect(seoHeadSrc).toContain('content="summary_large_image"');
     });
 
-    it('should have charset UTF-8', () => {
-        expect(baseLayoutContent).toContain('<meta charset="UTF-8"');
+    it('renders twitter:title tag', () => {
+        expect(seoHeadSrc).toContain('name="twitter:title"');
     });
 
-    it('should have viewport meta tag', () => {
-        expect(baseLayoutContent).toContain('<meta name="viewport"');
-        expect(baseLayoutContent).toContain('width=device-width');
+    it('renders twitter:description tag', () => {
+        expect(seoHeadSrc).toContain('name="twitter:description"');
     });
 
-    it('should have lang attribute on html tag', () => {
-        expect(baseLayoutContent).toContain('<html lang={locale}');
+    it('conditionally renders twitter:image when image prop is provided', () => {
+        expect(seoHeadSrc).toContain('name="twitter:image"');
+        expect(seoHeadSrc).toContain('{image &&');
+    });
+
+    it('uses the fullTitle for the twitter:title (with site suffix)', () => {
+        // Same fullTitle is used for both OG and Twitter
+        const titleMatches = (seoHeadSrc.match(/content=\{fullTitle\}/g) ?? []).length;
+        expect(titleMatches).toBeGreaterThanOrEqual(2);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Hreflang alternate links
+// ---------------------------------------------------------------------------
+
+describe('SEOHead.astro — hreflang alternate links', () => {
+    it('generates hreflang link for es locale', () => {
+        expect(seoHeadSrc).toContain('hreflang="es"');
+    });
+
+    it('generates hreflang link for en locale', () => {
+        expect(seoHeadSrc).toContain('hreflang="en"');
+    });
+
+    it('generates hreflang link for pt locale', () => {
+        expect(seoHeadSrc).toContain('hreflang="pt"');
+    });
+
+    it('generates x-default hreflang pointing to Spanish URL', () => {
+        expect(seoHeadSrc).toContain('hreflang="x-default"');
+        expect(seoHeadSrc).toContain('hreflang="x-default" href={esUrl}');
+    });
+
+    it('emits exactly 4 alternate link tags', () => {
+        const count = (seoHeadSrc.match(/rel="alternate"/g) ?? []).length;
+        expect(count).toBe(4);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Props interface completeness
+// ---------------------------------------------------------------------------
+
+describe('SEOHead.astro — Props interface', () => {
+    it('exports a Props interface', () => {
+        expect(seoHeadSrc).toContain('export interface Props');
+    });
+
+    it('declares title as required string prop', () => {
+        expect(seoHeadSrc).toContain('title: string');
+    });
+
+    it('declares description as required string prop', () => {
+        expect(seoHeadSrc).toContain('description: string');
+    });
+
+    it('declares canonical as required string prop', () => {
+        expect(seoHeadSrc).toContain('canonical: string');
+    });
+
+    it('declares image as optional string prop', () => {
+        expect(seoHeadSrc).toContain('image?: string');
+    });
+
+    it('declares noindex as optional boolean prop', () => {
+        expect(seoHeadSrc).toContain('noindex?: boolean');
+    });
+
+    it('declares locale as optional SupportedLocale prop', () => {
+        expect(seoHeadSrc).toContain('locale?: SupportedLocale');
+    });
+
+    it('declares type as optional website|article union prop', () => {
+        expect(seoHeadSrc).toContain("type?: 'website' | 'article'");
+    });
+
+    it('imports SupportedLocale as a type-only import', () => {
+        expect(seoHeadSrc).toContain('type SupportedLocale');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Multiple pages — SEOHead wired correctly
+// ---------------------------------------------------------------------------
+
+describe('pages — SEOHead integration across multiple pages', () => {
+    it('homepage imports and uses SEOHead in the head slot', () => {
+        expect(homepageSrc).toContain('import SEOHead from');
+        expect(homepageSrc).toContain('slot="head"');
+        expect(homepageSrc).toContain('canonical={canonicalUrl}');
+        expect(homepageSrc).toContain('locale={locale}');
+    });
+
+    it('contacto.astro imports and uses SEOHead in the head slot', () => {
+        expect(contactoSrc).toContain('import SEOHead from');
+        expect(contactoSrc).toContain('slot="head"');
+        expect(contactoSrc).toContain('canonical={canonicalUrl}');
+        expect(contactoSrc).toContain('locale={locale}');
+    });
+
+    it('mapa-del-sitio.astro imports and uses SEOHead in the head slot', () => {
+        expect(mapaSiteSrc).toContain('import SEOHead from');
+        expect(mapaSiteSrc).toContain('slot="head"');
+        expect(mapaSiteSrc).toContain('canonical={canonicalUrl}');
+    });
+
+    it('404.astro imports and uses SEOHead with noindex', () => {
+        expect(page404Src).toContain('import SEOHead from');
+        expect(page404Src).toContain('noindex={true}');
+    });
+
+    it('all sampled pages derive canonical from Astro.site to form absolute URLs', () => {
+        for (const src of [homepageSrc, contactoSrc, mapaSiteSrc, page404Src]) {
+            expect(src).toContain('new URL(Astro.url.pathname, Astro.site)');
+        }
     });
 });

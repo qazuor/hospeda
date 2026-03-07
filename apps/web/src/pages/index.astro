@@ -1,14 +1,8 @@
 ---
-export const prerender = false;
-
 /**
- * Root page - redirects to locale-specific homepage based on Accept-Language header.
- * Implements automatic language detection for internationalized routing.
+ * Root redirect: sends visitors to the default locale homepage.
  */
-import { parseAcceptLanguage } from '../lib/i18n';
+export const prerender = true;
 
-const acceptLanguage = Astro.request.headers.get('accept-language');
-const locale = parseAcceptLanguage(acceptLanguage);
-
-return Astro.redirect(`/${locale}/`);
+return Astro.redirect('/es/', 301);
 ---

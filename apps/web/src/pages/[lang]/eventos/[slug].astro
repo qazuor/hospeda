@@ -5,363 +5,464 @@ export const prerender = true;
  * Event detail page - displays comprehensive information about a specific event.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
  *
- * Rendering: SSG + ISR (6h revalidation)
+ * Rendering: SSG with fallback fetch on-demand
  * Route: /[lang]/eventos/[slug]
  */
+
+import type { EventPublic } from '@repo/schemas';
+import { CalendarIcon, ClockIcon, ImageIcon, LocationIcon, TagIcon, UserIcon } from '@repo/icons';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import EventJsonLd from '../../../components/seo/EventJsonLd.astro';
-import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
-import Container from '../../../components/ui/Container.astro';
-import Section from '../../../components/ui/Section.astro';
-import EventCard from '../../../components/event/EventCard.astro';
-import { getLocaleFromParams, HOME_BREADCRUMB, SUPPORTED_LOCALES } from '../../../lib/page-helpers';
-import { eventsApi } from '../../../lib/api/endpoints';
+import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
+import { ShareButtons } from '../../../components/shared/ShareButtons.client';
 import { fetchAllPages } from '../../../lib/api/client';
-import { CalendarIcon, ClockIcon, LocationIcon, ImageIcon } from '@repo/icons';
-import { ShareButtons } from '../../../components/ui/ShareButtons.client';
-import { toEventCardProps } from '../../../lib/api/transforms';
+import { eventsApi as eventsApiEndpoints } from '../../../lib/api/endpoints';
 import { extractFeaturedImageUrl } from '../../../lib/media';
+import { toEventCardProps } from '../../../lib/api/transforms';
+import {
+    getLocaleFromParams,
+    HOME_BREADCRUMB,
+    SUPPORTED_LOCALES
+} from '../../../lib/page-helpers';
+import { createT } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 import { formatDate as i18nFormatDate, toBcp47Locale } from '@repo/i18n';
-import { t } from '../../../lib/i18n';
 
 /**
  * Generate static paths for all events across all locales.
  * Pre-renders event detail pages at build time for SSG.
  */
 export async function getStaticPaths() {
-	const events = await fetchAllPages({
-		fetcher: (p) => eventsApi.list(p),
-	});
+    const events = await fetchAllPages({
+        fetcher: (p) => eventsApiEndpoints.list(p),
+    });
 
-	return SUPPORTED_LOCALES.flatMap((lang) =>
-		events
-			.filter((e) => e.slug)
-			.map((e) => ({
-				params: { lang, slug: e.slug },
-				props: { event: e },
-			}))
-	);
+    return SUPPORTED_LOCALES.flatMap((lang) =>
+        events
+            .filter((e) => Boolean(e.slug))
+            .map((e) => ({
+                params: { lang, slug: e.slug },
+                props: { event: e },
+            }))
+    );
 }
 
 const { slug } = Astro.params;
-
 const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+
+if (!locale) {
+    return Astro.redirect('/es/');
+}
+
+const t = createT(locale);
 
 /**
  * Fetch event data from API.
  * Uses prop from getStaticPaths if available, otherwise fetches on-demand.
  */
-let event = Astro.props.event as Record<string, unknown> | undefined;
+let event = Astro.props.event as EventPublic | undefined;
+
 if (!event) {
-	const result = await eventsApi.getBySlug({ slug: slug || '' });
-	if (!result.ok) {
-		return Astro.redirect(`/${locale}/eventos/`);
-	}
-	event = result.data;
+    const result = await eventsApiEndpoints.getBySlug({ slug: slug ?? '' });
+    if (!result.ok) {
+        return Astro.redirect(buildUrl({ locale, path: 'eventos' }));
+    }
+    event = result.data;
 }
 
 /**
- * Extract featured image URL from nested media structure
+ * Extract featured image URL from the nested media structure.
  */
-const eventImageUrl = extractFeaturedImageUrl(event, '');
+const eventImageUrl = extractFeaturedImageUrl(event as Record<string, unknown>, '');
 
 /**
- * Calculate if event has ended based on actual end date
+ * Determine if the event has already ended.
  */
-const isPastEvent = event.endDate ? new Date(event.endDate) < new Date() : false;
+const endDateRaw = (event as Record<string, unknown>).endDate as string | undefined;
+const startDateRaw = (event as Record<string, unknown>).startDate as string | undefined;
+const isPastEvent = endDateRaw ? new Date(endDateRaw) < new Date() : false;
+
+const eventName = String((event as Record<string, unknown>).name ?? '');
+const eventCategory = String((event as Record<string, unknown>).category ?? '');
+const eventDescription = String(
+    (event as Record<string, unknown>).description ??
+    (event as Record<string, unknown>).summary ??
+    ''
+);
+const eventOrganizer = (event as Record<string, unknown>).organizer as string | undefined;
+const eventPrice = (event as Record<string, unknown>).price as string | undefined;
+const eventTicketUrl = (event as Record<string, unknown>).ticketUrl as string | undefined;
+const eventLocation = (event as Record<string, unknown>).location as
+    | { name?: string; address?: string; city?: string }
+    | undefined;
+const eventAgenda = (event as Record<string, unknown>).agenda as
+    | Array<{ time?: string; title?: string; description?: string }>
+    | undefined;
 
 /**
- * Localized page title
+ * Localized meta description truncated to 155 characters.
  */
-const pageTitle = event.name;
+const metaDescription =
+    eventDescription.length > 155
+        ? `${eventDescription.substring(0, 152)}...`
+        : eventDescription;
+
+/** BCP-47 locale string for Intl formatting (e.g. 'es-AR'). */
+const bcp47Locale = toBcp47Locale(locale);
 
 /**
- * Localized meta description computed from event data
+ * Format a date string for display using the page locale.
  */
-const eventDescription = event.description || event.summary || '';
-const metaDescription = eventDescription.substring(0, 155) + (eventDescription.length > 155 ? '...' : '');
+function formatDate(dateString: string): string {
+    return i18nFormatDate({
+        date: dateString,
+        locale: bcp47Locale,
+        options: { year: 'numeric', month: 'long', day: 'numeric' },
+    });
+}
 
 /**
- * Localized events breadcrumb label
+ * Format a date string to show only the time portion.
  */
-const eventsLabel = t({ locale, namespace: 'events', key: 'breadcrumb.events' });
-
-/**
- * Localized section labels
- */
-const labelCategory = t({ locale, namespace: 'events', key: 'detail.category' });
-const labelDate = t({ locale, namespace: 'events', key: 'detail.date' });
-const labelTime = t({ locale, namespace: 'events', key: 'detail.time' });
-const labelLocation = t({ locale, namespace: 'events', key: 'detail.location' });
-const labelDescription = t({ locale, namespace: 'events', key: 'detail.description' });
-const labelAgenda = t({ locale, namespace: 'events', key: 'detail.agenda' });
-const labelPricing = t({ locale, namespace: 'events', key: 'detail.pricing' });
-const labelOrganizer = t({ locale, namespace: 'events', key: 'detail.organizer' });
-const labelGetTickets = t({ locale, namespace: 'events', key: 'detail.getTickets' });
-const labelRelatedEvents = t({ locale, namespace: 'events', key: 'detail.relatedEvents' });
-const labelShareEvent = t({ locale, namespace: 'events', key: 'detail.shareEvent' });
-const labelPastEvent = t({ locale, namespace: 'events', key: 'detail.pastEvent' });
+function formatTime(dateString: string): string {
+    return i18nFormatDate({
+        date: dateString,
+        locale: bcp47Locale,
+        options: { hour: '2-digit', minute: '2-digit' },
+    });
+}
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
- * Breadcrumb navigation items
+ * Breadcrumb navigation items for this event detail page.
  */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: eventsLabel, href: `/${locale}/eventos/` },
-	{ label: pageTitle, href: `/${locale}/eventos/${slug}/` },
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    { label: t('events.breadcrumb.events', 'Eventos'), href: buildUrl({ locale, path: 'eventos' }) },
+    {
+        label: eventName,
+        href: buildUrl({ locale, path: `eventos/${slug}` }),
+    },
 ];
 
 /**
- * Fetch related/upcoming events for the related events section.
- * Filter out the current event from the list.
+ * Fetch upcoming events for the related events section.
+ * Filter out the current event and limit to 3 results.
  */
-const relResult = await eventsApi.getUpcoming({ pageSize: 4 });
-const relatedEventsRaw = relResult.ok
-	? relResult.data.items.filter((e) => e.slug !== slug).slice(0, 3)
-	: [];
+const relResult = await eventsApiEndpoints.getUpcoming({ pageSize: 4 });
+const relatedEventCards =
+    relResult.ok
+        ? relResult.data.items
+              .filter((e) => e.slug !== slug)
+              .slice(0, 3)
+              .map((evt) => toEventCardProps({ item: evt as Record<string, unknown> }))
+        : [];
 
-const relatedEventCards = relatedEventsRaw.map((evt) =>
-	toEventCardProps({ item: evt as Record<string, unknown> })
-);
-
-/** BCP 47 locale for Intl formatting */
-const bcp47Locale = toBcp47Locale(locale);
-
-/**
- * Format date for display
- */
-const formatDate = (dateString: string): string => {
-	return i18nFormatDate({
-		date: dateString,
-		locale: bcp47Locale,
-		options: { year: 'numeric', month: 'long', day: 'numeric' },
-	});
-};
-
-/**
- * Format time for display
- */
-const formatTime = (dateString: string): string => {
-	return i18nFormatDate({
-		date: dateString,
-		locale: bcp47Locale,
-		options: { hour: '2-digit', minute: '2-digit' },
-	});
+/** JSON-LD location object for EventJsonLd. */
+const jsonLdLocation = {
+    name: eventLocation?.name ?? eventLocation?.city ?? 'Concepcion del Uruguay',
+    address: eventLocation?.address ?? eventLocation?.city ?? 'Entre Rios, Argentina',
 };
 ---
 
-<BaseLayout title={pageTitle} description={metaDescription} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={pageTitle}
-		description={metaDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="article"
-		image={eventImageUrl || undefined}
-	/>
+<BaseLayout title={eventName} description={metaDescription} locale={locale}>
+    <SEOHead
+        slot="head"
+        title={eventName}
+        description={metaDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="article"
+        image={eventImageUrl || undefined}
+    />
 
-	<EventJsonLd
-		slot="head"
-		name={event.name}
-		description={event.description || event.summary}
-		startDate={event.startDate}
-		endDate={event.endDate}
-		url={canonicalUrl}
-		image={eventImageUrl || undefined}
-		location={event.location}
-		organizer={event.organizer}
-	/>
+    {startDateRaw && (
+        <EventJsonLd
+            slot="head"
+            name={eventName}
+            description={eventDescription || eventName}
+            startDate={startDateRaw}
+            endDate={endDateRaw}
+            url={canonicalUrl}
+            image={eventImageUrl || undefined}
+            location={jsonLdLocation}
+            organizer={eventOrganizer}
+        />
+    )}
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="container mx-auto max-w-6xl px-4 py-6">
+        <Breadcrumb items={breadcrumbItems} />
 
-		<Section>
-			<div class="mx-auto max-w-6xl">
-				<!-- Event Header -->
-				<article id="event-header" class="mb-8">
-					<div class="flex flex-wrap items-center gap-3 mb-4">
-						<span class="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
-							{event.category}
-						</span>
-						{isPastEvent && (
-							<span id="past-event-badge" class="inline-flex items-center rounded-full bg-text-tertiary/10 px-3 py-1 text-sm font-semibold text-text-secondary">
-								{labelPastEvent}
-							</span>
-						)}
-					</div>
+        <!-- Event header -->
+        <article id="event-header" class="mb-8">
+            <div class="mb-4 flex flex-wrap items-center gap-3">
+                {eventCategory && (
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-sm font-semibold text-primary">
+                        <TagIcon size={14} weight="bold" aria-hidden="true" />
+                        {eventCategory}
+                    </span>
+                )}
+                {isPastEvent && (
+                    <span
+                        id="past-event-badge"
+                        class="inline-flex items-center rounded-full bg-muted px-3 py-1 text-sm font-semibold text-muted-foreground"
+                    >
+                        {t('events.detail.pastEvent', 'Evento pasado')}
+                    </span>
+                )}
+            </div>
 
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{event.name}
-					</h1>
+            <h1 class="mb-6 text-4xl font-bold text-foreground md:text-5xl">
+                {eventName}
+            </h1>
 
-					<!-- Event Meta Information -->
-					<div id="event-meta" class="flex flex-wrap gap-6 text-text-secondary">
-						<!-- Date -->
-						<div class="flex items-center gap-2">
-							<CalendarIcon size={20} className="text-primary" aria-hidden="true" />
-							<div>
-								<span class="font-semibold">{labelDate}:</span>
-								<span class="ml-1">{formatDate(event.startDate)}</span>
-							</div>
-						</div>
+            <!-- Event metadata row -->
+            <div id="event-meta" class="flex flex-wrap gap-6 text-muted-foreground">
+                {startDateRaw && (
+                    <div class="flex items-center gap-2">
+                        <CalendarIcon size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                            <span class="font-semibold text-foreground">
+                                {t('events.detail.date', 'Fecha')}:
+                            </span>
+                            <span class="ml-1">{formatDate(startDateRaw)}</span>
+                        </div>
+                    </div>
+                )}
 
-						<!-- Time -->
-						<div class="flex items-center gap-2">
-							<ClockIcon size={20} className="text-primary" aria-hidden="true" />
-							<div>
-								<span class="font-semibold">{labelTime}:</span>
-								<span class="ml-1">{formatTime(event.startDate)}</span>
-							</div>
-						</div>
+                {startDateRaw && (
+                    <div class="flex items-center gap-2">
+                        <ClockIcon size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                            <span class="font-semibold text-foreground">
+                                {t('events.detail.time', 'Hora')}:
+                            </span>
+                            <span class="ml-1">{formatTime(startDateRaw)}</span>
+                        </div>
+                    </div>
+                )}
 
-						<!-- Location -->
-						{event.location && (
-							<div class="flex items-center gap-2">
-								<LocationIcon size={20} className="text-primary" aria-hidden="true" />
-								<div>
-									<span class="font-semibold">{labelLocation}:</span>
-									<span class="ml-1">{event.location.name}</span>
-								</div>
-							</div>
-						)}
-					</div>
-				</article>
+                {eventLocation?.name && (
+                    <div class="flex items-center gap-2">
+                        <LocationIcon size={20} className="shrink-0 text-primary" aria-hidden="true" />
+                        <div>
+                            <span class="font-semibold text-foreground">
+                                {t('events.detail.location', 'Lugar')}:
+                            </span>
+                            <span class="ml-1">{eventLocation.name}</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </article>
 
-				<!-- Event Image Area -->
-				<article id="event-image" class="mb-12">
-					{eventImageUrl ? (
-						<div class="aspect-video w-full overflow-hidden rounded-lg bg-surface-alt">
-							<img
-								src={eventImageUrl}
-								alt={event.name}
-								class="h-full w-full object-cover"
-								loading="eager"
-								transition:name={`entity-${slug}`}
-							/>
-						</div>
-					) : (
-						<div class="aspect-video w-full overflow-hidden rounded-lg bg-surface-alt">
-							<div class="flex h-full items-center justify-center text-text-tertiary">
-								<ImageIcon size={64} weight="regular" aria-hidden="true" />
-							</div>
-						</div>
-					)}
-				</article>
+        <!-- Event hero image -->
+        <div id="event-image" class="mb-12">
+            {eventImageUrl ? (
+                <div class="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+                    <img
+                        src={eventImageUrl}
+                        alt={eventName}
+                        class="h-full w-full object-cover"
+                        loading="eager"
+                        transition:name={`entity-${slug}`}
+                    />
+                </div>
+            ) : (
+                <div class="aspect-video w-full overflow-hidden rounded-xl bg-muted">
+                    <div class="flex h-full items-center justify-center text-muted-foreground">
+                        <ImageIcon size={64} weight="regular" aria-hidden="true" />
+                    </div>
+                </div>
+            )}
+        </div>
 
-				<div class="grid gap-8 lg:grid-cols-3">
-					<!-- Main Content Column -->
-					<div class="lg:col-span-2 space-y-8">
-						<!-- Description Section -->
-						<article id="event-description" class="rounded-lg bg-bg p-6 shadow-sm">
-							<h2 class="mb-4 text-2xl font-semibold text-text-primary">
-								{labelDescription}
-							</h2>
-							<p class="text-lg leading-relaxed text-text-secondary">
-								{event.description || event.summary}
-							</p>
-						</article>
+        <!-- Past event notice banner -->
+        {isPastEvent && (
+            <div
+                role="status"
+                class="mb-8 rounded-lg border border-border bg-muted px-5 py-4 text-muted-foreground"
+            >
+                <p class="text-sm font-medium">
+                    {t('events.detail.pastEventNotice', 'Este evento ya finalizo. La informacion mostrada corresponde a su ultima edicion.')}
+                </p>
+            </div>
+        )}
 
-						<!-- Agenda Section -->
-						{event.agenda && Array.isArray(event.agenda) && event.agenda.length > 0 && (
-							<article id="event-schedule" class="rounded-lg bg-bg p-6 shadow-sm">
-								<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-									{labelAgenda}
-								</h2>
-								<ol class="space-y-4">
-									{event.agenda.map((item: { time?: string; title?: string; description?: string }, index: number) => (
-										<li class="flex gap-4">
-											<div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-												{index + 1}
-											</div>
-											<div class="flex-1">
-												<div class="mb-1 flex items-baseline gap-2">
-													<span class="text-sm font-semibold text-primary">{item.time}</span>
-													<h3 class="font-semibold text-text-primary">{item.title}</h3>
-												</div>
-												<p class="text-text-secondary">{item.description}</p>
-											</div>
-										</li>
-									))}
-								</ol>
-							</article>
-						)}
+        <div class="grid gap-8 lg:grid-cols-3">
+            <!-- Main content column -->
+            <div class="space-y-8 lg:col-span-2">
+                <!-- Description -->
+                <article id="event-description" class="rounded-xl bg-card p-6 shadow-sm">
+                    <h2 class="mb-4 text-2xl font-semibold text-foreground">
+                        {t('events.detail.description', 'Descripcion')}
+                    </h2>
+                    <p class="text-lg leading-relaxed text-muted-foreground">
+                        {eventDescription}
+                    </p>
+                </article>
 
-						<!-- Share Buttons -->
-						<article id="share-buttons" class="rounded-lg bg-bg p-6 shadow-sm">
-							<h3 class="mb-4 text-lg font-semibold text-text-primary">
-								{labelShareEvent}
-							</h3>
-							<ShareButtons
-								client:visible
-								url={canonicalUrl}
-								title={pageTitle}
-								text={eventDescription.substring(0, 100)}
-							/>
-						</article>
-					</div>
+                <!-- Agenda -->
+                {Array.isArray(eventAgenda) && eventAgenda.length > 0 && (
+                    <article id="event-schedule" class="scroll-reveal rounded-xl bg-card p-6 shadow-sm">
+                        <h2 class="mb-6 text-2xl font-semibold text-foreground">
+                            {t('events.detail.agenda', 'Agenda')}
+                        </h2>
+                        <ol class="space-y-4">
+                            {eventAgenda.map((item, index) => (
+                                <li class="flex gap-4">
+                                    <div
+                                        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary"
+                                        aria-hidden="true"
+                                    >
+                                        {index + 1}
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="mb-1 flex flex-wrap items-baseline gap-2">
+                                            {item.time && (
+                                                <span class="text-sm font-semibold text-primary">
+                                                    {item.time}
+                                                </span>
+                                            )}
+                                            {item.title && (
+                                                <h3 class="font-semibold text-foreground">
+                                                    {item.title}
+                                                </h3>
+                                            )}
+                                        </div>
+                                        {item.description && (
+                                            <p class="text-muted-foreground">{item.description}</p>
+                                        )}
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
+                    </article>
+                )}
 
-					<!-- Sidebar Column -->
-					<div class="space-y-6">
-						<!-- Pricing Section -->
-						{(event.price || event.ticketUrl) && (
-							<article id="event-pricing" class="rounded-lg bg-bg p-6 shadow-sm">
-								<h2 class="mb-4 text-xl font-semibold text-text-primary">
-									{labelPricing}
-								</h2>
-								{event.price && (
-									<p class="mb-4 text-2xl font-bold text-primary">
-										{event.price}
-									</p>
-								)}
-								{!isPastEvent && event.ticketUrl && (
-									<a
-										href={event.ticketUrl}
-										class="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-										target="_blank"
-										rel="noopener noreferrer"
-									>
-										{labelGetTickets}
-									</a>
-								)}
-							</article>
-						)}
+                <!-- Share buttons -->
+                <article id="share-buttons" class="rounded-xl bg-card p-6 shadow-sm">
+                    <h3 class="mb-4 text-lg font-semibold text-foreground">
+                        {t('events.detail.shareEvent', 'Compartir evento')}
+                    </h3>
+                    <ShareButtons
+                        client:visible
+                        url={canonicalUrl}
+                        title={eventName}
+                        text={eventDescription.substring(0, 100)}
+                        locale={locale}
+                    />
+                </article>
+            </div>
 
-						<!-- Organizer Info -->
-						{event.organizer && (
-							<article id="event-organizer" class="rounded-lg bg-bg p-6 shadow-sm">
-								<h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-text-tertiary">
-									{labelOrganizer}
-								</h3>
-								<p class="text-lg font-semibold text-text-primary">
-									{event.organizer}
-								</p>
-							</article>
-						)}
-					</div>
-				</div>
+            <!-- Sidebar column -->
+            <div class="space-y-6">
+                <!-- Pricing / tickets -->
+                {(eventPrice || eventTicketUrl) && (
+                    <article id="event-pricing" class="scroll-reveal-right rounded-xl bg-card p-6 shadow-sm">
+                        <h2 class="mb-4 text-xl font-semibold text-foreground">
+                            {t('events.detail.pricing', 'Entradas')}
+                        </h2>
+                        {eventPrice && (
+                            <p class="mb-4 text-2xl font-bold text-primary">{eventPrice}</p>
+                        )}
+                        {!isPastEvent && eventTicketUrl && (
+                            <a
+                                href={eventTicketUrl}
+                                class="inline-flex w-full items-center justify-center rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                {t('events.detail.getTickets', 'Conseguir entradas')}
+                            </a>
+                        )}
+                    </article>
+                )}
 
-				<!-- Related Events Section -->
-				{relatedEventCards.length > 0 && (
-					<article id="related-events" class="mt-12">
-						<h2 class="mb-6 text-center text-3xl font-semibold text-text-primary">
-							{labelRelatedEvents}
-						</h2>
-						<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" role="region" aria-label={labelRelatedEvents}>
-							{relatedEventCards.map((event) => (
-								<EventCard
-									event={event}
-									locale={locale}
-								/>
-							))}
-						</div>
-					</article>
-				)}
-			</div>
-		</Section>
-	</Container>
+                <!-- Organizer info -->
+                {eventOrganizer && (
+                    <article id="event-organizer" class="rounded-xl bg-card p-6 shadow-sm">
+                        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                            {t('events.detail.organizer', 'Organizador')}
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <UserIcon size={18} className="shrink-0 text-muted-foreground" aria-hidden="true" />
+                            <p class="text-lg font-semibold text-foreground">{eventOrganizer}</p>
+                        </div>
+                    </article>
+                )}
+
+                <!-- Location details -->
+                {eventLocation?.address && (
+                    <article id="event-location-detail" class="rounded-xl bg-card p-6 shadow-sm">
+                        <h3 class="mb-2 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                            {t('events.detail.location', 'Lugar')}
+                        </h3>
+                        <div class="flex items-start gap-2">
+                            <LocationIcon size={18} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                            <div>
+                                {eventLocation.name && (
+                                    <p class="font-semibold text-foreground">{eventLocation.name}</p>
+                                )}
+                                <p class="text-muted-foreground">{eventLocation.address}</p>
+                                {eventLocation.city && (
+                                    <p class="text-sm text-muted-foreground">{eventLocation.city}</p>
+                                )}
+                            </div>
+                        </div>
+                    </article>
+                )}
+            </div>
+        </div>
+
+        <!-- Related upcoming events -->
+        {relatedEventCards.length > 0 && (
+            <section id="related-events" class="scroll-reveal mt-16" aria-label={t('events.detail.relatedEvents', 'Proximos eventos')}>
+                <h2 class="mb-8 text-center text-3xl font-semibold text-foreground">
+                    {t('events.detail.relatedEvents', 'Proximos eventos')}
+                </h2>
+                <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {relatedEventCards.map((relatedEvent) => (
+                        <a
+                            href={buildUrl({ locale, path: `eventos/${relatedEvent.slug}` })}
+                            class="group block overflow-hidden rounded-xl bg-card shadow-sm ring-1 ring-border transition-shadow hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                            <div class="aspect-video overflow-hidden bg-muted">
+                                {relatedEvent.featuredImage ? (
+                                    <img
+                                        src={relatedEvent.featuredImage}
+                                        alt={relatedEvent.name}
+                                        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div class="flex h-full items-center justify-center text-muted-foreground">
+                                        <ImageIcon size={40} weight="regular" aria-hidden="true" />
+                                    </div>
+                                )}
+                            </div>
+                            <div class="p-4">
+                                {relatedEvent.category && (
+                                    <span class="mb-2 inline-block text-xs font-semibold uppercase tracking-wide text-primary">
+                                        {relatedEvent.category}
+                                    </span>
+                                )}
+                                <h3 class="mb-1 font-semibold text-foreground line-clamp-2 group-hover:text-primary">
+                                    {relatedEvent.name}
+                                </h3>
+                                {relatedEvent.date.start && (
+                                    <p class="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                        <CalendarIcon size={14} aria-hidden="true" />
+                                        {formatDate(relatedEvent.date.start)}
+                                    </p>
+                                )}
+                            </div>
+                        </a>
+                    ))}
+                </div>
+            </section>
+        )}
+    </div>
 </BaseLayout>

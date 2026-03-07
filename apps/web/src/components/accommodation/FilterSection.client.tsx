@@ -1,32 +1,34 @@
 import { ChevronDownIcon } from '@repo/icons';
 import type { JSX } from 'react';
+import type React from 'react';
 
 /**
- * Props for the FilterSection component
+ * Props for the FilterSection component.
  */
 export interface FilterSectionProps {
     /**
-     * Section title displayed in the toggle button
+     * Section title displayed in the toggle button header.
      */
     readonly title: string;
 
     /**
-     * Whether the section is currently expanded
+     * Whether the section is currently expanded and showing its children.
      */
     readonly isExpanded: boolean;
 
     /**
-     * Callback to toggle section expansion
+     * Callback invoked when the toggle button is clicked.
      */
     readonly onToggle: () => void;
 
     /**
-     * Content to render inside the section when expanded
+     * Content to render inside the section when expanded.
      */
     readonly children: React.ReactNode;
 
     /**
-     * Whether to show a bottom border (default true)
+     * Whether to render a bottom border separator after the section.
+     * @default true
      */
     readonly withBorder?: boolean;
 }
@@ -34,12 +36,12 @@ export interface FilterSectionProps {
 /**
  * FilterSection component
  *
- * A reusable collapsible section wrapper for filter groups.
- * Renders a toggle button with a chevron icon and conditionally
- * shows its children based on the expanded state.
+ * A reusable collapsible section wrapper for filter groups. Renders a
+ * toggle button with a rotating chevron icon and conditionally shows
+ * its children based on the `isExpanded` state.
  *
  * @param props - Component props
- * @returns React component
+ * @returns React element
  *
  * @example
  * ```tsx
@@ -65,7 +67,7 @@ export function FilterSection({
                 type="button"
                 onClick={onToggle}
                 aria-expanded={isExpanded}
-                className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                className="mb-3 flex w-full items-center justify-between rounded text-left font-semibold text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
             >
                 {title}
                 <ChevronDownIcon

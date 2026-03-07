@@ -1,6 +1,6 @@
 /**
- * Pure utility functions extracted from LitoralMap.astro frontmatter and inline script.
- * Enables unit testing of coordinate conversion and text truncation logic.
+ * Pure utility functions for LitoralMap coordinate conversion and text truncation.
+ * Enables unit testing of geographic projection and tooltip clamping logic.
  */
 
 /** Geographic bounds defining the map region */
@@ -39,7 +39,7 @@ interface GeoToSvgResult {
 
 /**
  * Default geographic bounds for the Litoral/Entre Rios region.
- * Matches the constants in LitoralMap.astro.
+ * Matches the constants used in LitoralMap.astro.
  */
 export const DEFAULT_BOUNDS: GeoBounds = {
     latMin: -34.1,
@@ -48,11 +48,13 @@ export const DEFAULT_BOUNDS: GeoBounds = {
     lonMax: -57.4
 } as const;
 
-/** Default SVG dimensions matching LitoralMap.astro */
+/** Default SVG width matching LitoralMap.astro viewBox */
 export const DEFAULT_SVG_WIDTH = 200;
+
+/** Default SVG height matching LitoralMap.astro viewBox */
 export const DEFAULT_SVG_HEIGHT = 280;
 
-/** Inset margin applied to the SVG coordinate space */
+/** Inset margin applied to the usable SVG coordinate space */
 const SVG_MARGIN = 20;
 
 /**
@@ -111,7 +113,7 @@ interface TruncateNameResult {
 /**
  * Truncate a destination name for display in SVG tooltips.
  * If the name exceeds maxLength, it is clipped to (maxLength - 2) characters
- * and an ellipsis unicode character is appended.
+ * and a unicode ellipsis character is appended.
  *
  * @param input - The name and maximum length
  * @returns The potentially truncated name

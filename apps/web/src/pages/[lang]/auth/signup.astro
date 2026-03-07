@@ -1,96 +1,63 @@
 ---
 /**
  * Sign up page - allows users to create a new account.
- * Uses the SignUpClient React island for interactive registration via Better Auth.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
  *
  * @route /[lang]/auth/signup/
- * @rendering SSR (Server-Side Rendering) - requires server-side auth guard
+ * @rendering SSR
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import Container from '../../../components/ui/Container.astro';
 import { SignUpClient } from '../../../components/auth/SignUp.client';
 import { getLocaleFromParams } from '../../../lib/page-helpers';
-import { t } from '../../../lib/i18n';
+import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-/**
- * Server-side auth guard: redirect authenticated users to home page.
- * This prevents the flash of the signup form for already-logged-in users.
- */
+const typedLocale = locale as SupportedLocale;
+
+/** Redirect authenticated users to home page. */
 if (Astro.locals.user) {
-	return Astro.redirect(`/${locale}/`);
+    return Astro.redirect(buildUrl({ locale: typedLocale }));
 }
 
-const title = t({ locale, namespace: 'auth-ui', key: 'pages.signup.title' });
-const description = t({ locale, namespace: 'auth-ui', key: 'pages.signup.description' });
+const t = createT(typedLocale);
+const title = t('auth-ui.pages.signup.title', 'Crear cuenta');
+const description = t('auth-ui.pages.signup.description', 'Crea tu cuenta en Hospeda');
 
-/**
- * Localized labels
- */
-const labels = {
-	es: {
-		haveAccount: '¿Ya tienes cuenta?',
-		signIn: 'Iniciar sesión',
-	},
-	en: {
-		haveAccount: 'Already have an account?',
-		signIn: 'Sign In',
-	},
-	pt: {
-		haveAccount: 'Já tem uma conta?',
-		signIn: 'Entrar',
-	},
+const labels: Record<SupportedLocale, { haveAccount: string; signIn: string }> = {
+    es: { haveAccount: 'Ya tienes cuenta?', signIn: 'Iniciar sesion' },
+    en: { haveAccount: 'Already have an account?', signIn: 'Sign In' },
+    pt: { haveAccount: 'Ja tem uma conta?', signIn: 'Entrar' },
 };
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const currentLabels = labels[locale];
+const currentLabels = labels[typedLocale];
 
-/**
- * Build an absolute redirect URL so Better Auth OAuth redirects
- * return to the web app instead of the API.
- */
 const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || Astro.url.origin;
-const redirectTo = new URL(`/${locale}/mi-cuenta`, siteOrigin).href;
+const redirectTo = new URL(buildUrl({ locale: typedLocale, path: 'mi-cuenta' }), siteOrigin).href;
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+    <SEOHead slot="head" title={title} description={description} canonical={canonicalUrl} locale={locale} noindex={true} />
 
-	<Container>
-		<div class="flex min-h-screen items-center justify-center py-12">
-			<div class="w-full max-w-md">
-				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
-					<SignUpClient
-						client:load
-						redirectTo={redirectTo}
-						showOAuth={true}
-					/>
+    <div class="flex min-h-screen items-center justify-center py-12 px-4">
+        <div class="w-full max-w-md">
+            <div class="rounded-xl border border-border bg-card p-8 shadow-lg">
+                <SignUpClient client:load redirectTo={redirectTo} showOAuth={true} />
 
-					<!-- Sign in link -->
-					<div class="mt-6 text-center">
-						<span class="text-sm text-text-secondary">{currentLabels.haveAccount}</span>
-						{' '}
-						<a
-							href={`/${locale}/auth/signin/`}
-							class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
-						>
-							{currentLabels.signIn}
-						</a>
-					</div>
-				</div>
-			</div>
-		</div>
-	</Container>
+                <div class="mt-6 text-center">
+                    <span class="text-sm text-muted-foreground">{currentLabels.haveAccount}</span>
+                    {' '}
+                    <a
+                        href={buildUrl({ locale: typedLocale, path: 'auth/signin' })}
+                        class="text-sm font-medium text-primary transition-colors hover:text-primary/80"
+                    >
+                        {currentLabels.signIn}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 </BaseLayout>

@@ -91,7 +91,7 @@ export function DestinationFilterPanel({
     t
 }: DestinationFilterPanelProps) {
     return (
-        <div className="mx-auto max-w-4xl rounded-xl border border-border bg-surface p-4 shadow-md">
+        <div className="mx-auto max-w-4xl rounded-xl border border-border bg-card p-4 shadow-md">
             {/* Search Form */}
             <form
                 onSubmit={onSearch}
@@ -107,7 +107,7 @@ export function DestinationFilterPanel({
                     <div className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3">
                         <SearchIcon
                             size={18}
-                            className="text-text-tertiary"
+                            className="text-muted-foreground"
                             aria-hidden="true"
                         />
                     </div>
@@ -119,12 +119,12 @@ export function DestinationFilterPanel({
                         value={query}
                         onChange={(e) => onQueryChange(e.target.value)}
                         placeholder={t('search.placeholder')}
-                        className="w-full rounded-lg border border-border bg-bg py-2.5 pr-3 pl-10 text-text-primary placeholder-text-tertiary"
+                        className="w-full rounded-lg border border-border bg-background py-2.5 pr-3 pl-10 text-foreground placeholder-muted-foreground"
                     />
                 </div>
                 <button
                     type="submit"
-                    className="flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-white transition-colors hover:bg-primary-dark"
+                    className="flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 text-primary-foreground transition-colors hover:bg-primary/90"
                     aria-label={t('search.button')}
                 >
                     <SearchIcon
@@ -140,7 +140,7 @@ export function DestinationFilterPanel({
                 <div className="min-w-[180px] flex-1">
                     <label
                         htmlFor="destination-type-filter"
-                        className="mb-1 block font-medium text-sm text-text-secondary"
+                        className="mb-1 block font-medium text-muted-foreground text-sm"
                     >
                         {t('search.typeLabel')}
                     </label>
@@ -148,7 +148,7 @@ export function DestinationFilterPanel({
                         id="destination-type-filter"
                         value={selectedType}
                         onChange={(e) => onTypeChange(e.target.value)}
-                        className="w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-text-primary"
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-foreground"
                     >
                         <option value="">{t('search.allTypes')}</option>
                         {DESTINATION_TYPES.map((type) => (
@@ -167,7 +167,7 @@ export function DestinationFilterPanel({
                     <div className="min-w-[180px] flex-1">
                         <label
                             htmlFor="destination-parent-filter"
-                            className="mb-1 block font-medium text-sm text-text-secondary"
+                            className="mb-1 block font-medium text-muted-foreground text-sm"
                         >
                             {t('search.parentLabel')}
                         </label>
@@ -176,7 +176,7 @@ export function DestinationFilterPanel({
                             value={selectedParentId}
                             onChange={(e) => onParentChange(e.target.value)}
                             disabled={isLoadingParents || parentError}
-                            className="w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-text-primary disabled:cursor-not-allowed disabled:opacity-50"
+                            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-foreground disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             <option value="">
                                 {isLoadingParents
@@ -202,7 +202,7 @@ export function DestinationFilterPanel({
                     <button
                         type="button"
                         onClick={onClearFilters}
-                        className="rounded-lg border border-border bg-bg px-4 py-2.5 font-medium text-sm text-text-secondary transition-colors hover:bg-surface hover:text-text-primary"
+                        className="rounded-lg border border-border bg-background px-4 py-2.5 font-medium text-muted-foreground text-sm transition-colors hover:bg-card hover:text-foreground"
                     >
                         {t('search.clearFilters')}
                     </button>

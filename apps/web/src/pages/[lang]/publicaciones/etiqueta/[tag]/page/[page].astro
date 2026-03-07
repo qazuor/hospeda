@@ -1,12 +1,16 @@
 ---
 /**
  * Paginated posts-by-tag route using URL segments.
- * Rewrites to the tag index page with the page query parameter.
- * Page 1 redirects to the base URL (canonical, avoids duplicate content).
+ *
+ * Rewrites to the tag index page with the `page` query parameter so the
+ * single index page handles all pagination without duplicating logic.
+ * Page 1 redirects to the canonical base URL (no /page/ segment) to avoid
+ * duplicate content for search engines.
  *
  * @route /[lang]/publicaciones/etiqueta/[tag]/page/[page]/
  * @rendering SSR (on-demand, inherits from tag index rewrite target)
  */
+
 import { getLocaleFromParams } from '../../../../../../lib/page-helpers';
 
 const { tag, page } = Astro.params;
@@ -14,22 +18,22 @@ const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
 if (!tag || typeof tag !== 'string' || tag.trim() === '') {
-  return Astro.redirect(`/${locale}/publicaciones/`);
+    return Astro.redirect(`/${locale}/publicaciones/`);
 }
 
 const tagSlug = tag.trim();
 
-const pageNum = Number.parseInt(page || '1', 10);
+const pageNum = Number.parseInt(page ?? '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
+    return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
 }
 
-/** Page 1 should use the canonical base URL without /page/ segment */
+/** Page 1 must use the canonical base URL — no /page/ segment. */
 if (pageNum === 1) {
-  return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
+    return Astro.redirect(`/${locale}/publicaciones/etiqueta/${tagSlug}/`);
 }
 
-/** Rewrite to the tag index page with the page query parameter */
+/** Rewrite to the index page; it reads `page` from the query string. */
 return Astro.rewrite(`/${locale}/publicaciones/etiqueta/${tagSlug}/?page=${pageNum}`);
 ---

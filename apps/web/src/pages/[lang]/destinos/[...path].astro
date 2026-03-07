@@ -4,455 +4,360 @@ export const prerender = true;
 /**
  * Destination Detail Page
  *
- * Displays comprehensive information about a destination including:
- * - Hero image with destination name and province
- * - Description, climate information, how to get there
- * - Image gallery with lightbox
- * - List of attractions and things to do
- * - Accommodations in this destination
- * - Events happening in this destination
- * - Location map
- * - Share and favorite buttons
+ * Catch-all route supporting any destination hierarchy depth.
+ * Displays hero, description, gallery, climate, attractions, map,
+ * accommodations preview, and events for a single destination.
  *
- * Rendering: SSG + ISR (24h revalidation)
  * Route: /[lang]/destinos/[...path]
- *
- * Uses catch-all path parameter to support hierarchical paths like:
- * - /es/destinos/entre-rios/colon/
- * - /es/destinos/concepcion-del-uruguay/
+ * Rendering: SSG (pre-rendered at build time)
  */
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import Container from '../../../components/ui/Container.astro';
-import Section from '../../../components/ui/Section.astro';
-import Badge from '../../../components/ui/Badge.astro';
-import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import PlaceJsonLd from '../../../components/seo/PlaceJsonLd.astro';
-import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro';
-import EventCard from '../../../components/event/EventCard.astro';
-import EmptyState from '../../../components/ui/EmptyState.astro';
-import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
-import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
-import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
-import { MapView } from '../../../components/map/MapView.client.tsx';
-import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
-import { t as i18nT, tPlural as i18nTPlural } from '../../../lib/i18n';
+import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
+import AccommodationCard from '../../../components/shared/AccommodationCard.astro';
+import EventCard from '../../../components/shared/EventCard.astro';
+import EmptyState from '../../../components/shared/EmptyState.astro';
+import FavoriteButtonIsland from '../../../components/shared/FavoriteButtonIsland.astro';
+import { ImageGallery } from '../../../components/shared/ImageGallery.client';
+import { ShareButtons } from '../../../components/shared/ShareButtons.client';
+import { MapView } from '../../../components/shared/MapView.client';
+import { createTranslations, SUPPORTED_LOCALES, type SupportedLocale } from '../../../lib/i18n';
+import { buildUrl, buildUrlWithParams } from '../../../lib/urls';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
+import { destinationsApi, eventsApi } from '../../../lib/api/endpoints';
+import { fetchAllPages } from '../../../lib/api/client';
+import {
+    toAccommodationCardProps,
+    toEventCardProps,
+    type AccommodationCardData,
+    type EventCardData,
+} from '../../../lib/api/transforms';
+import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { sanitizeHtml } from '../../../lib/sanitize-html';
-import { destinationsApi, accommodationsApi, eventsApi } from '../../../lib/api/endpoints';
-import { fetchAllPages } from '../../../lib/api/client';
-import { toAccommodationCardProps, toEventCardProps } from '../../../lib/api/transforms';
-import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
 
 /**
- * Generate static paths for all destinations in all locales
+ * Generates static paths for every destination in every supported locale.
+ * The catch-all `path` parameter handles any hierarchy depth.
  */
 export async function getStaticPaths() {
-	const locales = SUPPORTED_LOCALES;
-	const destinations = await fetchAllPages<Record<string, unknown>>({
-		fetcher: (p) => destinationsApi.list(p),
-	});
-
-	return locales.flatMap((lang) =>
-		destinations
-			.filter((d) => d.path || d.slug)
-			.map((d) => ({
-				params: { lang, path: String(d.path || d.slug).replace(/^\//, '') },
-				props: { destinationData: d },
-			}))
-	);
+    const all = await fetchAllPages<Record<string, unknown>>({
+        fetcher: (p) => destinationsApi.list(p),
+    });
+    return SUPPORTED_LOCALES.flatMap((lang) =>
+        all
+            .filter((d) => d.path || d.slug)
+            .map((d) => ({
+                params: { lang, path: String(d.path || d.slug).replace(/^\//, '') },
+                props: { destinationData: d },
+            }))
+    );
 }
+
+// ─── Locale & route params ────────────────────────────────────────────────────
 
 const { path } = Astro.params;
-const { destinationData } = Astro.props;
+const { destinationData } = Astro.props as { destinationData: Record<string, unknown> };
 
-const locale = getLocaleFromParams(Astro.params);
+const locale = getLocaleFromParams(Astro.params) as SupportedLocale;
 if (!locale) return Astro.redirect('/es/');
 
-/**
- * Fetch destination data from API
- * Using the path parameter or fallback to destinationData from getStaticPaths
- */
-let destination: Record<string, unknown> = destinationData || {};
+const { t, tPlural } = createTranslations(locale);
 
-// If we have a path param, fetch fresh data (for ISR)
+// ─── Destination data (refresh on SSR, fallback to getStaticPaths props) ─────
+
+let destination: Record<string, unknown> = destinationData ?? {};
+
 if (path) {
-	const pathStr = Array.isArray(path) ? path.join('/') : String(path);
-	const destResult = await destinationsApi.getByPath({ path: pathStr });
-
-	if (!destResult.ok) {
-		// Fallback to destinationData or redirect to destinations list
-		if (!destinationData) {
-			return Astro.redirect(`/${locale}/destinos/`);
-		}
-	} else {
-		destination = destResult.data as Record<string, unknown>;
-	}
+    const pathStr = Array.isArray(path) ? path.join('/') : String(path);
+    const result = await destinationsApi.getByPath({ path: pathStr });
+    if (result.ok) {
+        destination = result.data as unknown as Record<string, unknown>;
+    } else if (!destinationData) {
+        return Astro.redirect(buildUrl({ locale, path: 'destinos' }));
+    }
 }
 
-/**
- * Extract destination name early - needed for event city filtering below
- */
-const destinationName = String(destination.name || 'Sin nombre');
+const destinationId       = String(destination.id ?? '');
+const destinationName     = String(destination.name ?? '');
+const destinationSlug     = String(destination.slug ?? destination.path ?? '');
+const destinationProvince = String(destination.province ?? destination.state ?? '');
+const destinationCountry  = String(destination.country ?? 'Argentina');
+const heroImage           = extractFeaturedImageUrl(destination, '/images/placeholder-destination.svg');
+const locationCoords      = (destination.location as { lat?: number; lng?: number }) ?? {};
+const climate             = (destination.climate as Record<string, string>) ?? {};
+const attractions         = Array.isArray(destination.attractions) ? (destination.attractions as ReadonlyArray<{ name: string; description: string }>) : [];
 
-/**
- * Fetch related data: accommodations and events
- */
-const destinationId = String(destination.id || '');
-let accommodations: Array<Record<string, unknown>> = [];
-let events: Array<Record<string, unknown>> = [];
+// ─── Gallery ──────────────────────────────────────────────────────────────────
+
+const galleryUrls    = extractGalleryUrls(destination);
+const galleryImages  = (galleryUrls.length > 0 ? galleryUrls : [heroImage]).map((src) => ({
+    src,
+    alt: destinationName,
+}));
+
+// ─── Rich-text HTML ───────────────────────────────────────────────────────────
+
+/** Casts an unknown API value to the TiptapDocument shape expected by renderTiptapContent. */
+function toTiptapDoc(raw: unknown) {
+    if (raw && typeof raw === 'object' && 'type' in (raw as Record<string, unknown>)) {
+        return raw as Parameters<typeof renderTiptapContent>[0]['content'];
+    }
+    return null;
+}
+
+const descriptionHtml   = sanitizeHtml({ html: renderTiptapContent({ content: toTiptapDoc(destination.description ?? destination.summary) }) });
+const howToGetThereHtml = sanitizeHtml({ html: renderTiptapContent({ content: toTiptapDoc(destination.howToGetThere) }) });
+
+// ─── Related content (accommodations & events) ────────────────────────────────
+
+let accommodations: readonly AccommodationCardData[] = [];
+let events: readonly EventCardData[] = [];
 
 if (destinationId) {
-	// Fetch accommodations for this destination
-	const accResult = await destinationsApi.getAccommodations({
-		id: destinationId,
-		pageSize: 6,
-	});
-	if (accResult.ok) {
-		const accData = accResult.data as unknown as Record<string, unknown>;
-		const rawAccommodations = (accData.accommodations ?? accData.items ?? []) as Array<Record<string, unknown>>;
-		accommodations = rawAccommodations.map((a) => toAccommodationCardProps({ item: a }));
-	}
-
-	// Fetch events filtered by destination city name.
-	// The events API does not support destinationId filtering, so we fetch a larger
-	// batch and filter client-side by matching the event location city.
-	const evtResult = await eventsApi.list({ pageSize: 100 });
-	if (evtResult.ok) {
-		const allMapped = evtResult.data.items.map((e) =>
-			toEventCardProps({ item: e as Record<string, unknown> })
-		);
-		// Filter events whose location city matches the destination name
-		events = allMapped.filter((e) => {
-			const evtCity = e.location?.city;
-			return evtCity && evtCity.toLowerCase() === destinationName.toLowerCase();
-		});
-	}
+    const [accResult, evtResult] = await Promise.all([
+        destinationsApi.getAccommodations({ id: destinationId, pageSize: 6 }),
+        // pageSize: 12 provides buffer for city-name filtering while avoiding over-fetching.
+        // Only 3 event preview cards are displayed, but we fetch more so the city filter
+        // has enough candidates to find matches without loading the full catalog.
+        eventsApi.list({ pageSize: 12 }),
+    ]);
+    if (accResult.ok && Array.isArray(accResult.data?.items)) {
+        accommodations = accResult.data.items.map((item) =>
+            toAccommodationCardProps({ item: item as Record<string, unknown> })
+        );
+    }
+    if (evtResult.ok && Array.isArray(evtResult.data?.items)) {
+        events = evtResult.data.items
+            .map((item) => toEventCardProps({ item: item as Record<string, unknown> }))
+            .filter((e) => e.location?.city?.toLowerCase() === destinationName.toLowerCase());
+    }
 }
 
-// Fetch breadcrumb hierarchy
-let hierarchyBreadcrumb: readonly {
-	id: string;
-	slug: string;
-	name: string;
-	level: number;
-	destinationType: string;
-	path: string;
-}[] = [];
+// ─── Breadcrumb hierarchy ─────────────────────────────────────────────────────
+
+type BreadcrumbEntry = { id: string; name: string; path: string };
+let hierarchy: readonly BreadcrumbEntry[] = [];
 if (destinationId) {
-	const bcResult = await destinationsApi.getBreadcrumb({ id: destinationId });
-	if (bcResult.ok && bcResult.data.breadcrumb) {
-		hierarchyBreadcrumb = [...bcResult.data.breadcrumb];
-	}
+    const bcResult = await destinationsApi.getBreadcrumb({ id: destinationId });
+    if (bcResult.ok && Array.isArray(bcResult.data?.breadcrumb)) {
+        hierarchy = [...bcResult.data.breadcrumb];
+    }
 }
 
-/**
- * Render TipTap content to HTML
- */
-const descriptionContent = destination.description || destination.summary || { type: 'doc', content: [] };
-const howToGetThereContent = destination.howToGetThere || { type: 'doc', content: [] };
+// ─── Derived values ───────────────────────────────────────────────────────────
 
-const renderedDescription = sanitizeHtml({ html: renderTiptapContent({ content: descriptionContent }) });
-const renderedHowToGetThere = sanitizeHtml({ html: renderTiptapContent({ content: howToGetThereContent }) });
+const PREVIEW_LIMIT      = 3 as const;
+const previewAccs        = accommodations.slice(0, PREVIEW_LIMIT);
+const previewEvts        = events.slice(0, PREVIEW_LIMIT);
+const accommodationCount = Number(destination.accommodationsCount ?? accommodations.length);
+const eventCount         = events.length;
 
-/** Helper to translate destination detail page keys */
-const tDetail = (key: string) => i18nT({ locale, namespace: 'destinations', key: `detailPage.${key}` });
-/** Helper for pluralized destination detail page keys */
-const tDetailPlural = (key: string, count: number) => i18nTPlural({ locale, namespace: 'destinations', key: `detailPage.${key}`, count });
+const pageUrl       = buildUrl({ locale, path: `destinos/${destinationSlug}` });
+const canonicalUrl  = new URL(pageUrl, Astro.site).href;
+const accsUrl       = buildUrlWithParams({ locale, path: 'alojamientos', params: { city: destinationName } });
+const eventsUrl     = buildUrlWithParams({ locale, path: 'eventos', params: { city: destinationName } });
 
-/**
- * Extract data from destination with fallbacks
- */
-const destinationSlug = String(destination.slug || destination.path || '');
-const destinationHeroImage = extractFeaturedImageUrl(destination, '/images/placeholder-destination.svg');
-const destinationProvince = String(destination.province || destination.state || '');
-const destinationCountry = String(destination.country || 'Argentina');
-const destinationLocation = (destination.location as { lat?: number; lng?: number }) || {};
-const destinationClimate = (destination.climate as Record<string, string>) || {};
-const destinationAttractions = (destination.attractions as Array<{ name: string; description: string }>) || [];
-const galleryUrls = extractGalleryUrls(destination);
-const destinationImages = galleryUrls.length > 0
-	? galleryUrls.map((url) => ({ src: url, alt: destinationName }))
-	: [{ src: destinationHeroImage, alt: destinationName }];
-// Use DB totals for sidebar counts; fetched arrays are just the preview subset
-const accommodationCount = Number(destination.accommodationsCount || destination.accommodationCount || accommodations.length);
-const eventCount = events.length;
-// Limit preview cards shown on page; full list available via "View all" link
-const PREVIEW_LIMIT = 3;
-const previewAccommodations = accommodations.slice(0, PREVIEW_LIMIT);
-const previewEvents = events.slice(0, PREVIEW_LIMIT);
-const accommodationsListUrl = `/${locale}/alojamientos/?city=${encodeURIComponent(destinationName)}`;
-const eventsListUrl = `/${locale}/eventos/?city=${encodeURIComponent(destinationName)}`;
+const mapMarkers = locationCoords.lat && locationCoords.lng
+    ? [{ id: destinationId, lat: locationCoords.lat, lng: locationCoords.lng, title: destinationName, popup: `${destinationName}, ${destinationProvince}` }]
+    : [];
 
-// Breadcrumb navigation items (includes full hierarchy: Home > Destinations > Parent... > Current)
+const pageDescription = t('destination.detail.seoDescription', `${destinationName} - ${destinationProvince}, ${destinationCountry}`);
+
 const breadcrumbItems = [
-	{ label: tDetail('home'), href: `/${locale}/` },
-	{ label: tDetail('destinations'), href: `/${locale}/destinos/` },
-	...hierarchyBreadcrumb
-		.filter((item) => item.id !== destinationId)
-		.map((item) => ({
-			label: item.name,
-			href: `/${locale}/destinos/${item.path}/`,
-		})),
-	{ label: destinationName },
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale, path: '' }) },
+    { label: t('destination.listing.title', 'Destinos'), href: buildUrl({ locale, path: 'destinos' }) },
+    ...hierarchy
+        .filter((item) => item.id !== destinationId)
+        .map((item) => ({ label: item.name, href: buildUrl({ locale, path: `destinos/${item.path}` }) })),
+    { label: destinationName, href: pageUrl },
 ];
 
-// Page URL for sharing and canonical
-const pageUrl = `/${locale}/destinos/${destinationSlug}/`;
-
-// Map markers for destination location
-const mapMarkers = destinationLocation.lat && destinationLocation.lng
-	? [
-			{
-				id: destinationId,
-				lat: destinationLocation.lat,
-				lng: destinationLocation.lng,
-				title: destinationName,
-				popup: `${destinationName}, ${destinationProvince}`
-			}
-	  ]
-	: [];
+/** Climate fields with i18n keys for the climate grid. */
+const climateFields = [
+    { key: 'summer',     label: t('destination.detail.summer', 'Verano'),            value: climate.summer },
+    { key: 'winter',     label: t('destination.detail.winter', 'Invierno'),           value: climate.winter },
+    { key: 'bestSeason', label: t('destination.detail.bestSeason', 'Mejor epoca'),   value: climate.bestSeason },
+    { key: 'rainfall',   label: t('destination.detail.rainfall', 'Precipitaciones'), value: climate.rainfall },
+].filter((f) => Boolean(f.value));
 ---
 
-<BaseLayout
-  title={destinationName}
-  description={`${destinationName} - ${destinationProvince}, ${destinationCountry}`}
-  locale={locale}
-  image={destinationHeroImage}
->
-  <SEOHead
-    slot="head"
-    title={destinationName}
-    description={tDetail('seoDescription').replace('{name}', destinationName).replace('{province}', destinationProvince)}
-    image={destinationHeroImage}
-    locale={locale}
-  />
-  <PlaceJsonLd
-    slot="head"
-    name={destinationName}
-    description={tDetail('seoDescription').replace('{name}', destinationName).replace('{province}', destinationProvince)}
-    url={new URL(pageUrl, Astro.site).href}
-    image={destinationHeroImage}
-    address={{
-      addressLocality: destinationName,
-      addressRegion: destinationProvince || undefined,
-      addressCountry: 'AR',
-    }}
-  />
-
-  <Container>
-    <Breadcrumb items={breadcrumbItems} class="py-4" />
-
-    <!-- Hero section -->
-    <div class="relative mb-8 overflow-hidden rounded-lg aspect-[21/9]">
-      <img
-        src={destinationHeroImage}
-        alt={destinationName}
-        class="h-full w-full object-cover"
-        transition:name={`entity-${destinationSlug}`}
-      />
-      <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-      <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-        <Badge variant="primary" label={destinationProvince} class="mb-3" />
-        <h1 class="text-3xl md:text-5xl font-bold text-white">{destinationName}</h1>
-      </div>
-    </div>
-
-    <!-- Action buttons -->
-    <div class="flex items-center justify-end gap-2 mb-8">
-      <FavoriteButtonIsland
-        server:defer
-        entityId={destinationId}
-        entityType="destination"
-        entityName={destinationName}
-      >
-        <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-surface-alt" />
-      </FavoriteButtonIsland>
-      <ShareButtons
-        client:visible
-        url={pageUrl}
+<BaseLayout title={destinationName} description={pageDescription} locale={locale}>
+    <SEOHead
+        slot="head"
         title={destinationName}
-      />
-    </div>
+        description={pageDescription}
+        canonical={canonicalUrl}
+        image={heroImage}
+        locale={locale}
+        type="website"
+    />
+    <PlaceJsonLd
+        slot="head"
+        name={destinationName}
+        description={pageDescription}
+        url={canonicalUrl}
+        image={heroImage}
+        address={{ addressLocality: destinationName, addressRegion: destinationProvince || undefined, addressCountry: 'AR' }}
+    />
 
-    <!-- Main content grid -->
-    <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
-      <!-- Left column (2/3) -->
-      <div class="lg:col-span-2 space-y-8">
-        <!-- Description -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{tDetail('description')}</h2>
-          <div class="prose max-w-none text-text-secondary" set:html={renderedDescription} />
+    <div class="container mx-auto max-w-6xl px-4 py-6">
+        <Breadcrumb items={breadcrumbItems} />
+
+        <!-- Hero -->
+        <div class="relative mb-8 aspect-[21/9] overflow-hidden rounded-2xl">
+            <img src={heroImage} alt={destinationName} class="h-full w-full object-cover" transition:name={`entity-${destinationSlug}`} loading="eager" />
+            <div class="absolute inset-0 bg-gradient-to-t from-foreground/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 right-0 p-6 md:p-8">
+                {destinationProvince && (
+                    <span class="mb-3 inline-block rounded-full bg-primary/80 px-3 py-1 text-sm font-semibold text-primary-foreground backdrop-blur-sm">{destinationProvince}</span>
+                )}
+                <h1 class="text-3xl font-bold text-hero-text md:text-5xl">{destinationName}</h1>
+            </div>
+        </div>
+
+        <!-- Action row -->
+        <div class="mb-8 flex items-center justify-end gap-2">
+            <FavoriteButtonIsland server:defer entityId={destinationId} entityType="destination" entityName={destinationName} locale={locale}>
+                <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-muted"></div>
+            </FavoriteButtonIsland>
+            <ShareButtons client:visible url={canonicalUrl} title={destinationName} locale={locale} />
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
+            <!-- Main content (2/3) -->
+            <div class="space-y-10 lg:col-span-2">
+                {descriptionHtml && (
+                    <section aria-labelledby="dest-desc-h">
+                        <h2 id="dest-desc-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.description', 'Descripcion')}</h2>
+                        <div class="prose max-w-none text-muted-foreground" set:html={descriptionHtml} />
+                    </section>
+                )}
+
+                {galleryImages.length > 0 && (
+                    <section aria-labelledby="dest-gallery-h">
+                        <h2 id="dest-gallery-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.gallery', 'Galeria de fotos')}</h2>
+                        <ImageGallery client:visible images={galleryImages} locale={locale} />
+                    </section>
+                )}
+
+                {climateFields.length > 0 && (
+                    <section aria-labelledby="dest-climate-h" class="scroll-reveal">
+                        <h2 id="dest-climate-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.climate', 'Clima')}</h2>
+                        <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
+                            {climateFields.map(({ key, label, value }) => (
+                                <div class="rounded-xl border border-border bg-card p-4" key={key}>
+                                    <div class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+                                    <div class="mt-1 font-semibold text-foreground">{value}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {howToGetThereHtml && howToGetThereHtml.trim() !== '' && (
+                    <section aria-labelledby="dest-how-h">
+                        <h2 id="dest-how-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.howToGetThere', 'Como llegar')}</h2>
+                        <div class="prose max-w-none text-muted-foreground" set:html={howToGetThereHtml} />
+                    </section>
+                )}
+
+                {attractions.length > 0 && (
+                    <section aria-labelledby="dest-attr-h">
+                        <h2 id="dest-attr-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.attractions', 'Atracciones')}</h2>
+                        <ul class="space-y-3">
+                            {attractions.map((a) => (
+                                <li class="rounded-xl border border-border bg-card p-4">
+                                    <h3 class="font-semibold text-foreground">{a.name}</h3>
+                                    <p class="mt-1 text-sm text-muted-foreground">{a.description}</p>
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {mapMarkers.length > 0 && (
+                    <section aria-labelledby="dest-map-h">
+                        <h2 id="dest-map-h" class="mb-4 text-2xl font-bold text-foreground">{t('destination.detail.map', 'Ubicacion')}</h2>
+                        <MapView client:visible markers={mapMarkers} center={[locationCoords.lat!, locationCoords.lng!]} zoom={13} height="400px" locale={locale} />
+                    </section>
+                )}
+            </div>
+
+            <!-- Sidebar (1/3) -->
+            <aside class="space-y-6 lg:sticky lg:top-4 lg:self-start">
+                <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    <h3 class="font-semibold text-foreground">{t('destination.detail.accommodationsTitle', 'Alojamientos')}</h3>
+                    <p class="mt-2 text-3xl font-bold text-primary">{accommodationCount}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">{tPlural('destination.detail.accommodationCount', accommodationCount, { count: accommodationCount })}</p>
+                    <a href={accsUrl} class="mt-4 block rounded-xl bg-primary px-4 py-2 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                        {t('destination.detail.viewAll', 'Ver todos')}
+                    </a>
+                </div>
+                <div class="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                    <h3 class="font-semibold text-foreground">{t('destination.detail.eventsTitle', 'Eventos')}</h3>
+                    <p class="mt-2 text-3xl font-bold text-primary">{eventCount}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">{tPlural('destination.detail.eventCount', eventCount, { count: eventCount })}</p>
+                    <a href={eventsUrl} class="mt-4 block rounded-xl bg-primary px-4 py-2 text-center font-semibold text-primary-foreground transition-colors hover:bg-primary/90">
+                        {t('destination.detail.viewAll', 'Ver todos')}
+                    </a>
+                </div>
+            </aside>
+        </div>
+
+        <!-- Accommodations section -->
+        <section aria-labelledby="dest-accs-h" class="scroll-reveal-left mt-14">
+            <h2 id="dest-accs-h" class="mb-6 text-2xl font-bold text-foreground">
+                {t('destination.detail.accommodationsIn', 'Alojamientos en')} {destinationName}
+            </h2>
+            {previewAccs.length > 0 ? (
+                <>
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {previewAccs.map((card) => <AccommodationCard card={card} locale={locale} />)}
+                    </div>
+                    {accommodations.length > PREVIEW_LIMIT && (
+                        <div class="mt-8 text-center">
+                            <a href={accsUrl} class="inline-block rounded-xl border-2 border-primary px-6 py-2.5 font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
+                                {t('destination.detail.viewAll', 'Ver todos')} ({accommodationCount})
+                            </a>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <EmptyState
+                    title={t('destination.detail.noAccommodations', 'Sin alojamientos aun')}
+                    message={t('destination.detail.noAccommodationsMessage', 'Todavia no hay alojamientos registrados en este destino.')}
+                />
+            )}
         </section>
 
-        <!-- Image Gallery -->
-        {destinationImages.length > 0 && (
-          <section>
-            <h2 class="mb-4 text-2xl font-bold">{tDetail('gallery')}</h2>
-            <ImageGallery client:visible images={destinationImages} />
-          </section>
-        )}
-
-        <!-- Climate -->
-        {(destinationClimate.summer || destinationClimate.winter || destinationClimate.bestSeason || destinationClimate.rainfall) && (
-          <section>
-            <h2 class="mb-4 text-2xl font-bold">{tDetail('climate')}</h2>
-            <div class="grid grid-cols-2 gap-4 md:grid-cols-4">
-              {destinationClimate.summer && (
-                <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{tDetail('summer')}</div>
-                  <div class="mt-1 font-semibold text-text">{destinationClimate.summer}</div>
-                </div>
-              )}
-              {destinationClimate.winter && (
-                <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{tDetail('winter')}</div>
-                  <div class="mt-1 font-semibold text-text">{destinationClimate.winter}</div>
-                </div>
-              )}
-              {destinationClimate.bestSeason && (
-                <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{tDetail('bestSeason')}</div>
-                  <div class="mt-1 font-semibold text-text">{destinationClimate.bestSeason}</div>
-                </div>
-              )}
-              {destinationClimate.rainfall && (
-                <div class="rounded-lg border border-border bg-surface p-4">
-                  <div class="text-sm text-text-tertiary">{tDetail('rainfall')}</div>
-                  <div class="mt-1 font-semibold text-text">{destinationClimate.rainfall}</div>
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        <!-- How to get there -->
-        {renderedHowToGetThere && renderedHowToGetThere.trim() !== '' && (
-          <section>
-            <h2 class="mb-4 text-2xl font-bold">{tDetail('howToGetThere')}</h2>
-            <div class="prose max-w-none text-text-secondary" set:html={renderedHowToGetThere} />
-          </section>
-        )}
-
-        <!-- Attractions -->
-        {destinationAttractions.length > 0 && (
-          <section>
-            <h2 class="mb-4 text-2xl font-bold">{tDetail('attractions')}</h2>
-            <ul class="space-y-3">
-              {destinationAttractions.map((attraction) => (
-                <li class="rounded-lg border border-border bg-surface p-4">
-                  <h3 class="font-semibold text-text">{attraction.name}</h3>
-                  <p class="mt-1 text-sm text-text-secondary">{attraction.description}</p>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
-
-        <!-- Map -->
-        {mapMarkers.length > 0 && destinationLocation.lat && destinationLocation.lng && (
-          <section>
-            <h2 class="mb-4 text-2xl font-bold">{tDetail('map')}</h2>
-            <MapView
-              client:visible
-              markers={mapMarkers}
-              center={[destinationLocation.lat, destinationLocation.lng]}
-              zoom={13}
-              height="400px"
-            />
-          </section>
-        )}
-      </div>
-
-      <!-- Right sidebar (1/3) -->
-      <aside class="lg:sticky lg:top-4 lg:self-start space-y-6">
-        <!-- Accommodations count card -->
-        <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
-          <h3 class="text-lg font-semibold text-text">{tDetail('accommodationsTitle')}</h3>
-          <p class="mt-2 text-3xl font-bold text-primary">{accommodationCount}</p>
-          <p class="mt-1 text-sm text-text-tertiary">
-            {tDetailPlural('accommodationCount', accommodationCount)}
-          </p>
-          <a
-            href={accommodationsListUrl}
-            class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            {tDetail('viewAll')}
-          </a>
-        </div>
-
-        <!-- Events count card -->
-        <div class="rounded-lg border border-border bg-surface p-6 shadow-sm">
-          <h3 class="text-lg font-semibold text-text">{tDetail('eventsTitle')}</h3>
-          <p class="mt-2 text-3xl font-bold text-primary">{eventCount}</p>
-          <p class="mt-1 text-sm text-text-tertiary">
-            {tDetailPlural('eventCount', eventCount)}
-          </p>
-          <a
-            href={eventsListUrl}
-            class="mt-4 block text-center rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            {tDetail('viewAll')}
-          </a>
-        </div>
-      </aside>
+        <!-- Events section -->
+        <section aria-labelledby="dest-evts-h" class="scroll-reveal-right mt-14">
+            <h2 id="dest-evts-h" class="mb-6 text-2xl font-bold text-foreground">
+                {t('destination.detail.eventsIn', 'Eventos en')} {destinationName}
+            </h2>
+            {previewEvts.length > 0 ? (
+                <>
+                    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                        {previewEvts.map((card) => <EventCard card={card} locale={locale} />)}
+                    </div>
+                    {events.length > PREVIEW_LIMIT && (
+                        <div class="mt-8 text-center">
+                            <a href={eventsUrl} class="inline-block rounded-xl border-2 border-primary px-6 py-2.5 font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground">
+                                {t('destination.detail.viewAll', 'Ver todos')} ({eventCount})
+                            </a>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <EmptyState
+                    title={t('destination.detail.noEvents', 'Sin eventos aun')}
+                    message={t('destination.detail.noEventsMessage', 'Todavia no hay eventos registrados en este destino.')}
+                />
+            )}
+        </section>
     </div>
-
-    <!-- Accommodations section -->
-    <Section title={`${tDetail('accommodationsIn')} ${destinationName}`} class="mt-12">
-      {previewAccommodations.length > 0 ? (
-        <>
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {previewAccommodations.map((accommodation) => (
-              <AccommodationCardFeatured accommodation={accommodation} locale={locale} />
-            ))}
-          </div>
-          {accommodations.length > PREVIEW_LIMIT && (
-            <div class="mt-6 text-center">
-              <a
-                href={accommodationsListUrl}
-                class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
-              >
-                {tDetail('viewAll')} ({accommodationCount})
-              </a>
-            </div>
-          )}
-        </>
-      ) : (
-        <EmptyState
-          title={tDetail('noAccommodations')}
-          message={tDetail('noAccommodationsMessage')}
-        />
-      )}
-    </Section>
-
-    <!-- Events section -->
-    <Section title={`${tDetail('eventsIn')} ${destinationName}`} class="mt-12">
-      {previewEvents.length > 0 ? (
-        <>
-          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {previewEvents.map((event) => (
-              <EventCard event={event} locale={locale} />
-            ))}
-          </div>
-          {events.length > PREVIEW_LIMIT && (
-            <div class="mt-6 text-center">
-              <a
-                href={eventsListUrl}
-                class="inline-block rounded-md border-2 border-primary px-6 py-2 font-semibold text-primary transition-colors hover:bg-primary hover:text-white"
-              >
-                {tDetail('viewAll')} ({eventCount})
-              </a>
-            </div>
-          )}
-        </>
-      ) : (
-        <EmptyState
-          title={tDetail('noEvents')}
-          message={tDetail('noEventsMessage')}
-        />
-      )}
-    </Section>
-  </Container>
 </BaseLayout>

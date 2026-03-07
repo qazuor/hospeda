@@ -5,7 +5,7 @@ import type { SupportedLocale } from './i18n';
  */
 import type { PricingPlan } from './pricing-plans';
 
-// ─── Tourist Fallback Plans ────────────────────────────────────────────────────
+// --- Tourist Fallback Plans ---
 
 /** Hardcoded fallback pricing plans for tourists (locale-specific) */
 export const TOURIST_FALLBACK_PLANS: Record<SupportedLocale, PricingPlan[]> = {
@@ -138,7 +138,7 @@ export const TOURIST_FALLBACK_PLANS: Record<SupportedLocale, PricingPlan[]> = {
     ]
 };
 
-// ─── Owner Fallback Plans ──────────────────────────────────────────────────────
+// --- Owner Fallback Plans ---
 
 /** Hardcoded fallback pricing plans for accommodation owners (locale-specific) */
 export const OWNER_FALLBACK_PLANS: Record<SupportedLocale, PricingPlan[]> = {
@@ -288,7 +288,7 @@ export const OWNER_FALLBACK_PLANS: Record<SupportedLocale, PricingPlan[]> = {
     ]
 };
 
-// ─── CTA Config ────────────────────────────────────────────────────────────────
+// --- CTA Config ---
 
 /** CTA label templates per locale for tourist plans */
 export const TOURIST_CTA_LABELS: Record<SupportedLocale, Record<string, string>> = {

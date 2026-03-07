@@ -6,7 +6,7 @@ import type { PaymentItem } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
 
 /**
- * Props for the PaymentHistory component
+ * Props for the PaymentHistory component.
  */
 export interface PaymentHistoryProps {
     /** Locale for i18n and date/currency formatting */
@@ -16,6 +16,9 @@ export interface PaymentHistoryProps {
 /**
  * Payment history table for the user billing dashboard.
  * Fetches payments on mount and displays date, amount, method and status.
+ * Handles loading, error, and empty states gracefully.
+ *
+ * @param props - {@link PaymentHistoryProps}
  *
  * @example
  * ```tsx
@@ -29,7 +32,7 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
     const [isLoading, setIsLoading] = useState(false);
     const [hasError, setHasError] = useState(false);
 
-    /** Fetch payments from the API */
+    /** Fetch payments from the protected billing API */
     const fetchPayments = useCallback(async () => {
         setIsLoading(true);
         setHasError(false);
@@ -51,7 +54,12 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
         fetchPayments();
     }, [fetchPayments]);
 
-    /** Format a date string for display */
+    /**
+     * Format a date string for display using @repo/i18n's formatDate.
+     *
+     * @param dateStr - ISO 8601 date string
+     * @returns Localized short date string (e.g. "12 mar. 2025")
+     */
     const formatPaymentDate = (dateStr: string): string => {
         return formatDate({
             date: dateStr,
@@ -64,7 +72,7 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
         <section aria-labelledby="payments-heading">
             <h2
                 id="payments-heading"
-                className="mb-4 font-semibold text-lg text-text"
+                className="mb-4 font-semibold text-foreground text-lg"
             >
                 {t('subscription.paymentsTitle')}
             </h2>
@@ -79,7 +87,7 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
                     {(['sk-pay-0', 'sk-pay-1', 'sk-pay-2', 'sk-pay-3'] as const).map((id) => (
                         <div
                             key={id}
-                            className="h-12 animate-pulse rounded-md bg-surface-alt"
+                            className="h-12 animate-pulse rounded-md bg-muted"
                         />
                     ))}
                 </div>
@@ -88,13 +96,13 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
             {/* Error state */}
             {!isLoading && hasError && (
                 <div className="rounded-lg border border-border p-6 text-center">
-                    <p className="mb-3 text-sm text-text-secondary">
+                    <p className="mb-3 text-muted-foreground text-sm">
                         {t('subscription.loadError')}
                     </p>
                     <button
                         type="button"
                         onClick={fetchPayments}
-                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                        className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('subscription.retry')}
                     </button>
@@ -104,7 +112,9 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
             {/* Empty state */}
             {!isLoading && !hasError && payments.length === 0 && (
                 <div className="rounded-lg border border-border p-8 text-center">
-                    <p className="text-sm text-text-secondary">{t('subscription.paymentsEmpty')}</p>
+                    <p className="text-muted-foreground text-sm">
+                        {t('subscription.paymentsEmpty')}
+                    </p>
                 </div>
             )}
 
@@ -115,29 +125,29 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
                         className="w-full min-w-[520px] text-sm"
                         aria-label={t('subscription.paymentsTitle')}
                     >
-                        <thead className="bg-surface-alt">
+                        <thead className="bg-muted">
                             <tr>
                                 <th
                                     scope="col"
-                                    className="px-4 py-3 text-left font-medium text-text-secondary text-xs uppercase tracking-wide"
+                                    className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
                                 >
                                     {t('subscription.paymentDate')}
                                 </th>
                                 <th
                                     scope="col"
-                                    className="px-4 py-3 text-right font-medium text-text-secondary text-xs uppercase tracking-wide"
+                                    className="px-4 py-3 text-right font-medium text-muted-foreground text-xs uppercase tracking-wide"
                                 >
                                     {t('subscription.paymentAmount')}
                                 </th>
                                 <th
                                     scope="col"
-                                    className="px-4 py-3 text-left font-medium text-text-secondary text-xs uppercase tracking-wide"
+                                    className="px-4 py-3 text-left font-medium text-muted-foreground text-xs uppercase tracking-wide"
                                 >
                                     {t('subscription.paymentMethod')}
                                 </th>
                                 <th
                                     scope="col"
-                                    className="px-4 py-3 text-center font-medium text-text-secondary text-xs uppercase tracking-wide"
+                                    className="px-4 py-3 text-center font-medium text-muted-foreground text-xs uppercase tracking-wide"
                                 >
                                     {t('subscription.paymentStatus')}
                                 </th>
@@ -147,23 +157,23 @@ export function PaymentHistory({ locale }: PaymentHistoryProps) {
                             {payments.map((payment) => (
                                 <tr
                                     key={payment.id}
-                                    className="bg-surface transition-colors hover:bg-surface-alt"
+                                    className="bg-card transition-colors hover:bg-muted"
                                 >
-                                    <td className="whitespace-nowrap px-4 py-3 text-text-secondary">
+                                    <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                                         {formatPaymentDate(payment.date)}
                                     </td>
-                                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-text tabular-nums">
+                                    <td className="whitespace-nowrap px-4 py-3 text-right font-medium text-foreground tabular-nums">
                                         {formatCurrency({
                                             value: payment.amount / 100,
                                             currency: payment.currency,
                                             locale: toBcp47Locale(locale)
                                         })}
                                     </td>
-                                    <td className="px-4 py-3 text-text-secondary">
+                                    <td className="px-4 py-3 text-muted-foreground">
                                         {payment.method}
                                     </td>
                                     <td className="px-4 py-3 text-center">
-                                        <span className="inline-flex items-center rounded-full bg-surface-alt px-2.5 py-0.5 font-medium text-text-secondary text-xs capitalize">
+                                        <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 font-medium text-muted-foreground text-xs capitalize">
                                             {payment.status}
                                         </span>
                                     </td>

@@ -1,98 +1,42 @@
 ---
 /**
- * Event JSON-LD component for events.
+ * @file EventJsonLd.astro
+ * @description Event JSON-LD component for events.
  * Generates schema.org Event structured data.
- *
- * @example
- * ```astro
- * ---
- * import EventJsonLd from '@/components/seo/EventJsonLd.astro';
- * ---
- *
- * <EventJsonLd
- *   name="Festival Nacional de Jineteada"
- *   description="El festival gauchesco más importante de la región"
- *   startDate="2026-02-15T10:00:00-03:00"
- *   endDate="2026-02-17T22:00:00-03:00"
- *   url="https://hospeda.com/eventos/festival-jineteada"
- *   image="https://hospeda.com/images/festival-jineteada.jpg"
- *   location={{
- *     name: 'Plaza Ramírez',
- *     address: 'Concepción del Uruguay, Entre Ríos, Argentina',
- *   }}
- *   organizer="Municipalidad de Concepción del Uruguay"
- * />
- * ```
  */
 
-import type { Props as JsonLdProps } from './JsonLd.astro';
 import JsonLd from './JsonLd.astro';
 
-/**
- * Event location interface
- */
+/** Event location interface */
 export interface EventLocation {
-  /**
-   * Name of the location/venue
-   */
-  name: string;
-
-  /**
-   * Address of the location
-   */
-  address: string;
+  /** Name of the location/venue */
+  readonly name: string;
+  /** Address of the location */
+  readonly address: string;
 }
 
-/**
- * Props interface for EventJsonLd component.
- */
-export interface Props {
-  /**
-   * Name of the event
-   */
-  name: string;
-
-  /**
-   * Description of the event
-   */
-  description: string;
-
-  /**
-   * Start date and time in ISO 8601 format
-   */
-  startDate: string;
-
-  /**
-   * End date and time in ISO 8601 format
-   */
-  endDate?: string;
-
-  /**
-   * URL of the event page
-   */
-  url: string;
-
-  /**
-   * Image URL for the event
-   */
-  image?: string;
-
-  /**
-   * Event location information
-   */
-  location: EventLocation;
-
-  /**
-   * Event organizer name
-   */
-  organizer?: string;
+/** Props interface for EventJsonLd component. */
+interface Props {
+  /** Name of the event */
+  readonly name: string;
+  /** Description of the event */
+  readonly description: string;
+  /** Start date and time in ISO 8601 format */
+  readonly startDate: string;
+  /** End date and time in ISO 8601 format */
+  readonly endDate?: string;
+  /** URL of the event page */
+  readonly url: string;
+  /** Image URL for the event */
+  readonly image?: string;
+  /** Event location information */
+  readonly location: EventLocation;
+  /** Event organizer name */
+  readonly organizer?: string;
 }
 
 const { name, description, startDate, endDate, url, image, location, organizer } = Astro.props;
 
-/**
- * Build Event structured data object
- */
 const structuredData: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'Event',
@@ -110,7 +54,6 @@ const structuredData: Record<string, unknown> = {
   },
 };
 
-// Add optional properties
 if (endDate) {
   structuredData.endDate = endDate;
 }

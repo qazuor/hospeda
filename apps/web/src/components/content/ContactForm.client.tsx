@@ -8,7 +8,7 @@ import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
 /**
- * Contact form state
+ * Internal form state shape.
  */
 interface ContactFormState {
     readonly name: string;
@@ -18,7 +18,7 @@ interface ContactFormState {
 }
 
 /**
- * Validation errors for form fields
+ * Per-field validation error messages.
  */
 interface ContactFormErrors {
     name?: string;
@@ -28,26 +28,26 @@ interface ContactFormErrors {
 }
 
 /**
- * Props for the ContactForm component
+ * Props for the ContactForm component.
  */
 export interface ContactFormProps {
     /**
-     * Locale for UI text
+     * Locale used for UI text translations.
      * @default 'es'
      */
     readonly locale?: string;
 
     /**
-     * Additional CSS classes to apply to the component
+     * Additional CSS classes applied to the `<form>` element.
      */
     readonly className?: string;
 }
 
 /**
- * Validates an email address using a simple regex pattern
+ * Validates an email address with a simple regex pattern.
  *
- * @param email - Email address to validate
- * @returns True if email is valid, false otherwise
+ * @param email - The email string to test.
+ * @returns `true` when the email is syntactically valid.
  */
 function isValidEmail(email: string): boolean {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -55,13 +55,19 @@ function isValidEmail(email: string): boolean {
 }
 
 /**
- * ContactForm component
+ * ContactForm component.
  *
- * A contact form with name, email, subject, and message fields.
- * Includes client-side validation, API submission, and toast notifications.
+ * Renders a contact form with name, email, subject, and message fields.
+ * Performs client-side validation before submitting to the public contact API
+ * endpoint. On success or failure it shows a toast notification and resets
+ * or keeps the form state accordingly.
  *
- * @param props - Component props
- * @returns React component
+ * Intentionally uses manual validation (no react-hook-form) because the form
+ * is simple (4 fields, basic rules) and adding a heavy form library is not
+ * justified (YAGNI).
+ *
+ * @param props - Component props.
+ * @returns The rendered contact form.
  *
  * @example
  * ```tsx
@@ -81,36 +87,32 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'contact' });
 
     /**
-     * Validates form data
+     * Validates the current form state and returns any validation errors.
      *
-     * @param data - Form data to validate
-     * @returns Validation errors or empty object if valid
+     * @param data - Snapshot of the form fields to validate.
+     * @returns An object with field-level error messages, or `{}` when valid.
      */
     const validateForm = (data: ContactFormState): ContactFormErrors => {
         const validationErrors: ContactFormErrors = {};
 
-        // Name validation
         if (!data.name.trim()) {
             validationErrors.name = t('form.validation.nameRequired');
         } else if (data.name.trim().length < 2) {
             validationErrors.name = t('form.validation.nameMinLength');
         }
 
-        // Email validation
         if (!data.email.trim()) {
             validationErrors.email = t('form.validation.emailRequired');
         } else if (!isValidEmail(data.email.trim())) {
             validationErrors.email = t('form.validation.emailInvalid');
         }
 
-        // Subject validation
         if (!data.subject.trim()) {
             validationErrors.subject = t('form.validation.subjectRequired');
         } else if (data.subject.trim().length < 3) {
             validationErrors.subject = t('form.validation.subjectMinLength');
         }
 
-        // Message validation
         if (!data.message.trim()) {
             validationErrors.message = t('form.validation.messageRequired');
         } else if (data.message.trim().length < 20) {
@@ -121,37 +123,17 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
     };
 
     /**
-     * Handles form submission
+     * Sends the validated form payload to the contact API endpoint.
+     * Shows a success or error toast and resets the form on success.
      */
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-
-        // Validate form
-        const validationErrors = validateForm(formState);
-        setErrors(validationErrors);
-
-        // Stop if validation failed
-        if (Object.keys(validationErrors).length > 0) {
-            return;
-        }
-
-        // Submit to API (async operation)
-        submitForm();
-    };
-
-    /**
-     * Submits form data to API
-     */
-    const submitForm = async () => {
+    const submitForm = async (): Promise<void> => {
         setIsSubmitting(true);
 
         try {
             const apiBaseUrl = getApiUrl();
             const response = await fetch(`${apiBaseUrl}/api/v1/public/contact`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     name: formState.name.trim(),
                     email: formState.email.trim(),
@@ -164,42 +146,49 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 throw new Error('Failed to send message');
             }
 
-            // Success: show toast and reset form
-            addToast({
-                type: 'success',
-                message: t('form.successMessage')
-            });
+            addToast({ type: 'success', message: t('form.successMessage') });
 
-            setFormState({
-                name: '',
-                email: '',
-                subject: '',
-                message: ''
-            });
+            setFormState({ name: '', email: '', subject: '', message: '' });
             setErrors({});
         } catch (error) {
             webLogger.error('ContactForm: submit failed', error);
             Sentry.captureException(error);
-            // Error: show toast
-            addToast({
-                type: 'error',
-                message: t('form.errorMessage')
-            });
+            addToast({ type: 'error', message: t('form.errorMessage') });
         } finally {
             setIsSubmitting(false);
         }
     };
 
     /**
-     * Handles field change and clears corresponding error
+     * Handles the form submit event: validates, then fires the async submit.
+     *
+     * @param e - The React form submit event.
      */
-    const handleFieldChange = (field: keyof ContactFormState, value: string) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+        e.preventDefault();
+
+        const validationErrors = validateForm(formState);
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            return;
+        }
+
+        void submitForm();
+    };
+
+    /**
+     * Updates a single field in the form state and clears its error if present.
+     *
+     * @param field - The form field key to update.
+     * @param value - The new value for that field.
+     */
+    const handleFieldChange = (field: keyof ContactFormState, value: string): void => {
         setFormState((prev) => ({ ...prev, [field]: value }));
-        // Clear error for this field if it exists
         if (errors[field]) {
-            const newErrors = { ...errors };
-            delete newErrors[field];
-            setErrors(newErrors);
+            const updated = { ...errors };
+            delete updated[field];
+            setErrors(updated);
         }
     };
 
@@ -208,7 +197,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
             onSubmit={handleSubmit}
             className={`space-y-4 ${className}`.trim()}
         >
-            {/* Name Field */}
+            {/* Name */}
             <div>
                 <label
                     htmlFor="contact-name"
@@ -228,14 +217,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-describedby={errors.name ? 'name-error' : undefined}
                     className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.name
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.name && (
                     <p
                         id="name-error"
-                        className="mt-1 text-red-600 text-sm dark:text-red-400"
+                        className="mt-1 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -244,7 +233,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 )}
             </div>
 
-            {/* Email Field */}
+            {/* Email */}
             <div>
                 <label
                     htmlFor="contact-email"
@@ -264,14 +253,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-describedby={errors.email ? 'email-error' : undefined}
                     className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.email
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.email && (
                     <p
                         id="email-error"
-                        className="mt-1 text-red-600 text-sm dark:text-red-400"
+                        className="mt-1 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -280,7 +269,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 )}
             </div>
 
-            {/* Subject Field */}
+            {/* Subject */}
             <div>
                 <label
                     htmlFor="contact-subject"
@@ -300,14 +289,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-describedby={errors.subject ? 'subject-error' : undefined}
                     className={`w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.subject
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.subject && (
                     <p
                         id="subject-error"
-                        className="mt-1 text-red-600 text-sm dark:text-red-400"
+                        className="mt-1 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -316,7 +305,7 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 )}
             </div>
 
-            {/* Message Field */}
+            {/* Message */}
             <div>
                 <label
                     htmlFor="contact-message"
@@ -336,14 +325,14 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                     aria-describedby={errors.message ? 'message-error' : undefined}
                     className={`resize-vertical w-full rounded-md border bg-surface px-3 py-2 text-sm text-text focus:outline-none focus:ring-1 disabled:cursor-not-allowed disabled:opacity-60 ${
                         errors.message
-                            ? 'border-red-500 focus:border-red-500 focus:ring-red-500 dark:border-red-400 dark:focus:border-red-400 dark:focus:ring-red-400'
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
                 {errors.message && (
                     <p
                         id="message-error"
-                        className="mt-1 text-red-600 text-sm dark:text-red-400"
+                        className="mt-1 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -352,11 +341,11 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                 )}
             </div>
 
-            {/* Submit Button */}
+            {/* Submit */}
             <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-md bg-primary px-4 py-2 font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isSubmitting ? t('form.submitting') : t('form.submit')}
             </button>

@@ -1,214 +1,234 @@
-/**
- * Tests for Header.astro layout component (T-039).
- * Verifies isHero prop support, transparent/solid state CSS,
- * hero-mode nav link colors, logo, navigation links, and responsive behavior.
- */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const componentPath = resolve(__dirname, '../../src/layouts/Header.astro');
-const content = readFileSync(componentPath, 'utf8');
+const srcDir = resolve(__dirname, '../../src');
 
-describe('Header.astro', () => {
-    describe('Semantic HTML', () => {
-        it('should use header element', () => {
-            expect(content).toContain('<header');
-        });
+const src = readFileSync(resolve(srcDir, 'layouts/Header.astro'), 'utf8');
 
-        it('should have navigation with role', () => {
-            expect(content).toContain('role="navigation"');
-        });
-
-        it('should have aria-label for navigation', () => {
-            expect(content).toContain('aria-label=');
-        });
-
-        it('should have banner role on header element', () => {
-            expect(content).toContain('role="banner"');
-        });
+describe('Header.astro - Semantic HTML', () => {
+    it('should use a nav element as the root element', () => {
+        // Arrange: source already loaded
+        // Act: look for semantic nav element
+        // Assert
+        expect(src).toContain('<nav');
     });
 
-    describe('Logo', () => {
-        it('should render Hospeda text', () => {
-            expect(content).toContain('Hospeda');
-        });
-
-        it('should link to locale root', () => {
-            expect(content).toContain('${locale}/');
-        });
-
-        it('should use serif font', () => {
-            expect(content).toContain('font-serif');
-        });
+    it('should have an aria-label on the nav element for screen readers', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('aria-label=');
     });
 
-    describe('Navigation links', () => {
-        it('should include accommodations link via i18n', () => {
-            expect(content).toContain("key: 'accommodations'");
-            expect(content).toContain('/alojamientos/');
-        });
+    it('should give the nav element an id of navbar', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('id="navbar"');
+    });
+});
 
-        it('should include destinations link via i18n', () => {
-            expect(content).toContain("key: 'destinations'");
-            expect(content).toContain('/destinos/');
-        });
-
-        it('should include events link via i18n', () => {
-            expect(content).toContain("key: 'events'");
-            expect(content).toContain('/eventos/');
-        });
-
-        it('should include blog link via i18n', () => {
-            expect(content).toContain("key: 'blog'");
-            expect(content).toContain('/publicaciones/');
-        });
+describe('Header.astro - Logo and brand', () => {
+    it('should render the Hospeda logo image', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('src="/images/logo.webp"');
+        expect(src).toContain('alt="Hospeda logo"');
     });
 
-    describe('Props interface', () => {
-        it('should accept locale prop', () => {
-            expect(content).toContain('locale?: string');
-        });
-
-        it('should accept isHero prop for transparent-to-solid transition', () => {
-            expect(content).toContain('isHero?: boolean');
-        });
-
-        it('should default isHero to false', () => {
-            expect(content).toContain('isHero = false');
-        });
+    it('should display Hospeda brand text next to the logo', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('Hospeda');
     });
 
-    describe('isHero prop support', () => {
-        it('should conditionally apply transparent positioning when isHero is true', () => {
-            expect(content).toContain('isHero');
-        });
+    it('should wrap the logo in a locale-aware link using buildUrl', () => {
+        // Arrange / Act / Assert
+        // The logo anchor href is built via buildUrl with the typed locale
+        expect(src).toContain('buildUrl({ locale: typedLocale })');
+    });
+});
 
-        it('should apply bg-gray-900 class when not isHero (solid background)', () => {
-            expect(content).toContain('bg-gray-900');
-        });
-
-        it('should use isHero to toggle between absolute and relative positioning', () => {
-            expect(content).toContain('absolute');
-            expect(content).toContain('relative');
-        });
+describe('Header.astro - Desktop navigation links', () => {
+    it('should import NAV_LINKS from the navigation data file', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('NAV_LINKS');
+        expect(src).toContain('@/data/navigation');
     });
 
-    describe('Nav link classes', () => {
-        it('should use text-white/70 for inactive nav links', () => {
-            expect(content).toContain('text-white/70');
-        });
-
-        it('should use hover:text-white for hover state', () => {
-            expect(content).toContain('hover:text-white');
-        });
-
-        it('should use text-white for logo in hero mode', () => {
-            expect(content).toContain('text-white');
-        });
-
-        it('should use border-white/30 for owner CTA button outline', () => {
-            expect(content).toContain('border-white/30');
-        });
+    it('should iterate over NAV_LINKS to render desktop nav anchors', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('NAV_LINKS.map');
+        expect(src).toContain('nav-link');
     });
 
-    describe('Style block', () => {
-        it('should have a style block', () => {
-            expect(content).toContain('<style>');
-        });
-
-        it('should define styles for header-theme-toggle', () => {
-            expect(content).toContain('.header-theme-toggle');
-        });
-
-        it('should define styles for header-auth-section', () => {
-            expect(content).toContain('.header-auth-section');
-        });
+    it('should resolve nav link hrefs via getNavHref which uses buildUrl', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('getNavHref');
+        expect(src).toContain('buildUrl');
     });
 
-    describe('Responsive', () => {
-        it('should hide desktop nav on mobile', () => {
-            expect(content).toContain('hidden');
-            expect(content).toContain('md:flex');
-        });
-
-        it('should use MobileMenuWrapper component for mobile navigation', () => {
-            expect(content).toContain(
-                "import { MobileMenuWrapper } from '../components/ui/MobileMenuWrapper.client'"
-            );
-        });
-
-        it('should hydrate MobileMenuWrapper only on mobile via client:media', () => {
-            expect(content).toContain('client:media="(max-width: 768px)"');
-        });
-
-        it('should pass navItems and locale to MobileMenuWrapper', () => {
-            expect(content).toContain('navItems={');
-            expect(content).toContain('locale={locale');
-        });
+    it('should use the locale variable when building nav link paths', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('typedLocale');
     });
 
-    describe('Header positioning', () => {
-        it('should have appropriate z-index', () => {
-            expect(content).toContain('z-20');
-        });
+    it('should render visual separators between desktop nav items', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('nav-separator');
+    });
+});
 
-        it('should be full-width', () => {
-            expect(content).toContain('w-full');
-        });
-
-        it('should use absolute positioning for hero pages', () => {
-            expect(content).toContain('absolute top-0 left-0');
-        });
-
-        it('should use relative positioning for non-hero pages', () => {
-            expect(content).toContain('relative bg-bg');
-        });
+describe('Header.astro - Language switcher', () => {
+    it('should import LanguageSwitcher component', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('import LanguageSwitcher from');
+        expect(src).toContain('LanguageSwitcher.astro');
     });
 
-    describe('Safe area insets', () => {
-        it('should account for safe-area-inset-top for notch devices', () => {
-            expect(content).toContain('safe-area-inset-top');
-        });
+    it('should render LanguageSwitcher with the current locale', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('<LanguageSwitcher locale={typedLocale}');
     });
 
-    describe('Logo animation', () => {
-        it('should have transition-opacity duration-300 on logo', () => {
-            expect(content).toContain('transition-opacity duration-300');
-        });
+    it('should render LanguageSwitcher in both desktop and mobile layouts', () => {
+        // Arrange / Act / Assert
+        // Two occurrences: one in the desktop CTA bar and one inside the mobile menu
+        const occurrences = (src.match(/<LanguageSwitcher/g) ?? []).length;
+        expect(occurrences).toBeGreaterThanOrEqual(2);
+    });
+});
+
+describe('Header.astro - Auth section', () => {
+    it('should import AuthSection component', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('import AuthSection from');
+        expect(src).toContain('AuthSection.astro');
     });
 
-    describe('i18n integration', () => {
-        it('should import t function from lib/i18n', () => {
-            expect(content).toContain("import { t, type SupportedLocale } from '../lib/i18n'");
-        });
-
-        it('should use nav namespace for link labels', () => {
-            expect(content).toContain("namespace: 'nav'");
-        });
-
-        it('should use ownerCta key for CTA button', () => {
-            expect(content).toContain("key: 'ownerCta'");
-        });
+    it('should render AuthSection with server:defer for deferred hydration', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('server:defer');
+        expect(src).toContain('<AuthSection');
     });
 
-    describe('Auth and theme sections', () => {
-        it('should include ThemeToggle component', () => {
-            expect(content).toContain(
-                "import { ThemeToggle } from '../components/ui/ThemeToggle.client'"
-            );
-        });
+    it('should pass locale prop to AuthSection', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('locale={locale}');
+    });
 
-        it('should hydrate ThemeToggle with client:idle', () => {
-            expect(content).toContain('client:idle');
-        });
+    it('should provide a fallback slot inside AuthSection for pre-render state', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('slot="fallback"');
+    });
+});
 
-        it('should include AuthSection component', () => {
-            expect(content).toContain('AuthSection');
-        });
+describe('Header.astro - Theme toggle', () => {
+    it('should import ThemeToggle component', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('import ThemeToggle from');
+        expect(src).toContain('ThemeToggle.astro');
+    });
 
-        it('should use server:defer for AuthSection', () => {
-            expect(content).toContain('server:defer');
-        });
+    it('should render ThemeToggle in the desktop CTA bar', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('<ThemeToggle');
+    });
+});
+
+describe('Header.astro - Mobile navigation', () => {
+    it('should include a mobile menu button with id mobile-menu-btn', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('id="mobile-menu-btn"');
+    });
+
+    it('should set aria-expanded on the mobile menu button', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('aria-expanded="false"');
+    });
+
+    it('should set aria-controls linking button to the mobile menu panel', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('aria-controls="mobile-menu"');
+    });
+
+    it('should render the full-screen mobile menu panel with id mobile-menu', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('id="mobile-menu"');
+    });
+
+    it('should mark the mobile menu panel as a dialog with aria-modal', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('role="dialog"');
+        expect(src).toContain('aria-modal="true"');
+    });
+
+    it('should include open and close icon elements for the mobile button', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('id="menu-icon-open"');
+        expect(src).toContain('id="menu-icon-close"');
+    });
+
+    it('should import ListIcon and CloseIcon from @repo/icons for the mobile button', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('ListIcon');
+        expect(src).toContain('CloseIcon');
+        expect(src).toContain('@repo/icons');
+    });
+});
+
+describe('Header.astro - i18n integration', () => {
+    it('should import createT from the i18n lib', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('createT');
+        expect(src).toContain('@/lib/i18n');
+    });
+
+    it('should cast locale to SupportedLocale for type safety', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('SupportedLocale');
+        expect(src).toContain('typedLocale');
+    });
+
+    it('should use translation helper t() for nav labels', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('t(link.labelKey');
+    });
+});
+
+describe('Header.astro - Owner CTA link', () => {
+    it('should render a CTA link to the propietarios page', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain("path: 'propietarios'");
+    });
+
+    it('should build the propietarios link using buildUrl with current locale', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain("buildUrl({ locale: typedLocale, path: 'propietarios' })");
+    });
+});
+
+describe('Header.astro - Scroll behavior script', () => {
+    it('should contain a scroll event listener for navbar style changes', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('window.addEventListener("scroll"');
+    });
+
+    it('should apply backdrop-blur when the page is scrolled', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('backdrop-blur-md');
+    });
+
+    it('should dispatch a custom navbar:scroll event for islands to consume', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('navbar:scroll');
+        expect(src).toContain('CustomEvent');
+    });
+});
+
+describe('Header.astro - Prop defaults', () => {
+    it('should default locale to es', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain("locale = 'es'");
+    });
+
+    it('should default isHomepage to false', () => {
+        // Arrange / Act / Assert
+        expect(src).toContain('isHomepage = false');
     });
 });

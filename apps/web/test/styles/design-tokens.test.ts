@@ -2,490 +2,347 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const globalCssPath = resolve(__dirname, '../../src/styles/global.css');
-const globalCss = readFileSync(globalCssPath, 'utf8');
+const cssPath = resolve(__dirname, '../../src/styles/global.css');
+const css = readFileSync(cssPath, 'utf8');
 
-const tailwindCssPath = resolve(__dirname, '../../src/styles/tailwind.css');
-const tailwindCss = readFileSync(tailwindCssPath, 'utf8');
+/**
+ * Extract the :root block content from the CSS file.
+ * Returns the raw text between the opening brace and matching closing brace.
+ */
+function extractRootBlock(source: string): string {
+    const rootStart = source.indexOf(':root {');
+    if (rootStart === -1) return '';
+    const bodyStart = source.indexOf('{', rootStart);
+    let depth = 0;
+    let i = bodyStart;
+    while (i < source.length) {
+        if (source[i] === '{') depth++;
+        else if (source[i] === '}') {
+            depth--;
+            if (depth === 0) return source.slice(bodyStart, i + 1);
+        }
+        i++;
+    }
+    return '';
+}
 
-describe('Design Tokens - global.css', () => {
-    describe('Regional color palette', () => {
-        const colorTokens = [
-            '--color-primary',
-            '--color-primary-dark',
-            '--color-primary-light',
-            '--color-secondary',
-            '--color-secondary-dark',
-            '--color-accent',
-            '--color-accent-dark',
-            '--color-accent-warm',
-            '--color-bg-warm',
-            '--color-text',
-            '--color-text-secondary',
-            '--color-text-tertiary',
-            '--color-border',
-            '--color-bg',
-            '--color-surface',
-            '--color-surface-alt',
-            '--color-surface-warm',
-            '--color-header-bg',
-            '--color-success',
-            '--color-warning',
-            '--color-error',
-            '--color-info'
-        ];
+/**
+ * Extract the [data-theme="dark"] block content from the CSS file.
+ * Uses a regex to find the selector as a standalone rule, skipping any
+ * @custom-variant references that also mention [data-theme="dark"].
+ */
+function extractDarkBlock(source: string): string {
+    const rulePattern = /\[data-theme="dark"\]\s*\{/;
+    const match = rulePattern.exec(source);
+    if (!match) return '';
+    const darkStart = match.index;
+    const bodyStart = source.indexOf('{', darkStart);
+    let depth = 0;
+    let i = bodyStart;
+    while (i < source.length) {
+        if (source[i] === '{') depth++;
+        else if (source[i] === '}') {
+            depth--;
+            if (depth === 0) return source.slice(bodyStart, i + 1);
+        }
+        i++;
+    }
+    return '';
+}
 
-        it.each(colorTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+const rootBlock = extractRootBlock(css);
+const darkBlock = extractDarkBlock(css);
+
+describe('global.css - Design Token Infrastructure', () => {
+    describe('File loading', () => {
+        it('should load the CSS file successfully', () => {
+            // Arrange
+            // Act - already done at module load time
+            // Assert
+            expect(css.length).toBeGreaterThan(0);
         });
 
-        it('should have --color-primary value of #0D7377 (Rio Uruguay teal)', () => {
-            expect(globalCss).toMatch(/--color-primary:\s*#0D7377/i);
+        it('should contain a :root block', () => {
+            // Arrange / Act / Assert
+            expect(css).toContain(':root {');
+            expect(rootBlock.length).toBeGreaterThan(0);
         });
 
-        it('should have --color-primary-dark value of #0A5C5F', () => {
-            expect(globalCss).toMatch(/--color-primary-dark:\s*#0A5C5F/i);
-        });
-
-        it('should have --color-primary-light value of #3D9B9E', () => {
-            expect(globalCss).toMatch(/--color-primary-light:\s*#3D9B9E/i);
-        });
-
-        it('should have --color-secondary value of #D4870E (amber gold)', () => {
-            expect(globalCss).toMatch(/--color-secondary:\s*#D4870E/i);
-        });
-
-        it('should have --color-accent value of #F0E6D6 (warm sand)', () => {
-            expect(globalCss).toMatch(/--color-accent:\s*#F0E6D6/i);
-        });
-
-        it('should have --color-accent-dark value of #C25B3A (terracotta)', () => {
-            expect(globalCss).toMatch(/--color-accent-dark:\s*#C25B3A/i);
-        });
-
-        it('should have --color-accent-warm value of #D4870E (amber)', () => {
-            expect(globalCss).toMatch(/--color-accent-warm:\s*#D4870E/i);
-        });
-
-        it('should have --color-bg value of #FDFAF5 (river sand)', () => {
-            expect(globalCss).toMatch(/--color-bg:\s*#FDFAF5/i);
-        });
-
-        it('should have warm brown text color #2C1810', () => {
-            expect(globalCss).toMatch(/--color-text:\s*#2C1810/i);
-        });
-
-        it('should have --color-bg-warm value of #F0E6D6', () => {
-            const rootSection = globalCss.split('[data-theme="dark"]')[0];
-            expect(rootSection).toMatch(/--color-bg-warm:\s*#F0E6D6/i);
+        it('should contain a [data-theme="dark"] block', () => {
+            // Arrange / Act / Assert
+            expect(css).toContain('[data-theme="dark"]');
+            expect(darkBlock.length).toBeGreaterThan(0);
         });
     });
 
-    describe('Primary color scale (50-950)', () => {
-        const primaryScale = [
-            '--color-primary-50',
-            '--color-primary-100',
-            '--color-primary-200',
-            '--color-primary-300',
-            '--color-primary-400',
-            '--color-primary-500',
-            '--color-primary-600',
-            '--color-primary-700',
-            '--color-primary-800',
-            '--color-primary-900',
-            '--color-primary-950'
-        ];
+    describe('Light mode - core semantic tokens (in :root)', () => {
+        const coreTokens = [
+            '--background',
+            '--foreground',
+            '--card',
+            '--card-foreground',
+            '--primary',
+            '--primary-foreground',
+            '--secondary',
+            '--secondary-foreground',
+            '--accent',
+            '--accent-foreground',
+            '--muted',
+            '--muted-foreground',
+            '--destructive',
+            '--destructive-foreground',
+            '--border',
+            '--ring'
+        ] as const;
 
-        it.each(primaryScale)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        for (const token of coreTokens) {
+            it(`should define ${token}`, () => {
+                // Arrange
+                const declaration = `${token}:`;
+                // Act / Assert
+                expect(rootBlock).toContain(declaration);
+            });
+        }
+    });
+
+    describe('Dark mode - token overrides in [data-theme="dark"]', () => {
+        const darkTokens = [
+            '--background',
+            '--foreground',
+            '--card',
+            '--card-foreground',
+            '--primary',
+            '--primary-foreground',
+            '--secondary',
+            '--secondary-foreground',
+            '--accent',
+            '--accent-foreground',
+            '--muted',
+            '--muted-foreground',
+            '--destructive',
+            '--destructive-foreground',
+            '--border',
+            '--ring'
+        ] as const;
+
+        for (const token of darkTokens) {
+            it(`should override ${token} for dark mode`, () => {
+                // Arrange
+                const declaration = `${token}:`;
+                // Act / Assert
+                expect(darkBlock).toContain(declaration);
+            });
+        }
+    });
+
+    describe('Z-index scale tokens', () => {
+        it('should define --z-content', () => {
+            expect(rootBlock).toContain('--z-content:');
+        });
+
+        it('should define --z-wave', () => {
+            expect(rootBlock).toContain('--z-wave:');
+        });
+
+        it('should define --z-menu', () => {
+            expect(rootBlock).toContain('--z-menu:');
+        });
+
+        it('should define --z-overlay', () => {
+            expect(rootBlock).toContain('--z-overlay:');
+        });
+
+        it('should define --z-toast for toasts above overlays', () => {
+            expect(rootBlock).toContain('--z-toast:');
+        });
+
+        it('should have toast z-index higher than overlay z-index', () => {
+            // Arrange
+            const toastMatch = rootBlock.match(/--z-toast:\s*(\d+)/);
+            const overlayMatch = rootBlock.match(/--z-overlay:\s*(\d+)/);
+            // Act
+            const toastZ = toastMatch ? Number.parseInt(toastMatch[1] as string, 10) : 0;
+            const overlayZ = overlayMatch ? Number.parseInt(overlayMatch[1] as string, 10) : 0;
+            // Assert
+            expect(toastZ).toBeGreaterThan(overlayZ);
         });
     });
 
-    describe('Green color tokens', () => {
-        it('should define --color-green', () => {
-            expect(globalCss).toMatch(/--color-green:\s*#2D6A4F/i);
+    describe('Animation duration tokens', () => {
+        it('should define --scroll-reveal-duration', () => {
+            expect(rootBlock).toContain('--scroll-reveal-duration:');
         });
 
-        it('should define --color-green-dark', () => {
-            expect(globalCss).toMatch(/--color-green-dark:\s*#1B4332/i);
+        it('should define --scroll-reveal-offset-y', () => {
+            expect(rootBlock).toContain('--scroll-reveal-offset-y:');
         });
 
-        it('should define --color-green-light', () => {
-            expect(globalCss).toMatch(/--color-green-light:\s*#52B788/i);
+        it('should define --scroll-reveal-offset-x', () => {
+            expect(rootBlock).toContain('--scroll-reveal-offset-x:');
         });
-    });
 
-    describe('Terracotta color tokens', () => {
-        it('should define --color-terracotta', () => {
-            expect(globalCss).toMatch(/--color-terracotta:\s*#C25B3A/i);
+        it('should define --nav-stagger-ms for nav item stagger delay', () => {
+            expect(rootBlock).toContain('--nav-stagger-ms:');
         });
-    });
 
-    describe('Spacing tokens', () => {
-        const spacingTokens = [
-            '--space-xs',
-            '--space-sm',
-            '--space-md',
-            '--space-lg',
-            '--space-xl',
-            '--space-2xl',
-            '--space-3xl',
-            '--space-4xl'
-        ];
+        it('should define --card-stagger-ms for card stagger delay', () => {
+            expect(rootBlock).toContain('--card-stagger-ms:');
+        });
 
-        it.each(spacingTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        it('should use seconds unit for --scroll-reveal-duration', () => {
+            // Arrange
+            const durationMatch = rootBlock.match(/--scroll-reveal-duration:\s*[\d.]+s/);
+            // Act / Assert
+            expect(durationMatch).not.toBeNull();
         });
     });
 
-    describe('Border radius tokens', () => {
-        const radiusTokens = [
-            '--radius-sm',
-            '--radius-md',
-            '--radius-lg',
-            '--radius-xl',
-            '--radius-2xl',
-            '--radius-full'
-        ];
+    describe('Layout tokens', () => {
+        it('should define --radius for border radius scale', () => {
+            expect(rootBlock).toContain('--radius:');
+        });
 
-        it.each(radiusTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        it('should define --wave-separator-height', () => {
+            expect(rootBlock).toContain('--wave-separator-height:');
+        });
+
+        it('should define --perspective-card-featured for 3D card effect', () => {
+            expect(rootBlock).toContain('--perspective-card-featured:');
+        });
+
+        it('should define --perspective-card-secondary for secondary 3D card', () => {
+            expect(rootBlock).toContain('--perspective-card-secondary:');
+        });
+
+        it('should define --card-tilt-featured with rotateY and rotateX transforms', () => {
+            // Arrange
+            const tiltValue = rootBlock.match(/--card-tilt-featured:\s*([^;]+)/);
+            // Act / Assert
+            expect(tiltValue).not.toBeNull();
+            expect(tiltValue?.[1]).toContain('rotateY');
+            expect(tiltValue?.[1]).toContain('rotateX');
         });
     });
 
-    describe('Shadow tokens (warm-tinted)', () => {
-        const shadowTokens = ['--shadow-sm', '--shadow-md', '--shadow-lg', '--shadow-xl'];
-
-        it.each(shadowTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+    describe('Color function usage', () => {
+        it('should use oklch() color function in :root tokens', () => {
+            expect(rootBlock).toContain('oklch(');
         });
 
-        it('should use warm-tinted shadows with rgba(44, 24, 16, ...)', () => {
-            expect(globalCss).toContain('rgba(44, 24, 16,');
-        });
-    });
-
-    describe('Typography - Fraunces font', () => {
-        it('should define --font-serif with Fraunces', () => {
-            expect(globalCss).toContain('"Fraunces"');
+        it('should use oklch() color function in dark mode overrides', () => {
+            expect(darkBlock).toContain('oklch(');
         });
 
-        it('should include Fraunces Fallback in serif stack', () => {
-            expect(globalCss).toContain('"Fraunces Fallback"');
-        });
-
-        it('should define Fraunces Fallback @font-face', () => {
-            expect(globalCss).toContain('font-family: "Fraunces Fallback"');
-        });
-
-        it('should use Georgia as Fraunces Fallback source', () => {
-            expect(globalCss).toContain('src: local("Georgia")');
-        });
-
-        it('should define --fraunces-hero variation settings', () => {
-            expect(globalCss).toContain('--fraunces-hero:');
-            expect(globalCss).toContain('"SOFT" 100');
-            expect(globalCss).toContain('"WONK" 1');
-        });
-
-        it('should define --fraunces-section variation settings', () => {
-            expect(globalCss).toContain('--fraunces-section:');
-            expect(globalCss).toContain('"SOFT" 50');
-        });
-
-        it('should define --fraunces-default variation settings', () => {
-            expect(globalCss).toContain('--fraunces-default:');
-            expect(globalCss).toContain('"opsz" auto');
-        });
-
-        it('should NOT reference Playfair Display', () => {
-            expect(globalCss).not.toContain('Playfair Display');
+        it('should not use deprecated hsl() function for semantic tokens', () => {
+            // oklch is the chosen color space for this project
+            expect(rootBlock).not.toContain('hsl(');
         });
     });
 
-    describe('Typography scale tokens', () => {
-        it('should define --fs-display-hero', () => {
-            expect(globalCss).toContain('--fs-display-hero:');
+    describe('Shadow tokens', () => {
+        it('should define --shadow-card', () => {
+            expect(rootBlock).toContain('--shadow-card:');
         });
 
-        it('should define --fs-display-section', () => {
-            expect(globalCss).toContain('--fs-display-section:');
+        it('should define --shadow-card-hover', () => {
+            expect(rootBlock).toContain('--shadow-card-hover:');
         });
 
-        it('should define --fs-accent-subtitle with fluid clamp value', () => {
-            expect(globalCss).toContain('--fs-accent-subtitle:');
-            /* Uses clamp() for fluid scaling: min 1.375rem, max 1.625rem */
-            expect(globalCss).toContain('--fs-accent-subtitle: clamp(');
+        it('should define --shadow-nav', () => {
+            expect(rootBlock).toContain('--shadow-nav:');
         });
 
-        it('should define --max-w-site with 1200px value', () => {
-            expect(globalCss).toMatch(/--max-w-site:\s*1200px/);
-        });
-    });
-
-    describe('Typography base tokens', () => {
-        const typographyTokens = [
-            '--font-serif',
-            '--font-sans',
-            '--font-accent',
-            '--font-size-xs',
-            '--font-size-sm',
-            '--font-size-base',
-            '--font-size-lg',
-            '--font-size-xl',
-            '--font-size-2xl',
-            '--font-size-3xl',
-            '--font-size-4xl',
-            '--font-size-5xl',
-            '--line-height-tight',
-            '--line-height-normal',
-            '--line-height-relaxed'
-        ];
-
-        it.each(typographyTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        it('should define --shadow-brutal-sm', () => {
+            expect(rootBlock).toContain('--shadow-brutal-sm:');
         });
 
-        it('should include Inter Fallback font in sans stack', () => {
-            expect(globalCss).toContain('Inter Fallback');
+        it('should define --shadow-brutal-lg', () => {
+            expect(rootBlock).toContain('--shadow-brutal-lg:');
         });
     });
 
-    describe('Accent font (Caveat)', () => {
-        it('should define --font-accent CSS variable', () => {
-            expect(globalCss).toContain('--font-accent:');
+    describe('Hospeda brand tokens', () => {
+        it('should define --hospeda-sky', () => {
+            expect(rootBlock).toContain('--hospeda-sky:');
         });
 
-        it('should include Caveat in --font-accent value', () => {
-            const fontAccentMatch = globalCss.match(/--font-accent:\s*([^;]+);/);
-            expect(fontAccentMatch).toBeTruthy();
-            expect(fontAccentMatch![1]).toContain('Caveat');
+        it('should define --hospeda-river', () => {
+            expect(rootBlock).toContain('--hospeda-river:');
         });
 
-        it('should include cursive fallback in --font-accent', () => {
-            const fontAccentMatch = globalCss.match(/--font-accent:\s*([^;]+);/);
-            expect(fontAccentMatch).toBeTruthy();
-            expect(fontAccentMatch![1]).toContain('cursive');
+        it('should define --hospeda-forest', () => {
+            expect(rootBlock).toContain('--hospeda-forest:');
         });
 
-        it('should define Caveat Fallback @font-face', () => {
-            expect(globalCss).toContain('font-family: "Caveat Fallback"');
+        it('should define --hospeda-sand', () => {
+            expect(rootBlock).toContain('--hospeda-sand:');
         });
 
-        it('should use font-display: swap for Caveat Fallback', () => {
-            const caveatFallbackSection = globalCss
-                .split('font-family: "Caveat Fallback"')[1]
-                ?.split('}')[0];
-            expect(caveatFallbackSection).toBeDefined();
-            expect(caveatFallbackSection).toContain('font-display: swap');
-        });
-    });
-
-    describe('Font fallback metrics', () => {
-        it('should define Inter Fallback @font-face', () => {
-            expect(globalCss).toContain('font-family: "Inter Fallback"');
+        it('should define --hospeda-sunset for CTA/accent usage', () => {
+            expect(rootBlock).toContain('--hospeda-sunset:');
         });
 
-        it('should use Arial as Inter Fallback', () => {
-            expect(globalCss).toContain('src: local("Arial")');
-        });
-
-        it('should have ascent-override for Inter Fallback', () => {
-            const interFallbackSection = globalCss
-                .split('font-family: "Inter Fallback"')[1]
-                ?.split('}')[0];
-            expect(interFallbackSection).toBeDefined();
-            expect(interFallbackSection).toContain('ascent-override:');
-        });
-
-        it('should have size-adjust for Inter Fallback', () => {
-            const interFallbackSection = globalCss
-                .split('font-family: "Inter Fallback"')[1]
-                ?.split('}')[0];
-            expect(interFallbackSection).toBeDefined();
-            expect(interFallbackSection).toContain('size-adjust:');
+        it('should override all hospeda brand tokens in dark mode', () => {
+            const brandTokens = [
+                '--hospeda-sky',
+                '--hospeda-river',
+                '--hospeda-forest',
+                '--hospeda-sand',
+                '--hospeda-sunset'
+            ] as const;
+            for (const token of brandTokens) {
+                expect(darkBlock).toContain(`${token}:`);
+            }
         });
     });
 
-    describe('Transition tokens', () => {
-        const transitionTokens = ['--transition-fast', '--transition-base', '--transition-slow'];
+    describe('Feedback state tokens', () => {
+        it('should define --success and --success-foreground', () => {
+            expect(rootBlock).toContain('--success:');
+            expect(rootBlock).toContain('--success-foreground:');
+        });
 
-        it.each(transitionTokens)('should define %s', (token) => {
-            expect(globalCss).toContain(`${token}:`);
+        it('should define --warning and --warning-foreground', () => {
+            expect(rootBlock).toContain('--warning:');
+            expect(rootBlock).toContain('--warning-foreground:');
+        });
+
+        it('should define --info and --info-foreground', () => {
+            expect(rootBlock).toContain('--info:');
+            expect(rootBlock).toContain('--info-foreground:');
+        });
+
+        it('should override feedback tokens in dark mode', () => {
+            expect(darkBlock).toContain('--success:');
+            expect(darkBlock).toContain('--warning:');
+            expect(darkBlock).toContain('--info:');
         });
     });
 
-    describe('Z-index approach', () => {
-        it('should document Tailwind z-scale approach instead of custom CSS variables', () => {
-            expect(globalCss).toContain('Tailwind z-scale');
+    describe('@theme inline block - Tailwind v4 token mapping', () => {
+        it('should contain an @theme inline block', () => {
+            expect(css).toContain('@theme inline {');
         });
 
-        it('should reference z-10, z-20, z-30, z-40, z-50 in documentation comment', () => {
-            expect(globalCss).toContain('z-10');
-            expect(globalCss).toContain('z-20');
-            expect(globalCss).toContain('z-30');
-            expect(globalCss).toContain('z-40');
-            expect(globalCss).toContain('z-50');
-        });
-    });
-
-    describe('Dark mode - "Noche Estrellada"', () => {
-        it('should include dark mode skeleton with data-theme="dark"', () => {
-            expect(globalCss).toContain('[data-theme="dark"]');
+        it('should map --color-background to var(--background)', () => {
+            expect(css).toContain('--color-background: var(--background)');
         });
 
-        it('should override key color tokens in dark mode', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toContain('--color-text:');
-            expect(darkSection).toContain('--color-bg:');
-            expect(darkSection).toContain('--color-surface:');
+        it('should map --color-primary to var(--primary)', () => {
+            expect(css).toContain('--color-primary: var(--primary)');
         });
 
-        it('should use night blue background (#0F1A2E) not gray', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-bg:\s*#0F1A2E/i);
+        it('should map --color-accent to var(--accent)', () => {
+            expect(css).toContain('--color-accent: var(--accent)');
         });
 
-        it('should have deep night surface (#1A2740)', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-surface:\s*#1A2740/i);
+        it('should map --color-destructive to var(--destructive)', () => {
+            expect(css).toContain('--color-destructive: var(--destructive)');
         });
 
-        it('should have warm white text (#F0EDE8)', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-text:\s*#F0EDE8/i);
-        });
-
-        it('should have luminous teal primary (#3DBDC0) in dark mode', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-primary:\s*#3DBDC0/i);
-        });
-
-        it('should have night blue header (#0F1A2E)', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-header-bg:\s*#0F1A2E/i);
-        });
-
-        it('should have --color-bg-warm dark mode override of #1C1A15', () => {
-            const darkSection = globalCss.split('[data-theme="dark"]')[1];
-            expect(darkSection).toBeDefined();
-            expect(darkSection).toMatch(/--color-bg-warm:\s*#1C1A15/i);
-        });
-    });
-});
-
-describe('Tailwind Theme - tailwind.css', () => {
-    it('should import tailwindcss', () => {
-        expect(tailwindCss).toContain('@import "tailwindcss"');
-    });
-
-    it('should import global.css', () => {
-        expect(tailwindCss).toContain('@import "./global.css"');
-    });
-
-    it('should import textures.css', () => {
-        expect(tailwindCss).toContain('@import "./textures.css"');
-    });
-
-    it('should define @theme inline block', () => {
-        expect(tailwindCss).toContain('@theme inline');
-    });
-
-    describe('Theme color mappings', () => {
-        const themeColors = [
-            '--color-primary',
-            '--color-secondary',
-            '--color-accent',
-            '--color-accent-warm',
-            '--color-bg-warm',
-            '--color-success',
-            '--color-warning',
-            '--color-error',
-            '--color-info',
-            '--color-green',
-            '--color-green-dark',
-            '--color-green-light',
-            '--color-terracotta',
-            '--color-terracotta-dark',
-            '--color-terracotta-light'
-        ];
-
-        it.each(themeColors)('should map %s to Tailwind theme', (token) => {
-            const themeSection = tailwindCss.split('@theme inline')[1];
-            expect(themeSection).toContain(token);
-        });
-    });
-
-    describe('Primary scale in theme', () => {
-        const primaryScaleTokens = [
-            '--color-primary-50',
-            '--color-primary-100',
-            '--color-primary-200',
-            '--color-primary-500',
-            '--color-primary-900',
-            '--color-primary-950'
-        ];
-
-        it.each(primaryScaleTokens)('should map %s to Tailwind theme', (token) => {
-            const themeSection = tailwindCss.split('@theme inline')[1];
-            expect(themeSection).toContain(token);
-        });
-    });
-
-    describe('Theme typography scale mappings', () => {
-        const themeTypographyTokens = [
-            '--fs-display-hero',
-            '--fs-display-section',
-            '--fs-accent-subtitle',
-            '--font-accent'
-        ];
-
-        it.each(themeTypographyTokens)('should map %s to Tailwind theme', (token) => {
-            const themeSection = tailwindCss.split('@theme inline')[1];
-            expect(themeSection).toContain(token);
-        });
-
-        it('should map --max-w-site to Tailwind theme', () => {
-            const themeSection = tailwindCss.split('@theme inline')[1];
-            expect(themeSection).toContain('--max-w-site');
-        });
-
-        it('should map --radius-2xl to Tailwind theme', () => {
-            const themeSection = tailwindCss.split('@theme inline')[1];
-            expect(themeSection).toContain('--radius-2xl');
-        });
-    });
-
-    describe('Base typography', () => {
-        it('should set serif font for headings', () => {
-            expect(tailwindCss).toContain('var(--font-serif)');
-        });
-
-        it('should set sans font for html', () => {
-            expect(tailwindCss).toContain('var(--font-sans)');
-        });
-
-        it('should include font-variation-settings for headings', () => {
-            expect(tailwindCss).toContain('font-variation-settings');
-            expect(tailwindCss).toContain('var(--fraunces-default)');
-        });
-
-        it('should have h1 letter-spacing of -0.04em', () => {
-            expect(tailwindCss).toContain('-0.04em');
-        });
-
-        it('should have h2 letter-spacing of -0.03em', () => {
-            expect(tailwindCss).toContain('-0.03em');
-        });
-
-        it('should include focus-visible styles for accessibility', () => {
-            expect(tailwindCss).toContain(':focus-visible');
+        it('should define radius variants via calc()', () => {
+            expect(css).toContain('--radius-sm: calc(var(--radius)');
+            expect(css).toContain('--radius-lg: var(--radius)');
         });
     });
 });

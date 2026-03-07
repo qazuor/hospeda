@@ -1,3 +1,8 @@
+/**
+ * Environment variable validation schemas using Zod.
+ * Validates that required variables are present at build/runtime.
+ */
+
 import { z } from 'zod';
 
 /**
@@ -7,12 +12,14 @@ import { z } from 'zod';
  * This schema ensures that either the monorepo variables (HOSPEDA_*)
  * or the deployment/public variables (PUBLIC_*) are set for API and Site URLs.
  */
-const serverEnvSchema = z
+export const serverEnvSchema = z
     .object({
         HOSPEDA_API_URL: z.string().url().optional(),
         PUBLIC_API_URL: z.string().url().optional(),
         HOSPEDA_SITE_URL: z.string().url().optional(),
         PUBLIC_SITE_URL: z.string().url().optional(),
+        PUBLIC_SENTRY_DSN: z.string().optional(),
+        PUBLIC_SENTRY_RELEASE: z.string().optional(),
         NODE_ENV: z.enum(['development', 'production', 'test']).default('development')
     })
     .refine((data) => data.HOSPEDA_API_URL || data.PUBLIC_API_URL, {
@@ -30,20 +37,13 @@ const serverEnvSchema = z
  *
  * These variables are exposed to the browser and must not contain secrets.
  */
-const clientEnvSchema = z.object({
+export const clientEnvSchema = z.object({
     PUBLIC_API_URL: z.string().url(),
     PUBLIC_SITE_URL: z.string().url()
 });
 
-/**
- * Inferred TypeScript type for server environment variables.
- */
-type ServerEnv = z.infer<typeof serverEnvSchema>;
+/** Inferred TypeScript type for server environment variables. */
+export type ServerEnv = z.infer<typeof serverEnvSchema>;
 
-/**
- * Inferred TypeScript type for client environment variables.
- */
-type ClientEnv = z.infer<typeof clientEnvSchema>;
-
-export { serverEnvSchema, clientEnvSchema };
-export type { ServerEnv, ClientEnv };
+/** Inferred TypeScript type for client environment variables. */
+export type ClientEnv = z.infer<typeof clientEnvSchema>;

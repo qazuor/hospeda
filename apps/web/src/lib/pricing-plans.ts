@@ -36,7 +36,7 @@ const LOCALE_CONFIG: Record<
     pt: { currency: 'ARS', period: '/mês' }
 };
 
-// ─── Shared Mapping Helper ─────────────────────────────────────────────────────
+// --- Shared Mapping Helper ---
 
 /** Parameters for mapping an API plan record to a PricingPlan */
 interface MapPlanParams {
@@ -95,7 +95,7 @@ function mapApiPlanToCard({
     };
 }
 
-// ─── Fetch Helpers ─────────────────────────────────────────────────────────────
+// --- Fetch Helpers ---
 
 /**
  * Extracts a flat item array from the API response.
@@ -131,7 +131,7 @@ function sortByOrder(plans: Record<string, unknown>[]): Record<string, unknown>[
     });
 }
 
-// ─── Public API ────────────────────────────────────────────────────────────────
+// --- Public API ---
 
 /**
  * Fetches tourist plans from the billing API and maps them to PricingPlan records.

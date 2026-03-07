@@ -1,274 +1,256 @@
 /**
- * Integration tests for the complete homepage section assembly (SPEC-013).
- * Validates section rendering order, cross-component ARIA patterns,
- * SectionWrapper variant consistency, and accessibility requirements.
+ * @file homepage-sections-integration.test.ts
+ * @description Integration tests verifying that the homepage composes all
+ * expected section components, passes the required props, uses server:defer
+ * for dynamic Server Islands, and renders skeletons as fallbacks.
+ *
+ * Tests read the homepage source file and validate imports, directive usage,
+ * prop passing, and section order as expressed in the template.
  */
+
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const homepagePath = resolve(__dirname, '../../src/pages/[lang]/index.astro');
-const homepage = readFileSync(homepagePath, 'utf8');
+// ---------------------------------------------------------------------------
+// Source fixtures
+// ---------------------------------------------------------------------------
 
-const statisticsPath = resolve(__dirname, '../../src/components/content/StatisticsSection.astro');
-const statistics = readFileSync(statisticsPath, 'utf8');
+const WEB_ROOT = resolve(__dirname, '../../');
+const HOMEPAGE_PATH = resolve(WEB_ROOT, 'src/pages/[lang]/index.astro');
+const homepageSrc = readFileSync(HOMEPAGE_PATH, 'utf8');
 
-const categoryIconsPath = resolve(
-    __dirname,
-    '../../src/components/content/CategoryIconsSection.astro'
-);
-const categoryIcons = readFileSync(categoryIconsPath, 'utf8');
+// ---------------------------------------------------------------------------
+// Expected sections with their metadata
+// ---------------------------------------------------------------------------
 
-const testimonialsPath = resolve(
-    __dirname,
-    '../../src/components/content/TestimonialsSection.astro'
-);
-const testimonials = readFileSync(testimonialsPath, 'utf8');
+interface SectionMeta {
+    /** Import identifier used in the file */
+    readonly importName: string;
+    /** Relative path used in the import statement */
+    readonly importPath: string;
+    /** Whether this section uses server:defer (Server Island) */
+    readonly isServerIsland: boolean;
+    /** Whether this section requires a skeleton fallback slot */
+    readonly hasFallback: boolean;
+    /** Expected skeleton component name, if any */
+    readonly skeletonName?: string;
+}
 
-const carouselPath = resolve(
-    __dirname,
-    '../../src/components/content/TestimonialCarousel.client.tsx'
-);
-const carousel = readFileSync(carouselPath, 'utf8');
+const EXPECTED_SECTIONS: readonly SectionMeta[] = [
+    {
+        importName: 'HeroSection',
+        importPath: '../../components/sections/HeroSection.astro',
+        isServerIsland: false,
+        hasFallback: false
+    },
+    {
+        importName: 'AccommodationsSection',
+        importPath: '../../components/sections/AccommodationsSection.astro',
+        isServerIsland: true,
+        hasFallback: true,
+        skeletonName: 'AccommodationGridSkeleton'
+    },
+    {
+        importName: 'DestinationsSection',
+        importPath: '../../components/sections/DestinationsSection.astro',
+        isServerIsland: true,
+        hasFallback: true,
+        skeletonName: 'DestinationGridSkeleton'
+    },
+    {
+        importName: 'EventsSection',
+        importPath: '../../components/sections/EventsSection.astro',
+        isServerIsland: true,
+        hasFallback: true,
+        skeletonName: 'EventGridSkeleton'
+    },
+    {
+        importName: 'PostsSection',
+        importPath: '../../components/sections/PostsSection.astro',
+        isServerIsland: true,
+        hasFallback: true,
+        skeletonName: 'PostGridSkeleton'
+    },
+    {
+        importName: 'ReviewsSection',
+        importPath: '../../components/sections/ReviewsSection.astro',
+        isServerIsland: false,
+        hasFallback: false
+    },
+    {
+        importName: 'StatsSection',
+        importPath: '../../components/sections/StatsSection.astro',
+        isServerIsland: false,
+        hasFallback: false
+    },
+    {
+        importName: 'ListPropertySection',
+        importPath: '../../components/sections/ListPropertySection.astro',
+        isServerIsland: false,
+        hasFallback: false
+    }
+] as const;
 
-const newsletterPath = resolve(__dirname, '../../src/components/content/NewsletterSection.astro');
-const newsletter = readFileSync(newsletterPath, 'utf8');
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
 
-const ownerCtaPath = resolve(__dirname, '../../src/components/content/OwnerCTASection.astro');
-const ownerCta = readFileSync(ownerCtaPath, 'utf8');
+describe('homepage-sections-integration', () => {
+    describe('section imports', () => {
+        it.each(EXPECTED_SECTIONS)(
+            'should import $importName from $importPath',
+            ({ importName, importPath }) => {
+                // Arrange / Act / Assert
+                expect(homepageSrc).toContain(`import ${importName} from '${importPath}'`);
+            }
+        );
+    });
 
-const sectionWrapperPath = resolve(__dirname, '../../src/components/ui/SectionWrapper.astro');
-const sectionWrapper = readFileSync(sectionWrapperPath, 'utf8');
+    describe('section template rendering', () => {
+        it.each(EXPECTED_SECTIONS)(
+            'should render <$importName> in the template body',
+            ({ importName }) => {
+                // Arrange / Act / Assert
+                expect(homepageSrc).toContain(`<${importName}`);
+            }
+        );
 
-describe('Homepage Sections Integration (SPEC-013)', () => {
-    describe('Complete section order (positions 1-8)', () => {
-        it('should render all 8 sections in correct order', () => {
-            const sectionOrder = [
-                '<HeroSection',
-                '<FeaturedAccommodations',
-                '<FeaturedDestinations',
-                '<FeaturedEvents',
-                '<CategoryIconsSection',
-                '<FeaturedPosts',
-                '<TestimonialsSection',
-                '<OwnerCTASection'
-            ];
+        it.each(EXPECTED_SECTIONS)('$importName should receive locale prop', ({ importName }) => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain(`<${importName}`);
+            // The template passes locale={locale} to every section component
+            const sectionBlock = homepageSrc.slice(
+                homepageSrc.indexOf(`<${importName}`),
+                homepageSrc.indexOf(`<${importName}`) + 200
+            );
+            expect(sectionBlock).toContain('locale={locale}');
+        });
+    });
 
-            const positions = sectionOrder.map((tag) => homepage.indexOf(tag));
+    describe('server:defer Server Islands', () => {
+        it.each(EXPECTED_SECTIONS.filter((s) => s.isServerIsland))(
+            '$importName should use server:defer directive',
+            ({ importName }) => {
+                // Arrange - extract the opening tag up to the closing > to avoid
+                // reading into adjacent elements.
+                const tagStart = homepageSrc.indexOf(`<${importName}`);
+                const tagEnd = homepageSrc.indexOf('>', tagStart) + 1;
+                const openTag = homepageSrc.slice(tagStart, tagEnd);
 
-            // All sections must exist
-            for (let i = 0; i < positions.length; i++) {
-                expect(positions[i], `Section ${sectionOrder[i]} not found`).toBeGreaterThan(-1);
+                // Act / Assert
+                expect(openTag).toContain('server:defer');
+            }
+        );
+
+        it.each(EXPECTED_SECTIONS.filter((s) => !s.isServerIsland))(
+            '$importName should NOT use server:defer (it is a static component)',
+            ({ importName }) => {
+                // Arrange - find the tag and extract only up to the closing angle bracket
+                // to avoid false positives from adjacent server:defer sections.
+                const tagStart = homepageSrc.indexOf(`<${importName}`);
+                // Self-closing tags end with />; regular opening tags end with >.
+                // Take the smaller of the two to stay within the tag boundary.
+                const selfCloseEnd = homepageSrc.indexOf('/>', tagStart);
+                const openEnd = homepageSrc.indexOf('>', tagStart);
+                const tagEnd = Math.min(
+                    selfCloseEnd !== -1 ? selfCloseEnd + 2 : Number.POSITIVE_INFINITY,
+                    openEnd !== -1 ? openEnd + 1 : Number.POSITIVE_INFINITY
+                );
+                const openTag = homepageSrc.slice(tagStart, tagEnd);
+
+                // Act / Assert
+                expect(openTag).not.toContain('server:defer');
+            }
+        );
+    });
+
+    describe('skeleton fallbacks', () => {
+        it.each(EXPECTED_SECTIONS.filter((s) => s.hasFallback))(
+            '$importName should import its skeleton component ($skeletonName)',
+            ({ skeletonName }) => {
+                // Arrange / Act / Assert
+                expect(homepageSrc).toContain(`import ${skeletonName}`);
+            }
+        );
+
+        it.each(EXPECTED_SECTIONS.filter((s) => s.hasFallback))(
+            '$importName should render skeleton with slot="fallback"',
+            ({ skeletonName }) => {
+                // Arrange / Act / Assert
+                expect(homepageSrc).toContain(`<${skeletonName}`);
+                expect(homepageSrc).toContain('slot="fallback"');
+            }
+        );
+    });
+
+    describe('section order in template', () => {
+        it('sections should appear in the correct order in the template', () => {
+            // Arrange - find the position of each section's opening tag
+            const positions: Record<string, number> = {};
+            for (const { importName } of EXPECTED_SECTIONS) {
+                positions[importName] = homepageSrc.indexOf(`<${importName}`);
             }
 
-            // Each section must come after the previous one
-            for (let i = 1; i < positions.length; i++) {
-                expect(
-                    positions[i],
-                    `${sectionOrder[i]} should come after ${sectionOrder[i - 1]}`
-                ).toBeGreaterThan(positions[i - 1]!);
-            }
-        });
-
-        it('should not have duplicate section renders', () => {
-            const sections = ['CategoryIconsSection', 'TestimonialsSection', 'OwnerCTASection'];
-
-            for (const section of sections) {
-                const regex = new RegExp(`<${section}`, 'g');
-                const matches = homepage.match(regex) ?? [];
-                expect(matches.length, `${section} should appear exactly once`).toBe(1);
-            }
+            // Act / Assert - validate relative ordering matches design spec
+            expect(positions.HeroSection).toBeLessThan(positions.AccommodationsSection);
+            expect(positions.AccommodationsSection).toBeLessThan(positions.DestinationsSection);
+            expect(positions.DestinationsSection).toBeLessThan(positions.EventsSection);
+            expect(positions.EventsSection).toBeLessThan(positions.PostsSection);
+            expect(positions.PostsSection).toBeLessThan(positions.ReviewsSection);
+            expect(positions.ReviewsSection).toBeLessThan(positions.StatsSection);
+            expect(positions.StatsSection).toBeLessThan(positions.ListPropertySection);
         });
     });
 
-    describe('SectionWrapper variant consistency', () => {
-        it('StatisticsSection should use image variant for overlay background', () => {
-            expect(statistics).toContain('variant="image"');
+    describe('ParallaxDivider between sections', () => {
+        it('should import ParallaxDivider for section separators', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain('import ParallaxDivider');
+            expect(homepageSrc).toContain('../../components/shared/ParallaxDivider.astro');
         });
 
-        it('CategoryIconsSection should use warm variant for beige background', () => {
-            expect(categoryIcons).toContain('variant="warm"');
-        });
+        it('should use at least three ParallaxDivider instances', () => {
+            // Arrange
+            const dividerMatches = homepageSrc.match(/<ParallaxDivider/g) ?? [];
 
-        it('TestimonialsSection should use sand variant for beige background', () => {
-            expect(testimonials).toContain('variant="sand"');
-        });
-
-        it('NewsletterSection should use river variant with gradient overlay', () => {
-            expect(newsletter).toContain('variant="river"');
-        });
-
-        it('OwnerCTASection should use gradient background (from-primary-50 via-surface-warm)', () => {
-            expect(ownerCta).toContain('from-primary-50');
-            expect(ownerCta).toContain('via-surface-warm');
-        });
-
-        it('SectionWrapper should support all used variants', () => {
-            expect(sectionWrapper).toContain('white');
-            expect(sectionWrapper).toContain('gray');
-            expect(sectionWrapper).toContain('warm');
-            expect(sectionWrapper).toContain('image');
+            // Act / Assert
+            expect(dividerMatches.length).toBeGreaterThanOrEqual(3);
         });
     });
 
-    describe('Background alternation pattern', () => {
-        it('should alternate between white, warm, and image backgrounds', () => {
-            // Hero (split teal) -> Accommodations (white) -> Destinations (warm) ->
-            // Statistics (image) -> Events (white) -> CategoryIcons (warm) ->
-            // Posts (gray) -> Testimonials (sand) -> Newsletter (river) -> OwnerCTA (gradient)
-            // No two consecutive sections should feel visually identical
-            expect(statistics).toContain('variant="image"');
-            expect(categoryIcons).toContain('variant="warm"');
-            expect(testimonials).toContain('variant="sand"');
-            expect(newsletter).toContain('variant="river"');
-            expect(ownerCta).toContain('from-primary-50');
-        });
-
-        it('Destinations FeaturedSection should have warm background class on homepage', () => {
-            const destSection = homepage.match(
-                /<FeaturedSection[^>]*title=\{featuredDestinationsTitle\}[^>]*/
+    describe('page-level setup', () => {
+        it('should use BaseLayout as the outer wrapper', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain(
+                "import BaseLayout from '../../layouts/BaseLayout.astro'"
             );
-            expect(destSection).not.toBeNull();
-            expect(destSection![0]).toContain('bg-bg-warm');
+            expect(homepageSrc).toContain('<BaseLayout');
         });
 
-        it('Posts FeaturedSection should have gray background class on homepage', () => {
-            const postsSection = homepage.match(
-                /<FeaturedSection[^>]*title=\{latestBlogTitle\}[^>]*/
+        it('should include SEOHead in the head slot', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain(
+                "import SEOHead from '../../components/seo/SEOHead.astro'"
             );
-            expect(postsSection).not.toBeNull();
-            expect(postsSection![0]).toContain('bg-surface-alt');
-        });
-    });
-
-    describe('Cross-component locale propagation', () => {
-        it('homepage should pass locale to all sections that need it', () => {
-            const sectionLocalePatterns = [
-                /<CategoryIconsSection[^>]*locale/,
-                /<TestimonialsSection[^>]*locale/,
-                /<OwnerCTASection[^>]*locale/
-            ];
-
-            for (const pattern of sectionLocalePatterns) {
-                expect(homepage).toMatch(pattern);
-            }
+            expect(homepageSrc).toContain('<SEOHead');
+            expect(homepageSrc).toContain('slot="head"');
         });
 
-        it('sections with locale-dependent content should accept locale prop', () => {
-            expect(categoryIcons).toContain('locale');
-            expect(testimonials).toContain('locale');
-            expect(ownerCta).toContain('locale');
-        });
-    });
-
-    describe('Testimonials data flow', () => {
-        it('homepage should define TESTIMONIALS array with test data', () => {
-            expect(homepage).toContain('TESTIMONIALS');
+        it('should enable SSG with prerender export', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain('export const prerender = true');
         });
 
-        it('homepage should pass testimonials to TestimonialsSection', () => {
-            expect(homepage).toContain('testimonials={TESTIMONIALS}');
+        it('should export getStaticPaths via getStaticLocalePaths for locale generation', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain('getStaticLocalePaths as getStaticPaths');
         });
 
-        it('TestimonialsSection should pass testimonials to carousel', () => {
-            expect(testimonials).toContain('testimonials={testimonials}');
-        });
-
-        it('TestimonialCarousel should guard against empty array', () => {
-            expect(carousel).toContain('return null');
-            expect(carousel).toContain('testimonials.length === 0');
-        });
-
-        it('TestimonialsSection should guard rendering with length check', () => {
-            expect(testimonials).toContain('testimonials.length > 0');
-        });
-    });
-
-    describe('React island hydration directives', () => {
-        it('TestimonialCarousel should use client:visible', () => {
-            expect(testimonials).toContain('client:visible');
-        });
-
-        it('CounterAnimation should use client:visible in StatisticsSection', () => {
-            expect(statistics).toContain('client:visible');
-        });
-
-        it('NewsletterCTA should use client:visible in NewsletterSection', () => {
-            expect(newsletter).toContain('client:visible');
-        });
-
-        it('no new section should use client:load (reserved for above-fold)', () => {
-            expect(statistics).not.toContain('client:load');
-            expect(categoryIcons).not.toContain('client:load');
-            expect(testimonials).not.toContain('client:load');
-            expect(newsletter).not.toContain('client:load');
-            expect(ownerCta).not.toContain('client:load');
-        });
-    });
-
-    describe('Accessibility across sections', () => {
-        it('TestimonialCarousel should have carousel roledescription with aria-label', () => {
-            expect(carousel).toContain('aria-roledescription="carousel"');
-            expect(carousel).toContain('aria-label');
-        });
-
-        it('TestimonialCarousel should suppress aria-live for auto-advancing', () => {
-            expect(carousel).toContain('aria-live="off"');
-        });
-
-        it('CategoryIconsSection links should have aria-labels', () => {
-            expect(categoryIcons).toContain('aria-label');
-        });
-
-        it('CategoryIconsSection icons should be decorative (aria-hidden)', () => {
-            expect(categoryIcons).toContain('aria-hidden');
-        });
-
-        it('CounterAnimation should announce completion to screen readers', () => {
-            const counterPath = resolve(
-                __dirname,
-                '../../src/components/content/CounterAnimation.client.tsx'
-            );
-            const counter = readFileSync(counterPath, 'utf8');
-            expect(counter).toContain('aria-live="polite"');
-            expect(counter).toContain('sr-only');
-        });
-
-        it('OwnerCTA button should link to propietarios page', () => {
-            expect(ownerCta).toContain('/propietarios/');
-        });
-    });
-
-    describe('Image overlay fallbacks', () => {
-        it('StatisticsSection should have dark background fallback', () => {
-            expect(statistics).toContain('bg-primary-900');
-        });
-
-        it('NewsletterSection should have gradient background', () => {
-            expect(newsletter).toContain('bg-gradient-to-br');
-            expect(newsletter).toContain('from-primary-800');
-        });
-
-        it('OwnerCTASection should have gradient background', () => {
-            expect(ownerCta).toContain('bg-gradient-to-br');
-            expect(ownerCta).toContain('from-primary-50');
-        });
-    });
-
-    describe('No default exports in React islands', () => {
-        it('TestimonialCarousel should use named export', () => {
-            expect(carousel).toContain('export const TestimonialCarousel');
-            expect(carousel).not.toContain('export default');
-        });
-
-        it('CounterAnimation should use named export', () => {
-            const counterPath = resolve(
-                __dirname,
-                '../../src/components/content/CounterAnimation.client.tsx'
-            );
-            const counter = readFileSync(counterPath, 'utf8');
-            expect(counter).toContain('export const CounterAnimation');
-            expect(counter).not.toContain('export default');
+        it('should pass isHero and isHomepage flags to BaseLayout', () => {
+            // Arrange / Act / Assert
+            expect(homepageSrc).toContain('isHero');
+            expect(homepageSrc).toContain('isHomepage');
         });
     });
 });

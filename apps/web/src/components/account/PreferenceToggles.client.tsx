@@ -52,10 +52,11 @@ export interface PreferenceTogglesProps {
  *
  * Manages user preferences for notifications and language settings.
  * Provides separate save buttons for each section with optimistic updates.
- * Handles API calls via userApi.patchProfile and shows toast notifications.
+ * Handles API calls via `userApi.patchProfile` and shows toast notifications
+ * on success or error. On language change, redirects to the new locale URL.
  *
  * @param props - Component props
- * @returns React component
+ * @returns React element
  *
  * @example
  * ```tsx
@@ -82,18 +83,18 @@ export function PreferenceToggles({
     const [notifications, setNotifications] = useState<NotificationSettings>(
         initialSettings.notifications
     );
-    const [language, setLanguage] = useState<string>(initialSettings.language || locale);
+    const [language, setLanguage] = useState<string>(initialSettings.language ?? locale);
     const [isSavingNotifications, setIsSavingNotifications] = useState<boolean>(false);
     const [isSavingLanguage, setIsSavingLanguage] = useState<boolean>(false);
 
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
 
     /**
-     * Handles notification checkbox toggle
+     * Handles notification checkbox toggle for a given field.
      *
      * @param field - Notification field to toggle
      */
-    const handleNotificationToggle = (field: keyof NotificationSettings) => {
+    const handleNotificationToggle = (field: keyof NotificationSettings): void => {
         setNotifications((prev) => ({
             ...prev,
             [field]: !prev[field]
@@ -101,9 +102,9 @@ export function PreferenceToggles({
     };
 
     /**
-     * Saves notification preferences
+     * Persists notification preferences via PATCH and shows a toast on completion.
      */
-    const handleSaveNotifications = async () => {
+    const handleSaveNotifications = async (): Promise<void> => {
         setIsSavingNotifications(true);
 
         try {
@@ -140,9 +141,10 @@ export function PreferenceToggles({
     };
 
     /**
-     * Saves language preference and redirects to new locale
+     * Persists language preference via PATCH and redirects to the new locale URL
+     * when the selected language differs from the current locale.
      */
-    const handleSaveLanguage = async () => {
+    const handleSaveLanguage = async (): Promise<void> => {
         setIsSavingLanguage(true);
 
         try {
@@ -166,12 +168,11 @@ export function PreferenceToggles({
                 duration: 3000
             });
 
-            // Redirect to the new locale URL
+            // Redirect to the new locale URL when language changes.
             if (typeof window !== 'undefined' && language !== locale) {
                 const currentPath = window.location.pathname;
                 const pathSegments = currentPath.split('/').filter(Boolean);
 
-                // Replace locale segment (first segment)
                 if (pathSegments.length > 0) {
                     pathSegments[0] = language;
                     const newPath = `/${pathSegments.join('/')}`;
@@ -193,7 +194,7 @@ export function PreferenceToggles({
     return (
         <div className="space-y-8">
             {/* Notifications Section */}
-            <section className="rounded-lg border bg-bg p-6">
+            <section className="rounded-lg border border-border bg-bg p-6">
                 <div className="mb-4">
                     <h2 className="font-semibold text-lg text-text">
                         {t('preferences.notificationsTitle')}
@@ -289,7 +290,7 @@ export function PreferenceToggles({
                         type="button"
                         onClick={handleSaveNotifications}
                         disabled={isSavingNotifications}
-                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
+                        className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
                     >
                         {isSavingNotifications
                             ? t('preferences.saving')
@@ -299,7 +300,7 @@ export function PreferenceToggles({
             </section>
 
             {/* Language Section */}
-            <section className="rounded-lg border bg-bg p-6">
+            <section className="rounded-lg border border-border bg-bg p-6">
                 <div className="mb-4">
                     <h2 className="font-semibold text-lg text-text">
                         {t('preferences.languageTitle')}
@@ -334,7 +335,7 @@ export function PreferenceToggles({
                         type="button"
                         onClick={handleSaveLanguage}
                         disabled={isSavingLanguage}
-                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
+                        className="rounded-md bg-primary px-4 py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
                     >
                         {isSavingLanguage ? t('preferences.saving') : t('preferences.saveButton')}
                     </button>

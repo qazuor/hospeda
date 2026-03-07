@@ -8,7 +8,7 @@ import { LocationIcon, resolveIcon } from '@repo/icons';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
 
-/** Attraction item with displayWeight for sorting */
+/** Attraction item with displayWeight for sorting. */
 export interface DestinationAttraction {
     readonly id: string;
     readonly name: string;
@@ -16,7 +16,7 @@ export interface DestinationAttraction {
     readonly displayWeight?: number;
 }
 
-/** Minimal destination shape for rendering cards */
+/** Minimal destination shape for rendering cards. */
 export interface DestinationItem {
     readonly id: string;
     readonly slug: string;
@@ -31,34 +31,42 @@ export interface DestinationItem {
     readonly media?: {
         readonly featuredImage?: { readonly url?: string } | string;
     };
-    /** Top attractions ordered by displayWeight DESC from the service layer */
+    /** Top attractions ordered by displayWeight DESC from the service layer. */
     readonly attractions?: readonly DestinationAttraction[];
 }
 
-/** Localized labels needed for card rendering */
+/** Localized labels needed for card rendering. */
 export interface CardLabels {
     readonly accommodation: string;
     readonly accommodations: string;
     readonly featured: string;
 }
 
-/** Max number of attraction badges to show */
-const MAX_ATTRACTIONS = 3;
-
-/** Minimal destination card for client-rendered filtered results. */
-export function DestinationCardClient({
-    destination,
-    locale,
-    labels
-}: {
+/** Props for the DestinationCardClient component. */
+export interface DestinationCardClientProps {
     readonly destination: DestinationItem;
     readonly locale: string;
     readonly labels: CardLabels;
-}) {
+}
+
+/** Max number of attraction badges to show. */
+const MAX_ATTRACTIONS = 3;
+
+/**
+ * Minimal destination card for client-rendered filtered results.
+ *
+ * Renders a card with the destination image, name, accommodation count,
+ * attraction badges (up to {@link MAX_ATTRACTIONS}), and an optional summary.
+ * Attractions are sorted by displayWeight DESC before slicing.
+ *
+ * @param props - {@link DestinationCardClientProps}
+ */
+export function DestinationCardClient({ destination, locale, labels }: DestinationCardClientProps) {
     const { tPlural } = useTranslation({
         locale: locale as SupportedLocale,
         namespace: 'destinations'
     });
+
     const detailPath = destination.path ?? destination.slug;
     const detailUrl = `/${locale}/destinos/${detailPath}/`;
     const mediaFeatured = destination.media?.featuredImage;
@@ -79,7 +87,7 @@ export function DestinationCardClient({
     const extraAttractionCount = Math.max(0, sortedAttractions.length - MAX_ATTRACTIONS);
 
     return (
-        <article className="group relative overflow-hidden rounded-lg bg-surface shadow-md transition-shadow hover:shadow-lg">
+        <article className="group relative overflow-hidden rounded-lg bg-card shadow-md transition-shadow hover:shadow-lg">
             <a
                 href={detailUrl}
                 className="relative block aspect-[16/9] overflow-hidden"
@@ -92,7 +100,7 @@ export function DestinationCardClient({
                 />
                 {destination.isFeatured && (
                     <div className="absolute top-3 right-3">
-                        <span className="rounded-full bg-warning/90 px-2.5 py-0.5 font-medium text-text text-xs backdrop-blur-sm">
+                        <span className="rounded-full bg-accent/90 px-2.5 py-0.5 font-medium text-accent-foreground text-xs backdrop-blur-sm">
                             {labels.featured}
                         </span>
                     </div>
@@ -102,12 +110,12 @@ export function DestinationCardClient({
                 <h3 className="font-semibold text-lg">
                     <a
                         href={detailUrl}
-                        className="text-text no-underline hover:text-primary"
+                        className="text-foreground no-underline hover:text-primary"
                     >
                         {destination.name}
                     </a>
                 </h3>
-                <p className="mt-1 text-sm text-text-tertiary">{countLabel}</p>
+                <p className="mt-1 text-muted-foreground text-sm">{countLabel}</p>
                 {visibleAttractions.length > 0 && (
                     <div className="mt-1.5 flex flex-wrap items-center gap-1">
                         {visibleAttractions.map((attraction) => {
@@ -118,7 +126,7 @@ export function DestinationCardClient({
                             return (
                                 <span
                                     key={attraction.id}
-                                    className="inline-flex items-center justify-center rounded-full bg-primary/10 p-[5px] text-primary transition-colors hover:bg-primary/20 dark:bg-primary/20 dark:hover:bg-primary/30"
+                                    className="inline-flex items-center justify-center rounded-full bg-primary/10 p-[5px] text-primary transition-colors hover:bg-primary/20"
                                     title={attraction.name}
                                     aria-label={attraction.name}
                                     role="img"
@@ -132,14 +140,14 @@ export function DestinationCardClient({
                             );
                         })}
                         {extraAttractionCount > 0 && (
-                            <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs dark:bg-primary/20">
+                            <span className="inline-flex items-center justify-center rounded-full bg-primary/10 px-2 py-0.5 font-medium text-primary text-xs">
                                 +{extraAttractionCount}
                             </span>
                         )}
                     </div>
                 )}
                 {summary && (
-                    <p className="mt-2 line-clamp-2 text-sm text-text-secondary">{summary}</p>
+                    <p className="mt-2 line-clamp-2 text-muted-foreground text-sm">{summary}</p>
                 )}
             </div>
         </article>

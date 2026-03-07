@@ -1,191 +1,175 @@
 ---
-import { ViewTransitions } from 'astro:transitions';
-import Header from './Header.astro';
-import StickyNav from './StickyNav.astro';
-import Footer from './Footer.astro';
+import "@/styles/global.css";
+import { ToastContainer } from "@/components/ui/Toast.client";
+import { FeedbackFAB } from "@repo/feedback";
+import Header from "./Header.astro";
+import Footer from "./Footer.astro";
 
-/**
- * Base HTML layout for all pages.
- * Provides the document shell with meta tags, fonts, and semantic structure.
- * Renders Header and Footer automatically for all pages.
- */
 interface Props {
-  title: string;
-  description: string;
-  image?: string;
-  noindex?: boolean;
+  title?: string;
+  description?: string;
   locale?: string;
-  /** Enable hero mode: header overlays hero, sticky nav appears on scroll */
   isHero?: boolean;
+  /** Whether to show the header (default true). Auth pages may use a simplified header. */
+  showHeader?: boolean;
+  /** Whether this is the homepage (affects nav link behavior). */
+  isHomepage?: boolean;
 }
 
-const { title, description, image, noindex = false, locale = 'es', isHero = false } = Astro.props;
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site);
-const pageTitle = `${title} | Hospeda`;
-const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
-
-const skipToContentText: Record<string, string> = {
-  es: 'Saltar al contenido',
-  en: 'Skip to content',
-  pt: 'Pular para o conteudo',
-};
+const {
+  title = "Hospeda",
+  description = "Descubri los mejores alojamientos turisticos en Entre Rios",
+  locale = "es",
+  isHero = false,
+  showHeader = true,
+  isHomepage = false,
+} = Astro.props;
 ---
 
+<!doctype html>
 <html lang={locale}>
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{pageTitle}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#3b7fa3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#111b28" media="(prefers-color-scheme: dark)" />
+
+    <!-- Default meta (overridden by SEOHead slot if present) -->
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonicalUrl.href} />
+    <title>{title}</title>
 
-    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="/icon-light-32x32.png"
+      media="(prefers-color-scheme: light)"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="/icon-dark-32x32.png"
+      media="(prefers-color-scheme: dark)"
+    />
+    <link rel="apple-touch-icon" href="/apple-icon.png" />
 
-    <!-- Open Graph -->
-    <meta property="og:title" content={pageTitle} />
-    <meta property="og:description" content={description} />
-    <meta property="og:url" content={canonicalUrl.href} />
-    <meta property="og:locale" content={ogLocale} />
-    <meta property="og:type" content="website" />
-    {image && <meta property="og:image" content={image} />}
+    <!-- Skip to content link -->
+    <style>
+      .skip-to-content {
+        position: absolute;
+        left: -9999px;
+        z-index: 9999;
+        padding: 0.5rem 1rem;
+        background: var(--accent);
+        color: var(--accent-foreground);
+        border-radius: 0.25rem;
+      }
+      .skip-to-content:focus {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+      }
+    </style>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="https://fonts.gstatic.com/s/caveat/v18/WnznHAc5bAfYB2QRah7pcpNvOx-pjfJ9SIKjYBxPigs.woff2"
-      crossorigin
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
     />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Inter:wght@400;600;700&display=swap"
-      onload="this.onload=null;this.rel='stylesheet'"
-    />
-    <noscript>
-      <link
-        href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Inter:wght@400;600;700&display=swap"
-        rel="stylesheet"
-      />
-    </noscript>
 
-    <!-- Dark mode FOUC prevention (must run before first paint) -->
+    <!-- FOUC prevention for dark mode -->
     <script is:inline>
-      (function(){var t=localStorage.getItem('hospeda-theme');if(!t){t=window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light'}document.documentElement.setAttribute('data-theme',t)})();
+      (function() {
+        const theme = localStorage.getItem('theme');
+        if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      })();
     </script>
 
-    <!-- View Transitions -->
-    <ViewTransitions fallback="swap" />
-
-    <!-- Import Tailwind CSS -->
-    <style>
-      @import '../styles/tailwind.css';
-
-      /* Custom view transitions with subtle scale */
-      ::view-transition-old(root) {
-        animation: vt-fade-scale-out 0.3s ease-out;
-      }
-
-      ::view-transition-new(root) {
-        animation: vt-fade-scale-in 0.3s ease-in;
-      }
-
-      @keyframes vt-fade-scale-out {
-        from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0.98); }
-      }
-
-      @keyframes vt-fade-scale-in {
-        from { opacity: 0; transform: scale(1.02); }
-        to { opacity: 1; transform: scale(1); }
-      }
-
-      /* Entity card-to-detail morph transition */
-      ::view-transition-group(entity-image) {
-        animation-duration: 0.4s;
-        animation-timing-function: ease-in-out;
-      }
-
-      ::view-transition-old(entity-image) {
-        animation: fade-out 0.4s ease-out;
-      }
-
-      ::view-transition-new(entity-image) {
-        animation: fade-in 0.4s ease-in;
-      }
-    </style>
+    <!-- SEO slot (overrides default title/description) -->
+    <slot name="head" />
   </head>
-  <body style="margin:0;padding:0;">
-    <!-- Skip to main content link for accessibility -->
-    <a
-      href="#main-content"
-      class="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-white focus:outline-none"
-    >
-      {skipToContentText[locale] || skipToContentText.es}
-    </a>
-
-    <Header locale={locale} isHero={isHero} />
-    {isHero && <StickyNav locale={locale} />}
-
+  <body class="font-sans antialiased">
+    <a href="#main-content" class="skip-to-content">Skip to content</a>
+    {showHeader && <Header locale={locale} isHomepage={isHomepage} />}
     <main id="main-content">
       <slot />
     </main>
-
     <Footer locale={locale} />
 
-    <!-- Scroll reveal animation observer (runs on every page) -->
-    <script>
-      let scrollRevealObserver: IntersectionObserver | null = null;
+    <ToastContainer client:load locale={locale as 'es' | 'en' | 'pt'} />
 
-      function initScrollReveal(): void {
-        scrollRevealObserver?.disconnect();
-        scrollRevealObserver = null;
+    <!-- Feedback FAB: low-priority island, deferred until browser is idle -->
+    <!-- FeedbackIslandWrapper is available for wrapping interactive islands -->
+    <FeedbackFAB
+      client:idle
+      apiUrl={import.meta.env.PUBLIC_API_URL || 'http://localhost:3001'}
+      appSource="web"
+    />
 
-        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const elements = document.querySelectorAll('[data-scroll-reveal]');
+    <!-- Scroll reveal observer (is:inline to run after DOM is parsed) -->
+    <script is:inline>
+      (function () {
+        var SELECTOR = ".scroll-reveal, .scroll-reveal-left, .scroll-reveal-right";
+
+        var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+        function revealElement(el) {
+          el.classList.add("revealed");
+        }
 
         if (prefersReducedMotion) {
-          elements.forEach((el) => {
-            el.classList.add('scroll-visible');
-            el.querySelectorAll('.scroll-reveal-stagger').forEach((child) =>
-              child.classList.add('scroll-visible')
-            );
-          });
+          document.querySelectorAll(SELECTOR).forEach(revealElement);
+          new MutationObserver(function (mutations) {
+            for (var i = 0; i < mutations.length; i++) {
+              for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+                var node = mutations[i].addedNodes[j];
+                if (node.nodeType === 1) {
+                  if (node.matches && node.matches(SELECTOR)) revealElement(node);
+                  node.querySelectorAll && node.querySelectorAll(SELECTOR).forEach(revealElement);
+                }
+              }
+            }
+          }).observe(document.body, { childList: true, subtree: true });
           return;
         }
 
-        const observer = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                const el = entry.target as HTMLElement;
-                const delay = el.style.getPropertyValue('--stagger-delay') || '0ms';
-                el.style.transitionDelay = delay;
-                el.classList.add('scroll-visible');
-                /* Reveal stagger children within this container */
-                el.querySelectorAll('.scroll-reveal-stagger').forEach((child) =>
-                  child.classList.add('scroll-visible')
-                );
-                observer.unobserve(el);
+        var io = new IntersectionObserver(
+          function (entries) {
+            for (var i = 0; i < entries.length; i++) {
+              if (entries[i].isIntersecting) {
+                revealElement(entries[i].target);
+                io.unobserve(entries[i].target);
               }
             }
           },
-          { threshold: 0.1 }
+          { threshold: 0.1, rootMargin: "0px 0px -50px 0px" }
         );
 
-        elements.forEach((el) => observer.observe(el));
-        scrollRevealObserver = observer;
-      }
+        document.querySelectorAll(SELECTOR).forEach(function (el) {
+          io.observe(el);
+        });
 
-      initScrollReveal();
-      document.addEventListener('astro:page-load', initScrollReveal);
-      document.addEventListener('astro:before-swap', () => {
-        scrollRevealObserver?.disconnect();
-        scrollRevealObserver = null;
-      });
+        /* Watch for Server Island content arriving after initial load */
+        new MutationObserver(function (mutations) {
+          for (var i = 0; i < mutations.length; i++) {
+            for (var j = 0; j < mutations[i].addedNodes.length; j++) {
+              var node = mutations[i].addedNodes[j];
+              if (node.nodeType === 1) {
+                if (node.matches && node.matches(SELECTOR)) io.observe(node);
+                if (node.querySelectorAll) {
+                  node.querySelectorAll(SELECTOR).forEach(function (el) {
+                    io.observe(el);
+                  });
+                }
+              }
+            }
+          }
+        }).observe(document.body, { childList: true, subtree: true });
+      })();
     </script>
   </body>
 </html>

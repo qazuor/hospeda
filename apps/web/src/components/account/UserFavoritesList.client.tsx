@@ -1,10 +1,10 @@
 import { formatDate, toBcp47Locale } from '@repo/i18n';
 import { FavoriteIcon } from '@repo/icons';
 /**
- * User favorites list component with tab navigation
+ * User favorites list component with tab navigation.
  *
- * Displays user's bookmarked items with filtering by entity type.
- * Supports pagination with load more functionality and optimistic deletion.
+ * Displays user's bookmarked items filtered by entity type.
+ * Supports paginated "load more" and optimistic deletion.
  *
  * @example
  * ```tsx
@@ -18,24 +18,28 @@ import type { SupportedLocale } from '../../lib/i18n';
 import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
 
+/** Props for the UserFavoritesList component */
 interface UserFavoritesListProps {
-    locale: 'es' | 'en' | 'pt';
+    readonly locale: SupportedLocale;
 }
 
+/** Entity type values supported as bookmark targets */
 type EntityType = 'ACCOMMODATION' | 'DESTINATION' | 'EVENT' | 'POST';
 
+/** Normalized bookmark data for display */
 interface Bookmark {
-    id: string;
-    entityId: string;
-    entityType: EntityType;
-    name: string | null;
-    description: string | null;
-    createdAt: string;
+    readonly id: string;
+    readonly entityId: string;
+    readonly entityType: EntityType;
+    readonly name: string | null;
+    readonly description: string | null;
+    readonly createdAt: string;
 }
 
+/** Tab configuration entry */
 interface TabConfig {
-    id: EntityType;
-    label: string;
+    readonly id: EntityType;
+    readonly label: string;
 }
 
 /** Maps entity types to i18n tab label keys */
@@ -46,11 +50,20 @@ const TAB_LABEL_KEYS: Readonly<Record<EntityType, string>> = {
     POST: 'favorites.tabs.post'
 } as const;
 
+const PAGE_SIZE = 12 as const;
+
 /**
- * User favorites list component
+ * User favorites list component.
+ *
+ * Renders a tabbed interface for browsing and managing bookmarks grouped
+ * by entity type. Uses optimistic UI for deletion and "load more" pagination.
+ *
+ * @param props - Component props.
+ * @param props.locale - Active locale for translations and date formatting.
  */
 export function UserFavoritesList({ locale }: UserFavoritesListProps) {
-    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
+    const { t } = useTranslation({ locale, namespace: 'account' });
+
     const [activeTab, setActiveTab] = useState<EntityType>('ACCOMMODATION');
     const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
     const [total, setTotal] = useState(0);
@@ -65,7 +78,9 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
     ];
 
     /**
-     * Fetch bookmarks for active tab
+     * Fetch bookmarks for the active tab.
+     *
+     * @param resetPage - When true, resets the list to page 1 (tab change).
      */
     const fetchBookmarks = async (resetPage = false) => {
         setIsLoading(true);
@@ -74,12 +89,12 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
             const result = await userBookmarksApi.list({
                 entityType: activeTab,
                 page: currentPage,
-                pageSize: 12
+                pageSize: PAGE_SIZE
             });
 
             if (result.ok && result.data) {
-                const newBookmarks = result.data.bookmarks as unknown as Bookmark[];
-                setBookmarks(resetPage ? newBookmarks : [...bookmarks, ...newBookmarks]);
+                const fetched = result.data.bookmarks as unknown as Bookmark[];
+                setBookmarks(resetPage ? fetched : (prev) => [...prev, ...fetched]);
                 setTotal(result.data.total);
                 if (!resetPage) {
                     setPage(currentPage + 1);
@@ -96,7 +111,9 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
     };
 
     /**
-     * Handle tab change
+     * Switch to a different entity-type tab and reset list state.
+     *
+     * @param tabId - The entity type tab to activate.
      */
     const handleTabChange = (tabId: EntityType) => {
         setActiveTab(tabId);
@@ -105,10 +122,12 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
     };
 
     /**
-     * Handle bookmark deletion with optimistic removal
+     * Delete a bookmark with optimistic UI rollback on failure.
+     *
+     * @param bookmarkId - The ID of the bookmark to delete.
      */
     const handleDelete = async (bookmarkId: string) => {
-        const previousBookmarks = [...bookmarks];
+        const snapshot = [...bookmarks];
 
         setBookmarks((prev) => prev.filter((b) => b.id !== bookmarkId));
         setTotal((prev) => prev - 1);
@@ -119,12 +138,12 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
             if (result.ok) {
                 addToast({ type: 'success', message: t('favorites.deleteSuccess') });
             } else {
-                setBookmarks(previousBookmarks);
+                setBookmarks(snapshot);
                 setTotal((prev) => prev + 1);
                 addToast({ type: 'error', message: t('favorites.deleteError') });
             }
         } catch (error) {
-            setBookmarks(previousBookmarks);
+            setBookmarks(snapshot);
             setTotal((prev) => prev + 1);
             addToast({ type: 'error', message: t('favorites.deleteError') });
             webLogger.error('Error deleting bookmark:', error);
@@ -132,14 +151,16 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
     };
 
     /**
-     * Load more bookmarks
+     * Trigger load-more fetch for the current tab.
+     *
+     * @param e - Form submit event to prevent default navigation.
      */
     const handleLoadMore = (e: FormEvent) => {
         e.preventDefault();
         fetchBookmarks();
     };
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: intentionally refetch when activeTab changes; fetchBookmarks captures latest state via closure
+    // biome-ignore lint/correctness/useExhaustiveDependencies: refetch intentionally when activeTab changes; fetchBookmarks captures latest state via closure
     useEffect(() => {
         fetchBookmarks(true);
     }, [activeTab]);
@@ -163,12 +184,11 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                             aria-selected={activeTab === tab.id}
                             aria-controls={`panel-${tab.id}`}
                             onClick={() => handleTabChange(tab.id)}
-                            className={`px-4 py-3 font-medium text-sm transition-colors border-b-2${
+                            className={`border-b-2 px-4 py-3 font-medium text-sm transition-colors ${
                                 activeTab === tab.id
                                     ? 'border-primary text-primary'
                                     : 'border-transparent text-text-secondary hover:border-border hover:text-text'
-                            }
-							`}
+                            }`}
                         >
                             {tab.label}
                         </button>
@@ -176,13 +196,13 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                 </nav>
             </div>
 
-            {/* Tab Content */}
+            {/* Tab Panel */}
             <div
                 id={`panel-${activeTab}`}
                 role="tabpanel"
                 aria-labelledby={`tab-${activeTab}`}
             >
-                {/* Loading State */}
+                {/* Loading State (initial) */}
                 {isLoading && bookmarks.length === 0 && (
                     <div className="flex items-center justify-center py-12">
                         <div className="h-12 w-12 animate-spin rounded-full border-primary border-b-2" />
@@ -218,7 +238,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0 flex-1">
                                         <h3 className="mb-1 truncate font-semibold text-base text-text">
-                                            {bookmark.name ||
+                                            {bookmark.name ??
                                                 `${t(TAB_LABEL_KEYS[bookmark.entityType])} #${bookmark.entityId.slice(0, 8)}`}
                                         </h3>
                                         {bookmark.description && (
@@ -241,8 +261,8 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                                     <button
                                         type="button"
                                         onClick={() => handleDelete(bookmark.id)}
-                                        className="flex-shrink-0 rounded-md px-3 py-1.5 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-300"
-                                        aria-label={`${t('favorites.delete')} ${bookmark.name || bookmark.entityId}`}
+                                        className="flex-shrink-0 rounded-md px-3 py-1.5 font-medium text-destructive text-sm transition-colors hover:bg-destructive/10"
+                                        aria-label={`${t('favorites.delete')} ${bookmark.name ?? bookmark.entityId}`}
                                     >
                                         {t('favorites.delete')}
                                     </button>
@@ -258,7 +278,7 @@ export function UserFavoritesList({ locale }: UserFavoritesListProps) {
                         <button
                             type="button"
                             onClick={handleLoadMore}
-                            className="rounded-lg bg-primary px-6 py-2.5 font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
                             {t('favorites.loadMore')}
                         </button>

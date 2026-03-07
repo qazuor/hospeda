@@ -1,152 +1,126 @@
 ---
-/**
- * Global site footer with regional identity.
- * Features SVG skyline silhouette, teal-to-night gradient background,
- * 4-column navigation grid, "Hecho con mate" tagline, and social links.
- */
-import Container from '../components/ui/Container.astro';
-import LanguageSwitcher from '../components/ui/LanguageSwitcher.astro';
-import NewsletterCTAIsland from '../components/newsletter/NewsletterCTAIsland.astro';
-import { InstagramIcon, FacebookIcon, WhatsappIcon } from '@repo/icons';
-import { t, type SupportedLocale } from '../lib/i18n';
+import { LocationIcon, EmailIcon, PhoneIcon, InstagramIcon, FacebookIcon, YoutubeIcon, CheckCircleIcon } from "@repo/icons";
+import WaveDivider from "@/components/shared/WaveDivider.astro";
+import { FOOTER_LINKS } from "@/data/navigation";
+import { createT, type SupportedLocale } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
 
 interface Props {
   locale?: string;
 }
 
 const { locale = 'es' } = Astro.props;
-const loc = locale as SupportedLocale;
+const typedLocale = locale as SupportedLocale;
+const t = createT(typedLocale);
 
-/** Shorthand for footer namespace translations */
-const ft = (key: string) => t({ locale: loc, namespace: 'footer', key });
-/** Shorthand for nav namespace translations (shared link labels) */
-const nt = (key: string) => t({ locale: loc, namespace: 'nav', key });
-
-const linkGroups = [
-  {
-    title: ft('explore'),
-    links: [
-      { label: nt('accommodations'), href: `/${locale}/alojamientos/` },
-      { label: nt('destinations'), href: `/${locale}/destinos/` },
-      { label: nt('events'), href: `/${locale}/eventos/` },
-      { label: nt('blog'), href: `/${locale}/publicaciones/` },
-    ],
-  },
-  {
-    title: ft('owners'),
-    links: [
-      { label: ft('listProperty'), href: `/${locale}/propietarios/` },
-      { label: ft('ownerPlans'), href: `/${locale}/precios/propietarios/` },
-      { label: ft('touristPlans'), href: `/${locale}/precios/turistas/` },
-    ],
-  },
-  {
-    title: ft('legal'),
-    links: [
-      { label: ft('terms'), href: `/${locale}/terminos-condiciones/` },
-      { label: ft('privacy'), href: `/${locale}/privacidad/` },
-      { label: ft('contact'), href: `/${locale}/contacto/` },
-    ],
-  },
-];
-
-const currentYear = new Date().getFullYear();
+const columnTitles: Record<string, string> = {
+  Explore: t('footer.columns.explorar', 'Explorar'),
+  Destinations: t('footer.columns.destinos', 'Destinos'),
+  Owners: t('footer.columns.propietarios', 'Propietarios'),
+  Hospeda: t('footer.columns.hospeda', 'Hospeda'),
+};
 ---
 
-<footer role="contentinfo" class="relative overflow-hidden">
-  <!-- Skyline silhouette divider -->
-  <div class="relative h-16 bg-bg sm:h-24" aria-hidden="true">
-    <svg class="absolute bottom-0 left-0 w-full text-primary-900" viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-      <!-- Simplified skyline of Concepcion del Uruguay -->
-      <path d="M0,80 L0,60 L60,60 L60,40 L80,40 L80,30 L100,30 L100,40 L120,40 L120,55 L180,55 L180,45 L200,45 L200,35 L210,25 L220,35 L220,45 L260,45 L260,50 L320,50 L320,40 L340,40 L340,20 L345,15 L350,20 L350,40 L370,40 L370,50 L440,50 L440,55 L520,55 L520,45 L540,45 L540,30 L550,25 L560,30 L560,45 L580,45 L580,55 L680,55 L680,50 L700,50 L700,35 L720,35 L720,25 L730,20 L740,25 L740,35 L760,35 L760,50 L840,50 L840,55 L920,55 L920,50 L940,50 L940,35 L950,30 L960,35 L960,50 L1000,50 L1000,55 L1100,55 L1100,45 L1120,45 L1120,30 L1140,30 L1140,40 L1160,40 L1160,55 L1260,55 L1260,50 L1300,50 L1300,55 L1380,55 L1380,60 L1440,60 L1440,80 Z" fill="currentColor"/>
-    </svg>
-  </div>
+<footer class="bg-foreground text-card">
+  <!-- Top wave -->
+  <WaveDivider path="M0,30 C480,60 960,0 1440,30 L1440,0 L0,0 Z" fillClass="fill-background" position="inline" />
 
-  <!-- Main footer content -->
-  <div class="bg-gradient-to-b from-primary-900 to-[var(--color-footer-gradient-end)] dark:to-bg">
-    <Container size="xl">
-      <div class="py-12 md:py-16">
-        <!-- 4-column grid -->
-        <div class="grid grid-cols-2 gap-8 md:grid-cols-4">
-          <!-- Brand column -->
-          <div class="col-span-2 md:col-span-1">
-            <a href={`/${locale}/`} class="font-serif text-xl font-bold text-white no-underline hover:text-primary-200">
-              Hospeda
-            </a>
-            <p class="mt-3 text-sm text-primary-200/70">
-              {ft('shortDescription')}
-            </p>
-            <!-- Mate tagline -->
-            <p class="mt-4 font-accent text-sm text-primary-300/60">
-              {ft('mateTagline')}
-            </p>
-          </div>
-
-          <!-- Link groups -->
-          {linkGroups.map((group) => (
-            <div>
-              <h3 class="text-sm font-semibold uppercase tracking-wider text-white/90">
-                {group.title}
-              </h3>
-              <ul class="mt-4 space-y-3">
-                {group.links.map((link) => (
-                  <li>
-                    <a
-                      href={link.href}
-                      class="text-sm text-primary-200/60 transition-colors hover:text-white"
-                    >
-                      {link.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+  <div class="mx-auto max-w-7xl px-4 pb-8 pt-4 md:px-8 md:pt-8">
+    <!-- Newsletter -->
+    <div class="mb-10 rounded-2xl bg-card/5 p-6 md:p-8">
+      <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div class="max-w-md">
+          <h3 class="font-serif text-xl font-semibold text-card">{t('footer.newsletter.title', 'Recibi novedades de Entre Rios')}</h3>
+          <p class="mt-1 text-sm text-card/60">{t('footer.newsletter.subtitle', 'Eventos, ofertas de alojamientos y notas de interes en tu correo.')}</p>
         </div>
-
-        <!-- Social links -->
-        <div class="mt-12 border-t border-white/10 pt-8">
-          <div class="mb-8 flex justify-center gap-6">
-            <a
-              href="https://instagram.com/hospeda"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
-              aria-label="Instagram"
-            >
-              <InstagramIcon size={24} aria-hidden="true" />
-            </a>
-            <a
-              href="https://facebook.com/hospeda"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
-              aria-label="Facebook"
-            >
-              <FacebookIcon size={24} aria-hidden="true" />
-            </a>
-            <a
-              href="https://wa.me/5493442000000"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-primary-200/60 transition-all hover:scale-110 hover:text-white"
-              aria-label="WhatsApp"
-            >
-              <WhatsappIcon size={24} aria-hidden="true" />
-            </a>
-          </div>
-        </div>
-
-        <!-- Copyright bar + Language switcher -->
-        <div class="border-t border-white/10 pt-8">
-          <div class="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-            <p class="text-sm text-primary-200/40">
-              &copy; {currentYear} Hospeda. {ft('rights')}
-            </p>
-            <LanguageSwitcher locale={loc} />
-          </div>
+        <form class="flex w-full max-w-sm flex-col gap-2 sm:flex-row" id="newsletter-form" aria-label={t('footer.newsletter.title', 'Recibi novedades de Entre Rios')}>
+          <label for="newsletter-email" class="sr-only">{t('footer.newsletter.placeholder', 'Tu correo electronico')}</label>
+          <input
+            type="email"
+            id="newsletter-email"
+            name="email"
+            placeholder={t('footer.newsletter.placeholder', 'Tu correo electronico')}
+            class="h-10 flex-1 rounded-full bg-card/10 px-4 text-sm text-card placeholder:text-card/40 focus:outline-none focus:ring-2 focus:ring-accent"
+            required
+          />
+          <button
+            type="submit"
+            class="h-10 shrink-0 rounded-full bg-accent px-5 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent/90"
+          >
+            {t('footer.newsletter.submit', 'Suscribirme')}
+          </button>
+        </form>
+        <div id="newsletter-success" class="hidden items-center gap-2 text-sm text-accent">
+          <CheckCircleIcon size={16} />
+          <span>{t('footer.newsletter.success', 'Gracias por suscribirte!')}</span>
         </div>
       </div>
-    </Container>
+    </div>
+
+    <div class="grid gap-10 sm:grid-cols-2 md:grid-cols-5">
+      <!-- Brand -->
+      <div class="flex flex-col gap-4">
+        <div class="flex items-center gap-2">
+          <LocationIcon size={20} className="text-accent" />
+          <span class="font-serif text-2xl font-bold">Hospeda</span>
+        </div>
+        <p class="text-sm leading-relaxed text-card/70">{t('footer.brand', 'Tu portal de turismo para la costa del Rio Uruguay en Entre Rios, Argentina.')}</p>
+        <div class="flex gap-3">
+          <a href="#" class="text-card/60 transition-colors hover:text-accent" aria-label="Instagram">
+            <InstagramIcon size={20} />
+          </a>
+          <a href="#" class="text-card/60 transition-colors hover:text-accent" aria-label="Facebook">
+            <FacebookIcon size={20} />
+          </a>
+          <a href="#" class="text-card/60 transition-colors hover:text-accent" aria-label="Youtube">
+            <YoutubeIcon size={20} />
+          </a>
+        </div>
+      </div>
+
+      <!-- Links -->
+      {Object.entries(FOOTER_LINKS).map(([columnKey, items]) => (
+        <div>
+          <h4 class="mb-4 text-sm font-semibold uppercase tracking-wider text-card/50">{columnTitles[columnKey] ?? columnKey}</h4>
+          <ul class="flex flex-col gap-2.5">
+            {items.map((item) => (
+              <li>
+                <a
+                  href={item.path ? buildUrl({ locale: typedLocale, path: item.path }) : '#'}
+                  class="text-sm text-card/70 transition-colors hover:text-accent"
+                >
+                  {t(item.labelKey, item.label)}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+    </div>
+
+    <!-- Contact + copyright -->
+    <div class="mt-10 flex flex-col gap-4 border-t border-card/10 pt-8 md:flex-row md:items-center md:justify-between">
+      <div class="flex flex-wrap gap-6 text-sm text-card/60">
+        <span class="flex items-center gap-1.5">
+          <EmailIcon size={16} /> info@hospeda.com.ar
+        </span>
+        <span class="flex items-center gap-1.5">
+          <PhoneIcon size={16} /> +54 345 123-4567
+        </span>
+      </div>
+      <p class="text-xs text-card/40">{t('footer.copyright', '2026 Hospeda. Todos los derechos reservados.')}</p>
+    </div>
   </div>
 </footer>
+
+<script>
+  const form = document.getElementById("newsletter-form") as HTMLFormElement;
+  const successMsg = document.getElementById("newsletter-success")!;
+
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    form.classList.add("hidden");
+    successMsg.classList.remove("hidden");
+    successMsg.classList.add("flex");
+  });
+</script>

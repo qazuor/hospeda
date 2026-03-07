@@ -4,202 +4,201 @@
  * Displays paginated accommodations for a specific destination.
  * Slug-based routing resolves destination server-side on each request.
  *
- * @route /[lang]/destinos/[slug]/alojamientos/
- * @rendering SSR (on-demand, no prerender)
+ * Route: /[lang]/destinos/[slug]/alojamientos/
+ * Rendering: SSR (on-demand, no prerender)
  */
+import type { SupportedLocale } from '../../../../../lib/i18n';
+import { createT } from '../../../../../lib/i18n';
+import { buildUrl } from '../../../../../lib/urls';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../../../lib/page-helpers';
+import { destinationsApi } from '../../../../../lib/api/endpoints';
+import { toAccommodationCardProps } from '../../../../../lib/api/transforms';
+import type { AccommodationCardData } from '../../../../../lib/api/types';
 import BaseLayout from '../../../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../../../components/seo/SEOHead.astro';
 import JsonLd from '../../../../../components/seo/JsonLd.astro';
-import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro';
-import Container from '../../../../../components/ui/Container.astro';
-import Section from '../../../../../components/ui/Section.astro';
-import EmptyState from '../../../../../components/ui/EmptyState.astro';
-import Pagination from '../../../../../components/ui/Pagination.astro';
-import AccommodationCardFeatured from '../../../../../components/accommodation/AccommodationCardFeatured.astro';
-import DestinationErrorState from '../../../../../components/error/DestinationErrorState.astro';
-import { getLocaleFromParams } from '../../../../../lib/page-helpers';
-import { t as i18nT } from '../../../../../lib/i18n';
-import { destinationsApi } from '../../../../../lib/api/endpoints';
-import { toAccommodationCardProps } from '../../../../../lib/api/transforms';
+import Breadcrumb from '../../../../../components/shared/Breadcrumb.astro';
+import AccommodationCard from '../../../../../components/shared/AccommodationCard.astro';
+import EmptyState from '../../../../../components/shared/EmptyState.astro';
+import Pagination from '../../../../../components/shared/Pagination.astro';
 
 const { slug } = Astro.params;
 
-const locale = getLocaleFromParams(Astro.params);
+const locale = getLocaleFromParams(Astro.params) as SupportedLocale;
 if (!locale) return Astro.redirect('/es/');
 
-/**
- * Validate slug parameter.
- */
 if (!slug) {
-	return Astro.redirect(`/${locale}/destinos/`);
+    return Astro.redirect(buildUrl({ locale, path: 'destinos' }));
 }
 
-/**
- * Localized UI labels via i18n.
- */
-const tDest = (key: string) => i18nT({ locale, namespace: 'destination', key: `accommodationsPage.${key}` });
+const t = createT(locale);
 
-const t = {
-	home: tDest('home'),
-	destinations: tDest('destinations'),
-	accommodations: tDest('accommodations'),
-	noResults: tDest('noResults'),
-	noResultsDetail: tDest('noResultsDetail'),
-	pageTitle: tDest('pageTitle'),
-	pageDescription: tDest('pageDescription'),
-};
-
-/**
- * Resolve destination by slug from the API.
- */
+/** Resolve destination by slug from the API. */
 const destinationResult = await destinationsApi.getBySlug({ slug });
 
-/**
- * Return 404 if destination is not found.
- */
 if (!destinationResult.ok) {
-	Astro.response.status = 404;
+    Astro.response.status = 404;
 }
 
-/**
- * Extract destination data with safe access.
- * Data arrives as Record<string, unknown> from the public API.
- */
 const destination = destinationResult.ok
-	? (destinationResult.data as Record<string, unknown>)
-	: null;
+    ? (destinationResult.data as Record<string, unknown>)
+    : null;
 
 const destinationId = destination?.id as string | undefined;
 const destinationName = (destination?.name as string | undefined) ?? slug;
 
-/**
- * Get pagination page from query string.
- */
-const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
+/** Get pagination page from query string. */
+const page = Math.max(1, Number.parseInt(Astro.url.searchParams.get('page') || '1', 10));
 const pageSize = 12;
 
-/**
- * Fetch accommodations for the destination only when destination is found.
- */
-const accommodationsResult = destinationId
-	? await destinationsApi.getAccommodations({ id: destinationId, page, pageSize })
-	: null;
+/** Fetch accommodations for this destination. */
+let accommodations: readonly AccommodationCardData[] = [];
+let pagination: { page: number; totalPages: number } | null = null;
 
-const accommodations = accommodationsResult?.ok ? accommodationsResult.data.items : [];
-const pagination = accommodationsResult?.ok ? accommodationsResult.data.pagination : null;
+if (destinationId) {
+    const result = await destinationsApi.getAccommodations({ id: destinationId, page, pageSize });
+    if (result.ok) {
+        accommodations = result.data.items.map((item) =>
+            toAccommodationCardProps({ item: item as Record<string, unknown> })
+        );
+        pagination = {
+            page: result.data.pagination.page,
+            totalPages: result.data.pagination.totalPages,
+        };
+    }
+}
 
-/**
- * SEO metadata.
- */
-const pageTitle = `${t.pageTitle} ${destinationName}`;
-const pageDescription = `${t.pageDescription} ${destinationName}.`;
+/** SEO metadata. */
+const pageTitle = t(
+    'destination.accommodations.title',
+    `Alojamientos en ${destinationName}`
+);
+const pageDescription = t(
+    'destination.accommodations.description',
+    `Encuentra alojamientos en ${destinationName}`
+);
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const baseUrl = `/${locale}/destinos/${slug}/alojamientos`;
+const paginationBaseUrl = buildUrl({
+    locale,
+    path: `destinos/${slug}/alojamientos`,
+}).replace(/\/$/, '');
 
-/**
- * Breadcrumb navigation items.
- */
+/** Breadcrumb navigation. */
 const breadcrumbItems = [
-	{ label: t.home, href: `/${locale}/` },
-	{ label: t.destinations, href: `/${locale}/destinos/` },
-	{ label: destinationName, href: `/${locale}/destinos/${slug}/` },
-	{ label: t.accommodations, href: `${baseUrl}/` },
-];
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    {
+        label: t('destination.listing.title', 'Destinos'),
+        href: buildUrl({ locale, path: 'destinos' }),
+    },
+    {
+        label: destinationName,
+        href: buildUrl({ locale, path: `destinos/${slug}` }),
+    },
+    {
+        label: t('destination.accommodations.breadcrumb', 'Alojamientos'),
+        href: buildUrl({ locale, path: `destinos/${slug}/alojamientos` }),
+    },
+] as const;
 
-/**
- * CollectionPage + BreadcrumbList JSON-LD structured data
- */
+/** Localized labels. */
+const noResultsTitle = t('destination.accommodations.noResults', 'Sin alojamientos');
+const noResultsMessage = t(
+    'destination.accommodations.noResultsDetail',
+    `No se encontraron alojamientos en ${destinationName}.`
+);
+const errorTitle = t('destination.accommodations.errorTitle', 'Destino no encontrado');
+const errorMessage = t(
+    'destination.accommodations.errorMessage',
+    'No pudimos encontrar el destino solicitado.'
+);
+
+/** CollectionPage + BreadcrumbList JSON-LD. */
 const collectionJsonLd = {
-	'@context': 'https://schema.org',
-	'@graph': [
-		{
-			'@type': 'CollectionPage',
-			name: pageTitle,
-			description: pageDescription,
-			url: canonicalUrl,
-		},
-		{
-			'@type': 'BreadcrumbList',
-			itemListElement: breadcrumbItems.map((item, index) => ({
-				'@type': 'ListItem',
-				position: index + 1,
-				name: item.label,
-				item: new URL(item.href, Astro.site).href,
-			})),
-		},
-	],
+    '@context': 'https://schema.org',
+    '@graph': [
+        {
+            '@type': 'CollectionPage',
+            name: pageTitle,
+            description: pageDescription,
+            url: canonicalUrl,
+        },
+        {
+            '@type': 'BreadcrumbList',
+            itemListElement: breadcrumbItems.map((item, index) => ({
+                '@type': 'ListItem',
+                position: index + 1,
+                name: item.label,
+                item: new URL(item.href, Astro.site).href,
+            })),
+        },
+    ],
 };
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={pageTitle}
-		description={pageDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-	/>
-	<JsonLd slot="head" data={collectionJsonLd} />
+    <SEOHead
+        slot="head"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="website"
+    />
+    <JsonLd slot="head" data={collectionJsonLd} />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="container mx-auto max-w-7xl px-4 py-8">
+        <Breadcrumb items={breadcrumbItems} />
 
-		<Section>
-			<div class="mx-auto max-w-6xl">
-				{!destination ? (
-					/* Destination not found - error state */
-					<article id="destination-error">
-						<DestinationErrorState
-							locale={locale}
-							retryHref={`/${locale}/destinos/`}
-						/>
-					</article>
-				) : (
-					<>
-						<!-- Destination Header Section -->
-						<article id="destination-header" class="mb-12 text-center">
-							<h1 class="mb-4 text-4xl font-bold text-text-primary md:text-5xl">
-								{t.accommodations}
-							</h1>
-							<p class="text-xl text-text-secondary">
-								{t.pageDescription} <span class="font-semibold text-text-primary">{destinationName}</span>
-							</p>
-						</article>
+        {!destination ? (
+            <EmptyState
+                title={errorTitle}
+                message={errorMessage}
+                cta={{
+                    label: t('destination.accommodations.backToDestinations', 'Ver destinos'),
+                    href: buildUrl({ locale, path: 'destinos' }),
+                }}
+            />
+        ) : (
+            <>
+                <header class="mb-8 text-center">
+                    <h1 class="mb-2 text-3xl font-bold text-foreground md:text-4xl">
+                        {pageTitle}
+                    </h1>
+                    <p class="text-lg text-muted-foreground">
+                        {pageDescription}
+                    </p>
+                </header>
 
-						<!-- Accommodation Grid Section -->
-						<article id="accommodation-grid" class="mb-12">
-							{accommodations.length > 0 ? (
-								<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-									{accommodations.map((accommodation) => (
-										<AccommodationCardFeatured
-											accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })}
-											locale={locale}
-										/>
-									))}
-								</div>
-							) : (
-								<EmptyState
-									title={t.noResults}
-									message={t.noResultsDetail}
-								/>
-							)}
-						</article>
+                {accommodations.length > 0 ? (
+                    <section aria-label={pageTitle}>
+                        <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                            {accommodations.map((card) => (
+                                <article>
+                                    <AccommodationCard card={card} locale={locale} />
+                                </article>
+                            ))}
+                        </div>
 
-						<!-- Pagination Section -->
-						{pagination && pagination.totalPages > 1 && (
-							<article id="pagination" class="mb-12">
-								<Pagination
-									currentPage={pagination.page as number}
-									totalPages={pagination.totalPages as number}
-									baseUrl={baseUrl}
-									locale={locale}
-								/>
-							</article>
-						)}
-					</>
-				)}
-			</div>
-		</Section>
-	</Container>
+                        {pagination && pagination.totalPages > 1 && (
+                            <Pagination
+                                currentPage={pagination.page}
+                                totalPages={pagination.totalPages}
+                                baseUrl={paginationBaseUrl}
+                                locale={locale}
+                            />
+                        )}
+                    </section>
+                ) : (
+                    <EmptyState
+                        title={noResultsTitle}
+                        message={noResultsMessage}
+                        cta={{
+                            label: t('destination.accommodations.backToDestination', `Ver ${destinationName}`),
+                            href: buildUrl({ locale, path: `destinos/${slug}` }),
+                        }}
+                    />
+                )}
+            </>
+        )}
+    </div>
 </BaseLayout>

@@ -1,7 +1,10 @@
 /**
- * Pure utility functions extracted from DestinationCarousel.astro inline script.
- * Enables unit testing of carousel logic without DOM dependencies.
+ * @file destination-carousel.utils.ts
+ * @description Pure utility functions for the DestinationCarousel component.
+ * Extracted from the inline script to enable unit testing without DOM dependencies.
  */
+
+// ─── calculateActiveIndex ─────────────────────────────────────────────────────
 
 /** Input for calculating the active carousel index from scroll position */
 interface CalculateActiveIndexInput {
@@ -21,7 +24,7 @@ interface CalculateActiveIndexResult {
 
 /**
  * Calculate which carousel item is currently active based on scroll position.
- * Uses Math.round for snap-point rounding and clamps to valid range.
+ * Uses Math.round for snap-point rounding and clamps to the valid index range.
  *
  * @param input - Scroll position, item width, and item count
  * @returns The clamped active index
@@ -40,6 +43,8 @@ export function calculateActiveIndex({
 
     return { activeIndex };
 }
+
+// ─── resolveKeyboardNavigation ────────────────────────────────────────────────
 
 /** Input for resolving the target index after a keyboard navigation event */
 interface ResolveKeyboardNavigationInput {
@@ -60,7 +65,7 @@ interface ResolveKeyboardNavigationResult {
 /**
  * Resolve the target carousel index for a given keyboard event.
  * Supports ArrowRight/Down (next), ArrowLeft/Up (prev), Home (first), End (last).
- * Returns null for non-navigation keys.
+ * Returns null for non-navigation keys so callers can skip preventDefault.
  *
  * @param input - The key pressed, current index, and item count
  * @returns The target index or null if the key is not handled

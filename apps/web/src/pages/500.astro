@@ -1,125 +1,168 @@
 ---
 /**
  * 500 Internal Server Error page.
+ *
  * Server-rendered to detect locale from URL path or Accept-Language header.
  * Falls back to Spanish (default locale).
+ *
+ * Uses `prerender = false` so Astro can access request headers at runtime.
  */
 import BaseLayout from '../layouts/BaseLayout.astro';
 import SEOHead from '../components/seo/SEOHead.astro';
-import { isValidLocale, parseAcceptLanguage, t } from '../lib/i18n';
+import { AlertTriangleIcon, HomeIcon, RefreshIcon, DebugIcon } from '@repo/icons';
+import { DEFAULT_LOCALE, isValidLocale, parseAcceptLanguage, createT } from '../lib/i18n';
 import type { SupportedLocale } from '../lib/i18n';
+import { buildUrl } from '../lib/urls';
+
+export const prerender = false;
 
 /**
  * Detect locale from URL path first segment, then Accept-Language header.
  */
 const pathSegments = Astro.url.pathname.split('/').filter(Boolean);
 const firstSegment = pathSegments[0] ?? '';
-let locale: SupportedLocale = 'es';
 
+let locale: SupportedLocale = DEFAULT_LOCALE;
 if (isValidLocale(firstSegment)) {
-	locale = firstSegment;
+    locale = firstSegment;
 } else {
-	locale = parseAcceptLanguage(Astro.request.headers.get('accept-language'));
+    locale = parseAcceptLanguage(Astro.request.headers.get('accept-language'));
 }
 
-const tError = (key: string) => t({ locale, namespace: 'error', key });
+const t = createT(locale);
 
-const title = tError('500.title');
-const description = tError('500.description');
-const heading = tError('500.heading');
-const message = tError('500.message');
-const retryLabel = tError('500.retry');
-const goHomeLabel = tError('500.goHome');
+const title = t('error.500.title', 'Error del servidor');
+const description = t('error.500.description', 'Ocurrio un error interno en el servidor. Por favor intenta de nuevo.');
+const heading = t('error.500.heading', 'Algo salio mal');
+const message = t('error.500.message', 'Ocurrio un error inesperado en el servidor. Nuestro equipo fue notificado. Por favor intenta de nuevo en unos minutos.');
+const retryLabel = t('error.500.retry', 'Intentar de nuevo');
+const goHomeLabel = t('error.500.goHome', 'Volver al inicio');
+const reportLabel = t('error.500.report', 'Reportar este error');
+
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const homeUrl = buildUrl({ locale });
+const feedbackUrl = buildUrl({ locale, path: `feedback` }) +
+    `?type=bug-js&source=web&url=${encodeURIComponent(Astro.url.pathname)}`;
 ---
 
-<BaseLayout title={title} description={description} noindex={true} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		noindex={true}
-		locale={locale}
-		type="website"
-	/>
+<BaseLayout title={title} description={description} locale={locale}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        canonical={canonicalUrl}
+        noindex={true}
+        locale={locale}
+        type="website"
+    />
 
-	<div class="flex min-h-screen items-center justify-center bg-gradient-to-b from-bg to-bg-alt px-4 py-16">
-		<div class="w-full max-w-2xl text-center">
-			<!-- Decorative 500 text -->
-			<div class="mb-8">
-				<span class="text-9xl font-bold text-error opacity-20" aria-hidden="true">500</span>
-			</div>
+    <div class="flex min-h-[80vh] items-center justify-center bg-background px-4 py-16">
+        <div class="w-full max-w-lg text-center">
 
-			<!-- SVG illustration (server/technical error themed) -->
-			<div class="mb-8 flex justify-center" aria-hidden="true">
-				<svg
-					width="200"
-					height="120"
-					viewBox="0 0 200 120"
-					fill="none"
-					xmlns="http://www.w3.org/2000/svg"
-					class="text-error opacity-30"
-				>
-					<!-- Simple server/error illustration -->
-					<rect
-						x="60"
-						y="30"
-						width="80"
-						height="60"
-						rx="4"
-						stroke="currentColor"
-						stroke-width="3"
-						fill="none"
-					/>
-					<circle cx="75" cy="45" r="4" fill="currentColor" />
-					<circle cx="90" cy="45" r="4" fill="currentColor" />
-					<circle cx="105" cy="45" r="4" fill="currentColor" />
-					<circle cx="120" cy="45" r="4" fill="currentColor" />
+            <!-- Decorative illustration: storm over the river with a broken bridge, Litoral/nature theme -->
+            <div class="mx-auto mb-6 w-40 h-40" aria-hidden="true">
+                <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full">
+                    <!-- Storm cloud (main) -->
+                    <ellipse cx="80" cy="38" rx="36" ry="22" class="fill-muted-foreground/20"/>
+                    <ellipse cx="58" cy="44" rx="20" ry="14" class="fill-muted-foreground/20"/>
+                    <ellipse cx="104" cy="46" rx="22" ry="13" class="fill-muted-foreground/20"/>
+                    <!-- Cloud outline -->
+                    <path d="M44 48 Q44 30 62 28 Q68 18 84 20 Q100 16 110 28 Q126 30 126 46 Q126 54 116 56 L44 56 Q36 54 44 48Z"
+                          class="stroke-muted-foreground/40" stroke-width="1.5" fill="none"/>
 
-					<circle cx="75" cy="60" r="4" fill="currentColor" />
-					<circle cx="90" cy="60" r="4" fill="currentColor" />
-					<circle cx="105" cy="60" r="4" fill="currentColor" />
-					<circle cx="120" cy="60" r="4" fill="currentColor" />
+                    <!-- Lightning bolt -->
+                    <path d="M82 56 L74 78 L82 78 L72 100 L88 72 L80 72 L88 56Z"
+                          class="fill-accent/70 stroke-accent/50" stroke-width="1"/>
 
-					<circle cx="75" cy="75" r="4" fill="currentColor" />
-					<circle cx="90" cy="75" r="4" fill="currentColor" />
-					<circle cx="105" cy="75" r="4" fill="currentColor" />
-					<circle cx="120" cy="75" r="4" fill="currentColor" />
+                    <!-- River surface -->
+                    <rect x="10" y="118" width="140" height="32" rx="4" class="fill-primary/10"/>
+                    <!-- River waves -->
+                    <path d="M10 124 Q28 120 46 124 Q64 128 82 124 Q100 120 118 124 Q136 128 150 124"
+                          class="stroke-primary/35" stroke-width="2" stroke-linecap="round" fill="none"/>
+                    <path d="M10 132 Q28 128 46 132 Q64 136 82 132 Q100 128 118 132 Q136 136 150 132"
+                          class="stroke-primary/25" stroke-width="1.5" stroke-linecap="round" fill="none"/>
 
-					<!-- Error symbol (X) -->
-					<line x1="155" y1="35" x2="175" y2="55" stroke="currentColor" stroke-width="4" />
-					<line x1="175" y1="35" x2="155" y2="55" stroke="currentColor" stroke-width="4" />
-				</svg>
-			</div>
+                    <!-- Bridge left span (intact) -->
+                    <path d="M10 114 L10 104 L56 104 L56 114" class="stroke-foreground/40" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <line x1="20" y1="104" x2="20" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="34" y1="104" x2="34" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="48" y1="104" x2="48" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
 
-			<!-- Heading -->
-			<h1 class="mb-4 text-4xl font-bold text-text">{heading}</h1>
+                    <!-- Bridge right span (intact) -->
+                    <path d="M104 114 L104 104 L150 104 L150 114" class="stroke-foreground/40" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                    <line x1="114" y1="104" x2="114" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="128" y1="104" x2="128" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="142" y1="104" x2="142" y2="118" class="stroke-foreground/25" stroke-width="2" stroke-linecap="round"/>
 
-			<!-- Message -->
-			<p class="mx-auto mb-8 max-w-md text-lg text-text-secondary">
-				{message}
-			</p>
+                    <!-- Bridge gap / broken section (jagged edges) -->
+                    <path d="M56 104 L62 110 L68 102 L74 112 L80 100 L86 112 L92 102 L98 110 L104 104"
+                          class="stroke-destructive/60" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
 
-			<!-- Action buttons -->
-			<div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
-				<!-- Retry button -->
-				<button
-					type="button"
-					onclick="window.location.reload()"
-					class="inline-flex items-center justify-center rounded-lg border-2 border-border bg-surface px-6 py-3 text-base font-semibold text-text transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-				>
-					{retryLabel}
-				</button>
+                    <!-- Rain drops -->
+                    <line x1="36" y1="70" x2="32" y2="82" class="stroke-primary/30" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="52" y1="66" x2="48" y2="78" class="stroke-primary/25" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="118" y1="68" x2="114" y2="80" class="stroke-primary/30" stroke-width="1.5" stroke-linecap="round"/>
+                    <line x1="132" y1="72" x2="128" y2="84" class="stroke-primary/25" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </div>
 
-				<!-- Home link -->
-				<a
-					href={`/${locale}/`}
-					class="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-				>
-					{goHomeLabel}
-				</a>
-			</div>
-		</div>
-	</div>
+            <!-- Decorative error code -->
+            <div class="mb-6" aria-hidden="true">
+                <span class="text-[8rem] font-bold leading-none text-destructive opacity-10 select-none">
+                    500
+                </span>
+            </div>
+
+            <!-- Error icon -->
+            <div class="mb-6 flex justify-center" aria-hidden="true">
+                <AlertTriangleIcon
+                    size={64}
+                    weight="duotone"
+                    className="text-destructive"
+                />
+            </div>
+
+            <!-- Heading -->
+            <h1 class="mb-4 text-3xl font-bold text-foreground">
+                {heading}
+            </h1>
+
+            <!-- Message -->
+            <p class="mx-auto mb-8 max-w-md text-base text-muted-foreground">
+                {message}
+            </p>
+
+            <!-- Action buttons -->
+            <div class="flex flex-col items-center justify-center gap-3 sm:flex-row">
+
+                <!-- Retry button -->
+                <button
+                    type="button"
+                    onclick="window.location.reload()"
+                    class="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-base font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                    <RefreshIcon size={20} weight="regular" aria-hidden="true" />
+                    {retryLabel}
+                </button>
+
+                <!-- Report error link -->
+                <a
+                    href={feedbackUrl}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg border border-destructive bg-card px-6 py-3 text-base font-semibold text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                    <DebugIcon size={20} weight="regular" aria-hidden="true" />
+                    {reportLabel}
+                </a>
+
+                <!-- Home link -->
+                <a
+                    href={homeUrl}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                    <HomeIcon size={20} weight="regular" aria-hidden="true" />
+                    {goHomeLabel}
+                </a>
+            </div>
+        </div>
+    </div>
 </BaseLayout>

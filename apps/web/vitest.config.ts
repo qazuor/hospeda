@@ -36,7 +36,6 @@ export default defineConfig(
                     '**/*.config.*',
                     '.astro/',
                     'public/',
-                    'scripts/',
                     '**/*.astro.mjs',
                     '**/*.mjs',
                     '**/*.js',

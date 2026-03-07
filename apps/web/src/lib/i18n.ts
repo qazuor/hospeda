@@ -2,6 +2,10 @@
  * Internationalization utilities for route-based locale management.
  * Provides constants and helpers for validating and parsing supported locales,
  * as well as translation utilities integrated with @repo/i18n.
+ *
+ * All translations are sourced from `@repo/i18n` which holds flat
+ * `Record<Locale, Record<string, string>>` objects built from JSON locale files.
+ * Keys use dot-notation: `"namespace.rest.of.key"`.
  */
 
 import type { Namespace } from '@repo/i18n';
@@ -33,12 +37,6 @@ export type TranslationRecord = Record<string, string | Record<string, unknown>>
  *
  * @param locale - The locale string to validate.
  * @returns True if the locale is supported, false otherwise.
- *
- * @example
- * ```ts
- * isValidLocale('es'); // true
- * isValidLocale('fr'); // false
- * ```
  */
 export function isValidLocale(locale: string): locale is SupportedLocale {
     return SUPPORTED_LOCALES.includes(locale as SupportedLocale);
@@ -50,22 +48,12 @@ export function isValidLocale(locale: string): locale is SupportedLocale {
  *
  * @param header - The Accept-Language header value (or null).
  * @returns The matched supported locale or the default locale.
- *
- * @example
- * ```ts
- * parseAcceptLanguage('es-AR,es;q=0.9,en;q=0.8'); // 'es'
- * parseAcceptLanguage('en-US,en;q=0.9'); // 'en'
- * parseAcceptLanguage('fr-FR'); // 'es' (default)
- * parseAcceptLanguage(null); // 'es' (default)
- * ```
  */
 export function parseAcceptLanguage(header: string | null): SupportedLocale {
     if (!header) {
         return DEFAULT_LOCALE;
     }
 
-    // Parse Accept-Language header
-    // Format: "es-AR,es;q=0.9,en;q=0.8,pt;q=0.7"
     const languages = header
         .split(',')
         .map((lang) => {
@@ -73,14 +61,12 @@ export function parseAcceptLanguage(header: string | null): SupportedLocale {
             if (!code) {
                 return null;
             }
-            // Extract the primary language code (before the dash)
             const primaryCodeParts = code.split('-');
             const primaryCode = primaryCodeParts[0]?.toLowerCase();
             return primaryCode || null;
         })
         .filter((code): code is string => Boolean(code));
 
-    // Find first matching supported locale
     for (const lang of languages) {
         if (isValidLocale(lang)) {
             return lang;
@@ -92,21 +78,9 @@ export function parseAcceptLanguage(header: string | null): SupportedLocale {
 
 /**
  * Gets all translations for a given locale and namespace from @repo/i18n.
- * Returns a record with dot-notation keys and their translated values.
  *
  * @param params - Object with locale and namespace.
- * @param params.locale - The locale to retrieve translations for.
- * @param params.namespace - The namespace to retrieve translations from.
  * @returns A record of translation keys and values for the namespace.
- *
- * @example
- * ```ts
- * const commonTranslations = getTranslations({ locale: 'es', namespace: 'common' });
- * // Returns: { 'search': 'Buscar', 'loading': 'Cargando...', ... }
- *
- * const navTranslations = getTranslations({ locale: 'en', namespace: 'nav' });
- * // Returns: { 'home': 'Home', 'accommodations': 'Accommodations', ... }
- * ```
  */
 export function getTranslations({
     locale,
@@ -115,18 +89,14 @@ export function getTranslations({
     locale: SupportedLocale;
     namespace: Namespace;
 }): TranslationRecord {
-    // Get translations for the locale (fallback to default locale if not found)
-    // @repo/i18n currently only supports 'es', so we use type assertion
     const allTranslations = trans as Record<string, Record<string, string>>;
     const localeTranslations = allTranslations[locale] ?? allTranslations[DEFAULT_LOCALE] ?? {};
 
-    // Filter translations by namespace prefix
     const namespacePrefix = `${namespace}.`;
     const result: TranslationRecord = {};
 
     for (const [key, value] of Object.entries(localeTranslations)) {
         if (key.startsWith(namespacePrefix)) {
-            // Remove namespace prefix from key
             const localKey = key.slice(namespacePrefix.length);
             result[localKey] = value as string;
         }
@@ -136,28 +106,161 @@ export function getTranslations({
 }
 
 /**
- * Retrieves a single translation by key from @repo/i18n.
- * Supports dot-notation keys and parameter interpolation.
+ * Resolves a single translation from @repo/i18n.
+ * The full key uses dot-notation: "namespace.rest.of.key".
+ * The first segment is the namespace, the rest is the key within that namespace.
  *
- * @param params - Object with translation parameters.
- * @param params.locale - The locale to retrieve the translation for.
- * @param params.namespace - The namespace where the translation key exists.
- * @param params.key - The translation key (without namespace prefix).
- * @param params.fallback - Optional fallback text if translation is missing.
- * @param params.params - Optional parameters for string interpolation.
- * @returns The translated string, fallback, or a missing key indicator.
+ * @param fullKey - Dot-notation key like "nav.iniciarSesion" or "home.hero.title"
+ * @param fallback - Optional fallback string when the key is missing
+ * @param params - Optional interpolation params for {{param}} and {param} placeholders
+ * @returns The translated string
+ */
+function resolve({
+    locale,
+    fullKey,
+    fallback,
+    params
+}: {
+    locale: SupportedLocale;
+    fullKey: string;
+    fallback?: string;
+    params?: Record<string, unknown>;
+}): string {
+    const allTranslations = trans as Record<string, Record<string, string>>;
+    const localeTranslations = allTranslations[locale] ?? allTranslations[DEFAULT_LOCALE] ?? {};
+
+    let raw: string | undefined = localeTranslations[fullKey];
+
+    if (!raw) {
+        if (fallback) {
+            raw = fallback;
+        } else {
+            // Use uppercase [MISSING: ...] to match @repo/i18n convention.
+            // This is required for `pluralize()` fallback detection to work.
+            if (import.meta.env.DEV) {
+                return `[MISSING: ${fullKey}]`;
+            }
+            return fullKey;
+        }
+    }
+
+    if (!params) {
+        return raw;
+    }
+
+    return Object.keys(params).reduce((acc, k) => {
+        const v = params[k];
+        return acc
+            .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
+            .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+    }, raw);
+}
+
+/**
+ * Translation function type returned by createT.
+ * Takes a dot-notation key, optional fallback, and optional interpolation params.
  *
  * @example
  * ```ts
- * t({ locale: 'es', namespace: 'common', key: 'search' });
- * // Returns: 'Buscar'
- *
- * t({ locale: 'es', namespace: 'common', key: 'missing', fallback: 'Not found' });
- * // Returns: 'Not found'
- *
- * t({ locale: 'es', namespace: 'common', key: 'welcome', params: { name: 'Juan' } });
- * // Returns: 'Bienvenido, Juan' (if translation has {{name}} placeholder)
+ * const t = createT('es');
+ * t('nav.iniciarSesion');
+ * t('nav.iniciarSesion', 'Iniciar sesion');
+ * t('home.hero.title', 'Hospeda', { name: 'World' });
  * ```
+ */
+export type TranslationFn = (
+    fullKey: string,
+    fallback?: string,
+    params?: Record<string, unknown>
+) => string;
+
+/**
+ * Plural translation function type returned by createTranslations.
+ * Takes a dot-notation key, a count, and optional interpolation params.
+ * Uses CLDR `_one` / `_other` convention via `@repo/i18n`'s `pluralize`.
+ *
+ * @example
+ * ```ts
+ * const { tPlural } = createTranslations('es');
+ * tPlural('review.totalReviews', 1);  // "1 resena"
+ * tPlural('review.totalReviews', 5);  // "5 resenas"
+ * ```
+ */
+export type PluralTranslationFn = (
+    fullKey: string,
+    count: number,
+    params?: Record<string, unknown>
+) => string;
+
+/**
+ * Return type for createTranslations.
+ */
+export interface Translations {
+    /** Standard translation function with fallback support. */
+    readonly t: TranslationFn;
+    /** Plural-aware translation using CLDR _one/_other keys. */
+    readonly tPlural: PluralTranslationFn;
+}
+
+/**
+ * Creates translation functions bound to a specific locale.
+ * Returns `{ t, tPlural }` mirroring `@repo/i18n`'s `useTranslations` hook
+ * but without React dependency (works in Astro components, .ts files, etc.).
+ *
+ * @param locale - The locale to bind translations to
+ * @returns Object with `t` and `tPlural` functions
+ *
+ * @example
+ * ```ts
+ * // In Astro component frontmatter:
+ * const { t, tPlural } = createTranslations(locale);
+ * t('nav.iniciarSesion');                                  // simple lookup
+ * t('home.hero.title', 'Hospeda');                         // with fallback
+ * t('home.greeting', 'Hola {{name}}', { name: 'Juan' });  // with params
+ * tPlural('review.totalReviews', 5);                       // "5 resenas"
+ * ```
+ */
+export function createTranslations(locale: SupportedLocale): Translations {
+    const t: TranslationFn = (fullKey, fallback?, params?) => {
+        return resolve({ locale, fullKey, fallback, params });
+    };
+
+    // Internal t adapter compatible with @repo/i18n's pluralize signature: (key, params?) => string
+    const pluralizeT = (key: string, params?: Record<string, unknown>): string => {
+        return resolve({ locale, fullKey: key, params });
+    };
+
+    const tPlural: PluralTranslationFn = (fullKey, count, params?) => {
+        return pluralize({ t: pluralizeT, key: fullKey, count, params });
+    };
+
+    return { t, tPlural };
+}
+
+/**
+ * Creates a translation function bound to a specific locale.
+ * Shorthand when you only need `t` without plural support.
+ *
+ * @param locale - The locale to bind translations to
+ * @returns A translation function with signature (key, fallback?, params?) => string
+ *
+ * @example
+ * ```ts
+ * const t = createT('es');
+ * t('nav.iniciarSesion');
+ * ```
+ */
+export function createT(locale: SupportedLocale): TranslationFn {
+    return (fullKey: string, fallback?: string, params?: Record<string, unknown>): string => {
+        return resolve({ locale, fullKey, fallback, params });
+    };
+}
+
+/**
+ * Legacy object-style translation function.
+ * Kept for backward compatibility during migration.
+ *
+ * @deprecated Use createT() or createTranslations() instead
  */
 export function t({
     locale,
@@ -172,84 +275,7 @@ export function t({
     fallback?: string;
     params?: Record<string, unknown>;
 }): string {
-    // Get translations for the locale (fallback to default locale if not found)
-    // @repo/i18n currently only supports 'es', so we use type assertion
-    const allTranslations = trans as Record<string, Record<string, string>>;
-    const localeTranslations = allTranslations[locale] ?? allTranslations[DEFAULT_LOCALE] ?? {};
-
-    // Construct full key with namespace
-    const fullKey = `${namespace}.${key}`;
-
-    // Get translation value
-    let raw: string | undefined = localeTranslations[fullKey];
-
-    // If not found, use fallback or missing indicator
-    if (!raw) {
-        if (fallback) {
-            raw = fallback;
-        } else {
-            // In development, show missing key indicator
-            if (import.meta.env.DEV) {
-                return `[missing: ${fullKey}]`;
-            }
-            return key;
-        }
-    }
-
-    // If no params, return raw translation
-    if (!params) {
-        return raw;
-    }
-
-    // Replace {{key}} and {key} patterns with parameter values
-    // IMPORTANT: Must replace double braces FIRST to avoid partial matches
-    return Object.keys(params).reduce((acc, k) => {
-        const v = params[k];
-        return acc
-            .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v))
-            .replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
-    }, raw);
-}
-
-/**
- * Resolves the correct plural form of a translation key based on count.
- * Uses the CLDR `_one` / `_other` convention via the shared pluralize utility.
- *
- * @param params - Object with locale, namespace, base key, count, and optional extra params.
- * @param params.locale - The locale for translations.
- * @param params.namespace - The namespace for the translation key.
- * @param params.key - The base translation key (without `_one` / `_other` suffix).
- * @param params.count - The count value to determine plural form.
- * @param params.params - Optional additional parameters for interpolation.
- * @returns The resolved plural translation string.
- *
- * @example
- * ```ts
- * tPlural({ locale: 'es', namespace: 'home', key: 'categories.count', count: 1 });
- * // "1 alojamiento"
- *
- * tPlural({ locale: 'es', namespace: 'home', key: 'categories.count', count: 5 });
- * // "5 alojamientos"
- * ```
- */
-export function tPlural({
-    locale,
-    namespace,
-    key,
-    count,
-    params
-}: {
-    locale: SupportedLocale;
-    namespace: Namespace;
-    key: string;
-    count: number;
-    params?: Record<string, unknown>;
-}): string {
-    const wrappedT = (k: string, p?: Record<string, unknown>): string => {
-        return t({ locale, namespace, key: k, params: p });
-    };
-
-    return pluralize({ t: wrappedT, key, count, params });
+    return resolve({ locale, fullKey: `${namespace}.${key}`, fallback, params });
 }
 
 /**

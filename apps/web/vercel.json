@@ -1,7 +1,7 @@
 {
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "astro",
-    "buildCommand": "cd ../.. && pnpm turbo run build --filter=web",
+    "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-web",
     "outputDirectory": "dist",
     "installCommand": "pnpm install --frozen-lockfile",
     "nodeVersion": "20",

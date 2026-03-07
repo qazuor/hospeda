@@ -1,5 +1,3 @@
-import { formatCurrency, formatDate, toBcp47Locale } from '@repo/i18n';
-import { AlertTriangleIcon, CheckIcon, RefreshIcon } from '@repo/icons';
 /**
  * Subscription card component displaying the user's current plan and billing info.
  *
@@ -11,12 +9,17 @@ import { AlertTriangleIcon, CheckIcon, RefreshIcon } from '@repo/icons';
  * <SubscriptionCard locale="es" upgradeHref="/es/precios/turistas" />
  * ```
  */
+import { AlertTriangleIcon, RefreshIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SubscriptionData } from '../../lib/api/endpoints-protected';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
 import { webLogger } from '../../lib/logger';
+import { SubscriptionActiveView, SubscriptionFreePlanView } from './SubscriptionActiveView.client';
+
+/** Stable keys for skeleton feature rows (avoids index key lint warning) */
+const SKELETON_FEATURE_KEYS = ['feat-1', 'feat-2', 'feat-3', 'feat-4'] as const;
 
 /** Props for the SubscriptionCard component */
 interface SubscriptionCardProps {
@@ -28,411 +31,15 @@ interface SubscriptionCardProps {
     readonly onUpdatePayment?: () => void;
 }
 
-/** Stable keys for skeleton feature rows (avoids index key lint warning) */
-const SKELETON_FEATURE_KEYS = ['feat-1', 'feat-2', 'feat-3', 'feat-4'] as const;
-
-/** Status badge color classes by subscription status */
-const STATUS_BADGE_CLASSES: Readonly<Record<SubscriptionData['status'] | 'free', string>> = {
-    active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-    trial: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-    cancelled: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    expired: 'bg-surface-alt text-text-secondary',
-    past_due: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-    pending: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
-    free: 'bg-surface-alt text-text-secondary'
-} as const;
-
-/**
- * Format a date string as a localized long date using @repo/i18n.
- */
-function formatLocalDate(dateString: string, locale: string): string {
-    return formatDate({
-        date: dateString,
-        locale: toBcp47Locale(locale),
-        options: { year: 'numeric', month: 'long', day: 'numeric' }
-    });
-}
-
-/**
- * Format an ARS price as a localized currency string using @repo/i18n.
- * Example output: "$1.500 ARS/mes"
- */
-function formatArsPrice(amount: number, locale: string): string {
-    const formatted = formatCurrency({
-        value: amount,
-        locale: toBcp47Locale(locale),
-        currency: 'ARS'
-    });
-    return `${formatted}/mes`;
-}
-
-/**
- * Compute remaining trial days from a trialEndsAt ISO string.
- * Returns 0 if the date is in the past.
- */
-function computeTrialDaysRemaining(trialEndsAt: string): number {
-    const remaining = Math.ceil(
-        (new Date(trialEndsAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-    );
-    return Math.max(0, remaining);
-}
-
-/** Props for the StatusBadge sub-component */
-interface StatusBadgeProps {
-    readonly statusKey: SubscriptionData['status'] | 'free';
-    readonly label: string;
-}
-
-/**
- * Accessible status pill badge.
- * Uses both color AND visible text (WCAG requirement - not color alone).
- */
-function StatusBadge({ statusKey, label }: StatusBadgeProps) {
-    const colorClasses = STATUS_BADGE_CLASSES[statusKey];
-    return (
-        <output
-            className={`inline-block rounded-full px-2 py-1 font-medium text-sm ${colorClasses}`}
-        >
-            {label}
-        </output>
-    );
-}
-
-/** Props for the FeaturesList sub-component */
-interface FeaturesListProps {
-    readonly features: readonly string[];
-    readonly heading: string;
-}
-
-/**
- * Semantic features list with check icons.
- */
-function FeaturesList({ features, heading }: FeaturesListProps) {
-    return (
-        <div className="space-y-3">
-            <h3 className="font-semibold text-sm text-text-secondary uppercase tracking-wide">
-                {heading}
-            </h3>
-            <ul className="space-y-2">
-                {features.map((feature) => (
-                    <li
-                        key={feature}
-                        className="flex items-center gap-2 text-sm text-text-secondary"
-                    >
-                        <CheckIcon
-                            size="xs"
-                            weight="bold"
-                            className="shrink-0 text-green-500"
-                            aria-hidden="true"
-                        />
-                        {feature}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
-
-/** Props for the UpgradeCTA sub-component */
-interface UpgradeCtaProps {
-    readonly heading: string;
-    readonly description: string;
-    readonly buttonText: string;
-    readonly href: string;
-}
-
-/**
- * Upgrade call-to-action section for free plan users.
- */
-function UpgradeCta({ heading, description, buttonText, href }: UpgradeCtaProps) {
-    return (
-        <div className="space-y-2 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 p-4">
-            <h3 className="font-semibold text-text">{heading}</h3>
-            <p className="text-sm text-text-secondary">{description}</p>
-            <a
-                href={href}
-                className="mt-2 inline-block rounded-md bg-primary px-4 py-2 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2"
-            >
-                {buttonText}
-            </a>
-        </div>
-    );
-}
-
-/** Translation function type used by sub-components */
-type TFunction = (key: string, fallback?: string, params?: Record<string, unknown>) => string;
-
-/** Callback type for subscription action buttons */
-type ActionCallback = () => void;
-
-/**
- * Loaded state for an authenticated user with an active paid subscription.
- */
-interface ActiveSubscriptionViewProps {
-    readonly subscription: SubscriptionData;
-    readonly locale: 'es' | 'en' | 'pt';
-    readonly upgradeHref: string;
-    readonly t: TFunction;
-    readonly features: readonly string[];
-    readonly statusLabels: Record<string, string>;
-    readonly onChangePlan?: ActionCallback;
-    readonly onCancelSubscription?: ActionCallback;
-    readonly onReactivate?: ActionCallback;
-    readonly onUpdatePayment?: ActionCallback;
-}
-
-function ActiveSubscriptionView({
-    subscription,
-    locale,
-    upgradeHref,
-    t,
-    features,
-    statusLabels,
-    onChangePlan,
-    onCancelSubscription,
-    onReactivate,
-    onUpdatePayment
-}: ActiveSubscriptionViewProps) {
-    const {
-        planName,
-        status,
-        monthlyPriceArs,
-        trialEndsAt,
-        cancelAtPeriodEnd,
-        currentPeriodEnd,
-        paymentMethod
-    } = subscription;
-
-    const trialDaysRemaining =
-        status === 'trial' && trialEndsAt ? computeTrialDaysRemaining(trialEndsAt) : null;
-
-    const formattedPeriodEnd = currentPeriodEnd ? formatLocalDate(currentPeriodEnd, locale) : null;
-
-    const isFree = monthlyPriceArs === 0;
-
-    return (
-        <div className="space-y-6">
-            {/* Plan header */}
-            <div className="space-y-2">
-                <h2 className="font-bold text-text text-xl">{planName}</h2>
-                <StatusBadge
-                    statusKey={status}
-                    label={statusLabels[status] ?? status}
-                />
-            </div>
-
-            {/* Price */}
-            <div>
-                <p className="font-bold text-2xl text-text">
-                    {isFree
-                        ? t('subscription.freePlanPrice')
-                        : formatArsPrice(monthlyPriceArs, locale)}
-                </p>
-            </div>
-
-            {/* Trial warning */}
-            {trialDaysRemaining !== null && (
-                <p className="rounded-md bg-amber-50 px-3 py-2 font-medium text-amber-800 text-sm dark:bg-amber-900/20 dark:text-amber-300">
-                    {t('subscription.trialEndsIn', undefined, { days: trialDaysRemaining })}
-                </p>
-            )}
-
-            {/* Past due warning with grace period countdown */}
-            {status === 'past_due' && (
-                <div
-                    className="rounded-md bg-red-50 px-3 py-2 dark:bg-red-900/20"
-                    role="alert"
-                >
-                    <p className="font-medium text-red-700 text-sm dark:text-red-300">
-                        {subscription.gracePeriodDaysRemaining != null &&
-                        subscription.gracePeriodDaysRemaining > 0
-                            ? t('subscription.pastDueNoticeWithDays', undefined, {
-                                  days: subscription.gracePeriodDaysRemaining
-                              })
-                            : subscription.gracePeriodDaysRemaining === 0
-                              ? t('subscription.pastDueNoticeLastDay')
-                              : t('subscription.pastDueNotice')}
-                    </p>
-                    <a
-                        href={upgradeHref}
-                        className="mt-1 inline-block font-semibold text-red-700 text-sm underline hover:text-red-800 dark:text-red-300 dark:hover:text-red-200"
-                    >
-                        {t('subscription.updatePaymentMethod')}
-                    </a>
-                </div>
-            )}
-
-            {/* Payment method */}
-            {paymentMethod && (
-                <div className="space-y-1">
-                    <h3 className="font-semibold text-sm text-text-secondary uppercase tracking-wide">
-                        {t('subscription.paymentMethodLabel')}
-                    </h3>
-                    <p className="text-sm text-text">
-                        {t('subscription.paymentMethodCard', undefined, {
-                            brand:
-                                paymentMethod.brand.charAt(0).toUpperCase() +
-                                paymentMethod.brand.slice(1),
-                            last4: paymentMethod.last4
-                        })}
-                    </p>
-                    <p className="text-text-tertiary text-xs">
-                        {t('subscription.paymentMethodExpires', undefined, {
-                            month: String(paymentMethod.expMonth).padStart(2, '0'),
-                            year: paymentMethod.expYear
-                        })}
-                    </p>
-                </div>
-            )}
-
-            {/* Cancellation notice */}
-            {cancelAtPeriodEnd && formattedPeriodEnd && (
-                <p className="rounded-md bg-red-50 px-3 py-2 font-medium text-red-700 text-sm dark:bg-red-900/20 dark:text-red-300">
-                    {t('subscription.cancelNotice', undefined, { date: formattedPeriodEnd })}
-                </p>
-            )}
-
-            {/* Renewal info */}
-            {!cancelAtPeriodEnd && status === 'active' && formattedPeriodEnd && (
-                <p className="text-sm text-text-tertiary">
-                    {t('subscription.renewsOn', undefined, { date: formattedPeriodEnd })}
-                </p>
-            )}
-
-            <hr className="border-border" />
-
-            {/* Features list */}
-            <FeaturesList
-                features={features}
-                heading={t('subscription.featuresHeading')}
-            />
-
-            {/* Upgrade CTA - only for free plan */}
-            {isFree && (
-                <>
-                    <hr className="border-border" />
-                    <UpgradeCta
-                        heading={t('subscription.upgradeHeading')}
-                        description={t('subscription.upgradeDescription')}
-                        buttonText={t('subscription.upgradeButton')}
-                        href={upgradeHref}
-                    />
-                </>
-            )}
-
-            {/* Action buttons based on subscription status */}
-            {!isFree && (
-                <>
-                    <hr className="border-border" />
-                    <div className="flex flex-wrap gap-3">
-                        {status === 'active' && (
-                            <>
-                                {onChangePlan && (
-                                    <button
-                                        type="button"
-                                        onClick={onChangePlan}
-                                        className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                                    >
-                                        {t('subscription.changePlanButton')}
-                                    </button>
-                                )}
-                                {onCancelSubscription && (
-                                    <button
-                                        type="button"
-                                        onClick={onCancelSubscription}
-                                        className="rounded-md border border-red-300 px-4 py-2 font-medium text-red-600 text-sm transition-colors hover:bg-red-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-500 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-900/20"
-                                    >
-                                        {t('subscription.cancelButton')}
-                                    </button>
-                                )}
-                            </>
-                        )}
-                        {status === 'trial' && onChangePlan && (
-                            <button
-                                type="button"
-                                onClick={onChangePlan}
-                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                            >
-                                {t('subscription.viewPlansButton')}
-                            </button>
-                        )}
-                        {(status === 'cancelled' || status === 'expired') && onReactivate && (
-                            <button
-                                type="button"
-                                onClick={onReactivate}
-                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                            >
-                                {t('subscription.reactivateButton')}
-                            </button>
-                        )}
-                        {status === 'past_due' && onUpdatePayment && (
-                            <button
-                                type="button"
-                                onClick={onUpdatePayment}
-                                className="rounded-md bg-primary px-4 py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                            >
-                                {t('subscription.updatePaymentButton')}
-                            </button>
-                        )}
-                    </div>
-                </>
-            )}
-        </div>
-    );
-}
-
-/**
- * Loaded state for a user with no subscription (free plan fallback).
- */
-interface FreePlanViewProps {
-    readonly upgradeHref: string;
-    readonly t: TFunction;
-    readonly features: readonly string[];
-    readonly statusLabels: Record<string, string>;
-}
-
-function FreePlanView({ upgradeHref, t, features, statusLabels }: FreePlanViewProps) {
-    return (
-        <div className="space-y-6">
-            {/* Plan header */}
-            <div className="space-y-2">
-                <h2 className="font-bold text-text text-xl">{t('subscription.freePlanName')}</h2>
-                <StatusBadge
-                    statusKey="free"
-                    label={statusLabels.free ?? 'Free'}
-                />
-            </div>
-
-            {/* Price */}
-            <div>
-                <p className="font-bold text-2xl text-text">{t('subscription.freePlanPrice')}</p>
-            </div>
-
-            <hr className="border-border" />
-
-            {/* Features list */}
-            <FeaturesList
-                features={features}
-                heading={t('subscription.featuresHeading')}
-            />
-
-            <hr className="border-border" />
-
-            {/* Upgrade CTA */}
-            <UpgradeCta
-                heading={t('subscription.upgradeHeading')}
-                description={t('subscription.upgradeDescription')}
-                buttonText={t('subscription.upgradeButton')}
-                href={upgradeHref}
-            />
-        </div>
-    );
-}
-
 /**
  * Subscription card React island.
  * Displays the authenticated user's current subscription plan and status.
  * Fetches data on mount and shows appropriate loading, error, or loaded states.
+ *
+ * @example
+ * ```astro
+ * <SubscriptionCard client:idle locale={locale} upgradeHref={`/${locale}/precios/turistas`} />
+ * ```
  */
 export function SubscriptionCard({
     locale,
@@ -554,17 +161,17 @@ export function SubscriptionCard({
     if (error) {
         return (
             <div
-                className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-800/50 dark:bg-red-900/20"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 p-6"
                 role="alert"
             >
                 <div className="flex flex-col items-center gap-4 text-center">
                     <AlertTriangleIcon
                         size="lg"
                         weight="fill"
-                        className="text-red-500 dark:text-red-400"
+                        className="text-destructive"
                         aria-hidden="true"
                     />
-                    <p className="font-medium text-red-700 text-sm dark:text-red-400">
+                    <p className="font-medium text-destructive text-sm">
                         {t('subscription.loadError')}
                     </p>
                     <button
@@ -589,7 +196,7 @@ export function SubscriptionCard({
     return (
         <div className="rounded-lg border border-border p-6 shadow-sm">
             {data !== null ? (
-                <ActiveSubscriptionView
+                <SubscriptionActiveView
                     subscription={data}
                     locale={locale}
                     upgradeHref={upgradeHref}
@@ -602,7 +209,7 @@ export function SubscriptionCard({
                     onUpdatePayment={onUpdatePayment}
                 />
             ) : (
-                <FreePlanView
+                <SubscriptionFreePlanView
                     upgradeHref={upgradeHref}
                     t={t}
                     features={features}

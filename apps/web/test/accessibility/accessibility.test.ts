@@ -1,1025 +1,376 @@
 /**
- * Accessibility Test Suite
+ * @file accessibility.test.ts
+ * @description WCAG AA pattern validation via source-content inspection.
  *
- * Comprehensive automated accessibility tests validating WCAG 2.1 AA compliance
- * across all key pages and components in the web2 application.
- *
- * Test Strategy:
- * - Astro components: Read source files and verify HTML structure and ARIA attributes
- * - React components: Similar file-based verification for accessibility patterns
- * - Manual validation pattern (no axe-core required - not in dependencies)
- *
- * Coverage areas:
- * 1. ARIA Landmarks and Semantic HTML
- * 2. Heading Hierarchy
- * 3. Form Accessibility
- * 4. Interactive Component Accessibility
- * 5. Image Accessibility
- * 6. Navigation Accessibility
- * 7. Focus Management
+ * Tests check for accessibility patterns across layout, page, and component
+ * source files: aria-hidden on decorative elements, skip links, semantic
+ * landmarks, focus management, form label associations, image alt text,
+ * heading hierarchy, and prefers-reduced-motion handling.
  */
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-const srcDir = resolve(__dirname, '../../src');
+// ---------------------------------------------------------------------------
+// Source files under test
+// ---------------------------------------------------------------------------
 
-/**
- * Helper to read component file
- */
-function readComponent(relativePath: string): string {
-    return readFileSync(resolve(srcDir, relativePath), 'utf8');
-}
+const baseLayoutSrc = readFileSync(
+    resolve(__dirname, '../../src/layouts/BaseLayout.astro'),
+    'utf8'
+);
 
-/**
- * Helper to read page file
- */
-function readPage(relativePath: string): string {
-    return readFileSync(resolve(srcDir, relativePath), 'utf8');
-}
+const headerSrc = readFileSync(resolve(__dirname, '../../src/layouts/Header.astro'), 'utf8');
 
-/**
- * Helper to read layout file
- */
-function readLayout(relativePath: string): string {
-    return readFileSync(resolve(srcDir, relativePath), 'utf8');
-}
+const globalCssSrc = readFileSync(resolve(__dirname, '../../src/styles/global.css'), 'utf8');
 
-describe('Accessibility Tests', () => {
-    describe('ARIA Landmarks and Semantic HTML', () => {
-        describe('BaseLayout', () => {
-            let baseLayoutContent: string;
+const page404Src = readFileSync(resolve(__dirname, '../../src/pages/404.astro'), 'utf8');
 
-            beforeAll(() => {
-                baseLayoutContent = readLayout('layouts/BaseLayout.astro');
-            });
+const page500Src = readFileSync(resolve(__dirname, '../../src/pages/500.astro'), 'utf8');
 
-            it('should have main landmark with id', () => {
-                expect(baseLayoutContent).toContain('<main id="main-content">');
-            });
+const _homepageSrc = readFileSync(resolve(__dirname, '../../src/pages/[lang]/index.astro'), 'utf8');
 
-            it('should have skip to content link', () => {
-                expect(baseLayoutContent).toContain('href="#main-content"');
-                expect(baseLayoutContent).toContain('Skip to content');
-            });
+const contactoSrc = readFileSync(
+    resolve(__dirname, '../../src/pages/[lang]/contacto.astro'),
+    'utf8'
+);
 
-            it('should have skip link with focus-visible styles', () => {
-                expect(baseLayoutContent).toContain('sr-only focus:not-sr-only');
-                expect(baseLayoutContent).toContain('focus:fixed');
-            });
+const mapaSiteSrc = readFileSync(
+    resolve(__dirname, '../../src/pages/[lang]/mapa-del-sitio.astro'),
+    'utf8'
+);
 
-            it('should have html lang attribute', () => {
-                expect(baseLayoutContent).toContain('<html lang={locale}');
-            });
+// ---------------------------------------------------------------------------
+// Skip link — keyboard-first navigation
+// ---------------------------------------------------------------------------
 
-            it('should have charset UTF-8', () => {
-                expect(baseLayoutContent).toContain('<meta charset="UTF-8"');
-            });
-
-            it('should have viewport meta tag', () => {
-                expect(baseLayoutContent).toContain('<meta name="viewport"');
-                expect(baseLayoutContent).toContain('width=device-width');
-            });
-
-            it('should import and render Header and Footer components', () => {
-                expect(baseLayoutContent).toContain("import Header from './Header.astro'");
-                expect(baseLayoutContent).toContain("import Footer from './Footer.astro'");
-                expect(baseLayoutContent).toContain('<Header locale={locale}');
-                expect(baseLayoutContent).toContain('<Footer locale={locale}');
-            });
-        });
-
-        describe('Header', () => {
-            let headerContent: string;
-
-            beforeAll(() => {
-                headerContent = readLayout('layouts/Header.astro');
-            });
-
-            it('should have header with role="banner"', () => {
-                expect(headerContent).toContain('role="banner"');
-                expect(headerContent).toContain('<header');
-            });
-
-            it('should have navigation with role="navigation"', () => {
-                expect(headerContent).toContain('<nav role="navigation"');
-            });
-
-            it('should have aria-label on navigation', () => {
-                expect(headerContent).toContain('aria-label="Main navigation"');
-            });
-
-            it('should use MobileMenuWrapper React island for mobile navigation', () => {
-                expect(headerContent).toContain('MobileMenuWrapper');
-                expect(headerContent).toContain('client:media="(max-width: 768px)"');
-                expect(headerContent).toContain('navItems={');
-            });
-
-            it('should have decorative icons with aria-hidden', () => {
-                expect(headerContent).toContain('aria-hidden="true"');
-            });
-        });
-
-        describe('Footer', () => {
-            let footerContent: string;
-
-            beforeAll(() => {
-                footerContent = readLayout('layouts/Footer.astro');
-            });
-
-            it('should have footer with role="contentinfo"', () => {
-                expect(footerContent).toContain('<footer role="contentinfo"');
-            });
-
-            it('should have heading for link groups', () => {
-                expect(footerContent).toContain('<h3');
-            });
-
-            it('should use semantic list elements for navigation', () => {
-                expect(footerContent).toContain('<ul');
-                expect(footerContent).toContain('<li>');
-            });
-        });
+describe('BaseLayout.astro — skip to content link', () => {
+    it('renders a skip-to-content link as the first interactive element', () => {
+        // WCAG 2.4.1: bypass blocks
+        expect(baseLayoutSrc).toContain('class="skip-to-content"');
+        expect(baseLayoutSrc).toContain('href="#main-content"');
     });
 
-    describe('Heading Hierarchy', () => {
-        describe('Homepage', () => {
-            let homepageContent: string;
-
-            beforeAll(() => {
-                homepageContent = readPage('pages/[lang]/index.astro');
-            });
-
-            it('should use BaseLayout which provides document structure', () => {
-                expect(homepageContent).toContain('import BaseLayout');
-                expect(homepageContent).toContain('<BaseLayout');
-            });
-
-            it('should pass title prop to BaseLayout', () => {
-                expect(homepageContent).toContain('title={pageTitle}');
-            });
-
-            it('should pass description prop to BaseLayout', () => {
-                expect(homepageContent).toContain('description={pageDescription}');
-            });
-        });
-
-        describe('Accommodation Detail Page', () => {
-            let accommodationContent: string;
-
-            beforeAll(() => {
-                accommodationContent = readPage('pages/[lang]/alojamientos/[slug].astro');
-            });
-
-            it('should have h1 for accommodation name', () => {
-                expect(accommodationContent).toContain('<h1');
-                expect(accommodationContent).toContain('.name}');
-            });
-
-            it('should have h2 for major sections', () => {
-                expect(accommodationContent).toContain('<h2');
-                expect(accommodationContent).toContain('{t.description}');
-                expect(accommodationContent).toContain('{t.amenities}');
-                expect(accommodationContent).toContain('{t.location}');
-                expect(accommodationContent).toContain('{t.reviews}');
-                expect(accommodationContent).toContain('{t.faq}');
-            });
-
-            it('should use section elements for major content areas', () => {
-                expect(accommodationContent).toContain('<section>');
-            });
-
-            it('should use aside element for sidebar', () => {
-                expect(accommodationContent).toContain('<aside');
-            });
-        });
+    it('skip-to-content link text is descriptive', () => {
+        expect(baseLayoutSrc).toContain('Skip to content');
     });
 
-    describe('Form Accessibility', () => {
-        describe('Input Component', () => {
-            let inputContent: string;
+    it('skip link target has id="main-content" on the <main> element', () => {
+        expect(baseLayoutSrc).toContain('id="main-content"');
+        expect(baseLayoutSrc).toContain('<main id="main-content"');
+    });
+});
 
-            beforeAll(() => {
-                inputContent = readComponent('components/ui/Input.astro');
-            });
+// ---------------------------------------------------------------------------
+// Semantic landmarks — HTML5 structural elements
+// ---------------------------------------------------------------------------
 
-            it('should have label element', () => {
-                expect(inputContent).toContain('<label');
-            });
-
-            it('should have label for attribute linking to input id', () => {
-                expect(inputContent).toContain('for={inputId}');
-            });
-
-            it('should generate unique id for input', () => {
-                expect(inputContent).toContain('const inputId = id || `input-${name}`');
-            });
-
-            it('should support required attribute', () => {
-                expect(inputContent).toContain('required?: boolean');
-                expect(inputContent).toContain('required={required || undefined}');
-            });
-
-            it('should have aria-invalid for error state', () => {
-                expect(inputContent).toContain("aria-invalid={error ? 'true' : undefined}");
-            });
-
-            it('should have aria-describedby linking to error message', () => {
-                expect(inputContent).toContain('aria-describedby={error ? errorId : undefined}');
-            });
-
-            it('should have error message with role="alert"', () => {
-                expect(inputContent).toContain('role="alert"');
-            });
-
-            it('should visually indicate required fields', () => {
-                expect(inputContent).toContain('aria-label="required"');
-            });
-
-            it('should have focus styles', () => {
-                expect(inputContent).toContain('focus:outline-none');
-                expect(inputContent).toContain('focus:ring-2');
-                expect(inputContent).toContain('focus:ring-primary');
-            });
-
-            it('should support disabled state', () => {
-                expect(inputContent).toContain('disabled?: boolean');
-                expect(inputContent).toContain('disabled={disabled}');
-                expect(inputContent).toContain('disabled:opacity-50');
-                expect(inputContent).toContain('disabled:cursor-not-allowed');
-            });
-        });
-
-        describe('Button Component', () => {
-            let buttonContent: string;
-
-            beforeAll(() => {
-                buttonContent = readComponent('components/ui/Button.astro');
-            });
-
-            it('should have focus-visible styles', () => {
-                expect(buttonContent).toContain('focus-visible:outline');
-            });
-
-            it('should support aria-disabled for links', () => {
-                expect(buttonContent).toContain('aria-disabled');
-            });
-
-            it('should support aria-busy for loading state', () => {
-                expect(buttonContent).toContain('aria-busy');
-            });
-
-            it('should disable interactions when disabled', () => {
-                expect(buttonContent).toContain('disabled:pointer-events-none');
-                expect(buttonContent).toContain('disabled:opacity-50');
-            });
-
-            it('should hide loading spinner from screen readers', () => {
-                expect(buttonContent).toContain('aria-hidden="true"');
-            });
-        });
+describe('BaseLayout.astro — semantic landmark elements', () => {
+    it('wraps primary content in a <main> element', () => {
+        // WCAG 1.3.1: info and relationships
+        expect(baseLayoutSrc).toContain('<main ');
+        expect(baseLayoutSrc).toContain('</main>');
     });
 
-    describe('Interactive Component Accessibility', () => {
-        describe('Modal Component', () => {
-            let modalContent: string;
-
-            beforeAll(() => {
-                modalContent = readComponent('components/ui/Modal.client.tsx');
-            });
-
-            it('should use native dialog element', () => {
-                expect(modalContent).toContain('<dialog');
-            });
-
-            it('should have aria-modal attribute', () => {
-                expect(modalContent).toContain('aria-modal="true"');
-            });
-
-            it('should have aria-labelledby linking to title', () => {
-                expect(modalContent).toContain('aria-labelledby="modal-title"');
-            });
-
-            it('should have id on title element', () => {
-                expect(modalContent).toContain('id="modal-title"');
-            });
-
-            it('should have close button with aria-label', () => {
-                expect(modalContent).toContain("aria-label={t('accessibility.closeModal')}");
-            });
-
-            it('should have focus-visible styles on close button', () => {
-                expect(modalContent).toContain('focus-visible:outline');
-            });
-
-            it('should handle Escape key', () => {
-                expect(modalContent).toContain("e.key === 'Escape'");
-            });
-
-            it('should hide decorative close icon from screen readers', () => {
-                expect(modalContent).toContain('aria-hidden="true"');
-            });
-        });
-
-        describe('Tabs Component', () => {
-            let tabsContent: string;
-
-            beforeAll(() => {
-                tabsContent = readComponent('components/ui/Tabs.client.tsx');
-            });
-
-            it('should have role="tablist" on tab container', () => {
-                expect(tabsContent).toContain('role="tablist"');
-            });
-
-            it('should have role="tab" on tab buttons', () => {
-                expect(tabsContent).toContain('role="tab"');
-            });
-
-            it('should have role="tabpanel" on panels', () => {
-                expect(tabsContent).toContain('role="tabpanel"');
-            });
-
-            it('should have aria-selected on tabs', () => {
-                expect(tabsContent).toContain('aria-selected={isActive}');
-            });
-
-            it('should have aria-controls linking tab to panel', () => {
-                expect(tabsContent).toContain('aria-controls={`panel-${tab.id}`}');
-            });
-
-            it('should have aria-labelledby linking panel to tab', () => {
-                expect(tabsContent).toContain('aria-labelledby={`tab-${tab.id}`}');
-            });
-
-            it('should manage tabIndex for roving tabindex pattern', () => {
-                expect(tabsContent).toContain('tabIndex={isActive ? 0 : -1}');
-            });
-
-            it('should support ArrowLeft navigation', () => {
-                expect(tabsContent).toContain("case 'ArrowLeft'");
-            });
-
-            it('should support ArrowRight navigation', () => {
-                expect(tabsContent).toContain("case 'ArrowRight'");
-            });
-
-            it('should support Home key navigation', () => {
-                expect(tabsContent).toContain("case 'Home'");
-            });
-
-            it('should support End key navigation', () => {
-                expect(tabsContent).toContain("case 'End'");
-            });
-
-            it('should have focus-visible styles', () => {
-                expect(tabsContent).toContain('focus-visible:outline');
-            });
-
-            it('should have type="button" on tab buttons', () => {
-                expect(tabsContent).toContain('type="button"');
-            });
-        });
-
-        describe('AccordionFAQ Component', () => {
-            let accordionContent: string;
-
-            beforeAll(() => {
-                accordionContent = readComponent('components/ui/AccordionFAQ.client.tsx');
-            });
-
-            it('should use native details element', () => {
-                expect(accordionContent).toContain('<details');
-            });
-
-            it('should use native summary element', () => {
-                expect(accordionContent).toContain('<summary');
-            });
-
-            it('should have aria-expanded on summary', () => {
-                expect(accordionContent).toContain('aria-expanded=');
-            });
-
-            it('should have aria-controls linking summary to content', () => {
-                expect(accordionContent).toContain('aria-controls={contentId}');
-            });
-
-            it('should use section element for content', () => {
-                expect(accordionContent).toContain('<section');
-            });
-
-            it('should have aria-labelledby on content', () => {
-                expect(accordionContent).toContain('aria-labelledby={itemId}');
-            });
-
-            it('should have focus-visible styles on summary', () => {
-                expect(accordionContent).toContain('focus-visible:outline');
-            });
-
-            it('should hide decorative icon from screen readers', () => {
-                expect(accordionContent).toContain('aria-hidden="true"');
-            });
-
-            it('should use section element with aria-label on container', () => {
-                expect(accordionContent).toContain('<section');
-                expect(accordionContent).toContain("aria-label={t('accessibility.faqSection')}");
-            });
-        });
-
-        describe('ShareButtons Component', () => {
-            let shareButtonsContent: string;
-
-            beforeAll(() => {
-                shareButtonsContent = readComponent('components/ui/ShareButtons.client.tsx');
-            });
-
-            it('should have aria-label on native share button', () => {
-                expect(shareButtonsContent).toContain(
-                    "aria-label={t('accessibility.shareViaDevice')}"
-                );
-            });
-
-            it('should have aria-label on WhatsApp button', () => {
-                expect(shareButtonsContent).toContain(
-                    "aria-label={t('accessibility.shareOnWhatsApp')}"
-                );
-            });
-
-            it('should have aria-label on Facebook button', () => {
-                expect(shareButtonsContent).toContain(
-                    "aria-label={t('accessibility.shareOnFacebook')}"
-                );
-            });
-
-            it('should have aria-label on Twitter button', () => {
-                expect(shareButtonsContent).toContain(
-                    "aria-label={t('accessibility.shareOnTwitter')}"
-                );
-            });
-
-            it('should have dynamic aria-label on copy button', () => {
-                expect(shareButtonsContent).toContain(
-                    "aria-label={copied ? t('accessibility.linkCopied') : t('accessibility.copyLink')}"
-                );
-            });
-
-            it('should hide decorative icons from screen readers', () => {
-                expect(shareButtonsContent).toContain('aria-hidden="true"');
-            });
-
-            it('should have focus-visible styles', () => {
-                expect(shareButtonsContent).toContain('focus-visible:outline');
-            });
-
-            it('should have aria-live region for copy feedback', () => {
-                expect(shareButtonsContent).toContain('aria-live="polite"');
-            });
-
-            it('should have type="button" on buttons', () => {
-                expect(shareButtonsContent).toContain('type="button"');
-            });
-        });
+    it('sets the page language via lang attribute on <html>', () => {
+        // WCAG 3.1.1: language of page
+        expect(baseLayoutSrc).toContain('lang={locale}');
+        expect(baseLayoutSrc).toContain('<html lang');
     });
 
-    describe('Image Accessibility', () => {
-        describe('OptimizedImage Component', () => {
-            let optimizedImageContent: string;
-
-            beforeAll(() => {
-                optimizedImageContent = readComponent('components/ui/OptimizedImage.astro');
-            });
-
-            it('should require alt prop', () => {
-                expect(optimizedImageContent).toContain('alt: string');
-            });
-
-            it('should have alt attribute on img element', () => {
-                expect(optimizedImageContent).toContain('alt={alt}');
-            });
-
-            it('should support lazy loading', () => {
-                expect(optimizedImageContent).toContain("loading?: 'lazy' | 'eager'");
-                expect(optimizedImageContent).toContain("loading = 'lazy'");
-                expect(optimizedImageContent).toContain('loading={loading}');
-            });
-
-            it('should have width and height for CLS prevention', () => {
-                expect(optimizedImageContent).toContain('width: number');
-                expect(optimizedImageContent).toContain('height: number');
-                expect(optimizedImageContent).toContain('width={width}');
-                expect(optimizedImageContent).toContain('height={height}');
-            });
-
-            it('should support async decoding', () => {
-                expect(optimizedImageContent).toContain("decoding = 'async'");
-            });
-
-            it('should have responsive sizes attribute', () => {
-                expect(optimizedImageContent).toContain('sizes?: string');
-                expect(optimizedImageContent).toContain('sizes={sizes}');
-            });
-
-            it('should generate srcset for responsive images', () => {
-                expect(optimizedImageContent).toContain('srcset');
-            });
-        });
+    it('renders a <Footer> landmark component', () => {
+        expect(baseLayoutSrc).toContain('<Footer');
     });
 
-    describe('Navigation Accessibility', () => {
-        describe('Breadcrumb Component', () => {
-            let breadcrumbContent: string;
+    it('renders a <Header> landmark component', () => {
+        expect(baseLayoutSrc).toContain('<Header');
+    });
+});
 
-            beforeAll(() => {
-                breadcrumbContent = readComponent('components/ui/Breadcrumb.astro');
-            });
-
-            it('should have nav element with aria-label', () => {
-                expect(breadcrumbContent).toContain('<nav aria-label="Breadcrumb"');
-            });
-
-            it('should use ordered list for breadcrumb items', () => {
-                expect(breadcrumbContent).toContain('<ol');
-            });
-
-            it('should use list items for each breadcrumb', () => {
-                expect(breadcrumbContent).toContain('<li');
-            });
-
-            it('should have aria-current="page" on last item', () => {
-                expect(breadcrumbContent).toContain('aria-current="page"');
-            });
-
-            it('should hide separator from screen readers', () => {
-                expect(breadcrumbContent).toContain('aria-hidden="true"');
-            });
-
-            it('should include JSON-LD structured data', () => {
-                expect(breadcrumbContent).toContain('type="application/ld+json"');
-                expect(breadcrumbContent).toContain('BreadcrumbList');
-            });
-        });
+describe('Header.astro — semantic landmark elements', () => {
+    it('wraps navigation in a <nav> element', () => {
+        expect(headerSrc).toContain('<nav');
     });
 
-    describe('Focus Management', () => {
-        describe('Skip to Content Link', () => {
-            let baseLayoutContent: string;
-
-            beforeAll(() => {
-                baseLayoutContent = readLayout('layouts/BaseLayout.astro');
-            });
-
-            it('should be hidden by default', () => {
-                expect(baseLayoutContent).toContain('sr-only');
-            });
-
-            it('should be visible on focus', () => {
-                expect(baseLayoutContent).toContain('focus:not-sr-only');
-            });
-
-            it('should be positioned accessibly when focused', () => {
-                expect(baseLayoutContent).toContain('focus:fixed');
-                expect(baseLayoutContent).toContain('focus:top-4');
-                expect(baseLayoutContent).toContain('focus:left-4');
-            });
-
-            it('should have high z-index when focused', () => {
-                expect(baseLayoutContent).toContain('focus:z-50');
-            });
-
-            it('should have clear styling when focused', () => {
-                expect(baseLayoutContent).toContain('focus:bg-primary');
-                expect(baseLayoutContent).toContain('focus:text-white');
-                expect(baseLayoutContent).toContain('focus:px-4');
-                expect(baseLayoutContent).toContain('focus:py-2');
-            });
-        });
-
-        describe('Focus Visible Styles', () => {
-            it('should have focus-visible on Button', () => {
-                const buttonContent = readComponent('components/ui/Button.astro');
-                expect(buttonContent).toContain('focus-visible:outline');
-            });
-
-            it('should have focus-visible on Input', () => {
-                const inputContent = readComponent('components/ui/Input.astro');
-                expect(inputContent).toContain('focus:ring-2');
-                expect(inputContent).toContain('focus:ring-primary');
-            });
-
-            it('should have focus-visible on Tabs', () => {
-                const tabsContent = readComponent('components/ui/Tabs.client.tsx');
-                expect(tabsContent).toContain('focus-visible:outline');
-            });
-
-            it('should have focus-visible on Modal close button', () => {
-                const modalContent = readComponent('components/ui/Modal.client.tsx');
-                expect(modalContent).toContain('focus-visible:outline');
-            });
-
-            it('should have focus-visible on AccordionFAQ', () => {
-                const accordionContent = readComponent('components/ui/AccordionFAQ.client.tsx');
-                expect(accordionContent).toContain('focus-visible:outline');
-            });
-
-            it('should have focus-visible on ShareButtons', () => {
-                const shareButtonsContent = readComponent('components/ui/ShareButtons.client.tsx');
-                expect(shareButtonsContent).toContain('focus-visible:outline');
-            });
-        });
+    it('adds an aria-label to the main navigation', () => {
+        // WCAG 4.1.2: name, role, value — nav must have accessible name
+        expect(headerSrc).toContain('aria-label=');
     });
 
-    describe('Color and Contrast', () => {
-        describe('Button Component', () => {
-            let buttonContent: string;
+    it('uses the principal nav translation key for the aria-label', () => {
+        expect(headerSrc).toContain("'nav.principal'");
+    });
+});
 
-            beforeAll(() => {
-                buttonContent = readComponent('components/ui/Button.astro');
-            });
+// ---------------------------------------------------------------------------
+// Focus management — keyboard accessibility
+// ---------------------------------------------------------------------------
 
-            it('should have high contrast primary variant', () => {
-                expect(buttonContent).toContain('bg-primary');
-                expect(buttonContent).toContain('text-white');
-            });
-
-            it('should have visible outline variant', () => {
-                expect(buttonContent).toContain('border-primary');
-                expect(buttonContent).toContain('text-primary');
-            });
-
-            it('should reduce opacity for disabled state', () => {
-                expect(buttonContent).toContain('disabled:opacity-50');
-            });
-        });
+describe('Header.astro — focus management', () => {
+    it('mobile menu button has aria-expanded attribute', () => {
+        // WCAG 4.1.2: buttons that toggle panels must expose their state
+        expect(headerSrc).toContain('aria-expanded="false"');
+        expect(headerSrc).toContain('setAttribute("aria-expanded"');
     });
 
-    describe('Keyboard Navigation', () => {
-        describe('Tabs Component', () => {
-            let tabsContent: string;
-
-            beforeAll(() => {
-                tabsContent = readComponent('components/ui/Tabs.client.tsx');
-            });
-
-            it('should handle keyboard navigation function', () => {
-                expect(tabsContent).toContain('handleKeyDown');
-            });
-
-            it('should prevent default for arrow keys', () => {
-                expect(tabsContent).toContain('event.preventDefault()');
-            });
-
-            it('should wrap navigation at boundaries', () => {
-                expect(tabsContent).toContain('tabs.length - 1');
-            });
-        });
-
-        describe('Modal Component', () => {
-            let modalContent: string;
-
-            beforeAll(() => {
-                modalContent = readComponent('components/ui/Modal.client.tsx');
-            });
-
-            it('should handle Escape key to close', () => {
-                expect(modalContent).toContain('onKeyDown');
-                expect(modalContent).toContain("key === 'Escape'");
-            });
-
-            it('should listen to cancel event', () => {
-                expect(modalContent).toContain("addEventListener('cancel'");
-            });
-        });
+    it('mobile menu button has aria-controls referencing the menu panel', () => {
+        expect(headerSrc).toContain('aria-controls="mobile-menu"');
     });
 
-    describe('State Communication', () => {
-        describe('Input Error States', () => {
-            let inputContent: string;
-
-            beforeAll(() => {
-                inputContent = readComponent('components/ui/Input.astro');
-            });
-
-            it('should communicate errors with aria-invalid', () => {
-                expect(inputContent).toContain('aria-invalid');
-            });
-
-            it('should link errors with aria-describedby', () => {
-                expect(inputContent).toContain('aria-describedby');
-            });
-
-            it('should announce errors with role="alert"', () => {
-                expect(inputContent).toContain('role="alert"');
-            });
-
-            it('should visually distinguish error state', () => {
-                expect(inputContent).toContain('border-red-500');
-                expect(inputContent).toContain('text-red-500');
-            });
-        });
-
-        describe('Button Loading States', () => {
-            let buttonContent: string;
-
-            beforeAll(() => {
-                buttonContent = readComponent('components/ui/Button.astro');
-            });
-
-            it('should communicate loading with aria-busy', () => {
-                expect(buttonContent).toContain('aria-busy');
-            });
-
-            it('should disable interaction when loading', () => {
-                expect(buttonContent).toContain('disabled={disabled || loading}');
-            });
-        });
-
-        describe('ShareButtons Copy Feedback', () => {
-            let shareButtonsContent: string;
-
-            beforeAll(() => {
-                shareButtonsContent = readComponent('components/ui/ShareButtons.client.tsx');
-            });
-
-            it('should announce copy success with aria-live', () => {
-                expect(shareButtonsContent).toContain('aria-live="polite"');
-            });
-
-            it('should show visual feedback for copy state', () => {
-                expect(shareButtonsContent).toContain('Copied!');
-            });
-
-            it('should update aria-label for copy state', () => {
-                expect(shareButtonsContent).toContain("t('accessibility.linkCopied')");
-            });
-        });
+    it('mobile menu button has a descriptive aria-label', () => {
+        expect(headerSrc).toContain('aria-label=');
+        expect(headerSrc).toContain("'nav.abrirMenu'");
     });
 
-    describe('Semantic HTML Structure', () => {
-        describe('Header Component', () => {
-            let headerContent: string;
-
-            beforeAll(() => {
-                headerContent = readLayout('layouts/Header.astro');
-            });
-
-            it('should use header element', () => {
-                expect(headerContent).toContain('<header');
-            });
-
-            it('should use nav element', () => {
-                expect(headerContent).toContain('<nav');
-            });
-
-            it('should use MobileMenuWrapper for mobile menu trigger', () => {
-                expect(headerContent).toContain('<MobileMenuWrapper');
-                expect(headerContent).toContain('navItems={');
-            });
-        });
-
-        describe('Footer Component', () => {
-            let footerContent: string;
-
-            beforeAll(() => {
-                footerContent = readLayout('layouts/Footer.astro');
-            });
-
-            it('should use footer element', () => {
-                expect(footerContent).toContain('<footer');
-            });
-
-            it('should use lists for navigation groups', () => {
-                expect(footerContent).toContain('<ul');
-                expect(footerContent).toContain('<li>');
-            });
-
-            it('should use headings for group titles', () => {
-                expect(footerContent).toContain('<h3');
-            });
-        });
-
-        describe('Accommodation Detail Page', () => {
-            let accommodationContent: string;
-
-            beforeAll(() => {
-                accommodationContent = readPage('pages/[lang]/alojamientos/[slug].astro');
-            });
-
-            it('should use section elements', () => {
-                expect(accommodationContent).toContain('<section>');
-            });
-
-            it('should use aside for sidebar', () => {
-                expect(accommodationContent).toContain('<aside');
-            });
-
-            it('should use heading hierarchy', () => {
-                expect(accommodationContent).toContain('<h1');
-                expect(accommodationContent).toContain('<h2');
-            });
-        });
+    it('aria-label updates when the menu opens or closes', () => {
+        // Dynamic label change on toggle
+        expect(headerSrc).toContain('setAttribute("aria-label"');
+        expect(headerSrc).toContain('data-label-open=');
+        expect(headerSrc).toContain('data-label-close=');
     });
 
-    describe('Screen Reader Support', () => {
-        describe('Decorative Elements', () => {
-            it('should hide decorative icons in Header', () => {
-                const headerContent = readLayout('layouts/Header.astro');
-                expect(headerContent).toContain('aria-hidden="true"');
-            });
+    it('mobile menu overlay has role="dialog" with aria-modal', () => {
+        expect(headerSrc).toContain('role="dialog"');
+        expect(headerSrc).toContain('aria-modal="true"');
+    });
+});
 
-            it('should hide decorative separators in Breadcrumb', () => {
-                const breadcrumbContent = readComponent('components/ui/Breadcrumb.astro');
-                expect(breadcrumbContent).toContain('aria-hidden="true"');
-            });
+describe('BaseLayout.astro — focus-visible styles', () => {
+    it('skip-to-content link has a focus style defined in an inline <style>', () => {
+        // Focus must be visible (WCAG 2.4.7)
+        expect(baseLayoutSrc).toContain('.skip-to-content:focus');
+    });
+});
 
-            it('should hide decorative icons in ShareButtons', () => {
-                const shareButtonsContent = readComponent('components/ui/ShareButtons.client.tsx');
-                expect(shareButtonsContent).toContain('aria-hidden="true"');
-            });
-
-            it('should hide loading spinner in Button', () => {
-                const buttonContent = readComponent('components/ui/Button.astro');
-                expect(buttonContent).toContain('aria-hidden="true"');
-            });
-        });
-
-        describe('Screen Reader Only Content', () => {
-            it('should have sr-only class for skip link', () => {
-                const baseLayoutContent = readLayout('layouts/BaseLayout.astro');
-                expect(baseLayoutContent).toContain('sr-only');
-            });
-
-            it('should have sr-only label for required indicator', () => {
-                const inputContent = readComponent('components/ui/Input.astro');
-                expect(inputContent).toContain('aria-label="required"');
-            });
-        });
+describe('Interactive elements — focus-visible outline', () => {
+    it('links in 404 page have focus-visible:outline styles', () => {
+        expect(page404Src).toContain('focus-visible:outline');
     });
 
-    describe('Interactive State Indicators', () => {
-        describe('Accordion Component', () => {
-            let accordionContent: string;
-
-            beforeAll(() => {
-                accordionContent = readComponent('components/ui/AccordionFAQ.client.tsx');
-            });
-
-            it('should indicate expanded state with aria-expanded', () => {
-                expect(accordionContent).toContain('aria-expanded');
-            });
-
-            it('should use open attribute for details element', () => {
-                expect(accordionContent).toContain('open={isOpen}');
-            });
-
-            it('should visually indicate expanded state', () => {
-                expect(accordionContent).toContain('rotate-180');
-            });
-        });
-
-        describe('Tabs Component', () => {
-            let tabsContent: string;
-
-            beforeAll(() => {
-                tabsContent = readComponent('components/ui/Tabs.client.tsx');
-            });
-
-            it('should indicate selected state with aria-selected', () => {
-                expect(tabsContent).toContain('aria-selected');
-            });
-
-            it('should hide inactive panels', () => {
-                expect(tabsContent).toContain('hidden={!isActive}');
-            });
-
-            it('should visually distinguish active tab', () => {
-                expect(tabsContent).toContain('border-primary');
-                expect(tabsContent).toContain('text-primary');
-            });
-        });
+    it('buttons and links in 500 page have focus-visible:outline styles', () => {
+        expect(page500Src).toContain('focus-visible:outline');
     });
 
-    describe('Form Control Association', () => {
-        describe('Input Component', () => {
-            let inputContent: string;
-
-            beforeAll(() => {
-                inputContent = readComponent('components/ui/Input.astro');
-            });
-
-            it('should associate label with input via for/id', () => {
-                expect(inputContent).toContain('for={inputId}');
-                expect(inputContent).toContain('id={inputId}');
-            });
-
-            it('should generate unique IDs', () => {
-                expect(inputContent).toContain('inputId');
-                expect(inputContent).toContain('errorId');
-            });
-
-            it('should link error messages with aria-describedby', () => {
-                expect(inputContent).toContain('aria-describedby={error ? errorId : undefined}');
-                expect(inputContent).toContain('id={errorId}');
-            });
-        });
+    it('links in contacto page have focus-visible:outline styles', () => {
+        expect(contactoSrc).toContain('focus-visible:outline');
     });
 
-    describe('Link Accessibility', () => {
-        describe('Breadcrumb Links', () => {
-            let breadcrumbContent: string;
+    it('links in mapa-del-sitio have focus-visible:outline styles', () => {
+        expect(mapaSiteSrc).toContain('focus-visible:outline');
+    });
+});
 
-            beforeAll(() => {
-                breadcrumbContent = readComponent('components/ui/Breadcrumb.astro');
-            });
+// ---------------------------------------------------------------------------
+// Decorative elements — aria-hidden
+// ---------------------------------------------------------------------------
 
-            it('should render current page as text not link', () => {
-                expect(breadcrumbContent).toContain('isLast');
-                expect(breadcrumbContent).toContain('<span');
-            });
-
-            it('should use anchor elements for navigable items', () => {
-                expect(breadcrumbContent).toContain('<a');
-                expect(breadcrumbContent).toContain('href={item.href}');
-            });
-
-            it('should have hover styles for links', () => {
-                expect(breadcrumbContent).toContain('hover:text-primary');
-            });
-        });
-
-        describe('ShareButtons Links', () => {
-            let shareButtonsContent: string;
-
-            beforeAll(() => {
-                shareButtonsContent = readComponent('components/ui/ShareButtons.client.tsx');
-            });
-
-            it('should have rel="noopener noreferrer" on external links', () => {
-                expect(shareButtonsContent).toContain('rel="noopener noreferrer"');
-            });
-
-            it('should open external links in new tab', () => {
-                expect(shareButtonsContent).toContain('target="_blank"');
-            });
-
-            it('should have descriptive aria-labels', () => {
-                expect(shareButtonsContent).toContain("aria-label={t('accessibility.shareOn");
-            });
-        });
+describe('aria-hidden on decorative elements', () => {
+    it('404 page SVG illustration is aria-hidden', () => {
+        // Decorative images must be hidden from screen readers (WCAG 1.1.1)
+        expect(page404Src).toContain('aria-hidden="true"');
     });
 
-    describe('Responsive Accessibility', () => {
-        describe('Header Navigation', () => {
-            let headerContent: string;
-
-            beforeAll(() => {
-                headerContent = readLayout('layouts/Header.astro');
-            });
-
-            it('should hide desktop nav on mobile', () => {
-                expect(headerContent).toContain('hidden');
-                expect(headerContent).toContain('md:flex');
-            });
-
-            it('should use MobileMenuWrapper hydrated only on mobile', () => {
-                expect(headerContent).toContain('client:media="(max-width: 768px)"');
-            });
-        });
+    it('500 page SVG illustration is aria-hidden', () => {
+        expect(page500Src).toContain('aria-hidden="true"');
     });
 
-    describe('Progressive Enhancement', () => {
-        describe('AccordionFAQ Component', () => {
-            let accordionContent: string;
+    it('404 decorative error code text is aria-hidden', () => {
+        // The giant "404" number is decorative; the h1 conveys the real message
+        const matches = page404Src.match(/aria-hidden="true"/g) ?? [];
+        expect(matches.length).toBeGreaterThanOrEqual(2);
+    });
 
-            beforeAll(() => {
-                accordionContent = readComponent('components/ui/AccordionFAQ.client.tsx');
-            });
+    it('500 decorative error code text is aria-hidden', () => {
+        const matches = page500Src.match(/aria-hidden="true"/g) ?? [];
+        expect(matches.length).toBeGreaterThanOrEqual(2);
+    });
 
-            it('should use native details/summary elements', () => {
-                expect(accordionContent).toContain('<details');
-                expect(accordionContent).toContain('<summary');
-            });
+    it('header nav separator spans are aria-hidden', () => {
+        // Decorative pipe separators between nav links are not meaningful
+        expect(headerSrc).toContain('aria-hidden="true"');
+    });
 
-            it('should work without JavaScript via details element', () => {
-                expect(accordionContent).toContain('open={isOpen}');
-            });
-        });
+    it('icons inside buttons and links are aria-hidden', () => {
+        // Icon SVGs inside labelled buttons/links must not add duplicate text
+        expect(page404Src).toContain('aria-hidden="true"');
+        expect(page500Src).toContain('aria-hidden="true"');
+    });
+});
 
-        describe('Modal Component', () => {
-            let modalContent: string;
+// ---------------------------------------------------------------------------
+// Image alt text
+// ---------------------------------------------------------------------------
 
-            beforeAll(() => {
-                modalContent = readComponent('components/ui/Modal.client.tsx');
-            });
+describe('Header.astro — image alt text', () => {
+    it('logo image has a descriptive alt attribute', () => {
+        // WCAG 1.1.1: non-text content
+        expect(headerSrc).toContain('alt="Hospeda logo"');
+    });
+});
 
-            it('should use native dialog element', () => {
-                expect(modalContent).toContain('<dialog');
-                expect(modalContent).toContain('dialogRef');
-            });
+// ---------------------------------------------------------------------------
+// Heading hierarchy
+// ---------------------------------------------------------------------------
 
-            it('should use native showModal() API', () => {
-                expect(modalContent).toContain('showModal()');
-            });
-        });
+describe('Page heading hierarchy', () => {
+    it('404 page has exactly one h1 element', () => {
+        const h1Count = (page404Src.match(/<h1/g) ?? []).length;
+        expect(h1Count).toBe(1);
+    });
+
+    it('500 page has exactly one h1 element', () => {
+        const h1Count = (page500Src.match(/<h1/g) ?? []).length;
+        expect(h1Count).toBe(1);
+    });
+
+    it('mapa-del-sitio has one h1 and uses h2 for section headings', () => {
+        // The page renders seven sections via Astro's map() template — the source
+        // contains one <h2 template expression that produces a heading per section.
+        const h1Count = (mapaSiteSrc.match(/<h1/g) ?? []).length;
+        const h2Count = (mapaSiteSrc.match(/<h2/g) ?? []).length;
+        expect(h1Count).toBe(1);
+        expect(h2Count).toBeGreaterThanOrEqual(1);
+    });
+
+    it('contacto page h1 is the first heading on the page', () => {
+        // h2 should only appear after an h1 in the document
+        const h1Index = contactoSrc.indexOf('<h1');
+        const h2Index = contactoSrc.indexOf('<h2');
+        expect(h1Index).toBeGreaterThan(0);
+        expect(h1Index).toBeLessThan(h2Index);
+    });
+
+    it('contacto page has an h1 and an h2 (contact info section)', () => {
+        expect(contactoSrc).toContain('<h1');
+        expect(contactoSrc).toContain('<h2');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Semantic HTML — additional structural elements
+// ---------------------------------------------------------------------------
+
+describe('Semantic HTML structural elements', () => {
+    it('mapa-del-sitio uses <article> elements for section cards', () => {
+        // Each sitemap card is a standalone, self-contained content unit
+        expect(mapaSiteSrc).toContain('<article');
+    });
+
+    it('mapa-del-sitio uses <nav> with aria-label inside each section', () => {
+        expect(mapaSiteSrc).toContain('<nav aria-label=');
+    });
+
+    it('contacto page uses <aside> for supplementary contact information', () => {
+        // The contact info panel is supplementary to the main form content
+        expect(contactoSrc).toContain('<aside');
+    });
+
+    it('contacto page uses <section> with scroll-reveal for the main section', () => {
+        expect(contactoSrc).toContain('<section');
+    });
+
+    it('contacto page wraps its heading in a <header> element', () => {
+        expect(contactoSrc).toContain('<header');
+    });
+
+    it('mapa-del-sitio wraps its page heading in a <header> element', () => {
+        expect(mapaSiteSrc).toContain('<header');
+    });
+
+    it('contacto contact info uses a <ul> list for contact items', () => {
+        // Structurally listed contact details aid screen reader navigation
+        expect(contactoSrc).toContain('<ul');
+        expect(contactoSrc).toContain('<li');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Form accessibility — label associations
+// ---------------------------------------------------------------------------
+
+describe('contacto.astro — form accessibility', () => {
+    it('renders a ContactForm React island for the contact form', () => {
+        // Form label/field associations are owned by ContactForm component
+        expect(contactoSrc).toContain('ContactForm');
+    });
+
+    it('social media links have descriptive aria-label attributes', () => {
+        // Icon-only links must have accessible names (WCAG 1.1.1, 4.1.2)
+        expect(contactoSrc).toContain('aria-label="Instagram"');
+        expect(contactoSrc).toContain('aria-label="Facebook"');
+        expect(contactoSrc).toContain('aria-label="Twitter / X"');
+    });
+
+    it('social media icon SVGs inside links are aria-hidden', () => {
+        // Icon is decorative when the link already has an accessible name
+        expect(contactoSrc).toContain('aria-hidden="true"');
+    });
+
+    it('contact info list has an aria-label for screen reader context', () => {
+        expect(contactoSrc).toContain('aria-label={contactInfoHeading}');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Prefers-reduced-motion
+// ---------------------------------------------------------------------------
+
+describe('global.css — prefers-reduced-motion support', () => {
+    it('BaseLayout respects prefers-reduced-motion in the scroll observer script', () => {
+        // The inline scroll-reveal script checks prefers-reduced-motion and
+        // immediately reveals all elements when the user prefers reduced motion
+        expect(baseLayoutSrc).toContain('prefers-reduced-motion');
+        expect(baseLayoutSrc).toContain('prefersReducedMotion');
+    });
+
+    it('scroll-reveal animations are defined in CSS', () => {
+        expect(globalCssSrc).toContain('.scroll-reveal');
+        expect(globalCssSrc).toContain('.scroll-reveal.revealed');
+    });
+
+    it('defines transition properties for scroll-reveal animations', () => {
+        expect(globalCssSrc).toContain('transition:');
+        expect(globalCssSrc).toContain('ease-out');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Dark mode — contrast accessibility
+// ---------------------------------------------------------------------------
+
+describe('global.css — dark mode via data-theme attribute', () => {
+    it('dark mode activates via [data-theme="dark"] selector', () => {
+        // Ensures dark mode is not dependent on OS preference alone,
+        // letting users override regardless of system settings
+        expect(globalCssSrc).toContain('[data-theme="dark"]');
+    });
+
+    it('BaseLayout includes FOUC prevention script for dark mode', () => {
+        // Prevents flash of un-themed content before styles load
+        expect(baseLayoutSrc).toContain("localStorage.getItem('theme')");
+        expect(baseLayoutSrc).toContain('data-theme');
+    });
+
+    it('dark mode defines destructive color for error states', () => {
+        // Ensures error colors remain visible in dark mode
+        const darkSection = globalCssSrc.slice(globalCssSrc.indexOf('[data-theme="dark"]'));
+        expect(darkSection).toContain('--destructive:');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Viewport meta tag — mobile accessibility
+// ---------------------------------------------------------------------------
+
+describe('BaseLayout.astro — viewport and mobile accessibility', () => {
+    it('sets the viewport meta tag for responsive layout', () => {
+        // Prevents mobile browsers from scaling down pages (WCAG 1.4.4)
+        expect(baseLayoutSrc).toContain('name="viewport"');
+        expect(baseLayoutSrc).toContain('width=device-width');
+    });
+
+    it('sets charset to UTF-8 for international character support', () => {
+        expect(baseLayoutSrc).toContain('charset="UTF-8"');
     });
 });

@@ -1,309 +1,438 @@
 ---
-export const prerender = true;
-
 /**
- * Accommodation Detail Page
+ * @file [slug].astro
+ * @description Accommodation detail page.
  *
- * Displays comprehensive information about a single accommodation including:
- * - Image gallery with lightbox
- * - Description, amenities, location map
- * - Reviews and FAQ section
- * - Similar accommodations recommendations
- * - Booking sidebar with pricing and check-in/check-out times
+ * Displays comprehensive information about a single accommodation:
+ * - Hero image gallery with lightbox
+ * - Title, category badge, star rating, location
+ * - Rich-text description rendered from TipTap JSON
+ * - Amenities grid
+ * - Pricing sidebar with check-in / check-out times
+ * - Interactive map showing the property location
+ * - Reviews section (authenticated-aware server island)
+ * - FAQ accordion
+ * - Share and favourite buttons
+ * - Related accommodations (up to 3 cards)
+ * - Breadcrumb with destination hierarchy
+ * - LodgingBusiness JSON-LD structured data
  *
- * Rendering: SSG + ISR (24h revalidation)
+ * Rendering: SSG (prerender = true) + server:defer islands for auth-aware content.
  * Route: /[lang]/alojamientos/[slug]
  */
 
+export const prerender = true;
+
+import type { AccommodationPublic } from '@repo/schemas';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import Container from '../../../components/ui/Container.astro';
-import Section from '../../../components/ui/Section.astro';
-import Badge from '../../../components/ui/Badge.astro';
-import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import LodgingBusinessJsonLd from '../../../components/seo/LodgingBusinessJsonLd.astro';
-import AccommodationCardFeatured from '../../../components/accommodation/AccommodationCardFeatured.astro';
-import AmenitiesList from '../../../components/accommodation/AmenitiesList.astro';
-import { ImageGallery } from '../../../components/ui/ImageGallery.client.tsx';
-import { ShareButtons } from '../../../components/ui/ShareButtons.client.tsx';
-import FavoriteButtonIsland from '../../../components/ui/FavoriteButtonIsland.astro';
-import { AccordionFAQ } from '../../../components/ui/AccordionFAQ.client.tsx';
-import { MapView } from '../../../components/map/MapView.client.tsx';
+import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
+import AmenitiesList from '../../../components/shared/AmenitiesList.astro';
+import AccordionFAQ from '../../../components/shared/AccordionFAQ.astro';
+import AccommodationCard from '../../../components/shared/AccommodationCard.astro';
+import FavoriteButtonIsland from '../../../components/shared/FavoriteButtonIsland.astro';
 import ReviewListIsland from '../../../components/review/ReviewListIsland.astro';
-import PriceDisplay from '../../../components/ui/PriceDisplay.astro';
-import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
-import { t as i18nT } from '../../../lib/i18n';
-import { renderTiptapContent } from '../../../lib/tiptap-renderer';
-import { sanitizeHtml } from '../../../lib/sanitize-html';
+import { ImageGallery } from '../../../components/shared/ImageGallery.client';
+import { ShareButtons } from '../../../components/shared/ShareButtons.client';
+import { MapView } from '../../../components/shared/MapView.client';
 import { accommodationsApi } from '../../../lib/api/endpoints';
 import { fetchAllPages } from '../../../lib/api/client';
-import { toAccommodationCardProps } from '../../../lib/api/transforms';
+import { createT } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
+import { renderTiptapContent } from '../../../lib/tiptap-renderer';
+import { sanitizeHtml } from '../../../lib/sanitize-html';
+import { toAccommodationCardProps } from '../../../lib/api/transforms';
+import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
 
-const { slug } = Astro.params;
+/**
+ * Generate static paths for all accommodation slugs across all locales.
+ * Uses fetchAllPages to paginate through the full catalog.
+ */
+export async function getStaticPaths() {
+    const accommodations = await fetchAllPages({
+        fetcher: (p) => accommodationsApi.list(p),
+    });
+
+    return SUPPORTED_LOCALES.flatMap((lang) =>
+        accommodations
+            .filter((a) => Boolean(a.slug))
+            .map((a) => ({
+                params: { lang, slug: a.slug },
+                props: { accommodation: a },
+            }))
+    );
+}
+
+// --- Locale validation ---
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-/**
- * getStaticPaths - Generate static paths for all accommodations
- */
-export async function getStaticPaths() {
-  const locales = SUPPORTED_LOCALES;
-  const accommodations = await fetchAllPages({
-    fetcher: (p) => accommodationsApi.list(p),
-  });
+const { slug } = Astro.params;
 
-  return locales.flatMap((lang) =>
-    accommodations
-      .filter((a) => a.slug)
-      .map((a) => ({
-        params: { lang, slug: a.slug },
-        props: { accommodation: a },
-      }))
-  );
-}
-
-// Fetch accommodation from props (getStaticPaths) or API (fallback)
-let accommodation = Astro.props.accommodation;
+// --- Accommodation data ---
+// Props come from getStaticPaths. Fallback fetch for dev/preview environments.
+let accommodation = Astro.props.accommodation as AccommodationPublic | undefined;
 if (!accommodation) {
-  const result = await accommodationsApi.getBySlug({ slug: slug || '' });
-  if (!result.ok) {
-    return Astro.redirect(`/${locale}/alojamientos/`);
-  }
-  accommodation = result.data;
+    const result = await accommodationsApi.getBySlug({ slug: slug ?? '' });
+    if (!result.ok) {
+        return Astro.redirect(buildUrl({ locale, path: '404' }));
+    }
+    accommodation = result.data;
 }
 
-// Extract image URLs from nested media structure
-const accRecord = accommodation as Record<string, unknown>;
-const accommodationImage = extractFeaturedImageUrl(accRecord, '/images/placeholder-accommodation.svg');
-const accommodationGallery = extractGalleryUrls(accRecord);
-const galleryImages = accommodationGallery.length > 0
-  ? accommodationGallery.map((url) => ({ src: url, alt: String(accommodation.name || '') }))
-  : [{ src: accommodationImage, alt: String(accommodation.name || '') }];
+// --- Media extraction ---
 
-// Render TipTap content to HTML
-const renderedDescription = sanitizeHtml({ html: renderTiptapContent({ content: accommodation.description }) });
+const accRecord = accommodation as unknown as Record<string, unknown>;
+const featuredImageUrl = extractFeaturedImageUrl(accRecord, '/images/placeholder-accommodation.svg');
+const galleryUrls = extractGalleryUrls(accRecord);
 
-// Fetch similar accommodations from API
+/** Gallery images: prefer multi-image gallery, fall back to featured image. */
+const galleryImages = galleryUrls.length > 0
+    ? galleryUrls.map((url) => ({ src: url, alt: String(accommodation.name ?? '') }))
+    : [{ src: featuredImageUrl, alt: String(accommodation.name ?? '') }];
+
+// --- Rich-text description ---
+
+const descriptionHtml = sanitizeHtml({
+    html: renderTiptapContent({
+        // description is stored as TipTap JSON in the API
+        content: accommodation.description as Parameters<typeof renderTiptapContent>[0]['content'],
+    }),
+});
+
+// --- Similar accommodations ---
+
 const simResult = await accommodationsApi.list({ pageSize: 4 });
 const allAccommodations = simResult.ok ? simResult.data.items : [];
-const similarCards = allAccommodations
-  .filter((a) => a.id !== accommodation.id)
-  .slice(0, 3)
-  .map((item) => toAccommodationCardProps({ item: item as Record<string, unknown> }));
+const relatedCards = allAccommodations
+    .filter((a) => a.id !== accommodation.id)
+    .slice(0, 3)
+    .map((item) => toAccommodationCardProps({ item: item as Record<string, unknown> }));
 
-// Localized texts via i18n
-const tAcc = (key: string) => i18nT({ locale, namespace: 'accommodations', key: `detail.${key}` });
+// --- Translations ---
 
-const t = {
-  home: tAcc('home'),
-  accommodations: tAcc('accommodations'),
-  description: tAcc('description'),
-  amenities: tAcc('amenities'),
-  location: tAcc('location'),
-  reviews: tAcc('reviews'),
-  faq: tAcc('faq'),
-  similar: tAcc('similar'),
-  perNight: tAcc('perNight'),
-  share: tAcc('share'),
-  checkIn: tAcc('checkIn'),
-  checkOut: tAcc('checkOut'),
-  stars: tAcc('stars'),
-  reviewsLabel: tAcc('reviewsLabel'),
-  bookNow: tAcc('bookNow'),
-};
+const t = createT(locale);
 
-// Breadcrumb navigation items
+const labels = {
+    home: t('nav.home', 'Inicio'),
+    accommodations: t('nav.accommodations', 'Alojamientos'),
+    description: t('accommodations.detail.description', 'Descripcion'),
+    amenities: t('accommodations.detail.amenities', 'Comodidades'),
+    location: t('accommodations.detail.location', 'Ubicacion'),
+    reviews: t('accommodations.detail.reviews', 'Resenas'),
+    faq: t('accommodations.detail.faq', 'Preguntas frecuentes'),
+    similar: t('accommodations.detail.similar', 'Alojamientos similares'),
+    perNight: t('accommodations.detail.perNight', 'noche'),
+    checkIn: t('accommodations.detail.checkIn', 'Check-in'),
+    checkOut: t('accommodations.detail.checkOut', 'Check-out'),
+    reviewsLabel: t('accommodations.detail.reviewsLabel', 'resenas'),
+    inquire: t('accommodations.detail.inquire', 'Consultar precio'),
+    noAmenities: t('accommodations.detail.noAmenities', 'Sin comodidades registradas'),
+    noFaq: t('accommodations.detail.noFaq', 'Sin preguntas frecuentes'),
+    noSimilar: t('accommodations.detail.noSimilar', 'Sin alojamientos similares'),
+} as const;
+
+// --- Breadcrumb ---
+
 const breadcrumbItems = [
-  { label: t.home, href: `/${locale}/` },
-  { label: t.accommodations, href: `/${locale}/alojamientos/` },
-  { label: accommodation.name },
+    { label: labels.home, href: buildUrl({ locale }) },
+    { label: labels.accommodations, href: buildUrl({ locale, path: 'alojamientos' }) },
+    { label: String(accommodation.name ?? ''), href: buildUrl({ locale, path: `alojamientos/${accommodation.slug}` }) },
 ];
 
-// Page URL for sharing and canonical
-const pageUrl = `/${locale}/alojamientos/${accommodation.slug}/`;
+// --- Page URL (for sharing and canonical) ---
 
-// Map markers for location
+const pageUrl = buildUrl({ locale, path: `alojamientos/${accommodation.slug}` });
+
+// --- Map marker ---
+
+const locationObj = accommodation.location as Record<string, unknown> | undefined;
+const lat = Number(locationObj?.lat ?? -32.4833);
+const lng = Number(locationObj?.lng ?? -58.2333);
+const address = String(locationObj?.address ?? '');
+const city = String(locationObj?.city ?? '');
+const province = String(locationObj?.state ?? locationObj?.province ?? '');
+
 const mapMarkers = [
-  {
-    id: accommodation.id,
-    lat: accommodation.location?.lat || -32.4833,
-    lng: accommodation.location?.lng || -58.2333,
-    title: accommodation.name,
-    popup: accommodation.location?.address || ''
-  }
+    {
+        id: accommodation.id,
+        lat,
+        lng,
+        title: String(accommodation.name ?? ''),
+        popup: address,
+    },
 ];
+
+// --- Pricing ---
+
+const priceData = accommodation.price as Record<string, unknown> | undefined;
+const priceAmount = Number(priceData?.price ?? priceData?.amount ?? 0);
+const priceCurrency = String(priceData?.currency ?? 'ARS');
+const priceDisplay = priceAmount > 0
+    ? `${priceCurrency === 'ARS' ? '$' : priceCurrency}${priceAmount.toLocaleString('es-AR')}`
+    : null;
+
+// --- Amenities ---
+
+type AmenityItem = { name: string; icon?: string; slug: string; displayWeight?: number };
+
+const rawAmenities = accommodation.amenities as Array<Record<string, unknown>> | undefined;
+const amenities: readonly AmenityItem[] = rawAmenities
+    ? rawAmenities.map((rel) => {
+          const nested = (rel.amenity ?? rel) as Record<string, unknown>;
+          return {
+              slug: String(nested.slug ?? nested.name ?? ''),
+              name: String(nested.description ?? nested.name ?? rel.name ?? ''),
+              icon: nested.icon ? String(nested.icon) : undefined,
+              displayWeight: Number(nested.displayWeight ?? 50),
+          };
+      }).filter((a) => Boolean(a.slug))
+    : [];
+
+// --- FAQ ---
+
+type FaqItem = { question: string; answer: string };
+const rawFaqs = (accommodation as unknown as Record<string, unknown>).faqs as Array<Record<string, unknown>> | undefined;
+const faqs: readonly FaqItem[] = rawFaqs
+    ? rawFaqs.map((f) => ({
+          question: String(f.question ?? ''),
+          answer: String(f.answer ?? ''),
+      })).filter((f) => Boolean(f.question))
+    : [];
+
+// --- Extra info (check-in / check-out) ---
+
+const extraInfo = accommodation.extraInfo as Record<string, unknown> | undefined;
+const checkInTime = String(extraInfo?.checkIn ?? extraInfo?.checkInTime ?? '14:00');
+const checkOutTime = String(extraInfo?.checkOut ?? extraInfo?.checkOutTime ?? '10:00');
+
+// --- SEO ---
+
+const seoDescription = `${String(accommodation.name ?? '')} en ${city}, ${province}`;
+const canonicalUrl = `${import.meta.env.PUBLIC_SITE_URL ?? ''}${pageUrl}`;
+
+// --- JSON-LD address ---
+
+const jsonLdAddress = {
+    streetAddress: address,
+    addressLocality: city,
+    addressRegion: province,
+    addressCountry: 'AR',
+};
 ---
 
 <BaseLayout
-  title={accommodation.name}
-  description={`${accommodation.name} - ${accommodation.location?.city || ''}`}
-  locale={locale}
-  image={accommodationImage}
->
-  <SEOHead
-    slot="head"
-    title={accommodation.name}
-    description={`${accommodation.name} en ${accommodation.location?.city || ''}, ${accommodation.location?.province || ''}`}
-    image={accommodationImage}
+    title={String(accommodation.name ?? '')}
+    description={seoDescription}
     locale={locale}
-  />
-  <LodgingBusinessJsonLd
-    slot="head"
-    name={accommodation.name}
-    description={accommodation.location?.address || ''}
-    image={accommodationImage}
-    rating={accommodation.rating || 0}
-    reviewCount={accommodation.reviewCount || 0}
-    priceRange={`$${accommodation.pricePerNight || 0}`}
-    address={accommodation.location?.address || ''}
-    url={pageUrl}
-  />
+>
+    <SEOHead
+        slot="head"
+        title={String(accommodation.name ?? '')}
+        description={seoDescription}
+        canonical={canonicalUrl}
+        image={featuredImageUrl}
+        locale={locale}
+    />
+    <LodgingBusinessJsonLd
+        slot="head"
+        name={String(accommodation.name ?? '')}
+        description={seoDescription}
+        url={canonicalUrl}
+        image={featuredImageUrl}
+        address={jsonLdAddress}
+        priceRange={priceDisplay ?? undefined}
+        amenities={amenities.map((a) => a.name)}
+    />
 
-  <Container>
-    <Breadcrumb items={breadcrumbItems} class="py-4" />
+    <div class="container mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Breadcrumb */}
+        <Breadcrumb items={breadcrumbItems} />
 
-    <!-- Image Gallery -->
-    <div transition:name={`entity-${slug}`}>
-      <ImageGallery client:visible images={galleryImages} />
-    </div>
-
-    <!-- Main content grid -->
-    <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
-      <!-- Left column (2/3) -->
-      <div class="lg:col-span-2 space-y-8">
-        <!-- Header -->
-        <div>
-          <div class="flex items-start justify-between">
-            <div>
-              <Badge variant="primary" label={accommodation.type || 'HOTEL'} />
-              <h1 class="mt-2 text-3xl font-bold">{accommodation.name}</h1>
-              <p class="mt-1 text-text-secondary">
-                {accommodation.location?.address || ''}, {accommodation.location?.city || ''}, {accommodation.location?.province || ''}
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <FavoriteButtonIsland
-                server:defer
-                entityId={accommodation.id}
-                entityType="accommodation"
-                entityName={accommodation.name}
-              >
-                <div slot="fallback" class="h-10 w-10 animate-pulse rounded-full bg-surface-alt" />
-              </FavoriteButtonIsland>
-              <ShareButtons
-                client:visible
-                url={pageUrl}
-                title={accommodation.name}
-              />
-            </div>
-          </div>
-          <!-- Rating -->
-          <div class="mt-3 flex items-center gap-2">
-            <span class="rounded-md bg-primary px-2 py-1 text-sm font-bold text-white">
-              {accommodation.rating || 0}
-            </span>
-            <span class="text-sm text-text-secondary">
-              ({accommodation.reviewCount || 0} {t.reviewsLabel})
-            </span>
-          </div>
+        {/* Image gallery with view transition morphing */}
+        <div class="mt-4" transition:name={`entity-${slug}`}>
+            <ImageGallery client:visible images={galleryImages} locale={locale} />
         </div>
 
-        <!-- Description -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.description}</h2>
-          <div class="prose max-w-none" set:html={renderedDescription} />
-        </section>
+        {/* Main content grid */}
+        <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
 
-        <!-- Amenities -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.amenities}</h2>
-          <AmenitiesList amenities={accommodation.amenities || []} />
-        </section>
+            {/* ─── Left column (2/3) ─────────────────────────────── */}
+            <div class="space-y-10 lg:col-span-2">
 
-        <!-- Location Map -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.location}</h2>
-          <MapView
-            client:visible
-            markers={mapMarkers}
-            center={[accommodation.location?.lat || -32.4833, accommodation.location?.lng || -58.2333]}
-            zoom={15}
-            height="400px"
-          />
-        </section>
+                {/* Header: type badge, name, location, rating, actions */}
+                <header>
+                    <div class="flex flex-wrap items-start justify-between gap-4">
+                        <div class="flex-1 min-w-0">
+                            {/* Accommodation type badge */}
+                            <span class="inline-block rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                                {String(accommodation.type ?? '')}
+                            </span>
 
-        <!-- Reviews -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.reviews}</h2>
-          <ReviewListIsland
-            server:defer
-            reviews={[]}
-            totalCount={accommodation.reviewCount || 0}
-            locale={locale}
-            hasMore={false}
-          >
-            <div slot="fallback" class="space-y-4 animate-pulse">
-              <div class="h-4 w-3/4 rounded bg-surface-alt" />
-              <div class="h-4 w-1/2 rounded bg-surface-alt" />
-              <div class="h-4 w-2/3 rounded bg-surface-alt" />
+                            {/* Name */}
+                            <h1 class="mt-2 text-2xl font-bold leading-tight text-foreground sm:text-3xl">
+                                {accommodation.name}
+                            </h1>
+
+                            {/* Location */}
+                            {(city || province) && (
+                                <p class="mt-1 text-muted-foreground">
+                                    {[address, city, province].filter(Boolean).join(', ')}
+                                </p>
+                            )}
+
+                            {/* Rating */}
+                            <div class="mt-3 flex items-center gap-2">
+                                <span class="rounded-md bg-primary px-2 py-1 text-sm font-bold text-primary-foreground">
+                                    {Number(accommodation.averageRating ?? 0).toFixed(1)}
+                                </span>
+                                <span class="text-sm text-muted-foreground">
+                                    ({Number(accommodation.reviewsCount ?? 0)} {labels.reviewsLabel})
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div class="flex items-center gap-2 flex-shrink-0">
+                            <FavoriteButtonIsland
+                                entityId={accommodation.id}
+                                entityType="accommodation"
+                                entityName={String(accommodation.name ?? '')}
+                                locale={locale}
+                            >
+                                <div
+                                    slot="fallback"
+                                    class="h-10 w-10 animate-pulse rounded-full bg-muted"
+                                    aria-hidden="true"
+                                />
+                            </FavoriteButtonIsland>
+
+                            <ShareButtons
+                                client:visible
+                                url={canonicalUrl}
+                                title={String(accommodation.name ?? '')}
+                                locale={locale}
+                            />
+                        </div>
+                    </div>
+                </header>
+
+                {/* Description */}
+                {descriptionHtml && (
+                    <section aria-labelledby="description-heading" class="scroll-reveal-left">
+                        <h2 id="description-heading" class="mb-4 text-xl font-bold text-foreground">
+                            {labels.description}
+                        </h2>
+                        <div class="prose prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-primary prose-strong:text-foreground max-w-none" set:html={descriptionHtml} />
+                    </section>
+                )}
+
+                {/* Amenities */}
+                <section aria-labelledby="amenities-heading" class="scroll-reveal">
+                    <h2 id="amenities-heading" class="mb-4 text-xl font-bold text-foreground">
+                        {labels.amenities}
+                    </h2>
+                    {amenities.length > 0 ? (
+                        <AmenitiesList amenities={amenities} />
+                    ) : (
+                        <p class="text-muted-foreground">{labels.noAmenities}</p>
+                    )}
+                </section>
+
+                {/* Location map */}
+                <section aria-labelledby="location-heading">
+                    <h2 id="location-heading" class="mb-4 text-xl font-bold text-foreground">
+                        {labels.location}
+                    </h2>
+                    <MapView
+                        client:visible
+                        markers={mapMarkers}
+                        center={[lat, lng]}
+                        zoom={15}
+                        height="400px"
+                        locale={locale}
+                    />
+                </section>
+
+                {/* Reviews */}
+                <section aria-labelledby="reviews-heading" class="scroll-reveal">
+                    <h2 id="reviews-heading" class="mb-4 text-xl font-bold text-foreground">
+                        {labels.reviews}
+                    </h2>
+                    <ReviewListIsland
+                        server:defer
+                        reviews={[]}
+                        totalCount={Number(accommodation.reviewsCount ?? 0)}
+                        locale={locale}
+                        hasMore={false}
+                    />
+                </section>
+
+                {/* FAQ */}
+                {faqs.length > 0 && (
+                    <section aria-labelledby="faq-heading">
+                        <h2 id="faq-heading" class="mb-4 text-xl font-bold text-foreground">
+                            {labels.faq}
+                        </h2>
+                        <AccordionFAQ items={faqs} ariaLabel={labels.faq} />
+                    </section>
+                )}
             </div>
-          </ReviewListIsland>
-        </section>
 
-        <!-- FAQ -->
-        <section>
-          <h2 class="mb-4 text-2xl font-bold">{t.faq}</h2>
-          <AccordionFAQ
-            client:visible
-            items={accommodation.faqs || []}
-          />
-        </section>
-      </div>
+            {/* ─── Right sidebar (1/3) ──────────────────────────── */}
+            <aside class="lg:sticky lg:top-6 lg:self-start" aria-label="Pricing and availability">
+                <div class="rounded-xl border border-border bg-card p-6 shadow-sm">
 
-      <!-- Right sidebar (1/3) -->
-      <aside class="lg:sticky lg:top-4 lg:self-start">
-        <div class="rounded-lg border border-border p-6 shadow-sm">
-          <!-- Price -->
-          <div class="mb-4">
-            <PriceDisplay amountARS={accommodation.pricePerNight || 0} locale={locale} showDisclaimer={false} />
-            <span class="text-sm text-text-secondary"> / {t.perNight}</span>
-          </div>
+                    {/* Price */}
+                    <div class="mb-4 border-b border-border pb-4">
+                        {priceDisplay ? (
+                            <div class="flex items-baseline gap-1">
+                                <span class="text-2xl font-bold text-foreground">{priceDisplay}</span>
+                                <span class="text-sm text-muted-foreground">/ {labels.perNight}</span>
+                            </div>
+                        ) : (
+                            <p class="text-base font-semibold text-primary">{labels.inquire}</p>
+                        )}
+                    </div>
 
-          <!-- Check-in/out -->
-          <div class="mb-6 space-y-2 text-sm">
-            <div class="flex justify-between">
-              <span class="text-text-secondary">{t.checkIn}</span>
-              <span class="font-medium">{accommodation.checkIn || '14:00'}</span>
-            </div>
-            <div class="flex justify-between">
-              <span class="text-text-secondary">{t.checkOut}</span>
-              <span class="font-medium">{accommodation.checkOut || '10:00'}</span>
-            </div>
-          </div>
+                    {/* Check-in / Check-out */}
+                    <dl class="mb-6 space-y-3 text-sm">
+                        <div class="flex items-center justify-between">
+                            <dt class="text-muted-foreground">{labels.checkIn}</dt>
+                            <dd class="font-medium text-foreground">{checkInTime}</dd>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <dt class="text-muted-foreground">{labels.checkOut}</dt>
+                            <dd class="font-medium text-foreground">{checkOutTime}</dd>
+                        </div>
+                    </dl>
 
-          <!-- CTA button -->
-          <a
-            href="#"
-            class="block w-full rounded-md bg-primary px-4 py-3 text-center font-semibold text-white transition-colors hover:bg-primary-dark"
-          >
-            {t.bookNow}
-          </a>
+                    {/* Contact CTA */}
+                    <a
+                        href={buildUrl({ locale, path: 'contacto' })}
+                        class="block w-full rounded-lg bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    >
+                        {labels.inquire}
+                    </a>
+                </div>
+            </aside>
         </div>
-      </aside>
-    </div>
 
-    <!-- Similar Accommodations -->
-    <Section title={t.similar} class="mt-12">
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {similarCards.map((accommodation) => (
-          <AccommodationCardFeatured
-            accommodation={accommodation}
-            locale={locale}
-          />
-        ))}
-      </div>
-    </Section>
-  </Container>
+        {/* ─── Related accommodations ─────────────────────────────── */}
+        {relatedCards.length > 0 && (
+            <section class="scroll-reveal mt-16" aria-labelledby="similar-heading">
+                <h2 id="similar-heading" class="mb-6 text-2xl font-bold text-foreground">
+                    {labels.similar}
+                </h2>
+                <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                    {relatedCards.map((card) => (
+                        <AccommodationCard card={card} locale={locale} />
+                    ))}
+                </div>
+            </section>
+        )}
+    </div>
 </BaseLayout>

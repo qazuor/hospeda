@@ -12,22 +12,24 @@ import { ACCOMMODATION_TYPES, AMENITIES, DESTINATIONS } from './filter-sidebar.t
 export type { AccommodationFilters } from './filter-sidebar.types';
 
 /**
- * Props for the FilterSidebar component
+ * Props for the FilterSidebar component.
  */
 export interface FilterSidebarProps {
     /**
-     * Initial filter values
+     * Initial filter values to populate the sidebar state on first render.
+     * URL query parameters take precedence when present.
      */
     readonly initialFilters?: Partial<AccommodationFilters>;
 
     /**
-     * Locale for UI text
+     * Locale used for all UI text translations.
      * @default 'es'
      */
     readonly locale?: string;
 
     /**
-     * Additional CSS classes to apply to the component
+     * Additional CSS class names to apply to the root `<aside>` element.
+     * Useful for passing layout utilities such as `lg:sticky lg:top-4`.
      */
     readonly className?: string;
 }
@@ -36,17 +38,20 @@ export interface FilterSidebarProps {
  * FilterSidebar component
  *
  * A comprehensive filter sidebar for accommodation search with URL synchronization.
- * Features collapsible sections for type, price, destination, amenities, and rating.
- * Active filters are displayed as removable badges. All filter changes sync to URL
- * query parameters without page reload.
+ * Renders collapsible sections for accommodation type, price range, destination,
+ * amenities, and minimum star rating. Active filters are displayed as removable
+ * badge chips via {@link ActiveFilterChips}. All filter changes are pushed to
+ * URL query parameters via `window.history.pushState` without triggering a page
+ * reload. On mount the component reads any existing URL parameters to restore
+ * previous filter state.
  *
- * Sub-components:
- * - {@link FilterSection} - Collapsible section wrapper
- * - {@link PriceRangeFilter} - Price min/max inputs
- * - {@link ActiveFilterChips} - Active filter badge chips
+ * Sub-components composed internally:
+ * - {@link FilterSection} - Collapsible section wrapper with animated chevron
+ * - {@link PriceRangeFilter} - Min/max price number inputs inside a FilterSection
+ * - {@link ActiveFilterChips} - Removable badge chips for each active filter
  *
  * @param props - Component props
- * @returns React component
+ * @returns React element
  *
  * @example
  * ```tsx
@@ -85,7 +90,10 @@ export function FilterSidebar({
     });
 
     /**
-     * Syncs filters to URL query parameters
+     * Serializes the given filter state into URL query parameters and pushes
+     * the resulting URL to the browser history without reloading the page.
+     *
+     * @param newFilters - The filter state to serialize
      */
     const syncToUrl = (newFilters: AccommodationFilters): void => {
         const params = new URLSearchParams();
@@ -109,12 +117,15 @@ export function FilterSidebar({
             params.set('minRating', String(newFilters.minRating));
         }
 
-        const newUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`;
+        const query = params.toString();
+        const newUrl = `${window.location.pathname}${query ? `?${query}` : ''}`;
         window.history.pushState({}, '', newUrl);
     };
 
     /**
-     * Parses URL query parameters to initialize filters
+     * On mount, reads URL query parameters and merges them into the local
+     * filter state so that bookmarked or shared URLs restore the correct
+     * sidebar selection.
      */
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -150,7 +161,10 @@ export function FilterSidebar({
     }, []);
 
     /**
-     * Updates filters and syncs to URL
+     * Merges the given partial update into the current filter state and
+     * synchronizes the result to the URL.
+     *
+     * @param updates - Partial filter values to apply
      */
     const updateFilters = (updates: Partial<AccommodationFilters>): void => {
         const newFilters = { ...filters, ...updates };
@@ -159,7 +173,9 @@ export function FilterSidebar({
     };
 
     /**
-     * Toggles accommodation type
+     * Toggles a single accommodation type in the `types` filter array.
+     *
+     * @param type - Accommodation type identifier to toggle
      */
     const toggleType = (type: string): void => {
         const newTypes = filters.types.includes(type)
@@ -169,7 +185,9 @@ export function FilterSidebar({
     };
 
     /**
-     * Toggles amenity
+     * Toggles a single amenity in the `amenities` filter array.
+     *
+     * @param amenity - Amenity identifier to toggle
      */
     const toggleAmenity = (amenity: string): void => {
         const newAmenities = filters.amenities.includes(amenity)
@@ -179,14 +197,16 @@ export function FilterSidebar({
     };
 
     /**
-     * Sets minimum rating
+     * Sets the minimum star rating filter.
+     *
+     * @param rating - Numeric rating value (1-5)
      */
     const setRating = (rating: number): void => {
         updateFilters({ minRating: rating });
     };
 
     /**
-     * Clears all filters
+     * Resets all filters to their empty defaults and clears URL parameters.
      */
     const clearAllFilters = (): void => {
         const emptyFilters: AccommodationFilters = {
@@ -202,7 +222,11 @@ export function FilterSidebar({
     };
 
     /**
-     * Clears a specific filter
+     * Clears a single filter field, optionally removing only a specific value
+     * from array-based filters (types, amenities).
+     *
+     * @param filterType - The filter key to clear
+     * @param value - For array filters, the specific value to remove; omit to clear all
      */
     const clearFilter = (filterType: keyof AccommodationFilters, value?: string): void => {
         switch (filterType) {
@@ -232,14 +256,19 @@ export function FilterSidebar({
     };
 
     /**
-     * Toggles section expansion
+     * Toggles the expanded/collapsed state of a given section panel.
+     *
+     * @param section - The section key to toggle
      */
     const toggleSection = (section: keyof SectionState): void => {
         setExpandedSections((prev) => ({ ...prev, [section]: !prev[section] }));
     };
 
     /**
-     * Renders a star button for rating selection
+     * Renders a single star button for the rating selection row.
+     *
+     * @param index - Zero-based star index (0-4)
+     * @returns Star button element
      */
     const renderStar = (index: number): JSX.Element => {
         const value = index + 1;
@@ -265,11 +294,11 @@ export function FilterSidebar({
 
     return (
         <aside
-            className={`${className}`.trim()}
+            className={className.trim() || undefined}
             aria-label={t('sidebar.filters')}
         >
-            <div className="rounded-lg border border-border bg-surface p-6">
-                <h2 className="mb-6 font-bold text-text text-xl">{t('sidebar.filters')}</h2>
+            <div className="rounded-lg border border-border bg-card p-6">
+                <h2 className="mb-6 font-bold text-foreground text-xl">{t('sidebar.filters')}</h2>
 
                 <ActiveFilterChips
                     filters={filters}
@@ -283,7 +312,7 @@ export function FilterSidebar({
                     locale={locale}
                 />
 
-                {/* Type Section */}
+                {/* Accommodation type checkboxes */}
                 <FilterSection
                     title={t('sidebar.type')}
                     isExpanded={expandedSections.type}
@@ -301,13 +330,15 @@ export function FilterSidebar({
                                     onChange={() => toggleType(type)}
                                     className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
                                 />
-                                <span className="ml-3 text-sm text-text">{t(`types.${type}`)}</span>
+                                <span className="ml-3 text-foreground text-sm">
+                                    {t(`types.${type}`)}
+                                </span>
                             </label>
                         ))}
                     </div>
                 </FilterSection>
 
-                {/* Price Range Section */}
+                {/* Price range min/max inputs */}
                 <PriceRangeFilter
                     priceMin={filters.priceMin}
                     priceMax={filters.priceMax}
@@ -318,7 +349,7 @@ export function FilterSidebar({
                     locale={locale}
                 />
 
-                {/* Destination Section */}
+                {/* Destination select dropdown */}
                 <FilterSection
                     title={t('sidebar.destination')}
                     isExpanded={expandedSections.destination}
@@ -328,7 +359,7 @@ export function FilterSidebar({
                         id="destination"
                         value={filters.destination}
                         onChange={(e) => updateFilters({ destination: e.target.value })}
-                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                         <option value="">{t('sidebar.allDestinations')}</option>
                         {DESTINATIONS.map((dest) => (
@@ -342,7 +373,7 @@ export function FilterSidebar({
                     </select>
                 </FilterSection>
 
-                {/* Amenities Section */}
+                {/* Amenity checkboxes */}
                 <FilterSection
                     title={t('sidebar.amenities')}
                     isExpanded={expandedSections.amenities}
@@ -360,7 +391,7 @@ export function FilterSidebar({
                                     onChange={() => toggleAmenity(amenity)}
                                     className="h-4 w-4 rounded border-border text-primary focus:ring-2 focus:ring-primary"
                                 />
-                                <span className="ml-3 text-sm text-text">
+                                <span className="ml-3 text-foreground text-sm">
                                     {t(`sidebar.${amenity}`)}
                                 </span>
                             </label>
@@ -368,7 +399,7 @@ export function FilterSidebar({
                     </div>
                 </FilterSection>
 
-                {/* Rating Section */}
+                {/* Minimum rating star selector */}
                 <FilterSection
                     title={t('sidebar.rating')}
                     isExpanded={expandedSections.rating}

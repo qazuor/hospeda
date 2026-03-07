@@ -1,3 +1,10 @@
+/**
+ * @file Toast.client.tsx
+ * @description Toast notification system with icon-based type indicators.
+ * Uses feedback design tokens (success, warning, info, destructive).
+ * Renders all active toasts in a fixed position container.
+ */
+
 import {
     AlertTriangleIcon,
     CheckCircleIcon,
@@ -7,20 +14,23 @@ import {
 } from '@repo/icons';
 import type { JSX } from 'react';
 import { useSyncExternalStore } from 'react';
-import { useTranslation } from '../../hooks/useTranslation';
-import type { SupportedLocale } from '../../lib/i18n';
+import { cn } from '../../lib/cn';
 import { getToasts, removeToast, subscribe } from '../../store/toast-store';
 import type { Toast } from '../../store/toast-store';
 
+/** Server snapshot returns empty array (no toasts during SSR) */
+const emptyToasts: ReadonlyArray<Toast> = [];
+function getServerSnapshot(): ReadonlyArray<Toast> {
+    return emptyToasts;
+}
+
 /**
- * Custom hook to access toast store state
- *
- * Uses React's useSyncExternalStore to sync with the toast store.
+ * Custom hook to access toast store state via useSyncExternalStore.
  *
  * @returns Array of current toasts
  */
 function useToasts(): ReadonlyArray<Toast> {
-    return useSyncExternalStore(subscribe, getToasts);
+    return useSyncExternalStore(subscribe, getToasts, getServerSnapshot);
 }
 
 /**
@@ -73,17 +83,17 @@ function ToastIcon(params: { readonly type: Toast['type'] }): JSX.Element {
 }
 
 /**
- * Get Tailwind CSS classes for a toast type
+ * Get Tailwind CSS classes for a toast type using feedback design tokens.
  *
  * @param type - Toast type
  * @returns CSS class string for the toast type
  */
 function getToastTypeClasses(type: Toast['type']): string {
     const typeClasses: Record<Toast['type'], string> = {
-        success: 'bg-success/10 dark:bg-success/20 text-success border-success/30',
-        error: 'bg-error/10 dark:bg-error/20 text-error border-error/30',
-        warning: 'bg-warning/10 dark:bg-warning/20 text-warning border-warning/30',
-        info: 'bg-info/10 dark:bg-info/20 text-info border-info/30'
+        success: 'bg-success/10 text-success border-success/30',
+        error: 'bg-destructive/10 text-destructive border-destructive/30',
+        warning: 'bg-warning/10 text-warning border-warning/30',
+        info: 'bg-info/10 text-info border-info/30'
     };
 
     return typeClasses[type];
@@ -94,14 +104,13 @@ function getToastTypeClasses(type: Toast['type']): string {
  *
  * @param params - Component props
  * @param params.toast - Toast object
- * @param params.locale - Locale for i18n translations
+ * @param params.closeToastLabel - Accessible close button label
  */
 function ToastItem(params: {
     readonly toast: Toast;
-    readonly locale: SupportedLocale;
+    readonly closeToastLabel: string;
 }): JSX.Element {
-    const { toast, locale } = params;
-    const { t } = useTranslation({ locale, namespace: 'ui' });
+    const { toast, closeToastLabel } = params;
 
     const handleClose = (): void => {
         removeToast(toast.id);
@@ -110,8 +119,10 @@ function ToastItem(params: {
     return (
         <div
             role="alert"
-            className={`pointer-events-auto w-full max-w-sm rounded-lg border p-4 shadow-lg transition-all duration-300 ease-in-out animate-slide-in-right${getToastTypeClasses(toast.type)}
-			`}
+            className={cn(
+                'slide-in-from-right-5 fade-in pointer-events-auto w-full max-w-sm animate-in rounded-lg border p-4 shadow-lg duration-300',
+                getToastTypeClasses(toast.type)
+            )}
         >
             <div className="flex items-start gap-3">
                 <ToastIcon type={toast.type} />
@@ -120,7 +131,7 @@ function ToastItem(params: {
                     type="button"
                     onClick={handleClose}
                     className="shrink-0 rounded transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
-                    aria-label={t('accessibility.closeToast')}
+                    aria-label={closeToastLabel}
                 >
                     <CloseIconComponent
                         size={20}
@@ -137,28 +148,23 @@ function ToastItem(params: {
  * Props for the ToastContainer component
  */
 export interface ToastContainerProps {
-    /**
-     * Locale for i18n translations
-     * @default 'es'
-     */
-    readonly locale?: SupportedLocale;
+    /** Locale for content (currently unused, reserved for future i18n) */
+    readonly locale?: 'es' | 'en' | 'pt';
+    /** Accessible label for the close button (default: "Cerrar notificacion") */
+    readonly closeToastLabel?: string;
 }
 
 /**
- * Toast container component
- *
+ * Toast container component.
  * Renders all active toasts in a fixed position container.
  * Should be rendered once at the app root level.
  *
  * @param props - Component props
- *
- * @example
- * ```tsx
- * // In your layout/app root
- * <ToastContainer locale="es" />
- * ```
  */
-export function ToastContainer({ locale = 'es' }: ToastContainerProps): JSX.Element {
+export function ToastContainer({
+    locale: _locale = 'es',
+    closeToastLabel = 'Cerrar notificacion'
+}: ToastContainerProps): JSX.Element {
     const toasts = useToasts();
 
     return (
@@ -171,7 +177,7 @@ export function ToastContainer({ locale = 'es' }: ToastContainerProps): JSX.Elem
                 <ToastItem
                     key={toast.id}
                     toast={toast}
-                    locale={locale}
+                    closeToastLabel={closeToastLabel}
                 />
             ))}
         </div>

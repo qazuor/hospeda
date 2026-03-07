@@ -1,10 +1,8 @@
 /**
- * Toast notification store
- *
+ * @file toast-store.ts
+ * @description Toast notification store.
  * Simple pub/sub store for managing toast notifications without external dependencies.
  * Uses module-level state with subscribers pattern compatible with React's useSyncExternalStore.
- *
- * @module toast-store
  */
 
 /**
@@ -14,27 +12,19 @@ export interface Toast {
     readonly id: string;
     readonly type: 'success' | 'error' | 'warning' | 'info';
     readonly message: string;
-    readonly duration?: number; // milliseconds, default 5000
+    readonly duration?: number;
 }
 
-/**
- * Internal mutable store state
- */
+/** Internal mutable store state */
 let toasts: Toast[] = [];
 
-/**
- * Set of listener functions to notify on state changes
- */
+/** Set of listener functions to notify on state changes */
 const listeners = new Set<() => void>();
 
-/**
- * Map of toast IDs to their auto-dismiss timeout IDs
- */
+/** Map of toast IDs to their auto-dismiss timeout IDs */
 const timeouts = new Map<string, NodeJS.Timeout>();
 
-/**
- * Notify all subscribers of state change
- */
+/** Notify all subscribers of state change */
 function emitChange(): void {
     for (const listener of listeners) {
         listener();
@@ -61,12 +51,6 @@ function generateId(): string {
  * @param params.message - Toast message content
  * @param params.duration - Auto-dismiss duration in milliseconds (default: 5000)
  * @returns The ID of the created toast
- *
- * @example
- * ```ts
- * addToast({ type: 'success', message: 'Item saved successfully!' });
- * addToast({ type: 'error', message: 'Failed to save', duration: 10000 });
- * ```
  */
 export function addToast(params: Omit<Toast, 'id'>): string {
     const { type, message, duration = 5000 } = params;
@@ -77,7 +61,6 @@ export function addToast(params: Omit<Toast, 'id'>): string {
     toasts = [...toasts, toast];
     emitChange();
 
-    // Set up auto-dismiss if duration is specified
     if (duration > 0) {
         const timeoutId = setTimeout(() => {
             removeToast(id);
@@ -92,16 +75,8 @@ export function addToast(params: Omit<Toast, 'id'>): string {
  * Remove a toast notification by ID
  *
  * @param id - Toast ID to remove
- *
- * @example
- * ```ts
- * const toastId = addToast({ type: 'info', message: 'Processing...' });
- * // Later...
- * removeToast(toastId);
- * ```
  */
 export function removeToast(id: string): void {
-    // Clear auto-dismiss timeout if exists
     const timeoutId = timeouts.get(id);
     if (timeoutId) {
         clearTimeout(timeoutId);
@@ -114,14 +89,8 @@ export function removeToast(id: string): void {
 
 /**
  * Remove all toast notifications
- *
- * @example
- * ```ts
- * clearToasts();
- * ```
  */
 export function clearToasts(): void {
-    // Clear all auto-dismiss timeouts
     for (const timeoutId of timeouts.values()) {
         clearTimeout(timeoutId);
     }
@@ -145,16 +114,6 @@ export function getToasts(): ReadonlyArray<Toast> {
  *
  * @param listener - Callback function to invoke on state change
  * @returns Unsubscribe function
- *
- * @example
- * ```ts
- * const unsubscribe = subscribe(() => {
- *   console.log('Toasts changed:', getToasts());
- * });
- *
- * // Later...
- * unsubscribe();
- * ```
  */
 export function subscribe(listener: () => void): () => void {
     listeners.add(listener);

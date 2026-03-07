@@ -1,70 +1,25 @@
 ---
 /**
- * SEO Head component for Hospeda web2 application.
+ * SEO Head component for Hospeda web3 application.
  * Renders essential meta tags, Open Graph tags, Twitter Card tags, and hreflang links.
- *
- * @example
- * ```astro
- * ---
- * import SEOHead from '@/components/seo/SEOHead.astro';
- * ---
- *
- * <head>
- *   <SEOHead
- *     title="Alojamientos en Concepción del Uruguay"
- *     description="Descubre los mejores alojamientos turísticos en Concepción del Uruguay."
- *     canonical="https://hospeda.com/es/alojamientos"
- *     image="https://hospeda.com/images/og-accommodations.jpg"
- *     locale="es"
- *     type="website"
- *   />
- * </head>
- * ```
  */
 
-/**
- * Props interface for SEOHead component.
- */
 import { SUPPORTED_LOCALES, type SupportedLocale } from '../../lib/i18n';
 
 export interface Props {
-  /**
-   * Page title (will be suffixed with " | Hospeda")
-   */
+  /** Page title (will be suffixed with " | Hospeda") */
   title: string;
-
-  /**
-   * Meta description for the page
-   */
+  /** Meta description for the page */
   description: string;
-
-  /**
-   * Canonical URL of the page
-   */
+  /** Canonical URL of the page */
   canonical: string;
-
-  /**
-   * Open Graph and Twitter Card image URL
-   */
+  /** Open Graph and Twitter Card image URL */
   image?: string;
-
-  /**
-   * Whether to add noindex robots meta tag
-   * @default false
-   */
+  /** Whether to add noindex robots meta tag */
   noindex?: boolean;
-
-  /**
-   * Page locale for Open Graph and hreflang tags.
-   * All supported locales are accepted directly.. no need to convert PT to ES.
-   * @default 'es'
-   */
+  /** Page locale for Open Graph and hreflang tags */
   locale?: SupportedLocale;
-
-  /**
-   * Open Graph type
-   * @default 'website'
-   */
+  /** Open Graph type */
   type?: 'website' | 'article';
 }
 
@@ -78,24 +33,15 @@ const {
   type = 'website',
 } = Astro.props;
 
-/**
- * Generate full page title with site suffix
- */
 const fullTitle = `${title} | Hospeda`;
 
-/**
- * Generate alternate URLs for hreflang tags.
- * Replaces locale in canonical URL with target locale.
- */
 const generateAlternateUrl = (targetLocale: string): string => {
   const url = new URL(canonical);
   const pathParts = url.pathname.split('/').filter(Boolean);
 
-  // Replace first path segment (locale) if it's a known locale
   if (pathParts.length > 0 && SUPPORTED_LOCALES.includes(pathParts[0] as typeof SUPPORTED_LOCALES[number])) {
     pathParts[0] = targetLocale;
   } else {
-    // Prepend locale if not present
     pathParts.unshift(targetLocale);
   }
 
@@ -107,9 +53,6 @@ const esUrl = generateAlternateUrl('es');
 const enUrl = generateAlternateUrl('en');
 const ptUrl = generateAlternateUrl('pt');
 
-/**
- * Map locale to Open Graph locale format
- */
 const ogLocale = locale === 'es' ? 'es_AR' : locale === 'pt' ? 'pt_BR' : 'en_US';
 ---
 

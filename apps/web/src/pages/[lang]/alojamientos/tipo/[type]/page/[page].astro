@@ -1,32 +1,51 @@
 ---
 /**
- * Paginated accommodation type listing route.
- * Rewrites to the type index page with the page query parameter.
- * Page 1 redirects to the base URL (canonical).
+ * @file alojamientos/tipo/[type]/page/[page].astro
+ * @description Paginated accommodation type listing route.
+ * Rewrites to the type index page with the page query parameter injected.
+ * Page 1 redirects to the canonical base URL (no /page/ segment).
  *
- * @route /[lang]/alojamientos/tipo/[type]/page/[page]/
+ * Rendering: SSR (server-side, on-demand).
+ * Route: /[lang]/alojamientos/tipo/[type]/page/[page]/
  */
+
 import { getLocaleFromParams } from '../../../../../../lib/page-helpers';
 
-const ALLOWED_TYPES = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
+export const prerender = false;
+
+/**
+ * Allowed accommodation types matching the API enum.
+ */
+const ALLOWED_TYPES = [
+    'hotel',
+    'hostel',
+    'cabin',
+    'apartment',
+    'camping',
+    'estancia',
+    'posada',
+] as const;
 
 const { type, page } = Astro.params;
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
+/**
+ * Validate type parameter; redirect to the main listing if invalid.
+ */
 if (!type || !ALLOWED_TYPES.includes(type as (typeof ALLOWED_TYPES)[number])) {
-  return Astro.redirect(`/${locale}/alojamientos/`);
+    return Astro.redirect(`/${locale}/alojamientos/`);
 }
 
-const pageNum = Number.parseInt(page || '1', 10);
+const pageNum = Number.parseInt(page ?? '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
+    return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
+    return Astro.redirect(`/${locale}/alojamientos/tipo/${type}/`);
 }
 
 /** Rewrite to the type index page with the page query parameter */

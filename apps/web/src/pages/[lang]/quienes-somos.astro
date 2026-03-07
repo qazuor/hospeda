@@ -1,173 +1,200 @@
 ---
+/**
+ * About Us page.
+ * Describes Hospeda's mission, core values, the Litoral region context,
+ * and includes a contact CTA at the bottom.
+ *
+ * Rendering: SSG (pre-rendered at build time for all supported locales).
+ * Route: /[lang]/quienes-somos/
+ */
 export const prerender = true;
 
 export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
-/**
- * About Us page - information about Hospeda platform, mission, values, and the region.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
- */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEOHead from '../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../components/ui/Breadcrumb.astro';
-import Container from '../../components/ui/Container.astro';
-import Section from '../../components/ui/Section.astro';
-import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
-import { t } from '../../lib/i18n';
+import Breadcrumb from '../../components/shared/Breadcrumb.astro';
+import BackgroundPattern from '../../components/shared/BackgroundPattern.astro';
+import DecorativeElement from '../../components/shared/DecorativeElement.astro';
+import GradientButton from '../../components/shared/GradientButton.astro';
 import { CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon } from '@repo/icons';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { createT } from '../../lib/i18n';
+import { buildUrl } from '../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+if (!locale) return Astro.redirect('/es/quienes-somos/');
 
-const pageTitle = t({ locale, namespace: 'about', key: 'page.title' });
-const pageDescription = t({ locale, namespace: 'about', key: 'page.description' });
-const heroText = t({ locale, namespace: 'about', key: 'page.heroText' });
-const missionTitle = t({ locale, namespace: 'about', key: 'page.missionTitle' });
-const missionText = t({ locale, namespace: 'about', key: 'page.missionText' });
-const valuesTitle = t({ locale, namespace: 'about', key: 'page.valuesTitle' });
-const regionTitle = t({ locale, namespace: 'about', key: 'page.regionTitle' });
-const regionText1 = t({ locale, namespace: 'about', key: 'page.regionText1' });
-const regionText2 = t({ locale, namespace: 'about', key: 'page.regionText2' });
-const ctaTitle = t({ locale, namespace: 'about', key: 'page.ctaTitle' });
-const ctaText = t({ locale, namespace: 'about', key: 'page.ctaText' });
-const ctaButton = t({ locale, namespace: 'about', key: 'page.ctaButton' });
+/** Translation helper bound to this locale. */
+const t = createT(locale);
+
+const pageTitle = t('about.page.title', 'Quienes somos');
+const pageDescription = t('about.page.description', 'Conoce al equipo detras de Hospeda y nuestra mision');
+const heroText = t('about.page.heroText', 'Conectamos viajeros con los mejores alojamientos del Litoral argentino');
+const missionTitle = t('about.page.missionTitle', 'Nuestra mision');
+const missionText = t('about.page.missionText', 'Facilitar la conexion entre viajeros y propietarios locales para impulsar el turismo regional');
+const valuesTitle = t('about.page.valuesTitle', 'Nuestros valores');
+const regionTitle = t('about.page.regionTitle', 'La region del Litoral');
+const regionText1 = t('about.page.regionText1', 'Entre Rios es una provincia de Argentina con una riqueza natural y cultural unica');
+const regionText2 = t('about.page.regionText2', 'Desde sus playas fluviales hasta su famoso Carnaval, la region ofrece experiencias memorables');
+const ctaTitle = t('about.page.ctaTitle', 'Queres saber mas?');
+const ctaText = t('about.page.ctaText', 'Escribinos y te respondemos a la brevedad');
+const ctaButton = t('about.page.ctaButton', 'Contactanos');
 
 /**
- * Values content built from i18n keys
+ * Values content built from i18n keys.
+ * Icon components correspond to values in order: Authenticity, Community, Quality, Sustainability.
  */
 const values = [
-	{
-		title: t({ locale, namespace: 'about', key: 'page.values.authenticity.title' }),
-		text: t({ locale, namespace: 'about', key: 'page.values.authenticity.text' }),
-	},
-	{
-		title: t({ locale, namespace: 'about', key: 'page.values.community.title' }),
-		text: t({ locale, namespace: 'about', key: 'page.values.community.text' }),
-	},
-	{
-		title: t({ locale, namespace: 'about', key: 'page.values.quality.title' }),
-		text: t({ locale, namespace: 'about', key: 'page.values.quality.text' }),
-	},
-	{
-		title: t({ locale, namespace: 'about', key: 'page.values.sustainability.title' }),
-		text: t({ locale, namespace: 'about', key: 'page.values.sustainability.text' }),
-	},
-];
+    {
+        icon: CheckIcon,
+        title: t('about.page.values.authenticity.title', 'Autenticidad'),
+        text: t('about.page.values.authenticity.text', 'Promovemos experiencias genuinas y locales')
+    },
+    {
+        icon: UsersIcon,
+        title: t('about.page.values.community.title', 'Comunidad'),
+        text: t('about.page.values.community.text', 'Trabajamos junto a las comunidades locales')
+    },
+    {
+        icon: CheckCircleIcon,
+        title: t('about.page.values.quality.title', 'Calidad'),
+        text: t('about.page.values.quality.text', 'Verificamos cada alojamiento para garantizar la mejor experiencia')
+    },
+    {
+        icon: GlobeIcon,
+        title: t('about.page.values.sustainability.title', 'Sustentabilidad'),
+        text: t('about.page.values.sustainability.text', 'Impulsamos el turismo responsable con el medio ambiente')
+    }
+] as const;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
- * Breadcrumb navigation items
+ * Breadcrumb navigation items.
  */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: pageTitle, href: `/${locale}/quienes-somos/` },
-];
-
-/**
- * Icon components in order corresponding to values array entries:
- * Authenticity, Community, Quality, Sustainability
- */
-const valueIcons = [CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon];
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    { label: pageTitle, href: buildUrl({ locale, path: 'quienes-somos' }) }
+] as const;
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={pageTitle}
-		description={pageDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-	/>
+    <SEOHead
+        slot="head"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="website"
+    />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="relative overflow-hidden">
+        <BackgroundPattern pattern="/images/pattern-topo.svg" size="80px 80px" opacity="opacity-35" />
+        <DecorativeElement src="/images/deco-rio-uruguay.svg" position="top-12 right-4 md:right-12" size="w-24 md:w-36" opacity="opacity-40" />
+        <DecorativeElement src="/images/deco-kayak.svg" position="bottom-12 left-4 md:left-16" size="w-20 md:w-32" opacity="opacity-35" rotate="rotate-6" />
 
-		<Section>
-			<div class="mx-auto max-w-4xl">
-				<!-- Hero Section -->
-				<article id="hero" class="mb-12 text-center">
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{pageTitle}
-					</h1>
-					<p class="text-xl leading-relaxed text-text-secondary">
-						{heroText}
-					</p>
-				</article>
+    <div class="container mx-auto max-w-7xl px-4 py-8">
+        <Breadcrumb items={breadcrumbItems} />
 
-				<!-- Mission Section -->
-				<article id="mission" class="mb-12">
-					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{missionTitle}</h2>
-						<p class="text-lg leading-relaxed text-text-secondary">
-							{missionText}
-						</p>
-					</div>
-				</article>
+        <div class="mx-auto max-w-4xl py-8">
+            <!-- Hero section -->
+            <header class="mb-12 text-center" id="hero">
+                <h1 class="mb-6 text-4xl font-bold text-foreground md:text-5xl">
+                    {pageTitle}
+                </h1>
+                <p class="text-xl leading-relaxed text-muted-foreground">
+                    {heroText}
+                </p>
+            </header>
 
-				<!-- Values Section -->
-				<article id="values" class="mb-12">
-					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						{valuesTitle}
-					</h2>
-					<div class="grid gap-8 md:grid-cols-2">
-						{
-							values.map((value, index) => {
-								const IconComponent = valueIcons[index];
-								return (
-									<div class="flex flex-col items-center text-center">
-										<div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-											<IconComponent
-												size={32}
-												className="text-primary"
-												aria-hidden="true"
-											/>
-										</div>
-										<h3 class="mb-2 text-xl font-semibold text-text-primary">
-											{value.title}
-										</h3>
-										<p class="text-text-secondary">{value.text}</p>
-									</div>
-								);
-							})
-						}
-					</div>
-				</article>
+            <!-- Mission section -->
+            <section id="mission" class="scroll-reveal mb-12" aria-labelledby="mission-heading">
+                <div class="rounded-xl border border-border bg-card p-8 shadow-sm">
+                    <h2
+                        id="mission-heading"
+                        class="mb-4 text-3xl font-semibold text-foreground"
+                    >
+                        {missionTitle}
+                    </h2>
+                    <p class="text-lg leading-relaxed text-muted-foreground">
+                        {missionText}
+                    </p>
+                </div>
+            </section>
 
-				<!-- Region Section -->
-				<article id="region" class="mb-12">
-					<div class="rounded-lg bg-bg p-8 shadow-sm">
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">{regionTitle}</h2>
-						<p class="mb-4 text-lg leading-relaxed text-text-secondary">
-							{regionText1}
-						</p>
-						<p class="text-lg leading-relaxed text-text-secondary">
-							{regionText2}
-						</p>
-					</div>
-				</article>
+            <!-- Values section -->
+            <section id="values" class="scroll-reveal mb-12" aria-labelledby="values-heading">
+                <h2
+                    id="values-heading"
+                    class="mb-8 text-center text-3xl font-semibold text-foreground"
+                >
+                    {valuesTitle}
+                </h2>
+                <div class="grid gap-8 md:grid-cols-2">
+                    {values.map(({ icon: IconComponent, title, text }) => (
+                        <div class="flex flex-col items-center text-center">
+                            <div
+                                class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+                                aria-hidden="true"
+                            >
+                                <IconComponent
+                                    size={32}
+                                    className="text-primary"
+                                    aria-hidden="true"
+                                />
+                            </div>
+                            <h3 class="mb-2 text-xl font-semibold text-foreground">
+                                {title}
+                            </h3>
+                            <p class="text-muted-foreground">{text}</p>
+                        </div>
+                    ))}
+                </div>
+            </section>
 
-				<!-- Contact CTA Section -->
-				<article id="contact-cta" class="mb-12">
-					<div
-						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
-					>
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
-							{ctaTitle}
-						</h2>
-						<p class="mb-6 text-lg leading-relaxed text-text-secondary">
-							{ctaText}
-						</p>
-						<a
-							href={`/${locale}/contacto/`}
-							class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-						>
-							{ctaButton}
-						</a>
-					</div>
-				</article>
-			</div>
-		</Section>
-	</Container>
+            <!-- Region section -->
+            <section id="region" class="scroll-reveal mb-12" aria-labelledby="region-heading">
+                <div class="rounded-xl border border-border bg-card p-8 shadow-sm">
+                    <h2
+                        id="region-heading"
+                        class="mb-4 text-3xl font-semibold text-foreground"
+                    >
+                        {regionTitle}
+                    </h2>
+                    <p class="mb-4 text-lg leading-relaxed text-muted-foreground">
+                        {regionText1}
+                    </p>
+                    <p class="text-lg leading-relaxed text-muted-foreground">
+                        {regionText2}
+                    </p>
+                </div>
+            </section>
+
+            <!-- Contact CTA section -->
+            <section
+                id="contact-cta"
+                class="mb-12"
+                aria-labelledby="cta-heading"
+            >
+                <div class="rounded-xl border border-border bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md">
+                    <h2
+                        id="cta-heading"
+                        class="mb-4 text-3xl font-semibold text-foreground"
+                    >
+                        {ctaTitle}
+                    </h2>
+                    <p class="mb-6 text-lg leading-relaxed text-muted-foreground">
+                        {ctaText}
+                    </p>
+                    <GradientButton
+                        href={buildUrl({ locale, path: 'contacto' })}
+                        label={ctaButton}
+                        showArrow={true}
+                    />
+                </div>
+            </section>
+        </div>
+    </div>
+    </div>
 </BaseLayout>

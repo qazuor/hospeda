@@ -1,260 +1,280 @@
 ---
+/**
+ * Benefits page.
+ * Showcases the platform benefits for tourists and property owners,
+ * with a CTA section linking to pricing pages.
+ *
+ * Rendering: SSG (pre-rendered at build time for all supported locales).
+ * Route: /[lang]/beneficios/
+ */
 export const prerender = true;
 
 export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
-/**
- * Benefits page - showcases benefits for tourists and property owners.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
- */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEOHead from '../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../components/ui/Breadcrumb.astro';
-import Container from '../../components/ui/Container.astro';
-import Section from '../../components/ui/Section.astro';
+import Breadcrumb from '../../components/shared/Breadcrumb.astro';
+import BackgroundPattern from '../../components/shared/BackgroundPattern.astro';
+import DecorativeElement from '../../components/shared/DecorativeElement.astro';
+import GradientButton from '../../components/shared/GradientButton.astro';
+import {
+    HomeIcon,
+    ShieldIcon,
+    LocationIcon,
+    StarIcon,
+    InfoIcon,
+    UserIcon,
+    CheckIcon,
+    UsersIcon,
+} from '@repo/icons';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
-import { t } from '../../lib/i18n';
-import { HomeIcon, ShieldIcon, LocationIcon, StarIcon, InfoIcon, UserIcon, CheckIcon, UsersIcon } from '@repo/icons';
+import { createT } from '../../lib/i18n';
+import { buildUrl } from '../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+if (!locale) return Astro.redirect('/es/beneficios/');
 
-/** Helper to get translations from the benefits namespace */
-const tBen = (key: string) => t({ locale, namespace: 'benefits', key });
+/** Translation helper bound to this locale. */
+const t = createT(locale);
 
-const title = tBen('page.title');
-const description = tBen('page.description');
+const pageTitle = t('benefits.page.title', 'Beneficios de Hospeda');
+const pageDescription = t(
+    'benefits.page.description',
+    'Descubri todos los beneficios que Hospeda ofrece para turistas y propietarios de alojamientos en el Litoral argentino'
+);
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
- * Breadcrumb navigation items
+ * Breadcrumb navigation items.
  */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: title, href: `/${locale}/beneficios/` },
-];
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    { label: pageTitle, href: buildUrl({ locale, path: 'beneficios' }) },
+] as const;
+
+/**
+ * Benefit cards for tourists section.
+ * Each entry has an icon component, a title key, and a description key.
+ */
+const touristBenefits = [
+    {
+        Icon: HomeIcon,
+        title: t('benefits.tourists.wideSelection.title', 'Amplia seleccion de alojamientos'),
+        description: t(
+            'benefits.tourists.wideSelection.description',
+            'Encontra cabanas, hoteles, hostels y mas opciones para cada tipo de viaje y presupuesto'
+        ),
+    },
+    {
+        Icon: ShieldIcon,
+        title: t('benefits.tourists.secureBooking.title', 'Reservas seguras'),
+        description: t(
+            'benefits.tourists.secureBooking.description',
+            'Proceso de reserva protegido con pagos seguros a traves de MercadoPago'
+        ),
+    },
+    {
+        Icon: LocationIcon,
+        title: t('benefits.tourists.authenticExperiences.title', 'Experiencias autenticas'),
+        description: t(
+            'benefits.tourists.authenticExperiences.description',
+            'Alojamientos locales verificados para vivir el Litoral argentino de forma genuina'
+        ),
+    },
+    {
+        Icon: StarIcon,
+        title: t('benefits.tourists.realReviews.title', 'Resenas reales'),
+        description: t(
+            'benefits.tourists.realReviews.description',
+            'Opiniones verificadas de huespedes reales para tomar la mejor decision'
+        ),
+    },
+    {
+        Icon: InfoIcon,
+        title: t('benefits.tourists.customerSupport.title', 'Soporte al cliente'),
+        description: t(
+            'benefits.tourists.customerSupport.description',
+            'Asistencia dedicada antes, durante y despues de tu estadía'
+        ),
+    },
+] as const;
+
+/**
+ * Benefit cards for property owners section.
+ */
+const ownerBenefits = [
+    {
+        Icon: UserIcon,
+        title: t('benefits.owners.increasedVisibility.title', 'Mayor visibilidad'),
+        description: t(
+            'benefits.owners.increasedVisibility.description',
+            'Tu propiedad llega a miles de viajeros que buscan alojamiento en la region del Litoral'
+        ),
+    },
+    {
+        Icon: CheckIcon,
+        title: t('benefits.owners.easyManagement.title', 'Gestion simplificada'),
+        description: t(
+            'benefits.owners.easyManagement.description',
+            'Administra disponibilidad, precios y reservas desde un panel intuitivo'
+        ),
+    },
+    {
+        Icon: ShieldIcon,
+        title: t('benefits.owners.securePayments.title', 'Pagos seguros'),
+        description: t(
+            'benefits.owners.securePayments.description',
+            'Cobros protegidos y acreditacion confiable directamente en tu cuenta bancaria'
+        ),
+    },
+    {
+        Icon: InfoIcon,
+        title: t('benefits.owners.analytics.title', 'Estadisticas detalladas'),
+        description: t(
+            'benefits.owners.analytics.description',
+            'Accede a datos de visitas, rendimiento y ocupacion para optimizar tu negocio'
+        ),
+    },
+    {
+        Icon: UsersIcon,
+        title: t('benefits.owners.growingCommunity.title', 'Comunidad en crecimiento'),
+        description: t(
+            'benefits.owners.growingCommunity.description',
+            'Forma parte de una comunidad de propietarios comprometidos con el turismo regional'
+        ),
+    },
+] as const;
+
+const touristsSectionTitle = t('benefits.tourists.heading', 'Para turistas');
+const ownersSectionTitle = t('benefits.owners.heading', 'Para propietarios');
+const ctaTitle = t('benefits.plans.heading', 'Elegí el plan que mejor se adapta a vos');
+const ctaDescription = t(
+    'benefits.plans.description',
+    'Tenemos opciones para cada tipo de usuario. Descubri nuestros planes y comenzá hoy mismo'
+);
+const ctaTouristLabel = t('benefits.plans.touristPricing', 'Planes para turistas');
+const ctaOwnerLabel = t('benefits.plans.ownerPricing', 'Planes para propietarios');
 ---
 
-<BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-	/>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
+    <SEOHead
+        slot="head"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="website"
+    />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="relative overflow-hidden">
+        <BackgroundPattern pattern="/images/pattern-dots.svg" size="50px 50px" opacity="opacity-40" />
+        <DecorativeElement src="/images/deco-avion.svg" position="top-10 right-6 md:right-16" size="w-20 md:w-28" opacity="opacity-40" rotate="-rotate-12" />
+        <DecorativeElement src="/images/deco-flecha-doble.svg" position="bottom-10 left-6 md:left-16" size="w-28 md:w-40" opacity="opacity-35" />
 
-		<Section>
-			<div class="mx-auto max-w-6xl">
-				<!-- Hero Section -->
-				<article id="hero" class="mb-12 text-center">
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{title}
-					</h1>
-					<p class="text-xl leading-relaxed text-text-secondary">
-						{tBen('hero.description')}
-					</p>
-				</article>
+    <div class="container mx-auto max-w-7xl px-4 py-8">
+        <Breadcrumb items={breadcrumbItems} />
 
-				<!-- Benefits for Tourists Section -->
-				<article id="tourist-benefits" class="mb-16">
-					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						{tBen('tourists.heading')}
-					</h2>
-					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-						<!-- Benefit 1: Wide Selection -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<HomeIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('tourists.wideSelection.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('tourists.wideSelection.description')}
-							</p>
-						</div>
+        <div class="mx-auto max-w-6xl py-8">
 
-						<!-- Benefit 2: Secure Booking -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<ShieldIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('tourists.secureBooking.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('tourists.secureBooking.description')}
-							</p>
-						</div>
+            <!-- Hero section -->
+            <header id="hero" class="mb-12 text-center">
+                <h1 class="mb-6 text-4xl font-bold text-foreground md:text-5xl">
+                    {pageTitle}
+                </h1>
+                <p class="text-xl leading-relaxed text-muted-foreground">
+                    {t(
+                        'benefits.hero.description',
+                        'Todo lo que necesitas para explorar o publicar alojamientos en el Litoral argentino'
+                    )}
+                </p>
+            </header>
 
-						<!-- Benefit 3: Authentic Experiences -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<LocationIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('tourists.authenticExperiences.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('tourists.authenticExperiences.description')}
-							</p>
-						</div>
+            <!-- Benefits for tourists section -->
+            <section id="tourist-benefits" class="scroll-reveal mb-16" aria-labelledby="tourist-benefits-heading">
+                <h2
+                    id="tourist-benefits-heading"
+                    class="mb-8 text-center text-3xl font-semibold text-foreground"
+                >
+                    {touristsSectionTitle}
+                </h2>
+                <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    {touristBenefits.map(({ Icon, title, description }) => (
+                        <article class="flex flex-col items-center text-center">
+                            <div
+                                class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+                                aria-hidden="true"
+                            >
+                                <Icon size={32} className="text-primary" aria-hidden="true" />
+                            </div>
+                            <h3 class="mb-2 text-xl font-semibold text-foreground">
+                                {title}
+                            </h3>
+                            <p class="text-muted-foreground">
+                                {description}
+                            </p>
+                        </article>
+                    ))}
+                </div>
+            </section>
 
-						<!-- Benefit 4: Real Reviews -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<StarIcon size={32} className="text-primary" weight="regular" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('tourists.realReviews.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('tourists.realReviews.description')}
-							</p>
-						</div>
+            <!-- Benefits for property owners section -->
+            <section id="owner-benefits" class="scroll-reveal mb-16" aria-labelledby="owner-benefits-heading">
+                <h2
+                    id="owner-benefits-heading"
+                    class="mb-8 text-center text-3xl font-semibold text-foreground"
+                >
+                    {ownersSectionTitle}
+                </h2>
+                <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+                    {ownerBenefits.map(({ Icon, title, description }) => (
+                        <article class="flex flex-col items-center text-center">
+                            <div
+                                class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
+                                aria-hidden="true"
+                            >
+                                <Icon size={32} className="text-primary" aria-hidden="true" />
+                            </div>
+                            <h3 class="mb-2 text-xl font-semibold text-foreground">
+                                {title}
+                            </h3>
+                            <p class="text-muted-foreground">
+                                {description}
+                            </p>
+                        </article>
+                    ))}
+                </div>
+            </section>
 
-						<!-- Benefit 5: Customer Support -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<InfoIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('tourists.customerSupport.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('tourists.customerSupport.description')}
-							</p>
-						</div>
-					</div>
-				</article>
+            <!-- CTA section -->
+            <section id="cta-section" class="mb-12" aria-labelledby="cta-heading">
+                <div class="rounded-xl border border-border bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md">
+                    <h2
+                        id="cta-heading"
+                        class="mb-4 text-3xl font-semibold text-foreground"
+                    >
+                        {ctaTitle}
+                    </h2>
+                    <p class="mb-8 text-lg leading-relaxed text-muted-foreground">
+                        {ctaDescription}
+                    </p>
+                    <div class="flex flex-col items-center justify-center gap-4 sm:flex-row">
+                        <GradientButton
+                            href={buildUrl({ locale, path: 'precios/turistas' })}
+                            label={ctaTouristLabel}
+                            showArrow={true}
+                        />
+                        <a
+                            href={buildUrl({ locale, path: 'precios/propietarios' })}
+                            class="inline-flex items-center justify-center rounded-full border-2 border-primary px-8 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+                        >
+                            {ctaOwnerLabel}
+                        </a>
+                    </div>
+                </div>
+            </section>
 
-				<!-- Benefits for Property Owners Section -->
-				<article id="owner-benefits" class="mb-16">
-					<h2 class="mb-8 text-center text-3xl font-semibold text-text-primary">
-						{tBen('owners.heading')}
-					</h2>
-					<div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-						<!-- Benefit 1: Increased Visibility -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<UserIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('owners.increasedVisibility.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('owners.increasedVisibility.description')}
-							</p>
-						</div>
-
-						<!-- Benefit 2: Easy Management -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<CheckIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('owners.easyManagement.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('owners.easyManagement.description')}
-							</p>
-						</div>
-
-						<!-- Benefit 3: Secure Payments -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<ShieldIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('owners.securePayments.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('owners.securePayments.description')}
-							</p>
-						</div>
-
-						<!-- Benefit 4: Analytics -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<InfoIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('owners.analytics.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('owners.analytics.description')}
-							</p>
-						</div>
-
-						<!-- Benefit 5: Growing Community -->
-						<div class="flex flex-col items-center text-center">
-							<div
-								class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10"
-							>
-								<UsersIcon size={32} className="text-primary" aria-hidden="true" />
-							</div>
-							<h3 class="mb-2 text-xl font-semibold text-text-primary">
-								{tBen('owners.growingCommunity.title')}
-							</h3>
-							<p class="text-text-secondary">
-								{tBen('owners.growingCommunity.description')}
-							</p>
-						</div>
-					</div>
-				</article>
-
-				<!-- CTA Section -->
-				<article id="cta-section" class="mb-12">
-					<div
-						class="rounded-lg bg-primary/10 p-8 text-center shadow-sm transition-shadow hover:shadow-md"
-					>
-						<h2 class="mb-4 text-3xl font-semibold text-text-primary">
-							{tBen('plans.heading')}
-						</h2>
-						<p class="mb-8 text-lg leading-relaxed text-text-secondary">
-							{tBen('plans.description')}
-						</p>
-						<div class="flex flex-col gap-4 sm:flex-row sm:justify-center">
-							<a
-								href={`/${locale}/precios-turistas/`}
-								class="inline-block rounded-lg bg-primary px-8 py-3 font-semibold text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-							>
-								{tBen('plans.touristPricing')}
-							</a>
-							<a
-								href={`/${locale}/precios-propietarios/`}
-								class="inline-block rounded-lg border-2 border-primary bg-surface px-8 py-3 font-semibold text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-							>
-								{tBen('plans.ownerPricing')}
-							</a>
-						</div>
-					</div>
-				</article>
-			</div>
-		</Section>
-	</Container>
+        </div>
+    </div>
+    </div>
 </BaseLayout>

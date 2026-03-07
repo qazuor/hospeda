@@ -1,162 +1,203 @@
 ---
-export const prerender = true;
-
 /**
- * Returns static paths for all locale + type combinations.
- * 3 locales x 7 types = 21 pre-rendered pages.
- * Combined with ISR (configured globally), pages revalidate on-demand.
- */
-export function getStaticPaths() {
-  const locales = SUPPORTED_LOCALES;
-  const types = ['hotel', 'hostel', 'cabin', 'apartment', 'camping', 'estancia', 'posada'] as const;
-
-  return locales.flatMap((lang) =>
-    types.map((type) => ({ params: { lang, type } }))
-  );
-}
-
-/**
- * Accommodation by Type page.
- * Displays filtered list of accommodations by type (hotel, hostel, cabin, etc.).
- * Validates locale and type parameters, redirects if invalid.
+ * @file alojamientos/tipo/[type]/index.astro
+ * @description Accommodation list page filtered by accommodation type.
+ * Displays a grid of accommodations matching the type URL segment with pagination.
+ * Validates locale and type parameters, redirects if either is invalid.
  *
- * @route /[lang]/alojamientos/tipo/[type]/
- * @rendering SSG + ISR (Static Site Generation with Incremental Static Regeneration)
+ * Rendering: SSG (pre-rendered per locale+type) with hybrid query-param handling.
+ * Route: /[lang]/alojamientos/tipo/[type]/
  */
-import BaseLayout from '../../../../../layouts/BaseLayout.astro';
-import SEOHead from '../../../../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../../../../components/ui/Breadcrumb.astro';
-import Container from '../../../../../components/ui/Container.astro';
-import Section from '../../../../../components/ui/Section.astro';
-import EmptyState from '../../../../../components/ui/EmptyState.astro';
-import Pagination from '../../../../../components/ui/Pagination.astro';
-import AccommodationCardFeatured from '../../../../../components/accommodation/AccommodationCardFeatured.astro';
-import { getLocaleFromParams, SUPPORTED_LOCALES } from '../../../../../lib/page-helpers';
+
+import type { SupportedLocale } from '../../../../../lib/i18n';
+import { createT } from '../../../../../lib/i18n';
+import { buildUrl } from '../../../../../lib/urls';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../../../lib/page-helpers';
 import { accommodationsApi } from '../../../../../lib/api/endpoints';
 import { toAccommodationCardProps } from '../../../../../lib/api/transforms';
-import { t } from '../../../../../lib/i18n';
-
-const { type } = Astro.params;
-
-const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+import AccommodationListLayout from '../../../../../components/accommodation/_AccommodationListLayout.astro';
+import type { AccommodationFilters } from '../../../../../components/accommodation/filter-sidebar.types';
 
 /**
- * Allowed accommodation types
+ * Allowed accommodation types matching the API enum.
  */
 const ALLOWED_TYPES = [
-	'hotel',
-	'hostel',
-	'cabin',
-	'apartment',
-	'camping',
-	'estancia',
-	'posada',
+    'hotel',
+    'hostel',
+    'cabin',
+    'apartment',
+    'camping',
+    'estancia',
+    'posada',
 ] as const;
 
 type AccommodationType = (typeof ALLOWED_TYPES)[number];
 
+const { type } = Astro.params;
+const locale = getLocaleFromParams(Astro.params);
+if (!locale) return Astro.redirect('/es/');
+
 /**
- * Validate accommodation type parameter
+ * Validate accommodation type parameter; redirect to listing on invalid type.
  */
 if (!type || !ALLOWED_TYPES.includes(type as AccommodationType)) {
-	return Astro.redirect(`/${locale}/alojamientos/`);
+    return Astro.redirect(`/${locale}/alojamientos/`);
 }
 
 const accommodationType = type as AccommodationType;
 
-const typeName = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.name` });
-const typeDescription = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.description` });
-const pageTitle = t({ locale, namespace: 'accommodations', key: `typePage.typeDetails.${accommodationType}.pageTitle` });
-const breadcrumbHome = t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbHome' });
-const breadcrumbAccommodations = t({ locale, namespace: 'accommodations', key: 'typePage.labels.breadcrumbAccommodations' });
-const emptyTitle = t({ locale, namespace: 'accommodations', key: 'typePage.labels.emptyTitle', params: { type: typeName.toLowerCase() } });
+const t = createT(locale as SupportedLocale);
+
+// ─── Parse query params ───────────────────────────────────────────────────────
+
+const sp = Astro.url.searchParams;
+
+/** Sort key; defaults to "featured" */
+const sortParam = sp.get('sortBy') ?? 'featured';
+
+/** Pagination page number */
+const page = Math.max(1, Number.parseInt(sp.get('page') ?? '1', 10));
+
+/** Price range */
+const priceMin = sp.get('priceMin') ? Number(sp.get('priceMin')) : undefined;
+const priceMax = sp.get('priceMax') ? Number(sp.get('priceMax')) : undefined;
+
+/** Capacity filters */
+const minGuests   = sp.get('minGuests')   ? Number(sp.get('minGuests'))   : undefined;
+const minBedrooms = sp.get('minBedrooms') ? Number(sp.get('minBedrooms')) : undefined;
+const minBathrooms = sp.get('minBathrooms') ? Number(sp.get('minBathrooms')) : undefined;
+
+/** Rating filter */
+const minRating = sp.get('minRating') ? Number(sp.get('minRating')) : undefined;
+
+/** Boolean amenity filters */
+const hasWifi    = sp.get('hasWifi')    === 'true' ? true : undefined;
+const hasPool    = sp.get('hasPool')    === 'true' ? true : undefined;
+const allowsPets = sp.get('allowsPets') === 'true' ? true : undefined;
+const hasParking = sp.get('hasParking') === 'true' ? true : undefined;
+
+/**
+ * Maps UI sort keys to API sortBy column names and sort direction.
+ */
+const SORT_MAP: Readonly<Record<string, { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' }>> = {
+    featured:   { sortBy: 'isFeatured',    sortOrder: 'desc' },
+    price_asc:  { sortBy: 'name',          sortOrder: 'asc'  },
+    price_desc: { sortBy: 'name',          sortOrder: 'desc' },
+    rating:     { sortBy: 'averageRating', sortOrder: 'desc' },
+    recent:     { sortBy: 'createdAt',     sortOrder: 'desc' },
+    name:       { sortBy: 'name',          sortOrder: 'asc'  },
+} as const;
+
+const sortConfig = SORT_MAP[sortParam] ?? SORT_MAP.featured;
+
+// ─── Fetch data ───────────────────────────────────────────────────────────────
+
+const PAGE_SIZE = 12;
+
+const apiResult = await accommodationsApi.list({
+    page,
+    pageSize: PAGE_SIZE,
+    sortBy:    sortConfig.sortBy,
+    sortOrder: sortConfig.sortOrder,
+    type:      accommodationType,
+    includeAmenities: true,
+    includeFeatures:  true,
+    minPrice:    priceMin,
+    maxPrice:    priceMax,
+    minGuests,
+    minBedrooms,
+    minBathrooms,
+    minRating,
+    hasWifi,
+    hasPool,
+    allowsPets,
+    hasParking,
+});
+
+const apiError        = !apiResult.ok;
+const accommodations  = apiResult.ok ? apiResult.data.items : [];
+const pagination      = apiResult.ok ? apiResult.data.pagination : null;
+
+const cards = accommodations.map((acc) =>
+    toAccommodationCardProps({ item: acc as unknown as Record<string, unknown> })
+);
+
+// ─── i18n ─────────────────────────────────────────────────────────────────────
+
+const typeName        = t(`accommodations.typePage.typeDetails.${accommodationType}.name`,        accommodationType);
+const typeDescription = t(`accommodations.typePage.typeDetails.${accommodationType}.description`, '');
+const pageTitle       = t(`accommodations.typePage.typeDetails.${accommodationType}.pageTitle`,   typeName);
+
+// ─── Breadcrumb ───────────────────────────────────────────────────────────────
+
+const breadcrumbItems = [
+    {
+        label: HOME_BREADCRUMB[locale as SupportedLocale],
+        href:  buildUrl({ locale: locale as SupportedLocale }),
+    },
+    {
+        label: t('accommodations.listPage.title', 'Alojamientos'),
+        href:  buildUrl({ locale: locale as SupportedLocale, path: 'alojamientos' }),
+    },
+    {
+        label: typeName,
+        href:  buildUrl({ locale: locale as SupportedLocale, path: `alojamientos/tipo/${accommodationType}` }),
+    },
+] as const;
+
+// ─── Canonical URL ────────────────────────────────────────────────────────────
+
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-/**
- * Breadcrumb navigation items
- */
-const breadcrumbItems = [
-	{ label: breadcrumbHome, href: `/${locale}/` },
-	{ label: breadcrumbAccommodations, href: `/${locale}/alojamientos/` },
-	{ label: typeName, href: `/${locale}/alojamientos/tipo/${accommodationType}/` },
-];
+// ─── Pagination search params (preserves all active filters) ─────────────────
 
-/**
- * Get pagination parameters from URL.
- * Astro.url.searchParams works for both SSG and ISR modes.
- */
-const page = Number.parseInt(Astro.url.searchParams.get('page') || '1', 10);
-const pageSize = 12;
+const paginationParams = new URLSearchParams();
+for (const [key, value] of sp.entries()) {
+    if (key !== 'page') paginationParams.set(key, value);
+}
 
-/**
- * Fetch accommodations filtered by type
- */
-const apiResult = await accommodationsApi.list({ page, pageSize, type: accommodationType });
+// ─── Initial filters for the sidebar React island ────────────────────────────
 
-const accommodations = apiResult.ok ? apiResult.data.items : [];
-const pagination = apiResult.ok ? apiResult.data.pagination : null;
+const initialFilters: Partial<AccommodationFilters> = {
+    types:    [accommodationType],
+    priceMin: priceMin ?? null,
+    priceMax: priceMax ?? null,
+    amenities: [],
+    minRating: minRating ?? null,
+};
 
-/**
- * Generate empty state message
- */
-const emptyMessage = emptyTitle;
+// ─── Helper: has any active filters beyond the type? ─────────────────────────
+
+const hasActiveFilters =
+    priceMin !== undefined ||
+    priceMax !== undefined ||
+    minRating !== undefined ||
+    hasWifi !== undefined ||
+    hasPool !== undefined ||
+    allowsPets !== undefined ||
+    hasParking !== undefined;
+
+// ─── URLs ─────────────────────────────────────────────────────────────────────
+
+const typeListingUrl = buildUrl({ locale: locale as SupportedLocale, path: `alojamientos/tipo/${accommodationType}` });
 ---
 
-<BaseLayout title={pageTitle} description={typeDescription} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={pageTitle}
-		description={typeDescription}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-	/>
-
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
-
-		<Section>
-			<div class="mx-auto max-w-6xl">
-				<!-- Type Header Section -->
-				<article id="type-header" class="mb-12 text-center">
-					<h1 class="mb-6 text-4xl font-bold text-text-primary md:text-5xl">
-						{typeName}
-					</h1>
-					<p class="text-xl leading-relaxed text-text-secondary">
-						{typeDescription}
-					</p>
-				</article>
-
-				<!-- Accommodation Grid Section -->
-				<article id="accommodation-grid" class="mb-12">
-					{
-						accommodations.length > 0 ? (
-							<div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-								{accommodations.map((accommodation) => (
-									<AccommodationCardFeatured accommodation={toAccommodationCardProps({ item: accommodation as Record<string, unknown> })} locale={locale} />
-								))}
-							</div>
-						) : (
-							<EmptyState title={emptyMessage} message={breadcrumbAccommodations} />
-						)
-					}
-				</article>
-
-				<!-- Pagination Section -->
-				{
-					pagination && pagination.totalPages > 1 && (
-						<article id="pagination" class="mb-12">
-							<Pagination
-								currentPage={pagination.page as number}
-								totalPages={pagination.totalPages as number}
-								baseUrl={`/${locale}/alojamientos/tipo/${accommodationType}`}
-								locale={locale}
-							/>
-						</article>
-					)
-				}
-			</div>
-		</Section>
-	</Container>
-</BaseLayout>
+<AccommodationListLayout
+    locale={locale as SupportedLocale}
+    title={pageTitle}
+    description={typeDescription || undefined}
+    canonicalUrl={canonicalUrl}
+    breadcrumbItems={breadcrumbItems}
+    cards={cards}
+    pagination={pagination}
+    apiError={apiError}
+    sortParam={sortParam}
+    paginationParams={paginationParams}
+    paginationBaseUrl={typeListingUrl.replace(/\/$/, '')}
+    clearFiltersUrl={typeListingUrl}
+    homeUrl={buildUrl({ locale: locale as SupportedLocale })}
+    hasActiveFilters={hasActiveFilters}
+    initialFilters={initialFilters}
+    searchActionUrl={typeListingUrl}
+    searchHiddenParams={[]}
+/>

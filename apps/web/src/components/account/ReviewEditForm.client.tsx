@@ -9,36 +9,36 @@ import type { SupportedLocale } from '../../lib/i18n';
 
 /** State managed by the inline edit form */
 export interface EditFormState {
-    rating: number;
-    title: string;
-    content: string;
+    readonly rating: number;
+    readonly title: string;
+    readonly content: string;
 }
 
 /** Subset of localized messages required by this form */
 export interface ReviewEditFormMessages {
-    ratingEditLabel: string;
-    titleLabel: string;
-    contentLabel: string;
-    cancelButton: string;
-    saveButton: string;
-    saving: string;
+    readonly ratingEditLabel: string;
+    readonly titleLabel: string;
+    readonly contentLabel: string;
+    readonly cancelButton: string;
+    readonly saveButton: string;
+    readonly saving: string;
 }
 
 /** Review data passed into the form for pre-filling */
 export interface ReviewEditFormReview {
-    id: string;
-    rating: number;
-    title: string;
-    content: string;
+    readonly id: string;
+    readonly rating: number;
+    readonly title: string;
+    readonly content: string;
 }
 
 interface ReviewEditFormProps {
-    review: ReviewEditFormReview;
-    messages: ReviewEditFormMessages;
-    onSave: (id: string, data: EditFormState) => Promise<void>;
-    onCancel: () => void;
-    isSaving: boolean;
-    locale?: SupportedLocale;
+    readonly review: ReviewEditFormReview;
+    readonly messages: ReviewEditFormMessages;
+    readonly onSave: (id: string, data: EditFormState) => Promise<void>;
+    readonly onCancel: () => void;
+    readonly isSaving: boolean;
+    readonly locale?: SupportedLocale;
 }
 
 /**
@@ -51,6 +51,7 @@ interface ReviewEditFormProps {
  * @param onSave - Async callback invoked with the updated data
  * @param onCancel - Callback invoked when the user cancels editing
  * @param isSaving - When true, disables controls and shows saving indicator
+ * @param locale - Locale for UI translations (defaults to 'es')
  */
 export function ReviewEditForm({
     review,
@@ -178,7 +179,7 @@ export function ReviewEditForm({
                 <button
                     type="submit"
                     disabled={isSaving}
-                    className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-sm text-white hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-50"
+                    className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 font-medium text-primary-foreground text-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1 disabled:opacity-50"
                 >
                     <SaveIcon
                         size="sm"

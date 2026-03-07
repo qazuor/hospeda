@@ -19,35 +19,40 @@ import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
 import { webLogger } from '../../lib/logger';
 import { addToast } from '../../store/toast-store';
-import { ReviewEditForm } from './ReviewEditForm.client';
-import type { EditFormState } from './ReviewEditForm.client';
+import { type EditFormState, ReviewEditForm } from './ReviewEditForm.client';
 
 interface UserReviewsListProps {
-    locale: 'es' | 'en' | 'pt';
+    readonly locale: 'es' | 'en' | 'pt';
 }
 
 type ReviewType = 'all' | 'accommodation' | 'destination';
 
 interface ReviewItem {
-    id: string;
-    rating: number;
-    title: string;
-    content: string;
-    createdAt: string;
-    updatedAt: string;
+    readonly id: string;
+    readonly rating: number;
+    readonly title: string;
+    readonly content: string;
+    readonly createdAt: string;
+    readonly updatedAt: string;
     /** Present on accommodation reviews */
-    accommodationId?: string;
+    readonly accommodationId?: string;
     /** Present on destination reviews */
-    destinationId?: string;
+    readonly destinationId?: string;
 }
 
 interface TabConfig {
-    id: ReviewType;
-    label: string;
+    readonly id: ReviewType;
+    readonly label: string;
+}
+
+interface ReviewTotals {
+    readonly accommodationReviews: number;
+    readonly destinationReviews: number;
+    readonly total: number;
 }
 
 /** Read-only star rating display */
-function StarRating({ rating, label }: { rating: number; label: string }) {
+function StarRating({ rating, label }: { readonly rating: number; readonly label: string }) {
     const maxStars = 5;
     return (
         <div
@@ -74,6 +79,9 @@ function StarRating({ rating, label }: { rating: number; label: string }) {
 /**
  * Determine the API endpoint path for a review.
  * These are placeholder paths until the API implements PATCH/DELETE for reviews.
+ *
+ * @param review - The review item to build the endpoint for
+ * @returns The API path string for the given review
  */
 function getReviewEndpoint(review: ReviewItem): string {
     if (review.accommodationId) {
@@ -84,6 +92,10 @@ function getReviewEndpoint(review: ReviewItem): string {
 
 /**
  * Merge and sort reviews from accommodation and destination sources by date descending.
+ *
+ * @param accReviews - Accommodation review records from the API
+ * @param destReviews - Destination review records from the API
+ * @returns Merged and sorted array of ReviewItem
  */
 function mergeReviews(
     accReviews: Record<string, unknown>[],
@@ -116,11 +128,13 @@ function mergeReviews(
  * User reviews list component.
  * Shows accommodation and destination reviews with tab filtering, pagination,
  * inline editing, and delete with confirmation.
+ *
+ * @param locale - Display locale for dates and translations
  */
 export function UserReviewsList({ locale }: UserReviewsListProps) {
     const [activeTab, setActiveTab] = useState<ReviewType>('all');
     const [reviews, setReviews] = useState<ReviewItem[]>([]);
-    const [totals, setTotals] = useState({
+    const [totals, setTotals] = useState<ReviewTotals>({
         accommodationReviews: 0,
         destinationReviews: 0,
         total: 0
@@ -173,7 +187,6 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                 setIsLoading(false);
             }
         },
-        // eslint-disable-next-line react-hooks/exhaustive-deps
         [activeTab, page, t]
     );
 
@@ -191,6 +204,9 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
 
     /**
      * Save edited review via PATCH (placeholder endpoint).
+     *
+     * @param id - ID of the review to update
+     * @param data - Updated form state values
      */
     const handleSave = async (id: string, data: EditFormState) => {
         const review = reviews.find((r) => r.id === id);
@@ -228,6 +244,8 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
 
     /**
      * Delete review via DELETE after window.confirm (placeholder endpoint).
+     *
+     * @param review - The review item to delete
      */
     const handleDelete = async (review: ReviewItem) => {
         if (!window.confirm(t('reviews.deleteConfirm'))) return;
@@ -431,11 +449,11 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                                                             : t('reviews.deleteButton')
                                                     }
                                                     title={t('reviews.deleteButton')}
-                                                    className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1 disabled:opacity-50 dark:focus:ring-red-400 dark:hover:bg-red-900/20 dark:hover:text-red-400"
+                                                    className="rounded-md p-1.5 text-text-secondary transition-colors hover:bg-error/10 hover:text-error focus:outline-none focus:ring-2 focus:ring-error focus:ring-offset-1 disabled:opacity-50"
                                                 >
                                                     {isDeleting ? (
                                                         <div
-                                                            className="h-4 w-4 animate-spin rounded-full border-red-600 border-b-2"
+                                                            className="h-4 w-4 animate-spin rounded-full border-error border-b-2"
                                                             role="status"
                                                         />
                                                     ) : (
@@ -461,7 +479,7 @@ export function UserReviewsList({ locale }: UserReviewsListProps) {
                         <button
                             type="button"
                             onClick={handleLoadMore}
-                            className="rounded-lg bg-primary px-6 py-2.5 font-medium text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                            className="rounded-lg bg-primary px-6 py-2.5 font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
                         >
                             {t('reviews.loadMore')}
                         </button>

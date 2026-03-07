@@ -48,7 +48,7 @@ export default defineConfig({
         isr: true,
         imageService: true
     }),
-    trailingSlash: 'always',
+
     server: {
         port: 4321
     },
@@ -60,24 +60,21 @@ export default defineConfig({
         ]
     },
     integrations: [
-        react(),
-        sitemap({
-            filter: (page) => {
-                // Exclude auth and account pages from sitemap
-                const excludePatterns = ['/auth/', '/mi-cuenta/'];
-                return !excludePatterns.some((pattern) => page.includes(pattern));
-            }
-        }),
         ...(process.env.PUBLIC_SENTRY_DSN
             ? [
                   sentry({
                       dsn: process.env.PUBLIC_SENTRY_DSN,
-                      sourceMapsUploadOptions: {
-                          enabled: false
-                      }
+                      sourceMapsUploadOptions: { enabled: false }
                   })
               ]
-            : [])
+            : []),
+        react(),
+        sitemap({
+            filter: (page) => {
+                const excludePatterns = ['/auth/', '/mi-cuenta/'];
+                return !excludePatterns.some((pattern) => page.includes(pattern));
+            }
+        })
     ],
     vite: {
         plugins: [tailwindcss()],
@@ -91,7 +88,8 @@ export default defineConfig({
                 '@repo/logger': resolve(rootDir, 'packages/logger/src'),
                 '@repo/i18n': resolve(rootDir, 'packages/i18n/src'),
                 '@repo/schemas': resolve(rootDir, 'packages/schemas/src'),
-                '@repo/service-core': resolve(rootDir, 'packages/service-core/src')
+                '@repo/service-core': resolve(rootDir, 'packages/service-core/src'),
+                '@repo/feedback': resolve(rootDir, 'packages/feedback/src')
             }
         },
         define: {

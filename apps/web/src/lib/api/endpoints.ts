@@ -17,7 +17,7 @@ import type { ApiResult, PaginatedResponse } from './types';
 
 const BASE = '/api/v1/public';
 
-// ─── Accommodations ───────────────────────────────────────────────────────────
+// --- Accommodations ---
 
 /** Public accommodation API endpoints */
 export const accommodationsApi = {
@@ -33,33 +33,19 @@ export const accommodationsApi = {
         destinationId?: string;
         includeAmenities?: boolean;
         includeFeatures?: boolean;
-        /** Minimum price filter */
         minPrice?: number;
-        /** Maximum price filter */
         maxPrice?: number;
-        /** Currency for price filter (e.g. 'ARS', 'USD') */
         currency?: string;
-        /** Minimum guest capacity */
         minGuests?: number;
-        /** Maximum guest capacity */
         maxGuests?: number;
-        /** Minimum number of bedrooms */
         minBedrooms?: number;
-        /** Maximum number of bedrooms */
         maxBedrooms?: number;
-        /** Minimum number of bathrooms */
         minBathrooms?: number;
-        /** Maximum number of bathrooms */
         maxBathrooms?: number;
-        /** Minimum average rating (1-5) */
         minRating?: number;
-        /** Filter by pool availability */
         hasPool?: boolean;
-        /** Filter by WiFi availability */
         hasWifi?: boolean;
-        /** Filter by pet-friendly */
         allowsPets?: boolean;
-        /** Filter by parking availability */
         hasParking?: boolean;
     }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
         return apiClient.getList({ path: `${BASE}/accommodations`, params });
@@ -108,7 +94,7 @@ export const accommodationsApi = {
     }
 };
 
-// ─── Destinations ─────────────────────────────────────────────────────────────
+// --- Destinations ---
 
 /** Public destination API endpoints */
 export const destinationsApi = {
@@ -125,7 +111,6 @@ export const destinationsApi = {
         destinationType?: string;
         level?: number;
         ancestorId?: string;
-        /** Include computed event counts per destination city. Adds latency.. use only for featured sections. */
         includeEventCount?: boolean;
     }): Promise<ApiResult<PaginatedResponse<DestinationPublic>>> {
         return apiClient.getList({ path: `${BASE}/destinations`, params });
@@ -211,7 +196,7 @@ export const destinationsApi = {
     }
 };
 
-// ─── Events ───────────────────────────────────────────────────────────────────
+// --- Events ---
 
 /** Public event API endpoints */
 export const eventsApi = {
@@ -254,7 +239,7 @@ export const eventsApi = {
     }
 };
 
-// ─── Posts ─────────────────────────────────────────────────────────────────────
+// --- Posts ---
 
 /** Public post/blog API endpoints */
 export const postsApi = {
@@ -301,7 +286,24 @@ export const postsApi = {
     }
 };
 
-// ─── Contact ──────────────────────────────────────────────────────────────────
+// --- Tags ---
+
+/** Public tag response (subset of full Tag model) */
+interface TagPublicResponse {
+    readonly id: string;
+    readonly name: string;
+    readonly slug: string;
+}
+
+/** Public tag API endpoints */
+export const tagsApi = {
+    /** Get tag by slug */
+    getBySlug({ slug }: { slug: string }): Promise<ApiResult<TagPublicResponse>> {
+        return apiClient.get({ path: `${BASE}/tags/by-slug/${slug}` });
+    }
+};
+
+// --- Contact ---
 
 /** Contact form API */
 export const contactApi = {

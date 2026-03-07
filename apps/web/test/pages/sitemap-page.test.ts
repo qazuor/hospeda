@@ -1,352 +1,288 @@
 /**
- * Tests for HTML Sitemap page (Mapa del Sitio).
- * Verifies page structure, SEO elements, localization, section organization, and links.
+ * @file sitemap-page.test.ts
+ * @description Source-content tests for the HTML sitemap page (mapa-del-sitio.astro).
+ *
+ * The sitemap is a static SSG page that lists all major site sections with
+ * locale-aware internal links.  Tests validate structure, i18n usage,
+ * accessibility patterns, and completeness of the route catalogue.
+ *
+ * NOTE: The legal.test.ts file runs a broad suite against this same source.
+ * This file focuses exclusively on sitemap-specific concerns: section
+ * completeness, link structure, heading hierarchy, and accessible navigation.
  */
+
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const sitemapPath = resolve(__dirname, '../../src/pages/[lang]/mapa-del-sitio.astro');
-const content = readFileSync(sitemapPath, 'utf8');
+// ---------------------------------------------------------------------------
+// Source file under test
+// ---------------------------------------------------------------------------
 
-describe('mapa-del-sitio.astro', () => {
-    describe('Page structure', () => {
-        it('should use BaseLayout', () => {
-            expect(content).toContain("import BaseLayout from '../../layouts/BaseLayout.astro'");
-            expect(content).toContain('<BaseLayout');
-        });
+const src = readFileSync(resolve(__dirname, '../../src/pages/[lang]/mapa-del-sitio.astro'), 'utf8');
 
-        it('should use SEOHead component', () => {
-            expect(content).toContain("import SEOHead from '../../components/seo/SEOHead.astro'");
-            expect(content).toContain('<SEOHead');
-        });
+// ---------------------------------------------------------------------------
+// Rendering & routing
+// ---------------------------------------------------------------------------
 
-        it('should use Breadcrumb component', () => {
-            expect(content).toContain(
-                "import Breadcrumb from '../../components/ui/Breadcrumb.astro'"
-            );
-            expect(content).toContain('<Breadcrumb items={breadcrumbItems}');
-        });
-
-        it('should use Container component', () => {
-            expect(content).toContain(
-                "import Container from '../../components/ui/Container.astro'"
-            );
-            expect(content).toContain('<Container>');
-        });
-
-        it('should use Section component', () => {
-            expect(content).toContain("import Section from '../../components/ui/Section.astro'");
-            expect(content).toContain('<Section>');
-        });
+describe('mapa-del-sitio.astro — rendering and routing', () => {
+    it('is pre-rendered (SSG)', () => {
+        expect(src).toContain('export const prerender = true');
     });
 
-    describe('Locale validation', () => {
-        it('should validate locale parameter', () => {
-            expect(content).toContain('getLocaleFromParams(Astro.params)');
-            expect(content).toContain('if (!locale)');
-        });
-
-        it('should redirect to /es/ on invalid locale', () => {
-            expect(content).toContain("return Astro.redirect('/es/')");
-        });
-
-        it('should import locale helpers', () => {
-            expect(content).toContain('getLocaleFromParams');
-            expect(content).toContain('import { t } from');
-        });
+    it('re-exports getStaticLocalePaths for locale-aware static generation', () => {
+        expect(src).toContain('getStaticLocalePaths as getStaticPaths');
     });
 
-    describe('Localization', () => {
-        it('should have localized titles for all supported locales', () => {
-            expect(content).toContain("t({ locale, namespace: 'common', key: 'sitemap.title' })");
-        });
-
-        it('should have localized meta descriptions', () => {
-            expect(content).toContain(
-                "t({ locale, namespace: 'common', key: 'sitemap.description' })"
-            );
-        });
-
-        it('should import HOME_BREADCRUMB from page-helpers', () => {
-            expect(content).toContain('HOME_BREADCRUMB');
-            expect(content).toContain("from '../../lib/page-helpers'");
-        });
-
-        it('should have section helper function using i18n', () => {
-            expect(content).toContain('const section = (key: string)');
-            expect(content).toContain('key: `sitemap.sections.${key}`');
-        });
-
-        it('should have link helper function using i18n', () => {
-            expect(content).toContain('const link = (key: string)');
-            expect(content).toContain('key: `sitemap.links.${key}`');
-        });
+    it('validates locale with getLocaleFromParams', () => {
+        expect(src).toContain('getLocaleFromParams(Astro.params)');
     });
 
-    describe('SEO elements', () => {
-        it('should generate canonical URL', () => {
-            expect(content).toContain('const canonicalUrl = new URL(Astro.url.pathname');
-            expect(content).toContain('canonical={canonicalUrl}');
-        });
-
-        it('should pass title and description to SEOHead', () => {
-            expect(content).toContain('title={pageTitle}');
-            expect(content).toContain('description={pageDescription}');
-        });
-
-        it('should set page type to website', () => {
-            expect(content).toContain('type="website"');
-        });
-
-        it('should not have noindex directive', () => {
-            expect(content).not.toContain('noindex');
-        });
+    it('redirects to /es/ on invalid locale', () => {
+        expect(src).toContain("Astro.redirect('/es/')");
     });
 
-    describe('Breadcrumb navigation', () => {
-        it('should create breadcrumb items array', () => {
-            expect(content).toContain('const breadcrumbItems = [');
-        });
+    it('builds canonical URL from Astro.site for SEO', () => {
+        expect(src).toContain('new URL(Astro.url.pathname, Astro.site)');
+        expect(src).toContain('canonicalUrl');
+    });
+});
 
-        it('should have home breadcrumb link', () => {
-            expect(content).toContain('{ label: HOME_BREADCRUMB[locale], href: `/${locale}/`');
-        });
+// ---------------------------------------------------------------------------
+// SEO integration
+// ---------------------------------------------------------------------------
 
-        it('should have sitemap page breadcrumb', () => {
-            expect(content).toContain('{ label: pageTitle, href: `/${locale}/mapa-del-sitio/`');
-        });
+describe('mapa-del-sitio.astro — SEO integration', () => {
+    it('imports and uses SEOHead', () => {
+        expect(src).toContain('import SEOHead from');
+        expect(src).toContain('<SEOHead');
     });
 
-    describe('Sitemap sections', () => {
-        it('should define sitemap sections array', () => {
-            expect(content).toContain('const sitemapSections = [');
-        });
-
-        it('should have Principal section', () => {
-            expect(content).toContain("id: 'principal'");
-            expect(content).toContain("heading: section('principal')");
-        });
-
-        it('should have Alojamientos section', () => {
-            expect(content).toContain("id: 'alojamientos'");
-            expect(content).toContain("heading: section('alojamientos')");
-        });
-
-        it('should have Destinos section', () => {
-            expect(content).toContain("id: 'destinos'");
-            expect(content).toContain("heading: section('destinos')");
-        });
-
-        it('should have Eventos section', () => {
-            expect(content).toContain("id: 'eventos'");
-            expect(content).toContain("heading: section('eventos')");
-        });
-
-        it('should have Blog section', () => {
-            expect(content).toContain("id: 'blog'");
-            expect(content).toContain("heading: section('blog')");
-        });
-
-        it('should have Cuenta section', () => {
-            expect(content).toContain("id: 'cuenta'");
-            expect(content).toContain("heading: section('cuenta')");
-        });
-
-        it('should have Informacion section', () => {
-            expect(content).toContain("id: 'informacion'");
-            expect(content).toContain("heading: section('informacion')");
-        });
+    it('passes all required props to SEOHead', () => {
+        expect(src).toContain('title={pageTitle}');
+        expect(src).toContain('description={pageDescription}');
+        expect(src).toContain('canonical={canonicalUrl}');
+        expect(src).toContain('locale={locale}');
     });
 
-    describe('Principal section links', () => {
-        it('should have Home link', () => {
-            expect(content).toContain("label: link('home')");
-            expect(content).toContain('href: `/${locale}/`');
-        });
-
-        it('should have About link', () => {
-            expect(content).toContain("label: link('about')");
-            expect(content).toContain('href: `/${locale}/quienes-somos/`');
-        });
-
-        it('should have Benefits link', () => {
-            expect(content).toContain("label: link('benefits')");
-            expect(content).toContain('href: `/${locale}/beneficios/`');
-        });
-
-        it('should have Contact link', () => {
-            expect(content).toContain("label: link('contact')");
-            expect(content).toContain('href: `/${locale}/contacto/`');
-        });
+    it('mounts SEOHead into the head slot', () => {
+        expect(src).toContain('slot="head"');
     });
 
-    describe('Alojamientos section links', () => {
-        it('should have Browse Accommodations link', () => {
-            expect(content).toContain("label: link('browseAccommodations')");
-            expect(content).toContain('href: `/${locale}/alojamientos/`');
-        });
-
-        it('should have Search Accommodations link', () => {
-            expect(content).toContain("label: link('searchAccommodations')");
-            expect(content).toContain('href: `/${locale}/alojamientos/buscar/`');
-        });
-
-        it('should have By Type link', () => {
-            expect(content).toContain("label: link('byType')");
-            expect(content).toContain('href: `/${locale}/alojamientos/tipo/`');
-        });
+    it('sets OG type to website', () => {
+        expect(src).toContain('type="website"');
     });
 
-    describe('Destinos section links', () => {
-        it('should have Browse Destinations link', () => {
-            expect(content).toContain("label: link('browseDestinations')");
-            expect(content).toContain('href: `/${locale}/destinos/`');
-        });
+    it('uses common.sitemap i18n namespace for title', () => {
+        expect(src).toContain("'common.sitemap.title'");
     });
 
-    describe('Eventos section links', () => {
-        it('should have Browse Events link', () => {
-            expect(content).toContain("label: link('browseEvents')");
-            expect(content).toContain('href: `/${locale}/eventos/`');
-        });
+    it('uses common.sitemap i18n namespace for description', () => {
+        expect(src).toContain("'common.sitemap.description'");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Breadcrumb navigation
+// ---------------------------------------------------------------------------
+
+describe('mapa-del-sitio.astro — breadcrumb', () => {
+    it('imports Breadcrumb component', () => {
+        expect(src).toContain('import Breadcrumb from');
     });
 
-    describe('Blog section links', () => {
-        it('should have Blog Listing link', () => {
-            expect(content).toContain("label: link('blogListing')");
-            expect(content).toContain('href: `/${locale}/blog/`');
-        });
+    it('renders Breadcrumb in the page body', () => {
+        expect(src).toContain('<Breadcrumb');
     });
 
-    describe('Cuenta section links', () => {
-        it('should have Sign In link', () => {
-            expect(content).toContain("label: link('signIn')");
-            expect(content).toContain('href: `/${locale}/auth/signin/`');
-        });
-
-        it('should have Sign Up link', () => {
-            expect(content).toContain("label: link('signUp')");
-            expect(content).toContain('href: `/${locale}/auth/signup/`');
-        });
-
-        it('should have Forgot Password link', () => {
-            expect(content).toContain("label: link('forgotPassword')");
-            expect(content).toContain('href: `/${locale}/auth/forgot-password/`');
-        });
+    it('includes HOME_BREADCRUMB as the first breadcrumb item', () => {
+        expect(src).toContain('HOME_BREADCRUMB');
     });
 
-    describe('Informacion section links', () => {
-        it('should have Terms and Conditions link', () => {
-            expect(content).toContain("label: link('terms')");
-            expect(content).toContain('href: `/${locale}/terminos-y-condiciones/`');
-        });
+    it('uses buildUrl for breadcrumb hrefs', () => {
+        expect(src).toContain('buildUrl({ locale })');
+    });
+});
 
-        it('should have Privacy Policy link', () => {
-            expect(content).toContain("label: link('privacy')");
-            expect(content).toContain('href: `/${locale}/politica-de-privacidad/`');
-        });
+// ---------------------------------------------------------------------------
+// Page heading hierarchy
+// ---------------------------------------------------------------------------
 
-        it('should have Sitemap link', () => {
-            expect(content).toContain("label: link('sitemap')");
-            expect(content).toContain('href: `/${locale}/mapa-del-sitio/`');
-        });
+describe('mapa-del-sitio.astro — heading structure', () => {
+    it('has an h1 page title', () => {
+        expect(src).toContain('<h1');
     });
 
-    describe('Page styling', () => {
-        it('should have main heading with proper styling', () => {
-            expect(content).toContain('text-4xl font-bold');
-            expect(content).toContain('md:text-5xl');
-        });
-
-        it('should have grid layout for sitemap sections', () => {
-            expect(content).toContain('grid gap-8 md:grid-cols-2 lg:grid-cols-3');
-        });
-
-        it('should have card-like section styling', () => {
-            expect(content).toContain('rounded-lg bg-bg p-6 shadow-sm');
-        });
-
-        it('should have section headings with proper styling', () => {
-            expect(content).toContain('text-xl font-semibold');
-        });
-
-        it('should have list spacing', () => {
-            expect(content).toContain('space-y-2');
-        });
+    it('uses h2 headings for each section card', () => {
+        expect(src).toContain('<h2');
     });
 
-    describe('Accessibility', () => {
-        it('should use semantic article elements for sections', () => {
-            expect(content).toContain('<article');
-        });
-
-        it('should have navigation landmarks', () => {
-            expect(content).toContain('<nav');
-            expect(content).toContain('aria-label');
-        });
-
-        it('should have focus-visible styles for links', () => {
-            expect(content).toContain('focus-visible:outline');
-        });
-
-        it('should use semantic lists', () => {
-            expect(content).toContain('<ul');
-            expect(content).toContain('<li>');
-        });
-
-        it('should have proper heading hierarchy', () => {
-            expect(content).toContain('<h1');
-            expect(content).toContain('<h2');
-        });
+    it('renders section headings from sitemapSections data', () => {
+        expect(src).toContain('{section.heading}');
     });
 
-    describe('Locale prefix usage', () => {
-        it('should use locale prefix for all internal links', () => {
-            expect(content).toContain('href: `/${locale}/');
-        });
+    it('wraps the page heading area in a <header> element', () => {
+        expect(src).toContain('<header');
+    });
+});
 
-        it('should not have hardcoded locale in links', () => {
-            const hardcodedEs = content.match(/href=["']\/es\//g);
-            const hardcodedEn = content.match(/href=["']\/en\//g);
-            const hardcodedPt = content.match(/href=["']\/pt\//g);
+// ---------------------------------------------------------------------------
+// Sitemap section completeness
+// ---------------------------------------------------------------------------
 
-            expect(hardcodedEs).toBeNull();
-            expect(hardcodedEn).toBeNull();
-            expect(hardcodedPt).toBeNull();
-        });
+describe('mapa-del-sitio.astro — section catalogue completeness', () => {
+    it('defines a sitemapSections array with all site areas', () => {
+        expect(src).toContain('sitemapSections');
     });
 
-    describe('Page header', () => {
-        it('should have header element', () => {
-            expect(content).toContain('<header');
-        });
-
-        it('should display page title in header', () => {
-            expect(content).toContain('{pageTitle}');
-        });
-
-        it('should display page description in header', () => {
-            expect(content).toContain('{pageDescription}');
-        });
+    it('has a principal section id', () => {
+        expect(src).toContain("id: 'principal'");
     });
 
-    describe('Section rendering', () => {
-        it('should map over sitemap sections', () => {
-            expect(content).toContain('sitemapSections.map((section)');
-        });
+    it('has an alojamientos section id', () => {
+        expect(src).toContain("id: 'alojamientos'");
+    });
 
-        it('should render section heading', () => {
-            expect(content).toContain('{section.heading}');
-        });
+    it('has a destinos section id', () => {
+        expect(src).toContain("id: 'destinos'");
+    });
 
-        it('should map over section links', () => {
-            expect(content).toContain('section.links.map((link)');
-        });
+    it('has an eventos section id', () => {
+        expect(src).toContain("id: 'eventos'");
+    });
 
-        it('should render link label and href', () => {
-            expect(content).toContain('{link.label}');
-            expect(content).toContain('href={link.href}');
-        });
+    it('has a publicaciones section id', () => {
+        expect(src).toContain("id: 'publicaciones'");
+    });
+
+    it('has a cuenta section id', () => {
+        expect(src).toContain("id: 'cuenta'");
+    });
+
+    it('has an informacion section id', () => {
+        expect(src).toContain("id: 'informacion'");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Link completeness — major routes present
+// ---------------------------------------------------------------------------
+
+describe('mapa-del-sitio.astro — link coverage for major routes', () => {
+    it('links to the home page', () => {
+        // buildUrl({ locale }) with no path = home
+        expect(src).toContain('buildUrl({ locale })');
+    });
+
+    it('links to /quienes-somos', () => {
+        expect(src).toContain("path: 'quienes-somos'");
+    });
+
+    it('links to /beneficios', () => {
+        expect(src).toContain("path: 'beneficios'");
+    });
+
+    it('links to /contacto', () => {
+        expect(src).toContain("path: 'contacto'");
+    });
+
+    it('links to /alojamientos', () => {
+        expect(src).toContain("path: 'alojamientos'");
+    });
+
+    it('links to /destinos', () => {
+        expect(src).toContain("path: 'destinos'");
+    });
+
+    it('links to /eventos', () => {
+        expect(src).toContain("path: 'eventos'");
+    });
+
+    it('links to /publicaciones (blog)', () => {
+        expect(src).toContain("path: 'publicaciones'");
+    });
+
+    it('links to auth signin page', () => {
+        expect(src).toContain("path: 'auth/signin'");
+    });
+
+    it('links to auth signup page', () => {
+        expect(src).toContain("path: 'auth/signup'");
+    });
+
+    it('links to forgot-password page', () => {
+        expect(src).toContain("path: 'auth/forgot-password'");
+    });
+
+    it('links to terminos-condiciones', () => {
+        expect(src).toContain("path: 'terminos-condiciones'");
+    });
+
+    it('links to privacidad', () => {
+        expect(src).toContain("path: 'privacidad'");
+    });
+
+    it('links to the sitemap itself (self-reference)', () => {
+        expect(src).toContain("path: 'mapa-del-sitio'");
+    });
+
+    it('uses buildUrl for all internal links (locale-aware)', () => {
+        // Each call to buildUrl ensures trailing-slash-safe locale-prefixed URLs
+        const count = (src.match(/buildUrl\(/g) ?? []).length;
+        expect(count).toBeGreaterThanOrEqual(10);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Accessible structure
+// ---------------------------------------------------------------------------
+
+describe('mapa-del-sitio.astro — accessible markup', () => {
+    it('wraps each section in an <article> landmark', () => {
+        expect(src).toContain('<article');
+    });
+
+    it('wraps each section link list in a <nav> with aria-label', () => {
+        expect(src).toContain('<nav aria-label=');
+    });
+
+    it('renders links inside <ul><li> list structure', () => {
+        expect(src).toContain('<ul');
+        expect(src).toContain('<li>');
+    });
+
+    it('links have focus-visible outline styles', () => {
+        expect(src).toContain('focus-visible:outline');
+    });
+
+    it('uses semantic color tokens on link text', () => {
+        expect(src).toContain('text-muted-foreground');
+        expect(src).toContain('hover:text-primary');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Design tokens — no hardcoded palette values
+// ---------------------------------------------------------------------------
+
+describe('mapa-del-sitio.astro — design token compliance', () => {
+    it('uses bg-card for section card backgrounds', () => {
+        expect(src).toContain('bg-card');
+    });
+
+    it('uses border-border for card borders', () => {
+        expect(src).toContain('border-border');
+    });
+
+    it('uses text-foreground for headings', () => {
+        expect(src).toContain('text-foreground');
+    });
+
+    it('does not contain hardcoded bg-white', () => {
+        expect(src).not.toContain('bg-white');
+    });
+
+    it('does not contain hardcoded text-gray-', () => {
+        expect(src).not.toContain('text-gray-');
     });
 });

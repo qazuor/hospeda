@@ -4,41 +4,43 @@ import type { SupportedLocale } from '../../lib/i18n';
 import { FilterSection } from './FilterSection.client';
 
 /**
- * Props for the PriceRangeFilter component
+ * Props for the PriceRangeFilter component.
  */
 export interface PriceRangeFilterProps {
     /**
-     * Current minimum price value
+     * Current minimum price value. Null means no lower bound is set.
      */
     readonly priceMin: number | null;
 
     /**
-     * Current maximum price value
+     * Current maximum price value. Null means no upper bound is set.
      */
     readonly priceMax: number | null;
 
     /**
-     * Whether the section is expanded
+     * Whether the price range section is currently expanded.
      */
     readonly isExpanded: boolean;
 
     /**
-     * Callback to toggle section expansion
+     * Callback invoked when the section toggle button is clicked.
      */
     readonly onToggle: () => void;
 
     /**
-     * Callback when minimum price changes
+     * Callback invoked when the minimum price input value changes.
+     * Receives the parsed integer value, or null if the input is empty.
      */
     readonly onPriceMinChange: (value: number | null) => void;
 
     /**
-     * Callback when maximum price changes
+     * Callback invoked when the maximum price input value changes.
+     * Receives the parsed integer value, or null if the input is empty.
      */
     readonly onPriceMaxChange: (value: number | null) => void;
 
     /**
-     * Locale for UI text
+     * Locale used for UI text translations.
      */
     readonly locale: string;
 }
@@ -46,11 +48,12 @@ export interface PriceRangeFilterProps {
 /**
  * PriceRangeFilter component
  *
- * Renders a collapsible price range filter section with min/max number inputs.
- * Parses input values to integers and passes null for empty inputs.
+ * Renders a collapsible price range filter section with min and max
+ * number inputs. Input values are parsed to integers before being passed
+ * to the callbacks; empty inputs yield null.
  *
  * @param props - Component props
- * @returns React component
+ * @returns React element
  *
  * @example
  * ```tsx
@@ -99,7 +102,7 @@ export function PriceRangeFilter({
                 <div>
                     <label
                         htmlFor="price-min"
-                        className="mb-1 block text-sm text-text-secondary"
+                        className="mb-1 block text-muted-foreground text-sm"
                     >
                         {t('sidebar.priceMin')}
                     </label>
@@ -110,13 +113,13 @@ export function PriceRangeFilter({
                         onChange={handleMinChange}
                         placeholder="0"
                         min="0"
-                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>
                 <div>
                     <label
                         htmlFor="price-max"
-                        className="mb-1 block text-sm text-text-secondary"
+                        className="mb-1 block text-muted-foreground text-sm"
                     >
                         {t('sidebar.priceMax')}
                     </label>
@@ -127,7 +130,7 @@ export function PriceRangeFilter({
                         onChange={handleMaxChange}
                         placeholder="0"
                         min="0"
-                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-border bg-card px-3 py-2 text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                 </div>
             </div>

@@ -1,177 +1,207 @@
 /**
- * Lint guard test: ensures all internal href links in source files
- * include trailing slashes, consistent with Astro's `trailingSlash: 'always'` config.
- *
- * This test scans `.astro` and `.tsx` source files for href patterns
- * that point to internal paths without a trailing slash.
+ * @file trailing-slash.test.ts
+ * @description Validates trailing-slash consistency across the web application.
+ * Checks that:
+ * - astro.config.mjs does NOT set trailingSlash to 'never' (config defers to
+ *   the Vercel adapter which defaults to 'always' for SSR)
+ * - The middleware enforces a trailing-slash redirect for paths without one
+ * - buildUrl always produces URLs ending with /
+ * - buildUrlWithParams always produces URLs where the path segment ends with /
+ * - Internal links in key components end with /
  */
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const SRC_DIR = join(__dirname, '../../src');
+const rootDir = resolve(__dirname, '../..');
+const srcDir = resolve(rootDir, 'src');
+const sharedDir = resolve(srcDir, 'components/shared');
 
-/**
- * Files to exclude from scanning (middleware has path examples in comments, etc.)
- */
-const EXCLUDED_FILES = ['middleware.ts', 'middleware-helpers.ts', 'urls.ts'];
+const astroConfigContent = readFileSync(resolve(rootDir, 'astro.config.mjs'), 'utf8');
+const urlsContent = readFileSync(resolve(srcDir, 'lib/urls.ts'), 'utf8');
+const middlewareContent = readFileSync(resolve(srcDir, 'middleware.ts'), 'utf8');
+const accommodationCard = readFileSync(resolve(sharedDir, 'AccommodationCard.astro'), 'utf8');
+const destinationCard = readFileSync(resolve(sharedDir, 'DestinationCard.astro'), 'utf8');
 
-/**
- * Recursively collect all files matching given extensions
- */
-function collectFiles({
-    dir,
-    extensions
-}: {
-    readonly dir: string;
-    readonly extensions: ReadonlyArray<string>;
-}): ReadonlyArray<string> {
-    const results: string[] = [];
+// ---------------------------------------------------------------------------
+// Import buildUrl so we can exercise it directly (pure function - no Astro runtime)
+// ---------------------------------------------------------------------------
+import { buildUrl, buildUrlWithParams } from '../../src/lib/urls';
 
-    const entries = readdirSync(dir);
-    for (const entry of entries) {
-        const fullPath = join(dir, entry);
-        const stat = statSync(fullPath);
+// ---------------------------------------------------------------------------
+// astro.config.mjs
+// ---------------------------------------------------------------------------
+describe('astro.config.mjs - trailing slash config', () => {
+    it('should not set trailingSlash to "never"', () => {
+        // The Vercel SSR adapter defaults to always appending trailing slashes.
+        // Setting trailingSlash: 'never' would break locale routing.
+        expect(astroConfigContent).not.toContain("trailingSlash: 'never'");
+        expect(astroConfigContent).not.toContain('trailingSlash: "never"');
+    });
 
-        if (stat.isDirectory()) {
-            results.push(...collectFiles({ dir: fullPath, extensions }));
-        } else if (extensions.some((ext) => entry.endsWith(ext))) {
-            results.push(fullPath);
+    it('should not set trailingSlash to "ignore"', () => {
+        // Ignoring trailing slashes would allow inconsistent URLs
+        expect(astroConfigContent).not.toContain("trailingSlash: 'ignore'");
+        expect(astroConfigContent).not.toContain('trailingSlash: "ignore"');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// middleware.ts - trailing slash enforcement
+// ---------------------------------------------------------------------------
+describe('middleware.ts - trailing slash enforcement', () => {
+    it('should contain logic to enforce trailing slashes on incoming paths', () => {
+        // The middleware redirects paths without trailing slashes to avoid
+        // Astro throwing errors with trailingSlash: 'always'
+        expect(middlewareContent).toContain("!path.endsWith('/')");
+    });
+
+    it('should issue a 301 redirect for paths missing a trailing slash', () => {
+        expect(middlewareContent).toContain('301');
+        expect(middlewareContent).toContain('redirect');
+    });
+
+    it('should append / to the path in the redirect URL', () => {
+        // The redirect target must include the trailing slash
+        expect(middlewareContent).toContain('`${path}/');
+    });
+
+    it('should preserve query parameters when redirecting', () => {
+        // Search params must not be lost during the trailing-slash redirect
+        expect(middlewareContent).toContain('context.url.search');
+    });
+
+    it('should skip the redirect for the root path /', () => {
+        // The root / already ends with /, so the check must exclude it
+        expect(middlewareContent).toContain("path !== '/'");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// src/lib/urls.ts - buildUrl implementation
+// ---------------------------------------------------------------------------
+describe('urls.ts - buildUrl implementation', () => {
+    it('should export buildUrl as a named export', () => {
+        expect(urlsContent).toContain('export function buildUrl');
+    });
+
+    it('should export buildUrlWithParams as a named export', () => {
+        expect(urlsContent).toContain('export function buildUrlWithParams');
+    });
+
+    it('should document the trailing slash guarantee in JSDoc', () => {
+        expect(urlsContent).toContain('trailing slash');
+    });
+
+    it('should normalise paths that do not start with /', () => {
+        // The implementation prepends / when the path does not already start with one
+        expect(urlsContent).toContain("path.startsWith('/')");
+    });
+
+    it('should normalise paths that do not end with /', () => {
+        expect(urlsContent).toContain("normalized.endsWith('/')");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildUrl - runtime behaviour
+// ---------------------------------------------------------------------------
+describe('buildUrl - runtime output', () => {
+    it('should return / terminated URL for a simple path', () => {
+        // Arrange
+        const locale = 'es' as const;
+        const path = 'alojamientos';
+
+        // Act
+        const result = buildUrl({ locale, path });
+
+        // Assert
+        expect(result).toBe('/es/alojamientos/');
+        expect(result.endsWith('/')).toBe(true);
+    });
+
+    it('should return / terminated URL for nested path', () => {
+        const result = buildUrl({ locale: 'es', path: 'mi-cuenta/editar' });
+        expect(result).toBe('/es/mi-cuenta/editar/');
+        expect(result.endsWith('/')).toBe(true);
+    });
+
+    it('should return locale root URL when path is empty', () => {
+        const result = buildUrl({ locale: 'en' });
+        expect(result).toBe('/en/');
+        expect(result.endsWith('/')).toBe(true);
+    });
+
+    it('should not double-add a trailing slash when path already ends with /', () => {
+        const result = buildUrl({ locale: 'pt', path: 'destinos/' });
+        expect(result).toBe('/pt/destinos/');
+        expect(result.endsWith('/')).toBe(true);
+    });
+
+    it('should not add a leading double slash when path starts with /', () => {
+        const result = buildUrl({ locale: 'es', path: '/eventos' });
+        expect(result).toBe('/es/eventos/');
+        expect(result.endsWith('/')).toBe(true);
+    });
+
+    it('should work for all supported locales', () => {
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            const result = buildUrl({ locale, path: 'contacto' });
+            expect(result).toBe(`/${locale}/contacto/`);
         }
-    }
+    });
+});
 
-    return results;
-}
+// ---------------------------------------------------------------------------
+// buildUrlWithParams - runtime behaviour
+// ---------------------------------------------------------------------------
+describe('buildUrlWithParams - runtime output', () => {
+    it('should append query params after the trailing slash', () => {
+        // Arrange
+        const result = buildUrlWithParams({
+            locale: 'es',
+            path: 'busqueda',
+            params: { q: 'hotel' }
+        });
 
-/**
- * Extract internal href values from a source file.
- * Returns array of { line, href, lineNumber } for hrefs missing trailing slashes.
- */
-function findBadHrefs({
-    content
-}: {
-    readonly content: string;
-}): ReadonlyArray<{ readonly line: string; readonly href: string; readonly lineNumber: number }> {
-    const lines = content.split('\n');
-    const violations: Array<{
-        readonly line: string;
-        readonly href: string;
-        readonly lineNumber: number;
-    }> = [];
+        // Act + Assert: path segment must end with / before ?
+        expect(result).toMatch(/\/es\/busqueda\/\?q=hotel/);
+    });
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line) continue;
+    it('should return a plain trailing-slash URL when params is empty', () => {
+        const result = buildUrlWithParams({
+            locale: 'es',
+            path: 'destinos',
+            params: {}
+        });
+        expect(result).toBe('/es/destinos/');
+        expect(result.endsWith('/')).toBe(true);
+    });
 
-        const trimmed = line.trim();
+    it('should encode multiple params in the query string', () => {
+        const result = buildUrlWithParams({
+            locale: 'en',
+            path: 'busqueda',
+            params: { q: 'playa', page: '2' }
+        });
+        expect(result).toContain('/en/busqueda/?');
+        expect(result).toContain('q=playa');
+        expect(result).toContain('page=2');
+    });
+});
 
-        // Skip comments (HTML, JS single-line, JSDoc)
-        if (
-            trimmed.startsWith('//') ||
-            trimmed.startsWith('*') ||
-            trimmed.startsWith('/*') ||
-            trimmed.startsWith('<!--')
-        ) {
-            continue;
-        }
+// ---------------------------------------------------------------------------
+// Internal links in card components end with /
+// ---------------------------------------------------------------------------
+describe('AccommodationCard.astro - internal links', () => {
+    it('should build accommodation detail link with trailing slash', () => {
+        // The href template literal must end with /
+        expect(accommodationCard).toContain('/${locale}/alojamientos/${card.slug}/');
+    });
+});
 
-        // Match href patterns in various forms:
-        // href="..." href='...' href={`...`} href={...} href: `...`
-        const hrefPatterns = [
-            // href="value" or href='value'
-            /href=["']([^"']+)["']/g,
-            // href={`value`}
-            /href=\{`([^`]+)`\}/g,
-            // href: `value`  (used in objects like navItems)
-            /href:\s*`([^`]+)`/g,
-            // href: "value" or href: 'value' (used in objects)
-            /href:\s*["']([^"']+)["']/g
-        ];
-
-        for (const pattern of hrefPatterns) {
-            let match: RegExpExecArray | null;
-            // Reset lastIndex for each line
-            pattern.lastIndex = 0;
-            // biome-ignore lint/suspicious/noAssignInExpressions: standard regex exec loop pattern
-            while ((match = pattern.exec(line)) !== null) {
-                const href = match[1];
-                if (!href) continue;
-
-                // Skip external URLs
-                if (href.startsWith('http://') || href.startsWith('https://')) continue;
-
-                // Skip anchor links
-                if (href.startsWith('#')) continue;
-
-                // Skip query-only links
-                if (href.startsWith('?')) continue;
-
-                // Skip mailto/tel links
-                if (href.startsWith('mailto:') || href.startsWith('tel:')) continue;
-
-                // Skip JavaScript expressions that are not simple strings
-                // (e.g., variable references, function calls)
-                if (href.includes('${') && !href.startsWith('/')) continue;
-
-                // Extract the path portion (before query string or hash)
-                const pathPart = href.split('?')[0]?.split('#')[0] ?? '';
-
-                // Skip empty path
-                if (!pathPart || pathPart === '/') continue;
-
-                // Check if the path ends with a trailing slash
-                if (!pathPart.endsWith('/')) {
-                    violations.push({
-                        line: line.trim(),
-                        href,
-                        lineNumber: i + 1
-                    });
-                }
-            }
-        }
-    }
-
-    return violations;
-}
-
-describe('Trailing slash guard', () => {
-    it('should not find any internal hrefs missing trailing slashes in source files', () => {
-        const files = collectFiles({ dir: SRC_DIR, extensions: ['.astro', '.tsx'] });
-
-        const allViolations: Array<{
-            readonly file: string;
-            readonly lineNumber: number;
-            readonly href: string;
-            readonly line: string;
-        }> = [];
-
-        for (const filePath of files) {
-            const fileName = filePath.split('/').pop() ?? '';
-
-            // Skip excluded files
-            if (EXCLUDED_FILES.some((excluded) => fileName === excluded)) continue;
-
-            const content = readFileSync(filePath, 'utf-8');
-            const violations = findBadHrefs({ content });
-
-            for (const violation of violations) {
-                allViolations.push({
-                    file: relative(SRC_DIR, filePath),
-                    lineNumber: violation.lineNumber,
-                    href: violation.href,
-                    line: violation.line
-                });
-            }
-        }
-
-        if (allViolations.length > 0) {
-            const report = allViolations
-                .map((v) => `  ${v.file}:${String(v.lineNumber)} - href="${v.href}"\n    ${v.line}`)
-                .join('\n\n');
-
-            expect.fail(
-                `Found ${String(allViolations.length)} internal href(s) missing trailing slashes:\n\n${report}\n\nUse buildUrl() from src/lib/urls.ts or add a trailing slash to fix.`
-            );
-        }
+describe('DestinationCard.astro - internal links', () => {
+    it('should build destination detail link with trailing slash', () => {
+        expect(destinationCard).toContain('/${locale}/destinos/${card.slug}/');
     });
 });

@@ -33,6 +33,14 @@ if (dsn) {
                 event.request.headers = cleanHeaders;
             }
             return event;
+        },
+
+        // Filter noisy breadcrumbs
+        beforeBreadcrumb(breadcrumb) {
+            if (breadcrumb.category === 'console' && breadcrumb.level === 'debug') {
+                return null;
+            }
+            return breadcrumb;
         }
     });
 }

@@ -1,116 +1,48 @@
 ---
 /**
- * LodgingBusiness JSON-LD component for accommodations.
+ * @file LodgingBusinessJsonLd.astro
+ * @description LodgingBusiness JSON-LD component for accommodations.
  * Generates schema.org LodgingBusiness structured data.
- *
- * @example
- * ```astro
- * ---
- * import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro';
- * ---
- *
- * <LodgingBusinessJsonLd
- *   name="Hotel Ejemplo"
- *   description="Hotel de lujo en el centro de la ciudad"
- *   url="https://hospeda.com/alojamientos/hotel-ejemplo"
- *   image="https://hospeda.com/images/hotel-ejemplo.jpg"
- *   address={{
- *     streetAddress: 'Calle Principal 123',
- *     addressLocality: 'Concepción del Uruguay',
- *     addressRegion: 'Entre Ríos',
- *     postalCode: '3260',
- *     addressCountry: 'AR',
- *   }}
- *   priceRange="$$"
- *   starRating={4}
- *   amenities={['WiFi', 'Piscina', 'Desayuno incluido']}
- * />
- * ```
  */
 
-import type { Props as JsonLdProps } from './JsonLd.astro';
 import JsonLd from './JsonLd.astro';
 
-/**
- * Address interface for structured data
- */
+/** Address interface for structured data */
 export interface Address {
-  /**
-   * Street address
-   */
-  streetAddress: string;
-
-  /**
-   * City or locality
-   */
-  addressLocality: string;
-
-  /**
-   * State or region
-   */
-  addressRegion: string;
-
-  /**
-   * Postal code
-   */
-  postalCode?: string;
-
-  /**
-   * Country code (ISO 3166-1 alpha-2)
-   */
-  addressCountry: string;
+  /** Street address */
+  readonly streetAddress: string;
+  /** City or locality */
+  readonly addressLocality: string;
+  /** State or region */
+  readonly addressRegion: string;
+  /** Postal code */
+  readonly postalCode?: string;
+  /** Country code (ISO 3166-1 alpha-2) */
+  readonly addressCountry: string;
 }
 
-/**
- * Props interface for LodgingBusinessJsonLd component.
- */
-export interface Props {
-  /**
-   * Name of the lodging business
-   */
-  name: string;
-
-  /**
-   * Description of the lodging business
-   */
-  description: string;
-
-  /**
-   * URL of the lodging business page
-   */
-  url: string;
-
-  /**
-   * Image URL for the lodging business
-   */
-  image?: string;
-
-  /**
-   * Physical address of the lodging business
-   */
-  address: Address;
-
-  /**
-   * Price range indicator (e.g., "$", "$$", "$$$", "$$$$")
-   */
-  priceRange?: string;
-
-  /**
-   * Star rating (1-5)
-   */
-  starRating?: number;
-
-  /**
-   * List of amenities offered
-   */
-  amenities?: string[];
+/** Props interface for LodgingBusinessJsonLd component. */
+interface Props {
+  /** Name of the lodging business */
+  readonly name: string;
+  /** Description of the lodging business */
+  readonly description: string;
+  /** URL of the lodging business page */
+  readonly url: string;
+  /** Image URL for the lodging business */
+  readonly image?: string;
+  /** Physical address of the lodging business */
+  readonly address: Address;
+  /** Price range indicator (e.g., "$", "$$", "$$$", "$$$$") */
+  readonly priceRange?: string;
+  /** Star rating (1-5) */
+  readonly starRating?: number;
+  /** List of amenities offered */
+  readonly amenities?: readonly string[];
 }
 
 const { name, description, url, image, address, priceRange, starRating, amenities } = Astro.props;
 
-/**
- * Build LodgingBusiness structured data object
- */
 const structuredData: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'LodgingBusiness',
@@ -127,7 +59,6 @@ const structuredData: Record<string, unknown> = {
   },
 };
 
-// Add optional properties
 if (image) {
   structuredData.image = image;
 }

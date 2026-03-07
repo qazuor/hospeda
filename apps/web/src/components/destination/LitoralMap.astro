@@ -1,353 +1,376 @@
 ---
 /**
  * SVG mini-map of the Litoral/Entre Rios region with destination markers.
- * Shows geographic context for featured destinations on desktop.
- * Markers are interactive: hover shows tooltip, click scrolls to card.
+ * Shows geographic context for featured destinations on desktop (lg+ viewport only).
+ * Markers are interactive: hover shows tooltip, click scrolls to matching card.
  * Bidirectional hover: hovering a card highlights the matching map marker.
  * Features gradient province fill, river labels, draw animation on scroll.
- * Only visible on lg+ viewport.
  */
-import { t, type SupportedLocale } from '../../lib/i18n';
+import { createT, type SupportedLocale } from '@/lib/i18n';
 import {
-  computeTooltipPosition,
-  DEFAULT_BOUNDS,
-  DEFAULT_SVG_HEIGHT,
-  DEFAULT_SVG_WIDTH,
-  geoToSvg,
-  truncateName
+    computeTooltipPosition,
+    DEFAULT_BOUNDS,
+    DEFAULT_SVG_HEIGHT,
+    DEFAULT_SVG_WIDTH,
+    geoToSvg,
+    truncateName
 } from './destination-map.utils';
 
+/**
+ * A destination entry with optional geographic coordinates for map rendering.
+ */
 interface MapDestination {
-  slug: string;
-  name: string;
-  coordinates?: { readonly lat: string; readonly long: string };
+    /** Unique slug identifying the destination */
+    readonly slug: string;
+    /** Display name of the destination */
+    readonly name: string;
+    /** Optional geographic coordinates for marker placement */
+    readonly coordinates?: { readonly lat: string; readonly long: string };
 }
 
+/**
+ * Props for LitoralMap.
+ */
 interface Props {
-  destinations: ReadonlyArray<MapDestination>;
-  locale?: SupportedLocale;
-  class?: string;
+    /**
+     * List of destinations to render as map markers.
+     * Only destinations with valid parseable coordinates are shown.
+     */
+    readonly destinations: ReadonlyArray<MapDestination>;
+    /** Locale used for translating map labels and ARIA strings. Defaults to 'es'. */
+    readonly locale?: SupportedLocale;
+    /** Optional extra CSS class applied to the aside element. */
+    readonly class?: string;
 }
 
 const { destinations, locale = 'es', class: className } = Astro.props;
+const t = createT(locale);
 
-const mapLabel = t({ locale, namespace: 'destinations', key: 'featured.map.label', fallback: 'Mapa de destinos' });
-const mapTitle = t({ locale, namespace: 'destinations', key: 'featured.map.title', fallback: 'Entre Ríos' });
-const riverParana = t({ locale, namespace: 'destinations', key: 'featured.map.riverParana', fallback: 'Río Paraná' });
-const riverUruguay = t({ locale, namespace: 'destinations', key: 'featured.map.riverUruguay', fallback: 'Río Uruguay' });
+const mapLabel    = t('destinations.featured.map.label',       'Mapa de destinos');
+const mapTitle    = t('destinations.featured.map.title',       'Entre Ríos');
+const riverParana = t('destinations.featured.map.riverParana', 'Río Paraná');
+const riverUruguay = t('destinations.featured.map.riverUruguay', 'Río Uruguay');
 
-const SVG_WIDTH = DEFAULT_SVG_WIDTH;
-const SVG_HEIGHT = DEFAULT_SVG_HEIGHT;
+const SVG_WIDTH    = DEFAULT_SVG_WIDTH;
+const SVG_HEIGHT   = DEFAULT_SVG_HEIGHT;
 const TOOLTIP_WIDTH = 80;
 
 /** Only render destinations that have valid, parseable coordinates */
 const mappableDestinations = destinations
-  .filter((d) => {
-    if (!d.coordinates?.lat || !d.coordinates?.long) return false;
-    return geoToSvg({
-      lat: d.coordinates.lat,
-      lon: d.coordinates.long,
-      bounds: DEFAULT_BOUNDS,
-      svgWidth: SVG_WIDTH,
-      svgHeight: SVG_HEIGHT
-    }) !== null;
-  })
-  .map((d) => ({
-    ...d,
-    svgPos: geoToSvg({
-      lat: d.coordinates!.lat,
-      lon: d.coordinates!.long,
-      bounds: DEFAULT_BOUNDS,
-      svgWidth: SVG_WIDTH,
-      svgHeight: SVG_HEIGHT
-    })!,
-  }));
+    .filter((d) => {
+        if (!d.coordinates?.lat || !d.coordinates?.long) return false;
+        return geoToSvg({
+            lat: d.coordinates.lat,
+            lon: d.coordinates.long,
+            bounds: DEFAULT_BOUNDS,
+            svgWidth: SVG_WIDTH,
+            svgHeight: SVG_HEIGHT
+        }) !== null;
+    })
+    .map((d) => ({
+        ...d,
+        svgPos: geoToSvg({
+            lat: d.coordinates!.lat,
+            lon: d.coordinates!.long,
+            bounds: DEFAULT_BOUNDS,
+            svgWidth: SVG_WIDTH,
+            svgHeight: SVG_HEIGHT
+        })!
+    }));
 ---
 
 <aside
-  class:list={['litoral-map hidden lg:flex flex-col items-center', className]}
-  aria-label={mapLabel}
->
-  <svg
-    viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-    width="100%"
-    height="100%"
-    xmlns="http://www.w3.org/2000/svg"
-    class="max-h-[400px] w-full"
-    role="img"
+    class:list={['litoral-map hidden lg:flex flex-col items-center', className]}
     aria-label={mapLabel}
-  >
-    <defs>
-      {/* Gradient fill for province shape */}
-      <radialGradient id="province-fill" cx="50%" cy="50%" r="60%">
-        <stop offset="0%" stop-color="var(--color-surface)" stop-opacity="0.9" />
-        <stop offset="100%" stop-color="var(--color-surface)" stop-opacity="0.6" />
-      </radialGradient>
-    </defs>
-
-    {/* Map title */}
-    <text
-      x={SVG_WIDTH / 2}
-      y="18"
-      text-anchor="middle"
-      font-size="11"
-      font-weight="600"
-      fill="var(--color-text-secondary)"
-      opacity="0.7"
+>
+    <svg
+        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+        width="100%"
+        height="100%"
+        xmlns="http://www.w3.org/2000/svg"
+        class="max-h-[400px] w-full"
+        role="img"
+        aria-label={mapLabel}
     >
-      {mapTitle}
-    </text>
+        <defs>
+            {/* Gradient fill for province shape */}
+            <radialGradient id="province-fill" cx="50%" cy="50%" r="60%">
+                <stop offset="0%" stop-color="var(--color-surface)" stop-opacity="0.9" />
+                <stop offset="100%" stop-color="var(--color-surface)" stop-opacity="0.6" />
+            </radialGradient>
+        </defs>
 
-    {/* Entre Rios province outline.
-        Source: Natural Earth 10m admin-1 subdivisions (public domain).
-        Converted from GeoJSON via scripts/generate-entre-rios-svg.ts
-        with Douglas-Peucker simplification (tolerance 1.5px).
-        Coordinate space: 200x280 SVG viewBox with 20px inset margin. */}
-    <path
-      class="province-outline"
-      d="M143.4,165.6 L145.9,200 L143.2,202.4 L132.9,203 L133.7,214.2 L129.4,220.3 L127.5,236.2 L132.1,254.7 L123.4,257.1 L105.4,244.5 L96.3,242.7 L94.6,238.4 L88.9,239.4 L83.1,234.6 L79.3,235.9 L71.5,232 L38.5,204.1 L30.3,188.4 L26.1,173 L30.9,144 L28.2,135.6 L31.5,123.8 L42.2,121.3 L53.7,108.1 L74,73.2 L78.4,58.6 L76.6,45 L89.1,43.2 L95.8,45.3 L106.6,37.4 L112.5,38.7 L125.7,34.5 L142.1,40.2 L149.5,49.8 L153.2,60.2 L161.6,69.9 L161.4,77.6 L156.6,79.8 L159.2,86.2 L156.9,96.6 L149.1,110 L153.2,114.5 L153.1,119.6 L149.9,129.2 L143.3,133.9 L145.9,141 L144,148.7 L148.2,156.1 L143.4,165.6 Z"
-      fill="url(#province-fill)"
-      stroke="var(--color-border)"
-      stroke-width="1.5"
-      opacity="0.8"
-    />
+        {/* Map title */}
+        <text
+            x={SVG_WIDTH / 2}
+            y="18"
+            text-anchor="middle"
+            font-size="11"
+            font-weight="600"
+            fill="var(--color-text-secondary)"
+            opacity="0.7"
+        >
+            {mapTitle}
+        </text>
 
-    {/* Parana River (western/southern border) */}
-    <path
-      id="parana-river"
-      class="river-path"
-      d="M123.4,257.1 L105.4,244.5 L96.3,242.7 L94.6,238.4 L88.9,239.4 L83.1,234.6 L79.3,235.9 L71.5,232 L68.3,227.7 L55.7,219.6 L38.5,204.1 L30.3,188.4 L26.1,173 L28.8,148.9 L30.9,144 L28.2,135.6 L31.5,123.8 L42.2,121.3 L53.7,108.1 L74,73.2 L78.4,58.6 L78.8,52.2 L76.6,45"
-      fill="none"
-      stroke="var(--color-primary)"
-      stroke-width="2"
-      stroke-dasharray="4,3"
-      opacity="0.3"
-    />
-
-    {/* Uruguay River (eastern border) */}
-    <path
-      id="uruguay-river"
-      class="river-path"
-      d="M143.4,165.6 L142.4,170.5 L146.3,191.4 L145.9,200 L143.2,202.4 L135.1,201.5 L132.9,203 L133.7,214.2 L129.4,220.3 L127.5,236.2 L132.5,253.1 L132.1,254.7 L123.4,257.1"
-      fill="none"
-      stroke="var(--color-primary)"
-      stroke-width="2"
-      stroke-dasharray="4,3"
-      opacity="0.3"
-    />
-
-    {/* River labels along paths */}
-    <text font-size="7" font-style="italic" fill="var(--color-primary)" opacity="0.35">
-      <textPath href="#parana-river" startOffset="35%">
-        {riverParana}
-      </textPath>
-    </text>
-    <text font-size="7" font-style="italic" fill="var(--color-primary)" opacity="0.35">
-      <textPath href="#uruguay-river" startOffset="25%">
-        {riverUruguay}
-      </textPath>
-    </text>
-
-    {/* Destination markers */}
-    {mappableDestinations.map((dest) => (
-      <g
-        class="map-marker cursor-pointer"
-        data-map-marker={dest.slug}
-        tabindex="0"
-        role="button"
-        aria-label={t({ locale, namespace: 'destinations', key: 'featured.map.showOnPage', params: { name: dest.name } })}
-      >
-        {/* Pulse ring (animation) */}
-        <circle
-          cx={dest.svgPos.x}
-          cy={dest.svgPos.y}
-          r="10"
-          fill="var(--color-primary)"
-          opacity="0"
-          class="marker-pulse"
+        {/* Entre Rios province outline.
+            Source: Natural Earth 10m admin-1 subdivisions (public domain).
+            Converted from GeoJSON via scripts/generate-entre-rios-svg.ts
+            with Douglas-Peucker simplification (tolerance 1.5px).
+            Coordinate space: 200x280 SVG viewBox with 20px inset margin. */}
+        <path
+            class="province-outline"
+            d="M143.4,165.6 L145.9,200 L143.2,202.4 L132.9,203 L133.7,214.2 L129.4,220.3 L127.5,236.2 L132.1,254.7 L123.4,257.1 L105.4,244.5 L96.3,242.7 L94.6,238.4 L88.9,239.4 L83.1,234.6 L79.3,235.9 L71.5,232 L38.5,204.1 L30.3,188.4 L26.1,173 L30.9,144 L28.2,135.6 L31.5,123.8 L42.2,121.3 L53.7,108.1 L74,73.2 L78.4,58.6 L76.6,45 L89.1,43.2 L95.8,45.3 L106.6,37.4 L112.5,38.7 L125.7,34.5 L142.1,40.2 L149.5,49.8 L153.2,60.2 L161.6,69.9 L161.4,77.6 L156.6,79.8 L159.2,86.2 L156.9,96.6 L149.1,110 L153.2,114.5 L153.1,119.6 L149.9,129.2 L143.3,133.9 L145.9,141 L144,148.7 L148.2,156.1 L143.4,165.6 Z"
+            fill="url(#province-fill)"
+            stroke="var(--color-border)"
+            stroke-width="1.5"
+            opacity="0.8"
         />
-        {/* Marker dot */}
-        <circle
-          cx={dest.svgPos.x}
-          cy={dest.svgPos.y}
-          r="5"
-          fill="var(--color-primary)"
-          stroke="var(--color-bg)"
-          stroke-width="2"
-          class="transition-all duration-200"
+
+        {/* Parana River (western/southern border) */}
+        <path
+            id="parana-river"
+            class="river-path"
+            d="M123.4,257.1 L105.4,244.5 L96.3,242.7 L94.6,238.4 L88.9,239.4 L83.1,234.6 L79.3,235.9 L71.5,232 L68.3,227.7 L55.7,219.6 L38.5,204.1 L30.3,188.4 L26.1,173 L28.8,148.9 L30.9,144 L28.2,135.6 L31.5,123.8 L42.2,121.3 L53.7,108.1 L74,73.2 L78.4,58.6 L78.8,52.2 L76.6,45"
+            fill="none"
+            stroke="var(--color-primary)"
+            stroke-width="2"
+            stroke-dasharray="4,3"
+            opacity="0.3"
         />
-        {/* Tooltip (hidden by default, shown on hover via CSS) */}
-        {(() => {
-          const { tooltipX, tooltipY } = computeTooltipPosition({ ...dest.svgPos, tooltipWidth: TOOLTIP_WIDTH, svgWidth: SVG_WIDTH });
-          return (
-            <g class="marker-tooltip opacity-0 transition-opacity duration-150">
-              <rect
-                x={tooltipX}
-                y={tooltipY}
-                width={TOOLTIP_WIDTH}
-                height="20"
-                rx="4"
-                fill="var(--color-text)"
-                opacity="0.9"
-              />
-              <text
-                x={dest.svgPos.x}
-                y={tooltipY + 13}
-                text-anchor="middle"
-                font-size="9"
-                font-weight="600"
-                fill="var(--color-bg)"
-              >
-                {truncateName({ name: dest.name, maxLength: 14 }).truncated}
-              </text>
+
+        {/* Uruguay River (eastern border) */}
+        <path
+            id="uruguay-river"
+            class="river-path"
+            d="M143.4,165.6 L142.4,170.5 L146.3,191.4 L145.9,200 L143.2,202.4 L135.1,201.5 L132.9,203 L133.7,214.2 L129.4,220.3 L127.5,236.2 L132.5,253.1 L132.1,254.7 L123.4,257.1"
+            fill="none"
+            stroke="var(--color-primary)"
+            stroke-width="2"
+            stroke-dasharray="4,3"
+            opacity="0.3"
+        />
+
+        {/* River labels along paths */}
+        <text font-size="7" font-style="italic" fill="var(--color-primary)" opacity="0.35">
+            <textPath href="#parana-river" startOffset="35%">
+                {riverParana}
+            </textPath>
+        </text>
+        <text font-size="7" font-style="italic" fill="var(--color-primary)" opacity="0.35">
+            <textPath href="#uruguay-river" startOffset="25%">
+                {riverUruguay}
+            </textPath>
+        </text>
+
+        {/* Destination markers */}
+        {mappableDestinations.map((dest) => (
+            <g
+                class="map-marker cursor-pointer"
+                data-map-marker={dest.slug}
+                tabindex="0"
+                role="button"
+                aria-label={t(
+                    'destinations.featured.map.showOnPage',
+                    `Ver ${dest.name} en la página`,
+                    { name: dest.name }
+                )}
+            >
+                {/* Pulse ring (animation) */}
+                <circle
+                    cx={dest.svgPos.x}
+                    cy={dest.svgPos.y}
+                    r="10"
+                    fill="var(--color-primary)"
+                    opacity="0"
+                    class="marker-pulse"
+                />
+                {/* Marker dot */}
+                <circle
+                    cx={dest.svgPos.x}
+                    cy={dest.svgPos.y}
+                    r="5"
+                    fill="var(--color-primary)"
+                    stroke="var(--color-bg)"
+                    stroke-width="2"
+                    class="transition-all duration-200"
+                />
+                {/* Tooltip (hidden by default, shown on hover via CSS) */}
+                {(() => {
+                    const { tooltipX, tooltipY } = computeTooltipPosition({
+                        ...dest.svgPos,
+                        tooltipWidth: TOOLTIP_WIDTH,
+                        svgWidth: SVG_WIDTH
+                    });
+                    return (
+                        <g class="marker-tooltip opacity-0 transition-opacity duration-150">
+                            <rect
+                                x={tooltipX}
+                                y={tooltipY}
+                                width={TOOLTIP_WIDTH}
+                                height="20"
+                                rx="4"
+                                fill="var(--color-text)"
+                                opacity="0.9"
+                            />
+                            <text
+                                x={dest.svgPos.x}
+                                y={tooltipY + 13}
+                                text-anchor="middle"
+                                font-size="9"
+                                font-weight="600"
+                                fill="var(--color-bg)"
+                            >
+                                {truncateName({ name: dest.name, maxLength: 14 }).truncated}
+                            </text>
+                        </g>
+                    );
+                })()}
             </g>
-          );
-        })()}
-      </g>
-    ))}
-  </svg>
+        ))}
+    </svg>
 </aside>
 
 <style>
-  /* Show tooltip on hover/focus and when card-activated */
-  .map-marker:hover .marker-tooltip,
-  .map-marker:focus .marker-tooltip,
-  .map-marker.map-marker-active .marker-tooltip {
-    opacity: 1;
-  }
+    /* Show tooltip on hover/focus and when card-activated */
+    .map-marker:hover .marker-tooltip,
+    .map-marker:focus .marker-tooltip,
+    .map-marker.map-marker-active .marker-tooltip {
+        opacity: 1;
+    }
 
-  /* Grow marker on hover and when card-activated */
-  .map-marker:hover circle:not(.marker-pulse),
-  .map-marker:focus circle:not(.marker-pulse),
-  .map-marker.map-marker-active circle:not(.marker-pulse) {
-    r: 7;
-  }
+    /* Grow marker on hover and when card-activated */
+    .map-marker:hover circle:not(.marker-pulse),
+    .map-marker:focus circle:not(.marker-pulse),
+    .map-marker.map-marker-active circle:not(.marker-pulse) {
+        r: 7;
+    }
 
-  /* Pulse animation on hover and when card-activated */
-  .map-marker:hover .marker-pulse,
-  .map-marker:focus .marker-pulse,
-  .map-marker.map-marker-active .marker-pulse {
-    animation: mapPulse 1.5s ease-out infinite;
-  }
-
-  @keyframes mapPulse {
-    0% { opacity: 0.4; transform: scale(1); }
-    100% { opacity: 0; transform: scale(3.6); }
-  }
-
-  /* Ensure pulse circles use transform-origin at their center */
-  .marker-pulse {
-    transform-origin: center;
-    transform-box: fill-box;
-  }
-
-  /* Focus ring for keyboard navigation */
-  .map-marker:focus-visible > circle:not(.marker-pulse) {
-    stroke: var(--color-warning);
-    stroke-width: 3;
-  }
-
-  /* Province outline draw animation */
-  .province-outline {
-    stroke-dasharray: 900;
-    stroke-dashoffset: 900;
-    transition: stroke-dashoffset 1.5s ease-out;
-  }
-
-  .scroll-visible .province-outline {
-    stroke-dashoffset: 0;
-  }
-
-  /* River paths fade in after outline draws */
-  .river-path {
-    transition: opacity 0.8s ease-out 1s;
-  }
-
-  :not(.scroll-visible) > svg .river-path {
-    opacity: 0 !important;
-  }
-
-  @media (prefers-reduced-motion: reduce) {
+    /* Pulse animation on hover and when card-activated */
     .map-marker:hover .marker-pulse,
     .map-marker:focus .marker-pulse,
     .map-marker.map-marker-active .marker-pulse {
-      animation: none;
+        animation: mapPulse 1.5s ease-out infinite;
     }
 
+    @keyframes mapPulse {
+        0% { opacity: 0.4; transform: scale(1); }
+        100% { opacity: 0; transform: scale(3.6); }
+    }
+
+    /* Ensure pulse circles use transform-origin at their center */
+    .marker-pulse {
+        transform-origin: center;
+        transform-box: fill-box;
+    }
+
+    /* Focus ring for keyboard navigation */
+    .map-marker:focus-visible > circle:not(.marker-pulse) {
+        stroke: var(--color-warning);
+        stroke-width: 3;
+    }
+
+    /* Province outline draw animation triggered by .scroll-visible on the aside */
     .province-outline {
-      stroke-dasharray: none;
-      stroke-dashoffset: 0;
-      transition: none;
+        stroke-dasharray: 900;
+        stroke-dashoffset: 900;
+        transition: stroke-dashoffset 1.5s ease-out;
     }
 
-    .river-path {
-      transition: none;
+    .scroll-visible .province-outline {
+        stroke-dashoffset: 0;
     }
-  }
+
+    /* River paths fade in after outline draws */
+    .river-path {
+        transition: opacity 0.8s ease-out 1s;
+    }
+
+    :not(.scroll-visible) > svg .river-path {
+        opacity: 0 !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .map-marker:hover .marker-pulse,
+        .map-marker:focus .marker-pulse,
+        .map-marker.map-marker-active .marker-pulse {
+            animation: none;
+        }
+
+        .province-outline {
+            stroke-dasharray: none;
+            stroke-dashoffset: 0;
+            transition: none;
+        }
+
+        .river-path {
+            transition: none;
+        }
+    }
 </style>
 
 <script>
-  let litoralMapController: AbortController | null = null;
+    let litoralMapController: AbortController | null = null;
 
-  function initLitoralMap(): void {
-    litoralMapController?.abort();
-    litoralMapController = new AbortController();
-    const { signal } = litoralMapController;
+    function initLitoralMap(): void {
+        litoralMapController?.abort();
+        litoralMapController = new AbortController();
+        const { signal } = litoralMapController;
 
-    const markers = document.querySelectorAll('[data-map-marker]');
+        const markers = document.querySelectorAll('[data-map-marker]');
 
-    for (const marker of markers) {
-      marker.addEventListener('click', () => {
-        const slug = marker.getAttribute('data-map-marker');
-        if (!slug) return;
+        for (const marker of markers) {
+            marker.addEventListener('click', () => {
+                const slug = marker.getAttribute('data-map-marker');
+                if (!slug) return;
 
-        const card = document.querySelector(`[data-destination-slug="${slug}"]`);
-        if (!card) return;
+                const card = document.querySelector(`[data-destination-slug="${slug}"]`);
+                if (!card) return;
 
-        /* Smooth scroll to card */
-        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                /* Smooth scroll to card */
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        /* Brief highlight pulse */
-        card.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
-        setTimeout(() => {
-          card.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
-        }, 2000);
-      }, { signal });
+                /* Brief highlight pulse */
+                card.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+                setTimeout(() => {
+                    card.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+                }, 2000);
+            }, { signal });
 
-      /* Keyboard: Enter/Space triggers click */
-      marker.addEventListener('keydown', (e) => {
-        const event = e as KeyboardEvent;
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          (marker as HTMLElement).click();
+            /* Keyboard: Enter/Space triggers click */
+            marker.addEventListener('keydown', (e) => {
+                const event = e as KeyboardEvent;
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    (marker as HTMLElement).click();
+                }
+            }, { signal });
         }
-      }, { signal });
+
+        /* Bidirectional hover: card hover highlights map marker */
+        const cards = document.querySelectorAll('[data-destination-slug]');
+
+        for (const card of cards) {
+            card.addEventListener('mouseenter', () => {
+                const slug = card.getAttribute('data-destination-slug');
+                if (!slug) return;
+                const markerEl = document.querySelector(`[data-map-marker="${slug}"]`);
+                markerEl?.classList.add('map-marker-active');
+            }, { signal });
+
+            card.addEventListener('mouseleave', () => {
+                const slug = card.getAttribute('data-destination-slug');
+                if (!slug) return;
+                const markerEl = document.querySelector(`[data-map-marker="${slug}"]`);
+                markerEl?.classList.remove('map-marker-active');
+            }, { signal });
+        }
     }
 
-    /* Bidirectional hover: card hover highlights map marker */
-    const cards = document.querySelectorAll('[data-destination-slug]');
-
-    for (const card of cards) {
-      card.addEventListener('mouseenter', () => {
-        const slug = card.getAttribute('data-destination-slug');
-        if (!slug) return;
-        const marker = document.querySelector(`[data-map-marker="${slug}"]`);
-        marker?.classList.add('map-marker-active');
-      }, { signal });
-
-      card.addEventListener('mouseleave', () => {
-        const slug = card.getAttribute('data-destination-slug');
-        if (!slug) return;
-        const marker = document.querySelector(`[data-map-marker="${slug}"]`);
-        marker?.classList.remove('map-marker-active');
-      }, { signal });
-    }
-  }
-
-  initLitoralMap();
-  document.addEventListener('astro:page-load', initLitoralMap);
-  document.addEventListener('astro:before-swap', () => {
-    litoralMapController?.abort();
-    litoralMapController = null;
-  });
+    initLitoralMap();
+    document.addEventListener('astro:page-load', initLitoralMap);
+    document.addEventListener('astro:before-swap', () => {
+        litoralMapController?.abort();
+        litoralMapController = null;
+    });
 </script>

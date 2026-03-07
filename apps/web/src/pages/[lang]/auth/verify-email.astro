@@ -1,51 +1,44 @@
 ---
 /**
  * Verify email page - handles email verification via token.
- * Uses the VerifyEmailClient React island for automatic verification via Better Auth.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
+ *
+ * @route /[lang]/auth/verify-email/
+ * @rendering SSR (reads token from query params)
  */
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import Container from '../../../components/ui/Container.astro';
 import { VerifyEmailClient } from '../../../components/auth/VerifyEmail.client';
 import { getLocaleFromParams } from '../../../lib/page-helpers';
-import { t } from '../../../lib/i18n';
+import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-const title = t({ locale, namespace: 'auth-ui', key: 'pages.verifyEmail.title' });
-const description = t({ locale, namespace: 'auth-ui', key: 'pages.verifyEmail.description' });
+const typedLocale = locale as SupportedLocale;
+const t = createT(typedLocale);
+const title = t('auth-ui.pages.verifyEmail.title', 'Verificar correo');
+const description = t('auth-ui.pages.verifyEmail.description', 'Verificacion de correo electronico');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /** Extract the verification token from URL query params */
 const token = Astro.url.searchParams.get('token') || '';
-const redirectTo = `/${locale}/auth/signin`;
+const redirectTo = buildUrl({ locale: typedLocale, path: 'auth/signin' });
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+    <SEOHead slot="head" title={title} description={description} canonical={canonicalUrl} locale={locale} noindex={true} />
 
-	<Container>
-		<div class="flex min-h-screen items-center justify-center py-12">
-			<div class="w-full max-w-md">
-				<div class="rounded-lg border border-border bg-bg-secondary p-8 shadow-lg">
-					<VerifyEmailClient
-						client:load
-						token={token}
-						redirectTo={redirectTo}
-					/>
-				</div>
-			</div>
-		</div>
-	</Container>
+    <div class="flex min-h-screen items-center justify-center py-12 px-4">
+        <div class="w-full max-w-md">
+            <div class="rounded-xl border border-border bg-card p-8 shadow-lg">
+                <VerifyEmailClient
+                    client:load
+                    token={token}
+                    redirectTo={redirectTo}
+                />
+            </div>
+        </div>
+    </div>
 </BaseLayout>

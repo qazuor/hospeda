@@ -35,7 +35,8 @@ interface ValidationErrors {
  * ProfileEditForm component
  *
  * A client-side form for editing user profile information (name and bio).
- * Email is displayed as read-only. Uses the protected API endpoint to update profile data.
+ * Email is displayed as read-only. Uses the protected API endpoint to update
+ * profile data.
  *
  * Features:
  * - Client-side validation (name required, min 2 chars; bio max 500 chars)
@@ -102,7 +103,6 @@ export function ProfileEditForm({
      */
     const handleNameChange = (event: ChangeEvent<HTMLInputElement>): void => {
         setName(event.target.value);
-        // Clear name error on change
         if (errors.name) {
             setErrors((prev) => ({ ...prev, name: undefined }));
         }
@@ -115,31 +115,26 @@ export function ProfileEditForm({
      */
     const handleBioChange = (event: ChangeEvent<HTMLTextAreaElement>): void => {
         setBio(event.target.value);
-        // Clear bio error on change
         if (errors.bio) {
             setErrors((prev) => ({ ...prev, bio: undefined }));
         }
     };
 
     /**
-     * Handle form submission
-     * - Validates fields
-     * - Calls API to update profile
-     * - Shows success/error toast
+     * Handle form submission.
+     * Validates fields, calls API to update profile, shows success/error toast.
      *
      * @param event - Form submit event
      */
     const handleSubmit = async (event: FormEvent<HTMLFormElement>): Promise<void> => {
         event.preventDefault();
 
-        // Client-side validation
         const validationErrors = validateForm();
         if (validationErrors) {
             setErrors(validationErrors);
             return;
         }
 
-        // Clear any existing errors
         setErrors({});
         setIsSubmitting(true);
 
@@ -164,7 +159,6 @@ export function ProfileEditForm({
         } catch (error) {
             webLogger.error('ProfileEditForm: save profile failed', error);
             Sentry.captureException(error);
-            // On error, show error toast
             addToast({
                 type: 'error',
                 message: t('profileEdit.errorMessage'),
@@ -175,12 +169,9 @@ export function ProfileEditForm({
         }
     };
 
-    /**
-     * Character count indicator for bio field
-     */
+    /** Character count for bio field */
     const bioCharCount = bio.length;
-    const bioCharCountColor =
-        bioCharCount > 500 ? 'text-red-600 dark:text-red-400' : 'text-text-tertiary';
+    const bioCharCountColor = bioCharCount > 500 ? 'text-destructive' : 'text-muted-foreground';
 
     return (
         <form
@@ -197,7 +188,7 @@ export function ProfileEditForm({
                 <div>
                     <label
                         htmlFor="input-name"
-                        className="mb-2 block font-medium text-sm text-text-primary"
+                        className="mb-2 block font-medium text-foreground text-sm"
                     >
                         {t('profileEdit.name')}
                     </label>
@@ -211,12 +202,12 @@ export function ProfileEditForm({
                         aria-required="true"
                         aria-invalid={!!errors.name}
                         aria-describedby={errors.name ? 'name-error' : undefined}
-                        className="w-full rounded-md border border-border bg-surface px-4 py-2 text-text-primary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full rounded-md border border-border bg-card px-4 py-2 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     {errors.name && (
                         <p
                             id="name-error"
-                            className="mt-1 text-red-600 text-sm dark:text-red-400"
+                            className="mt-1 text-destructive text-sm"
                             role="alert"
                         >
                             {errors.name}
@@ -228,7 +219,7 @@ export function ProfileEditForm({
                 <div>
                     <label
                         htmlFor="input-email"
-                        className="mb-2 block font-medium text-sm text-text-primary"
+                        className="mb-2 block font-medium text-foreground text-sm"
                     >
                         {t('profileEdit.email')}
                     </label>
@@ -241,11 +232,11 @@ export function ProfileEditForm({
                         readOnly
                         aria-readonly="true"
                         aria-describedby="email-help"
-                        className="w-full rounded-md border border-border bg-surface px-4 py-2 text-text-primary transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full rounded-md border border-border bg-card px-4 py-2 text-foreground transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <p
                         id="email-help"
-                        className="mt-2 text-sm text-text-tertiary"
+                        className="mt-2 text-muted-foreground text-sm"
                     >
                         {t('profileEdit.emailHelper')}
                     </p>
@@ -255,7 +246,7 @@ export function ProfileEditForm({
                 <div>
                     <label
                         htmlFor="input-bio"
-                        className="mb-2 block font-medium text-sm text-text-primary"
+                        className="mb-2 block font-medium text-foreground text-sm"
                     >
                         {t('profileEdit.bio')}
                     </label>
@@ -267,12 +258,12 @@ export function ProfileEditForm({
                         rows={6}
                         aria-invalid={!!errors.bio}
                         aria-describedby={errors.bio ? 'bio-error bio-help' : 'bio-help'}
-                        className="w-full rounded-md border border-border bg-surface px-4 py-2 text-text-primary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="w-full rounded-md border border-border bg-card px-4 py-2 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
                     />
                     <div className="mt-2 flex items-center justify-between">
                         <p
                             id="bio-help"
-                            className="text-sm text-text-tertiary"
+                            className="text-muted-foreground text-sm"
                         >
                             {t('profileEdit.bioHelper')}
                         </p>
@@ -286,7 +277,7 @@ export function ProfileEditForm({
                     {errors.bio && (
                         <p
                             id="bio-error"
-                            className="mt-1 text-red-600 text-sm dark:text-red-400"
+                            className="mt-1 text-destructive text-sm"
                             role="alert"
                         >
                             {errors.bio}
@@ -299,7 +290,7 @@ export function ProfileEditForm({
             <div className="flex flex-col gap-3 border-border border-t pt-6 sm:flex-row sm:justify-end">
                 <a
                     href={`/${locale}/mi-cuenta/`}
-                    className="inline-flex items-center justify-center rounded-md px-4 py-2 font-semibold text-base text-text transition-colors hover:bg-bg focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 sm:w-auto"
+                    className="inline-flex items-center justify-center rounded-md px-4 py-2 font-semibold text-base text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 sm:w-auto"
                 >
                     {t('profileEdit.cancel')}
                 </a>
@@ -307,11 +298,11 @@ export function ProfileEditForm({
                     type="submit"
                     disabled={isSubmitting}
                     aria-busy={isSubmitting}
-                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-semibold text-base text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary sm:w-auto"
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 font-semibold text-base text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                     {isSubmitting ? (
                         <>
-                            <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            <span className="mr-2 inline-block h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                             {t('profileEdit.save')}
                         </>
                     ) : (

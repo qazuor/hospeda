@@ -1,16 +1,12 @@
 /**
- * Centralized API response → Card component prop transformations.
+ * Centralized API response to Card component prop transformations.
  *
- * Each function takes a raw API response item (typed as Record<string, unknown>)
- * and returns a properly typed object matching the corresponding card component's
- * props interface. This eliminates duplicated inline .map() transforms across
- * pages and Server Islands while ensuring consistent field extraction, fallbacks,
- * and coercion.
+ * Each function takes a raw API response item and returns a properly typed
+ * object matching the corresponding card component's props interface.
  */
-import type { DestinationCardData } from '../../components/destination/destination-card.types';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../media';
 
-// ─── Shared sub-types ────────────────────────────────────────────────────────
+// --- Shared sub-types ---
 
 /** Amenity or feature item extracted from a relation join. */
 export interface CardAmenityFeature {
@@ -39,9 +35,9 @@ export interface EventLocation {
     readonly city: string;
 }
 
-// ─── Accommodation Card Data (Featured) ──────────────────────────────────────
+// --- Accommodation Card Data ---
 
-/** Props for AccommodationCardFeatured component. */
+/** Props for AccommodationCard component. */
 export interface AccommodationCardData {
     readonly id: string;
     readonly slug: string;
@@ -58,7 +54,7 @@ export interface AccommodationCardData {
     readonly features?: readonly CardAmenityFeature[];
 }
 
-// ─── Accommodation Card Data (Detailed) ──────────────────────────────────────
+// --- Accommodation Card Data (Detailed) ---
 
 /** Props for AccommodationCardDetailed component. */
 export interface AccommodationDetailedCardData {
@@ -78,7 +74,32 @@ export interface AccommodationDetailedCardData {
     readonly isFeatured: boolean;
 }
 
-// ─── Event Card Data ─────────────────────────────────────────────────────────
+// --- Destination Card Data ---
+
+/** Props for DestinationCard component. */
+export interface DestinationCardData {
+    readonly slug: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly featuredImage: string;
+    readonly accommodationsCount: number;
+    readonly isFeatured: boolean;
+    readonly path: string;
+    readonly averageRating: number;
+    readonly reviewsCount: number;
+    readonly eventsCount: number;
+    readonly attractions?: readonly {
+        id: string;
+        name: string;
+        icon?: string;
+        displayWeight?: number;
+    }[];
+    readonly gallery?: readonly { url: string; caption?: string }[];
+    readonly coordinates?: { lat: string; long: string };
+    readonly ratingDimensions?: Record<string, number>;
+}
+
+// --- Event Card Data ---
 
 /** Props for EventCard component. */
 export interface EventCardData {
@@ -92,7 +113,7 @@ export interface EventCardData {
     readonly location?: EventLocation;
 }
 
-// ─── Blog Post Card Data ─────────────────────────────────────────────────────
+// --- Blog Post Card Data ---
 
 /** Props for BlogPostCard component. */
 export interface BlogPostCardData {
@@ -108,14 +129,10 @@ export interface BlogPostCardData {
     readonly tags?: readonly string[];
 }
 
-// Re-export DestinationCardData so consumers can import everything from here
-export type { DestinationCardData };
-
-// ─── Helper: extract relation items (amenities / features) ──────────────────
+// --- Helper: extract relation items (amenities / features) ---
 
 /**
  * Extracts amenity or feature items from a relation join array.
- * Handles the nested `{ amenity: { slug, name, ... } }` or `{ feature: { ... } }` shape.
  */
 function extractRelationItems(
     items: unknown,
@@ -138,13 +155,10 @@ function extractRelationItems(
     return mapped.length > 0 ? mapped : undefined;
 }
 
-// ─── Transform functions ─────────────────────────────────────────────────────
+// --- Transform functions ---
 
 /**
- * Transforms a raw API accommodation item to AccommodationCardFeatured props.
- *
- * @param item - Raw accommodation object from the API
- * @returns Typed AccommodationCardData for the card component
+ * Transforms a raw API accommodation item to AccommodationCard props.
  */
 export function toAccommodationCardProps({
     item
@@ -233,9 +247,6 @@ export function toAccommodationDetailedProps({
 
 /**
  * Transforms a raw API event item to EventCard props.
- *
- * @param item - Raw event object from the API
- * @returns Typed EventCardData for the card component
  */
 export function toEventCardProps({
     item
@@ -315,9 +326,6 @@ export function toDestinationCardProps({
 
 /**
  * Transforms a raw API post item to BlogPostCard props.
- *
- * @param item - Raw post object from the API
- * @returns Typed BlogPostCardData for the card component
  */
 export function toPostCardProps({
     item

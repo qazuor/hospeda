@@ -1,25 +1,38 @@
 /**
- * Horizontal filter chips bar for accommodations page.
- * Toggle chips for boolean filters + dropdown chips for complex filters.
- * On apply, navigates via URL query params (server-side re-render).
+ * @file FilterChipsBar.client.tsx
+ * @description Horizontal bar of filter chips for the accommodations listing page.
+ * Toggle chips handle boolean amenity filters (wifi, pool, pets, parking).
+ * Dropdown chips handle multi-value filters (type, price range, capacity, rating).
+ * Every interaction navigates via URL query params, triggering a server-side re-render
+ * without a JS router — preserving all other active filters across navigations.
  */
+
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+/** Props for the FilterChipsBar component */
 interface FilterChipsBarProps {
-    /** Current query params as key-value pairs */
+    /** Current query params as key-value pairs, parsed from the URL. */
     readonly currentFilters: Record<string, string>;
-    /** Current locale */
+    /** Current locale for i18n. */
     readonly locale: string;
-    /** Accommodation types for the type filter dropdown */
+    /** Accommodation types available for the type filter dropdown. */
     readonly accommodationTypes: readonly { readonly value: string; readonly label: string }[];
 }
 
-/** Navigate by building URL with given params */
+// ─── Navigation helpers ───────────────────────────────────────────────────────
+
+/**
+ * Navigate to the current page with a new set of query params.
+ * Resets the page param on every filter change so the user lands on page 1.
+ *
+ * @param params - Key-value pairs to set or delete (undefined / empty string = delete).
+ */
 function navigateWithParams(params: Record<string, string | undefined>): void {
     const url = new URL(window.location.href);
-    // Reset page on filter change
     url.searchParams.delete('page');
     for (const [key, value] of Object.entries(params)) {
         if (value === undefined || value === '') {
@@ -31,13 +44,22 @@ function navigateWithParams(params: Record<string, string | undefined>): void {
     window.location.href = url.toString();
 }
 
-/** Toggle a boolean query param */
+/**
+ * Toggle a boolean query param on/off.
+ *
+ * @param key - The query param name.
+ * @param currentFilters - The current active filters.
+ */
 function toggleBoolParam(key: string, currentFilters: Record<string, string>): void {
     const isActive = currentFilters[key] === 'true';
     navigateWithParams({ [key]: isActive ? undefined : 'true' });
 }
 
-/** ToggleChip: simple on/off chip for boolean filters */
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+/**
+ * Simple on/off chip for boolean filters (wifi, pool, pets, parking).
+ */
 function ToggleChip({
     label,
     paramKey,
@@ -63,7 +85,10 @@ function ToggleChip({
     );
 }
 
-/** DropdownChip: chip that opens a popover with controls */
+/**
+ * Chip that opens a dropdown popover with interactive filter controls.
+ * Closes when clicking outside the popover.
+ */
 function DropdownChip({
     label,
     isActive,
@@ -128,7 +153,9 @@ function DropdownChip({
     );
 }
 
-/** Type filter dropdown content */
+/**
+ * Checkbox list for selecting one or more accommodation types.
+ */
 function TypeFilterContent({
     types,
     currentType
@@ -165,7 +192,9 @@ function TypeFilterContent({
     );
 }
 
-/** Price filter dropdown content */
+/**
+ * Min/max numeric inputs for price range filtering.
+ */
 function PriceFilterContent({
     currentMin,
     currentMax,
@@ -224,7 +253,7 @@ function PriceFilterContent({
             <button
                 type="button"
                 onClick={handleApply}
-                className="w-full rounded-lg bg-primary py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark"
+                className="w-full rounded-lg bg-primary py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90"
             >
                 {t('apply')}
             </button>
@@ -232,7 +261,47 @@ function PriceFilterContent({
     );
 }
 
-/** Capacity filter dropdown content */
+/**
+ * Stepper control: label + decrement / increment buttons for numeric values.
+ */
+function Stepper({
+    label,
+    value,
+    onChange
+}: {
+    readonly label: string;
+    readonly value: string;
+    readonly onChange: (v: string) => void;
+}) {
+    const num = Number.parseInt(value, 10) || 0;
+    return (
+        <div className="flex items-center justify-between">
+            <span className="text-sm text-text">{label}</span>
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => onChange(num > 0 ? String(num - 1) : '')}
+                    disabled={num <= 0}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:border-primary disabled:opacity-30"
+                >
+                    -
+                </button>
+                <span className="w-6 text-center font-medium text-sm text-text">{num || '-'}</span>
+                <button
+                    type="button"
+                    onClick={() => onChange(String(num + 1))}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:border-primary"
+                >
+                    +
+                </button>
+            </div>
+        </div>
+    );
+}
+
+/**
+ * Stepper group for guests, bedrooms, and bathrooms capacity filters.
+ */
 function CapacityFilterContent({
     currentFilters,
     t
@@ -272,7 +341,7 @@ function CapacityFilterContent({
             <button
                 type="button"
                 onClick={handleApply}
-                className="w-full rounded-lg bg-primary py-2 font-medium text-sm text-white transition-colors hover:bg-primary-dark"
+                className="w-full rounded-lg bg-primary py-2 font-medium text-primary-foreground text-sm transition-colors hover:bg-primary/90"
             >
                 {t('apply')}
             </button>
@@ -280,43 +349,9 @@ function CapacityFilterContent({
     );
 }
 
-/** Stepper: label + minus/plus buttons */
-function Stepper({
-    label,
-    value,
-    onChange
-}: {
-    readonly label: string;
-    readonly value: string;
-    readonly onChange: (v: string) => void;
-}) {
-    const num = Number.parseInt(value, 10) || 0;
-    return (
-        <div className="flex items-center justify-between">
-            <span className="text-sm text-text">{label}</span>
-            <div className="flex items-center gap-2">
-                <button
-                    type="button"
-                    onClick={() => onChange(num > 0 ? String(num - 1) : '')}
-                    disabled={num <= 0}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:border-primary disabled:opacity-30"
-                >
-                    -
-                </button>
-                <span className="w-6 text-center font-medium text-sm text-text">{num || '-'}</span>
-                <button
-                    type="button"
-                    onClick={() => onChange(String(num + 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:border-primary"
-                >
-                    +
-                </button>
-            </div>
-        </div>
-    );
-}
-
-/** Rating filter dropdown content */
+/**
+ * Star rating selection buttons (2+, 3+, 4+ stars).
+ */
 function RatingFilterContent({
     currentRating,
     t
@@ -328,7 +363,7 @@ function RatingFilterContent({
         { value: '4', label: `4+ ${t('stars')}` },
         { value: '3', label: `3+ ${t('stars')}` },
         { value: '2', label: `2+ ${t('stars')}` }
-    ];
+    ] as const;
 
     return (
         <div className="flex flex-col gap-2">
@@ -355,7 +390,17 @@ function RatingFilterContent({
     );
 }
 
-/** Main FilterChipsBar component */
+// ─── Main export ─────────────────────────────────────────────────────────────
+
+/**
+ * FilterChipsBar - Horizontal bar of filter chips for the accommodation listing.
+ *
+ * Renders toggle chips (on/off) for boolean amenity filters and dropdown chips
+ * for multi-value filters. Every interaction navigates via URL query params,
+ * triggering a full server-side re-render with the updated filter state.
+ *
+ * @param props - FilterChipsBarProps
+ */
 export function FilterChipsBar({
     currentFilters,
     locale,
@@ -376,7 +421,7 @@ export function FilterChipsBar({
 
     return (
         <div className="flex flex-wrap gap-2 pb-2">
-            {/* Toggle chips */}
+            {/* Boolean toggle chips */}
             <ToggleChip
                 label={ct('wifi')}
                 paramKey="hasWifi"
@@ -398,8 +443,11 @@ export function FilterChipsBar({
                 currentFilters={currentFilters}
             />
 
-            {/* Divider - hidden on mobile when wrapping */}
-            <div className="mx-1 hidden w-px self-stretch bg-border sm:block" />
+            {/* Visual divider — hidden on mobile to avoid extra height when wrapping */}
+            <div
+                className="mx-1 hidden w-px self-stretch bg-border sm:block"
+                aria-hidden="true"
+            />
 
             {/* Dropdown chips */}
             <DropdownChip

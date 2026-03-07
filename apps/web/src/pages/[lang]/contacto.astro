@@ -1,166 +1,175 @@
 ---
+/**
+ * Contact page.
+ * Displays a contact form (React island) alongside contact information and social links.
+ *
+ * Rendering: SSG (pre-rendered at build time for all supported locales).
+ * Route: /[lang]/contacto/
+ */
 export const prerender = true;
 
 export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
-/**
- * Contact page - form and contact information.
- * Validates locale parameter and redirects invalid locales to Spanish (default).
- */
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import SEOHead from '../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../components/ui/Breadcrumb.astro';
-import Container from '../../components/ui/Container.astro';
-import Section from '../../components/ui/Section.astro';
+import Breadcrumb from '../../components/shared/Breadcrumb.astro';
+import BackgroundPattern from '../../components/shared/BackgroundPattern.astro';
+import DecorativeElement from '../../components/shared/DecorativeElement.astro';
 import { ContactForm } from '../../components/content/ContactForm.client';
-import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
-import { t } from '../../lib/i18n';
 import { EmailIcon, LocationIcon, ClockIcon, InstagramIcon, FacebookIcon, TwitterIcon } from '@repo/icons';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../lib/page-helpers';
+import { createT } from '../../lib/i18n';
+import { buildUrl } from '../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
-if (!locale) return Astro.redirect('/es/');
+if (!locale) return Astro.redirect('/es/contacto/');
 
-const title = t({ locale, namespace: 'contact', key: 'page.title' });
-const description = t({ locale, namespace: 'contact', key: 'page.description' });
-const contactInfo = t({ locale, namespace: 'contact', key: 'page.contactInfo' });
-const officeHours = t({ locale, namespace: 'contact', key: 'page.officeHours' });
-const officeHoursValue = t({ locale, namespace: 'contact', key: 'page.officeHoursValue' });
-const followUs = t({ locale, namespace: 'contact', key: 'page.followUs' });
+/** Translation helper bound to this locale. */
+const t = createT(locale);
+
+const pageTitle = t('contact.page.title', 'Contacto');
+const pageDescription = t('contact.page.description', 'Ponete en contacto con el equipo de Hospeda');
+const contactInfoHeading = t('contact.page.contactInfo', 'Informacion de contacto');
+const officeHoursLabel = t('contact.page.officeHours', 'Horarios de atencion');
+const officeHoursValue = t('contact.page.officeHoursValue', 'Lunes a viernes, 9:00 - 18:00');
+const followUsLabel = t('contact.page.followUs', 'Seguinos en redes');
+const locationLabel = t('contact.page.locationLabel', 'Ubicacion');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /**
- * Breadcrumb navigation items
+ * Breadcrumb navigation items.
  */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: title, href: `/${locale}/contacto/` },
-];
+    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+    { label: pageTitle, href: buildUrl({ locale, path: 'contacto' }) }
+] as const;
 ---
 
-<BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-	/>
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale}>
+    <SEOHead
+        slot="head"
+        title={pageTitle}
+        description={pageDescription}
+        canonical={canonicalUrl}
+        locale={locale}
+        type="website"
+    />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+    <div class="relative overflow-hidden">
+        <BackgroundPattern pattern="/images/pattern-grid.svg" size="60px 60px" opacity="opacity-40" />
+        <DecorativeElement src="/images/deco-brujula.svg" position="top-8 right-8 md:right-16" size="w-20 md:w-28" opacity="opacity-40" />
+        <DecorativeElement src="/images/deco-pin-location.svg" position="bottom-8 left-4 md:left-12" size="w-16 md:w-24" opacity="opacity-35" rotate="-rotate-12" />
 
-		<Section>
-			<div class="mx-auto max-w-7xl">
-				<h1 class="mb-8 text-4xl font-bold text-text-primary">
-					{title}
-				</h1>
+    <div class="container mx-auto max-w-7xl px-4 py-8">
+        <Breadcrumb items={breadcrumbItems} />
 
-				<div class="grid gap-12 lg:grid-cols-2">
-					<!-- Left column: Contact form (React island) -->
-					<div class="order-2 lg:order-1">
-						<ContactForm client:visible locale={locale} />
-					</div>
+        <section class="scroll-reveal py-8">
+            <header class="mb-10">
+                <h1 class="text-4xl font-bold text-foreground">{pageTitle}</h1>
+            </header>
 
-					<!-- Right column: Contact information -->
-					<div class="order-1 lg:order-2">
-						<div class="rounded-lg border border-border bg-bg-secondary p-8">
-							<h2 class="mb-6 text-2xl font-semibold text-text-primary">
-								{contactInfo}
-							</h2>
+            <div class="grid gap-12 lg:grid-cols-2">
+                <!-- Contact form (React island, hydrated on visibility) -->
+                <div class="order-2 lg:order-1">
+                    <ContactForm client:visible locale={locale} />
+                </div>
 
-							<div class="space-y-6">
-								<!-- Email -->
-								<div class="flex items-start gap-4">
-									<div
-										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary bg-opacity-10"
-									>
-										<EmailIcon size={20} className="text-primary" aria-hidden="true" />
-									</div>
-									<div>
-										<p class="font-medium text-text-primary">Email</p>
-										<a
-											href="mailto:info@hospeda.com.ar"
-											class="text-text-secondary transition-colors hover:text-primary"
-										>
-											info@hospeda.com.ar
-										</a>
-									</div>
-								</div>
+                <!-- Contact information panel -->
+                <aside class="order-1 lg:order-2">
+                    <div class="rounded-xl border border-border bg-card p-8 shadow-sm">
+                        <h2 class="mb-6 text-2xl font-semibold text-foreground">
+                            {contactInfoHeading}
+                        </h2>
 
-								<!-- Location -->
-								<div class="flex items-start gap-4">
-									<div
-										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary bg-opacity-10"
-									>
-										<LocationIcon size={20} className="text-primary" aria-hidden="true" />
-									</div>
-									<div>
-										<p class="font-medium text-text-primary">Location</p>
-										<p class="text-text-secondary">
-											Concepción del Uruguay, Entre Ríos, Argentina
-										</p>
-									</div>
-								</div>
+                        <ul class="space-y-6" aria-label={contactInfoHeading}>
+                            <!-- Email -->
+                            <li class="flex items-start gap-4">
+                                <div
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+                                    aria-hidden="true"
+                                >
+                                    <EmailIcon size={20} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p class="font-medium text-foreground">Email</p>
+                                    <a
+                                        href="mailto:info@hospeda.com.ar"
+                                        class="text-muted-foreground transition-colors hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    >
+                                        info@hospeda.com.ar
+                                    </a>
+                                </div>
+                            </li>
 
-								<!-- Office hours -->
-								<div class="flex items-start gap-4">
-									<div
-										class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary bg-opacity-10"
-									>
-										<ClockIcon size={20} className="text-primary" aria-hidden="true" />
-									</div>
-									<div>
-										<p class="font-medium text-text-primary">{officeHours}</p>
-										<p class="text-text-secondary">
-											{officeHoursValue}
-										</p>
-									</div>
-								</div>
+                            <!-- Location -->
+                            <li class="flex items-start gap-4">
+                                <div
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+                                    aria-hidden="true"
+                                >
+                                    <LocationIcon size={20} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p class="font-medium text-foreground">{locationLabel}</p>
+                                    <p class="text-muted-foreground">
+                                        Concepcion del Uruguay, Entre Rios, Argentina
+                                    </p>
+                                </div>
+                            </li>
 
-								<!-- Social media -->
-								<div class="border-t border-border pt-6">
-									<p class="mb-4 font-medium text-text-primary">
-										{followUs}
-									</p>
-									<div class="flex gap-4">
-										<a
-											href="https://instagram.com/hospeda"
-											target="_blank"
-											rel="noopener noreferrer"
-											class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary bg-opacity-10 text-primary transition-colors hover:bg-primary hover:text-white"
-											aria-label="Instagram"
-										>
-											<InstagramIcon size={20} weight="fill" aria-hidden="true" />
-										</a>
+                            <!-- Office hours -->
+                            <li class="flex items-start gap-4">
+                                <div
+                                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10"
+                                    aria-hidden="true"
+                                >
+                                    <ClockIcon size={20} className="text-primary" />
+                                </div>
+                                <div>
+                                    <p class="font-medium text-foreground">{officeHoursLabel}</p>
+                                    <p class="text-muted-foreground">{officeHoursValue}</p>
+                                </div>
+                            </li>
+                        </ul>
 
-										<a
-											href="https://facebook.com/hospeda"
-											target="_blank"
-											rel="noopener noreferrer"
-											class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary bg-opacity-10 text-primary transition-colors hover:bg-primary hover:text-white"
-											aria-label="Facebook"
-										>
-											<FacebookIcon size={20} weight="fill" aria-hidden="true" />
-										</a>
-
-										<a
-											href="https://twitter.com/hospeda"
-											target="_blank"
-											rel="noopener noreferrer"
-											class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary bg-opacity-10 text-primary transition-colors hover:bg-primary hover:text-white"
-											aria-label="Twitter"
-										>
-											<TwitterIcon size={20} weight="fill" aria-hidden="true" />
-										</a>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</Section>
-	</Container>
+                        <!-- Social media -->
+                        <div class="mt-8 border-t border-border pt-6">
+                            <p class="mb-4 font-medium text-foreground">{followUsLabel}</p>
+                            <div class="flex gap-3">
+                                <a
+                                    href="https://instagram.com/hospeda"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    aria-label="Instagram"
+                                >
+                                    <InstagramIcon size={20} weight="fill" aria-hidden="true" />
+                                </a>
+                                <a
+                                    href="https://facebook.com/hospeda"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    aria-label="Facebook"
+                                >
+                                    <FacebookIcon size={20} weight="fill" aria-hidden="true" />
+                                </a>
+                                <a
+                                    href="https://twitter.com/hospeda"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                                    aria-label="Twitter / X"
+                                >
+                                    <TwitterIcon size={20} weight="fill" aria-hidden="true" />
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+    </div>
+    </div>
 </BaseLayout>

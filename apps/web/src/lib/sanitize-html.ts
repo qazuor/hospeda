@@ -5,9 +5,6 @@
  * to prevent XSS bypass vulnerabilities. Strips all HTML tags except a safe
  * allowlist, removes dangerous attributes, and preserves safe content.
  *
- * For TipTap JSON content, prefer `renderTiptapContent()` which builds HTML
- * from a structured allowlist and already escapes text nodes.
- *
  * @module sanitize-html
  */
 

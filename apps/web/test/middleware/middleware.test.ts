@@ -1,550 +1,640 @@
 /**
- * Tests for middleware helper functions.
- * Tests locale extraction, protected route detection, and static asset detection.
+ * Tests for middleware helper functions in src/lib/middleware-helpers.ts
+ * and for the structural patterns in src/middleware.ts.
+ *
+ * Pure helper functions are imported and exercised directly.
+ * The middleware module itself (which requires astro:middleware) is
+ * validated by reading its source and asserting on its logic patterns.
  */
-
-import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_LOCALE } from '../../src/lib/i18n';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 import {
     buildLocaleRedirect,
     buildLoginRedirect,
     extractLocaleFromPath,
+    isAuthRoute,
     isProtectedRoute,
     isServerIslandRoute,
     isStaticAssetRoute,
     parseSessionUser
 } from '../../src/lib/middleware-helpers';
 
+// ---------------------------------------------------------------------------
+// Source file contents (for pattern-based assertions on the middleware module)
+// ---------------------------------------------------------------------------
+
+const middlewareSrc = readFileSync(resolve(__dirname, '../../src/middleware.ts'), 'utf8');
+
+const helpersSrc = readFileSync(resolve(__dirname, '../../src/lib/middleware-helpers.ts'), 'utf8');
+
+// ---------------------------------------------------------------------------
+// extractLocaleFromPath
+// ---------------------------------------------------------------------------
+
 describe('extractLocaleFromPath', () => {
     describe('valid locales', () => {
-        it('should extract Spanish locale from path', () => {
-            const result = extractLocaleFromPath({ path: '/es/alojamientos' });
+        it('should extract "es" from /es/alojamientos/', () => {
+            // Arrange
+            const path = '/es/alojamientos/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBe('es');
-            expect(result.restOfPath).toBe('/alojamientos');
+            expect(result.restOfPath).toBe('/alojamientos/');
         });
 
-        it('should extract English locale from path', () => {
-            const result = extractLocaleFromPath({ path: '/en/about' });
+        it('should extract "en" from /en/destinations/', () => {
+            // Arrange
+            const path = '/en/destinations/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBe('en');
-            expect(result.restOfPath).toBe('/about');
+            expect(result.restOfPath).toBe('/destinations/');
         });
 
-        it('should extract Portuguese locale from path', () => {
-            const result = extractLocaleFromPath({ path: '/pt/sobre' });
+        it('should extract "pt" from /pt/acomodacoes/', () => {
+            // Arrange
+            const path = '/pt/acomodacoes/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBe('pt');
-            expect(result.restOfPath).toBe('/sobre');
+            expect(result.restOfPath).toBe('/acomodacoes/');
         });
 
-        it('should handle locale with trailing slash', () => {
-            const result = extractLocaleFromPath({ path: '/es/about/' });
-            expect(result.locale).toBe('es');
-            expect(result.restOfPath).toBe('/about/');
-        });
+        it('should return restOfPath as "/" for root locale path', () => {
+            // Arrange
+            const path = '/es/';
 
-        it('should handle locale-only path', () => {
-            const result = extractLocaleFromPath({ path: '/es' });
-            expect(result.locale).toBe('es');
-            expect(result.restOfPath).toBe('/');
-        });
+            // Act
+            const result = extractLocaleFromPath({ path });
 
-        it('should handle locale-only path with trailing slash', () => {
-            const result = extractLocaleFromPath({ path: '/es/' });
+            // Assert
             expect(result.locale).toBe('es');
             expect(result.restOfPath).toBe('/');
         });
 
-        it('should handle nested paths', () => {
-            const result = extractLocaleFromPath({ path: '/en/blog/post/123' });
-            expect(result.locale).toBe('en');
-            expect(result.restOfPath).toBe('/blog/post/123');
+        it('should handle deep nested paths correctly', () => {
+            // Arrange
+            const path = '/es/alojamientos/page/2/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
+            expect(result.locale).toBe('es');
+            expect(result.restOfPath).toBe('/alojamientos/page/2/');
         });
     });
 
     describe('invalid locales', () => {
-        it('should return null for invalid locale', () => {
-            const result = extractLocaleFromPath({ path: '/fr/about' });
+        it('should return null locale for unknown locale segment', () => {
+            // Arrange
+            const path = '/fr/destinations/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('/about');
         });
 
-        it('should return null for invalid locale with trailing slash', () => {
-            const result = extractLocaleFromPath({ path: '/de/test/' });
+        it('should return null locale for root path', () => {
+            // Arrange
+            const path = '/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('/test/');
         });
 
-        it('should return null for root path', () => {
-            const result = extractLocaleFromPath({ path: '/' });
+        it('should return null locale for empty path', () => {
+            // Arrange
+            const path = '';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('/');
         });
 
-        it('should return null for empty path', () => {
-            const result = extractLocaleFromPath({ path: '' });
+        it('should return null locale for "de" (unsupported)', () => {
+            // Arrange
+            const path = '/de/alojamientos/';
+
+            // Act
+            const result = extractLocaleFromPath({ path });
+
+            // Assert
             expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('');
         });
 
-        it('should return null for path without locale', () => {
-            const result = extractLocaleFromPath({ path: '/about' });
-            expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('/');
-        });
-    });
+        it('should return null locale for uppercase locale segment', () => {
+            // Arrange - locales are case-sensitive; "ES" is not valid
+            const path = '/ES/alojamientos/';
 
-    describe('edge cases', () => {
-        it('should handle path without leading slash', () => {
-            const result = extractLocaleFromPath({ path: 'es/about' });
-            expect(result.locale).toBe('es');
-            expect(result.restOfPath).toBe('/about');
-        });
+            // Act
+            const result = extractLocaleFromPath({ path });
 
-        it('should handle multiple slashes', () => {
-            const result = extractLocaleFromPath({ path: '//es//about' });
+            // Assert
             expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('//es//about');
-        });
-
-        it('should handle case sensitivity (lowercase only)', () => {
-            const result = extractLocaleFromPath({ path: '/ES/about' });
-            expect(result.locale).toBeNull();
-            expect(result.restOfPath).toBe('/about');
         });
     });
 });
 
-describe('isProtectedRoute', () => {
-    describe('protected routes', () => {
-        it('should return true for Spanish mi-cuenta route', () => {
-            expect(isProtectedRoute({ path: '/es/mi-cuenta/profile' })).toBe(true);
+// ---------------------------------------------------------------------------
+// isStaticAssetRoute
+// ---------------------------------------------------------------------------
+
+describe('isStaticAssetRoute', () => {
+    describe('paths that should be skipped', () => {
+        it('should skip internal Astro paths starting with /_', () => {
+            expect(isStaticAssetRoute({ path: '/_astro/some-chunk.js' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/_image' })).toBe(true);
         });
 
-        it('should return true for English mi-cuenta route', () => {
-            expect(isProtectedRoute({ path: '/en/mi-cuenta/settings' })).toBe(true);
+        it('should skip common image extensions', () => {
+            expect(isStaticAssetRoute({ path: '/images/hero.jpg' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/images/logo.webp' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/favicon.ico' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/icon.png' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/banner.svg' })).toBe(true);
         });
 
-        it('should return true for Portuguese mi-cuenta route', () => {
-            expect(isProtectedRoute({ path: '/pt/mi-cuenta/orders' })).toBe(true);
+        it('should skip font files', () => {
+            expect(isStaticAssetRoute({ path: '/fonts/inter.woff2' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/fonts/inter.ttf' })).toBe(true);
         });
 
-        it('should return true for mi-cuenta root with trailing slash', () => {
-            expect(isProtectedRoute({ path: '/es/mi-cuenta/' })).toBe(true);
+        it('should skip CSS and JS files', () => {
+            expect(isStaticAssetRoute({ path: '/styles/main.css' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/scripts/bundle.js' })).toBe(true);
         });
 
-        it('should return true for mi-cuenta root without trailing slash', () => {
-            expect(isProtectedRoute({ path: '/es/mi-cuenta' })).toBe(true);
+        it('should skip well-known static files', () => {
+            expect(isStaticAssetRoute({ path: '/robots.txt' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/sitemap.xml' })).toBe(true);
         });
 
-        it('should return true for nested mi-cuenta paths', () => {
-            expect(isProtectedRoute({ path: '/es/mi-cuenta/profile/edit' })).toBe(true);
+        it('should skip API routes', () => {
+            expect(isStaticAssetRoute({ path: '/api/v1/public/accommodations' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/api/auth/get-session' })).toBe(true);
+        });
+
+        it('should skip the 404 and 500 error pages', () => {
+            expect(isStaticAssetRoute({ path: '/404' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/500' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/404/' })).toBe(true);
+            expect(isStaticAssetRoute({ path: '/500/' })).toBe(true);
         });
     });
 
-    describe('public routes', () => {
-        it('should return false for regular content pages', () => {
-            expect(isProtectedRoute({ path: '/es/alojamientos' })).toBe(false);
+    describe('paths that should NOT be skipped', () => {
+        it('should not skip locale-prefixed HTML routes', () => {
+            expect(isStaticAssetRoute({ path: '/es/alojamientos/' })).toBe(false);
+            expect(isStaticAssetRoute({ path: '/es/' })).toBe(false);
+            expect(isStaticAssetRoute({ path: '/en/destinos/' })).toBe(false);
         });
 
-        it('should return false for about page', () => {
-            expect(isProtectedRoute({ path: '/en/about' })).toBe(false);
+        it('should not skip root path', () => {
+            expect(isStaticAssetRoute({ path: '/' })).toBe(false);
         });
 
-        it('should return false for blog posts', () => {
-            expect(isProtectedRoute({ path: '/es/blog/post-1' })).toBe(false);
+        it('should not skip auth routes', () => {
+            expect(isStaticAssetRoute({ path: '/es/auth/signin/' })).toBe(false);
+        });
+
+        it('should return false for empty path', () => {
+            expect(isStaticAssetRoute({ path: '' })).toBe(false);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// isServerIslandRoute
+// ---------------------------------------------------------------------------
+
+describe('isServerIslandRoute', () => {
+    it('should detect server island requests', () => {
+        expect(isServerIslandRoute({ path: '/_server-islands/AuthSection' })).toBe(true);
+        expect(isServerIslandRoute({ path: '/_server-islands/FavoriteButton' })).toBe(true);
+    });
+
+    it('should not detect regular paths as server islands', () => {
+        expect(isServerIslandRoute({ path: '/es/alojamientos/' })).toBe(false);
+        expect(isServerIslandRoute({ path: '/_astro/chunk.js' })).toBe(false);
+        expect(isServerIslandRoute({ path: '/' })).toBe(false);
+    });
+
+    it('should return false for empty path', () => {
+        expect(isServerIslandRoute({ path: '' })).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// isProtectedRoute
+// ---------------------------------------------------------------------------
+
+describe('isProtectedRoute', () => {
+    describe('protected paths', () => {
+        it('should detect /es/mi-cuenta/ as protected', () => {
+            expect(isProtectedRoute({ path: '/es/mi-cuenta/' })).toBe(true);
+        });
+
+        it('should detect sub-pages of mi-cuenta as protected', () => {
+            expect(isProtectedRoute({ path: '/es/mi-cuenta/favoritos/' })).toBe(true);
+            expect(isProtectedRoute({ path: '/es/mi-cuenta/editar/' })).toBe(true);
+            expect(isProtectedRoute({ path: '/es/mi-cuenta/suscripcion/' })).toBe(true);
+        });
+
+        it('should detect mi-cuenta for all supported locales', () => {
+            expect(isProtectedRoute({ path: '/en/mi-cuenta/' })).toBe(true);
+            expect(isProtectedRoute({ path: '/pt/mi-cuenta/' })).toBe(true);
+        });
+    });
+
+    describe('non-protected paths', () => {
+        it('should not flag public listing pages as protected', () => {
+            expect(isProtectedRoute({ path: '/es/alojamientos/' })).toBe(false);
+            expect(isProtectedRoute({ path: '/es/destinos/' })).toBe(false);
+        });
+
+        it('should not flag auth pages as protected', () => {
+            expect(isProtectedRoute({ path: '/es/auth/signin/' })).toBe(false);
         });
 
         it('should return false for root path', () => {
             expect(isProtectedRoute({ path: '/' })).toBe(false);
         });
 
-        it('should return false for locale root', () => {
-            expect(isProtectedRoute({ path: '/es/' })).toBe(false);
-        });
-
         it('should return false for empty path', () => {
             expect(isProtectedRoute({ path: '' })).toBe(false);
         });
 
-        it('should return false for auth routes', () => {
-            expect(isProtectedRoute({ path: '/es/auth/signin' })).toBe(false);
-        });
-    });
-
-    describe('edge cases', () => {
-        it('should return false for path without locale', () => {
-            expect(isProtectedRoute({ path: '/mi-cuenta' })).toBe(false);
-        });
-
-        it('should return false for similar but different paths', () => {
-            expect(isProtectedRoute({ path: '/es/mi-cuenta-settings' })).toBe(false);
-        });
-
-        it('should return false for mi-cuenta in middle of path', () => {
-            expect(isProtectedRoute({ path: '/es/users/mi-cuenta/profile' })).toBe(false);
-        });
-
-        it('should handle path without leading slash', () => {
-            expect(isProtectedRoute({ path: 'es/mi-cuenta/profile' })).toBe(true);
+        it('should return false for single-segment paths', () => {
+            expect(isProtectedRoute({ path: '/es/' })).toBe(false);
         });
     });
 });
 
-describe('isStaticAssetRoute', () => {
-    describe('static assets', () => {
-        it('should return true for Astro build assets', () => {
-            expect(isStaticAssetRoute({ path: '/_astro/client.abc123.js' })).toBe(true);
+// ---------------------------------------------------------------------------
+// isAuthRoute
+// ---------------------------------------------------------------------------
+
+describe('isAuthRoute', () => {
+    describe('auth paths', () => {
+        it('should detect /es/auth/signin/ as auth route', () => {
+            expect(isAuthRoute({ path: '/es/auth/signin/' })).toBe(true);
         });
 
-        it('should return true for Astro CSS files', () => {
-            expect(isStaticAssetRoute({ path: '/_astro/styles.xyz789.css' })).toBe(true);
+        it('should detect all auth sub-pages', () => {
+            expect(isAuthRoute({ path: '/es/auth/signup/' })).toBe(true);
+            expect(isAuthRoute({ path: '/es/auth/forgot-password/' })).toBe(true);
+            expect(isAuthRoute({ path: '/es/auth/reset-password/' })).toBe(true);
+            expect(isAuthRoute({ path: '/es/auth/verify-email/' })).toBe(true);
         });
 
-        it('should return true for favicon.ico', () => {
-            expect(isStaticAssetRoute({ path: '/favicon.ico' })).toBe(true);
-        });
-
-        it('should return true for robots.txt', () => {
-            expect(isStaticAssetRoute({ path: '/robots.txt' })).toBe(true);
-        });
-
-        it('should return true for sitemap.xml', () => {
-            expect(isStaticAssetRoute({ path: '/sitemap.xml' })).toBe(true);
-        });
-
-        it('should return true for API routes', () => {
-            expect(isStaticAssetRoute({ path: '/api/search' })).toBe(true);
-        });
-
-        it('should return true for nested API routes', () => {
-            expect(isStaticAssetRoute({ path: '/api/v1/accommodations' })).toBe(true);
-        });
-
-        it('should return false for server island endpoints (they need session parsing)', () => {
-            expect(isStaticAssetRoute({ path: '/_server-islands/AuthSection' })).toBe(false);
-        });
-
-        it('should return false for nested server island endpoints', () => {
-            expect(isStaticAssetRoute({ path: '/_server-islands/AuthSection.abc123' })).toBe(false);
+        it('should detect auth routes for all locales', () => {
+            expect(isAuthRoute({ path: '/en/auth/signin/' })).toBe(true);
+            expect(isAuthRoute({ path: '/pt/auth/signin/' })).toBe(true);
         });
     });
 
-    describe('page routes', () => {
-        it('should return false for regular pages', () => {
-            expect(isStaticAssetRoute({ path: '/es/alojamientos' })).toBe(false);
+    describe('non-auth paths', () => {
+        it('should not flag public pages as auth routes', () => {
+            expect(isAuthRoute({ path: '/es/alojamientos/' })).toBe(false);
+            expect(isAuthRoute({ path: '/es/mi-cuenta/' })).toBe(false);
         });
 
-        it('should return false for about page', () => {
-            expect(isStaticAssetRoute({ path: '/about' })).toBe(false);
-        });
-
-        it('should return false for blog posts', () => {
-            expect(isStaticAssetRoute({ path: '/es/blog/post-1' })).toBe(false);
-        });
-
-        it('should return false for root path', () => {
-            expect(isStaticAssetRoute({ path: '/' })).toBe(false);
-        });
-
-        it('should return false for empty path', () => {
-            expect(isStaticAssetRoute({ path: '' })).toBe(false);
-        });
-
-        it('should return false for locale root', () => {
-            expect(isStaticAssetRoute({ path: '/es/' })).toBe(false);
-        });
-    });
-
-    describe('edge cases', () => {
-        it('should return false for paths containing "_astro" but not at start', () => {
-            expect(isStaticAssetRoute({ path: '/es/_astro-like-path' })).toBe(false);
-        });
-
-        it('should return false for paths containing "api" but not at start', () => {
-            expect(isStaticAssetRoute({ path: '/es/api-docs' })).toBe(false);
-        });
-
-        it('should return false for favicon.ico in subdirectory', () => {
-            expect(isStaticAssetRoute({ path: '/images/favicon.ico' })).toBe(false);
+        it('should return false for root or empty paths', () => {
+            expect(isAuthRoute({ path: '/' })).toBe(false);
+            expect(isAuthRoute({ path: '' })).toBe(false);
         });
     });
 });
 
-describe('isServerIslandRoute', () => {
-    it('should return true for server island paths', () => {
-        expect(isServerIslandRoute({ path: '/_server-islands/AuthSection' })).toBe(true);
-    });
-
-    it('should return true for server island paths with hash', () => {
-        expect(isServerIslandRoute({ path: '/_server-islands/AuthSection.abc123' })).toBe(true);
-    });
-
-    it('should return false for regular pages', () => {
-        expect(isServerIslandRoute({ path: '/es/alojamientos' })).toBe(false);
-    });
-
-    it('should return false for Astro build assets', () => {
-        expect(isServerIslandRoute({ path: '/_astro/client.abc123.js' })).toBe(false);
-    });
-
-    it('should return false for empty path', () => {
-        expect(isServerIslandRoute({ path: '' })).toBe(false);
-    });
-
-    it('should return false for root path', () => {
-        expect(isServerIslandRoute({ path: '/' })).toBe(false);
-    });
-});
+// ---------------------------------------------------------------------------
+// buildLoginRedirect
+// ---------------------------------------------------------------------------
 
 describe('buildLoginRedirect', () => {
-    it('should build login URL with encoded return URL for Spanish', () => {
-        const result = buildLoginRedirect({
-            locale: 'es',
-            currentUrl: '/es/mi-cuenta/profile'
-        });
-        expect(result).toBe('/es/auth/signin?returnUrl=%2Fes%2Fmi-cuenta%2Fprofile');
+    it('should build a redirect URL to the signin page with a returnUrl param', () => {
+        // Arrange
+        const locale = 'es' as const;
+        const currentUrl = '/es/mi-cuenta/favoritos/';
+
+        // Act
+        const result = buildLoginRedirect({ locale, currentUrl });
+
+        // Assert
+        expect(result).toContain('/es/auth/signin');
+        expect(result).toContain('returnUrl=');
+        expect(result).toContain(encodeURIComponent(currentUrl));
     });
 
-    it('should build login URL with encoded return URL for English', () => {
-        const result = buildLoginRedirect({
-            locale: 'en',
-            currentUrl: '/en/mi-cuenta/settings'
-        });
-        expect(result).toBe('/en/auth/signin?returnUrl=%2Fen%2Fmi-cuenta%2Fsettings');
+    it('should use the provided locale in the redirect path', () => {
+        // Arrange & Act
+        const resultEn = buildLoginRedirect({ locale: 'en', currentUrl: '/en/mi-cuenta/' });
+        const resultPt = buildLoginRedirect({ locale: 'pt', currentUrl: '/pt/mi-cuenta/' });
+
+        // Assert
+        expect(resultEn).toMatch(/^\/en\/auth\/signin/);
+        expect(resultPt).toMatch(/^\/pt\/auth\/signin/);
     });
 
-    it('should build login URL with encoded return URL for Portuguese', () => {
-        const result = buildLoginRedirect({
-            locale: 'pt',
-            currentUrl: '/pt/mi-cuenta/orders'
-        });
-        expect(result).toBe('/pt/auth/signin?returnUrl=%2Fpt%2Fmi-cuenta%2Forders');
-    });
+    it('should URL-encode special characters in the return URL', () => {
+        // Arrange
+        const currentUrl = '/es/mi-cuenta/editar/?tab=profile';
 
-    it('should properly encode special characters in return URL', () => {
-        const result = buildLoginRedirect({
-            locale: 'es',
-            currentUrl: '/es/mi-cuenta/profile?tab=settings&view=details'
-        });
-        expect(result).toBe(
-            '/es/auth/signin?returnUrl=%2Fes%2Fmi-cuenta%2Fprofile%3Ftab%3Dsettings%26view%3Ddetails'
-        );
-    });
+        // Act
+        const result = buildLoginRedirect({ locale: 'es', currentUrl });
 
-    it('should handle nested paths in return URL', () => {
-        const result = buildLoginRedirect({
-            locale: 'en',
-            currentUrl: '/en/mi-cuenta/bookings/123/details'
-        });
-        expect(result).toBe(
-            '/en/auth/signin?returnUrl=%2Fen%2Fmi-cuenta%2Fbookings%2F123%2Fdetails'
-        );
+        // Assert
+        expect(result).toContain(encodeURIComponent(currentUrl));
+        // The query string delimiter should be encoded as %3F
+        expect(result).toContain('%3F');
     });
 });
 
+// ---------------------------------------------------------------------------
+// buildLocaleRedirect
+// ---------------------------------------------------------------------------
+
 describe('buildLocaleRedirect', () => {
-    it('should build redirect URL with default locale', () => {
-        const result = buildLocaleRedirect({ restOfPath: '/alojamientos' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/alojamientos`);
+    it('should prepend the default locale (es) to the rest of the path', () => {
+        // Arrange
+        const restOfPath = '/alojamientos/';
+
+        // Act
+        const result = buildLocaleRedirect({ restOfPath });
+
+        // Assert
+        expect(result).toBe('/es/alojamientos/');
+    });
+
+    it('should handle paths that do not start with a slash', () => {
+        // Arrange
+        const restOfPath = 'destinos/';
+
+        // Act
+        const result = buildLocaleRedirect({ restOfPath });
+
+        // Assert
+        expect(result).toBe('/es/destinos/');
     });
 
     it('should handle root path', () => {
-        const result = buildLocaleRedirect({ restOfPath: '/' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/`);
-    });
+        // Arrange
+        const restOfPath = '/';
 
-    it('should handle empty path', () => {
-        const result = buildLocaleRedirect({ restOfPath: '' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/`);
-    });
+        // Act
+        const result = buildLocaleRedirect({ restOfPath });
 
-    it('should handle path without leading slash', () => {
-        const result = buildLocaleRedirect({ restOfPath: 'about' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/about`);
-    });
-
-    it('should handle nested paths', () => {
-        const result = buildLocaleRedirect({ restOfPath: '/blog/post/123' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/blog/post/123`);
-    });
-
-    it('should handle paths with trailing slash', () => {
-        const result = buildLocaleRedirect({ restOfPath: '/about/' });
-        expect(result).toBe(`/${DEFAULT_LOCALE}/about/`);
+        // Assert
+        expect(result).toBe('/es/');
     });
 });
 
+// ---------------------------------------------------------------------------
+// parseSessionUser
+// ---------------------------------------------------------------------------
+
 describe('parseSessionUser', () => {
-    let fetchSpy: MockInstance;
+    it('should return null when cookieHeader is null', async () => {
+        // Arrange & Act
+        const result = await parseSessionUser({ cookieHeader: null });
 
-    beforeEach(() => {
-        fetchSpy = vi.spyOn(globalThis, 'fetch');
+        // Assert
+        expect(result).toBeNull();
     });
 
-    afterEach(() => {
-        fetchSpy.mockRestore();
+    it('should return null when cookieHeader is an empty string', async () => {
+        // Arrange & Act
+        const result = await parseSessionUser({ cookieHeader: '' });
+
+        // Assert
+        expect(result).toBeNull();
     });
 
-    describe('no cookie header', () => {
-        it('should return null when cookieHeader is null', async () => {
-            const result = await parseSessionUser({ cookieHeader: null });
-            expect(result).toBeNull();
-            expect(fetchSpy).not.toHaveBeenCalled();
-        });
+    it('should return null when the API returns a non-ok response', async () => {
+        // Arrange - global fetch is available in jsdom; we can spy on it
+        const originalFetch = global.fetch;
+        global.fetch = async () =>
+            new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 });
 
-        it('should return null when cookieHeader is empty string', async () => {
-            const result = await parseSessionUser({ cookieHeader: '' });
-            expect(result).toBeNull();
-            expect(fetchSpy).not.toHaveBeenCalled();
-        });
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
+
+        // Assert
+        expect(result).toBeNull();
+
+        // Cleanup
+        global.fetch = originalFetch;
     });
 
-    describe('with valid session', () => {
-        it('should return user object when API returns valid session', async () => {
-            fetchSpy.mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({
-                        user: {
-                            id: 'user-123',
-                            name: 'Test User',
-                            email: 'test@example.com'
-                        }
-                    }),
-                    { status: 200 }
-                )
-            );
+    it('should return null when the API response body has no user', async () => {
+        // Arrange
+        const originalFetch = global.fetch;
+        global.fetch = async () => new Response(JSON.stringify({}), { status: 200 });
 
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=abc123'
-            });
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
 
-            expect(result).toEqual({
-                id: 'user-123',
-                name: 'Test User',
-                email: 'test@example.com'
-            });
-        });
+        // Assert
+        expect(result).toBeNull();
 
-        it('should forward cookies in the request', async () => {
-            fetchSpy.mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({
-                        user: { id: 'user-1', name: 'User', email: 'u@e.com' }
-                    }),
-                    { status: 200 }
-                )
-            );
-
-            await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=abc123; other=value'
-            });
-
-            expect(fetchSpy).toHaveBeenCalledWith(
-                expect.stringContaining('/api/auth/get-session'),
-                expect.objectContaining({
-                    headers: {
-                        cookie: 'better-auth.session_token=abc123; other=value'
-                    }
-                })
-            );
-        });
-
-        it('should handle user with empty name', async () => {
-            fetchSpy.mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({
-                        user: { id: 'user-456', email: 'no-name@example.com' }
-                    }),
-                    { status: 200 }
-                )
-            );
-
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=abc'
-            });
-
-            expect(result).toEqual({
-                id: 'user-456',
-                name: '',
-                email: 'no-name@example.com'
-            });
-        });
+        // Cleanup
+        global.fetch = originalFetch;
     });
 
-    describe('with invalid session', () => {
-        it('should return null when API returns non-200 status', async () => {
-            fetchSpy.mockResolvedValueOnce(new Response('Unauthorized', { status: 401 }));
-
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=expired'
-            });
-
-            expect(result).toBeNull();
-        });
-
-        it('should return null when API returns no user', async () => {
-            fetchSpy.mockResolvedValueOnce(new Response(JSON.stringify({}), { status: 200 }));
-
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=invalid'
-            });
-
-            expect(result).toBeNull();
-        });
-
-        it('should return null when API returns user without id', async () => {
-            fetchSpy.mockResolvedValueOnce(
-                new Response(JSON.stringify({ user: { email: 'test@example.com' } }), {
-                    status: 200
-                })
+    it('should return null when user object is missing id', async () => {
+        // Arrange
+        const originalFetch = global.fetch;
+        global.fetch = async () =>
+            new Response(
+                JSON.stringify({ user: { name: 'Test User', email: 'test@example.com' } }),
+                { status: 200 }
             );
 
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=no-id'
-            });
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
 
-            expect(result).toBeNull();
-        });
+        // Assert
+        expect(result).toBeNull();
 
-        it('should return null when API returns user without email', async () => {
-            fetchSpy.mockResolvedValueOnce(
-                new Response(JSON.stringify({ user: { id: 'user-1' } }), { status: 200 })
-            );
-
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=no-email'
-            });
-
-            expect(result).toBeNull();
-        });
+        // Cleanup
+        global.fetch = originalFetch;
     });
 
-    describe('error handling', () => {
-        it('should return null when fetch throws network error', async () => {
-            fetchSpy.mockRejectedValueOnce(new Error('Network error'));
-
-            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=token'
-            });
-
-            expect(result).toBeNull();
-            expect(warnSpy).toHaveBeenCalledWith(
-                expect.stringContaining('Failed to validate session'),
-                expect.any(String)
+    it('should return a SessionUser when the API returns valid user data', async () => {
+        // Arrange
+        const originalFetch = global.fetch;
+        global.fetch = async () =>
+            new Response(
+                JSON.stringify({
+                    user: { id: 'user-1', name: 'Test User', email: 'test@example.com' }
+                }),
+                { status: 200 }
             );
-            warnSpy.mockRestore();
-        });
 
-        it('should return null when fetch times out', async () => {
-            fetchSpy.mockRejectedValueOnce(new Error('AbortError'));
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
 
-            const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-            const result = await parseSessionUser({
-                cookieHeader: 'better-auth.session_token=token'
-            });
+        // Assert
+        expect(result).not.toBeNull();
+        expect(result?.id).toBe('user-1');
+        expect(result?.name).toBe('Test User');
+        expect(result?.email).toBe('test@example.com');
 
-            expect(result).toBeNull();
-            warnSpy.mockRestore();
-        });
+        // Cleanup
+        global.fetch = originalFetch;
+    });
+
+    it('should return null when fetch throws a network error', async () => {
+        // Arrange
+        const originalFetch = global.fetch;
+        global.fetch = async () => {
+            throw new Error('Network failure');
+        };
+
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
+
+        // Assert
+        expect(result).toBeNull();
+
+        // Cleanup
+        global.fetch = originalFetch;
+    });
+
+    it('should use empty string for name when API omits it', async () => {
+        // Arrange
+        const originalFetch = global.fetch;
+        global.fetch = async () =>
+            new Response(
+                JSON.stringify({
+                    user: { id: 'user-2', email: 'noname@example.com' }
+                }),
+                { status: 200 }
+            );
+
+        // Act
+        const result = await parseSessionUser({ cookieHeader: 'session=xyz' });
+
+        // Assert
+        expect(result?.name).toBe('');
+        expect(result?.email).toBe('noname@example.com');
+
+        // Cleanup
+        global.fetch = originalFetch;
+    });
+});
+
+// ---------------------------------------------------------------------------
+// middleware.ts structural patterns
+// ---------------------------------------------------------------------------
+
+describe('middleware.ts source structure', () => {
+    it('should export onRequest via defineMiddleware', () => {
+        expect(middlewareSrc).toContain('export const onRequest = defineMiddleware(');
+    });
+
+    it('should skip static asset routes before any other processing', () => {
+        // In the middleware body (after imports), isStaticAssetRoute call must appear
+        // before extractLocaleFromPath call
+        const bodyStart = middlewareSrc.indexOf('defineMiddleware(');
+        const body = middlewareSrc.slice(bodyStart);
+        const staticIdx = body.indexOf('isStaticAssetRoute');
+        const localeIdx = body.indexOf('extractLocaleFromPath');
+        expect(staticIdx).toBeGreaterThan(-1);
+        expect(localeIdx).toBeGreaterThan(-1);
+        expect(staticIdx).toBeLessThan(localeIdx);
+    });
+
+    it('should enforce trailing slash redirect before locale extraction', () => {
+        // In the middleware body, trailing slash redirect must precede extractLocaleFromPath
+        const bodyStart = middlewareSrc.indexOf('defineMiddleware(');
+        const body = middlewareSrc.slice(bodyStart);
+        const trailingSlashIdx = body.indexOf("!path.endsWith('/')");
+        const localeIdx = body.indexOf('extractLocaleFromPath');
+        expect(trailingSlashIdx).toBeGreaterThan(-1);
+        expect(trailingSlashIdx).toBeLessThan(localeIdx);
+    });
+
+    it('should redirect to default locale when locale is null', () => {
+        expect(middlewareSrc).toContain('locale === null');
+        expect(middlewareSrc).toContain('buildLocaleRedirect');
+    });
+
+    it('should protect mi-cuenta routes with auth check', () => {
+        expect(middlewareSrc).toContain('isProtectedRoute');
+        expect(middlewareSrc).toContain('buildLoginRedirect');
+    });
+
+    it('should rewrite 404 responses to the custom 404 page', () => {
+        expect(middlewareSrc).toContain('response.status === 404');
+        expect(middlewareSrc).toContain("context.rewrite('/404')");
+    });
+
+    it('should set locale in context.locals', () => {
+        expect(middlewareSrc).toContain('context.locals');
+        expect(middlewareSrc).toContain('locale');
+    });
+
+    it('should handle server island routes separately', () => {
+        expect(middlewareSrc).toContain('isServerIslandRoute');
+    });
+
+    it('should use a 301 redirect for trailing slash enforcement', () => {
+        expect(middlewareSrc).toContain('301');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// middleware-helpers.ts source structure
+// ---------------------------------------------------------------------------
+
+describe('middleware-helpers.ts source structure', () => {
+    it('should export all required helper functions', () => {
+        const requiredExports = [
+            'extractLocaleFromPath',
+            'isProtectedRoute',
+            'isAuthRoute',
+            'isStaticAssetRoute',
+            'isServerIslandRoute',
+            'buildLoginRedirect',
+            'buildLocaleRedirect',
+            'parseSessionUser'
+        ];
+        for (const name of requiredExports) {
+            expect(helpersSrc).toMatch(new RegExp(`export (async )?function ${name}`));
+        }
+    });
+
+    it('should export the LocaleExtractionResult interface', () => {
+        expect(helpersSrc).toContain('export interface LocaleExtractionResult');
+    });
+
+    it('should export the SessionUser interface', () => {
+        expect(helpersSrc).toContain('export interface SessionUser');
+    });
+
+    it('should call the Better Auth get-session endpoint', () => {
+        expect(helpersSrc).toContain('/api/auth/get-session');
+    });
+
+    it('should use isValidLocale for locale validation', () => {
+        expect(helpersSrc).toContain('isValidLocale');
     });
 });

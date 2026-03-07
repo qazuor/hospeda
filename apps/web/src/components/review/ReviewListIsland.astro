@@ -1,29 +1,56 @@
 ---
 /**
- * Server Island wrapper for ReviewList.
- * Used with `server:defer` so auth state is resolved at request time,
- * even on pre-rendered (SSG) pages.
+ * @file ReviewListIsland.astro
+ * @description Server Island wrapper for ReviewList.
+ *
+ * Uses `server:defer` so authentication state is resolved at request time,
+ * even on pre-rendered (SSG) pages. This allows the island to pass the correct
+ * `isAuthenticated` value to the React component without requiring the whole page
+ * to be server-rendered.
+ *
+ * The `ReviewList` React component inside is hydrated with `client:visible` so
+ * JavaScript is only loaded when the review section scrolls into view.
  */
 import { ReviewList } from './ReviewList.client';
+import type { Review } from './ReviewList.client';
 
+/**
+ * Props for ReviewListIsland.
+ */
 interface Props {
-  readonly reviews: ReadonlyArray<unknown>;
-  readonly totalCount: number;
-  readonly locale?: 'es' | 'en';
-  readonly hasMore?: boolean;
-  readonly sortBy?: 'newest' | 'highest' | 'lowest';
+    /** Array of reviews to display. */
+    readonly reviews: ReadonlyArray<Review>;
+    /** Total count of reviews (for displaying aggregate count in header). */
+    readonly totalCount: number;
+    /**
+     * Locale for i18n of the inner React component.
+     * @default 'es'
+     */
+    readonly locale?: 'es' | 'en' | 'pt';
+    /**
+     * Whether more reviews can be loaded via the "Load more" button.
+     * @default false
+     */
+    readonly hasMore?: boolean;
+    /**
+     * Initial sort order for the list.
+     * @default 'newest'
+     */
+    readonly sortBy?: 'newest' | 'highest' | 'lowest';
 }
 
-const { reviews, totalCount, locale, hasMore, sortBy } = Astro.props;
+const { reviews, totalCount, locale = 'es', hasMore = false, sortBy = 'newest' } = Astro.props;
+
+/** Resolve authentication state server-side at request time. */
 const isAuthenticated = !!Astro.locals.user;
 ---
 
 <ReviewList
-  client:visible
-  reviews={reviews}
-  totalCount={totalCount}
-  locale={locale}
-  isAuthenticated={isAuthenticated}
-  hasMore={hasMore}
-  sortBy={sortBy}
+    client:visible
+    reviews={reviews}
+    totalCount={totalCount}
+    locale={locale}
+    isAuthenticated={isAuthenticated}
+    hasMore={hasMore}
+    sortBy={sortBy}
 />

@@ -3,9 +3,10 @@ import type { JSX } from 'react';
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
+import { addToast } from '../../store/toast-store';
 
 /**
- * Form data for review submission
+ * Form data for review submission.
  */
 export interface ReviewFormData {
     readonly rating: number;
@@ -14,43 +15,45 @@ export interface ReviewFormData {
 }
 
 /**
- * Props for the ReviewForm component
+ * Props for the ReviewForm component.
  */
 export interface ReviewFormProps {
     /**
-     * Entity ID to review
+     * Entity ID to review.
      */
     readonly entityId: string;
 
     /**
-     * Type of entity being reviewed
+     * Type of entity being reviewed.
      */
     readonly entityType: 'accommodation' | 'destination' | 'event';
 
     /**
-     * Locale for UI text
+     * Locale for UI text translations.
      * @default 'es'
      */
     readonly locale?: string;
 
     /**
-     * Callback fired when form is submitted with valid data
+     * Callback fired when form is submitted with valid data.
+     * NOTE: Actual API integration is deferred. This callback receives the
+     * validated form data for future wiring.
      */
     readonly onSubmit?: (data: ReviewFormData) => void;
 
     /**
-     * Callback fired when cancel button is clicked
+     * Callback fired when cancel button is clicked.
      */
     readonly onCancel?: () => void;
 
     /**
-     * Additional CSS classes to apply to the component
+     * Additional CSS classes applied to the `<form>` element.
      */
     readonly className?: string;
 }
 
 /**
- * Validation errors for form fields
+ * Per-field validation error messages.
  */
 interface ValidationErrors {
     rating?: string;
@@ -59,22 +62,30 @@ interface ValidationErrors {
 }
 
 /**
- * ReviewForm component
+ * ReviewForm component.
  *
- * A form for submitting reviews with star rating, title, and content.
- * Includes client-side validation and localized error messages.
+ * Renders a review form with a clickable 5-star rating input, a title field,
+ * and a content textarea. Performs client-side validation (rating required,
+ * title min 3 chars, content min 10 chars) before submission.
  *
- * @param props - Component props
- * @returns React component
+ * Submit is a placeholder: shows a success toast and logs data to the console.
+ * Actual API integration is deferred.
+ *
+ * Intentionally uses manual validation (no react-hook-form) because the form
+ * is simple (3 fields, basic rules) and adding a heavy form library is not
+ * justified (YAGNI).
+ *
+ * @param props - Component props.
+ * @returns The rendered review form.
  *
  * @example
  * ```tsx
  * <ReviewForm
- *   entityId="123"
+ *   entityId="abc-123"
  *   entityType="accommodation"
  *   locale="es"
- *   onSubmit={(data) => console.log('Review submitted:', data)}
- *   onCancel={() => console.log('Cancelled')}
+ *   onSubmit={(data) => console.log('Review:', data)}
+ *   onCancel={() => setShowForm(false)}
  * />
  * ```
  */
@@ -96,9 +107,10 @@ export function ReviewForm({
     const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     /**
-     * Validates form data
-     * @param data - Form data to validate
-     * @returns Validation errors or empty object if valid
+     * Validates the form fields and returns any per-field error messages.
+     *
+     * @param data - Snapshot of form fields to validate.
+     * @returns An object with field-level error messages, or `{}` when valid.
      */
     const validateForm = (data: {
         rating: number;
@@ -127,12 +139,15 @@ export function ReviewForm({
     };
 
     /**
-     * Handles form submission
+     * Handles the form submit event: validates fields, then fires the
+     * placeholder submit (toast + console.log). Actual API wiring is deferred.
+     *
+     * @param e - The React form submit event.
      */
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
         e.preventDefault();
 
-        const formData = {
+        const formData: ReviewFormData = {
             rating,
             title: title.trim(),
             content: content.trim()
@@ -141,43 +156,58 @@ export function ReviewForm({
         const validationErrors = validateForm(formData);
         setErrors(validationErrors);
 
-        if (Object.keys(validationErrors).length === 0) {
-            onSubmit?.(formData);
+        if (Object.keys(validationErrors).length > 0) {
+            return;
         }
+
+        // Placeholder submit: show toast. API integration is deferred.
+        // TODO: Replace with actual API call to POST /api/v1/protected/reviews
+        addToast({ type: 'success', message: t('form.submitSuccessPlaceholder') });
+
+        onSubmit?.(formData);
     };
 
     /**
-     * Handles star click
+     * Updates the selected star rating and clears the rating error if set.
+     *
+     * @param value - Star value selected (1-5).
      */
-    const handleStarClick = (value: number) => {
+    const handleStarClick = (value: number): void => {
         setRating(value);
         if (errors.rating) {
-            setErrors({ ...errors, rating: undefined });
+            setErrors((prev) => ({ ...prev, rating: undefined }));
         }
     };
 
     /**
-     * Handles title change
+     * Updates the title field and clears its error if set.
+     *
+     * @param e - The React change event from the input element.
      */
-    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         setTitle(e.target.value);
         if (errors.title) {
-            setErrors({ ...errors, title: undefined });
+            setErrors((prev) => ({ ...prev, title: undefined }));
         }
     };
 
     /**
-     * Handles content change
+     * Updates the content field and clears its error if set.
+     *
+     * @param e - The React change event from the textarea element.
      */
-    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         setContent(e.target.value);
         if (errors.content) {
-            setErrors({ ...errors, content: undefined });
+            setErrors((prev) => ({ ...prev, content: undefined }));
         }
     };
 
     /**
-     * Renders a single star
+     * Renders a single interactive star button.
+     *
+     * @param index - Zero-based index of the star (0-4).
+     * @returns A button element wrapping a StarIcon.
      */
     const renderStar = (index: number): JSX.Element => {
         const value = index + 1;
@@ -196,7 +226,7 @@ export function ReviewForm({
                 <StarIcon
                     size={32}
                     weight={isFilled ? 'fill' : 'regular'}
-                    className={isFilled ? 'text-star' : 'text-star-empty'}
+                    className={isFilled ? 'text-accent' : 'text-muted-foreground'}
                     aria-hidden="true"
                 />
             </button>
@@ -214,7 +244,7 @@ export function ReviewForm({
             <div>
                 <span
                     id="rating-label"
-                    className="mb-2 block font-medium text-sm text-text"
+                    className="mb-2 block font-medium text-foreground text-sm"
                 >
                     {t('form.ratingLabel')}
                 </span>
@@ -229,7 +259,7 @@ export function ReviewForm({
                 </div>
                 {errors.rating && (
                     <p
-                        className="mt-2 text-error text-sm"
+                        className="mt-2 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -242,7 +272,7 @@ export function ReviewForm({
             <div>
                 <label
                     htmlFor="review-title"
-                    className="mb-2 block font-medium text-sm text-text"
+                    className="mb-2 block font-medium text-foreground text-sm"
                 >
                     {t('form.titleLabel')}
                 </label>
@@ -255,12 +285,16 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.title}
                     aria-describedby={errors.title ? 'title-error' : undefined}
-                    className="w-full rounded-md border border-border bg-surface px-4 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`w-full rounded-md border bg-card px-4 py-2 text-card-foreground focus:outline-none focus:ring-2 ${
+                        errors.title
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
+                            : 'border-border focus:border-transparent focus:ring-primary'
+                    }`}
                 />
                 {errors.title && (
                     <p
                         id="title-error"
-                        className="mt-2 text-error text-sm"
+                        className="mt-2 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -273,7 +307,7 @@ export function ReviewForm({
             <div>
                 <label
                     htmlFor="review-content"
-                    className="mb-2 block font-medium text-sm text-text"
+                    className="mb-2 block font-medium text-foreground text-sm"
                 >
                     {t('form.contentLabel')}
                 </label>
@@ -286,12 +320,16 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.content}
                     aria-describedby={errors.content ? 'content-error' : undefined}
-                    className="resize-vertical w-full rounded-md border border-border bg-surface px-4 py-2 text-text focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`resize-vertical w-full rounded-md border bg-card px-4 py-2 text-card-foreground focus:outline-none focus:ring-2 ${
+                        errors.content
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
+                            : 'border-border focus:border-transparent focus:ring-primary'
+                    }`}
                 />
                 {errors.content && (
                     <p
                         id="content-error"
-                        className="mt-2 text-error text-sm"
+                        className="mt-2 text-destructive text-sm"
                         role="alert"
                         aria-live="polite"
                     >
@@ -306,14 +344,14 @@ export function ReviewForm({
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="rounded-md border border-border px-6 py-2 text-text transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="rounded-md border border-border bg-card px-6 py-2 text-card-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('form.cancelButton')}
                     </button>
                 )}
                 <button
                     type="submit"
-                    className="rounded-md bg-primary px-6 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    className="rounded-md bg-primary px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
                     {t('form.submitButton')}
                 </button>

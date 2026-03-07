@@ -1,85 +1,38 @@
 ---
 /**
- * TouristDestination JSON-LD component for destination pages.
+ * @file PlaceJsonLd.astro
+ * @description TouristDestination JSON-LD component for destination pages.
  * Generates schema.org TouristDestination structured data.
- *
- * @example
- * ```astro
- * ---
- * import PlaceJsonLd from '@/components/seo/PlaceJsonLd.astro';
- * ---
- *
- * <PlaceJsonLd
- *   name="Concepción del Uruguay"
- *   description="Ciudad histórica en Entre Ríos, Argentina"
- *   url="https://hospeda.com/es/destinos/concepcion-del-uruguay"
- *   image="https://hospeda.com/images/cdu.jpg"
- *   address={{
- *     addressLocality: 'Concepción del Uruguay',
- *     addressRegion: 'Entre Ríos',
- *     addressCountry: 'AR',
- *   }}
- * />
- * ```
  */
 
 import JsonLd from './JsonLd.astro';
 
-/**
- * Address interface for destination structured data.
- */
+/** Address interface for destination structured data. */
 export interface PlaceAddress {
-  /**
-   * City or locality name
-   */
-  addressLocality: string;
-
-  /**
-   * State or region name
-   */
-  addressRegion?: string;
-
-  /**
-   * Country code (ISO 3166-1 alpha-2)
-   */
-  addressCountry: string;
+  /** City or locality name */
+  readonly addressLocality: string;
+  /** State or region name */
+  readonly addressRegion?: string;
+  /** Country code (ISO 3166-1 alpha-2) */
+  readonly addressCountry: string;
 }
 
-/**
- * Props interface for PlaceJsonLd component.
- */
-export interface Props {
-  /**
-   * Name of the destination
-   */
-  name: string;
-
-  /**
-   * Description of the destination
-   */
-  description: string;
-
-  /**
-   * Canonical URL of the destination page
-   */
-  url: string;
-
-  /**
-   * Hero image URL for the destination
-   */
-  image?: string;
-
-  /**
-   * Address information for the destination
-   */
-  address?: PlaceAddress;
+/** Props interface for PlaceJsonLd component. */
+interface Props {
+  /** Name of the destination */
+  readonly name: string;
+  /** Description of the destination */
+  readonly description: string;
+  /** Canonical URL of the destination page */
+  readonly url: string;
+  /** Hero image URL for the destination */
+  readonly image?: string;
+  /** Address information for the destination */
+  readonly address?: PlaceAddress;
 }
 
 const { name, description, url, image, address } = Astro.props;
 
-/**
- * Build TouristDestination structured data object
- */
 const structuredData: Record<string, unknown> = {
   '@context': 'https://schema.org',
   '@type': 'TouristDestination',

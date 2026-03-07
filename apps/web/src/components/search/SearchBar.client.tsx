@@ -5,46 +5,49 @@ import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
 
 /**
- * Props for the SearchBar component
+ * Props for the SearchBar component.
  */
 export interface SearchBarProps {
     /**
-     * Locale for placeholder text
+     * Locale for placeholder text and navigation URL.
      * @default 'es'
      */
     readonly locale?: 'es' | 'en' | 'pt';
 
     /**
-     * Custom placeholder text (overrides locale-based placeholder)
+     * Custom placeholder text (overrides locale-based placeholder).
      */
     readonly placeholder?: string;
 
     /**
-     * Default value for the search input
+     * Default value for the search input.
      */
     readonly defaultValue?: string;
 
     /**
-     * Callback triggered when search is performed (on Enter or button click)
-     * If not provided, will navigate to search results page
+     * Callback triggered when search is performed (on Enter or button click).
+     * If not provided, will navigate to `/${locale}/busqueda/?q=` instead.
      */
     readonly onSearch?: (query: string) => void;
 
     /**
-     * Additional CSS classes to apply to the wrapper element
+     * Additional CSS classes to apply to the wrapper element.
      */
     readonly className?: string;
 }
 
 /**
- * SearchBar component with debounced input and search functionality
+ * SearchBar component with debounced input and search functionality.
  *
  * Features:
- * - Debounced input (300ms) for optional autocomplete
+ * - Debounced input (300ms) for optional autocomplete integration
  * - Enter key or search button click triggers search
  * - Clear button appears when input has text
- * - Navigates to `/${locale}/busqueda/?q=${query}` by default
+ * - Navigates to `/${locale}/busqueda/?q=${query}` by default when no `onSearch` is provided
  * - Fully accessible with ARIA attributes
+ *
+ * @param props - Component props.
+ * @returns The rendered search bar element.
  *
  * @example
  * ```tsx
@@ -68,7 +71,7 @@ export function SearchBar({
     const [_debouncedQuery, setDebouncedQuery] = useState(defaultValue);
     const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Debounce input value (for potential autocomplete)
+    // Debounce input value (for potential autocomplete integration)
     useEffect(() => {
         if (debounceTimeoutRef.current) {
             clearTimeout(debounceTimeoutRef.current);
@@ -86,7 +89,7 @@ export function SearchBar({
     }, [query]);
 
     /**
-     * Handles search execution (Enter key or button click)
+     * Handles search execution triggered by Enter key or button click.
      */
     const handleSearch = useCallback(() => {
         const trimmedQuery = query.trim();
@@ -104,7 +107,7 @@ export function SearchBar({
     }, [query, locale, onSearch]);
 
     /**
-     * Handles Enter key press
+     * Handles Enter key press on the input field.
      */
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -116,65 +119,64 @@ export function SearchBar({
     );
 
     /**
-     * Clears the search input
+     * Clears the search input and resets the debounced value.
      */
     const handleClear = useCallback(() => {
         setQuery('');
         setDebouncedQuery('');
     }, []);
 
-    const placeholderText = placeholder || tSearch('resultsPage.placeholder');
+    const placeholderText = placeholder ?? tSearch('resultsPage.placeholder');
     const hasQuery = query.length > 0;
 
     return (
         <div className={`relative flex items-center gap-2 ${className}`}>
-            {/* Search Icon */}
+            {/* Search icon - decorative, positioned inside the input */}
             <div className="pointer-events-none absolute left-3 flex items-center">
                 <SearchIcon
                     size={20}
-                    className="text-text-tertiary"
+                    className="text-muted-foreground"
                     aria-hidden="true"
                 />
             </div>
 
-            {/* Search Input */}
+            {/* Main text input */}
             <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder={placeholderText}
-                className="w-full rounded-lg border border-border bg-surface py-2 pr-20 pl-10 text-base text-text placeholder-text-tertiary transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+                className="w-full rounded-lg border border-border bg-card py-2 pr-20 pl-10 text-base transition-colors placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
                 aria-label={t('accessibility.search')}
             />
 
-            {/* Clear Button */}
+            {/* Clear button - only visible when input has text */}
             {hasQuery && (
                 <button
                     type="button"
                     onClick={handleClear}
-                    className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-surface-alt text-text-secondary transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
+                    className="absolute right-14 flex h-5 w-5 items-center justify-center rounded-full bg-muted text-muted-foreground transition-colors hover:bg-border focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50"
                     aria-label={t('accessibility.clearSearch')}
                 >
                     <CloseIcon
                         size={12}
-                        className="text-text-secondary"
+                        className="text-muted-foreground"
                         aria-hidden="true"
                     />
                 </button>
             )}
 
-            {/* Search Button */}
+            {/* Submit search button */}
             <button
                 type="button"
                 onClick={handleSearch}
                 disabled={!hasQuery}
-                className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-sm text-white transition-colors hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-surface-alt disabled:text-text-tertiary"
+                className="absolute right-2 rounded-md bg-primary px-3 py-1 font-semibold text-primary-foreground text-sm transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
                 aria-label={t('accessibility.search')}
             >
                 <SearchIcon
                     size={16}
-                    className="text-white"
                     aria-hidden="true"
                 />
             </button>

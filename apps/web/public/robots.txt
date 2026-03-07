@@ -1,12 +1,6 @@
-# Hospeda - robots.txt
-# https://www.robotstxt.org/
-
 User-agent: *
 Allow: /
-
-# Disallow private/auth routes
 Disallow: /*/auth/
 Disallow: /*/mi-cuenta/
 
-# Sitemap
 Sitemap: https://hospeda.com.ar/sitemap-index.xml

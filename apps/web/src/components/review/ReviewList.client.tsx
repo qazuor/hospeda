@@ -5,7 +5,7 @@ import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
 
 /**
- * Individual review data structure
+ * Individual review data structure.
  */
 export interface Review {
     readonly id: string;
@@ -19,71 +19,102 @@ export interface Review {
 }
 
 /**
- * Props for the ReviewList component
+ * Props for the ReviewList component.
  */
 export interface ReviewListProps {
     /**
-     * Array of reviews to display
+     * Array of reviews to display.
      */
     readonly reviews: ReadonlyArray<Review>;
 
     /**
-     * Total count of reviews (may be larger than reviews array for pagination)
+     * Total count of reviews (may be larger than reviews array for pagination).
      */
     readonly totalCount: number;
 
     /**
-     * Locale for internationalization
+     * Locale for internationalization.
      * @default 'es'
      */
     readonly locale?: string;
 
     /**
-     * Whether the user is authenticated
+     * Whether the user is authenticated.
      * @default false
      */
     readonly isAuthenticated?: boolean;
 
     /**
-     * Callback fired when user clicks "Write a review" button
+     * Callback fired when user clicks "Write a review" button.
      */
     readonly onWriteReview?: () => void;
 
     /**
-     * Callback fired when user clicks "Load more" button
+     * Callback fired when user clicks "Load more" button.
      */
     readonly onLoadMore?: () => void;
 
     /**
-     * Whether more reviews can be loaded
+     * Whether more reviews can be loaded.
      * @default false
      */
     readonly hasMore?: boolean;
 
     /**
-     * Current sort order
+     * Current sort order.
      * @default 'newest'
      */
     readonly sortBy?: 'newest' | 'highest' | 'lowest';
 
     /**
-     * Callback fired when sort order changes
+     * Callback fired when sort order changes.
      */
     readonly onSortChange?: (sort: 'newest' | 'highest' | 'lowest') => void;
 
     /**
-     * Additional CSS classes to apply to the container
+     * Additional CSS classes to apply to the container.
      */
     readonly className?: string;
 }
 
 /**
- * ReviewList component
+ * Renders an inline star rating display.
+ *
+ * @param rating - Numeric rating value (1-5)
+ * @param ariaLabel - Accessible label for the rating group
+ * @returns JSX star icons row
+ */
+function StarRating({ rating, ariaLabel }: { rating: number; ariaLabel: string }): JSX.Element {
+    return (
+        <div
+            className="flex gap-0.5"
+            role="img"
+            aria-label={ariaLabel}
+        >
+            {Array.from({ length: 5 }, (_, index) => {
+                const isFilled = index < Math.floor(rating);
+                const starId = `star-${rating}-${index}`;
+                return (
+                    <StarIcon
+                        key={starId}
+                        size={20}
+                        weight={isFilled ? 'fill' : 'regular'}
+                        className={isFilled ? 'text-accent' : 'text-muted'}
+                        aria-hidden="true"
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+/**
+ * ReviewList component.
  *
  * PRESENTATIONAL COMPONENT. Receives reviews as props, does NOT fetch from API.
- * Displays a list of reviews with sorting, filtering, and pagination capabilities.
- * Includes header with total count and sort dropdown, review cards with author info,
- * rating, title, content, date, and verified badge.
+ * Displays a list of reviews with sorting and pagination capabilities.
+ * Includes a header with total count and sort dropdown, inline review cards with
+ * author info, star rating, title, content, date, and verified badge.
  *
  * @param props - Component props
  * @returns React component
@@ -121,97 +152,6 @@ export function ReviewList({
     });
     const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
-    /**
-     * Renders a star rating display
-     */
-    const renderStars = (rating: number): JSX.Element => {
-        return (
-            <div
-                className="flex gap-0.5"
-                role="img"
-                aria-label={tUi('accessibility.ratingOutOf', undefined, { rating })}
-            >
-                {Array.from({ length: 5 }, (_, index) => {
-                    const isFilled = index < Math.floor(rating);
-                    const starId = `star-${rating}-${index}`;
-                    return (
-                        <StarIcon
-                            key={starId}
-                            size={20}
-                            weight={isFilled ? 'fill' : 'regular'}
-                            className={isFilled ? 'text-star' : 'text-star-empty'}
-                            aria-hidden="true"
-                        />
-                    );
-                })}
-            </div>
-        );
-    };
-
-    /**
-     * Renders a review card
-     */
-    const renderReviewCard = (review: Review): JSX.Element => {
-        return (
-            <article
-                key={review.id}
-                className="rounded-lg border border-border bg-surface p-6 shadow-sm transition-shadow hover:shadow-md"
-            >
-                {/* Author and Rating */}
-                <div className="mb-4 flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        {review.authorAvatar ? (
-                            <img
-                                src={review.authorAvatar}
-                                alt={review.authorName}
-                                className="h-10 w-10 rounded-full object-cover"
-                            />
-                        ) : (
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-semibold text-white">
-                                {review.authorName.charAt(0).toUpperCase()}
-                            </div>
-                        )}
-                        <div>
-                            <div className="flex items-center gap-2">
-                                <h3 className="font-semibold text-text">{review.authorName}</h3>
-                                {review.verified && (
-                                    <span className="inline-flex items-center gap-1 rounded bg-green-50 px-2 py-0.5 font-medium text-green-700 text-xs dark:bg-green-900/30 dark:text-green-400">
-                                        <CheckCircleIcon
-                                            size={12}
-                                            weight="fill"
-                                            className="text-green-700"
-                                            aria-hidden="true"
-                                        />
-                                        {t('list.verified')}
-                                    </span>
-                                )}
-                            </div>
-                            <time
-                                className="text-sm text-text-secondary"
-                                dateTime={review.date}
-                            >
-                                {formatDate({
-                                    date: review.date,
-                                    locale: toBcp47Locale(locale),
-                                    options: {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric'
-                                    }
-                                })}
-                            </time>
-                        </div>
-                    </div>
-                    {renderStars(review.rating)}
-                </div>
-
-                {/* Review Content */}
-                <h4 className="mb-2 font-semibold text-text">{review.title}</h4>
-                <p className="text-text-secondary leading-relaxed">{review.content}</p>
-            </article>
-        );
-    };
-
     // Empty state
     if (reviews.length === 0) {
         return (
@@ -220,18 +160,20 @@ export function ReviewList({
                     <ChatIcon
                         size={48}
                         weight="duotone"
-                        className="mx-auto text-text-tertiary"
+                        className="mx-auto text-muted-foreground"
                         aria-hidden="true"
                     />
-                    <h3 className="mt-4 font-semibold text-lg text-text">{t('list.noReviews')}</h3>
-                    <p className="mt-2 text-sm text-text-secondary">
+                    <h3 className="mt-4 font-semibold text-foreground text-lg">
+                        {t('list.noReviews')}
+                    </h3>
+                    <p className="mt-2 text-muted-foreground text-sm">
                         {t('list.noReviewsDescription')}
                     </p>
                     {isAuthenticated && onWriteReview && (
                         <button
                             type="button"
                             onClick={onWriteReview}
-                            className="mt-6 inline-flex items-center rounded-md bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="mt-6 inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                         >
                             {t('list.writeReview')}
                         </button>
@@ -246,8 +188,8 @@ export function ReviewList({
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h2 className="font-bold text-2xl text-text">{t('list.title')}</h2>
-                    <p className="mt-1 text-sm text-text-secondary">
+                    <h2 className="font-bold text-2xl text-foreground">{t('list.title')}</h2>
+                    <p className="mt-1 text-muted-foreground text-sm">
                         {tPlural('list.totalReviews', totalCount)}
                     </p>
                 </div>
@@ -256,18 +198,18 @@ export function ReviewList({
                     {/* Sort Dropdown */}
                     <div className="flex items-center gap-2">
                         <label
-                            htmlFor="sort-select"
-                            className="font-medium text-sm text-text"
+                            htmlFor="review-sort-select"
+                            className="font-medium text-foreground text-sm"
                         >
                             {t('list.sortBy')}:
                         </label>
                         <select
-                            id="sort-select"
+                            id="review-sort-select"
                             value={sortBy}
                             onChange={(e) =>
                                 onSortChange?.(e.target.value as 'newest' | 'highest' | 'lowest')
                             }
-                            className="block rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            className="block rounded-md border border-border bg-card px-3 py-1.5 text-card-foreground text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
                         >
                             <option value="newest">{t('list.sortNewest')}</option>
                             <option value="highest">{t('list.sortHighest')}</option>
@@ -280,12 +222,12 @@ export function ReviewList({
                         <button
                             type="button"
                             onClick={onWriteReview}
-                            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-white transition-colors hover:bg-primary-dark focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                         >
                             <AddIcon
                                 size={20}
                                 weight="bold"
-                                className="mr-2 text-white"
+                                className="mr-2"
                                 aria-hidden="true"
                             />
                             {t('list.writeReview')}
@@ -295,7 +237,78 @@ export function ReviewList({
             </div>
 
             {/* Review List */}
-            <div className="space-y-4">{reviews.map((review) => renderReviewCard(review))}</div>
+            <div className="space-y-4">
+                {reviews.map((review) => (
+                    <article
+                        key={review.id}
+                        className="rounded-2xl border border-border bg-card p-6 shadow-card transition-shadow hover:shadow-card-hover"
+                    >
+                        {/* Author and Rating */}
+                        <div className="mb-4 flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                                {review.authorAvatar ? (
+                                    <img
+                                        src={review.authorAvatar}
+                                        alt={review.authorName}
+                                        className="h-10 w-10 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <div
+                                        className="flex h-10 w-10 items-center justify-center rounded-full bg-primary font-semibold text-primary-foreground"
+                                        aria-hidden="true"
+                                    >
+                                        {review.authorName.charAt(0).toUpperCase()}
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="font-semibold text-card-foreground">
+                                            {review.authorName}
+                                        </h3>
+                                        {review.verified && (
+                                            <span className="inline-flex items-center gap-1 rounded bg-secondary/10 px-2 py-0.5 font-medium text-secondary-foreground text-xs">
+                                                <CheckCircleIcon
+                                                    size={12}
+                                                    weight="fill"
+                                                    className="text-secondary"
+                                                    aria-hidden="true"
+                                                />
+                                                {t('list.verified')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <time
+                                        className="text-muted-foreground text-sm"
+                                        dateTime={review.date}
+                                    >
+                                        {formatDate({
+                                            date: review.date,
+                                            locale: toBcp47Locale(locale),
+                                            options: {
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            }
+                                        })}
+                                    </time>
+                                </div>
+                            </div>
+                            <StarRating
+                                rating={review.rating}
+                                ariaLabel={tUi('accessibility.ratingOutOf', undefined, {
+                                    rating: review.rating
+                                })}
+                            />
+                        </div>
+
+                        {/* Review Content */}
+                        <h4 className="mb-2 font-semibold text-card-foreground">{review.title}</h4>
+                        <p className="text-muted-foreground leading-relaxed">
+                            &ldquo;{review.content}&rdquo;
+                        </p>
+                    </article>
+                ))}
+            </div>
 
             {/* Load More Button */}
             {hasMore && onLoadMore && (
@@ -303,7 +316,7 @@ export function ReviewList({
                     <button
                         type="button"
                         onClick={onLoadMore}
-                        className="inline-flex items-center rounded-md border-2 border-primary bg-surface px-6 py-3 text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                        className="inline-flex items-center rounded-md border-2 border-primary bg-card px-6 py-3 text-primary transition-colors hover:bg-primary hover:text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('list.loadMore')}
                     </button>

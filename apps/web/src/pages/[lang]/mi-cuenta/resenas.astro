@@ -1,66 +1,70 @@
 ---
 /**
- * My Reviews page - user written reviews for accommodations and destinations.
- * Uses UserReviewsList React island for interactive data fetching and pagination.
- * Auth-protected (middleware handles authentication check).
+ * My Reviews page.
+ * Wraps UserReviewsList React island for tab filtering, inline edit, and pagination.
+ *
+ * Rendering: SSR (on-demand). Auth-protected via middleware; also guards
+ * directly in frontmatter and redirects to signin if user is absent.
+ *
+ * Route: /[lang]/mi-cuenta/resenas
  */
+
+import type { SupportedLocale } from '../../../lib/i18n';
+import { createT } from '../../../lib/i18n';
+import { buildUrl } from '../../../lib/urls';
+import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
-import Breadcrumb from '../../../components/ui/Breadcrumb.astro';
-import Container from '../../../components/ui/Container.astro';
-import Section from '../../../components/ui/Section.astro';
+import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
 import { UserReviewsList } from '../../../components/account/UserReviewsList.client';
-import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
-import { t } from '../../../lib/i18n';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-/** Auth guard: redirect unauthenticated users to sign in */
+/**
+ * Auth guard: middleware protects /mi-cuenta/* but we also check here
+ * to ensure a clean redirect with the correct locale.
+ */
 const user = Astro.locals.user;
 if (!user) {
-	return Astro.redirect(`/${locale}/auth/signin`);
+  return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
 }
 
-const title = t({ locale, namespace: 'account', key: 'pages.reviews.title' });
-const description = t({ locale, namespace: 'account', key: 'pages.reviews.description' });
-const accountLabel = t({ locale, namespace: 'account', key: 'pages.accountLabel' });
+const t = createT(locale as SupportedLocale);
+
+const title = t('account.pages.reviews.title', 'Mis reseñas');
+const description = t(
+  'account.pages.reviews.description',
+  'Reseñas que escribiste sobre alojamientos visitados'
+);
+const accountLabel = t('account.pages.accountLabel', 'Mi Cuenta');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-/**
- * Breadcrumb navigation items
- */
 const breadcrumbItems = [
-	{ label: HOME_BREADCRUMB[locale], href: `/${locale}/` },
-	{ label: accountLabel, href: `/${locale}/mi-cuenta/` },
-	{ label: title, href: `/${locale}/mi-cuenta/resenas/` },
+  { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale }) },
+  { label: accountLabel, href: buildUrl({ locale, path: 'mi-cuenta' }) },
+  { label: title, href: buildUrl({ locale, path: 'mi-cuenta/resenas' }) },
 ];
 ---
 
 <BaseLayout title={title} description={description} locale={locale}>
-	<SEOHead
-		slot="head"
-		title={title}
-		description={description}
-		canonical={canonicalUrl}
-		locale={locale}
-		type="website"
-		noindex={true}
-	/>
+  <SEOHead
+    slot="head"
+    title={title}
+    description={description}
+    canonical={canonicalUrl}
+    locale={locale}
+    type="website"
+    noindex={true}
+  />
 
-	<Container>
-		<Breadcrumb items={breadcrumbItems} />
+  <div class="container mx-auto max-w-7xl px-4 py-8">
+    <Breadcrumb items={breadcrumbItems} />
 
-		<Section>
-			<div class="mx-auto max-w-7xl">
-				<h1 class="mb-8 text-4xl font-bold text-text-primary">
-					{title}
-				</h1>
+    <h1 class="mb-8 text-3xl font-bold text-foreground">{title}</h1>
 
-				<!-- UserReviewsList React Island handles tabs, data fetching, and pagination -->
-				<UserReviewsList client:visible locale={locale} />
-			</div>
-		</Section>
-	</Container>
+    <!-- UserReviewsList handles tabs, data fetching, inline edit, and pagination -->
+    <UserReviewsList client:visible locale={locale} />
+  </div>
 </BaseLayout>

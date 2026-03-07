@@ -15,12 +15,12 @@ if (!locale) return Astro.redirect('/es/');
 const pageNum = Number.parseInt(page || '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${locale}/destinos/`);
+    return Astro.redirect(`/${locale}/destinos/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${locale}/destinos/`);
+    return Astro.redirect(`/${locale}/destinos/`);
 }
 
 /** Rewrite to the index page with the page query parameter */

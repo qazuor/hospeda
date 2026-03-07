@@ -1,42 +1,68 @@
 ---
 /**
- * Auth section rendered as a Server Island.
- * Used with `server:defer` in Header so that auth state is always
- * resolved at request time, even on pre-rendered (SSG) pages.
+ * AuthSection - Server Island that resolves authentication state at request time.
  *
- * The middleware populates `Astro.locals.user` by validating the
- * session cookie against the Better Auth API. This component reads
- * that value and renders either the UserNav dropdown or a sign-in link.
+ * Used with `server:defer` in the Navbar so that auth state is always fresh,
+ * even when the surrounding page is pre-rendered (SSG).
+ *
+ * The middleware populates `Astro.locals.user` for:
+ * - Protected routes (/mi-cuenta/*) - always parsed
+ * - Auth routes (/auth/*) - always parsed
+ * - Server Island requests (/_server-islands/*) - always parsed
+ *
+ * This component is rendered as a Server Island, so it receives a fresh session
+ * on every request regardless of whether the parent page is SSG or SSR.
+ *
+ * Renders either:
+ * - A UserNav dropdown when the user is authenticated
+ * - A "Iniciar sesion" link when the user is not authenticated
  */
-import { t, type SupportedLocale } from '../../lib/i18n';
 import { UserNav } from './UserNav.client';
+import { createT, type SupportedLocale } from '../../lib/i18n';
+import { buildUrl } from '../../lib/urls';
 
 interface Props {
-  /** Current locale for localized links and labels */
-  readonly locale?: string;
+    /** Current locale for localized links (e.g. "es", "en", "pt") */
+    readonly locale?: string;
+    /**
+     * Visual variant matching the Navbar's current scroll state.
+     * Passed through to UserNav so colours stay consistent.
+     */
+    readonly variant?: 'hero' | 'scrolled';
 }
 
-const { locale = 'es' } = Astro.props;
-const loc = locale as SupportedLocale;
+const { locale = 'es', variant = 'hero' } = Astro.props;
+const typedLocale = locale as SupportedLocale;
 
+const t = createT(typedLocale);
 const user = Astro.locals.user;
 const isAuthenticated = !!user;
+
+// Sign-in link classes mirror the static button in Navbar.astro exactly.
+// The Navbar scroll-state script targets #navbar-signin by id, so we replicate
+// that id here so the same JS logic applies when the user is NOT authenticated.
+const signinClasses =
+    variant === 'scrolled'
+        ? 'inline-flex h-10 items-center justify-center rounded-full px-5 text-sm font-medium transition-colors border border-foreground/20 text-foreground hover:bg-foreground/5'
+        : 'inline-flex h-10 items-center justify-center rounded-full px-5 text-sm font-medium transition-colors border border-hero-border text-hero-text bg-hero-surface hover:bg-hero-surface';
 ---
 
 {isAuthenticated && user ? (
   <UserNav
     client:load
     user={{
-      name: user.name || 'User',
+      name: user.name || 'Usuario',
       email: user.email || '',
     }}
-    locale={locale as 'es' | 'en' | 'pt'}
+    locale={locale}
+    variant={variant}
   />
 ) : (
   <a
-    href={`/${locale}/auth/signin/`}
-    class="text-sm font-medium text-primary transition-colors hover:text-primary-dark"
+    href={buildUrl({ locale: typedLocale, path: 'auth/signin' })}
+    id="navbar-signin"
+    class={signinClasses}
   >
-    {t({ locale: loc, namespace: 'common', key: 'auth.signIn' })}
+    {t('nav.iniciarSesion', 'Iniciar sesion')}
   </a>
 )}

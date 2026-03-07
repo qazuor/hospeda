@@ -1,4 +1,5 @@
 import { toBcp47Locale } from '@repo/i18n';
+import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import type React from 'react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
@@ -23,7 +24,7 @@ export interface CalendarViewProps {
     /** Callback when a date is selected */
     readonly onDateSelect: (date: string) => void;
     /** Locale for date formatting and day names */
-    readonly locale: 'es' | 'en' | 'pt';
+    readonly locale: SupportedLocale;
     /** Optional CSS class name */
     readonly className?: string;
 }
@@ -31,6 +32,9 @@ export interface CalendarViewProps {
 /**
  * Generates localized short day names (Mon-Sun) using Intl.DateTimeFormat.
  * Week starts on Monday (ISO 8601).
+ *
+ * @param locale - Locale string for formatting
+ * @returns Array of 7 short day name strings starting from Monday
  */
 function getDayNames(locale: string): readonly string[] {
     const intlLocale = toBcp47Locale(locale);
@@ -45,6 +49,9 @@ function getDayNames(locale: string): readonly string[] {
 
 /**
  * Generates localized full month names using Intl.DateTimeFormat.
+ *
+ * @param locale - Locale string for formatting
+ * @returns Array of 12 full month name strings
  */
 function getMonthNames(locale: string): readonly string[] {
     const intlLocale = toBcp47Locale(locale);
@@ -57,7 +64,7 @@ function getMonthNames(locale: string): readonly string[] {
 }
 
 /**
- * Interface for a calendar cell.
+ * Interface for a single calendar grid cell.
  */
 interface CalendarCell {
     readonly date: Date;
@@ -81,47 +88,44 @@ function formatDateToISOString(date: Date): string {
 }
 
 /**
- * Formats a date for aria-label.
+ * Formats a date as a localized string suitable for an aria-label.
  *
  * @param date - Date to format
  * @param locale - Locale for formatting
- * @returns Formatted date string
+ * @returns Human-readable localized date string
  */
-function formatDateForAriaLabel(date: Date, locale: 'es' | 'en' | 'pt'): string {
+function formatDateForAriaLabel(date: Date, locale: SupportedLocale): string {
     const day = date.getDate();
     const monthIndex = date.getMonth();
     const year = date.getFullYear();
     const monthName = getMonthNames(locale)[monthIndex] ?? '';
 
-    if (locale === 'es') {
-        return `${day} de ${monthName.toLowerCase()} de ${year}`;
-    }
     if (locale === 'en') {
         return `${monthName} ${day}, ${year}`;
     }
-    // pt
+    // es and pt share the same "D de Month de YYYY" pattern
     return `${day} de ${monthName.toLowerCase()} de ${year}`;
 }
 
 /**
- * Gets the first day of the month (0 = Sunday, 6 = Saturday).
- * Adjusted to Monday-based week (0 = Monday, 6 = Sunday).
+ * Gets the first day of the month offset for a Monday-based week.
+ * Returns 0 for Monday through 6 for Sunday.
  *
- * @param year - Year
- * @param month - Month (0-11)
- * @returns First day of month (0 = Monday, 6 = Sunday)
+ * @param year - Full year
+ * @param month - Month index (0-11)
+ * @returns First weekday of the month mapped to Monday-based index (0=Mon, 6=Sun)
  */
 function getFirstDayOfMonth(year: number, month: number): number {
     const firstDay = new Date(year, month, 1).getDay();
-    // Convert Sunday (0) to 6, and shift Monday (1) to 0
+    // Convert Sunday (0) to 6, shift Monday (1) to 0
     return firstDay === 0 ? 6 : firstDay - 1;
 }
 
 /**
- * Gets the number of days in a month.
+ * Returns the number of days in the given month.
  *
- * @param year - Year
- * @param month - Month (0-11)
+ * @param year - Full year
+ * @param month - Month index (0-11)
  * @returns Number of days in the month
  */
 function getDaysInMonth(year: number, month: number): number {
@@ -129,13 +133,16 @@ function getDaysInMonth(year: number, month: number): number {
 }
 
 /**
- * Generates the calendar grid for a given month.
+ * Generates a 42-cell (6×7) calendar grid for the given month.
+ * Includes leading cells from the previous month and trailing cells
+ * from the next month to complete the grid.
  *
- * @param year - Year
- * @param month - Month (0-11)
- * @param events - Events to mark on the calendar
- * @param today - Today's date
- * @returns Array of calendar cells
+ * @param params - Grid generation parameters
+ * @param params.year - Full year
+ * @param params.month - Month index (0-11)
+ * @param params.events - Events to mark on the calendar
+ * @param params.today - Today's date (normalized to midnight)
+ * @returns Immutable array of 42 calendar cells
  */
 function generateCalendarGrid({
     year,
@@ -143,22 +150,21 @@ function generateCalendarGrid({
     events,
     today
 }: {
-    year: number;
-    month: number;
-    events: ReadonlyArray<CalendarEvent>;
-    today: Date;
+    readonly year: number;
+    readonly month: number;
+    readonly events: ReadonlyArray<CalendarEvent>;
+    readonly today: Date;
 }): readonly CalendarCell[] {
     const cells: CalendarCell[] = [];
     const firstDay = getFirstDayOfMonth(year, month);
     const daysInMonth = getDaysInMonth(year, month);
     const daysInPrevMonth = getDaysInMonth(year, month - 1);
 
-    // Event dates set for fast lookup
+    // Event date set for O(1) lookup
     const eventDates = new Set(events.map((e) => e.date));
-
     const todayString = formatDateToISOString(today);
 
-    // Previous month days (leading)
+    // Leading cells from previous month
     for (let i = firstDay - 1; i >= 0; i--) {
         const day = daysInPrevMonth - i;
         const date = new Date(year, month - 1, day);
@@ -172,7 +178,7 @@ function generateCalendarGrid({
         });
     }
 
-    // Current month days
+    // Current month cells
     for (let day = 1; day <= daysInMonth; day++) {
         const date = new Date(year, month, day);
         const dateString = formatDateToISOString(date);
@@ -185,8 +191,8 @@ function generateCalendarGrid({
         });
     }
 
-    // Next month days (trailing)
-    const remainingCells = 42 - cells.length; // 6 rows × 7 columns
+    // Trailing cells from next month to fill 6 rows
+    const remainingCells = 42 - cells.length;
     for (let day = 1; day <= remainingCells; day++) {
         const date = new Date(year, month + 1, day);
         const dateString = formatDateToISOString(date);
@@ -203,13 +209,18 @@ function generateCalendarGrid({
 }
 
 /**
- * Monthly calendar component that highlights dates with events and allows date selection.
+ * Custom monthly calendar component that marks dates containing events
+ * and allows the user to select a date.
+ *
+ * Renders a full 6-row grid with locale-aware month/day names via
+ * `Intl.DateTimeFormat`. Does not depend on any external date-picker library.
+ * Keyboard navigation follows the WAI-ARIA grid pattern (arrow keys, Home, End).
  *
  * @example
  * ```tsx
  * const events = [
- *   { id: '1', name: 'Event 1', date: '2026-02-15' },
- *   { id: '2', name: 'Event 2', date: '2026-02-20' },
+ *   { id: '1', name: 'Carnaval', date: '2026-02-15' },
+ *   { id: '2', name: 'Feria del Rio', date: '2026-02-20' },
  * ];
  *
  * <CalendarView
@@ -229,29 +240,29 @@ export function CalendarView({
 }: CalendarViewProps): React.JSX.Element {
     const [currentDate, setCurrentDate] = useState<Date>(new Date());
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
-    const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'events' });
+    const { t } = useTranslation({ locale, namespace: 'events' });
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
 
     /**
-     * Navigates to the previous month.
+     * Navigates the calendar to the previous month.
      */
     const handlePrevMonth = (): void => {
         setCurrentDate(new Date(year, month - 1, 1));
     };
 
     /**
-     * Navigates to the next month.
+     * Navigates the calendar to the next month.
      */
     const handleNextMonth = (): void => {
         setCurrentDate(new Date(year, month + 1, 1));
     };
 
     /**
-     * Handles date selection.
+     * Selects a date and invokes the parent callback.
      *
-     * @param dateString - Date string in YYYY-MM-DD format
+     * @param dateString - ISO date string (YYYY-MM-DD)
      */
     const handleDateClick = (dateString: string): void => {
         setSelectedDate(dateString);
@@ -259,11 +270,12 @@ export function CalendarView({
     };
 
     /**
-     * Handles keyboard navigation in the calendar grid.
+     * Handles keyboard navigation within the calendar grid.
+     * Supports arrow keys, Home, End, Enter, and Space.
      *
-     * @param event - Keyboard event
-     * @param cell - Calendar cell
-     * @param index - Cell index in the grid
+     * @param event - React keyboard event from the cell button
+     * @param cell - The calendar cell receiving the event
+     * @param index - The cell's position in the flat 42-cell array
      */
     const handleKeyDown = (
         event: React.KeyboardEvent<HTMLButtonElement>,
@@ -302,18 +314,20 @@ export function CalendarView({
                 event.preventDefault();
                 handleDateClick(cell.dateString);
                 return;
+            default:
+                return;
         }
 
         if (targetIndex !== null && targetIndex >= 0 && targetIndex < calendarCells.length) {
             const targetCell = calendarCells[targetIndex];
             if (targetCell) {
-                // Update current month if navigating to different month
+                // Switch displayed month when navigating into an adjacent month
                 const targetDate = targetCell.date;
                 if (targetDate.getMonth() !== month) {
                     setCurrentDate(new Date(targetDate.getFullYear(), targetDate.getMonth(), 1));
                 }
 
-                // Focus the target button
+                // Focus the target cell after React re-renders
                 setTimeout(() => {
                     const buttons = document.querySelectorAll('[data-calendar-cell]');
                     const targetButton = buttons[targetIndex] as HTMLButtonElement | undefined;
@@ -323,21 +337,13 @@ export function CalendarView({
         }
     };
 
-    // Generate calendar cells
+    // Memoize calendar grid so it only rebuilds when month, year, or events change
     const calendarCells = useMemo(() => {
-        // Normalize today to start of day in local timezone
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
-        return generateCalendarGrid({
-            year,
-            month,
-            events,
-            today
-        });
+        return generateCalendarGrid({ year, month, events, today });
     }, [year, month, events]);
 
-    // Month name and navigation labels
     const dayNames = useMemo(() => getDayNames(locale), [locale]);
     const monthNames = useMemo(() => getMonthNames(locale), [locale]);
     const monthName = monthNames[month] ?? '';
@@ -346,18 +352,22 @@ export function CalendarView({
 
     return (
         <div className={className}>
-            {/* Header with month/year and navigation */}
+            {/* Month/year header with navigation controls */}
             <div className="mb-4 flex items-center justify-between">
                 <button
                     type="button"
                     onClick={handlePrevMonth}
                     aria-label={prevMonthLabel}
-                    className="rounded p-2 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    className="rounded p-2 transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
-                    <span aria-hidden="true">←</span>
+                    <ChevronLeftIcon
+                        size="sm"
+                        weight="regular"
+                        aria-hidden="true"
+                    />
                 </button>
 
-                <h2 className="font-bold text-text text-xl">
+                <h2 className="font-bold text-foreground text-xl">
                     {monthName} {year}
                 </h2>
 
@@ -365,31 +375,37 @@ export function CalendarView({
                     type="button"
                     onClick={handleNextMonth}
                     aria-label={nextMonthLabel}
-                    className="rounded p-2 transition-colors hover:bg-surface-alt focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    className="rounded p-2 transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                 >
-                    <span aria-hidden="true">→</span>
+                    <ChevronRightIcon
+                        size="sm"
+                        weight="regular"
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
 
-            {/* Calendar grid */}
+            {/* Calendar grid (WAI-ARIA grid pattern) */}
             {/* biome-ignore lint/a11y/useSemanticElements: div with role="grid" is the standard WAI-ARIA calendar pattern */}
             <div
                 role="grid"
                 className="overflow-hidden rounded-lg border border-border"
             >
-                {/* Day names header */}
-                <div className="grid grid-cols-7 border-border border-b bg-surface-alt">
+                {/* Day-name column headers */}
+                <div className="grid grid-cols-7 border-border border-b bg-muted/50">
                     {dayNames.map((dayName) => (
                         <div
                             key={dayName}
-                            className="p-2 text-center font-semibold text-sm text-text-secondary"
+                            // biome-ignore lint/a11y/useSemanticElements: columnheader role on div is correct for custom calendar grid
+                            role="columnheader"
+                            className="p-2 text-center font-semibold text-muted-foreground text-sm"
                         >
                             {dayName}
                         </div>
                     ))}
                 </div>
 
-                {/* Calendar cells */}
+                {/* Date cells */}
                 <div className="grid grid-cols-7">
                     {calendarCells.map((cell, index) => {
                         const isSelected = cell.dateString === selectedDate;
@@ -399,23 +415,37 @@ export function CalendarView({
                             <button
                                 key={cell.dateString}
                                 type="button"
+                                // biome-ignore lint/a11y/useSemanticElements: gridcell role on button is correct for custom calendar grid
+                                role="gridcell"
                                 aria-label={ariaLabel}
                                 {...(cell.isToday && { 'aria-current': 'date' as const })}
                                 aria-selected={isSelected}
                                 data-calendar-cell
                                 onClick={() => handleDateClick(cell.dateString)}
                                 onKeyDown={(e) => handleKeyDown(e, cell, index)}
-                                className={`relative h-14 border-border border-r border-b p-2 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${cell.isCurrentMonth ? 'text-text' : 'text-text-tertiary'}
-									${cell.isToday ? 'bg-blue-50 font-bold dark:bg-blue-950/40' : ''}
-									${isSelected ? 'bg-primary font-bold text-white dark:text-white' : 'hover:bg-surface-alt'}
-									${cell.isToday && !isSelected ? 'ring-2 ring-blue-500 ring-inset dark:ring-blue-400' : ''}
-								`}
+                                className={[
+                                    'relative h-14 border-border border-r border-b p-2 transition-colors',
+                                    'focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2',
+                                    cell.isCurrentMonth
+                                        ? 'text-foreground'
+                                        : 'text-muted-foreground',
+                                    cell.isToday && !isSelected
+                                        ? 'font-bold ring-2 ring-primary ring-inset'
+                                        : '',
+                                    isSelected
+                                        ? 'bg-primary font-bold text-primary-foreground'
+                                        : 'hover:bg-primary/10 hover:text-primary'
+                                ]
+                                    .filter(Boolean)
+                                    .join(' ')}
                             >
                                 <span className="flex flex-col items-center justify-center">
                                     <span>{cell.date.getDate()}</span>
                                     {cell.hasEvent && (
                                         <span
-                                            className={`mt-1 h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white dark:bg-gray-100' : 'bg-primary'}`}
+                                            className={`mt-1 h-1.5 w-1.5 rounded-full ${
+                                                isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                                            }`}
                                             aria-hidden="true"
                                         />
                                     )}

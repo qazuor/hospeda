@@ -1,26 +1,31 @@
 ---
 /**
- * Paginated accommodation listing route.
- * Rewrites to the index page with the page query parameter.
- * Page 1 redirects to the base URL (canonical).
+ * @file alojamientos/page/[page].astro
+ * @description Paginated accommodation listing route.
+ * Rewrites to the index page with the page query parameter injected.
+ * Page 1 redirects to the canonical base URL (no /page/ segment).
  *
- * @route /[lang]/alojamientos/page/[page]/
+ * Rendering: SSR (server-side, on-demand).
+ * Route: /[lang]/alojamientos/page/[page]/
  */
+
 import { getLocaleFromParams } from '../../../../lib/page-helpers';
+
+export const prerender = false;
 
 const { page } = Astro.params;
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-const pageNum = Number.parseInt(page || '1', 10);
+const pageNum = Number.parseInt(page ?? '1', 10);
 
 if (Number.isNaN(pageNum) || pageNum < 1) {
-  return Astro.redirect(`/${locale}/alojamientos/`);
+    return Astro.redirect(`/${locale}/alojamientos/`);
 }
 
 /** Page 1 should use the canonical base URL without /page/ segment */
 if (pageNum === 1) {
-  return Astro.redirect(`/${locale}/alojamientos/`);
+    return Astro.redirect(`/${locale}/alojamientos/`);
 }
 
 /** Rewrite to the index page with the page query parameter */

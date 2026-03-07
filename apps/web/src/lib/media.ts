@@ -33,7 +33,6 @@ export function extractFeaturedImageUrl(
     item: Record<string, unknown>,
     fallback = DEFAULT_PLACEHOLDER
 ): string {
-    // Try nested media.featuredImage.url (standard DB/API structure)
     const media = item.media as MediaObject | undefined;
     if (media?.featuredImage) {
         if (typeof media.featuredImage === 'string') {
@@ -44,17 +43,14 @@ export function extractFeaturedImageUrl(
         }
     }
 
-    // Try flat featuredImage (in case already normalized)
     if (typeof item.featuredImage === 'string' && item.featuredImage) {
         return item.featuredImage;
     }
 
-    // Try heroImage fallback
     if (typeof item.heroImage === 'string' && item.heroImage) {
         return item.heroImage;
     }
 
-    // Try image fallback (used by events)
     if (typeof item.image === 'string' && item.image) {
         return item.image;
     }

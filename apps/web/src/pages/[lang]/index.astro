@@ -4,286 +4,122 @@ export const prerender = true;
 export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
 
 /**
- * Localized homepage for Hospeda platform.
+ * Localized homepage for Hospeda platform (web3).
  * Static shell with Server Islands for dynamic featured content.
- * Hero uses fullscreen carousel with category badges, animated counter,
- * rotating phrases, and redesigned search bar with multi-select popovers.
  *
  * Rendering: SSG + Server Islands
  * Route: /[lang]/
  */
-import { AccommodationTypeEnum } from "@repo/schemas";
-import CategoryIconsSection from "../../components/content/CategoryIconsSection.astro";
-import FeaturedAccommodations from "../../components/content/FeaturedAccommodations.astro";
-import FeaturedDestinations from "../../components/content/FeaturedDestinations.astro";
-import FeaturedEvents from "../../components/content/FeaturedEvents.astro";
-import FeaturedPosts from "../../components/content/FeaturedPosts.astro";
-import FeaturedSection from "../../components/content/FeaturedSection.astro";
-import HeroSection from "../../components/content/HeroSection.astro";
-import SectionSubtitle from "../../components/ui/SectionSubtitle.astro";
-import SectionTitle from "../../components/ui/SectionTitle.astro";
-import OwnerCTASection from "../../components/content/OwnerCTASection.astro";
-import TestimonialsSection from "../../components/content/TestimonialsSection.astro";
-import type { HeroSearchBarLabels } from "../../components/search/search-bar-types";
-import SEOHead from "../../components/seo/SEOHead.astro";
-import AccommodationCardSkeleton from "../../components/ui/AccommodationCardSkeleton.astro";
-import BlogPostCardSkeleton from "../../components/ui/BlogPostCardSkeleton.astro";
-import DestinationCardSkeleton from "../../components/ui/DestinationCardSkeleton.astro";
-import EventCardSkeleton from "../../components/ui/EventCardSkeleton.astro";
-import BaseLayout from "../../layouts/BaseLayout.astro";
-import { t as i18nT } from "../../lib/i18n";
-import { getApiUrl } from "../../lib/env";
-import { getLocaleFromParams } from "../../lib/page-helpers";
+import AccommodationsSection from '../../components/sections/AccommodationsSection.astro';
+import DestinationsSection from '../../components/sections/DestinationsSection.astro';
+import EventsSection from '../../components/sections/EventsSection.astro';
+import PostsSection from '../../components/sections/PostsSection.astro';
+import HeroSection from '../../components/sections/HeroSection.astro';
+import ReviewsSection from '../../components/sections/ReviewsSection.astro';
+import StatsSection from '../../components/sections/StatsSection.astro';
+import ListPropertySection from '../../components/sections/ListPropertySection.astro';
+import ParallaxDivider from '../../components/shared/ParallaxDivider.astro';
+import SEOHead from '../../components/seo/SEOHead.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import AccommodationGridSkeleton from '../../components/skeletons/AccommodationGridSkeleton.astro';
+import DestinationGridSkeleton from '../../components/skeletons/DestinationGridSkeleton.astro';
+import EventGridSkeleton from '../../components/skeletons/EventGridSkeleton.astro';
+import PostGridSkeleton from '../../components/skeletons/PostGridSkeleton.astro';
+import { HERO_IMAGE_SOURCES } from '../../data/hero';
+import { createT } from '../../lib/i18n';
+import { getLocaleFromParams } from '../../lib/page-helpers';
 
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-// ---------------------------------------------------------------------------
-// i18n texts - simple strings from locale files
-// ---------------------------------------------------------------------------
+const t = createT(locale);
 
-const pageTitle = i18nT({ locale, namespace: 'home', key: 'page.title' });
-const pageDescription = i18nT({ locale, namespace: 'home', key: 'page.description' });
-const heroAccentSubtitle = i18nT({ locale, namespace: 'home', key: 'heroCarousel.accentSubtitle' });
-const heroHeadline = i18nT({ locale, namespace: 'home', key: 'heroCarousel.headline' });
-const heroSubheadline = i18nT({ locale, namespace: 'home', key: 'heroCarousel.subheadline' });
-const statsDestinations = i18nT({ locale, namespace: 'home', key: 'heroCarousel.statsDestinations' });
-const statsAccommodations = i18nT({ locale, namespace: 'home', key: 'heroCarousel.statsAccommodations' });
-const featuredAccommodationsTitle = i18nT({ locale, namespace: 'home', key: 'sections.featuredAccommodations' });
-const accommodationsSubtitle = i18nT({ locale, namespace: 'home', key: 'sections.accommodationsSubtitle' });
-const featuredDestinationsTitle = i18nT({ locale, namespace: 'home', key: 'sections.featuredDestinations' });
-const upcomingEventsTitle = i18nT({ locale, namespace: 'home', key: 'sections.upcomingEvents' });
-const latestBlogTitle = i18nT({ locale, namespace: 'home', key: 'sections.latestBlog' });
-const viewAllLabel = i18nT({ locale, namespace: 'home', key: 'sections.viewAll' });
-
-// ---------------------------------------------------------------------------
-// Search bar labels - built from i18n locale files
-// ---------------------------------------------------------------------------
-
-const typeLabels = Object.values(AccommodationTypeEnum).reduce(
-    (acc, enumVal) => {
-        acc[enumVal] = i18nT({ locale, namespace: 'accommodations', key: `types.${enumVal.toLowerCase()}` });
-        return acc;
-    },
-    {} as Record<AccommodationTypeEnum, string>
-);
-
-const searchLabels: HeroSearchBarLabels = {
-    typePlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.typePlaceholder' }),
-    destinationPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.destinationPlaceholder' }),
-    datesPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.datesPlaceholder' }),
-    guestsPlaceholder: i18nT({ locale, namespace: 'home', key: 'searchBar.guestsPlaceholder' }),
-    checkInLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.checkInLabel' }),
-    checkOutLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.checkOutLabel' }),
-    adultsLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.adultsLabel' }),
-    childrenLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.childrenLabel' }),
-    guestsSummary: i18nT({ locale, namespace: 'home', key: 'searchBar.guestsSummary' }),
-    ctaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.ctaLabel' }),
-    loadingText: i18nT({ locale, namespace: 'home', key: 'searchBar.loadingText' }),
-    searchAriaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.searchAriaLabel' }),
-    closePanelAriaLabel: i18nT({ locale, namespace: 'home', key: 'searchBar.closePanelAriaLabel' }),
-    typeLabels,
-};
-
+const pageTitle = t('home.page.title', 'Alojamientos turisticos en Entre Rios');
+const pageDescription = t('home.page.description', 'Descubri los mejores alojamientos turisticos en Concepcion del Uruguay y el Litoral argentino.');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
-const apiBaseUrl = getApiUrl();
 
-// ---------------------------------------------------------------------------
-// Hero carousel images
-// ---------------------------------------------------------------------------
+/** Preload first hero image for instant LCP (remaining images preloaded by React) */
+const heroPreloadSrc = HERO_IMAGE_SOURCES[0]?.src.src;
 
-/**
- * Curated hero carousel images showcasing the region.
- * Covers: rio, playa, isla, carnaval, fiesta, autodromo, palacio, termas.
- */
-const heroImages = [
-    "/images/hero/rio1.jpg",
-    "/images/hero/rio2.png",
-    "/images/hero/rio3.jpg",
-    "/images/hero/playa1.jpg",
-    "/images/hero/playa2.jpg",
-    "/images/hero/playa3.png",
-    "/images/hero/playa4.jpg",
-    "/images/hero/playa5.jpg",
-    "/images/hero/playa6.jpg",
-    "/images/hero/playa7.jpg",
-    "/images/hero/playa8.webp",
-    "/images/hero/isla1.jpg",
-    "/images/hero/isla2.jpg",
-    "/images/hero/isla3.jpg",
-    "/images/hero/carnaval1.jpg",
-    "/images/hero/fiestaplaya1.jpg",
-    "/images/hero/autodromo1.webp",
-    "/images/hero/palacio1.jpg",
-    "/images/hero/palacio2.webp",
-    "/images/hero/termas1.png",
-    "/images/hero/termas2.jpeg",
-    "/images/hero/termas3.jpg",
-] as const;
-
-// ---------------------------------------------------------------------------
-// Animated counter items
-// ---------------------------------------------------------------------------
-
-const counterItems = [
-    { value: 22, label: i18nT({ locale, namespace: 'home', key: 'counter.destinations.label' }) },
-    { value: 150, suffix: "+", label: i18nT({ locale, namespace: 'home', key: 'counter.accommodations.label' }) },
-] as const;
-
-// ---------------------------------------------------------------------------
-// Rotating phrases (one per image category, cycled across slides)
-// ---------------------------------------------------------------------------
-
-const phraseRiver = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.river' });
-const phraseBeach = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.beach' });
-const phraseIslands = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.islands' });
-const phraseCarnival = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.carnival' });
-const phraseFestivals = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.festivals' });
-const phraseRacetrack = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.racetrack' });
-const phraseHistory = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.history' });
-const phraseHotsprings = i18nT({ locale, namespace: 'home', key: 'heroCarousel.phrases.hotsprings' });
-
-const rotatingPhrases = [
-    phraseRiver, phraseRiver, phraseRiver,
-    phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach, phraseBeach,
-    phraseIslands, phraseIslands, phraseIslands,
-    phraseCarnival,
-    phraseFestivals,
-    phraseRacetrack,
-    phraseHistory, phraseHistory,
-    phraseHotsprings, phraseHotsprings, phraseHotsprings,
-] as const;
-
-// ---------------------------------------------------------------------------
-// Testimonials
-// ---------------------------------------------------------------------------
-
-/**
- * Hardcoded testimonials for the homepage carousel.
- * Will be replaced with API data when testimonials endpoint is available.
- */
-const TESTIMONIALS = [
-    {
-        id: "testimonial-1",
-        quote: "Encontramos la cabana perfecta para nuestras vacaciones en familia. El proceso de reserva fue muy simple.",
-        author: "Maria Garcia",
-        location: "Concepcion del Uruguay",
-        rating: 5,
-    },
-    {
-        id: "testimonial-2",
-        quote: "Excelente plataforma para encontrar alojamiento en el Litoral. Muy buenas opciones y precios.",
-        author: "Carlos Rodriguez",
-        location: "Colon, Entre Rios",
-        rating: 4,
-    },
-    {
-        id: "testimonial-3",
-        quote: "Hospeda nos ayudo a descubrir lugares increibles que no conociamos. Totalmente recomendado.",
-        author: "Laura Martinez",
-        location: "Gualeguaychu",
-        rating: 5,
-    },
-];
+const parallax1Title = t('home.parallax.river.title', 'Donde el rio se encuentra con la serenidad');
+const parallax1Subtitle = t('home.parallax.river.subtitle', 'Playas de arena fina a orillas del Rio Uruguay');
+const parallax2Title = t('home.parallax.carnival.title', 'Vivi la fiesta mas grande del pais');
+const parallax2Subtitle = t('home.parallax.carnival.subtitle', 'El Carnaval de Gualeguaychu te espera cada verano');
+const parallax3Title = t('home.parallax.termas.title', 'Relaja cuerpo y mente en aguas termales');
+const parallax3Subtitle = t('home.parallax.termas.subtitle', 'Descubri el poder curativo de nuestras termas naturales');
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription} locale={locale} isHero>
-    <SEOHead slot="head" title={pageTitle} description={pageDescription} canonical={canonicalUrl} locale={locale} />
+<BaseLayout title={pageTitle} description={pageDescription} locale={locale} isHero isHomepage>
+  <SEOHead slot="head" title={pageTitle} description={pageDescription} canonical={canonicalUrl} locale={locale} />
+  {heroPreloadSrc && (
+    <link slot="head" rel="preload" as="image" href={heroPreloadSrc} fetchpriority="high" />
+  )}
 
-    <!-- 1. Hero Section with carousel, category badges, counter, rotating phrases -->
-    <HeroSection
-        heroImages={heroImages}
-        accentSubtitle={heroAccentSubtitle}
-        headline={heroHeadline}
-        subheadline={heroSubheadline}
-        searchLabels={searchLabels}
-        locale={locale}
-        apiBaseUrl={apiBaseUrl}
-        counterItems={counterItems}
-        statsLabels={{ destinations: statsDestinations, accommodations: statsAccommodations }}
-        rotatingPhrases={rotatingPhrases}
-    />
+  <!-- 1. Hero Section (fullscreen slideshow + search form) -->
+  <HeroSection locale={locale} />
 
     <!-- 2. Featured Accommodations (Server Island) -->
-    <FeaturedSection
-        title={featuredAccommodationsTitle}
-        subtitle={accommodationsSubtitle}
-        viewAllHref={`/${locale}/alojamientos/`}
-        viewAllLabel={viewAllLabel}
-    >
-        <FeaturedAccommodations server:defer locale={locale}>
-            <div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <AccommodationCardSkeleton />
-                <AccommodationCardSkeleton />
-                <AccommodationCardSkeleton />
-                <AccommodationCardSkeleton />
-                <AccommodationCardSkeleton class="hidden sm:block" />
-                <AccommodationCardSkeleton class="hidden lg:block" />
-                <AccommodationCardSkeleton class="hidden lg:block" />
-                <AccommodationCardSkeleton class="hidden lg:block" />
-            </div>
-        </FeaturedAccommodations>
-    </FeaturedSection>
+    <AccommodationsSection server:defer locale={locale}>
+      <AccommodationGridSkeleton slot="fallback" />
+    </AccommodationsSection>
 
-    <!-- 3. Featured Destinations (Server Island) - sand texture background -->
-    <FeaturedSection
-        title={featuredDestinationsTitle}
-        viewAllHref={`/${locale}/destinos/`}
-        viewAllLabel={viewAllLabel}
-        class="bg-bg-warm texture-sand"
-    >
-        <Fragment slot="title">
-            <SectionTitle>{featuredDestinationsTitle}</SectionTitle>
-            <SectionSubtitle class="mt-2">
-                {i18nT({ locale, namespace: "destinations", key: "featured.subtitle" })}
-            </SectionSubtitle>
-        </Fragment>
-        <FeaturedDestinations server:defer locale={locale}>
-            <div slot="fallback" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 lg:gap-5">
-                <DestinationCardSkeleton />
-                <DestinationCardSkeleton class="hidden sm:block" />
-                <DestinationCardSkeleton class="hidden lg:block" />
-                <DestinationCardSkeleton class="hidden xl:block" />
-                <DestinationCardSkeleton class="hidden sm:block" />
-                <DestinationCardSkeleton class="hidden lg:block" />
-                <DestinationCardSkeleton class="hidden xl:block" />
-                <DestinationCardSkeleton class="hidden xl:block" />
-            </div>
-        </FeaturedDestinations>
-    </FeaturedSection>
+    <!-- 3. Featured Destinations (Server Island) -->
+    <DestinationsSection server:defer locale={locale}>
+      <DestinationGridSkeleton slot="fallback" />
+    </DestinationsSection>
 
-    <!-- 4. Featured Events (Server Island) -->
-    <FeaturedSection title={upcomingEventsTitle} viewAllHref={`/${locale}/eventos/`} viewAllLabel={viewAllLabel}>
-        <FeaturedEvents server:defer locale={locale}>
-            <div slot="fallback" class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                <EventCardSkeleton />
-                <EventCardSkeleton class="hidden lg:block" />
-            </div>
-        </FeaturedEvents>
-    </FeaturedSection>
+    <!-- Parallax divider 1: Rio Uruguay -->
+    <div class="relative z-[7] -mt-10 md:-mt-12">
+      <ParallaxDivider
+        image="/images/parallax/parallax-rio-uruguay.jpg"
+        title={parallax1Title}
+        subtitle={parallax1Subtitle}
+        topWaveClass="fill-secondary"
+        bottomWaveClass="fill-background"
+        variant="cloud1"
+      />
+    </div>
 
-    <!-- 6. Category Icons Section (warm texture background) -->
-    <CategoryIconsSection locale={locale} />
+    <!-- 4. Events (Server Island) -->
+    <EventsSection server:defer locale={locale}>
+      <EventGridSkeleton slot="fallback" />
+    </EventsSection>
 
-    <!-- 7. Featured Blog Posts (Server Island) - alternate background -->
-    <FeaturedSection
-        title={latestBlogTitle}
-        viewAllHref={`/${locale}/publicaciones/`}
-        viewAllLabel={viewAllLabel}
-        class="bg-surface-alt"
-    >
-        <FeaturedPosts server:defer locale={locale}>
-            <div slot="fallback" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                <BlogPostCardSkeleton />
-                <BlogPostCardSkeleton />
-                <BlogPostCardSkeleton class="hidden sm:block" />
-            </div>
-        </FeaturedPosts>
-    </FeaturedSection>
+    <!-- Parallax divider 2: Carnaval -->
+    <div class="relative z-[5] -mt-10 md:-mt-12">
+      <ParallaxDivider
+        image="/images/parallax/parallax-carnaval.jpg"
+        title={parallax2Title}
+        subtitle={parallax2Subtitle}
+        topWaveClass="fill-background"
+        bottomWaveClass="fill-muted"
+        variant="cloud2"
+      />
+    </div>
 
-    <!-- 8. Testimonials Section (postcard style on sand texture) -->
-    <TestimonialsSection locale={locale} testimonials={TESTIMONIALS} />
+    <!-- 5. Blog Posts (Server Island) -->
+    <PostsSection server:defer locale={locale}>
+      <PostGridSkeleton slot="fallback" />
+    </PostsSection>
 
-    <!-- 9. Owner CTA Section (split layout with illustration) -->
-    <OwnerCTASection locale={locale} />
+    <!-- Parallax divider 3: Termas -->
+    <div class="relative z-[3] -mt-10 md:-mt-12">
+      <ParallaxDivider
+        image="/images/parallax/parallax-termas-er.jpg"
+        title={parallax3Title}
+        subtitle={parallax3Subtitle}
+        topWaveClass="fill-muted"
+        bottomWaveClass="fill-background"
+        variant="cloud3"
+      />
+    </div>
+
+    <!-- 6. Reviews -->
+    <ReviewsSection locale={locale} />
+
+    <!-- 7. Stats -->
+    <StatsSection locale={locale} />
+
+  <!-- 8. Owner CTA -->
+  <ListPropertySection locale={locale} />
 </BaseLayout>

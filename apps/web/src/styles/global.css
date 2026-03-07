@@ -1,330 +1,666 @@
-/* Design System Tokens - Hospeda web2 */
-/* Regional palette inspired by the Litoral argentino */
-/* Rio Uruguay, subtropical nature, colonial architecture, carnival culture */
+@import "tailwindcss";
+@import "tw-animate-css";
 
-/* Font fallback metrics to minimize CLS */
-@font-face {
-    font-family: "Inter Fallback";
-    src: local("Arial");
-    ascent-override: 90%;
-    descent-override: 22.43%;
-    line-gap-override: 0%;
-    size-adjust: 107.64%;
-}
-
-@font-face {
-    font-family: "Fraunces Fallback";
-    src: local("Georgia");
-    ascent-override: 95%;
-    descent-override: 25%;
-    line-gap-override: 0%;
-    size-adjust: 108%;
-}
-
-@font-face {
-    font-family: "Caveat Fallback";
-    src: local("cursive");
-    font-display: swap;
-    ascent-override: 100%;
-    descent-override: 30%;
-    line-gap-override: 0%;
-    size-adjust: 105%;
-}
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 :root {
-    /* Colors - Regional Palette: Rio Uruguay & Litoral */
-    --color-primary: #0d7377; /* Rio Uruguay teal */
-    --color-primary-dark: #0a5c5f;
-    --color-primary-light: #3d9b9e;
-    --color-secondary: #d4870e; /* Amber gold */
-    --color-secondary-dark: #b86f08;
-    --color-accent: #f0e6d6; /* Warm sand */
-    --color-accent-dark: #c25b3a; /* Terracotta */
-    --color-accent-warm: #d4870e; /* Amber */
-    --color-bg-warm: #f0e6d6; /* Warm sand background */
+    /* Hospeda Tourism Theme - Blues, Greens, Grays with Orange accent */
+    --background: oklch(0.985 0.002 210);
+    --foreground: oklch(0.2 0.02 220);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.2 0.02 220);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2 0.02 220);
+    --primary: oklch(0.55 0.12 220);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.92 0.03 155);
+    --secondary-foreground: oklch(0.25 0.06 155);
+    --muted: oklch(0.95 0.01 210);
+    --muted-foreground: oklch(0.5 0.02 220);
+    --accent: oklch(0.7 0.18 55);
+    --accent-foreground: oklch(0.99 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.98 0 0);
+    --overlay: oklch(0.2 0.02 220 / 0.5);
+    --border: oklch(0.9 0.02 210);
+    --input: oklch(0.9 0.02 210);
+    --ring: oklch(0.55 0.12 220);
+    --chart-1: oklch(0.55 0.12 220);
+    --chart-2: oklch(0.6 0.14 155);
+    --chart-3: oklch(0.7 0.18 55);
+    --chart-4: oklch(0.75 0.1 190);
+    --chart-5: oklch(0.5 0.08 240);
+    --radius: 0.75rem;
 
-    /* Primary scale for gradients */
-    --color-primary-50: #e8f5f5;
-    --color-primary-100: #c5e8e9;
-    --color-primary-200: #9ed8da;
-    --color-primary-300: #6fc4c7;
-    --color-primary-400: #3d9b9e;
-    --color-primary-500: #0d7377;
-    --color-primary-600: #0a5c5f;
-    --color-primary-700: #084a4d;
-    --color-primary-800: #063839;
-    --color-primary-900: #042526;
-    --color-primary-950: #021516;
+    /* Typography extras */
+    --text-2xs: 0.625rem;
+    --text-3xs: 0.8rem;
+    --text-xs-alt: 0.6875rem;
 
-    /* Green (nature/vegetation) */
-    --color-green: #2d6a4f;
-    --color-green-dark: #1b4332;
-    --color-green-light: #52b788;
+    /* Tracking extras */
+    --tracking-ultra: 0.3em;
 
-    /* Terracotta */
-    --color-terracotta: #c25b3a;
-    --color-terracotta-dark: #a14427;
-    --color-terracotta-light: #d4785c;
+    /* Shadows */
+    --shadow-card: 0 4px 12px -2px oklch(from var(--foreground) l c h / 0.08), 0 2px 4px -2px
+        oklch(from var(--foreground) l c h / 0.04);
+    --shadow-card-hover: 0 12px 24px -4px oklch(from var(--foreground) l c h / 0.12), 0 4px 8px -2px
+        oklch(from var(--foreground) l c h / 0.06);
+    --shadow-nav: 0 2px 4px 0 oklch(from var(--foreground) l c h / 0.15), 0 6px 20px -2px
+        oklch(from var(--foreground) l c h / 0.18);
+    --shadow-brutal-sm: 4px 4px 0 0 oklch(from var(--foreground) l c h / 0.1), 0 8px 20px -8px
+        oklch(from var(--foreground) l c h / 0.12);
+    --shadow-brutal-sm-hover: 10px 10px 0 0 oklch(from var(--foreground) l c h / 0.15), 0 20px 40px
+        -10px oklch(from var(--foreground) l c h / 0.2);
+    --shadow-brutal-lg: 5px 5px 0 0 oklch(from var(--foreground) l c h / 0.1), 0 10px 30px -10px
+        oklch(from var(--foreground) l c h / 0.15);
+    --shadow-brutal-lg-hover: 12px 12px 0 0 oklch(from var(--foreground) l c h / 0.15), 0 25px 50px
+        -15px oklch(from var(--foreground) l c h / 0.25);
 
-    /* Neutrals - warm tones */
-    --color-text: #2c1810; /* Dark warm brown */
-    --color-text-secondary: #5c4a32;
-    --color-text-tertiary: #8b7355;
-    --color-border: #e8dcc8;
-    --color-bg: #fdfaf5; /* River sand */
-    --color-surface: #ffffff;
-    --color-surface-alt: #f5ede0;
-    --color-surface-warm: #f0e6d6;
-    --color-surface-elevated: #ffffff; /* Dropdowns, modals, popovers */
-    --color-overlay: rgba(0, 0, 0, 0.5);
-    --color-header-bg: #ffffff;
+    /* Z-index scale */
+    --z-content: 10;
+    --z-wave: 20;
+    --z-menu: 40;
+    --z-overlay: 50;
+    --z-toast: 100;
 
-    /* Semantic */
-    --color-success: #2d6a4f;
-    --color-warning: #d4870e;
-    --color-error: #c25b3a;
-    --color-info: #0d7377;
+    /* Animation tokens */
+    --scroll-reveal-duration: 0.8s;
+    --scroll-reveal-offset-y: 40px;
+    --scroll-reveal-offset-x: 60px;
+    --nav-stagger-ms: 100;
+    --card-stagger-ms: 150;
 
-    /* Star rating */
-    --color-star: #facc15; /* Yellow-400 for filled stars */
-    --color-star-empty: #d1d5db; /* Gray-300 for empty stars */
+    /* Layout tokens */
+    --wave-separator-height: 60px;
+    --perspective-card-featured: 1000px;
+    --perspective-card-secondary: 600px;
+    --card-tilt-featured: rotateY(-4deg) rotateX(2deg);
+    --card-tilt-secondary: rotateY(-3deg) rotateX(1deg);
 
-    /* Navigation - used for header/sticky nav on hero overlays */
-    --color-nav-text: rgb(255 255 255 / 0.6);
-    --color-nav-text-active: white;
-    --color-nav-border: rgb(255 255 255 / 0.3);
-    --color-nav-border-hover: rgb(255 255 255 / 0.6);
-    --color-nav-bg-hover: rgb(255 255 255 / 0.08);
-    --color-nav-indicator: rgb(255 255 255 / 0.25);
+    /* Shadow extras */
+    --shadow-search: 0 25px 50px -12px oklch(from var(--foreground) l c h / 0.25);
 
-    /* Spacing (8px grid) */
-    --space-xs: 0.25rem; /* 4px */
-    --space-sm: 0.5rem; /* 8px */
-    --space-md: 1rem; /* 16px */
-    --space-lg: 1.5rem; /* 24px */
-    --space-xl: 2rem; /* 32px */
-    --space-2xl: 3rem; /* 48px */
-    --space-3xl: 4rem; /* 64px */
-    --space-4xl: 6rem; /* 96px */
+    /* Custom Hospeda tokens */
+    --hospeda-sky: oklch(0.8 0.08 220);
+    --hospeda-sky-light: oklch(0.88 0.06 220);
+    --hospeda-river: oklch(0.55 0.12 220);
+    --hospeda-forest: oklch(0.5 0.14 155);
+    --hospeda-sand: oklch(0.93 0.03 85);
+    --hospeda-sunset: oklch(0.7 0.18 55);
 
-    /* Border Radius */
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-xl: 16px;
-    --radius-2xl: 20px;
-    --radius-full: 9999px;
+    /* Hero overlay tokens (text/borders over dark hero images) */
+    --hero-overlay: oklch(0 0 0 / 0.35);
+    --hero-overlay-heavy: oklch(0 0 0 / 0.55);
+    --hero-text: oklch(1 0 0);
+    --hero-text-secondary: oklch(1 0 0 / 0.8);
+    --hero-text-muted: oklch(1 0 0 / 0.6);
+    --hero-border: oklch(1 0 0 / 0.2);
+    --hero-surface: oklch(1 0 0 / 0.2);
 
-    /* Shadows - warm tinted */
-    --shadow-sm: 0 1px 2px rgba(44, 24, 16, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(44, 24, 16, 0.08);
-    --shadow-lg: 0 10px 15px -3px rgba(44, 24, 16, 0.08);
-    --shadow-xl: 0 20px 25px -5px rgba(44, 24, 16, 0.08);
-
-    /* Typography */
-    --font-serif: "Fraunces", "Fraunces Fallback", Georgia, serif;
-    --font-sans: "Inter", "Inter Fallback", -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-accent: "Caveat", "Caveat Fallback", cursive;
-
-    /* Fraunces variable font axes */
-    --fraunces-hero: "SOFT" 100, "WONK" 1;
-    --fraunces-section: "SOFT" 50, "WONK" 1;
-    --fraunces-default: "opsz" auto;
-
-    /* Typography scale (fluid with clamp) */
-    --fs-display-hero: clamp(2.25rem, 5vw + 1rem, 4rem);
-    --fs-display-section: clamp(1.5rem, 3vw + 0.75rem, 2.25rem);
-    --fs-accent-subtitle: clamp(1.75rem, 3vw + 1rem, 2.75rem);
-    --fs-counter-number: clamp(2rem, 3vw + 0.75rem, 2.5rem);
-
-    /* Container width */
-    --max-w-site: 1200px;
-
-    --font-size-xs: 0.75rem; /* 12px */
-    --font-size-sm: 0.875rem; /* 14px */
-    --font-size-base: 1rem; /* 16px */
-    --font-size-lg: 1.125rem; /* 18px */
-    --font-size-xl: 1.25rem; /* 20px */
-    --font-size-2xl: 1.5rem; /* 24px */
-    --font-size-3xl: 2rem; /* 32px */
-    --font-size-4xl: 2.5rem; /* 40px */
-    --font-size-5xl: 3rem; /* 48px */
-
-    --line-height-tight: 1.2;
-    --line-height-normal: 1.5;
-    --line-height-relaxed: 1.6;
-
-    /* Transitions */
-    --transition-fast: 150ms ease;
-    --transition-base: 250ms ease;
-    --transition-slow: 350ms ease;
-
-    /* Z-index: uses Tailwind z-scale (z-10, z-20, z-30, z-40, z-50).
-     * Layer order convention:
-     *   z-10  = elevated cards, badges, carousel controls
-     *   z-20  = sticky headers, shape dividers
-     *   z-30  = carousel indicators
-     *   z-40  = reserved
-     *   z-50  = dropdowns, modals, toasts, overlays
-     * See HeroSection.astro for per-section z documentation.
-     */
-
-    /* RGB triplets for rgba() usage in animations/effects */
-    --color-primary-rgb: 13, 115, 119;
-    --color-bg-dark-rgb: 15, 26, 46;
-
-    /* Header glassmorphism RGB values (used with rgba()) */
-    --header-bg-rgb: 255, 255, 255;
-    --header-border-rgb: 232, 220, 200;
-
-    /* Footer gradient end color (deep night blue) */
-    --color-footer-gradient-end: #0f1a2e;
-
-    /* Star texture color (warm white for light mode) */
-    --color-star-rgb: 240, 237, 232;
-
-    /* Glass bar colors for glassmorphism overlays */
-    --glass-bg-rgb: 0, 0, 0;
-    --glass-bg-opacity: 0.35;
-    --glass-bg-blur-opacity: 0.25;
-    --glass-bg-mobile-opacity: 0.55;
-    --glass-border-rgb: 255, 255, 255;
-    --glass-border-opacity: 0.12;
-
-    /* Shimmer highlight color */
-    --shimmer-rgb: 255, 255, 255;
-    --shimmer-opacity: 0.4;
+    /* Feedback tokens */
+    --success: oklch(0.58 0.15 150);
+    --success-foreground: oklch(0.99 0 0);
+    --warning: oklch(0.75 0.18 85);
+    --warning-foreground: oklch(0.2 0.02 85);
+    --info: oklch(0.55 0.12 220);
+    --info-foreground: oklch(0.99 0 0);
 }
 
-/* Fluid typography scale (clamp replaces discrete breakpoints) */
-/* Fallback breakpoints kept as reference:
- * Desktop: hero 3rem, section 2.25rem, accent 1.625rem, counter 2.5rem
- * Tablet:  hero 2.5rem, section 1.875rem, accent 1.5rem, counter 2.25rem
- * Mobile:  hero 2rem, section 1.5rem, accent 1.375rem, counter 2rem
- */
-
-/* Dark mode - "Noche Estrellada" (night blue, not gray) */
+/* Dark mode overrides - applied via data-theme="dark" on <html> */
 [data-theme="dark"] {
-    --color-bg: #0f1a2e; /* Night blue */
-    --color-surface: #1a2740; /* Deep night surface */
-    --color-surface-alt: #1a2740;
-    --color-surface-warm: #1c1a15; /* Warm dark surface */
-    --color-surface-elevated: #243352; /* Elevated surfaces in dark mode */
-    --color-overlay: rgba(0, 0, 0, 0.7);
-    --color-bg-warm: #1c1a15;
-    --color-border: #2d3b52;
-    --color-text: #f0ede8; /* Warm white */
-    --color-text-secondary: #c4b8a8;
-    --color-text-tertiary: #8b7e6e;
-    --color-header-bg: #0f1a2e;
+    /* Backgrounds: deep navy-slate tones */
+    --background: oklch(0.14 0.02 220);
+    --foreground: oklch(0.92 0.01 210);
 
-    /* Luminous teal in dark mode */
-    --color-primary: #3dbdc0;
-    --color-primary-dark: #0d7377;
-    --color-primary-light: #6dd5d8;
+    /* Card: slightly lighter than background */
+    --card: oklch(0.19 0.02 220);
+    --card-foreground: oklch(0.92 0.01 210);
 
-    /* Primary scale - inverted luminance for dark surfaces */
-    --color-primary-50: #042526;
-    --color-primary-100: #063839;
-    --color-primary-200: #084a4d;
-    --color-primary-300: #0a5c5f;
-    --color-primary-400: #0d7377;
-    --color-primary-500: #3dbdc0;
-    --color-primary-600: #6dd5d8;
-    --color-primary-700: #9ed8da;
-    --color-primary-800: #c5e8e9;
-    --color-primary-900: #e8f5f5;
-    --color-primary-950: #f0fafa;
+    /* Popover: same as card */
+    --popover: oklch(0.19 0.02 220);
+    --popover-foreground: oklch(0.92 0.01 210);
 
-    /* Secondary - amber gold adjusted for dark */
-    --color-secondary: #e09a2e;
-    --color-secondary-dark: #d4870e;
-    --color-accent: #2a2520; /* Warm dark sand */
-    --color-accent-dark: #d4785c; /* Lighter terracotta */
-    --color-accent-warm: #e09a2e; /* Brighter amber */
-    --color-bg-warm: #1c1a15;
+    /* Primary: lighter blue for dark backgrounds */
+    --primary: oklch(0.65 0.14 220);
+    --primary-foreground: oklch(0.1 0.02 220);
 
-    /* Green - nature tones for dark surfaces */
-    --color-green: #52b788;
-    --color-green-dark: #2d6a4f;
-    --color-green-light: #74d4a4;
+    /* Secondary: muted teal-green on dark */
+    --secondary: oklch(0.25 0.05 155);
+    --secondary-foreground: oklch(0.8 0.08 155);
 
-    /* Terracotta - warmer and lighter for dark surfaces */
-    --color-terracotta: #d4785c;
-    --color-terracotta-dark: #c25b3a;
-    --color-terracotta-light: #e09578;
+    /* Muted: subtle dark surface */
+    --muted: oklch(0.22 0.02 220);
+    --muted-foreground: oklch(0.6 0.02 220);
 
-    /* Semantic - brighter variants for contrast on dark backgrounds */
-    --color-success: #52b788;
-    --color-warning: #e09a2e;
-    --color-error: #e07a5e;
-    --color-info: #3dbdc0;
+    /* Accent: keep sunset orange, slightly brighter for contrast */
+    --accent: oklch(0.72 0.19 55);
+    --accent-foreground: oklch(0.1 0.01 55);
 
-    /* Star rating - brighter for dark backgrounds */
-    --color-star: #fbbf24; /* Amber-400 for filled stars on dark */
-    --color-star-empty: #4b5563; /* Gray-600 for empty stars on dark */
+    /* Destructive: keep recognizable red */
+    --destructive: oklch(0.6 0.22 27);
+    --destructive-foreground: oklch(0.98 0 0);
 
-    /* Navigation - inverted for dark theme */
-    --color-nav-text: rgb(255 255 255 / 0.7);
-    --color-nav-text-active: white;
-    --color-nav-border: rgb(255 255 255 / 0.2);
-    --color-nav-border-hover: rgb(255 255 255 / 0.5);
-    --color-nav-bg-hover: rgb(255 255 255 / 0.1);
-    --color-nav-indicator: rgb(255 255 255 / 0.25);
+    /* Overlay: dark scrim */
+    --overlay: oklch(0.05 0.01 220 / 0.7);
 
-    /* Shadows - higher opacity for visibility on dark surfaces */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    /* Borders and inputs: subtle on dark */
+    --border: oklch(0.28 0.02 220);
+    --input: oklch(0.28 0.02 220);
+    --ring: oklch(0.65 0.14 220);
 
-    /* RGB triplets for rgba() usage in animations/effects */
-    --color-primary-rgb: 61, 189, 192;
-    --color-bg-dark-rgb: 15, 26, 46;
+    /* Charts: slightly brighter for dark backgrounds */
+    --chart-1: oklch(0.65 0.14 220);
+    --chart-2: oklch(0.68 0.15 155);
+    --chart-3: oklch(0.72 0.19 55);
+    --chart-4: oklch(0.78 0.11 190);
+    --chart-5: oklch(0.62 0.1 240);
 
-    /* Header glassmorphism RGB for dark mode */
-    --header-bg-rgb: 15, 26, 46;
-    --header-border-rgb: 45, 59, 82;
+    /* Hospeda brand tokens: adjusted for dark, still recognizable */
+    --hospeda-sky: oklch(0.6 0.1 220);
+    --hospeda-sky-light: oklch(0.45 0.07 220);
+    --hospeda-river: oklch(0.65 0.14 220);
+    --hospeda-forest: oklch(0.58 0.15 155);
+    --hospeda-sand: oklch(0.3 0.04 85);
+    --hospeda-sunset: oklch(0.72 0.19 55);
 
-    /* Footer gradient end color (deeper dark for dark mode) */
-    --color-footer-gradient-end: #0a1020;
+    /* Hero overlay tokens (dark) - same values, hero is always on dark image */
+    --hero-overlay: oklch(0 0 0 / 0.4);
+    --hero-overlay-heavy: oklch(0 0 0 / 0.6);
+    --hero-text: oklch(1 0 0);
+    --hero-text-secondary: oklch(1 0 0 / 0.85);
+    --hero-text-muted: oklch(1 0 0 / 0.65);
+    --hero-border: oklch(1 0 0 / 0.25);
+    --hero-surface: oklch(1 0 0 / 0.2);
 
-    /* Star texture: lighter dots on dark backgrounds */
-    --color-star-rgb: 200, 210, 230;
-
-    /* Glass bar: lighter overlay on dark surfaces */
-    --glass-bg-rgb: var(--color-bg-dark-rgb);
-    --glass-bg-opacity: 0.55;
-    --glass-bg-blur-opacity: 0.45;
-    --glass-bg-mobile-opacity: 0.7;
-    --glass-border-rgb: 255, 255, 255;
-    --glass-border-opacity: 0.08;
-
-    /* Shimmer: subtler highlight on dark surfaces */
-    --shimmer-rgb: 255, 255, 255;
-    --shimmer-opacity: 0.15;
+    /* Feedback tokens (dark) */
+    --success: oklch(0.65 0.16 150);
+    --success-foreground: oklch(0.1 0.02 150);
+    --warning: oklch(0.78 0.18 85);
+    --warning-foreground: oklch(0.1 0.02 85);
+    --info: oklch(0.65 0.14 220);
+    --info-foreground: oklch(0.1 0.02 220);
 }
 
-/* Dark mode: generic wave divider fill override (for SimpleCurve, Totora, etc.) */
-[data-theme="dark"] .wave-divider-path {
-    fill: var(--color-bg) !important;
+@theme inline {
+    --font-sans: "Inter", sans-serif;
+    --font-serif: "Dancing Script", cursive;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --color-card: var(--card);
+    --color-card-foreground: var(--card-foreground);
+    --color-popover: var(--popover);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-primary: var(--primary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-secondary: var(--secondary);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-muted: var(--muted);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-accent: var(--accent);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-destructive: var(--destructive);
+    --color-destructive-foreground: var(--destructive-foreground);
+    --color-overlay: var(--overlay);
+    --color-border: var(--border);
+    --color-input: var(--input);
+    --color-ring: var(--ring);
+    --color-chart-1: var(--chart-1);
+    --color-chart-2: var(--chart-2);
+    --color-chart-3: var(--chart-3);
+    --color-chart-4: var(--chart-4);
+    --color-chart-5: var(--chart-5);
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    --color-hospeda-sky: var(--hospeda-sky);
+    --color-hospeda-sky-light: var(--hospeda-sky-light);
+    --color-hospeda-river: var(--hospeda-river);
+    --color-hospeda-forest: var(--hospeda-forest);
+    --color-hospeda-sand: var(--hospeda-sand);
+    --color-hospeda-sunset: var(--hospeda-sunset);
+
+    --color-hero-overlay: var(--hero-overlay);
+    --color-hero-overlay-heavy: var(--hero-overlay-heavy);
+    --color-hero-text: var(--hero-text);
+    --color-hero-text-secondary: var(--hero-text-secondary);
+    --color-hero-text-muted: var(--hero-text-muted);
+    --color-hero-border: var(--hero-border);
+    --color-hero-surface: var(--hero-surface);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+
+    --aspect-ratio-card: 4 / 3;
 }
 
-/* Dark mode: accent-warm text elevated for legibility on dark backgrounds */
-[data-theme="dark"] .text-accent-warm {
-    color: var(--color-text-secondary);
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
 }
 
-/* Dark mode overlay opacity increase for readability */
-[data-theme="dark"] .section-overlay {
-    background-color: rgba(0, 0, 0, 0.6);
+/* Parallax helper */
+.parallax-section {
+    background-attachment: fixed;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
 }
 
-/* Star rating utilities */
-.text-star {
-    color: var(--color-star);
+@media (width < 768px) {
+    .parallax-section {
+        background-attachment: scroll;
+    }
 }
 
-.text-star-empty {
-    color: var(--color-star-empty);
+/* Scroll reveal animations */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(var(--scroll-reveal-offset-y));
+    transition: opacity var(--scroll-reveal-duration) ease-out, transform
+        var(--scroll-reveal-duration) ease-out;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.scroll-reveal-left {
+    opacity: 0;
+    transform: translateX(calc(-1 * var(--scroll-reveal-offset-x)));
+    transition: opacity var(--scroll-reveal-duration) ease-out, transform
+        var(--scroll-reveal-duration) ease-out;
+}
+
+.scroll-reveal-left.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.scroll-reveal-right {
+    opacity: 0;
+    transform: translateX(var(--scroll-reveal-offset-x));
+    transition: opacity var(--scroll-reveal-duration) ease-out, transform
+        var(--scroll-reveal-duration) ease-out;
+}
+
+.scroll-reveal-right.revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* Wave separator */
+.wave-separator {
+    position: relative;
+    overflow: hidden;
+}
+
+.wave-separator::after {
+    content: "";
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: var(--wave-separator-height);
+    background: var(--background);
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 60'%3E%3Cpath fill='white' d='M0,30 C360,60 720,0 1080,30 C1260,45 1380,50 1440,30 L1440,60 L0,60 Z'/%3E%3C/svg%3E");
+    mask-size: 100% var(--wave-separator-height);
+    mask-repeat: no-repeat;
+    mask-position: bottom center;
+}
+
+/*
+ * Wave-bottom clip-paths: fixed 40px wave via polygon() + calc().
+ * Each point uses calc(100% - Npx) so the wave is always exactly 40px tall
+ * regardless of section height or viewport size.
+ * The section below overlaps with negative margin, visible through the wave cutout.
+ * 41 polygon points at 2.5% intervals for smooth sine-like curves.
+ * Values generated from sin() with varying phase offsets per variant.
+ */
+.wave-bottom-hero {
+    clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% calc(100% - 20px),
+        97.5% calc(100% - 15px),
+        95% calc(100% - 10px),
+        92.5% calc(100% - 6px),
+        90% calc(100% - 3px),
+        87.5% calc(100% - 4px),
+        85% calc(100% - 8px),
+        82.5% calc(100% - 13px),
+        80% calc(100% - 18px),
+        77.5% calc(100% - 24px),
+        75% calc(100% - 30px),
+        72.5% calc(100% - 35px),
+        70% calc(100% - 38px),
+        67.5% calc(100% - 37px),
+        65% calc(100% - 33px),
+        62.5% calc(100% - 28px),
+        60% calc(100% - 22px),
+        57.5% calc(100% - 16px),
+        55% calc(100% - 10px),
+        52.5% calc(100% - 5px),
+        50% calc(100% - 3px),
+        47.5% calc(100% - 4px),
+        45% calc(100% - 7px),
+        42.5% calc(100% - 12px),
+        40% calc(100% - 18px),
+        37.5% calc(100% - 24px),
+        35% calc(100% - 30px),
+        32.5% calc(100% - 35px),
+        30% calc(100% - 38px),
+        27.5% calc(100% - 37px),
+        25% calc(100% - 33px),
+        22.5% calc(100% - 27px),
+        20% calc(100% - 20px),
+        17.5% calc(100% - 14px),
+        15% calc(100% - 10px),
+        12.5% calc(100% - 6px),
+        10% calc(100% - 3px),
+        7.5% calc(100% - 5px),
+        5% calc(100% - 10px),
+        2.5% calc(100% - 15px),
+        0% calc(100% - 20px)
+    );
+}
+
+.wave-bottom-a {
+    clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% calc(100% - 32px),
+        97.5% calc(100% - 28px),
+        95% calc(100% - 22px),
+        92.5% calc(100% - 16px),
+        90% calc(100% - 10px),
+        87.5% calc(100% - 6px),
+        85% calc(100% - 3px),
+        82.5% calc(100% - 4px),
+        80% calc(100% - 8px),
+        77.5% calc(100% - 14px),
+        75% calc(100% - 20px),
+        72.5% calc(100% - 27px),
+        70% calc(100% - 33px),
+        67.5% calc(100% - 37px),
+        65% calc(100% - 39px),
+        62.5% calc(100% - 37px),
+        60% calc(100% - 33px),
+        57.5% calc(100% - 27px),
+        55% calc(100% - 20px),
+        52.5% calc(100% - 14px),
+        50% calc(100% - 8px),
+        47.5% calc(100% - 4px),
+        45% calc(100% - 3px),
+        42.5% calc(100% - 6px),
+        40% calc(100% - 10px),
+        37.5% calc(100% - 16px),
+        35% calc(100% - 22px),
+        32.5% calc(100% - 28px),
+        30% calc(100% - 33px),
+        27.5% calc(100% - 37px),
+        25% calc(100% - 40px),
+        22.5% calc(100% - 38px),
+        20% calc(100% - 34px),
+        17.5% calc(100% - 28px),
+        15% calc(100% - 22px),
+        12.5% calc(100% - 16px),
+        10% calc(100% - 10px),
+        7.5% calc(100% - 6px),
+        5% calc(100% - 5px),
+        2.5% calc(100% - 8px),
+        0% calc(100% - 14px)
+    );
+}
+
+.wave-bottom-b {
+    clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% calc(100% - 10px),
+        97.5% calc(100% - 6px),
+        95% calc(100% - 3px),
+        92.5% calc(100% - 4px),
+        90% calc(100% - 8px),
+        87.5% calc(100% - 14px),
+        85% calc(100% - 20px),
+        82.5% calc(100% - 26px),
+        80% calc(100% - 32px),
+        77.5% calc(100% - 36px),
+        75% calc(100% - 39px),
+        72.5% calc(100% - 38px),
+        70% calc(100% - 34px),
+        67.5% calc(100% - 28px),
+        65% calc(100% - 22px),
+        62.5% calc(100% - 15px),
+        60% calc(100% - 9px),
+        57.5% calc(100% - 5px),
+        55% calc(100% - 3px),
+        52.5% calc(100% - 4px),
+        50% calc(100% - 8px),
+        47.5% calc(100% - 14px),
+        45% calc(100% - 20px),
+        42.5% calc(100% - 27px),
+        40% calc(100% - 33px),
+        37.5% calc(100% - 37px),
+        35% calc(100% - 40px),
+        32.5% calc(100% - 38px),
+        30% calc(100% - 34px),
+        27.5% calc(100% - 28px),
+        25% calc(100% - 21px),
+        22.5% calc(100% - 15px),
+        20% calc(100% - 9px),
+        17.5% calc(100% - 5px),
+        15% calc(100% - 3px),
+        12.5% calc(100% - 5px),
+        10% calc(100% - 9px),
+        7.5% calc(100% - 14px),
+        5% calc(100% - 20px),
+        2.5% calc(100% - 25px),
+        0% calc(100% - 30px)
+    );
+}
+
+.wave-bottom-c {
+    clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% calc(100% - 25px),
+        97.5% calc(100% - 20px),
+        95% calc(100% - 15px),
+        92.5% calc(100% - 10px),
+        90% calc(100% - 6px),
+        87.5% calc(100% - 3px),
+        85% calc(100% - 4px),
+        82.5% calc(100% - 8px),
+        80% calc(100% - 13px),
+        77.5% calc(100% - 20px),
+        75% calc(100% - 27px),
+        72.5% calc(100% - 33px),
+        70% calc(100% - 37px),
+        67.5% calc(100% - 40px),
+        65% calc(100% - 38px),
+        62.5% calc(100% - 34px),
+        60% calc(100% - 28px),
+        57.5% calc(100% - 21px),
+        55% calc(100% - 14px),
+        52.5% calc(100% - 8px),
+        50% calc(100% - 4px),
+        47.5% calc(100% - 3px),
+        45% calc(100% - 5px),
+        42.5% calc(100% - 10px),
+        40% calc(100% - 16px),
+        37.5% calc(100% - 23px),
+        35% calc(100% - 30px),
+        32.5% calc(100% - 35px),
+        30% calc(100% - 39px),
+        27.5% calc(100% - 38px),
+        25% calc(100% - 34px),
+        22.5% calc(100% - 28px),
+        20% calc(100% - 21px),
+        17.5% calc(100% - 14px),
+        15% calc(100% - 8px),
+        12.5% calc(100% - 4px),
+        10% calc(100% - 3px),
+        7.5% calc(100% - 6px),
+        5% calc(100% - 11px),
+        2.5% calc(100% - 18px),
+        0% calc(100% - 25px)
+    );
+}
+
+.wave-bottom-d {
+    clip-path: polygon(
+        0% 0%,
+        100% 0%,
+        100% calc(100% - 15px),
+        97.5% calc(100% - 10px),
+        95% calc(100% - 6px),
+        92.5% calc(100% - 3px),
+        90% calc(100% - 3px),
+        87.5% calc(100% - 6px),
+        85% calc(100% - 10px),
+        82.5% calc(100% - 16px),
+        80% calc(100% - 22px),
+        77.5% calc(100% - 28px),
+        75% calc(100% - 34px),
+        72.5% calc(100% - 37px),
+        70% calc(100% - 39px),
+        67.5% calc(100% - 38px),
+        65% calc(100% - 34px),
+        62.5% calc(100% - 28px),
+        60% calc(100% - 22px),
+        57.5% calc(100% - 15px),
+        55% calc(100% - 9px),
+        52.5% calc(100% - 5px),
+        50% calc(100% - 3px),
+        47.5% calc(100% - 4px),
+        45% calc(100% - 8px),
+        42.5% calc(100% - 14px),
+        40% calc(100% - 20px),
+        37.5% calc(100% - 27px),
+        35% calc(100% - 33px),
+        32.5% calc(100% - 37px),
+        30% calc(100% - 40px),
+        27.5% calc(100% - 38px),
+        25% calc(100% - 34px),
+        22.5% calc(100% - 28px),
+        20% calc(100% - 21px),
+        17.5% calc(100% - 14px),
+        15% calc(100% - 9px),
+        12.5% calc(100% - 5px),
+        10% calc(100% - 3px),
+        7.5% calc(100% - 5px),
+        5% calc(100% - 9px),
+        2.5% calc(100% - 13px),
+        0% calc(100% - 18px)
+    );
+}
+
+/* 3D card transforms */
+.card-3d-featured {
+    perspective: var(--perspective-card-featured);
+}
+
+.card-3d-featured-tilt {
+    transform: var(--card-tilt-featured);
+}
+
+.card-3d-secondary {
+    perspective: var(--perspective-card-secondary);
+}
+
+.card-3d-secondary-tilt {
+    transform: var(--card-tilt-secondary);
+}
+
+/* Reduced motion: disable all decorative animations */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal,
+    .scroll-reveal-left,
+    .scroll-reveal-right {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
+
+    .parallax-section {
+        background-attachment: scroll;
+    }
+}
+
+/* Custom font-size utilities */
+@utility text-2xs {
+    font-size: var(--text-2xs);
+    line-height: 1.25;
+}
+
+@utility text-xs-alt {
+    font-size: var(--text-xs-alt);
+    line-height: 1.3;
+}
+
+/* Shadow utilities */
+@utility shadow-card {
+    box-shadow: var(--shadow-card);
+}
+
+@utility shadow-card-hover {
+    box-shadow: var(--shadow-card-hover);
+}
+
+@utility shadow-nav {
+    box-shadow: var(--shadow-nav);
+}
+
+@utility shadow-brutal-sm {
+    box-shadow: var(--shadow-brutal-sm);
+}
+
+@utility shadow-brutal-sm-hover {
+    box-shadow: var(--shadow-brutal-sm-hover);
+}
+
+@utility shadow-brutal-lg {
+    box-shadow: var(--shadow-brutal-lg);
+}
+
+@utility shadow-brutal-lg-hover {
+    box-shadow: var(--shadow-brutal-lg-hover);
+}
+
+@utility shadow-search {
+    box-shadow: var(--shadow-search);
+}
+
+@utility text-3xs {
+    font-size: var(--text-3xs);
+    line-height: 1.3;
+}
+
+@utility tracking-ultra {
+    letter-spacing: var(--tracking-ultra);
+}
+
+@utility aspect-card {
+    aspect-ratio: var(--aspect-ratio-card);
+}
+
+/* Hero text-shadow utilities for readability over images */
+@utility hero-text-shadow {
+    text-shadow: 0 2px 8px oklch(0 0 0 / 0.4), 0 1px 3px oklch(0 0 0 / 0.3);
+}
+
+@utility hero-text-shadow-sm {
+    text-shadow: 0 1px 4px oklch(0 0 0 / 0.35), 0 1px 2px oklch(0 0 0 / 0.25);
 }

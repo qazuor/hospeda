@@ -11,6 +11,7 @@ export {
 } from './endpoints';
 export {
     authApi,
+    billingApi,
     exchangeRatesApi,
     plansApi,
     tagsApi,

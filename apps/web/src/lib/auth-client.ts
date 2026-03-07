@@ -1,11 +1,8 @@
 /**
- * Better Auth React client for the web application.
+ * Better Auth React client for the web3 application.
  *
  * Provides authentication methods (signIn, signUp, signOut),
  * session management via React hooks, and password reset capabilities.
- *
- * The client connects to the API's Better Auth endpoints at /api/auth/*.
- * Used by React island components in auth pages.
  *
  * @module auth-client
  */
@@ -14,7 +11,6 @@ import { createAuthClient } from 'better-auth/react';
 
 /**
  * Resolves the API base URL from environment variables.
- * Supports both Astro's public env vars (client-side) and server-side fallback.
  */
 function getBaseURL(): string {
     if (typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_API_URL) {
@@ -27,24 +23,7 @@ function getBaseURL(): string {
 }
 
 /**
- * Better Auth client instance configured for the Hospeda web app.
- *
- * Session is cookie-based (credentials: 'include' is automatic).
- * No admin plugin needed for the public-facing web app.
- *
- * @example
- * ```tsx
- * import { authClient } from '@/lib/auth-client';
- *
- * // Sign in
- * const { data, error } = await authClient.signIn.email({
- *   email: 'user@example.com',
- *   password: 'password123'
- * });
- *
- * // Use session hook in a component
- * const { data: session, isPending } = authClient.useSession();
- * ```
+ * Better Auth client instance configured for the Hospeda web3 app.
  */
 export const authClient = createAuthClient({
     baseURL: getBaseURL(),
@@ -73,10 +52,6 @@ interface AuthApiResult {
 
 /**
  * Request a password reset email via the Better Auth API.
- *
- * @param params.email - The user's email address.
- * @param params.redirectTo - The URL to redirect to from the reset email link.
- * @returns Result with data on success or error on failure.
  */
 export async function forgetPassword({
     email,
@@ -105,10 +80,6 @@ export async function forgetPassword({
 
 /**
  * Reset password using a token from the reset email.
- *
- * @param params.newPassword - The new password.
- * @param params.token - The reset token from the email link.
- * @returns Result with data on success or error on failure.
  */
 export async function resetPassword({
     newPassword,
@@ -137,9 +108,6 @@ export async function resetPassword({
 
 /**
  * Verify email address using a token from the verification email.
- *
- * @param params.token - The verification token from the email link.
- * @returns Result with data on success or error on failure.
  */
 export async function verifyEmail({
     token

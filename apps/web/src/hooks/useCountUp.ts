@@ -27,15 +27,28 @@ const EASING_MAP: Record<EasingPreset, (t: number) => number> = {
 // Hook: useViewportTrigger
 // ---------------------------------------------------------------------------
 
+/** Options for useViewportTrigger */
+interface UseViewportTriggerOptions {
+    /** Intersection ratio threshold to trigger visibility (default: 0.3) */
+    readonly threshold?: number;
+}
+
 /**
- * Fires once when the referenced element enters the viewport.
- * Returns `[ref, isVisible]`.
+ * Fires once when the referenced element enters the viewport using IntersectionObserver.
+ * Automatically disconnects the observer after the element becomes visible.
+ *
+ * @param options - Configuration options for the IntersectionObserver
+ * @returns Tuple of [ref, isVisible] where ref must be attached to the target element
+ *
+ * @example
+ * ```tsx
+ * const [ref, isVisible] = useViewportTrigger<HTMLDivElement>({ threshold: 0.5 });
+ * return <div ref={ref}>{isVisible ? 'Visible!' : 'Hidden'}</div>;
+ * ```
  */
 export function useViewportTrigger<T extends HTMLElement>({
     threshold = 0.3
-}: {
-    readonly threshold?: number;
-} = {}): [RefObject<T | null>, boolean] {
+}: UseViewportTriggerOptions = {}): [RefObject<T | null>, boolean] {
     const ref = useRef<T>(null);
     const [isVisible, setIsVisible] = useState(false);
 
@@ -64,6 +77,7 @@ export function useViewportTrigger<T extends HTMLElement>({
 // Hook: useCountUp
 // ---------------------------------------------------------------------------
 
+/** Parameters for the useCountUp hook */
 interface UseCountUpParams {
     /** Target value to animate to */
     readonly target: number;
@@ -75,6 +89,7 @@ interface UseCountUpParams {
     readonly easing?: EasingPreset;
 }
 
+/** Return value of useCountUp */
 interface UseCountUpResult {
     /** Current animated value */
     readonly value: number;
@@ -84,8 +99,17 @@ interface UseCountUpResult {
 
 /**
  * Animates a number from 0 to target when `isVisible` becomes true.
+ * Uses requestAnimationFrame for smooth animation.
  * Respects `prefers-reduced-motion` by showing the final value immediately.
  * Only fires once per component mount.
+ *
+ * @param params - Animation configuration
+ * @returns Current animated value and completion flag
+ *
+ * @example
+ * ```tsx
+ * const { value, isComplete } = useCountUp({ target: 1000, isVisible, duration: 2000 });
+ * ```
  */
 export function useCountUp({
     target,
