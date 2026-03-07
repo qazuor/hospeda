@@ -14,15 +14,10 @@ const schema = {
 };
 
 /**
- * Database client instance for runtime connection
+ * Database client instance. Set via initializeDb() at app startup
+ * or via setDb() for test injection.
  */
 let runtimeClient: NodePgDatabase<typeof schema> | null = null;
-
-/**
- * Static database client for type inference and autocompletion in VS Code
- * This client is never actually used for database operations
- */
-const staticClient = drizzle(null as unknown as Pool, { schema });
 
 /**
  * Initializes the database connection with the provided connection pool.
@@ -53,24 +48,36 @@ export function initializeDb(pool: Pool): NodePgDatabase<typeof schema> {
 }
 
 /**
- * Returns the database client.
- * During development in VS Code, returns a static client for type inference.
- * In runtime, returns the initialized client or throws if not initialized.
+ * Injects a database client directly. Intended for use in tests only,
+ * where a real test database or mock client needs to be provided without
+ * going through initializeDb() and a connection pool.
+ *
+ * Calling this in production code is not recommended.
+ *
+ * @param client - A Drizzle ORM client instance to use as the active database
+ *
+ * @example
+ * ```typescript
+ * // In a test setup file:
+ * import { drizzle } from 'drizzle-orm/node-postgres';
+ * import { setDb } from '@repo/db';
+ *
+ * const testPool = new Pool({ connectionString: process.env.TEST_DATABASE_URL });
+ * setDb(drizzle(testPool, { schema }));
+ * ```
+ */
+export function setDb(client: NodePgDatabase<typeof schema>): void {
+    runtimeClient = client;
+}
+
+/**
+ * Returns the active database client.
+ * Requires a prior call to initializeDb() (production) or setDb() (tests).
  *
  * @returns The database client instance
- * @throws Error if database is not initialized in runtime
+ * @throws {Error} If the database has not been initialized
  */
 export function getDb(): NodePgDatabase<typeof schema> {
-    // If we're in VSCode or running tests and the client hasn't been initialized,
-    // return the static client for type inference
-    if (
-        !runtimeClient &&
-        (process.env.VSCODE_PID || process.env.VITEST || process.env.NODE_ENV === 'test')
-    ) {
-        return staticClient;
-    }
-
-    // In runtime, require initialization
     if (!runtimeClient) {
         throw new Error(
             'Database not initialized. Call initializeDb() before using database operations.'
