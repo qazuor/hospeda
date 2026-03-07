@@ -24,5 +24,10 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.ADMIN_SYSTEM_EVENT]: NotificationCategory.ADMIN,
 
     // Feedback - Always sent, cannot be opted out
-    [NotificationType.FEEDBACK_REPORT]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.FEEDBACK_REPORT]: NotificationCategory.TRANSACTIONAL,
+
+    // Subscription lifecycle - Transactional, always sent
+    [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL
 };

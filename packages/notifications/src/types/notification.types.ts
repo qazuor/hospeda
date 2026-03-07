@@ -15,7 +15,10 @@ export enum NotificationType {
     TRIAL_EXPIRED = 'trial_expired',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
-    FEEDBACK_REPORT = 'feedback_report'
+    FEEDBACK_REPORT = 'feedback_report',
+    SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
+    SUBSCRIPTION_PAUSED = 'subscription_paused',
+    SUBSCRIPTION_REACTIVATED = 'subscription_reactivated'
 }
 
 /**
@@ -147,6 +150,17 @@ export interface FeedbackReportPayload extends BaseNotificationPayload {
     };
 }
 
+/** Payload for subscription lifecycle notifications (cancellation, pause, reactivation) */
+export interface SubscriptionLifecyclePayload extends BaseNotificationPayload {
+    readonly type:
+        | NotificationType.SUBSCRIPTION_CANCELLED
+        | NotificationType.SUBSCRIPTION_PAUSED
+        | NotificationType.SUBSCRIPTION_REACTIVATED;
+    readonly planName: string;
+    readonly currentPeriodEnd?: string;
+    readonly nextBillingDate?: string;
+}
+
 /** Admin notifications */
 export interface AdminNotificationPayload extends BaseNotificationPayload {
     type: NotificationType.ADMIN_PAYMENT_FAILURE | NotificationType.ADMIN_SYSTEM_EVENT;
@@ -181,6 +195,7 @@ export type NotificationPayload =
     | PurchaseConfirmationPayload
     | PaymentNotificationPayload
     | SubscriptionEventPayload
+    | SubscriptionLifecyclePayload
     | AddonEventPayload
     | TrialEventPayload
     | AdminNotificationPayload
