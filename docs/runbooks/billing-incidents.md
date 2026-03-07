@@ -361,7 +361,7 @@ clearEntitlementCache('customer_xxx');
 
 ```bash
 # Manually trigger trial expiry check
-curl -X POST https://api.hospeda.com.ar/api/v1/billing/trial/check-expiry \
+curl -X POST https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 
@@ -573,7 +573,7 @@ WHERE id = 'sub_xxx'
 2. **Manually trigger trial expiry check**
 
 ```bash
-curl -X POST https://api.hospeda.com.ar/api/v1/billing/trial/check-expiry \
+curl -X POST https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry \
   -H "Authorization: Bearer $CRON_SECRET"
 ```
 

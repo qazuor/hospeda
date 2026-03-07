@@ -34,7 +34,7 @@ src/
 - `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
 - `billing_customers` uses `segment` column, not `category`
 - `PaginationQuerySchema` uses `page`+`pageSize` (NOT `limit`) for admin routes
-- Billing endpoints from qzpay-hono (`/api/v1/billing/plans`, `/addons`) DO accept `limit` natively
+- Billing endpoints from qzpay-hono (`/api/v1/protected/billing/plans`, `/addons`) DO accept `limit` natively
 
 ## Related Documentation
 

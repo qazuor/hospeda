@@ -602,7 +602,7 @@ Create at: <https://qazuor.sentry.io/dashboards/>
 6. **P99 Response Time** (Line Chart)
 
    ```
-   p99(transaction.duration) where transaction:"/api/v1/billing/*"
+   p99(transaction.duration) where transaction:"/api/v1/protected/billing/*"
    ```
 
 ### Additional Dashboard Widgets

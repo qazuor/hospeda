@@ -38,7 +38,7 @@ Authorization: Bearer <auth-jwt-token>
 **Exceptions:**
 
 - `POST /api/v1/webhooks/mercadopago` - Public (signature verification)
-- `POST /api/v1/billing/trial/start` - Internal use (no auth)
+- `POST /api/v1/protected/billing/trial/start` - Internal use (no auth)
 
 **Admin-only endpoints** require the user to have `admin` or `super_admin` role.
 
@@ -47,7 +47,7 @@ Authorization: Bearer <auth-jwt-token>
 All billing endpoints are mounted under:
 
 ```text
-/api/v1/billing
+/api/v1/protected/billing
 ```
 
 Webhook endpoints are under:
@@ -90,7 +90,7 @@ All endpoints follow the standard Hospeda API response format:
 
 Get a list of all available subscription plans.
 
-**Endpoint:** `GET /api/v1/billing/plans`
+**Endpoint:** `GET /api/v1/protected/billing/plans`
 
 **Auth:** Required
 
@@ -137,7 +137,7 @@ Get a list of all available subscription plans.
 
 Get details of a specific plan.
 
-**Endpoint:** `GET /api/v1/billing/plans/:id`
+**Endpoint:** `GET /api/v1/protected/billing/plans/:id`
 
 **Auth:** Required
 
@@ -159,7 +159,7 @@ Get details of a specific plan.
 
 Create a billing customer record for a user.
 
-**Endpoint:** `POST /api/v1/billing/customers`
+**Endpoint:** `POST /api/v1/protected/billing/customers`
 
 **Auth:** Required
 
@@ -204,7 +204,7 @@ Create a billing customer record for a user.
 
 Get billing customer details.
 
-**Endpoint:** `GET /api/v1/billing/customers/:id`
+**Endpoint:** `GET /api/v1/protected/billing/customers/:id`
 
 **Auth:** Required (user can only access their own customer record unless admin)
 
@@ -237,7 +237,7 @@ Get billing customer details.
 
 Create a new subscription for a customer.
 
-**Endpoint:** `POST /api/v1/billing/subscriptions`
+**Endpoint:** `POST /api/v1/protected/billing/subscriptions`
 
 **Auth:** Required
 
@@ -289,7 +289,7 @@ Create a new subscription for a customer.
 
 Get subscription details.
 
-**Endpoint:** `GET /api/v1/billing/subscriptions/:id`
+**Endpoint:** `GET /api/v1/protected/billing/subscriptions/:id`
 
 **Auth:** Required (user can only access their own subscription unless admin)
 
@@ -303,7 +303,7 @@ Get subscription details.
 
 Change subscription plan (upgrade/downgrade).
 
-**Endpoint:** `PATCH /api/v1/billing/subscriptions/:id`
+**Endpoint:** `PATCH /api/v1/protected/billing/subscriptions/:id`
 
 **Auth:** Required
 
@@ -333,7 +333,7 @@ Change subscription plan (upgrade/downgrade).
 
 Cancel an active subscription.
 
-**Endpoint:** `DELETE /api/v1/billing/subscriptions/:id`
+**Endpoint:** `DELETE /api/v1/protected/billing/subscriptions/:id`
 
 **Auth:** Required
 
@@ -375,7 +375,7 @@ Cancel an active subscription.
 
 Create a checkout session for subscription or add-on purchase.
 
-**Endpoint:** `POST /api/v1/billing/checkout`
+**Endpoint:** `POST /api/v1/protected/billing/checkout`
 
 **Auth:** Required
 
@@ -421,7 +421,7 @@ Create a checkout session for subscription or add-on purchase.
 
 Get the status of a checkout session.
 
-**Endpoint:** `GET /api/v1/billing/checkout/:id`
+**Endpoint:** `GET /api/v1/protected/billing/checkout/:id`
 
 **Auth:** Required
 
@@ -458,7 +458,7 @@ Get the status of a checkout session.
 
 Get a paginated list of payments for the authenticated user.
 
-**Endpoint:** `GET /api/v1/billing/payments`
+**Endpoint:** `GET /api/v1/protected/billing/payments`
 
 **Auth:** Required
 
@@ -507,7 +507,7 @@ Get a paginated list of payments for the authenticated user.
 
 Get details of a specific payment.
 
-**Endpoint:** `GET /api/v1/billing/payments/:id`
+**Endpoint:** `GET /api/v1/protected/billing/payments/:id`
 
 **Auth:** Required
 
@@ -523,7 +523,7 @@ Get details of a specific payment.
 
 Get a paginated list of invoices for the authenticated user.
 
-**Endpoint:** `GET /api/v1/billing/invoices`
+**Endpoint:** `GET /api/v1/protected/billing/invoices`
 
 **Auth:** Required
 
@@ -580,7 +580,7 @@ Get a paginated list of invoices for the authenticated user.
 
 Get details of a specific invoice.
 
-**Endpoint:** `GET /api/v1/billing/invoices/:id`
+**Endpoint:** `GET /api/v1/protected/billing/invoices/:id`
 
 **Auth:** Required
 
@@ -596,7 +596,7 @@ Get details of a specific invoice.
 
 Validate a promo code without applying it.
 
-**Endpoint:** `POST /api/v1/billing/promo-codes/validate`
+**Endpoint:** `POST /api/v1/protected/billing/promo-codes/validate`
 
 **Auth:** Required
 
@@ -664,7 +664,7 @@ Validate a promo code without applying it.
 
 Apply a promo code to a checkout session.
 
-**Endpoint:** `POST /api/v1/billing/promo-codes/apply`
+**Endpoint:** `POST /api/v1/protected/billing/promo-codes/apply`
 
 **Auth:** Required
 
@@ -705,7 +705,7 @@ Apply a promo code to a checkout session.
 
 Get a list of all promo codes (admin only).
 
-**Endpoint:** `GET /api/v1/billing/promo-codes`
+**Endpoint:** `GET /api/v1/protected/billing/promo-codes`
 
 **Auth:** Admin only
 
@@ -763,7 +763,7 @@ Get a list of all promo codes (admin only).
 
 Create a new promo code (admin only).
 
-**Endpoint:** `POST /api/v1/billing/promo-codes`
+**Endpoint:** `POST /api/v1/protected/billing/promo-codes`
 
 **Auth:** Admin only
 
@@ -815,7 +815,7 @@ Create a new promo code (admin only).
 
 Update an existing promo code (admin only).
 
-**Endpoint:** `PUT /api/v1/billing/promo-codes/:id`
+**Endpoint:** `PUT /api/v1/protected/billing/promo-codes/:id`
 
 **Auth:** Admin only
 
@@ -845,7 +845,7 @@ Update an existing promo code (admin only).
 
 Soft delete a promo code (admin only).
 
-**Endpoint:** `DELETE /api/v1/billing/promo-codes/:id`
+**Endpoint:** `DELETE /api/v1/protected/billing/promo-codes/:id`
 
 **Auth:** Admin only
 
@@ -873,7 +873,7 @@ Soft delete a promo code (admin only).
 
 Get a list of available add-ons for purchase.
 
-**Endpoint:** `GET /api/v1/billing/addons`
+**Endpoint:** `GET /api/v1/protected/billing/addons`
 
 **Auth:** Required
 
@@ -931,7 +931,7 @@ Get a list of available add-ons for purchase.
 
 Get details of a specific add-on.
 
-**Endpoint:** `GET /api/v1/billing/addons/:slug`
+**Endpoint:** `GET /api/v1/protected/billing/addons/:slug`
 
 **Auth:** Required
 
@@ -945,7 +945,7 @@ Get details of a specific add-on.
 
 Initiate add-on purchase and get checkout URL.
 
-**Endpoint:** `POST /api/v1/billing/addons/:slug/purchase`
+**Endpoint:** `POST /api/v1/protected/billing/addons/:slug/purchase`
 
 **Auth:** Required
 
@@ -989,7 +989,7 @@ Initiate add-on purchase and get checkout URL.
 
 Get a list of the authenticated user's active add-ons.
 
-**Endpoint:** `GET /api/v1/billing/addons/my`
+**Endpoint:** `GET /api/v1/protected/billing/addons/my`
 
 **Auth:** Required
 
@@ -1025,7 +1025,7 @@ Get a list of the authenticated user's active add-ons.
 
 Cancel a recurring add-on subscription.
 
-**Endpoint:** `POST /api/v1/billing/addons/:id/cancel`
+**Endpoint:** `POST /api/v1/protected/billing/addons/:id/cancel`
 
 **Auth:** Required
 
@@ -1062,7 +1062,7 @@ Cancel a recurring add-on subscription.
 
 Get the trial status for the authenticated user.
 
-**Endpoint:** `GET /api/v1/billing/trial/status`
+**Endpoint:** `GET /api/v1/protected/billing/trial/status`
 
 **Auth:** Required
 
@@ -1099,7 +1099,7 @@ Get the trial status for the authenticated user.
 
 Start a 14-day trial for a new user. Typically called by auth sync service.
 
-**Endpoint:** `POST /api/v1/billing/trial/start`
+**Endpoint:** `POST /api/v1/protected/billing/trial/start`
 
 **Auth:** Public (internal use)
 
@@ -1137,7 +1137,7 @@ Start a 14-day trial for a new user. Typically called by auth sync service.
 
 Batch job to find and block all expired trials.
 
-**Endpoint:** `POST /api/v1/billing/trial/check-expiry`
+**Endpoint:** `POST /api/v1/protected/billing/trial/check-expiry`
 
 **Auth:** Required (TODO: admin-only)
 
@@ -1167,7 +1167,7 @@ Batch job to find and block all expired trials.
 
 Get the authenticated user's current entitlements (feature flags).
 
-**Endpoint:** `GET /api/v1/billing/entitlements`
+**Endpoint:** `GET /api/v1/protected/billing/entitlements`
 
 **Auth:** Required
 
@@ -1202,7 +1202,7 @@ Get the authenticated user's current entitlements (feature flags).
 
 Get the authenticated user's current numeric limits.
 
-**Endpoint:** `GET /api/v1/billing/limits`
+**Endpoint:** `GET /api/v1/protected/billing/limits`
 
 **Auth:** Required
 
@@ -1407,7 +1407,7 @@ Billing service not configured or temporarily unavailable.
 
 Get the authenticated user's current resource usage across all plan limits.
 
-**Endpoint:** `GET /api/v1/billing/usage`
+**Endpoint:** `GET /api/v1/protected/billing/usage`
 
 **Auth:** Required
 
@@ -1478,7 +1478,7 @@ Get the authenticated user's current resource usage across all plan limits.
 
 Get detailed usage information for a specific resource limit.
 
-**Endpoint:** `GET /api/v1/billing/usage/:limitKey`
+**Endpoint:** `GET /api/v1/protected/billing/usage/:limitKey`
 
 **Auth:** Required
 

@@ -15,13 +15,13 @@ This directory contains k6 load testing scripts to validate performance requirem
 
 ### Critical Endpoints Tested
 
-1. `GET /api/v1/billing/subscriptions` - List subscriptions
-2. `GET /api/v1/billing/subscriptions/:id` - Get subscription details
-3. `POST /api/v1/billing/checkout` - Create checkout session
-4. `GET /api/v1/billing/invoices` - List invoices
-5. `POST /api/v1/billing/promo-codes/apply` - Apply promo code
-6. `GET /api/v1/billing/metrics` - Get billing metrics
-7. `POST /api/v1/billing/trial/start` - Start trial
+1. `GET /api/v1/protected/billing/subscriptions` - List subscriptions
+2. `GET /api/v1/protected/billing/subscriptions/:id` - Get subscription details
+3. `POST /api/v1/protected/billing/checkout` - Create checkout session
+4. `GET /api/v1/protected/billing/invoices` - List invoices
+5. `POST /api/v1/protected/billing/promo-codes/apply` - Apply promo code
+6. `GET /api/v1/protected/billing/metrics` - Get billing metrics
+7. `POST /api/v1/protected/billing/trial/start` - Start trial
 
 ## Installation
 

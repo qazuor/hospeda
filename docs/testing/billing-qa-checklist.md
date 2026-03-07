@@ -77,7 +77,7 @@ Before starting manual QA, ensure:
 3. **Day 0-2 (within grace)**: Make API calls to billing endpoints as User A:
 
    ```bash
-   curl https://<staging-api>/api/v1/billing/customers/<id> \
+   curl https://<staging-api>/api/v1/protected/billing/customers/<id> \
      -H "Authorization: Bearer <user-a-token>"
    ```
 
@@ -201,7 +201,7 @@ Before starting manual QA, ensure:
 
    ```bash
    # Try to read User A's customer record as User B
-   curl https://<staging-api>/api/v1/billing/customers/<user-a-customer-id> \
+   curl https://<staging-api>/api/v1/protected/billing/customers/<user-a-customer-id> \
      -H "Authorization: Bearer <user-b-token>"
    ```
 
@@ -209,7 +209,7 @@ Before starting manual QA, ensure:
 4. Try subscription endpoint:
 
    ```bash
-   curl https://<staging-api>/api/v1/billing/subscriptions/<user-a-subscription-id> \
+   curl https://<staging-api>/api/v1/protected/billing/subscriptions/<user-a-subscription-id> \
      -H "Authorization: Bearer <user-b-token>"
    ```
 
@@ -217,7 +217,7 @@ Before starting manual QA, ensure:
 6. Try invoice endpoint:
 
    ```bash
-   curl https://<staging-api>/api/v1/billing/invoices?customerId=<user-a-customer-id> \
+   curl https://<staging-api>/api/v1/protected/billing/invoices?customerId=<user-a-customer-id> \
      -H "Authorization: Bearer <user-b-token>"
    ```
 
@@ -305,7 +305,7 @@ Before starting manual QA, ensure:
 2. Attempt to reactivate:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/billing/trial/reactivate \
+   curl -X POST https://<staging-api>/api/v1/protected/billing/trial/reactivate \
      -H "Authorization: Bearer <user-token>" \
      -H "Content-Type: application/json" \
      -d '{"planId": "<owner-pro-plan-id>"}'
@@ -332,7 +332,7 @@ Before starting manual QA, ensure:
 2. Change to quarterly plan:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/billing/plan-change \
+   curl -X POST https://<staging-api>/api/v1/protected/billing/plan-change \
      -H "Authorization: Bearer <user-token>" \
      -H "Content-Type: application/json" \
      -d '{"planId": "<quarterly-plan-id>"}'
@@ -342,7 +342,7 @@ Before starting manual QA, ensure:
 4. Test semi-annual:
 
    ```bash
-   curl -X POST https://<staging-api>/api/v1/billing/plan-change \
+   curl -X POST https://<staging-api>/api/v1/protected/billing/plan-change \
      -H "Authorization: Bearer <user-token>" \
      -H "Content-Type: application/json" \
      -d '{"planId": "<semi-annual-plan-id>"}'

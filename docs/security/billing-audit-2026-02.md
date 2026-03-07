@@ -56,8 +56,8 @@ The billing system demonstrates **solid security fundamentals** with proper auth
 
 **Location:**
 
-- `/api/v1/billing/trial/start` (POST)
-- `/api/v1/billing/promo-codes/apply` (POST)
+- `/api/v1/protected/billing/trial/start` (POST)
+- `/api/v1/protected/billing/promo-codes/apply` (POST)
 - `/apps/api/src/routes/billing/*.ts`
 
 **Description:**
@@ -114,8 +114,8 @@ export const startTrialRoute = createSimpleRoute({
 
 **Location:**
 
-- `/api/v1/billing/addons/purchase` (POST)
-- `/api/v1/billing/trial/start` (POST)
+- `/api/v1/protected/billing/addons/purchase` (POST)
+- `/api/v1/protected/billing/trial/start` (POST)
 - `/api/v1/webhooks/mercadopago` (POST)
 
 **Description:**
@@ -1019,7 +1019,7 @@ describe('SQL Injection Prevention', () => {
   it('should not be vulnerable to SQL injection in promo code search', async () => {
     const maliciousInput = "'; DROP TABLE billing_promo_codes; --";
 
-    const response = await app.request('/api/v1/billing/promo-codes', {
+    const response = await app.request('/api/v1/protected/billing/promo-codes', {
       method: 'GET',
       headers: { Authorization: `Bearer ${adminToken}` },
       query: { codeSearch: maliciousInput }
@@ -1078,7 +1078,7 @@ describe('XSS Prevention', () => {
   it('should sanitize HTML in promo code descriptions', async () => {
     const xssPayload = '<script>alert("XSS")</script>';
 
-    const response = await app.request('/api/v1/billing/promo-codes', {
+    const response = await app.request('/api/v1/protected/billing/promo-codes', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${adminToken}`,

@@ -179,7 +179,7 @@ Test email delivery:
 
 ```bash
 # Send test notification
-curl -X POST https://api.hospeda.com.ar/api/v1/billing/test-notification \
+curl -X POST https://api.hospeda.com.ar/api/v1/protected/billing/test-notification \
   -H "Authorization: Bearer $ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"type": "PAYMENT_SUCCESS", "email": "test@example.com"}'
@@ -197,7 +197,7 @@ Configure monitoring for billing operations:
 
 #### Metrics
 
-- [ ] `/api/v1/billing/metrics` endpoint is accessible
+- [ ] `/api/v1/protected/billing/metrics` endpoint is accessible
 - [ ] Metrics include:
   - Active subscriptions by plan
   - Trial conversion rate
@@ -295,13 +295,13 @@ Configure trial expiry check (runs daily):
 # Vercel Cron (vercel.json)
 {
   "crons": [{
-    "path": "/api/v1/billing/trial/check-expiry",
+    "path": "/api/v1/protected/billing/trial/check-expiry",
     "schedule": "0 0 * * *"
   }]
 }
 
 # Or VPS cron (crontab)
-0 0 * * * curl -H "Authorization: Bearer $CRON_SECRET" https://api.hospeda.com.ar/api/v1/billing/trial/check-expiry
+0 0 * * * curl -H "Authorization: Bearer $CRON_SECRET" https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry
 ```
 
 ### 6. Enable Monitoring
@@ -326,7 +326,7 @@ curl https://api.hospeda.com.ar/health
 2. **Billing Health Check**
 
 ```bash
-curl https://api.hospeda.com.ar/api/v1/billing/health
+curl https://api.hospeda.com.ar/api/v1/protected/billing/health
 # Expected: {"billing":true,"paymentProvider":"mercadopago"}
 ```
 
@@ -348,7 +348,7 @@ curl https://api.hospeda.com.ar/api/v1/billing/health
 
 ```bash
 curl -H "Authorization: Bearer $ADMIN_TOKEN" \
-  https://api.hospeda.com.ar/api/v1/billing/metrics
+  https://api.hospeda.com.ar/api/v1/protected/billing/metrics
 # Verify metrics returned
 ```
 

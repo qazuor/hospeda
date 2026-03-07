@@ -53,9 +53,9 @@ stateDiagram-v2
    - Allows access to billing and export routes
 
 3. **Trial Routes** (`routes/billing/trial.ts`)
-   - GET /api/v1/billing/trial/status - Get trial status
-   - POST /api/v1/billing/trial/start - Start trial (internal)
-   - POST /api/v1/billing/trial/check-expiry - Batch expiry check (admin)
+   - GET /api/v1/protected/billing/trial/status - Get trial status
+   - POST /api/v1/protected/billing/trial/start - Start trial (internal)
+   - POST /api/v1/protected/billing/trial/check-expiry - Batch expiry check (admin)
 
 4. **Auth Sync Integration** (`routes/auth/sync.ts`)
    - Auto-starts trial when new owner/complex user registers
@@ -85,7 +85,7 @@ sequenceDiagram
 ### Get Trial Status
 
 ```http
-GET /api/v1/billing/trial/status
+GET /api/v1/protected/billing/trial/status
 Authorization: Bearer <token>
 ```
 
@@ -105,7 +105,7 @@ Authorization: Bearer <token>
 ### Start Trial (Internal)
 
 ```http
-POST /api/v1/billing/trial/start
+POST /api/v1/protected/billing/trial/start
 Content-Type: application/json
 
 {
@@ -127,7 +127,7 @@ Content-Type: application/json
 ### Check Expired Trials (Admin)
 
 ```http
-POST /api/v1/billing/trial/check-expiry
+POST /api/v1/protected/billing/trial/check-expiry
 Authorization: Bearer <admin-token>
 ```
 
@@ -147,7 +147,7 @@ Authorization: Bearer <admin-token>
 
 All routes **except** the following are blocked:
 
-- `/api/v1/billing/*` - Billing management
+- `/api/v1/protected/billing/*` - Billing management
 - `/api/v1/export/*` - Data export
 - `/health`, `/docs`, `/reference`, `/ui` - Documentation and health
 
@@ -227,13 +227,13 @@ The trial system includes a batch operation to check and block expired trials. T
 
 ```bash
 # Daily at 2 AM
-0 2 * * * curl -X POST https://api.hospeda.com/api/v1/billing/trial/check-expiry -H "Authorization: Bearer <admin-token>"
+0 2 * * * curl -X POST https://api.hospeda.com/api/v1/protected/billing/trial/check-expiry -H "Authorization: Bearer <admin-token>"
 ```
 
 ### Manual Trigger
 
 ```bash
-curl -X POST http://localhost:3001/api/v1/billing/trial/check-expiry \
+curl -X POST http://localhost:3001/api/v1/protected/billing/trial/check-expiry \
   -H "Authorization: Bearer <admin-token>"
 ```
 
@@ -293,7 +293,7 @@ pnpm test test/services/trial.service.test.ts
 
 3. **Billing route access**
    - Expire trial
-   - Access /api/v1/billing/trial/status
+   - Access /api/v1/protected/billing/trial/status
    - Verify access allowed
 
 4. **Batch expiry check**
