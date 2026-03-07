@@ -88,7 +88,7 @@ const ALLOWED_ATTRIBUTES: Record<string, string[]> = {
     polyline: ['points', 'fill', 'stroke'],
     polygon: ['points', 'fill', 'stroke'],
     g: ['transform', 'fill', 'stroke'],
-    use: ['href', 'x', 'y', 'width', 'height']
+    use: ['x', 'y', 'width', 'height']
 };
 
 /** Protocols allowed in URL-bearing attributes */
