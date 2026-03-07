@@ -1,9 +1,10 @@
+import { protectedAuthMiddleware } from '../../middlewares/authorization';
 import { LinearLabelsResponseSchema } from '../../schemas/bug-report.schema';
 import { getLinearLabels } from '../../services/linear.service';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 /**
- * GET /api/v1/reports/labels
+ * GET /api/v1/protected/reports/labels
  * Returns available Linear labels for bug report categorization.
  * Requires authentication. Results are cached in the Linear service for 5 minutes.
  */
@@ -20,6 +21,7 @@ export const getLabelsRoute = createSimpleRoute({
     },
     options: {
         authorizationLevel: 'protected',
-        cacheTTL: 300
+        cacheTTL: 300,
+        middlewares: [protectedAuthMiddleware()]
     }
 });

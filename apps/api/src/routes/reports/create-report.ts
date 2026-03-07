@@ -21,7 +21,7 @@ import { buildBugReportMarkdown } from '../../utils/markdown-builder';
 const logger = createLogger('reports:create');
 
 /**
- * POST /api/v1/reports/create
+ * POST /api/v1/protected/reports/create
  * Creates a bug report in Linear from multipart form data.
  * Expects: multipart/form-data with "data" (JSON) and optional "files" fields.
  * Requires authentication (protected route).
