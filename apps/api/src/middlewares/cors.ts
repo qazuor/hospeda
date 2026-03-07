@@ -6,6 +6,27 @@ import { cors } from 'hono/cors';
 import { getCorsConfig } from '../utils/env';
 
 /**
+ * Checks if an origin matches the allowed origins list,
+ * supporting wildcard subdomain patterns (e.g., `*.hospeda.com.ar`).
+ * Uses the same logic as originVerificationMiddleware in security.ts.
+ */
+function matchOrigin({
+    requestOrigin,
+    allowedOrigins
+}: { requestOrigin: string; allowedOrigins: readonly string[] }): boolean {
+    return allowedOrigins.some((allowed) => {
+        if (allowed === '*' || allowed === requestOrigin) return true;
+        // Support wildcard subdomains (e.g., *.example.com)
+        // Must check for leading dot to prevent sibling domain matching
+        if (allowed.startsWith('*.')) {
+            const baseDomain = allowed.slice(1); // Keep the leading dot: ".example.com"
+            return requestOrigin.endsWith(baseDomain);
+        }
+        return false;
+    });
+}
+
+/**
  * Creates a CORS middleware with environment-based configuration
  * @param customConfig - Optional custom CORS configuration
  * @returns Configured CORS middleware
@@ -18,12 +39,24 @@ export const createCorsMiddleware = (
 
     // Handle credentials based on origin (wildcard origin requires credentials: false)
     let credentials = corsConfig.allowCredentials;
-    if (corsConfig.origins.includes('*')) {
+    const hasWildcard = corsConfig.origins.includes('*');
+    if (hasWildcard) {
         credentials = false;
     }
 
+    // If any origin uses wildcard subdomain patterns (*.example.com),
+    // use a function for origin matching instead of a plain string array
+    const hasWildcardSubdomains = corsConfig.origins.some((o: string) => o.startsWith('*.'));
+    const origin =
+        hasWildcardSubdomains && !hasWildcard
+            ? (requestOrigin: string) =>
+                  matchOrigin({ requestOrigin, allowedOrigins: corsConfig.origins })
+                      ? requestOrigin
+                      : ''
+            : corsConfig.origins;
+
     const config = {
-        origin: corsConfig.origins,
+        origin,
         allowMethods: corsConfig.allowMethods,
         allowHeaders: corsConfig.allowHeaders,
         exposeHeaders: corsConfig.exposeHeaders,
@@ -31,8 +64,6 @@ export const createCorsMiddleware = (
         maxAge: corsConfig.maxAge,
         ...customConfig
     };
-
-    // CORS configuration is ready
 
     return cors(config);
 };
