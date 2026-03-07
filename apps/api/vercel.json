@@ -44,11 +44,11 @@
         },
         {
             "path": "/api/v1/cron/webhook-retry",
-            "schedule": "0 */1 * * *"
+            "schedule": "0 3 * * *"
         },
         {
             "path": "/api/v1/cron/exchange-rate-fetch",
-            "schedule": "*/15 * * * *"
+            "schedule": "0 4 * * *"
         },
         {
             "path": "/api/v1/cron/dunning",
