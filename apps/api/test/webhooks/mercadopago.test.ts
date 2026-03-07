@@ -695,7 +695,7 @@ describe('MercadoPago Webhook Handler', () => {
                 }
             });
 
-            process.env.ADMIN_NOTIFICATION_EMAILS = 'admin@example.com';
+            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@example.com';
 
             await handlePaymentUpdated(context, event);
 

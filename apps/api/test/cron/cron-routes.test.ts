@@ -232,7 +232,7 @@ describe('Cron Routes Integration Tests', () => {
     beforeAll(() => {
         // Set environment variables for tests
         process.env.NODE_ENV = 'test';
-        process.env.CRON_SECRET = TEST_CRON_SECRET;
+        process.env.HOSPEDA_CRON_SECRET = TEST_CRON_SECRET;
 
         // Validate environment before running tests
         validateApiEnv();

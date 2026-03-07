@@ -22,7 +22,7 @@ beforeAll(async () => {
     process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
     process.env.API_VALIDATION_AUTH_ENABLED = 'false';
     // Enable mock authentication for tests (required for isMockAuthAllowed())
-    process.env.DISABLE_AUTH = 'true';
+    process.env.HOSPEDA_DISABLE_AUTH = 'true';
     // Mock exchange rate API key for tests
     process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
 

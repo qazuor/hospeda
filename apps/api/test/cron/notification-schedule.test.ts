@@ -90,7 +90,7 @@ describe('Notification Schedule Cron Job', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resetSentNotificationsFallback();
-        process.env.WEB_URL = 'https://hospeda.com';
+        process.env.HOSPEDA_SITE_URL = 'https://hospeda.com';
     });
 
     describe('Job Definition', () => {

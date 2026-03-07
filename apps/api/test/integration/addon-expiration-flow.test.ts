@@ -90,7 +90,7 @@ describe('Add-on Purchase and Expiration Flow Integration', () => {
 
     beforeAll(() => {
         // Enable mock actor system for tests
-        process.env.ALLOW_MOCK_ACTOR = 'true';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 
         // Validate environment before running tests
         validateApiEnv();

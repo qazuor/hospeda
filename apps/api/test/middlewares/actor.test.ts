@@ -279,8 +279,8 @@ describe('Actor Middleware', () => {
 
     describe('Mock Actor Headers (Test Mode)', () => {
         it('should process mock actor headers when ALLOW_MOCK_ACTOR is true', async () => {
-            const originalAllowMock = process.env.ALLOW_MOCK_ACTOR;
-            process.env.ALLOW_MOCK_ACTOR = 'true';
+            const originalAllowMock = process.env.HOSPEDA_ALLOW_MOCK_ACTOR;
+            process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
             process.env.NODE_ENV = 'test';
 
             try {
@@ -306,13 +306,13 @@ describe('Actor Middleware', () => {
                 expect(data.actor.role).toBe(RoleEnum.ADMIN);
                 expect(data.actor.permissions).toEqual([PermissionEnum.ACCESS_API_PUBLIC]);
             } finally {
-                process.env.ALLOW_MOCK_ACTOR = originalAllowMock;
+                process.env.HOSPEDA_ALLOW_MOCK_ACTOR = originalAllowMock;
             }
         });
 
         it('should reject invalid mock actor role', async () => {
-            const originalAllowMock = process.env.ALLOW_MOCK_ACTOR;
-            process.env.ALLOW_MOCK_ACTOR = 'true';
+            const originalAllowMock = process.env.HOSPEDA_ALLOW_MOCK_ACTOR;
+            process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
             process.env.NODE_ENV = 'test';
 
             try {
@@ -335,7 +335,7 @@ describe('Actor Middleware', () => {
 
                 expect(res.status).toBe(400);
             } finally {
-                process.env.ALLOW_MOCK_ACTOR = originalAllowMock;
+                process.env.HOSPEDA_ALLOW_MOCK_ACTOR = originalAllowMock;
             }
         });
     });

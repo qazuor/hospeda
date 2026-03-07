@@ -529,10 +529,10 @@ describe('POST /api/v1/public/feedback', () => {
     it('multiple sequential requests within limit all succeed (TESTING_RATE_LIMIT with generous limit)', async () => {
         mockCreateIssue.mockResolvedValue(LINEAR_ISSUE_RESULT);
 
-        const originalTesting = process.env.TESTING_RATE_LIMIT;
+        const originalTesting = process.env.HOSPEDA_TESTING_RATE_LIMIT;
         const originalMax = process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS;
 
-        process.env.TESTING_RATE_LIMIT = 'true';
+        process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
         // Set a limit high enough that our 3 requests do not trigger it
         process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS = '10';
 
@@ -559,9 +559,9 @@ describe('POST /api/v1/public/feedback', () => {
             }
         } finally {
             if (originalTesting === undefined) {
-                process.env.TESTING_RATE_LIMIT = undefined;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = undefined;
             } else {
-                process.env.TESTING_RATE_LIMIT = originalTesting;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = originalTesting;
             }
             if (originalMax === undefined) {
                 process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS = undefined;
@@ -575,8 +575,8 @@ describe('POST /api/v1/public/feedback', () => {
     it('sets X-RateLimit headers on successful responses when TESTING_RATE_LIMIT is set', async () => {
         mockCreateIssue.mockResolvedValue(LINEAR_ISSUE_RESULT);
 
-        const originalEnv = process.env.TESTING_RATE_LIMIT;
-        process.env.TESTING_RATE_LIMIT = 'true';
+        const originalEnv = process.env.HOSPEDA_TESTING_RATE_LIMIT;
+        process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
         try {
             await clearRateLimitStore();
@@ -594,9 +594,9 @@ describe('POST /api/v1/public/feedback', () => {
             expect(res.headers.get('x-ratelimit-remaining')).toBeTruthy();
         } finally {
             if (originalEnv === undefined) {
-                process.env.TESTING_RATE_LIMIT = undefined;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = undefined;
             } else {
-                process.env.TESTING_RATE_LIMIT = originalEnv;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = originalEnv;
             }
             await clearRateLimitStore();
         }
@@ -606,10 +606,10 @@ describe('POST /api/v1/public/feedback', () => {
         mockCreateIssue.mockResolvedValue(LINEAR_ISSUE_RESULT);
 
         // Override env vars to set a very low limit for this test only
-        const originalTesting = process.env.TESTING_RATE_LIMIT;
+        const originalTesting = process.env.HOSPEDA_TESTING_RATE_LIMIT;
         const originalMax = process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS;
 
-        process.env.TESTING_RATE_LIMIT = 'true';
+        process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
         process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS = '3';
 
         try {
@@ -630,9 +630,9 @@ describe('POST /api/v1/public/feedback', () => {
             expect(lastStatus).toBe(429);
         } finally {
             if (originalTesting === undefined) {
-                process.env.TESTING_RATE_LIMIT = undefined;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = undefined;
             } else {
-                process.env.TESTING_RATE_LIMIT = originalTesting;
+                process.env.HOSPEDA_TESTING_RATE_LIMIT = originalTesting;
             }
             if (originalMax === undefined) {
                 process.env.API_RATE_LIMIT_PUBLIC_MAX_REQUESTS = undefined;

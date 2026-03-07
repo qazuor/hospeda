@@ -174,7 +174,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
 
     beforeAll(() => {
         validateApiEnv();
-        process.env.ALLOW_MOCK_ACTOR = 'true';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     });
 
     beforeEach(() => {
@@ -857,7 +857,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             const headers = createMockHeaders(sponsorActor);
 
             try {
-                const response = await app.request('/api/v1/billing/checkout/sessions', {
+                const response = await app.request('/api/v1/protected/billing/checkout/sessions', {
                     method: 'POST',
                     headers: { ...headers, 'content-type': 'application/json' },
                     body: JSON.stringify({
@@ -884,7 +884,7 @@ describe('Sponsorship Purchase and Analytics E2E Flow', () => {
             const headers = createMockHeaders(sponsorActor);
 
             try {
-                const response = await app.request('/api/v1/billing/plans', {
+                const response = await app.request('/api/v1/protected/billing/plans', {
                     method: 'GET',
                     headers
                 });

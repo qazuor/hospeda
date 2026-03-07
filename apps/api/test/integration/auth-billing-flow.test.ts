@@ -85,7 +85,7 @@ vi.mock('@repo/service-core');
 describe('Auth + Billing Integration Flow', () => {
     beforeAll(() => {
         validateApiEnv();
-        process.env.ALLOW_MOCK_ACTOR = 'true';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     });
 
     beforeEach(() => {
@@ -233,12 +233,12 @@ describe('Auth + Billing Integration Flow', () => {
             expect(process.env.HOSPEDA_BETTER_AUTH_SECRET!.length).toBeGreaterThanOrEqual(10);
         });
 
-        it('should have DISABLE_AUTH set for test mode', () => {
-            expect(process.env.DISABLE_AUTH).toBe('true');
+        it('should have HOSPEDA_DISABLE_AUTH set for test mode', () => {
+            expect(process.env.HOSPEDA_DISABLE_AUTH).toBe('true');
         });
 
-        it('should have ALLOW_MOCK_ACTOR set for test mode', () => {
-            expect(process.env.ALLOW_MOCK_ACTOR).toBe('true');
+        it('should have HOSPEDA_ALLOW_MOCK_ACTOR set for test mode', () => {
+            expect(process.env.HOSPEDA_ALLOW_MOCK_ACTOR).toBe('true');
         });
     });
 

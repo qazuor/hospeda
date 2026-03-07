@@ -48,45 +48,8 @@ for (const envFile of envFiles) {
 }
 
 /**
- * Maps legacy env var names to their new HOSPEDA_* names.
- * Only applies when the new name is NOT already set.
- * These mappings will be removed after migration is complete (Phase 7).
- */
-const LEGACY_ENV_MAPPINGS: Record<string, string> = {
-    DISABLE_AUTH: 'HOSPEDA_DISABLE_AUTH',
-    ALLOW_MOCK_ACTOR: 'HOSPEDA_ALLOW_MOCK_ACTOR',
-    CRON_SECRET: 'HOSPEDA_CRON_SECRET',
-    API_DEBUG_ERRORS: 'HOSPEDA_API_DEBUG_ERRORS',
-    TESTING_RATE_LIMIT: 'HOSPEDA_TESTING_RATE_LIMIT',
-    DEBUG_TESTS: 'HOSPEDA_DEBUG_TESTS',
-    COMMIT_SHA: 'HOSPEDA_COMMIT_SHA',
-    DB_POOL_MAX_CONNECTIONS: 'HOSPEDA_DB_POOL_MAX_CONNECTIONS',
-    DB_POOL_IDLE_TIMEOUT_MS: 'HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS',
-    DB_POOL_CONNECTION_TIMEOUT_MS: 'HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS',
-    MERCADO_PAGO_ACCESS_TOKEN: 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
-    RESEND_API_KEY: 'HOSPEDA_RESEND_API_KEY',
-    RESEND_FROM_EMAIL: 'HOSPEDA_RESEND_FROM_EMAIL',
-    RESEND_FROM_NAME: 'HOSPEDA_RESEND_FROM_NAME',
-    CRON_ADAPTER: 'HOSPEDA_CRON_ADAPTER',
-    SENTRY_DSN: 'HOSPEDA_SENTRY_DSN',
-    SENTRY_RELEASE: 'HOSPEDA_SENTRY_RELEASE',
-    SENTRY_PROJECT: 'HOSPEDA_SENTRY_PROJECT',
-    ADMIN_NOTIFICATION_EMAILS: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
-    WEB_URL: 'HOSPEDA_SITE_URL',
-    TESTING_ORIGIN_VERIFICATION: 'HOSPEDA_TESTING_ORIGIN_VERIFICATION'
-};
-
-/** Apply legacy env var mappings to process.env (new name takes precedence) */
-for (const [oldName, newName] of Object.entries(LEGACY_ENV_MAPPINGS)) {
-    if (!process.env[newName] && process.env[oldName]) {
-        process.env[newName] = process.env[oldName];
-    }
-}
-
-/**
  * API-specific environment schema.
  * All variables use the HOSPEDA_* prefix for consistency.
- * Legacy names are mapped via LEGACY_ENV_MAPPINGS above.
  */
 const ApiEnvSchema = z
     .object({
@@ -265,7 +228,7 @@ const ApiEnvSchema = z
         API_METRICS_SLOW_REQUEST_THRESHOLD_MS: z.coerce.number().default(1000),
         API_METRICS_SLOW_AUTH_THRESHOLD_MS: z.coerce.number().default(2000),
 
-        // Database pool (HOSPEDA_* names; legacy DB_POOL_* mapped above)
+        // Database pool
         HOSPEDA_DB_POOL_MAX_CONNECTIONS: z.coerce.number().default(10),
         HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
         HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),

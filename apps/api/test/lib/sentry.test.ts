@@ -7,6 +7,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as envModule from '../../src/utils/env';
 
 // Hoist mock functions so vi.mock factory can reference them
 const {
@@ -54,9 +55,12 @@ vi.mock('@sentry/profiling-node', () => ({
 import * as SentryModule from '../../src/lib/sentry';
 
 describe('Sentry Configuration', () => {
+    let originalSentryDsn: string | undefined;
+
     beforeEach(() => {
-        // Clear environment variables
-        Reflect.deleteProperty(process.env, 'SENTRY_DSN');
+        // Save and clear Sentry DSN from the validated env object
+        originalSentryDsn = envModule.env.HOSPEDA_SENTRY_DSN;
+        (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN = undefined;
         // Reset all mocks
         vi.clearAllMocks();
         mockIsEnabled.mockReturnValue(false);
@@ -68,6 +72,9 @@ describe('Sentry Configuration', () => {
     });
 
     afterEach(() => {
+        // Restore original Sentry DSN in validated env object
+        (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+            originalSentryDsn;
         vi.restoreAllMocks();
     });
 
@@ -80,7 +87,8 @@ describe('Sentry Configuration', () => {
         });
 
         it('should initialize with DSN from environment', () => {
-            process.env.SENTRY_DSN = 'https://test@sentry.io/123';
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
 
             const result = SentryModule.initializeSentry();
 
@@ -107,7 +115,8 @@ describe('Sentry Configuration', () => {
 
         it('should respect environment configuration', () => {
             process.env.NODE_ENV = 'production';
-            process.env.SENTRY_DSN = 'https://test@sentry.io/123';
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
 
             const result = SentryModule.initializeSentry();
 
@@ -115,7 +124,8 @@ describe('Sentry Configuration', () => {
         });
 
         it('should return false when init throws', () => {
-            process.env.SENTRY_DSN = 'https://test@sentry.io/123';
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
             mockInit.mockImplementationOnce(() => {
                 throw new Error('Init failed');
             });
@@ -161,7 +171,8 @@ describe('Sentry Configuration', () => {
         it('should handle error capturing with full context', () => {
             mockIsEnabled.mockReturnValue(true);
             mockCaptureException.mockReturnValue('event-id-123');
-            process.env.SENTRY_DSN = 'https://test@sentry.io/123';
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
             SentryModule.initializeSentry();
 
             const error = new Error('Test billing error');
@@ -328,7 +339,8 @@ describe('Billing Error Handler', () => {
     describe('Error Severity', () => {
         it('should accept different severity levels', () => {
             mockIsEnabled.mockReturnValue(true);
-            process.env.SENTRY_DSN = 'https://test@sentry.io/123';
+            (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
+                'https://test@sentry.io/123';
             SentryModule.initializeSentry();
 
             const error = new Error('Test error');

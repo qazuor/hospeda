@@ -198,8 +198,8 @@ describe('AddonService', () => {
         serviceWithoutBilling = new AddonService(null);
 
         // Set up default environment
-        process.env.MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
-        process.env.WEB_URL = 'http://localhost:4321';
+        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
+        process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
         process.env.API_URL = 'http://localhost:3001';
     });
 
@@ -442,8 +442,8 @@ describe('AddonService', () => {
 
         it('should return error when MERCADO_PAGO_ACCESS_TOKEN not set', async () => {
             // Arrange - set env var to empty string (falsy) to trigger check
-            const originalToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-            process.env.MERCADO_PAGO_ACCESS_TOKEN = '';
+            const originalToken = process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
+            process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = '';
             (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
@@ -458,7 +458,7 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not configured');
 
             // Restore
-            process.env.MERCADO_PAGO_ACCESS_TOKEN = originalToken || 'test-token';
+            process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = originalToken || 'test-token';
         });
 
         it('should create MercadoPago preference and return checkout URL', async () => {

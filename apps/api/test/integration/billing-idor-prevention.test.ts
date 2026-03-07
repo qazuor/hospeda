@@ -33,8 +33,8 @@ import type { Mock } from 'vitest';
 const originalEnv = { ...process.env };
 
 process.env.NODE_ENV = 'test';
-process.env.DISABLE_AUTH = 'true';
-process.env.ALLOW_MOCK_ACTOR = 'true';
+process.env.HOSPEDA_DISABLE_AUTH = 'true';
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.PORT = '3001';
 process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
@@ -556,10 +556,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/customers/${USER_A_CUSTOMER_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/customers/${USER_A_CUSTOMER_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(200);
@@ -574,10 +577,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/customers/${USER_B_CUSTOMER_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/customers/${USER_B_CUSTOMER_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -604,7 +610,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 { method: 'GET', headers }
             );
 
@@ -622,7 +628,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 { method: 'GET', headers }
             );
 
@@ -646,7 +652,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 {
                     method: 'PUT',
                     headers: { ...headers, 'content-type': 'application/json' },
@@ -673,10 +679,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/invoices/${USER_A_INVOICE_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/invoices/${USER_A_INVOICE_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(200);
@@ -691,10 +700,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/invoices/${USER_A_INVOICE_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/invoices/${USER_A_INVOICE_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -709,11 +721,14 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/invoices/${USER_A_INVOICE_ID}/pay`, {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({})
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/invoices/${USER_A_INVOICE_ID}/pay`,
+                {
+                    method: 'POST',
+                    headers: { ...headers, 'content-type': 'application/json' },
+                    body: JSON.stringify({})
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -734,10 +749,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAYMENT_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAYMENT_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(200);
@@ -752,10 +770,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAYMENT_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAYMENT_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -770,11 +791,14 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAYMENT_ID}/refund`, {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ reason: 'fraud' })
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAYMENT_ID}/refund`,
+                {
+                    method: 'POST',
+                    headers: { ...headers, 'content-type': 'application/json' },
+                    body: JSON.stringify({ reason: 'fraud' })
+                }
+            );
 
             // Assert .. admin guard and/or ownership middleware blocks this
             expect(res.status).toBe(403);
@@ -802,10 +826,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             // bypasses ownership for admin actors.
             // If the middleware does not bypass for admins, this tests that
             // the admin gets 403 (which means admin should use admin routes).
-            const res = await app.request(`/api/v1/billing/customers/${USER_A_CUSTOMER_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/customers/${USER_A_CUSTOMER_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert .. admin still goes through ownership middleware on QZPay routes,
             // so without matching billingCustomerId, the admin gets 403.
@@ -823,7 +850,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 {
                     method: 'PUT',
                     headers: { ...headers, 'content-type': 'application/json' },
@@ -844,11 +871,14 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAYMENT_ID}/refund`, {
-                method: 'POST',
-                headers: { ...headers, 'content-type': 'application/json' },
-                body: JSON.stringify({ reason: 'customer request' })
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAYMENT_ID}/refund`,
+                {
+                    method: 'POST',
+                    headers: { ...headers, 'content-type': 'application/json' },
+                    body: JSON.stringify({ reason: 'customer request' })
+                }
+            );
 
             // Assert
             expect(res.status).toBe(200);
@@ -868,10 +898,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             };
 
             // Act
-            const res = await app.request(`/api/v1/billing/customers/${USER_A_CUSTOMER_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/customers/${USER_A_CUSTOMER_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert .. billingAuthMiddleware inside QZPay routes requires user.id
             expect(res.status).toBe(401);
@@ -886,7 +919,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 { method: 'GET', headers }
             );
 
@@ -903,11 +936,14 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             };
 
             // Act
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAYMENT_ID}/refund`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({ reason: 'unauthorized attempt' })
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAYMENT_ID}/refund`,
+                {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ reason: 'unauthorized attempt' })
+                }
+            );
 
             // Assert .. either 401 (billingAuth) or 403 (admin guard blocks POST
             // on payments for non-admin/guest actors before auth runs).
@@ -930,10 +966,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act .. resource does not exist, so lookup returns null
-            const res = await app.request('/api/v1/billing/subscriptions/sub_nonexistent_999', {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                '/api/v1/protected/billing/subscriptions/sub_nonexistent_999',
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert .. fail closed: returns 403 when resource cannot be verified
             expect(res.status).toBe(403);
@@ -948,10 +987,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/invoices/inv_nonexistent_999', {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                '/api/v1/protected/billing/invoices/inv_nonexistent_999',
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -966,10 +1008,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/payments/pay_nonexistent_999', {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                '/api/v1/protected/billing/payments/pay_nonexistent_999',
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -994,7 +1039,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 { method: 'GET', headers }
             );
 
@@ -1012,10 +1057,13 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request(`/api/v1/billing/invoices/${USER_A_INVOICE_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/invoices/${USER_A_INVOICE_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Assert
             expect(res.status).toBe(403);
@@ -1036,7 +1084,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/subscriptions', {
+            const res = await app.request('/api/v1/protected/billing/subscriptions', {
                 method: 'POST',
                 headers: { ...headers, 'content-type': 'application/json' },
                 body: JSON.stringify({ planId: 'plan_basic', customerId: USER_A_CUSTOMER_ID })
@@ -1061,7 +1109,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act
             const res = await app.request(
-                `/api/v1/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUBSCRIPTION_ID}`,
                 { method: 'DELETE', headers }
             );
 
@@ -1078,7 +1126,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/plans', {
+            const res = await app.request('/api/v1/protected/billing/plans', {
                 method: 'POST',
                 headers: { ...headers, 'content-type': 'application/json' },
                 body: JSON.stringify({ name: 'Hacked Plan', price: 0 })
@@ -1103,7 +1151,10 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics', { method: 'GET', headers });
+            const res = await app.request('/api/v1/protected/billing/metrics', {
+                method: 'GET',
+                headers
+            });
 
             // Assert .. billingAdminGuardMiddleware on metrics wrapper or
             // createAdminRoute itself blocks non-admin users
@@ -1119,7 +1170,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics/system-usage', {
+            const res = await app.request('/api/v1/protected/billing/metrics/system-usage', {
                 method: 'GET',
                 headers
             });
@@ -1137,7 +1188,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics/approaching-limits', {
+            const res = await app.request('/api/v1/protected/billing/metrics/approaching-limits', {
                 method: 'GET',
                 headers
             });
@@ -1155,7 +1206,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics/activity', {
+            const res = await app.request('/api/v1/protected/billing/metrics/activity', {
                 method: 'GET',
                 headers
             });
@@ -1173,7 +1224,10 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics', { method: 'GET', headers });
+            const res = await app.request('/api/v1/protected/billing/metrics', {
+                method: 'GET',
+                headers
+            });
 
             // Assert
             expect(res.status).toBe(200);
@@ -1188,7 +1242,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics/system-usage', {
+            const res = await app.request('/api/v1/protected/billing/metrics/system-usage', {
                 method: 'GET',
                 headers
             });
@@ -1205,7 +1259,10 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             };
 
             // Act
-            const res = await app.request('/api/v1/billing/metrics', { method: 'GET', headers });
+            const res = await app.request('/api/v1/protected/billing/metrics', {
+                method: 'GET',
+                headers
+            });
 
             // Assert .. either 401 (auth required) or 403 (admin guard)
             expect([401, 403]).toContain(res.status);
@@ -1230,7 +1287,7 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
 
             // Act: POST to cancel User A's addon with User B's auth
             const res = await app.request(
-                '/api/v1/billing/addons/550e8400-e29b-41d4-a716-446655440000/cancel',
+                '/api/v1/protected/billing/addons/550e8400-e29b-41d4-a716-446655440000/cancel',
                 {
                     method: 'POST',
                     headers: { ...headers, 'content-type': 'application/json' },
@@ -1259,7 +1316,10 @@ describe('Billing IDOR Prevention (T-021 / SPEC-019)', () => {
             });
 
             // Act
-            const res = await app.request('/api/v1/billing/plans', { method: 'GET', headers });
+            const res = await app.request('/api/v1/protected/billing/plans', {
+                method: 'GET',
+                headers
+            });
 
             // Assert .. GET on plans is allowed for all authenticated users
             expect(res.status).toBe(200);

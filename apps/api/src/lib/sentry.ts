@@ -50,7 +50,7 @@ const DEFAULT_CONFIG: SentryConfig = {
     tracesSampleRate: isDev ? 0.0 : 0.1,
     profilesSampleRate: isDev ? 0.0 : 0.1,
     debug: false,
-    project: process.env.SENTRY_PROJECT || process.env.HOSPEDA_SENTRY_PROJECT || 'hospeda',
+    project: process.env.HOSPEDA_SENTRY_PROJECT || 'hospeda',
     appType: 'api'
 };
 

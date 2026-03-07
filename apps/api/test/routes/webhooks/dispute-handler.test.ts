@@ -139,7 +139,7 @@ describe('handleDisputeOpened', () => {
     describe('admin notification (BILL-17)', () => {
         it('should send ADMIN_SYSTEM_EVENT notification with severity critical to admin emails', async () => {
             // Arrange
-            process.env.ADMIN_NOTIFICATION_EMAILS = 'admin1@test.com,admin2@test.com';
+            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin1@test.com,admin2@test.com';
             const c = createMockContext();
             const event = {
                 id: 33333,
@@ -180,7 +180,7 @@ describe('handleDisputeOpened', () => {
 
         it('should include dispute metadata in eventDetails', async () => {
             // Arrange
-            process.env.ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
+            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
             const c = createMockContext();
             const event = {
                 id: 44444,
@@ -214,7 +214,7 @@ describe('handleDisputeOpened', () => {
 
         it('should not block webhook processing if notification fails', async () => {
             // Arrange
-            process.env.ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
+            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
             mockSendNotification.mockRejectedValueOnce(new Error('Notification service down'));
             const c = createMockContext();
             const event = {
@@ -239,7 +239,7 @@ describe('handleDisputeOpened', () => {
 
         it('should skip notification when ADMIN_NOTIFICATION_EMAILS is not set', async () => {
             // Arrange
-            process.env.ADMIN_NOTIFICATION_EMAILS = undefined;
+            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = undefined;
             const c = createMockContext();
             const event = {
                 id: 66666,

@@ -21,8 +21,8 @@ import type { Mock } from 'vitest';
 const originalEnv = { ...process.env };
 
 process.env.NODE_ENV = 'test';
-process.env.DISABLE_AUTH = 'true';
-process.env.ALLOW_MOCK_ACTOR = 'true';
+process.env.HOSPEDA_DISABLE_AUTH = 'true';
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.PORT = '3001';
 process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
 process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
@@ -431,10 +431,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_B_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/subscriptions/${USER_A_SUB_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUB_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             expect(res.status).toBe(403);
         });
@@ -446,10 +449,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_A_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/subscriptions/${USER_A_SUB_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUB_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             expect(res.status).toBe(200);
         });
@@ -467,7 +473,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_B_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/invoices/${USER_A_INV_ID}`, {
+            const res = await app.request(`/api/v1/protected/billing/invoices/${USER_A_INV_ID}`, {
                 method: 'GET',
                 headers
             });
@@ -488,7 +494,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_B_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAY_ID}`, {
+            const res = await app.request(`/api/v1/protected/billing/payments/${USER_A_PAY_ID}`, {
                 method: 'GET',
                 headers
             });
@@ -503,10 +509,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_B_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAY_ID}/refund`, {
-                method: 'POST',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAY_ID}/refund`,
+                {
+                    method: 'POST',
+                    headers
+                }
+            );
 
             // Either 403 from ownership or admin guard
             expect([403]).toContain(res.status);
@@ -525,10 +534,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_A_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/customers/${USER_B_CUSTOMER_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/customers/${USER_B_CUSTOMER_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             expect(res.status).toBe(403);
         });
@@ -548,10 +560,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: 'cust_admin_xxx'
             });
 
-            const res = await app.request(`/api/v1/billing/subscriptions/${USER_A_SUB_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUB_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             expect(res.status).toBe(403);
         });
@@ -564,7 +579,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_A_CUSTOMER_ID
             });
 
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAY_ID}`, {
+            const res = await app.request(`/api/v1/protected/billing/payments/${USER_A_PAY_ID}`, {
                 method: 'GET',
                 headers
             });
@@ -585,7 +600,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_A_CUSTOMER_ID
             });
 
-            const res = await app.request('/api/v1/billing/entitlements', {
+            const res = await app.request('/api/v1/protected/billing/entitlements', {
                 method: 'POST',
                 headers
             });
@@ -600,7 +615,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 billingCustomerId: USER_A_CUSTOMER_ID
             });
 
-            const res = await app.request('/api/v1/billing/entitlements/ent_001', {
+            const res = await app.request('/api/v1/protected/billing/entitlements/ent_001', {
                 method: 'DELETE',
                 headers
             });
@@ -615,9 +630,12 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
 
     describe('Unauthenticated requests', () => {
         it('should deny unauthenticated billing subscription GET', async () => {
-            const res = await app.request(`/api/v1/billing/subscriptions/${USER_A_SUB_ID}`, {
-                method: 'GET'
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUB_ID}`,
+                {
+                    method: 'GET'
+                }
+            );
 
             // Without auth, may return 400/401/403 depending on middleware chain
             expect(res.status).toBeGreaterThanOrEqual(400);
@@ -625,7 +643,7 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
         });
 
         it('should deny unauthenticated billing payment GET', async () => {
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAY_ID}`, {
+            const res = await app.request(`/api/v1/protected/billing/payments/${USER_A_PAY_ID}`, {
                 method: 'GET'
             });
 
@@ -634,9 +652,12 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
         });
 
         it('should deny unauthenticated refund POST', async () => {
-            const res = await app.request(`/api/v1/billing/payments/${USER_A_PAY_ID}/refund`, {
-                method: 'POST'
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/payments/${USER_A_PAY_ID}/refund`,
+                {
+                    method: 'POST'
+                }
+            );
 
             expect(res.status).toBeGreaterThanOrEqual(400);
             expect(res.status).toBeLessThan(500);
@@ -658,10 +679,13 @@ describe('QZPay Ownership Integration (SPEC-019)', () => {
                 // No billingCustomerId
             });
 
-            const res = await app.request(`/api/v1/billing/subscriptions/${USER_A_SUB_ID}`, {
-                method: 'GET',
-                headers
-            });
+            const res = await app.request(
+                `/api/v1/protected/billing/subscriptions/${USER_A_SUB_ID}`,
+                {
+                    method: 'GET',
+                    headers
+                }
+            );
 
             // Fail-closed: resource-specific route without billing customer -> 403
             expect(res.status).toBe(403);

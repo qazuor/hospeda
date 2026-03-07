@@ -108,7 +108,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
 
     beforeAll(() => {
         // Enable mock actor system for tests
-        process.env.ALLOW_MOCK_ACTOR = 'true';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 
         // Validate environment before running tests
         validateApiEnv();
@@ -1105,7 +1105,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
     describe('11. Edge Cases and Error Handling', () => {
         it('should handle billing service unavailable gracefully', async () => {
             // Act - Access billing routes
-            const response = await app.request('/api/v1/billing/plans', {
+            const response = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     'user-agent': 'test-agent'
                 }

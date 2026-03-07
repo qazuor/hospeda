@@ -117,7 +117,7 @@ describe('Notification Schedule Cron Job - Renewal Reminders', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         resetSentNotificationsFallback();
-        process.env.WEB_URL = 'https://hospeda.com';
+        process.env.HOSPEDA_SITE_URL = 'https://hospeda.com';
         subscriptionCounter = 0; // Reset counter for each test
     });
 

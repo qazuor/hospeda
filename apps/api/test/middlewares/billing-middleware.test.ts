@@ -80,7 +80,7 @@ function createMockContext(
 
     return {
         req: {
-            path: overrides.path ?? '/api/v1/billing/subscriptions',
+            path: overrides.path ?? '/api/v1/protected/billing/subscriptions',
             method: overrides.method ?? 'GET',
             query: () => ({}),
             header: () => overrides.headers ?? { 'content-type': 'application/json' }
@@ -229,7 +229,7 @@ describe('sentryBillingMiddleware', () => {
     it('should set module tag to billing', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/plans' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/plans' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -241,7 +241,7 @@ describe('sentryBillingMiddleware', () => {
     it('should tag subscription operations', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/subscriptions/123' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/subscriptions/123' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -253,7 +253,7 @@ describe('sentryBillingMiddleware', () => {
     it('should tag payment operations', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/payments' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/payments' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -265,7 +265,7 @@ describe('sentryBillingMiddleware', () => {
     it('should tag addon operations', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/addons' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/addons' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -277,7 +277,7 @@ describe('sentryBillingMiddleware', () => {
     it('should tag promo code operations', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/promo-codes' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/promo-codes' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -289,7 +289,7 @@ describe('sentryBillingMiddleware', () => {
     it('should tag trial operations', async () => {
         const { sentryBillingMiddleware } = await import('../../src/middlewares/sentry');
         mockSentryIsEnabled.mockReturnValue(true);
-        const ctx = createMockContext({ path: '/api/v1/billing/trial' });
+        const ctx = createMockContext({ path: '/api/v1/protected/billing/trial' });
         const next = vi.fn();
 
         const middleware = sentryBillingMiddleware();
@@ -344,7 +344,7 @@ describe('billingMiddleware', () => {
     it('should set billingEnabled false when env vars are missing', async () => {
         // No MERCADO_PAGO_ACCESS_TOKEN or HOSPEDA_DATABASE_URL
         const originalEnv = { ...process.env };
-        process.env.MERCADO_PAGO_ACCESS_TOKEN = undefined;
+        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = undefined;
         process.env.HOSPEDA_DATABASE_URL = undefined;
 
         const { billingMiddleware } = await import('../../src/middlewares/billing');
@@ -362,7 +362,7 @@ describe('billingMiddleware', () => {
 
     it('should log warning when billing env vars are missing', async () => {
         const originalEnv = { ...process.env };
-        process.env.MERCADO_PAGO_ACCESS_TOKEN = undefined;
+        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = undefined;
         process.env.HOSPEDA_DATABASE_URL = undefined;
 
         const { billingMiddleware } = await import('../../src/middlewares/billing');

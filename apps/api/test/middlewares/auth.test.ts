@@ -142,7 +142,7 @@ describe('Auth Middleware', () => {
 
     describe('authMiddleware (real mode)', () => {
         beforeEach(() => {
-            process.env.DISABLE_AUTH = 'false';
+            process.env.HOSPEDA_DISABLE_AUTH = 'false';
         });
 
         it('should call getSession with request headers', async () => {

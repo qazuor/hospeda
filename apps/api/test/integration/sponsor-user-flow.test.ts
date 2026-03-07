@@ -155,7 +155,7 @@ describe('Sponsor User E2E Flow', () => {
 
     beforeAll(() => {
         validateApiEnv();
-        process.env.ALLOW_MOCK_ACTOR = 'true';
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
     });
 
     beforeEach(() => {
@@ -217,7 +217,7 @@ describe('Sponsor User E2E Flow', () => {
                 ...sponsorActor,
                 permissions: [...sponsorActor.permissions, PermissionEnum.INVOICE_VIEW]
             });
-            const response = await app.request('/api/v1/billing/invoices', {
+            const response = await app.request('/api/v1/protected/billing/invoices', {
                 method: 'GET',
                 headers
             });
@@ -260,7 +260,7 @@ describe('Sponsor User E2E Flow', () => {
     describe('3. Access Control - Sponsor Restrictions', () => {
         it('should deny sponsor access to admin billing plans route', async () => {
             const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/billing/plans', {
+            const response = await app.request('/api/v1/protected/billing/plans', {
                 method: 'POST',
                 headers: { ...headers, 'content-type': 'application/json' },
                 body: JSON.stringify({ name: 'Test Plan', price: 1000 })
@@ -272,7 +272,7 @@ describe('Sponsor User E2E Flow', () => {
         it('should deny sponsor access to modify promo codes', async () => {
             const headers = createMockHeaders(sponsorActor);
             const response = await app.request(
-                '/api/v1/billing/promo-codes/00000000-0000-0000-0000-000000000001',
+                '/api/v1/protected/billing/promo-codes/00000000-0000-0000-0000-000000000001',
                 {
                     method: 'PUT',
                     headers: { ...headers, 'content-type': 'application/json' },
@@ -285,7 +285,7 @@ describe('Sponsor User E2E Flow', () => {
 
         it('should deny sponsor access to global settings', async () => {
             const headers = createMockHeaders(sponsorActor);
-            const response = await app.request('/api/v1/billing/settings', {
+            const response = await app.request('/api/v1/protected/billing/settings', {
                 method: 'PUT',
                 headers: { ...headers, 'content-type': 'application/json' },
                 body: JSON.stringify({ setting: 'value' })

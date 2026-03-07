@@ -86,7 +86,7 @@ describe('Notification Idempotency Key Persistence', () => {
         resetSentNotificationsFallback();
         mockRedisSet.mockResolvedValue('OK');
         mockRedisExists.mockResolvedValue(0);
-        process.env.WEB_URL = 'https://hospeda.com';
+        process.env.HOSPEDA_SITE_URL = 'https://hospeda.com';
     });
 
     describe('Redis-backed idempotency', () => {

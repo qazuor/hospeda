@@ -389,7 +389,7 @@ describe('Webhook Event Persistence Integration Tests', () => {
         it('should require authentication when CRON_AUTH is enabled', async () => {
             // Arrange
             process.env.CRON_AUTH_DISABLED = undefined;
-            process.env.CRON_SECRET = 'test-secret-123';
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request without auth
             const response = await app.request('/api/v1/webhooks/health', {
@@ -407,7 +407,7 @@ describe('Webhook Event Persistence Integration Tests', () => {
         it('should accept CRON_SECRET authentication', async () => {
             // Arrange
             process.env.CRON_AUTH_DISABLED = undefined;
-            process.env.CRON_SECRET = 'test-secret-123';
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request with Bearer token
             const response = await app.request('/api/v1/webhooks/health', {
@@ -426,7 +426,7 @@ describe('Webhook Event Persistence Integration Tests', () => {
         it('should accept X-Cron-Secret header authentication', async () => {
             // Arrange
             process.env.CRON_AUTH_DISABLED = undefined;
-            process.env.CRON_SECRET = 'test-secret-123';
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request with X-Cron-Secret header
             const response = await app.request('/api/v1/webhooks/health', {

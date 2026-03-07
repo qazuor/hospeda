@@ -5,7 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ✅ Enable rate limiting for this specific test file
-process.env.TESTING_RATE_LIMIT = 'true';
+process.env.HOSPEDA_TESTING_RATE_LIMIT = 'true';
 
 // Mock Redis to use in-memory store in tests
 vi.mock('../../src/utils/redis', () => ({
