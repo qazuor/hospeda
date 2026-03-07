@@ -56,8 +56,7 @@ export const fetchAuthSession = createServerFn({ method: 'GET' }).handler(
             return UNAUTHENTICATED_STATE;
         }
 
-        const apiUrl =
-            process.env.HOSPEDA_API_URL || process.env.VITE_API_URL || 'http://localhost:3001';
+        const apiUrl = process.env.HOSPEDA_API_URL || 'http://localhost:3001';
         const cookieHeader = request.headers.get('cookie') || '';
 
         try {

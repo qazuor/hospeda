@@ -9,7 +9,7 @@ describe('webLogger', () => {
         vi.stubGlobal('import.meta', {
             env: {
                 DEV: true,
-                VITE_ENABLE_LOGGING: undefined,
+                PUBLIC_ENABLE_LOGGING: undefined,
                 PUBLIC_API_URL: undefined,
                 HOSPEDA_API_URL: undefined,
                 PROD: false

@@ -14,6 +14,8 @@ import { z } from 'zod';
 const AdminEnvSchema = z.object({
     // API Configuration
     VITE_API_URL: z.string().url().describe('API base URL'),
+    VITE_SITE_URL: z.string().url().optional().describe('Public web app URL'),
+    HOSPEDA_API_URL: z.string().url().optional().describe('Server-side API URL for SSR auth'),
 
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
@@ -133,6 +135,8 @@ export const validateAdminEnv = (): AdminEnv => {
         // Create env object from import.meta.env
         const envData = {
             VITE_API_URL: import.meta.env.VITE_API_URL,
+            VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
+            HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',

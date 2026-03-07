@@ -136,6 +136,11 @@ export default defineConfig({
                             process.env.HOSPEDA_DEFAULT_LOCALE ||
                                 process.env.VITE_DEFAULT_LOCALE ||
                                 'en'
+                        ),
+                        'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(
+                            process.env.VERCEL_GIT_COMMIT_SHA ||
+                                process.env.VITE_SENTRY_RELEASE ||
+                                ''
                         )
                     }
                 };

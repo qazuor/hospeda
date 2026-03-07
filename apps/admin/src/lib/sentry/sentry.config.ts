@@ -46,7 +46,6 @@ function getSentryConfig(): SentryConfig {
         release:
             import.meta.env.VITE_SENTRY_RELEASE ||
             import.meta.env.VITE_APP_VERSION ||
-            import.meta.env.VERCEL_GIT_COMMIT_SHA ||
             'development',
         // Performance monitoring
         tracesSampleRate: 0.1, // 10% of transactions

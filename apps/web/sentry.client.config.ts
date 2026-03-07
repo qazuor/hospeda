@@ -6,10 +6,7 @@ if (dsn) {
     Sentry.init({
         dsn,
         environment: import.meta.env.MODE || 'development',
-        release:
-            import.meta.env.PUBLIC_SENTRY_RELEASE ||
-            import.meta.env.VERCEL_GIT_COMMIT_SHA ||
-            'development',
+        release: import.meta.env.PUBLIC_SENTRY_RELEASE || 'development',
 
         initialScope: {
             tags: {

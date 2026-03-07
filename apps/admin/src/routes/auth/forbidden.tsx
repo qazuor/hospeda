@@ -52,7 +52,7 @@ function ForbiddenPage(): React.JSX.Element {
 
     const siteUrl =
         typeof window !== 'undefined'
-            ? (import.meta.env.PUBLIC_SITE_URL ?? 'http://localhost:4321')
+            ? (import.meta.env.VITE_SITE_URL ?? 'http://localhost:4321')
             : 'http://localhost:4321';
 
     if (!isClient) {

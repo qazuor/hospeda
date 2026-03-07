@@ -49,5 +49,5 @@ export const webLogger = createFrontendLogger({
     category: 'HOSPEDA-WEB',
     bgColor: '#3b82f6',
     textColor: '#ffffff',
-    enabled: import.meta.env.DEV || import.meta.env.VITE_ENABLE_LOGGING === 'true'
+    enabled: import.meta.env.DEV || import.meta.env.PUBLIC_ENABLE_LOGGING === 'true'
 });
