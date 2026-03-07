@@ -11,23 +11,29 @@ import {
 
 // Mock environment variables
 const mockEnv = {
-    MERCADO_PAGO_ACCESS_TOKEN: 'TEST-1234567890',
-    MERCADO_PAGO_WEBHOOK_SECRET: 'test-webhook-secret',
-    MERCADO_PAGO_SANDBOX: 'true',
-    MERCADO_PAGO_TIMEOUT: '10000',
-    MERCADO_PAGO_PLATFORM_ID: 'test-platform',
-    MERCADO_PAGO_INTEGRATOR_ID: 'test-integrator'
+    HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'TEST-1234567890',
+    HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: 'test-webhook-secret',
+    HOSPEDA_MERCADO_PAGO_SANDBOX: 'true',
+    HOSPEDA_MERCADO_PAGO_TIMEOUT: '10000',
+    HOSPEDA_MERCADO_PAGO_PLATFORM_ID: 'test-platform',
+    HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID: 'test-integrator'
 };
 
 describe('MercadoPago Adapter Configuration', () => {
     beforeEach(() => {
         // Reset environment variables
-        vi.stubEnv('MERCADO_PAGO_ACCESS_TOKEN', mockEnv.MERCADO_PAGO_ACCESS_TOKEN);
-        vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', mockEnv.MERCADO_PAGO_WEBHOOK_SECRET);
-        vi.stubEnv('MERCADO_PAGO_SANDBOX', mockEnv.MERCADO_PAGO_SANDBOX);
-        vi.stubEnv('MERCADO_PAGO_TIMEOUT', mockEnv.MERCADO_PAGO_TIMEOUT);
-        vi.stubEnv('MERCADO_PAGO_PLATFORM_ID', mockEnv.MERCADO_PAGO_PLATFORM_ID);
-        vi.stubEnv('MERCADO_PAGO_INTEGRATOR_ID', mockEnv.MERCADO_PAGO_INTEGRATOR_ID);
+        vi.stubEnv('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN);
+        vi.stubEnv(
+            'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
+            mockEnv.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET
+        );
+        vi.stubEnv('HOSPEDA_MERCADO_PAGO_SANDBOX', mockEnv.HOSPEDA_MERCADO_PAGO_SANDBOX);
+        vi.stubEnv('HOSPEDA_MERCADO_PAGO_TIMEOUT', mockEnv.HOSPEDA_MERCADO_PAGO_TIMEOUT);
+        vi.stubEnv('HOSPEDA_MERCADO_PAGO_PLATFORM_ID', mockEnv.HOSPEDA_MERCADO_PAGO_PLATFORM_ID);
+        vi.stubEnv(
+            'HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID',
+            mockEnv.HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID
+        );
     });
 
     describe('createMercadoPagoAdapter', () => {
@@ -94,7 +100,7 @@ describe('MercadoPago Adapter Configuration', () => {
 
         it('should allow empty webhook secret in sandbox mode with warning', () => {
             // Arrange
-            vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', '');
+            vi.stubEnv('HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', '');
             const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
             // Act
@@ -122,7 +128,7 @@ describe('MercadoPago Adapter Configuration', () => {
 
         it('should throw error when webhook secret is undefined in production mode', () => {
             // Arrange
-            vi.stubEnv('MERCADO_PAGO_WEBHOOK_SECRET', '');
+            vi.stubEnv('HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', '');
 
             // Act & Assert
             expect(() => {
@@ -199,7 +205,7 @@ describe('MercadoPago Adapter Configuration', () => {
     describe('Environment variable handling', () => {
         it('should throw error when access token is missing', () => {
             // Arrange
-            vi.stubEnv('MERCADO_PAGO_ACCESS_TOKEN', '');
+            vi.stubEnv('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', '');
 
             // Act & Assert
             expect(() => {
@@ -210,7 +216,7 @@ describe('MercadoPago Adapter Configuration', () => {
         it('should use default values for optional env vars', () => {
             // Arrange
             vi.unstubAllEnvs();
-            vi.stubEnv('MERCADO_PAGO_ACCESS_TOKEN', 'TEST-1234567890');
+            vi.stubEnv('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', 'TEST-1234567890');
 
             // Act
             const adapter = createMercadoPagoAdapter();

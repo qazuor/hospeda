@@ -123,16 +123,7 @@ export const SYSTEM_ENV_VARS = [
         apps: ['api'],
         category: 'system'
     },
-    {
-        name: 'SENTRY_ENVIRONMENT',
-        description: 'Sentry environment tag applied to all events emitted by the API',
-        type: 'string',
-        required: false,
-        secret: false,
-        exampleValue: 'production',
-        apps: ['api'],
-        category: 'system'
-    },
+    // SENTRY_ENVIRONMENT: Deferred.. use import.meta.env.MODE or NODE_ENV instead
     {
         name: 'TEST_DB_URL',
         description: 'PostgreSQL connection string for E2E test database setup scripts',

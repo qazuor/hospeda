@@ -59,6 +59,17 @@ export const CLIENT_WEB_ENV_VARS = [
         category: 'client-web'
     },
     {
+        name: 'PUBLIC_ENABLE_LOGGING',
+        description: 'Enable verbose client-side logging in the web app',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'false',
+        exampleValue: 'true',
+        apps: ['web'],
+        category: 'client-web'
+    },
+    {
         name: 'PUBLIC_VERSION',
         description:
             'Application version string exposed to the browser for feedback auto-collection',
@@ -171,8 +182,8 @@ export const CLIENT_ADMIN_ENV_VARS = [
         type: 'number',
         required: false,
         secret: false,
-        defaultValue: '10',
-        exampleValue: '10',
+        defaultValue: '25',
+        exampleValue: '25',
         apps: ['admin'],
         category: 'client-admin'
     },

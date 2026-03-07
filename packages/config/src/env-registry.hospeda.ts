@@ -126,7 +126,7 @@ export const HOSPEDA_ENV_VARS = [
         required: true,
         secret: false,
         exampleValue: 'http://localhost:3001/api/auth',
-        apps: ['api', 'web', 'admin'],
+        apps: ['api', 'web'],
         category: 'auth'
     },
     {
@@ -194,6 +194,58 @@ export const HOSPEDA_ENV_VARS = [
         required: false,
         secret: true,
         exampleValue: 'TEST-xxxx-xxxx',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
+        description: 'MercadoPago webhook signature secret',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'whsec_xxxx',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_SANDBOX',
+        description: 'Enable MercadoPago sandbox mode',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_TIMEOUT',
+        description: 'MercadoPago API request timeout in ms',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '5000',
+        exampleValue: '5000',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_PLATFORM_ID',
+        description: 'MercadoPago platform ID for marketplace tracking',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'MP-PLATFORM-ID',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
+        name: 'HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID',
+        description: 'MercadoPago integrator ID for tracking',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'MP-INTEGRATOR-ID',
         apps: ['api'],
         category: 'billing'
     },
@@ -435,5 +487,38 @@ export const HOSPEDA_ENV_VARS = [
         exampleValue: 'abc123',
         apps: ['api'],
         category: 'build'
+    },
+    {
+        name: 'HOSPEDA_DEBUG_ACTOR_ID',
+        description:
+            'Override actor ID for admin debugging (mapped to VITE_DEBUG_ACTOR_ID at build)',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'user-uuid',
+        apps: ['admin'],
+        category: 'debugging'
+    },
+    {
+        name: 'HOSPEDA_SUPPORTED_LOCALES',
+        description: 'Supported locales (mapped to VITE_SUPPORTED_LOCALES at build)',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'en,es',
+        exampleValue: 'en,es,pt',
+        apps: ['admin'],
+        category: 'i18n'
+    },
+    {
+        name: 'HOSPEDA_DEFAULT_LOCALE',
+        description: 'Default locale (mapped to VITE_DEFAULT_LOCALE at build)',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'en',
+        exampleValue: 'es',
+        apps: ['admin'],
+        category: 'i18n'
     }
 ] as const satisfies readonly EnvVarDefinition[];

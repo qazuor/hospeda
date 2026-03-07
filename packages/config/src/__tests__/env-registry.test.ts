@@ -19,7 +19,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  5 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 163;
+const EXPECTED_VAR_COUNT = 170;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -38,6 +38,7 @@ const EXPECTED_CATEGORIES = [
     'testing',
     'debugging',
     'build',
+    'i18n',
     'api-config',
     'client-web',
     'client-admin',
@@ -186,6 +187,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_LINEAR_API_KEY',
                 'HOSPEDA_EXCHANGE_RATE_API_KEY',
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
+                'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
                 'HOSPEDA_RESEND_API_KEY',
                 'HOSPEDA_CRON_SECRET',
                 'HOSPEDA_SENTRY_DSN',
@@ -387,8 +389,8 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.category).toBe('system');
         });
 
-        it('should include CI, VERCEL, VERCEL_GIT_COMMIT_SHA, and SENTRY_ENVIRONMENT', () => {
-            const systemVarNames = ['CI', 'VERCEL', 'VERCEL_GIT_COMMIT_SHA', 'SENTRY_ENVIRONMENT'];
+        it('should include CI, VERCEL, and VERCEL_GIT_COMMIT_SHA', () => {
+            const systemVarNames = ['CI', 'VERCEL', 'VERCEL_GIT_COMMIT_SHA'];
             for (const name of systemVarNames) {
                 const entry = REGISTRY.find((e) => e.name === name);
                 expect(entry, `${name} not found in registry`).toBeDefined();

@@ -56,10 +56,10 @@ export interface SandboxConfig {
  * ```
  */
 export function getSandboxConfig(): SandboxConfig {
-    const accessToken = getEnv('MERCADO_PAGO_ACCESS_TOKEN', null);
-    const webhookSecret = getEnv('MERCADO_PAGO_WEBHOOK_SECRET', null);
-    const sandbox = getEnvBoolean('MERCADO_PAGO_SANDBOX', true);
-    const timeout = Number.parseInt(getEnv('MERCADO_PAGO_TIMEOUT', '10000'), 10);
+    const accessToken = getEnv('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', null);
+    const webhookSecret = getEnv('HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', null);
+    const sandbox = getEnvBoolean('HOSPEDA_MERCADO_PAGO_SANDBOX', true);
+    const timeout = Number.parseInt(getEnv('HOSPEDA_MERCADO_PAGO_TIMEOUT', '10000'), 10);
 
     // Sandbox is configured if we have an access token and sandbox mode is enabled
     const isConfigured = !!accessToken && sandbox;
@@ -77,9 +77,9 @@ export function getSandboxConfig(): SandboxConfig {
  * Check if sandbox environment is properly configured
  *
  * Verifies that:
- * - MERCADO_PAGO_ACCESS_TOKEN is set
+ * - HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN is set
  * - Token starts with TEST- (sandbox token)
- * - MERCADO_PAGO_SANDBOX is true
+ * - HOSPEDA_MERCADO_PAGO_SANDBOX is true
  *
  * @returns True if sandbox is configured, false otherwise
  *
@@ -121,7 +121,7 @@ export function skipIfNoSandbox(): void {
     if (!isSandboxConfigured()) {
         const message =
             'Skipping sandbox tests - MercadoPago sandbox not configured. ' +
-            'Set MERCADO_PAGO_ACCESS_TOKEN (TEST-...) to run these tests.';
+            'Set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN (TEST-...) to run these tests.';
 
         // In Vitest, we need to throw to skip
         throw new Error(message);

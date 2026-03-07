@@ -23,7 +23,7 @@ export interface MercadoPagoAdapterConfig {
      * may use 'APP_USR-' prefix even in sandbox mode.
      *
      * @remarks
-     * If not provided, will be read from MERCADO_PAGO_ACCESS_TOKEN environment variable
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN environment variable
      */
     accessToken?: string;
 
@@ -31,7 +31,7 @@ export interface MercadoPagoAdapterConfig {
      * Webhook secret for IPN signature verification
      *
      * @remarks
-     * If not provided, will be read from MERCADO_PAGO_WEBHOOK_SECRET environment variable
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET environment variable
      */
     webhookSecret?: string;
 
@@ -41,7 +41,7 @@ export interface MercadoPagoAdapterConfig {
      * @remarks
      * When true, uses MercadoPago sandbox environment
      * When false, uses production environment (requires APP_USR- token)
-     * If not provided, will be read from MERCADO_PAGO_SANDBOX environment variable (default: true)
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_SANDBOX environment variable (default: true)
      */
     sandbox?: boolean;
 
@@ -49,7 +49,7 @@ export interface MercadoPagoAdapterConfig {
      * Request timeout in milliseconds
      *
      * @remarks
-     * If not provided, will be read from MERCADO_PAGO_TIMEOUT environment variable (default: 5000)
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_TIMEOUT environment variable (default: 5000)
      *
      * @default 5000
      */
@@ -59,7 +59,7 @@ export interface MercadoPagoAdapterConfig {
      * Platform ID for marketplace tracking
      *
      * @remarks
-     * If not provided, will be read from MERCADO_PAGO_PLATFORM_ID environment variable
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_PLATFORM_ID environment variable
      */
     platformId?: string;
 
@@ -67,7 +67,7 @@ export interface MercadoPagoAdapterConfig {
      * Integrator ID for tracking
      *
      * @remarks
-     * If not provided, will be read from MERCADO_PAGO_INTEGRATOR_ID environment variable
+     * If not provided, will be read from HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID environment variable
      */
     integratorId?: string;
 
@@ -132,17 +132,18 @@ export function createMercadoPagoAdapter(
     config: MercadoPagoAdapterConfig = {}
 ): QZPayMercadoPagoAdapter {
     // Get configuration from environment variables with fallbacks
-    const accessToken = config.accessToken ?? getEnv('MERCADO_PAGO_ACCESS_TOKEN');
-    const webhookSecret = config.webhookSecret ?? getEnv('MERCADO_PAGO_WEBHOOK_SECRET', '');
-    const sandbox = config.sandbox ?? getEnvBoolean('MERCADO_PAGO_SANDBOX', true);
-    const timeout = config.timeout ?? getEnvNumber('MERCADO_PAGO_TIMEOUT', DEFAULT_CONFIG.timeout);
-    const platformId = config.platformId ?? getEnv('MERCADO_PAGO_PLATFORM_ID', '');
-    const integratorId = config.integratorId ?? getEnv('MERCADO_PAGO_INTEGRATOR_ID', '');
+    const accessToken = config.accessToken ?? getEnv('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN');
+    const webhookSecret = config.webhookSecret ?? getEnv('HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', '');
+    const sandbox = config.sandbox ?? getEnvBoolean('HOSPEDA_MERCADO_PAGO_SANDBOX', true);
+    const timeout =
+        config.timeout ?? getEnvNumber('HOSPEDA_MERCADO_PAGO_TIMEOUT', DEFAULT_CONFIG.timeout);
+    const platformId = config.platformId ?? getEnv('HOSPEDA_MERCADO_PAGO_PLATFORM_ID', '');
+    const integratorId = config.integratorId ?? getEnv('HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID', '');
 
     // Validate access token is not empty
     if (!accessToken) {
         throw new Error(
-            'MercadoPago access token is required. Set MERCADO_PAGO_ACCESS_TOKEN environment variable.'
+            'MercadoPago access token is required. Set HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN environment variable.'
         );
     }
 
@@ -158,7 +159,7 @@ export function createMercadoPagoAdapter(
     // Validate webhook secret based on environment
     if (!sandbox && !webhookSecret) {
         throw new Error(
-            'Webhook secret is required in production mode. Set MERCADO_PAGO_WEBHOOK_SECRET environment variable. ' +
+            'Webhook secret is required in production mode. Set HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET environment variable. ' +
                 'Without it, attackers could forge payment webhooks and manipulate subscription states.'
         );
     }
@@ -166,7 +167,7 @@ export function createMercadoPagoAdapter(
     if (sandbox && !webhookSecret) {
         console.warn(
             '[billing] MercadoPago webhook secret is not configured in sandbox mode. ' +
-                'Webhook signature verification will be skipped. Set MERCADO_PAGO_WEBHOOK_SECRET for proper testing.'
+                'Webhook signature verification will be skipped. Set HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET for proper testing.'
         );
     }
 

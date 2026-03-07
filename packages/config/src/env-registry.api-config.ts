@@ -45,18 +45,6 @@ export const API_CONFIG_ENV_VARS = [
         apps: ['api'],
         category: 'api-config'
     },
-    {
-        name: 'API_DEBUG_ERRORS',
-        description: 'Show detailed error messages and stack traces in production 5xx responses',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'api-config'
-    },
-
     // -------------------------------------------------------------------------
     // Logging
     // -------------------------------------------------------------------------
