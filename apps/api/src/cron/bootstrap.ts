@@ -4,6 +4,7 @@
  * @module cron/bootstrap
  */
 
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { getEnabledCronJobs } from './registry';
 
@@ -34,7 +35,7 @@ type CronAdapter = 'node-cron' | 'vercel' | 'manual';
  * ```
  */
 export const startCronScheduler = async (port: number): Promise<void> => {
-    const adapter = (process.env.CRON_ADAPTER || 'manual') as CronAdapter;
+    const adapter = (env.HOSPEDA_CRON_ADAPTER || 'manual') as CronAdapter;
 
     apiLogger.info({ message: '[CRON] Initializing cron scheduler', adapter });
 
@@ -58,7 +59,7 @@ export const startCronScheduler = async (port: number): Promise<void> => {
             return;
         }
 
-        const cronSecret = process.env.CRON_SECRET;
+        const cronSecret = env.HOSPEDA_CRON_SECRET;
         if (!cronSecret) {
             apiLogger.error({
                 message: '[CRON] CRON_SECRET not configured - cannot schedule jobs'

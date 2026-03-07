@@ -23,6 +23,7 @@ import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { TrialService } from '../../services/trial.service.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
+import { env } from '../../utils/env.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import { getRedisClient } from '../../utils/redis.js';
 import type { CronJobDefinition } from '../types.js';
@@ -209,7 +210,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             continue;
                         }
 
-                        const upgradeUrl = `${process.env.WEB_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
+                        const upgradeUrl = `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
 
                         // Fire-and-forget notification
                         sendNotification({
@@ -288,7 +289,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             continue;
                         }
 
-                        const upgradeUrl = `${process.env.WEB_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
+                        const upgradeUrl = `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
 
                         // Fire-and-forget notification
                         sendNotification({

@@ -7,6 +7,7 @@
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
+import { env } from '../utils/env.js';
 
 /**
  * Middleware to authenticate cron job requests.
@@ -28,7 +29,7 @@ import type { AppBindings } from '../types';
  */
 export const cronAuthMiddleware = async (c: Context<AppBindings>, next: Next): Promise<void> => {
     // CRON_SECRET is required in all environments
-    const cronSecret = process.env.CRON_SECRET;
+    const cronSecret = env.HOSPEDA_CRON_SECRET;
     if (!cronSecret) {
         throw new HTTPException(503, {
             message: 'Cron system not configured - CRON_SECRET environment variable is required'
