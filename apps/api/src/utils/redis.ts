@@ -4,6 +4,7 @@
  * Falls back to undefined when HOSPEDA_REDIS_URL is not configured.
  */
 import type Redis from 'ioredis';
+import { env } from './env';
 import { apiLogger } from './logger';
 
 let redisClient: Redis | undefined;
@@ -19,7 +20,7 @@ export const getRedisClient = async (): Promise<Redis | undefined> => {
 
     connectionAttempted = true;
 
-    const redisUrl = process.env.HOSPEDA_REDIS_URL;
+    const redisUrl = env.HOSPEDA_REDIS_URL;
     if (!redisUrl) {
         apiLogger.info(
             'Redis not configured (HOSPEDA_REDIS_URL not set). Using in-memory fallbacks.'

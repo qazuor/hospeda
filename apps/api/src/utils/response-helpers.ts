@@ -8,6 +8,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { env } from './env';
 import { apiLogger } from './logger';
 
 /**
@@ -166,7 +167,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: error.code,
                 message: error.message,
-                details: process.env.NODE_ENV === 'development' ? error.details : undefined
+                details: env.NODE_ENV === 'development' ? error.details : undefined
             },
             c,
             statusCode
@@ -207,7 +208,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                    details: env.NODE_ENV === 'development' ? error.message : undefined
                 },
                 c,
                 400
@@ -219,7 +220,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: 'DATABASE_ERROR',
                 message: 'A database error occurred',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                details: env.NODE_ENV === 'development' ? error.message : undefined
             },
             c,
             500
@@ -252,7 +253,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code,
                     message,
-                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                    details: env.NODE_ENV === 'development' ? error.message : undefined
                 },
                 c,
                 statusCode
@@ -265,7 +266,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                    details: env.NODE_ENV === 'development' ? error.message : undefined
                 },
                 c,
                 400
@@ -278,7 +279,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'VALIDATION_ERROR',
                     message: error.message,
-                    details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                    details: env.NODE_ENV === 'development' ? error.message : undefined
                 },
                 c,
                 400
@@ -289,7 +290,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: 'INTERNAL_ERROR',
                 message: 'An unexpected error occurred',
-                details: process.env.NODE_ENV === 'development' ? error.message : undefined
+                details: env.NODE_ENV === 'development' ? error.message : undefined
             },
             c,
             500
@@ -306,7 +307,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+                    details: env.NODE_ENV === 'development' ? errorMessage : undefined
                 },
                 c,
                 400
@@ -319,7 +320,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'VALIDATION_ERROR',
                     message: errorMessage,
-                    details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+                    details: env.NODE_ENV === 'development' ? errorMessage : undefined
                 },
                 c,
                 400

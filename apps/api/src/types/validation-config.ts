@@ -72,63 +72,28 @@ export const CRITICAL_HEADERS = {
 } as const;
 
 /**
- * Get validation configuration from environment or use defaults
+ * Get validation configuration from environment or use defaults.
+ * Reads from the validated `env` object populated by {@link validateApiEnv}.
  */
 export const getValidationConfig = (): ValidationConfig => {
     try {
-        // Read dynamic overrides directly from process.env to support test-time changes
-        const rawAllowed =
-            typeof process.env.API_VALIDATION_ALLOWED_CONTENT_TYPES === 'string'
-                ? process.env.API_VALIDATION_ALLOWED_CONTENT_TYPES
-                : env.API_VALIDATION_ALLOWED_CONTENT_TYPES;
-        const rawRequired =
-            typeof process.env.API_VALIDATION_REQUIRED_HEADERS === 'string'
-                ? process.env.API_VALIDATION_REQUIRED_HEADERS
-                : env.API_VALIDATION_REQUIRED_HEADERS;
-        const rawAuthHeaders =
-            typeof process.env.API_VALIDATION_AUTH_HEADERS === 'string'
-                ? process.env.API_VALIDATION_AUTH_HEADERS
-                : env.API_VALIDATION_AUTH_HEADERS;
-        const authEnabled =
-            typeof process.env.API_VALIDATION_AUTH_ENABLED === 'string'
-                ? process.env.API_VALIDATION_AUTH_ENABLED === 'true'
-                : env.API_VALIDATION_AUTH_ENABLED;
-
         return {
-            maxBodySize:
-                typeof process.env.API_VALIDATION_MAX_BODY_SIZE === 'string'
-                    ? Number(process.env.API_VALIDATION_MAX_BODY_SIZE)
-                    : env.API_VALIDATION_MAX_BODY_SIZE,
-            maxRequestTime:
-                typeof process.env.API_VALIDATION_MAX_REQUEST_TIME === 'string'
-                    ? Number(process.env.API_VALIDATION_MAX_REQUEST_TIME)
-                    : env.API_VALIDATION_MAX_REQUEST_TIME,
-            allowedContentTypes: rawAllowed
-                .split(',')
+            maxBodySize: env.API_VALIDATION_MAX_BODY_SIZE,
+            maxRequestTime: env.API_VALIDATION_MAX_REQUEST_TIME,
+            allowedContentTypes: env.API_VALIDATION_ALLOWED_CONTENT_TYPES.split(',')
                 .map((s) => s.trim())
                 .filter(Boolean),
-            requiredHeaders: rawRequired
-                .split(',')
+            requiredHeaders: env.API_VALIDATION_REQUIRED_HEADERS.split(',')
                 .map((s) => s.trim())
                 .filter(Boolean),
             sanitizeOptions: {
-                removeHtmlTags:
-                    typeof process.env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS === 'string'
-                        ? process.env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS === 'true'
-                        : env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS,
-                maxStringLength:
-                    typeof process.env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH === 'string'
-                        ? Number(process.env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH)
-                        : env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH,
-                allowedCharacters:
-                    typeof process.env.API_VALIDATION_SANITIZE_ALLOWED_CHARS === 'string'
-                        ? process.env.API_VALIDATION_SANITIZE_ALLOWED_CHARS
-                        : env.API_VALIDATION_SANITIZE_ALLOWED_CHARS
+                removeHtmlTags: env.API_VALIDATION_SANITIZE_REMOVE_HTML_TAGS,
+                maxStringLength: env.API_VALIDATION_SANITIZE_MAX_STRING_LENGTH,
+                allowedCharacters: env.API_VALIDATION_SANITIZE_ALLOWED_CHARS
             },
             auth: {
-                enabled: authEnabled,
-                requiredHeaders: rawAuthHeaders
-                    .split(',')
+                enabled: env.API_VALIDATION_AUTH_ENABLED,
+                requiredHeaders: env.API_VALIDATION_AUTH_HEADERS.split(',')
                     .map((s) => s.trim())
                     .filter(Boolean)
             }

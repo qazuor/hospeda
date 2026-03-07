@@ -16,6 +16,7 @@ import {
     createResendClient
 } from '@repo/notifications';
 import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
+import { env } from './env';
 import { apiLogger } from './logger';
 
 /**
@@ -57,10 +58,10 @@ function getNotificationService(): NotificationService | null {
     }
 
     try {
-        // Check if RESEND_API_KEY is set
-        if (!process.env.RESEND_API_KEY) {
+        // Check if HOSPEDA_RESEND_API_KEY is set
+        if (!env.HOSPEDA_RESEND_API_KEY) {
             apiLogger.warn(
-                'RESEND_API_KEY not set in environment. Notifications will not be sent.'
+                'HOSPEDA_RESEND_API_KEY not set in environment. Notifications will not be sent.'
             );
             initializationFailed = true;
             return null;

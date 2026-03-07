@@ -109,7 +109,7 @@ export function createApp() {
             wrapMiddleware(
                 bodyLimit({
                     maxSize: process.env.VERCEL
-                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless
+                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless (not in HOSPEDA_* schema)
                         : 10 * 1024 * 1024, // 10MB for long-running server
                     onError: (c) => {
                         return c.json(
