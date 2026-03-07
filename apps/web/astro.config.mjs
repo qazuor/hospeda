@@ -6,6 +6,7 @@ import vercel from '@astrojs/vercel';
 import sentry from '@sentry/astro';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'astro/config';
+import { validateWebEnv } from './src/env.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
 const envPath = resolve(rootDir, '.env.local');
@@ -27,6 +28,13 @@ try {
         }
     }
 } catch {}
+
+// Validate environment variables at startup - fails fast on misconfiguration
+try {
+    validateWebEnv();
+} catch (error) {
+    console.warn('[env] Web app environment validation warning:', error instanceof Error ? error.message : String(error));
+}
 
 const HOSPEDA_API_URL =
     process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL || 'http://localhost:3001';
