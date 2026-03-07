@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="60" height="80" viewBox="0 0 60 80" fill="none">
+  <!-- Pin de ubicación estilizado -->
+  <path 
+    d="M30,5 C16,5 5,16 5,30 C5,50 30,75 30,75 C30,75 55,50 55,30 C55,16 44,5 30,5Z" 
+    fill="#E8B14C" 
+    fill-opacity="0.9"
+  />
+  <circle cx="30" cy="28" r="10" fill="white"/>
+  <!-- Ondas de señal -->
+  <path d="M30,78 Q25,82 20,78" stroke="#E8B14C" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M30,78 Q35,82 40,78" stroke="#E8B14C" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

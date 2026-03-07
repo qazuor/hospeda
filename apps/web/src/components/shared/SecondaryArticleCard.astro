@@ -1,0 +1,61 @@
+---
+/**
+ * @file SecondaryArticleCard.astro
+ * @description Compact horizontal article card for the magazine-style blog layout.
+ * Features a side-by-side image + content layout with paper fold decoration,
+ * category badge, date, title, summary, and reading time.
+ * Composes shared components: PaperFold, CategoryBadge.
+ */
+import { ClockIcon, ArrowRightIcon } from "@repo/icons";
+import type { BlogPostCardData } from "@/lib/api/transforms";
+import PaperFold from "@/components/shared/PaperFold.astro";
+import CategoryBadge from "@/components/shared/CategoryBadge.astro";
+
+/**
+ * Props for the SecondaryArticleCard component.
+ * @property article - Blog post data from the API transform layer
+ * @property locale - Current locale for i18n translation lookups
+ */
+interface Props {
+  /** Blog post data from the API transform layer */
+  readonly article: BlogPostCardData;
+  /** Current locale for translations */
+  readonly locale?: string;
+}
+
+const { article, locale = "es" } = Astro.props;
+---
+
+<a href={`/${locale}/publicaciones/${article.slug}/`} class="group relative card-3d-secondary">
+  <div class="relative overflow-hidden rounded-2xl bg-card shadow-brutal-sm transition-all duration-500 ease-out group-hover:shadow-brutal-sm-hover group-hover:-translate-x-1 group-hover:-translate-y-1 group-hover:card-3d-secondary-tilt">
+    <!-- Paper fold -->
+    <PaperFold size="sm" />
+
+    <div class="flex">
+      <!-- Image -->
+      <div class="relative h-44 w-36 shrink-0 overflow-hidden rounded-l-2xl sm:h-52 sm:w-44">
+        <img src={article.featuredImage} alt={article.title} class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" transition:name={`entity-${article.slug}`} />
+        <div class="absolute inset-0 bg-gradient-to-t from-foreground/50 via-transparent to-transparent"></div>
+        <div class="absolute bottom-3 left-3">
+          <CategoryBadge category={article.category} colorClass="bg-card/95 text-foreground backdrop-blur-sm" class="text-2xs font-semibold" />
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="flex flex-1 flex-col justify-between p-4 sm:p-5">
+        <div>
+          <span class="mb-2 block font-mono text-2xs uppercase tracking-wider text-muted-foreground">{article.publishedAt}</span>
+          <h3 class="mb-2 text-base font-bold leading-snug text-card-foreground sm:text-lg">{article.title}</h3>
+          <p class="line-clamp-2 text-xs text-muted-foreground leading-relaxed sm:text-sm">{article.summary}</p>
+        </div>
+        <div class="mt-3 flex items-center justify-between border-t border-border/50 pt-3">
+          <span class="flex items-center gap-1 text-xs text-muted-foreground">
+            <ClockIcon size={12} />
+            {article.readingTimeMinutes} min
+          </span>
+          <ArrowRightIcon size={16} className="text-primary opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-1" />
+        </div>
+      </div>
+    </div>
+  </div>
+</a>

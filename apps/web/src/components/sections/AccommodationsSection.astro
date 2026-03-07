@@ -1,0 +1,98 @@
+---
+/**
+ * @file AccommodationsSection.astro
+ * @description Homepage section displaying accommodation type/amenity filter chips
+ * and a grid of featured accommodation cards fetched from the API.
+ * Includes decorative background patterns, illustrations, and a wave divider.
+ */
+import BackgroundPattern from "@/components/shared/BackgroundPattern.astro";
+import DecorativeElement from "@/components/shared/DecorativeElement.astro";
+import Illustration from "@/components/shared/Illustration.astro";
+import FilterChip from "@/components/shared/FilterChip.astro";
+import SectionHeader from "@/components/shared/SectionHeader.astro";
+import GradientButton from "@/components/shared/GradientButton.astro";
+import AccommodationCard from "@/components/shared/AccommodationCard.astro";
+import { ACCOMMODATION_TYPES } from "@/data/accommodation-types";
+import { AMENITIES } from "@/data/amenities";
+import { accommodationsApi } from "@/lib/api/endpoints";
+import { toAccommodationCardProps } from "@/lib/api/transforms";
+import { createT } from "@/lib/i18n";
+
+/**
+ * Props for the AccommodationsSection component.
+ * @property locale - Current locale for i18n translations and link generation
+ */
+interface Props {
+  /** Current locale for translations */
+  readonly locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const t = createT(locale);
+
+// Fetch featured accommodations from the public API
+const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8 });
+const cards = result.ok
+  ? result.data.items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }))
+  : [];
+---
+
+<section id="accommodations" class="wave-bottom-a relative z-[10] -mt-10 md:-mt-12 bg-hospeda-sky-light py-16 pb-20 md:py-24 md:pb-24 overflow-hidden">
+  <BackgroundPattern pattern="/images/patterns/pattern-dots.svg" size="60px 60px" />
+
+  <DecorativeElement src="/images/decoratives/deco-rio-uruguay.svg" position="left-0 top-0" size="h-full w-32 md:w-48" opacity="opacity-25" hidden="" objectContain flip objectPosition="object-left" />
+  <DecorativeElement src="/images/decoratives/deco-brujula.svg" position="top-16 right-4 md:right-12" size="w-14 md:w-20" opacity="opacity-40" />
+  <DecorativeElement src="/images/decoratives/deco-kayak.svg" position="bottom-32 right-1/4" size="w-28 md:w-40" opacity="opacity-30" rotate="rotate-6" hidden="hidden lg:block" />
+  <DecorativeElement src="/images/decoratives/deco-flecha-curva.svg" position="bottom-24 left-8 md:left-16" size="w-20 md:w-28" opacity="opacity-35" rotate="-rotate-45" />
+  <Illustration src="/images/illustrations/ilustracion-buscar-alojamiento.svg" position="-right-6 top-1/2 md:right-4 lg:right-12" size="h-28 w-28 md:h-40 md:w-40 lg:h-52 lg:w-52" />
+
+  <div class="relative mx-auto max-w-7xl px-4 md:px-8">
+
+    <!-- Filter zone: search by type/amenity -->
+    <div class="mb-10 scroll-reveal">
+      <SectionHeader title={t('home.categories.title', 'Que tipo de alojamiento buscas?')} size="sm" spacing="compact" />
+
+      <!-- Accommodation type pills -->
+      <div class="mb-4">
+        <div class="flex flex-wrap justify-center gap-2">
+          {ACCOMMODATION_TYPES.map((accType) => (
+            <FilterChip href={`/${locale}/alojamientos?${accType.filter}`} icon={accType.icon} label={accType.name} variant="primary" />
+          ))}
+        </div>
+      </div>
+
+      <!-- Amenity pills -->
+      <div>
+        <div class="flex flex-wrap justify-center gap-2">
+          {AMENITIES.map((amenity) => (
+            <FilterChip href={`/${locale}/alojamientos?${amenity.filter}`} icon={amenity.icon} label={amenity.name} variant="accent" />
+          ))}
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual divider -->
+    <div class="mx-auto mb-12 flex items-center gap-4 max-w-md">
+      <div class="h-px flex-1 bg-border" />
+      <span class="text-xs font-medium uppercase tracking-widest text-muted-foreground">{t('home.featuredAccommodations.tagline', 'Donde quedarse')}</span>
+      <div class="h-px flex-1 bg-border" />
+    </div>
+
+    <!-- Featured accommodations zone -->
+    <SectionHeader
+      title={t('home.featuredAccommodations.title', 'Alojamientos destacados')}
+      subtitle={t('home.featuredAccommodations.subtitle', 'Encontra el lugar perfecto para tu escapada al litoral entrerriano.')}
+    />
+
+    <div class="scroll-reveal grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {cards.map((card) => (
+        <AccommodationCard card={card} locale={locale} />
+      ))}
+    </div>
+
+    <div class="mt-10 text-center scroll-reveal">
+      <GradientButton href={`/${locale}/alojamientos/`} label={t('home.featuredAccommodations.viewAll', 'Ver todos los alojamientos')} />
+    </div>
+  </div>
+
+</section>

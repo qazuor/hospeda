@@ -1,0 +1,75 @@
+---
+/**
+ * @file EventCard.astro
+ * @description Card component for displaying a single event listing.
+ * Features an image with category/location badges, title, summary, and date.
+ * Supports a "reversed" layout variant for alternating bento grid patterns.
+ * Composes shared components: CategoryBadge, LocationBadge.
+ */
+import { CalendarIcon, ArrowRightIcon } from "@repo/icons";
+import { createT } from "@/lib/i18n";
+import { categoryBg } from "@/lib/category-colors";
+import type { EventCardData } from "@/lib/api/transforms";
+import CategoryBadge from "@/components/shared/CategoryBadge.astro";
+import LocationBadge from "@/components/shared/LocationBadge.astro";
+
+/**
+ * Props for the EventCard component.
+ * @property card - Event data from the API transform layer
+ * @property reversed - When true, reverses the image/text stacking order for visual variety
+ * @property locale - Current locale for i18n translation lookups
+ */
+interface Props {
+  /** Event data from the API transform layer */
+  readonly card: EventCardData;
+  /** Reverse image/text layout for alternating bento grid patterns */
+  readonly reversed?: boolean;
+  /** Current locale for translations */
+  readonly locale?: string;
+}
+
+const { card, reversed = false, locale = "es" } = Astro.props;
+const t = createT(locale);
+---
+
+<div class:list={["flex flex-col", reversed && "sm:flex-col-reverse"]}>
+  <!-- Image -->
+  <div class:list={["relative overflow-hidden rounded-2xl", reversed && "flex-1 sm:rounded-t-none sm:rounded-b-2xl"]}>
+    <img
+      src={card.featuredImage}
+      alt={card.name}
+      class:list={[
+        "w-full object-cover transition-transform duration-500 hover:scale-105",
+        reversed ? "aspect-card sm:aspect-auto h-full sm:min-h-52" : "aspect-card",
+      ]}
+      transition:name={`entity-${card.slug}`}
+    />
+    <div class:list={[
+      "pointer-events-none absolute inset-x-0 h-24 bg-gradient-to-t from-background to-transparent",
+      reversed && "bottom-0 sm:bottom-auto sm:top-0 sm:bg-gradient-to-b",
+      !reversed && "bottom-0",
+    ]}></div>
+    <div class:list={[
+      "absolute flex flex-wrap gap-1.5",
+      reversed ? "left-3 top-3 sm:top-auto sm:bottom-3" : "left-3 top-3",
+    ]}>
+      <CategoryBadge category={card.category} colorClass={categoryBg(card.category)} class="shadow-sm" />
+      <LocationBadge location={card.location?.city || ''} />
+    </div>
+  </div>
+
+  <!-- Text -->
+  <div class:list={["relative z-10 px-2", reversed ? "-mt-6 sm:mt-0 sm:-mb-6" : "-mt-6"]}>
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="text-lg font-bold text-foreground">{card.name}</h3>
+      <a href={`/${locale}/eventos/${card.slug}/`} class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-primary transition-colors hover:bg-primary hover:text-primary-foreground" aria-label={`${t('home.upcomingEvents.viewMore', 'Ver mas sobre este evento')}: ${card.name}`}>
+        <ArrowRightIcon size={16} />
+      </a>
+    </div>
+    <p class="mt-1 text-sm text-muted-foreground line-clamp-2">{card.summary}</p>
+    <div class="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+      <CalendarIcon size={12} />
+      {card.date.start ? card.date.start : <span class="italic">{t('home.upcomingEvents.dateToBeConfirmed', 'Fecha a confirmar')}</span>}
+    </div>
+  </div>
+</div>

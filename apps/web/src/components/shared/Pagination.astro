@@ -1,0 +1,249 @@
+---
+/**
+ * @file Pagination.astro
+ * @description Accessible pagination component with URL-segment and query-param routing modes.
+ * Renders previous/next buttons and page numbers with an ellipsis algorithm.
+ * Mobile-responsive: shows 3 page buttons (current ± 1) on mobile, 5 on desktop.
+ * Uses semantic design tokens and i18n labels for full accessibility compliance.
+ *
+ * @example Segment mode (default)
+ * ```astro
+ * <Pagination
+ *   currentPage={2}
+ *   totalPages={10}
+ *   baseUrl="/es/alojamientos"
+ *   locale="es"
+ * />
+ * // Page 1 → /es/alojamientos/
+ * // Page 2 → /es/alojamientos/page/2/
+ * ```
+ *
+ * @example Query-param mode
+ * ```astro
+ * <Pagination
+ *   currentPage={3}
+ *   totalPages={10}
+ *   baseUrl="/es/busqueda"
+ *   locale="es"
+ *   searchParams={new URLSearchParams('q=playa&tipo=cabana')}
+ * />
+ * // Page 1 → /es/busqueda/?q=playa&tipo=cabana
+ * // Page 3 → /es/busqueda/?q=playa&tipo=cabana&page=3
+ * ```
+ */
+
+import { createT, type SupportedLocale } from '../../lib/i18n';
+
+/**
+ * Props for the Pagination component.
+ */
+interface Props {
+    /** Current active page number (1-based). */
+    readonly currentPage: number;
+    /** Total number of pages available. */
+    readonly totalPages: number;
+    /**
+     * Base URL without a page segment (e.g. "/es/alojamientos").
+     * Must NOT end with a page segment like "/page/2".
+     */
+    readonly baseUrl: string;
+    /** Locale used for ARIA labels and translated button text. Defaults to "es". */
+    readonly locale?: SupportedLocale;
+    /**
+     * When provided, the component switches to query-param mode: `?page=N&...params`.
+     * Pass any extra search params that must be preserved across pages (e.g. filters).
+     * Page 1 removes the `page` param entirely to keep URLs canonical.
+     */
+    readonly searchParams?: URLSearchParams;
+    /** Additional CSS classes merged onto the `<nav>` element. */
+    readonly class?: string;
+}
+
+const {
+    currentPage,
+    totalPages,
+    baseUrl,
+    locale = 'es',
+    searchParams,
+    class: className,
+} = Astro.props;
+
+const t = createT(locale);
+
+/** Resolved i18n labels for pagination controls. */
+const labels = {
+    previous: t('ui.pagination.previous', 'Anterior'),
+    next:     t('ui.pagination.next',     'Siguiente'),
+    page:     t('ui.pagination.page',     'Página'),
+    of:       t('ui.pagination.of',       'de'),
+} as const;
+
+/**
+ * Build the href for a given page number.
+ *
+ * In query-param mode (`searchParams` provided):
+ *   - Clones the URLSearchParams to avoid mutation.
+ *   - Removes the `page` param for page 1 (canonical URL).
+ *   - Appends `?qs` only when there are params remaining.
+ *
+ * In segment mode (default):
+ *   - Page 1 → `{base}/`
+ *   - Page N → `{base}/page/{N}/`
+ *
+ * @param page - Target page number.
+ * @returns Fully formed URL string.
+ */
+function buildPageUrl(page: number): string {
+    const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+    if (searchParams) {
+        const params = new URLSearchParams(searchParams);
+        if (page === 1) {
+            params.delete('page');
+        } else {
+            params.set('page', String(page));
+        }
+        const qs = params.toString();
+        return qs ? `${base}/?${qs}` : `${base}/`;
+    }
+
+    if (page === 1) {
+        return `${base}/`;
+    }
+    return `${base}/page/${page}/`;
+}
+
+/**
+ * Generate the sequence of page numbers (and ellipsis sentinels) to render.
+ *
+ * Rules (desktop, max 5 visible page numbers):
+ * - Total ≤ 5: show all pages without ellipsis.
+ * - Near start (current ≤ 3): 1, 2, 3, 4, …, last
+ * - Near end (current ≥ last - 2): 1, …, last-3, last-2, last-1, last
+ * - Middle: 1, …, current-1, current, current+1, …, last
+ *
+ * Sentinel value `-1` represents an ellipsis ("…").
+ *
+ * @param current - Current active page (1-based).
+ * @param total   - Total number of pages.
+ * @returns Array of page numbers with `-1` for ellipsis positions.
+ */
+function getPageNumbers(current: number, total: number): readonly number[] {
+    if (total <= 5) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    if (current <= 3) {
+        return [1, 2, 3, 4, -1, total] as const;
+    }
+
+    if (current >= total - 2) {
+        return [1, -1, total - 3, total - 2, total - 1, total] as const;
+    }
+
+    return [1, -1, current - 1, current, current + 1, -1, total] as const;
+}
+
+const pageNumbers = getPageNumbers(currentPage, totalPages);
+const hasPrevious = currentPage > 1;
+const hasNext     = currentPage < totalPages;
+
+/** Shared classes for active/interactive link elements. */
+const linkBase     = 'rounded-lg border border-border px-3 py-2 text-sm font-medium transition-colors';
+const linkIdle     = 'text-muted-foreground hover:bg-muted/80 hover:text-foreground';
+const linkDisabled = 'cursor-not-allowed border border-border px-3 py-2 text-sm font-medium text-muted-foreground/50 opacity-50 rounded-lg';
+const linkActive   = 'bg-primary text-primary-foreground rounded-lg px-3 py-2 text-sm font-medium';
+---
+
+{totalPages > 1 && (
+    <nav
+        class:list={['mt-8 flex items-center justify-center gap-1 sm:gap-2', className]}
+        aria-label={`${labels.page} ${currentPage} ${labels.of} ${totalPages}`}
+        role="navigation"
+    >
+        {/* Previous button */}
+        {hasPrevious ? (
+            <a
+                href={buildPageUrl(currentPage - 1)}
+                class:list={[linkBase, linkIdle]}
+                rel="prev"
+                aria-label={labels.previous}
+            >
+                <span class="hidden sm:inline">{labels.previous}</span>
+                <span class="sm:hidden" aria-hidden="true">&lsaquo;</span>
+                <span class="sr-only sm:hidden">{labels.previous}</span>
+            </a>
+        ) : (
+            <span
+                class={linkDisabled}
+                aria-disabled="true"
+                aria-label={labels.previous}
+            >
+                <span class="hidden sm:inline">{labels.previous}</span>
+                <span class="sm:hidden" aria-hidden="true">&lsaquo;</span>
+            </span>
+        )}
+
+        {/* Page number buttons */}
+        {pageNumbers.map((p) => {
+            if (p === -1) {
+                return (
+                    <span
+                        class="hidden px-1 text-muted-foreground sm:inline"
+                        aria-hidden="true"
+                    >
+                        &hellip;
+                    </span>
+                );
+            }
+
+            const isCurrent = p === currentPage;
+
+            return isCurrent ? (
+                <span
+                    class={linkActive}
+                    aria-current="page"
+                    aria-label={`${labels.page} ${p}`}
+                >
+                    {p}
+                </span>
+            ) : (
+                <a
+                    href={buildPageUrl(p)}
+                    class:list={[
+                        linkBase,
+                        linkIdle,
+                        // On mobile, hide pages that are not adjacent to the current page.
+                        Math.abs(p - currentPage) > 1 && 'hidden sm:inline-flex',
+                    ]}
+                    aria-label={`${labels.page} ${p}`}
+                >
+                    {p}
+                </a>
+            );
+        })}
+
+        {/* Next button */}
+        {hasNext ? (
+            <a
+                href={buildPageUrl(currentPage + 1)}
+                class:list={[linkBase, linkIdle]}
+                rel="next"
+                aria-label={labels.next}
+            >
+                <span class="hidden sm:inline">{labels.next}</span>
+                <span class="sm:hidden" aria-hidden="true">&rsaquo;</span>
+                <span class="sr-only sm:hidden">{labels.next}</span>
+            </a>
+        ) : (
+            <span
+                class={linkDisabled}
+                aria-disabled="true"
+                aria-label={labels.next}
+            >
+                <span class="hidden sm:inline">{labels.next}</span>
+                <span class="sm:hidden" aria-hidden="true">&rsaquo;</span>
+            </span>
+        )}
+    </nav>
+)}

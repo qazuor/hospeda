@@ -1,0 +1,45 @@
+---
+/**
+ * @file EmptyState.astro
+ * @description Empty state component for displaying when no content is available.
+ * Shows an illustration, title, message, and optional call-to-action.
+ */
+
+import { SearchIcon } from '@repo/icons';
+import GradientButton from './GradientButton.astro';
+
+/** Props interface for EmptyState component. */
+interface Props {
+  /** Title text */
+  readonly title: string;
+  /** Descriptive message */
+  readonly message: string;
+  /** Optional call-to-action link */
+  readonly cta?: {
+    readonly label: string;
+    readonly href: string;
+  };
+  /** Additional CSS classes */
+  readonly class?: string;
+}
+
+const { title, message, cta, class: className } = Astro.props;
+---
+
+<div class:list={['flex flex-col items-center justify-center px-6 py-12 text-center max-w-md mx-auto', className]}>
+  <div class="mb-6">
+    <SearchIcon size={96} className="text-muted-foreground" aria-hidden="true" />
+  </div>
+
+  <h3 class="text-xl font-semibold text-foreground mb-3">
+    {title}
+  </h3>
+
+  <p class="text-base text-muted-foreground mb-6">
+    {message}
+  </p>
+
+  {cta && (
+    <GradientButton href={cta.href} label={cta.label} />
+  )}
+</div>

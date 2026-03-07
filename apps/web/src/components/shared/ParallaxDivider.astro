@@ -1,0 +1,73 @@
+---
+interface Props {
+  image: string;
+  title: string;
+  subtitle: string;
+  topWaveClass?: string;
+  bottomWaveClass?: string;
+  variant?: "cloud1" | "cloud2" | "cloud3";
+}
+
+/**
+ * Wave paths with 8 cubic bezier segments each for smooth curves.
+ * ViewBox is 0 0 1440 50. Top waves fill upward (L1440,0 L0,0),
+ * bottom waves fill downward (L1440,50 L0,50).
+ */
+const WAVE_PATHS = {
+  cloud1: {
+    top: "M0,35 C90,28 180,18 270,15 C360,12 450,20 540,25 C630,30 720,15 810,10 C900,5 990,12 1080,18 C1170,24 1215,14 1260,10 C1305,6 1350,15 1395,20 L1440,22 L1440,0 L0,0 Z",
+    bottom: "M0,30 C90,34 180,42 270,45 C360,48 450,38 540,32 C630,26 720,35 810,40 C900,45 990,38 1080,32 C1170,26 1260,38 1350,44 L1440,40 L1440,50 L0,50 Z",
+  },
+  cloud2: {
+    top: "M0,28 C90,35 180,42 270,40 C360,38 450,22 540,15 C630,8 720,18 810,28 C900,38 990,18 1080,10 C1170,2 1260,14 1350,24 L1440,20 L1440,0 L0,0 Z",
+    bottom: "M0,25 C90,30 180,40 270,44 C360,48 450,35 540,28 C630,21 720,32 810,40 C900,48 990,34 1080,24 C1170,14 1260,28 1350,38 L1440,34 L1440,50 L0,50 Z",
+  },
+  cloud3: {
+    top: "M0,32 C90,26 180,15 270,10 C360,5 450,16 540,25 C630,34 720,22 810,12 C900,2 990,14 1080,24 C1170,34 1260,20 1350,12 L1440,18 L1440,0 L0,0 Z",
+    bottom: "M0,22 C90,28 180,38 270,44 C360,50 450,40 540,30 C630,20 720,30 810,40 C900,48 990,36 1080,26 C1170,16 1260,30 1350,40 L1440,35 L1440,50 L0,50 Z",
+  },
+};
+
+const {
+  image,
+  title,
+  subtitle,
+  topWaveClass = "fill-secondary",
+  bottomWaveClass = "fill-background",
+  variant = "cloud1",
+} = Astro.props;
+
+const wavePaths = WAVE_PATHS[variant];
+---
+
+<section class="relative h-64 overflow-hidden md:h-80">
+  <div class="absolute -top-px left-0 right-0 z-20" aria-hidden="true">
+    <svg viewBox="0 0 1440 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="block w-full" preserveAspectRatio="none">
+      <path d={wavePaths.top} class={topWaveClass} />
+    </svg>
+  </div>
+
+  <!-- Parallax background image (CSS-only) -->
+  <div
+    class="absolute inset-0 parallax-section"
+    style={`background-image: url('${image}');`}
+    aria-hidden="true"
+  ></div>
+  <div class="absolute inset-0 bg-foreground/50" aria-hidden="true"></div>
+
+  <!-- Content -->
+  <div class="relative z-10 flex h-full flex-col items-center justify-center px-4 text-center">
+    <p class="font-serif text-3xl font-bold text-primary-foreground md:text-5xl text-balance">
+      {title}
+    </p>
+    <p class="mt-3 text-sm text-primary-foreground/80 md:text-base">
+      {subtitle}
+    </p>
+  </div>
+
+  <div class="absolute -bottom-px left-0 right-0 z-20" aria-hidden="true">
+    <svg viewBox="0 0 1440 50" fill="none" xmlns="http://www.w3.org/2000/svg" class="block w-full" preserveAspectRatio="none">
+      <path d={wavePaths.bottom} class={bottomWaveClass} />
+    </svg>
+  </div>
+</section>

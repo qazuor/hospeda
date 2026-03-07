@@ -1,0 +1,40 @@
+---
+import { ArrowRightIcon } from "@repo/icons";
+import { createT } from "@/lib/i18n";
+import type { DestinationCardData } from "@/lib/api/transforms";
+
+interface Props {
+  card: DestinationCardData;
+  index?: number;
+  locale?: string;
+}
+
+const CARD_STAGGER_MS = 150;
+const { card, index = 0, locale = "es" } = Astro.props;
+const t = createT(locale);
+---
+
+<a
+  href={`/${locale}/destinos/${card.slug}/`}
+  class="scroll-reveal group relative flex h-80 overflow-hidden rounded-2xl md:h-96"
+  style={`transition-delay: ${index * CARD_STAGGER_MS}ms`}
+>
+  <img
+    src={card.featuredImage}
+    alt={`Destino ${card.name}`}
+    class="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+    transition:name={`entity-${card.slug}`}
+  />
+  <div class="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/20 to-transparent"></div>
+
+  <div class="relative mt-auto flex w-full items-end justify-between p-6">
+    <div>
+      <h3 class="font-serif text-3xl font-bold text-primary-foreground">{card.name}</h3>
+      <p class="mt-1 text-sm text-primary-foreground/80">{card.summary}</p>
+      <p class="mt-2 text-xs font-medium text-accent">{card.accommodationsCount} {t('home.featuredDestinations.accommodations', 'alojamientos')}</p>
+    </div>
+    <span class="flex h-10 w-10 items-center justify-center rounded-full bg-primary-foreground/20 text-primary-foreground backdrop-blur-sm transition-colors hover:bg-accent hover:text-accent-foreground" aria-label={`${t('home.featuredDestinations.viewAccommodations', 'Ver alojamientos en')} ${card.name}`}>
+      <ArrowRightIcon size={20} />
+    </span>
+  </div>
+</a>

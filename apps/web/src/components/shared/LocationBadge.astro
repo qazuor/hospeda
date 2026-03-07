@@ -1,0 +1,38 @@
+---
+/**
+ * @file LocationBadge.astro
+ * @description Compact badge displaying a location name with a map pin icon.
+ * Used in accommodation cards, event cards, and other listing components
+ * to indicate geographic context.
+ */
+import { LocationIcon } from "@repo/icons";
+
+/**
+ * Props for the LocationBadge component.
+ * @property location - City or place name to display (e.g. "Colon", "Concordia")
+ * @property variant - Visual style: "solid" uses opaque card background, "glass" uses translucent backdrop blur
+ * @property class - Additional CSS classes to merge into the badge container
+ */
+interface Props {
+  /** City or place name to display */
+  readonly location: string;
+  /** Visual style variant */
+  readonly variant?: "solid" | "glass";
+  /** Additional CSS classes */
+  readonly class?: string;
+}
+
+const { location, variant = "glass", class: className = "" } = Astro.props;
+
+/** Tailwind classes mapped to each visual variant */
+
+const variantClasses: Record<string, string> = {
+  solid: "bg-card text-foreground",
+  glass: "bg-card/90 text-foreground backdrop-blur-sm",
+};
+---
+
+<span class:list={["flex items-center gap-1 rounded-full px-2.5 py-1 text-2xs font-medium", variantClasses[variant], className]}>
+  <LocationIcon size={12} />
+  {location}
+</span>

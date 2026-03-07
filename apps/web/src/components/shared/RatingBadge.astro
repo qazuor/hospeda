@@ -1,0 +1,41 @@
+---
+/**
+ * @file RatingBadge.astro
+ * @description Compact floating badge displaying a star rating and optional review count.
+ * Positioned absolutely within a parent container (typically an image overlay).
+ * Shows a filled star with numeric rating when available, or a "no reviews" fallback.
+ */
+import { StarIcon } from "@repo/icons";
+
+/**
+ * Props for the RatingBadge component.
+ * @property rating - Numeric rating value (0 triggers the "no reviews" state)
+ * @property reviewsCount - Number of reviews to display in parentheses after the rating
+ * @property noReviewsLabel - Fallback text shown when rating is 0 (i18n fallback)
+ */
+interface Props {
+  /** Numeric rating value (0 shows "no reviews" state) */
+  readonly rating: number;
+  /** Number of reviews to display in parentheses */
+  readonly reviewsCount?: number;
+  /** Fallback label when there are no reviews */
+  readonly noReviewsLabel?: string;
+}
+
+const { rating, reviewsCount = 0, noReviewsLabel = "Sin reviews" } = Astro.props;
+---
+
+<div class="absolute right-3 top-3 rounded-full bg-card/90 px-2 py-1 backdrop-blur-sm">
+  {rating > 0 ? (
+    <div class="flex items-center gap-1">
+      <StarIcon size={12} weight="fill" className="text-accent" />
+      <span class="text-xs font-bold text-foreground">{rating}</span>
+      {reviewsCount > 0 && <span class="text-2xs text-muted-foreground">({reviewsCount})</span>}
+    </div>
+  ) : (
+    <div class="flex items-center gap-1">
+      <StarIcon size={12} weight="duotone" className="text-muted-foreground/50" />
+      <span class="text-2xs text-muted-foreground">{noReviewsLabel}</span>
+    </div>
+  )}
+</div>

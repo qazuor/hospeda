@@ -1,0 +1,74 @@
+---
+/**
+ * @file SectionHeader.astro
+ * @description Reusable section header with optional tagline, title, and subtitle.
+ * Supports multiple size and spacing variants for different layout contexts.
+ * Used across all homepage sections for consistent heading hierarchy.
+ */
+
+/**
+ * Props for the SectionHeader component.
+ * @property tagline - Small uppercase text displayed above the title (e.g. "Explore the region")
+ * @property taglineColor - Tailwind text color class for the tagline
+ * @property title - Main heading text (rendered as h2)
+ * @property subtitle - Descriptive paragraph below the title
+ * @property align - Text alignment: "center" centers all content, "left" left-aligns
+ * @property maxSubtitleWidth - Tailwind max-width class constraining the subtitle paragraph
+ * @property size - Title size variant: "default" for primary sections, "sm" for sub-sections
+ * @property spacing - Bottom margin variant: "default" adds mb-12, "compact" adds mb-5
+ */
+interface Props {
+  /** Small uppercase text above the title */
+  readonly tagline?: string;
+  /** Tailwind text color class for the tagline */
+  readonly taglineColor?: string;
+  /** Main heading text (rendered as h2) */
+  readonly title: string;
+  /** Descriptive paragraph below the title */
+  readonly subtitle?: string;
+  /** Text alignment for the entire header block */
+  readonly align?: "center" | "left";
+  /** Tailwind max-width class for the subtitle */
+  readonly maxSubtitleWidth?: string;
+  /** Title font size variant */
+  readonly size?: "default" | "sm";
+  /** Bottom margin spacing variant */
+  readonly spacing?: "default" | "compact";
+}
+
+const {
+  tagline,
+  taglineColor = "text-accent",
+  title,
+  subtitle,
+  align = "center",
+  maxSubtitleWidth = "max-w-lg",
+  size = "default",
+  spacing = "default",
+} = Astro.props;
+
+/** Computed alignment class based on the align prop */
+const alignClass = align === "center" ? "text-center" : "text-left";
+/** Computed subtitle positioning classes (centering + max-width) */
+const subtitleMargin = align === "center" ? `mx-auto ${maxSubtitleWidth}` : maxSubtitleWidth;
+/** Computed title font size classes based on the size variant */
+const titleSize = size === "sm" ? "text-2xl md:text-3xl" : "text-4xl md:text-5xl";
+/** Computed bottom margin class based on the spacing variant */
+const spacingClass = spacing === "compact" ? "mb-5" : "mb-12";
+---
+
+<div class:list={["scroll-reveal", spacingClass, alignClass]}>
+  {tagline && (
+    <p class:list={["mb-2 text-sm font-semibold uppercase tracking-widest", taglineColor]}>
+      {tagline}
+    </p>
+  )}
+  <h2 class:list={["font-serif font-bold text-foreground text-balance", titleSize]}>
+    {title}
+  </h2>
+  {subtitle && (
+    <p class:list={["mt-3 text-muted-foreground", subtitleMargin]}>
+      {subtitle}
+    </p>
+  )}
+</div>

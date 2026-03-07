@@ -1,0 +1,114 @@
+---
+/**
+ * @file Breadcrumb.astro
+ * @description Accessible breadcrumb navigation with JSON-LD structured data.
+ *
+ * Renders an ordered list of navigation links where the last item is displayed
+ * as plain text with `aria-current="page"`. Includes a `BreadcrumbList`
+ * JSON-LD script for search-engine rich results.
+ *
+ * Separators use a chevron icon from `@repo/icons` to match the design system.
+ * Color tokens follow the semantic palette defined in `STYLE_GUIDE.md`:
+ * - Non-active links: `text-muted-foreground` with `hover:text-primary`
+ * - Current page: `text-foreground`
+ * - Separator: `text-muted-foreground/60`
+ *
+ * @example
+ * ```astro
+ * ---
+ * import Breadcrumb from '@/components/shared/Breadcrumb.astro';
+ * ---
+ * <Breadcrumb
+ *   items={[
+ *     { label: 'Inicio', href: '/es/' },
+ *     { label: 'Alojamientos', href: '/es/alojamientos/' },
+ *     { label: 'Casa del Rio', href: '/es/alojamientos/casa-del-rio/' },
+ *   ]}
+ * />
+ * ```
+ */
+
+import { ChevronRightIcon } from '@repo/icons';
+
+/**
+ * A single breadcrumb step with its display label and navigation href.
+ */
+interface BreadcrumbItem {
+  /** Display text shown to the user. */
+  readonly label: string;
+  /**
+   * Relative or absolute URL for this step.
+   * Used both for navigation and for JSON-LD structured data.
+   */
+  readonly href: string;
+}
+
+/**
+ * Props for the Breadcrumb component.
+ */
+interface Props {
+  /**
+   * Ordered list of breadcrumb steps.
+   * The last item is treated as the current page and rendered as plain text.
+   * All preceding items are rendered as anchor links.
+   */
+  readonly items: readonly BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+/**
+ * Build the JSON-LD BreadcrumbList object for structured data.
+ * Resolves each href against `Astro.site` to produce absolute URLs.
+ * Falls back gracefully when `Astro.site` is undefined (local dev without `site` configured).
+ */
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: items.map((item, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    name: item.label,
+    item: Astro.site
+      ? new URL(item.href, Astro.site).href
+      : item.href,
+  })),
+};
+---
+
+<nav aria-label="Breadcrumb" class="py-3">
+  <ol class="flex flex-wrap items-center gap-1 text-sm">
+    {items.map((item, index) => {
+      const isLast = index === items.length - 1;
+      return (
+        <li class="flex items-center gap-1">
+          {index > 0 && (
+            <ChevronRightIcon
+              size={14}
+              weight="regular"
+              className="shrink-0 text-muted-foreground/60"
+              aria-hidden="true"
+            />
+          )}
+          {isLast ? (
+            <span
+              class="text-foreground"
+              aria-current="page"
+            >
+              {item.label}
+            </span>
+          ) : (
+            <a
+              href={item.href}
+              class="text-muted-foreground transition-colors hover:text-primary"
+            >
+              {item.label}
+            </a>
+          )}
+        </li>
+      );
+    })}
+  </ol>
+</nav>
+
+<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />

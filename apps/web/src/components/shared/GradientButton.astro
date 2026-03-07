@@ -1,0 +1,40 @@
+---
+/**
+ * @file GradientButton.astro
+ * @description Primary call-to-action link styled as a gradient pill button.
+ * Uses the brand gradient (primary to hospeda-river) with hover elevation effects.
+ * Used consistently across all homepage sections for "View all" navigation links.
+ */
+import { ArrowRightIcon } from "@repo/icons";
+
+/**
+ * Props for the GradientButton component.
+ * @property href - Navigation URL for the button link
+ * @property label - Button text content
+ * @property showArrow - Whether to display an arrow icon after the label
+ * @property class - Additional CSS classes to merge into the anchor element
+ */
+interface Props {
+  /** Navigation URL for the button link */
+  readonly href: string;
+  /** Button text content */
+  readonly label: string;
+  /** Whether to display a right arrow icon after the label */
+  readonly showArrow?: boolean;
+  /** Additional CSS classes */
+  readonly class?: string;
+}
+
+const { href, label, showArrow = false, class: className = "" } = Astro.props;
+---
+
+<a
+  href={href}
+  class:list={[
+    "inline-flex h-10 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-primary to-hospeda-river px-8 text-sm font-medium text-primary-foreground shadow-md transition-all hover:shadow-lg hover:brightness-110",
+    className,
+  ]}
+>
+  {label}
+  {showArrow && <ArrowRightIcon size={16} />}
+</a>

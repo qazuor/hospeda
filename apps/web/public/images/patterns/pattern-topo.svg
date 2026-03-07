@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400">
+  <defs>
+    <style>
+      .topo-line { fill: none; stroke: #3B82A0; stroke-width: 1.5; }
+    </style>
+  </defs>
+  <!-- Líneas topográficas onduladas inspiradas en curvas de nivel fluvial -->
+  <path class="topo-line" d="M0,40 Q50,20 100,40 T200,40 T300,40 T400,40"/>
+  <path class="topo-line" d="M0,80 Q60,55 120,80 T240,80 T360,80 L400,75"/>
+  <path class="topo-line" d="M0,120 Q80,95 140,125 T280,115 T400,120"/>
+  <path class="topo-line" d="M0,160 Q70,140 150,165 T300,155 T400,160"/>
+  <path class="topo-line" d="M0,200 Q90,175 160,205 T320,195 T400,200"/>
+  <path class="topo-line" d="M0,240 Q55,220 130,245 T270,235 T400,240"/>
+  <path class="topo-line" d="M0,280 Q75,255 145,285 T290,275 T400,280"/>
+  <path class="topo-line" d="M0,320 Q65,300 135,325 T275,315 T400,320"/>
+  <path class="topo-line" d="M0,360 Q85,335 155,365 T310,355 T400,360"/>
+  <path class="topo-line" d="M0,400 Q60,380 140,400 T280,395 T400,400"/>
+</svg>

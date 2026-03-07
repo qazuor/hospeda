@@ -1,0 +1,65 @@
+---
+import { CheckIcon } from '@repo/icons';
+import { sanitizeHtml } from '@/lib/sanitize-html';
+
+/**
+ * Displays a responsive grid of amenities with optional icons and names.
+ *
+ * Amenity names arrive pre-translated from the API, so no locale/i18n is needed.
+ * Icons are API-sourced SVG strings and are sanitized before rendering to prevent XSS.
+ * Falls back to a CheckIcon when no icon is provided.
+ * Items are sorted by displayWeight DESC for consistent presentation order.
+ *
+ * @example
+ * ```astro
+ * <AmenitiesList amenities={accommodation.amenities} />
+ * <AmenitiesList amenities={accommodation.amenities} class="mt-4" />
+ * ```
+ */
+
+/**
+ * A single amenity item as returned from the API.
+ */
+interface AmenityItem {
+  /** Display name of the amenity, already translated by the API. */
+  readonly name: string;
+  /** Optional SVG icon HTML string sourced from the API. Sanitized before render. */
+  readonly icon?: string;
+  /** Unique slug identifier for the amenity. */
+  readonly slug: string;
+  /** Numeric weight used for display ordering (higher = first). Defaults to 50. */
+  readonly displayWeight?: number;
+}
+
+/**
+ * Props for the AmenitiesList component.
+ */
+interface Props {
+  /** List of amenity items to render. */
+  readonly amenities: readonly AmenityItem[];
+  /** Additional CSS classes to merge onto the root `<ul>` element. */
+  readonly class?: string;
+}
+
+const { amenities, class: className } = Astro.props;
+
+/** Sort amenities by displayWeight DESC for consistent display order. */
+const sortedAmenities = [...amenities].sort(
+  (a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50)
+);
+---
+
+<ul class:list={['grid grid-cols-2 gap-3 sm:grid-cols-3', className]} role="list">
+  {sortedAmenities.map((amenity) => (
+    <li class="flex items-center gap-2 text-sm text-muted-foreground">
+      <span class="flex-shrink-0 text-primary" aria-hidden="true">
+        {amenity.icon ? (
+          <Fragment set:html={sanitizeHtml({ html: amenity.icon })} />
+        ) : (
+          <CheckIcon size={16} weight="bold" className="text-primary" />
+        )}
+      </span>
+      <span>{amenity.name}</span>
+    </li>
+  ))}
+</ul>

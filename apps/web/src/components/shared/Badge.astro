@@ -1,0 +1,38 @@
+---
+/**
+ * @file Badge.astro
+ * @description Inline badge component with 5 visual variants.
+ * Uses design tokens for consistent theming across light/dark modes.
+ */
+
+/** Badge visual variant */
+type BadgeVariant = 'primary' | 'secondary' | 'outline' | 'accent' | 'featured';
+
+/** Props interface for Badge component. */
+interface Props {
+  /** Visual variant of the badge */
+  readonly variant?: BadgeVariant;
+  /** Additional CSS classes */
+  readonly class?: string;
+}
+
+const { variant = 'primary', class: className } = Astro.props;
+
+const variantClasses: Record<BadgeVariant, string> = {
+  primary: 'bg-primary/10 text-primary',
+  secondary: 'bg-secondary/10 text-secondary-foreground',
+  outline: 'border border-border text-muted-foreground',
+  accent: 'bg-accent/15 text-accent',
+  featured: 'bg-accent/90 text-accent-foreground backdrop-blur-sm',
+};
+---
+
+<span
+  class:list={[
+    'inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full',
+    variantClasses[variant],
+    className,
+  ]}
+>
+  <slot />
+</span>

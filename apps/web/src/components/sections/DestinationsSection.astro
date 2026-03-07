@@ -1,0 +1,62 @@
+---
+/**
+ * @file DestinationsSection.astro
+ * @description Homepage section displaying featured destination cards
+ * fetched from the API in a 3-column grid with decorative elements.
+ */
+import BackgroundPattern from "@/components/shared/BackgroundPattern.astro";
+import DecorativeElement from "@/components/shared/DecorativeElement.astro";
+import Illustration from "@/components/shared/Illustration.astro";
+import SectionHeader from "@/components/shared/SectionHeader.astro";
+import GradientButton from "@/components/shared/GradientButton.astro";
+import DestinationCard from "@/components/shared/DestinationCard.astro";
+import { destinationsApi } from "@/lib/api/endpoints";
+import { toDestinationCardProps } from "@/lib/api/transforms";
+import { createT } from "@/lib/i18n";
+
+/**
+ * Props for the DestinationsSection component.
+ * @property locale - Current locale for i18n translations and link generation
+ */
+interface Props {
+  /** Current locale for translations */
+  readonly locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const t = createT(locale);
+
+const result = await destinationsApi.list({ isFeatured: true, pageSize: 3 });
+const cards = result.ok
+  ? result.data.items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown> }))
+  : [];
+---
+
+<section id="destinations" class="wave-bottom-b relative z-[8] -mt-10 md:-mt-12 overflow-hidden bg-secondary py-16 pb-20 md:py-24 md:pb-24">
+  <BackgroundPattern pattern="/images/patterns/pattern-diagonal.svg" size="40px 40px" opacity="opacity-80" />
+
+  <DecorativeElement src="/images/decoratives/deco-avion.svg" position="top-8 right-8 md:right-16" size="w-20 md:w-28" opacity="opacity-60" />
+  <DecorativeElement src="/images/decoratives/deco-multi-pins.svg" position="top-1/3 left-4 md:left-12" size="w-20 md:w-28" opacity="opacity-40" hidden="hidden lg:block" />
+  <DecorativeElement src="/images/decoratives/deco-flecha-curva.svg" position="bottom-16 right-1/4" size="w-24 md:w-32" opacity="opacity-45" rotate="rotate-45" />
+  <DecorativeElement src="/images/decoratives/deco-pin-location.svg" position="bottom-20 left-8 md:left-20" size="w-8 md:w-12" opacity="opacity-50" />
+  <Illustration src="/images/illustrations/ilustracion-destinos.svg" position="-left-4 top-40 md:left-4 md:top-20 lg:left-12 lg:top-16" size="h-20 w-20 md:h-40 md:w-40 lg:h-56 lg:w-56" />
+
+  <div class="relative mx-auto max-w-7xl px-4 md:px-8">
+    <SectionHeader
+      tagline={t('home.featuredDestinations.tagline', 'Explora la region')}
+      taglineColor="text-hospeda-forest"
+      title={t('home.featuredDestinations.title', 'Destinos imperdibles')}
+      subtitle={t('home.featuredDestinations.subtitle', 'Ciudades con encanto a orillas del Rio Uruguay, donde la naturaleza y la cultura se encuentran.')}
+    />
+
+    <div class="grid gap-6 md:grid-cols-3">
+      {cards.map((card, i) => (
+        <DestinationCard card={card} index={i} locale={locale} />
+      ))}
+    </div>
+
+    <div class="mt-10 text-center scroll-reveal">
+      <GradientButton href={`/${locale}/destinos/`} label={t('home.featuredDestinations.viewAll', 'Ver todos los destinos')} />
+    </div>
+  </div>
+</section>

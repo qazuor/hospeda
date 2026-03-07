@@ -1,0 +1,28 @@
+---
+import type React from "react";
+import type { IconProps } from "@repo/icons";
+
+interface Props {
+  href: string;
+  icon: React.ComponentType<IconProps>;
+  label: string;
+  /** Visual variant: "primary" for accommodation types, "accent" for amenities */
+  variant?: "primary" | "accent";
+}
+
+const { href, icon: ChipIcon, label, variant = "primary" } = Astro.props;
+
+const variantClasses = variant === "primary"
+  ? "bg-card shadow-sm hover:shadow-md hover:bg-primary hover:text-primary-foreground [&_.chip-icon]:text-primary [&_.chip-icon]:group-hover:text-primary-foreground [&_.chip-label]:text-card-foreground [&_.chip-label]:group-hover:text-primary-foreground"
+  : "border border-border bg-background hover:border-accent hover:bg-accent hover:text-accent-foreground [&_.chip-icon]:text-muted-foreground [&_.chip-icon]:group-hover:text-accent-foreground [&_.chip-label]:text-muted-foreground [&_.chip-label]:group-hover:text-accent-foreground";
+---
+
+<a
+  href={href}
+  class:list={["group flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all duration-200", variantClasses]}
+>
+  <ChipIcon size={variant === "primary" ? 16 : 14} className="chip-icon transition-colors" />
+  <span class="chip-label text-xs font-medium transition-colors">
+    {label}
+  </span>
+</a>

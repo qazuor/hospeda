@@ -1,0 +1,150 @@
+---
+/**
+ * @file HeroSection.astro
+ * @description Full-viewport hero section with React-driven image slideshow,
+ * gradient overlay, headline text, and the HeroSearchForm React island.
+ * Images are optimized via Astro's getImage() and preloaded in <head>.
+ */
+import { Image } from 'astro:assets';
+import { HeroSearchForm } from "@/components/hero/HeroSearchForm";
+import { HeroSlideshow } from "@/components/hero/HeroSlideshow";
+import { HERO_IMAGE_SOURCES, SLIDE_SECONDS } from "@/data/hero";
+import { createT } from "@/lib/i18n";
+import type { SupportedLocale } from "@/lib/i18n";
+
+/**
+ * Props for the HeroSection component.
+ * @property locale - Current locale for i18n translations
+ */
+interface Props {
+  /** Current locale for translations */
+  readonly locale?: string;
+}
+
+const { locale = 'es' } = Astro.props;
+const t = createT(locale as SupportedLocale);
+
+/** Map hero images to { src, alt } with resolved URLs for the React slideshow */
+const slideshowImages = HERO_IMAGE_SOURCES.map((image) => ({
+  src: image.src.src,
+  alt: image.alt,
+}));
+
+const firstSource = HERO_IMAGE_SOURCES[0];
+---
+
+<section class="wave-bottom-hero relative z-[12] min-h-screen overflow-hidden pb-20 md:pb-24">
+  <!-- First image as static SSR fallback (visible before JS hydrates) -->
+  {firstSource && (
+    <div class="hero-fallback absolute inset-0 z-[1]">
+      <Image
+        src={firstSource.src}
+        alt={firstSource.alt}
+        widths={[1024, 1440, 1920]}
+        sizes="100vw"
+        format="webp"
+        quality={80}
+        class="absolute inset-0 h-full w-full object-cover scale-110"
+        loading="eager"
+        fetchpriority="high"
+      />
+    </div>
+  )}
+
+  <!-- React slideshow (takes over after hydration) -->
+  <div class="hero-slideshow-wrapper absolute inset-0">
+    <HeroSlideshow
+      client:idle
+      images={slideshowImages}
+      interval={SLIDE_SECONDS * 1000}
+    />
+  </div>
+
+  <!-- Overlay gradient -->
+  <div class="absolute inset-0 z-[4] bg-gradient-to-b from-hero-overlay-heavy via-hero-overlay to-hero-overlay-heavy"></div>
+
+  <!-- Content -->
+  <div class="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 pb-24 pt-28 text-center">
+    <p class="hero-text-shadow-sm mb-3 font-medium uppercase tracking-ultra text-hero-text-secondary" style="font-size: clamp(0.75rem, 0.5rem + 0.8vw, 1rem);">
+      {t('home.hero.tagline', 'Costa del Rio Uruguay')}
+    </p>
+    <h1 class="hero-text-shadow mb-2 font-serif font-bold text-hero-text" style="font-size: clamp(2.5rem, 1rem + 6vw, 8rem);">
+      {t('home.hero.title', 'Tu escapada empieza aca')}
+    </h1>
+    <p class="hero-text-shadow-sm mx-auto mb-10 max-w-xl text-balance text-hero-text-secondary" style="font-size: clamp(0.875rem, 0.7rem + 0.6vw, 1.25rem);">
+      {t('home.hero.subtitle', 'Descubri los mejores alojamientos, destinos y experiencias del litoral.')}
+    </p>
+
+    <!-- Search form (React island) -->
+    <div class="w-full px-2 md:px-4 transition-opacity duration-300" id="hero-search-form">
+      <HeroSearchForm client:idle />
+    </div>
+  </div>
+
+  <!-- Scroll indicator - fixed to bottom of viewport so it's always visible -->
+  <div class="absolute inset-x-0 top-0 h-screen pointer-events-none z-20">
+  <div class="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce transition-opacity duration-300 pointer-events-auto" id="hero-scroll-indicator">
+    <a href="#alojamientos" aria-label={t('home.hero.scrollLabel', 'Ir al contenido')}>
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" viewBox="0 0 256 256" class="text-hero-text-muted" aria-hidden="true">
+        <path d="M213.66,141.66l-80,80a8,8,0,0,1-11.32,0l-80-80a8,8,0,0,1,11.32-11.32L128,204.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"></path>
+      </svg>
+    </a>
+  </div>
+  </div>
+
+  <style>
+    .hero-slideshow-wrapper :global(astro-island) {
+      display: block;
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+
+  <script>
+    /** Hide hero fixed elements when scrolled past the hero */
+    function initHeroScrollEffects() {
+      const indicator = document.getElementById('hero-scroll-indicator');
+      const searchForm = document.getElementById('hero-search-form');
+
+      if (!indicator && !searchForm) return;
+
+      const heroSection = indicator?.closest('section') ?? searchForm?.closest('section');
+      if (!heroSection) return;
+
+      // Fade out hero elements progressively as user scrolls
+      const handleScroll = () => {
+        const scrollY = window.scrollY;
+        const fadeStart = 0;
+        const fadeEnd = 500;
+
+        let opacity: number;
+        if (scrollY <= fadeStart) {
+          opacity = 1;
+        } else if (scrollY >= fadeEnd) {
+          opacity = 0;
+        } else {
+          const progress = (scrollY - fadeStart) / (fadeEnd - fadeStart);
+          opacity = 1 - progress;
+        }
+
+        const opacityStr = String(opacity);
+        const pointerEvents = opacity > 0 ? 'auto' : 'none';
+
+        if (searchForm) {
+          searchForm.style.opacity = opacityStr;
+          searchForm.style.pointerEvents = pointerEvents;
+        }
+        if (indicator) {
+          indicator.style.opacity = opacityStr;
+          indicator.style.pointerEvents = pointerEvents;
+        }
+      };
+      handleScroll();
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
+
+    initHeroScrollEffects();
+    document.addEventListener('astro:page-load', initHeroScrollEffects);
+  </script>
+
+</section>
