@@ -3,7 +3,7 @@ import { AuthProvider } from '@/contexts/auth-context';
 import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
 import { fetchAuthSession } from '@/lib/auth-session';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { Link, Outlet, createFileRoute, redirect } from '@tanstack/react-router';
 
 /**
@@ -68,21 +68,9 @@ export const Route = createFileRoute('/_authed')({
             });
         }
 
-        // Verify admin panel access.
-        // Roles with implicit panel access: SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, SPONSOR.
-        // USER and GUEST are public-web-only roles and cannot access the admin panel.
-        const adminPanelRoles: readonly string[] = [
-            RoleEnum.SUPER_ADMIN,
-            RoleEnum.ADMIN,
-            RoleEnum.CLIENT_MANAGER,
-            RoleEnum.EDITOR,
-            RoleEnum.HOST,
-            RoleEnum.SPONSOR
-        ] as const;
-
-        const hasPanelAccess =
-            (authState.role !== null && adminPanelRoles.includes(authState.role)) ||
-            authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
+        // Verify admin panel access using permission-only check.
+        // Never check roles directly - use PermissionEnum exclusively.
+        const hasPanelAccess = authState.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
 
         if (!hasPanelAccess) {
             throw redirect({

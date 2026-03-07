@@ -1,5 +1,5 @@
 import { UserModel } from '@repo/db';
-import { AuthMeResponseSchema, RoleEnum } from '@repo/schemas';
+import { AuthMeResponseSchema, PermissionEnum } from '@repo/schemas';
 import { createGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
@@ -20,18 +20,15 @@ export const authMeRoute = createSimpleRoute({
             // Check if user is authenticated by checking if actor is not a guest
             const isAuthenticated = actor.role !== 'GUEST';
 
-            // Only expose permissions to admin-level users.
-            // Regular users and guests receive an empty permissions array.
-            const isAdminUser =
-                actor.role === RoleEnum.SUPER_ADMIN ||
-                actor.role === RoleEnum.ADMIN ||
-                actor.role === RoleEnum.CLIENT_MANAGER;
+            // Return all permissions for authenticated users.
+            // Permissions are public knowledge to the user themselves and needed
+            // for client-side feature gating (e.g. admin panel access checks).
+            const filteredActor = actor;
 
-            const filteredActor = isAdminUser ? actor : { ...actor, permissions: [] as string[] };
-
-            // Check passwordChangeRequired flag for authenticated admin users
+            // Check passwordChangeRequired flag for admin panel users
             let passwordChangeRequired = false;
-            if (isAuthenticated && isAdminUser) {
+            const hasAdminAccess = actor.permissions.includes(PermissionEnum.ACCESS_PANEL_ADMIN);
+            if (isAuthenticated && hasAdminAccess) {
                 try {
                     const userModel = new UserModel();
                     const dbUser = await userModel.findById(actor.id);
