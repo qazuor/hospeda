@@ -1,53 +1,49 @@
 /**
  * Subscription webhook handler for MercadoPago IPN events.
  *
- * Handles subscription_preapproval.updated events. Currently logs the event
- * and marks it as processed without performing business logic. Real subscription
- * state sync is deferred to SPEC-027.
+ * Handles subscription_preapproval.updated events by delegating to
+ * processSubscriptionUpdated for full state sync with MercadoPago.
  *
  * @module routes/webhooks/mercadopago/subscription-handler
  */
 
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
-import { apiLogger } from '../../../utils/logger';
-import { markEventProcessedByProviderId } from './utils';
+import { apiLogger } from '../../../utils/logger.js';
+import { processSubscriptionUpdated } from './subscription-logic.js';
+import { getWebhookDependencies, markEventProcessedByProviderId } from './utils.js';
 
 /**
  * Handler for subscription_preapproval.updated events.
  *
- * Logs subscription status changes at warn level for monitoring visibility.
- * Marks the webhook event as processed in the database.
- *
- * @remarks
- * **V1 Limitation:** This handler does NOT sync subscription state from
- * MercadoPago to the local database. It only logs and acknowledges.
- *
- * A full implementation would:
- * 1. Fetch current subscription state from MercadoPago via QZPay
- * 2. Update `billing_subscriptions` with the new status
- * 3. Send notifications for cancellations, suspensions, or reactivations
- * 4. Handle grace periods and entitlement revocation
- *
- * This is tracked in SPEC-027 (Webhook Subscription Sync).
+ * Fetches current subscription state from MercadoPago, updates the local
+ * database, records an audit log, and sends notifications as appropriate.
+ * On failure, the error propagates and the event enters the dead letter queue.
  *
  * @param c - Hono context
  * @param event - Parsed QZPay webhook event
  */
-export const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
-    const eventData = event.data as Record<string, unknown> | undefined;
+export const handleSubscriptionUpdated: QZPayWebhookHandler = async (_c, event) => {
+    const deps = getWebhookDependencies();
 
-    apiLogger.warn(
-        {
-            eventId: event.id,
-            eventType: event.type,
-            status: eventData?.status,
-            subscriptionId: eventData?.id,
-            requestId: c.get('requestId')
-        },
-        'MercadoPago webhook: Subscription updated (not synced - see SPEC-027)'
-    );
+    if (!deps) {
+        apiLogger.warn('Billing not configured, skipping subscription sync');
+        await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+        return undefined;
+    }
 
-    await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+    const result = await processSubscriptionUpdated({
+        event,
+        billing: deps.billing,
+        paymentAdapter: deps.paymentAdapter,
+        providerEventId: String(event.id),
+        source: 'webhook'
+    });
 
-    return undefined; // Continue to default processing
+    if (result.success) {
+        await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+    }
+    // If !success, the error will propagate and the event handler
+    // will mark it as failed + add to dead letter queue
+
+    return undefined;
 };

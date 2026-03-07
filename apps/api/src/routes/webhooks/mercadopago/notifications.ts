@@ -214,3 +214,194 @@ export async function sendPaymentFailureNotifications(
         );
     }
 }
+
+/**
+ * Sends a cancellation notification to the user AND an admin alert.
+ *
+ * The user receives a SUBSCRIPTION_CANCELLED notification. Admins receive an
+ * ADMIN_SYSTEM_EVENT alert with mpSubscriptionId and previousStatus for
+ * investigation of involuntary cancellations.
+ *
+ * @param params.customerId - Billing customer ID
+ * @param params.customerEmail - Customer email address
+ * @param params.customerName - Customer display name
+ * @param params.userId - Associated user ID, or null if not linked
+ * @param params.planName - Name of the cancelled subscription plan
+ * @param params.currentPeriodEnd - ISO date string of the current period end, if available
+ * @param params.mpSubscriptionId - MercadoPago subscription ID for admin reference
+ * @param params.previousStatus - Status before cancellation for admin investigation
+ */
+export async function sendSubscriptionCancelledNotification(params: {
+    readonly customerId: string;
+    readonly customerEmail: string;
+    readonly customerName: string;
+    readonly userId: string | null;
+    readonly planName: string;
+    readonly currentPeriodEnd?: string;
+    readonly mpSubscriptionId: string;
+    readonly previousStatus: string;
+}): Promise<void> {
+    try {
+        // User notification
+        if (params.customerEmail) {
+            await sendNotification({
+                type: NotificationType.SUBSCRIPTION_CANCELLED,
+                recipientEmail: params.customerEmail,
+                recipientName: params.customerName,
+                userId: params.userId,
+                customerId: params.customerId,
+                planName: params.planName,
+                currentPeriodEnd: params.currentPeriodEnd
+            }).catch((err) => {
+                apiLogger.debug(
+                    {
+                        error: err instanceof Error ? err.message : String(err),
+                        customerId: params.customerId
+                    },
+                    'Subscription cancelled user notification failed (will retry)'
+                );
+            });
+        }
+
+        // Admin alert for involuntary cancellation
+        const adminEmails =
+            env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) ?? [];
+        for (const adminEmail of adminEmails) {
+            if (adminEmail) {
+                await sendNotification({
+                    type: NotificationType.ADMIN_SYSTEM_EVENT,
+                    recipientEmail: adminEmail,
+                    recipientName: 'Admin',
+                    userId: null,
+                    severity: 'warning' as const,
+                    eventDetails: {
+                        eventType: 'subscription_involuntary_cancellation',
+                        customerEmail: params.customerEmail,
+                        planName: params.planName,
+                        mpSubscriptionId: params.mpSubscriptionId,
+                        previousStatus: params.previousStatus
+                    }
+                }).catch((err) => {
+                    apiLogger.debug(
+                        {
+                            error: err instanceof Error ? err.message : String(err),
+                            adminEmail
+                        },
+                        'Admin cancellation alert failed (will retry)'
+                    );
+                });
+            }
+        }
+    } catch (error) {
+        apiLogger.debug(
+            {
+                error: error instanceof Error ? error.message : String(error),
+                customerId: params.customerId
+            },
+            'sendSubscriptionCancelledNotification failed'
+        );
+    }
+}
+
+/**
+ * Sends a pause/suspension notification to the user.
+ *
+ * Fires a SUBSCRIPTION_PAUSED notification to the customer email. If the
+ * email is empty the function returns early without sending. Failures are
+ * logged at debug level and do not propagate.
+ *
+ * @param params.customerId - Billing customer ID
+ * @param params.customerEmail - Customer email address
+ * @param params.customerName - Customer display name
+ * @param params.userId - Associated user ID, or null if not linked
+ * @param params.planName - Name of the paused subscription plan
+ */
+export async function sendSubscriptionPausedNotification(params: {
+    readonly customerId: string;
+    readonly customerEmail: string;
+    readonly customerName: string;
+    readonly userId: string | null;
+    readonly planName: string;
+}): Promise<void> {
+    try {
+        if (!params.customerEmail) return;
+
+        await sendNotification({
+            type: NotificationType.SUBSCRIPTION_PAUSED,
+            recipientEmail: params.customerEmail,
+            recipientName: params.customerName,
+            userId: params.userId,
+            customerId: params.customerId,
+            planName: params.planName
+        }).catch((err) => {
+            apiLogger.debug(
+                {
+                    error: err instanceof Error ? err.message : String(err),
+                    customerId: params.customerId
+                },
+                'Subscription paused notification failed (will retry)'
+            );
+        });
+    } catch (error) {
+        apiLogger.debug(
+            {
+                error: error instanceof Error ? error.message : String(error),
+                customerId: params.customerId
+            },
+            'sendSubscriptionPausedNotification failed'
+        );
+    }
+}
+
+/**
+ * Sends a reactivation confirmation to the user.
+ *
+ * Fires a SUBSCRIPTION_REACTIVATED notification to the customer email. If the
+ * email is empty the function returns early without sending. Failures are
+ * logged at debug level and do not propagate.
+ *
+ * @param params.customerId - Billing customer ID
+ * @param params.customerEmail - Customer email address
+ * @param params.customerName - Customer display name
+ * @param params.userId - Associated user ID, or null if not linked
+ * @param params.planName - Name of the reactivated subscription plan
+ * @param params.nextBillingDate - ISO date string of the next billing date, if available
+ */
+export async function sendSubscriptionReactivatedNotification(params: {
+    readonly customerId: string;
+    readonly customerEmail: string;
+    readonly customerName: string;
+    readonly userId: string | null;
+    readonly planName: string;
+    readonly nextBillingDate?: string;
+}): Promise<void> {
+    try {
+        if (!params.customerEmail) return;
+
+        await sendNotification({
+            type: NotificationType.SUBSCRIPTION_REACTIVATED,
+            recipientEmail: params.customerEmail,
+            recipientName: params.customerName,
+            userId: params.userId,
+            customerId: params.customerId,
+            planName: params.planName,
+            nextBillingDate: params.nextBillingDate
+        }).catch((err) => {
+            apiLogger.debug(
+                {
+                    error: err instanceof Error ? err.message : String(err),
+                    customerId: params.customerId
+                },
+                'Subscription reactivated notification failed (will retry)'
+            );
+        });
+    } catch (error) {
+        apiLogger.debug(
+            {
+                error: error instanceof Error ? error.message : String(error),
+                customerId: params.customerId
+            },
+            'sendSubscriptionReactivatedNotification failed'
+        );
+    }
+}

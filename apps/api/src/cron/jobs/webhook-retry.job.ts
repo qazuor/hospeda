@@ -16,6 +16,8 @@
  * @module cron/jobs/webhook-retry
  */
 
+import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
+import { createMercadoPagoAdapter } from '@repo/billing';
 import {
     and,
     billingWebhookDeadLetter,
@@ -28,6 +30,7 @@ import {
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
+import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -72,6 +75,62 @@ async function retryMercadoPagoPaymentUpdated(payload: unknown): Promise<boolean
     const result = await processPaymentUpdated({
         data,
         billing,
+        source: 'dead-letter-retry'
+    });
+
+    return result.success;
+}
+
+/**
+ * Retry a subscription_preapproval.updated event from the dead letter queue.
+ *
+ * Delegates to the shared processSubscriptionUpdated logic, reconstructing
+ * a minimal QZPayWebhookEvent from the stored payload.
+ *
+ * @param payload - The stored event payload from the dead letter queue
+ * @param providerEventId - The MercadoPago event ID
+ * @returns Promise resolving to true if processing succeeded, false otherwise
+ */
+async function retrySubscriptionUpdated(
+    payload: unknown,
+    providerEventId: string
+): Promise<boolean> {
+    const billing = getQZPayBilling();
+
+    if (!billing) {
+        apiLogger.warn('Billing not configured, skipping subscription retry');
+        return true;
+    }
+
+    let paymentAdapter: ReturnType<typeof createMercadoPagoAdapter>;
+    try {
+        paymentAdapter = createMercadoPagoAdapter();
+    } catch (error) {
+        apiLogger.error({ error }, 'Failed to create MercadoPago adapter for subscription retry');
+        return false;
+    }
+
+    // Reconstruct a minimal QZPayWebhookEvent from the stored payload
+    const payloadObj =
+        payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : null;
+
+    if (!payloadObj) {
+        apiLogger.debug('No payload in dead letter entry, skipping subscription retry');
+        return true;
+    }
+
+    const reconstructedEvent: QZPayWebhookEvent = {
+        id: providerEventId,
+        type: 'subscription_preapproval.updated',
+        data: (payloadObj.data as Record<string, unknown>) ?? payloadObj,
+        created: new Date((payloadObj.date_created as string) ?? Date.now())
+    };
+
+    const result = await processSubscriptionUpdated({
+        event: reconstructedEvent,
+        billing,
+        paymentAdapter,
+        providerEventId,
         source: 'dead-letter-retry'
     });
 
@@ -162,15 +221,17 @@ async function retryWebhookEvent(event: {
                 });
             }
 
-            case 'payment.created':
-            case 'subscription_preapproval.updated': {
-                // These event types have no custom business logic beyond persistence.
-                // The event was already persisted when it first arrived. Treat as resolved.
+            case 'payment.created': {
+                // payment.created has no custom business logic beyond persistence.
                 apiLogger.info(
                     { eventId: event.id, type: event.type },
                     'No business logic to retry for event type - resolving dead letter'
                 );
                 return true;
+            }
+
+            case 'subscription_preapproval.updated': {
+                return await retrySubscriptionUpdated(event.payload, event.providerEventId);
             }
 
             default: {
