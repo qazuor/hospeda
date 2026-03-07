@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { listCustomerAddonsRoute } from './customer-addons';
 import { listNotificationLogsRoute } from './notifications';
+import { subscriptionEventsRoute } from './subscription-events';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
 const app = createRouter();
@@ -17,5 +18,8 @@ app.route('/notifications', listNotificationLogsRoute);
 
 // GET /customer-addons - List purchased add-ons across all customers
 app.route('/customer-addons', listCustomerAddonsRoute);
+
+// GET /subscriptions/:id/events - List lifecycle events for a subscription
+app.route('/subscriptions', subscriptionEventsRoute);
 
 export { app as adminBillingRoutes };

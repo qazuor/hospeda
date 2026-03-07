@@ -76,6 +76,17 @@ export type {
     ListCustomerAddonsQuery
 } from './customer-addons.schema';
 
+// Subscription events schemas (routing-specific only; response schemas live in @repo/schemas)
+export {
+    ListSubscriptionEventsQuerySchema,
+    SubscriptionEventsParamSchema
+} from './subscription-events.schema';
+
+export type {
+    ListSubscriptionEventsQuery,
+    SubscriptionEventsParam
+} from './subscription-events.schema';
+
 // Webhook schemas
 export {
     DeadLetterEntryResponseSchema,
