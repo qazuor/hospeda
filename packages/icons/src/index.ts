@@ -50,6 +50,11 @@ export { ViewAllIcon } from './icons/admin/ViewAllIcon';
 
 // Export amenity icons
 export { AirConditioningIcon } from './icons/amenities/AirConditioningIcon';
+export { CarIcon } from './icons/amenities/CarIcon';
+export { CoffeeIcon } from './icons/amenities/CoffeeIcon';
+export { DogIcon } from './icons/amenities/DogIcon';
+export { DropIcon } from './icons/amenities/DropIcon';
+export { FireIcon } from './icons/amenities/FireIcon';
 export { BabyMonitorIcon } from './icons/amenities/BabyMonitorIcon';
 export { BalconyIcon } from './icons/amenities/BalconyIcon';
 export { BarServiceIcon } from './icons/amenities/BarServiceIcon';
@@ -126,6 +131,7 @@ export { WalkingTrailIcon } from './icons/amenities/WalkingTrailIcon';
 export { WasherIcon } from './icons/amenities/WasherIcon';
 export { WaterDispenserIcon } from './icons/amenities/WaterDispenserIcon';
 export { WifiIcon } from './icons/amenities/WifiIcon';
+export { WifiHighIcon } from './icons/amenities/WifiHighIcon';
 export { WorkshopSpaceIcon } from './icons/amenities/WorkshopSpaceIcon';
 export { YogaMeditationIcon } from './icons/amenities/YogaMeditationIcon';
 
@@ -142,6 +148,8 @@ export { SharedPatioIcon } from './icons/amenities/SharedPatioIcon';
 
 // Export feature icons
 export { AccessibilityFriendlyIcon } from './icons/features/AccessibilityFriendlyIcon';
+export { TentIcon } from './icons/features/TentIcon';
+export { TreeIcon } from './icons/features/TreeIcon';
 export { AdultsOnlyIcon } from './icons/features/AdultsOnlyIcon';
 export { AnimalActivitiesIcon } from './icons/features/AnimalActivitiesIcon';
 export { AnimalPenIcon } from './icons/features/AnimalPenIcon';
@@ -203,6 +211,8 @@ export { WasteRecyclingIcon } from './icons/features/WasteRecyclingIcon';
 
 // Export attraction icons
 export { AgriculturalCenterIcon } from './icons/attractions/AgriculturalCenterIcon';
+export { BirdIcon } from './icons/attractions/BirdIcon';
+export { CastleTurretIcon } from './icons/attractions/CastleTurretIcon';
 export { AmphitheaterIcon } from './icons/attractions/AmphitheaterIcon';
 export { ArchaeologicalSiteIcon } from './icons/attractions/ArchaeologicalSiteIcon';
 export { ArtisanalCheeseIcon } from './icons/attractions/ArtisanalCheeseIcon';
@@ -278,8 +288,17 @@ export { WetlandsIcon } from './icons/attractions/WetlandsIcon';
 
 // Export system icons
 export { AddIcon } from './icons/system/AddIcon';
+export { BookmarkIcon } from './icons/system/BookmarkIcon';
+export { BuildingsIcon } from './icons/system/BuildingsIcon';
+export { CalendarDotsIcon } from './icons/system/CalendarDotsIcon';
+export { ChevronLeftIcon } from './icons/system/ChevronLeftIcon';
+export { CompassIcon } from './icons/system/CompassIcon';
+export { MinusIcon } from './icons/system/MinusIcon';
+export { QuotesIcon } from './icons/system/QuotesIcon';
+export { SparkleIcon } from './icons/system/SparkleIcon';
 export { AddressIcon } from './icons/system/AddressIcon';
 export { AdminIcon } from './icons/system/AdminIcon';
+export { ArrowRightIcon } from './icons/system/ArrowRightIcon';
 export { AlertsIcon } from './icons/system/AlertsIcon';
 export { AlertTriangleIcon } from './icons/system/AlertTriangleIcon';
 export { AudioIcon } from './icons/system/AudioIcon';
@@ -402,6 +421,7 @@ export { UnavailableIcon } from './icons/booking/UnavailableIcon';
 
 // Export social icons
 export { FacebookIcon } from './icons/social/FacebookIcon';
+export { YoutubeIcon } from './icons/social/YoutubeIcon';
 export { InstagramIcon } from './icons/social/InstagramIcon';
 export { WebIcon } from './icons/social/WebIcon';
 export { TwitterIcon } from './icons/social/TwitterIcon';
