@@ -1547,12 +1547,12 @@ Get webhook system health metrics and statistics.
 
 **Endpoint:** `GET /api/v1/webhooks/health`
 
-**Auth:** CRON_SECRET or Admin
+**Auth:** HOSPEDA_CRON_SECRET or Admin
 
 **Authentication:**
 
 ```http
-Authorization: Bearer <CRON_SECRET>
+Authorization: Bearer <HOSPEDA_CRON_SECRET>
 ```
 
 Or authenticated admin user.

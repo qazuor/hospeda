@@ -105,9 +105,9 @@ interface CronJobResult {
 #### Required
 
 ```bash
-# CRON_SECRET - Required for all adapters except when CRON_AUTH_DISABLED=true
+# HOSPEDA_CRON_SECRET - Required for all adapters except when HOSPEDA_DISABLE_AUTH=true
 # Use a strong random secret (32+ characters recommended)
-CRON_SECRET=change-me-to-a-random-secret
+HOSPEDA_CRON_SECRET=change-me-to-a-random-secret
 ```
 
 **How to generate a secure secret:**
@@ -130,10 +130,10 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 # Options: 'manual' (default), 'node-cron', 'vercel'
 CRON_ADAPTER=manual
 
-# CRON_AUTH_DISABLED - Disable authentication (DEVELOPMENT ONLY!)
+# HOSPEDA_DISABLE_AUTH - Disable authentication (DEVELOPMENT ONLY!)
 # WARNING: NEVER set to true in production
 # Default: false
-CRON_AUTH_DISABLED=false
+HOSPEDA_DISABLE_AUTH=false
 ```
 
 ### CRON_ADAPTER Options
@@ -157,10 +157,10 @@ CRON_AUTH_DISABLED=false
 ```bash
 # .env.local
 CRON_ADAPTER=manual  # or omit (defaults to manual)
-CRON_SECRET=dev-secret-123  # Use simple secret for dev
+HOSPEDA_CRON_SECRET=dev-secret-123  # Use simple secret for dev
 
 # Optional: Disable auth for easier testing
-CRON_AUTH_DISABLED=true
+HOSPEDA_DISABLE_AUTH=true
 ```
 
 **Usage:**
@@ -200,7 +200,7 @@ pnpm add -D node-cron @types/node-cron
 # 2. Configure environment
 # .env.production
 CRON_ADAPTER=node-cron
-CRON_SECRET=<your-production-secret>
+HOSPEDA_CRON_SECRET=<your-production-secret>
 NODE_ENV=production
 ```
 
@@ -242,7 +242,7 @@ RUN pnpm build
 # Environment
 ENV NODE_ENV=production
 ENV CRON_ADAPTER=node-cron
-ENV CRON_SECRET=will-be-overridden-by-docker-compose
+ENV HOSPEDA_CRON_SECRET=will-be-overridden-by-docker-compose
 
 # Start
 CMD ["pnpm", "start"]
@@ -259,7 +259,7 @@ CMD ["pnpm", "start"]
 ```bash
 # 1. Configure environment in Vercel dashboard
 CRON_ADAPTER=vercel
-CRON_SECRET=<your-vercel-secret>
+HOSPEDA_CRON_SECRET=<your-vercel-secret>
 ```
 
 **2. Create `vercel.json` in API root:**
@@ -295,7 +295,7 @@ CRON_SECRET=<your-vercel-secret>
   "env": {
     "NODE_ENV": "production",
     "CRON_ADAPTER": "vercel",
-    "CRON_SECRET": "@cron-secret"
+    "HOSPEDA_CRON_SECRET": "@cron-secret"
   },
 
   "headers": [
@@ -339,9 +339,9 @@ All cron endpoints are protected by authentication middleware that validates the
 
 ```typescript
 // Automatic in apps/api/src/routes/cron/[jobName].ts
-if (!process.env.CRON_AUTH_DISABLED) {
+if (!process.env.HOSPEDA_DISABLE_AUTH) {
   const secret = c.req.header('X-Cron-Secret');
-  if (secret !== process.env.CRON_SECRET) {
+  if (secret !== process.env.HOSPEDA_CRON_SECRET) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 }
@@ -363,7 +363,7 @@ if (!process.env.CRON_AUTH_DISABLED) {
 - Commit secrets to version control
 - Use weak/predictable secrets (e.g., "secret123")
 - Share secrets between environments
-- Disable authentication in production (`CRON_AUTH_DISABLED=true`)
+- Disable authentication in production (`HOSPEDA_DISABLE_AUTH=true`)
 - Expose cron endpoints publicly without authentication
 - Log the secret value (log "secret present" or "secret missing")
 
@@ -373,7 +373,7 @@ For local development convenience, you can disable authentication:
 
 ```bash
 # .env.local (NEVER in production!)
-CRON_AUTH_DISABLED=true
+HOSPEDA_DISABLE_AUTH=true
 ```
 
 **When disabled:**
@@ -1028,10 +1028,10 @@ await sendMetrics(metrics);
    echo $CRON_ADAPTER
    ```
 
-2. ✅ Is `CRON_SECRET` set?
+2. ✅ Is `HOSPEDA_CRON_SECRET` set?
 
    ```bash
-   echo $CRON_SECRET
+   echo $HOSPEDA_CRON_SECRET
    ```
 
 3. ✅ Is `NODE_ENV !== 'test'`?
@@ -1057,7 +1057,7 @@ await sendMetrics(metrics);
 **Solutions:**
 
 - Set `CRON_ADAPTER=node-cron` in environment
-- Set `CRON_SECRET` to a secure random value
+- Set `HOSPEDA_CRON_SECRET` to a secure random value
 - Ensure `NODE_ENV` is not `test`
 - Enable job in definition file
 - Check server logs for specific error messages
@@ -1086,27 +1086,27 @@ pnpm add -D node-cron @types/node-cron
 
 ---
 
-#### 3. "CRON_SECRET not configured"
+#### 3. "HOSPEDA_CRON_SECRET not configured"
 
 **Symptoms:**
 
 ```
-[CRON] CRON_SECRET not configured - cannot schedule jobs
+[CRON] HOSPEDA_CRON_SECRET not configured - cannot schedule jobs
 ```
 
 **Solution:**
 
 ```bash
 # Add to .env or .env.local
-CRON_SECRET=$(openssl rand -hex 32)
+HOSPEDA_CRON_SECRET=$(openssl rand -hex 32)
 
 # Or manually set
-CRON_SECRET=your-secure-random-secret
+HOSPEDA_CRON_SECRET=your-secure-random-secret
 ```
 
 **Why this happens:**
 
-- `node-cron` adapter requires `CRON_SECRET` for authentication
+- `node-cron` adapter requires `HOSPEDA_CRON_SECRET` for authentication
 - Jobs trigger via internal HTTP requests that need authentication
 
 ---
@@ -1131,10 +1131,10 @@ CRON_SECRET=your-secure-random-secret
 
    ```bash
    # Server
-   echo $CRON_SECRET
+   echo $HOSPEDA_CRON_SECRET
 
    # Request
-   curl -H "X-Cron-Secret: $CRON_SECRET" ...
+   curl -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET" ...
    ```
 
 2. ✅ Header name is correct?
@@ -1152,14 +1152,14 @@ CRON_SECRET=your-secure-random-secret
 
    ```bash
    # Check .env
-   CRON_AUTH_DISABLED=false  # Should be false or unset
+   HOSPEDA_DISABLE_AUTH=false  # Should be false or unset
    ```
 
 **Solutions:**
 
 - Verify secret matches exactly (case-sensitive)
 - Use correct header name: `X-Cron-Secret`
-- Ensure `CRON_AUTH_DISABLED` is not set to `true` in production
+- Ensure `HOSPEDA_DISABLE_AUTH` is not set to `true` in production
 
 ---
 
@@ -1251,11 +1251,11 @@ CRON_SECRET=your-secure-random-secret
    0 0 2 * * *
    ```
 
-4. ✅ Is `CRON_SECRET` set in Vercel environment?
+4. ✅ Is `HOSPEDA_CRON_SECRET` set in Vercel environment?
 
    ```bash
    # Check Vercel dashboard > Settings > Environment Variables
-   CRON_SECRET=your-secret
+   HOSPEDA_CRON_SECRET=your-secret
    ```
 
 5. ✅ Check Vercel Cron logs
@@ -1267,7 +1267,7 @@ CRON_SECRET=your-secure-random-secret
 - Add `vercel.json` to API root
 - Ensure cron paths match registered job names exactly
 - Use 5-field cron syntax (no seconds field)
-- Set `CRON_SECRET` in Vercel environment variables
+- Set `HOSPEDA_CRON_SECRET` in Vercel environment variables
 - Check Vercel logs for specific errors
 
 ---
@@ -1339,11 +1339,11 @@ curl http://localhost:3001/api/v1/cron \
 
 | Variable | Required | Default | Values |
 |----------|----------|---------|--------|
-| `CRON_SECRET` | Yes* | - | Strong random string (32+ chars) |
+| `HOSPEDA_CRON_SECRET` | Yes* | - | Strong random string (32+ chars) |
 | `CRON_ADAPTER` | No | `manual` | `manual`, `node-cron`, `vercel` |
-| `CRON_AUTH_DISABLED` | No | `false` | `true` (dev only), `false` |
+| `HOSPEDA_DISABLE_AUTH` | No | `false` | `true` (dev only), `false` |
 
-*Required for all adapters except when `CRON_AUTH_DISABLED=true`
+*Required for all adapters except when `HOSPEDA_DISABLE_AUTH=true`
 
 ### API Endpoints
 
@@ -1361,15 +1361,15 @@ openssl rand -hex 32
 
 # Test job (dry-run)
 curl -X POST "http://localhost:3001/api/v1/cron/trial-expiry?dryRun=true" \
-  -H "X-Cron-Secret: $CRON_SECRET"
+  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
 
 # Test job (production)
 curl -X POST http://localhost:3001/api/v1/cron/trial-expiry \
-  -H "X-Cron-Secret: $CRON_SECRET"
+  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
 
 # List all jobs
 curl http://localhost:3001/api/v1/cron \
-  -H "X-Cron-Secret: $CRON_SECRET"
+  -H "X-Cron-Secret: $HOSPEDA_CRON_SECRET"
 ```
 
 ---

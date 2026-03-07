@@ -507,7 +507,7 @@ REPLICATE_API_TOKEN=r8_example456
 
 ### Payment Integration (Mercado Pago)
 
-#### MERCADO_PAGO_ACCESS_TOKEN
+#### HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN
 
 **Description**: Mercado Pago access token
 
@@ -521,13 +521,13 @@ REPLICATE_API_TOKEN=r8_example456
 
 ```env
 # Test/Staging
-MERCADO_PAGO_ACCESS_TOKEN=TEST-123456789-example
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-123456789-example
 
 # Production
-MERCADO_PAGO_ACCESS_TOKEN=APP-123456789-example
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=APP-123456789-example
 ```
 
-#### MERCADO_PAGO_PUBLIC_KEY
+#### HOSPEDA_MERCADO_PAGO_PUBLIC_KEY
 
 **Description**: Mercado Pago public key (client-side)
 
@@ -540,7 +540,7 @@ MERCADO_PAGO_ACCESS_TOKEN=APP-123456789-example
 **Example:**
 
 ```env
-MERCADO_PAGO_PUBLIC_KEY=APP-123456789-example-public
+HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=APP-123456789-example-public
 ```
 
 ### Image Storage (Cloudinary)
@@ -658,8 +658,8 @@ HOSPEDA_API_VALIDATION_ENABLED=true
 # HOSPEDA_REDIS_URL=redis://localhost:6379
 
 # Mercado Pago (test credentials)
-MERCADO_PAGO_ACCESS_TOKEN=TEST-123456-example
-MERCADO_PAGO_PUBLIC_KEY=TEST-public-key
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-123456-example
+HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=TEST-public-key
 
 # Cloudinary (development folder/account)
 CLOUDINARY_CLOUD_NAME=hospeda-dev
@@ -709,8 +709,8 @@ HOSPEDA_API_METRICS_ENABLED=true
 HOSPEDA_REDIS_URL=redis://staging-redis.example.com:6379
 
 # Mercado Pago (sandbox credentials)
-MERCADO_PAGO_ACCESS_TOKEN=TEST-staging-token
-MERCADO_PAGO_PUBLIC_KEY=TEST-staging-public
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-staging-token
+HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=TEST-staging-public
 
 # Cloudinary (staging folder/account)
 CLOUDINARY_CLOUD_NAME=hospeda-staging
@@ -760,8 +760,8 @@ HOSPEDA_API_METRICS_ENABLED=true
 HOSPEDA_REDIS_URL=redis://prod-redis.example.com:6379
 
 # Mercado Pago (production credentials)
-MERCADO_PAGO_ACCESS_TOKEN=APP-production-token
-MERCADO_PAGO_PUBLIC_KEY=APP-production-public
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=APP-production-token
+HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=APP-production-public
 
 # Cloudinary (production account)
 CLOUDINARY_CLOUD_NAME=hospeda-prod
@@ -894,8 +894,8 @@ const envSchema = z.object({
   REPLICATE_API_TOKEN: z.string().optional(),
 
   // Mercado Pago
-  MERCADO_PAGO_ACCESS_TOKEN: z.string(),
-  MERCADO_PAGO_PUBLIC_KEY: z.string(),
+  HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string(),
+  HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: z.string(),
 
   // Cloudinary
   CLOUDINARY_CLOUD_NAME: z.string(),

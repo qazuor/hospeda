@@ -589,7 +589,7 @@ const verifyWebhookSignature: MiddlewareHandler = async (c, next) => {
   const isValid = await paymentAdapter.verifyWebhookSignature(
     body,
     signature,
-    process.env.MERCADO_PAGO_WEBHOOK_SECRET
+    process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET
   );
 
   if (!isValid) {
@@ -1632,7 +1632,7 @@ Before deploying to production:
 
 ### Environment Configuration
 
-- [ ] ✅ Verify `MERCADO_PAGO_WEBHOOK_SECRET` is set (not committed to git)
+- [ ] ✅ Verify `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set (not committed to git)
 - [ ] ✅ Enable rate limiting in production (`API_RATE_LIMIT_ENABLED=true`)
 - [ ] ✅ Enable security headers (`API_SECURITY_ENABLED=true`)
 - [ ] ✅ Enable CORS with production origins only

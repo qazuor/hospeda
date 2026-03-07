@@ -386,7 +386,7 @@ c.cookie('session', sessionToken, cookieOptions);
 # .env.example (template only, no real values)
 DATABASE_URL=
 HOSPEDA_BETTER_AUTH_SECRET=
-MERCADO_PAGO_ACCESS_TOKEN=
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=
 
 # Real secrets stored in:
 # - GitHub Secrets (CI/CD)
@@ -2226,7 +2226,7 @@ app.post('/api/webhooks/mercadopago', async (c) => {
   const requestId = c.req.header('x-request-id');
 
   // Verify webhook signature
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET!;
+  const secret = process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET!;
   const expectedSignature = createHmac('sha256', secret)
     .update(requestId + payload)
     .digest('hex');
@@ -3419,7 +3419,7 @@ app.post('/api/webhooks/mercadopago', async (c) => {
   const payload = await c.req.text();
 
   // Verify signature with MercadoPago secret
-  const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET!;
+  const secret = process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET!;
   const expectedSignature = createHmac('sha256', secret)
     .update(requestId + payload)
     .digest('hex');

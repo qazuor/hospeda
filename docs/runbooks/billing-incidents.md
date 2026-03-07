@@ -107,9 +107,9 @@ grep "payment.*error" /var/log/hospeda-api.log | tail -50
 | **Invalid card details** | User error - instruct user to verify card info |
 | **Insufficient funds** | User error - instruct user to use different payment method |
 | **MercadoPago API down** | Wait for service restoration, enable retry logic |
-| **Invalid API credentials** | Verify `MERCADO_PAGO_ACCESS_TOKEN` is correct |
+| **Invalid API credentials** | Verify `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` is correct |
 | **Rate limiting** | Implement exponential backoff, request rate limit increase |
-| **Webhook signature mismatch** | Verify `MERCADO_PAGO_WEBHOOK_SECRET` matches MercadoPago settings |
+| **Webhook signature mismatch** | Verify `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` matches MercadoPago settings |
 
 #### Resolution Steps
 
@@ -126,7 +126,7 @@ curl https://status.mercadopago.com/api/v2/status.json
 
 ```bash
 # Verify credentials
-curl -H "Authorization: Bearer $MERCADO_PAGO_ACCESS_TOKEN" \
+curl -H "Authorization: Bearer $HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN" \
   https://api.mercadopago.com/v1/payment_methods
 
 # If invalid, update credentials and redeploy
@@ -216,7 +216,7 @@ curl -X POST https://api.hospeda.com.ar/api/v1/webhooks/mercadopago \
 |-------|----------|
 | **Incorrect webhook URL** | Update URL in MercadoPago dashboard |
 | **API endpoint down** | Check API health, restart if needed |
-| **Signature verification failing** | Verify `MERCADO_PAGO_WEBHOOK_SECRET` |
+| **Signature verification failing** | Verify `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` |
 | **Database connection timeout** | Check database health, increase connection pool |
 | **Rate limiting** | Increase rate limits for webhook endpoint |
 | **Firewall blocking MercadoPago IPs** | Whitelist MercadoPago IP ranges |
@@ -362,7 +362,7 @@ clearEntitlementCache('customer_xxx');
 ```bash
 # Manually trigger trial expiry check
 curl -X POST https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry \
-  -H "Authorization: Bearer $CRON_SECRET"
+  -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 ```
 
 4. **Database fix for specific subscription**
@@ -574,7 +574,7 @@ WHERE id = 'sub_xxx'
 
 ```bash
 curl -X POST https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry \
-  -H "Authorization: Bearer $CRON_SECRET"
+  -H "Authorization: Bearer $HOSPEDA_CRON_SECRET"
 ```
 
 3. **Fix trial end date**
@@ -643,7 +643,7 @@ psql $DATABASE_URL -c "
 ```bash
 # Test Resend API connectivity
 curl -X POST https://api.resend.com/emails \
-  -H "Authorization: Bearer $RESEND_API_KEY" \
+  -H "Authorization: Bearer $HOSPEDA_RESEND_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "from": "test@hospeda.com.ar",
@@ -670,8 +670,8 @@ psql $DATABASE_URL -c "
 
 | Cause | Solution |
 |-------|----------|
-| **Invalid Resend API key** | Verify `RESEND_API_KEY` is correct |
-| **Invalid sender email** | Verify `RESEND_FROM_EMAIL` is verified in Resend |
+| **Invalid Resend API key** | Verify `HOSPEDA_RESEND_API_KEY` is correct |
+| **Invalid sender email** | Verify `HOSPEDA_RESEND_FROM_EMAIL` is verified in Resend |
 | **Recipient email bounce** | Remove invalid emails from database |
 | **Rate limiting** | Implement exponential backoff, request increase |
 | **Template rendering error** | Fix email template syntax |
@@ -699,7 +699,7 @@ psql $DATABASE_URL -c "
 ```bash
 # Check sender email verification
 curl https://api.resend.com/domains \
-  -H "Authorization: Bearer $RESEND_API_KEY"
+  -H "Authorization: Bearer $HOSPEDA_RESEND_API_KEY"
 
 # Verify domain DNS records if needed
 ```

@@ -14,28 +14,27 @@ Verify all required environment variables are configured in production:
 
 #### MercadoPago Configuration
 
-- [ ] `MERCADO_PAGO_ACCESS_TOKEN` - MercadoPago access token
+- [ ] `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` - MercadoPago access token
   - **Sandbox**: Starts with `TEST-`
   - **Production**: Starts with `APP_USR-`
-- [ ] `MERCADO_PAGO_WEBHOOK_SECRET` - Webhook signature verification secret (recommended)
-- [ ] `MERCADO_PAGO_SANDBOX` - Set to `false` for production
-- [ ] `MERCADO_PAGO_TIMEOUT` - Request timeout in ms (default: 5000)
-- [ ] `MERCADO_PAGO_PLATFORM_ID` - (Optional) Platform ID for marketplace tracking
-- [ ] `MERCADO_PAGO_INTEGRATOR_ID` - (Optional) Integrator ID for tracking
+- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` - Webhook signature verification secret (recommended)
+- [ ] `HOSPEDA_MERCADO_PAGO_SANDBOX` - Set to `false` for production
+- [ ] `HOSPEDA_MERCADO_PAGO_TIMEOUT` - Request timeout in ms (default: 5000)
+- [ ] `HOSPEDA_MERCADO_PAGO_PLATFORM_ID` - (Optional) Platform ID for marketplace tracking
+- [ ] `HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID` - (Optional) Integrator ID for tracking
 
 #### Email Notifications (Resend)
 
-- [ ] `RESEND_API_KEY` - Resend API key for email delivery
-- [ ] `RESEND_FROM_EMAIL` - Default sender email (e.g., `noreply@hospeda.com.ar`)
-- [ ] `RESEND_FROM_NAME` - Default sender name (e.g., `Hospeda`)
+- [ ] `HOSPEDA_RESEND_API_KEY` - Resend API key for email delivery
+- [ ] `HOSPEDA_RESEND_FROM_EMAIL` - Default sender email (e.g., `noreply@hospeda.com.ar`)
+- [ ] `HOSPEDA_RESEND_FROM_NAME` - Default sender name (e.g., `Hospeda`)
 - [ ] `RESEND_REPLY_TO` - Reply-to email address (e.g., `soporte@hospeda.com.ar`)
 - [ ] `ADMIN_NOTIFICATION_EMAILS` - Comma-separated admin emails for notifications
 
 #### Cron/Scheduler
 
-- [ ] `CRON_SECRET` - Secret for authenticating cron requests (REQUIRED)
+- [ ] `HOSPEDA_CRON_SECRET` - Secret for authenticating cron requests (REQUIRED)
 - [ ] `CRON_ADAPTER` - Set to `vercel` for Vercel, `node-cron` for VPS, or `manual` (default)
-- [ ] `CRON_AUTH_DISABLED` - MUST be `false` in production
 
 #### API Configuration
 
@@ -110,7 +109,7 @@ https://api.hospeda.com.ar/api/v1/webhooks/mercadopago
    - [ ] `subscription_preapproval.created`
    - [ ] `subscription_preapproval.updated`
 
-5. Save webhook secret to `MERCADO_PAGO_WEBHOOK_SECRET` environment variable
+5. Save webhook secret to `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` environment variable
 
 #### Test Webhook Delivery
 
@@ -140,7 +139,7 @@ Verify plan configurations in code:
 
 #### Webhook Signature Verification
 
-- [ ] `MERCADO_PAGO_WEBHOOK_SECRET` is set (enables signature verification)
+- [ ] `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set (enables signature verification)
 - [ ] Webhook route uses `createWebhookRouter` with `signatureHeader: 'x-signature'`
 - [ ] Test signature verification with invalid signature (should reject)
 
@@ -277,7 +276,7 @@ vercel --prod
 ### 3. Configure MercadoPago Webhooks
 
 1. Update webhook URL in MercadoPago dashboard to production URL
-2. Verify webhook secret matches `MERCADO_PAGO_WEBHOOK_SECRET`
+2. Verify webhook secret matches `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`
 3. Send test webhook to verify connectivity
 
 ### 4. Seed Initial Data (if needed)
@@ -301,7 +300,7 @@ Configure trial expiry check (runs daily):
 }
 
 # Or VPS cron (crontab)
-0 0 * * * curl -H "Authorization: Bearer $CRON_SECRET" https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry
+0 0 * * * curl -H "Authorization: Bearer $HOSPEDA_CRON_SECRET" https://api.hospeda.com.ar/api/v1/protected/billing/trial/check-expiry
 ```
 
 ### 6. Enable Monitoring

@@ -1174,7 +1174,7 @@ export async function sendSlackAlert(alert: SlackAlert) {
 // packages/utils/src/alerts/email.ts
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(process.env.HOSPEDA_RESEND_API_KEY);
 
 export async function sendEmailAlert(alert: SlackAlert) {
   const html = `

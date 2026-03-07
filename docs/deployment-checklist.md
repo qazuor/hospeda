@@ -36,7 +36,7 @@ Comprehensive deployment checklist for the Hospeda monorepo. Covers all three ap
   - `HOSPEDA_API_URL` .. Public API URL
   - `HOSPEDA_SITE_URL` .. Public web URL
   - `HOSPEDA_ADMIN_URL` .. Admin panel URL
-  - `CRON_SECRET` .. Secret for Vercel Cron authentication
+  - `HOSPEDA_CRON_SECRET` .. Secret for Vercel Cron authentication
   - `SENTRY_DSN` .. Sentry error tracking DSN
 - [ ] All required env vars are set in Vercel for Web app:
   - `PUBLIC_API_URL`
@@ -92,7 +92,7 @@ Comprehensive deployment checklist for the Hospeda monorepo. Covers all three ap
 
 ### Cron Jobs (Vercel Cron)
 
-Defined in `apps/api/vercel.json`. Vercel sends `POST` requests with `CRON_SECRET` header.
+Defined in `apps/api/vercel.json`. Vercel sends `POST` requests with `HOSPEDA_CRON_SECRET` header.
 
 | Job | Schedule | Description |
 |-----|----------|-------------|

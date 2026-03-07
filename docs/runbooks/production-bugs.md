@@ -976,8 +976,8 @@ curl -X POST https://api.hospeda.com/api/webhooks/mercado-pago \
 
 Check environment variables:
 
-- `MERCADO_PAGO_ACCESS_TOKEN` (correct environment)
-- `MERCADO_PAGO_WEBHOOK_SECRET`
+- `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` (correct environment)
+- `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`
 
 **Prevention**:
 

@@ -55,8 +55,8 @@ Verify these are set in `.env` before starting:
 HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5436/hospeda
 
 # MercadoPago Sandbox (REQUIRED for billing)
-MERCADO_PAGO_ACCESS_TOKEN=TEST-your_access_token_here
-MERCADO_PAGO_SANDBOX=true
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-your_access_token_here
+HOSPEDA_MERCADO_PAGO_SANDBOX=true
 
 # Better Auth (REQUIRED)
 HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
@@ -64,7 +64,7 @@ HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # Optional but recommended
 SENTRY_DSN=                  # Leave empty to disable
-CRON_SECRET=test-secret      # For cron endpoint testing
+HOSPEDA_CRON_SECRET=test-secret      # For cron endpoint testing
 ```
 
 ### Database Setup
