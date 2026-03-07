@@ -70,9 +70,11 @@ Last updated: 2026-03-01 (SPEC-019)
 
 ## 9. /auth/me Endpoint Exposes Full Permission Array
 
-**Risk**: The `/api/v1/public/auth/me` endpoint returns the full actor object including the complete permissions array. This reveals the internal permission structure to any authenticated user.
+**Status**: Accepted (by design)
 
-**Mitigation**: The endpoint requires a valid session cookie (unauthenticated requests get a GUEST actor with no permissions). The admin panel depends on the permissions array from this endpoint to render UI controls. Filtering permissions would break admin functionality. The permissions themselves are not sensitive.. they only describe what the user can do, which the UI already exposes through available actions.
+**Risk**: The `/api/v1/public/auth/me` endpoint returns the full actor object including the complete permissions array for all authenticated users. This reveals the internal permission structure.
+
+**Mitigation**: This is intentional. Permissions are returned to all authenticated users (not just admins) because the admin panel relies on client-side permission checks (e.g., `ACCESS_PANEL_ADMIN`) for routing and UI gating. Unauthenticated requests receive a GUEST actor with no permissions. The permissions describe what the user can do, which the UI already exposes through available actions. Server-side enforcement remains the security boundary.
 
 **Severity**: Low (requires valid session, information is not actionable)
 
