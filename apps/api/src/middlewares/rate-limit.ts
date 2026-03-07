@@ -189,9 +189,9 @@ const getStore = (): RateLimitStore => {
     if (!activeStore) {
         const redisUrl = env.HOSPEDA_REDIS_URL;
         if (!redisUrl && env.NODE_ENV === 'production') {
-            apiLogger.warn(
-                'HOSPEDA_REDIS_URL not configured in production. ' +
-                    'Rate limiting uses in-memory store which is ineffective in serverless environments.'
+            throw new Error(
+                'HOSPEDA_REDIS_URL is required in production for effective rate limiting. ' +
+                    'In-memory rate limiting is ineffective in serverless environments.'
             );
         }
         activeStore = redisUrl ? createRedisStore() : inMemoryStore;
