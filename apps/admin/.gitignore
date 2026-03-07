@@ -4,10 +4,14 @@ dist
 dist-ssr
 *.local
 count.txt
+# Environment variables
 .env
+.env.local
+.env.*.local
 .nitro
 .tanstack
 .output
 .vinxi
 todos.json
 mcp-todos.json
+.vercel

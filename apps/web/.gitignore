@@ -2,6 +2,9 @@
 node_modules/
 dist/
 .astro/
-.env*.local
+# Environment variables
+.env
+.env.local
+.env.*.local
 .DS_Store
 .vercel
