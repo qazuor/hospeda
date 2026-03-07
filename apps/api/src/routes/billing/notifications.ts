@@ -5,7 +5,7 @@
  * Provides cleanup and retention policy management.
  *
  * Routes:
- * - POST /api/v1/billing/notifications/cleanup - Run retention policy (admin only)
+ * - POST /api/v1/protected/billing/notifications/cleanup - Run retention policy (admin only)
  *
  * @module routes/billing/notifications
  */
@@ -67,7 +67,7 @@ export const handleCleanup = async (
 };
 
 /**
- * POST /api/v1/billing/notifications/cleanup
+ * POST /api/v1/protected/billing/notifications/cleanup
  * Run notification log retention policy (admin only)
  *
  * This endpoint is meant to be called by a cron job or admin interface.

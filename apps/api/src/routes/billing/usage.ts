@@ -5,8 +5,8 @@
  * Helps users understand how much of their plan they've consumed and when they need to upgrade.
  *
  * Routes:
- * - GET /api/v1/billing/usage - Get complete usage summary for current user
- * - GET /api/v1/billing/usage/:limitKey - Get detailed usage for a specific limit
+ * - GET /api/v1/protected/billing/usage - Get complete usage summary for current user
+ * - GET /api/v1/protected/billing/usage/:limitKey - Get detailed usage for a specific limit
  *
  * @module routes/billing/usage
  */
@@ -49,7 +49,7 @@ const limitKeyParamSchema = z.object({
 });
 
 /**
- * GET /api/v1/billing/usage
+ * GET /api/v1/protected/billing/usage
  * Get current user's usage summary across all limits
  */
 export const getUserUsageSummaryRoute = createProtectedRoute({
@@ -121,7 +121,7 @@ export const getUserUsageSummaryRoute = createProtectedRoute({
 });
 
 /**
- * GET /api/v1/billing/usage/:limitKey
+ * GET /api/v1/protected/billing/usage/:limitKey
  * Get detailed usage for a specific limit
  */
 export const getUsageForLimitRoute = createProtectedRoute({

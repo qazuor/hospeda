@@ -17,7 +17,7 @@
  * - Billing settings configuration (custom routes)
  * - Usage tracking (custom routes)
  *
- * All routes are mounted under /api/v1/billing
+ * All routes are mounted under /api/v1/protected/billing
  *
  * @module routes/billing
  */

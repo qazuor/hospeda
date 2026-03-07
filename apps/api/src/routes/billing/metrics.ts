@@ -6,7 +6,7 @@
  * - Dashboard overview metrics (admin only)
  * - Recent subscription activity (admin only)
  *
- * All routes are mounted under /api/v1/billing/metrics
+ * All routes are mounted under /api/v1/protected/billing/metrics
  *
  * @module routes/billing/metrics
  */
@@ -97,7 +97,7 @@ const ActivityQuerySchema = z.object({
 /**
  * Get billing dashboard metrics (admin only)
  *
- * GET /api/v1/billing/metrics
+ * GET /api/v1/protected/billing/metrics
  */
 export const getDashboardMetricsRoute = createAdminRoute({
     method: 'get',
@@ -200,7 +200,7 @@ export const getDashboardMetricsRoute = createAdminRoute({
 /**
  * Get recent subscription activity (admin only)
  *
- * GET /api/v1/billing/metrics/activity
+ * GET /api/v1/protected/billing/metrics/activity
  */
 export const getRecentActivityRoute = createAdminRoute({
     method: 'get',
@@ -290,7 +290,7 @@ const ApproachingLimitsQuerySchema = z.object({
 /**
  * Get system-wide usage statistics (admin only)
  *
- * GET /api/v1/billing/metrics/system-usage
+ * GET /api/v1/protected/billing/metrics/system-usage
  */
 export const getSystemUsageRoute = createAdminRoute({
     method: 'get',
@@ -325,7 +325,7 @@ export const getSystemUsageRoute = createAdminRoute({
 /**
  * Get customers approaching their limits (admin only)
  *
- * GET /api/v1/billing/metrics/approaching-limits
+ * GET /api/v1/protected/billing/metrics/approaching-limits
  */
 export const getApproachingLimitsRoute = createAdminRoute({
     method: 'get',

@@ -7,7 +7,7 @@
  * - Validation (authenticated)
  * - Application to checkout (authenticated)
  *
- * All routes are mounted under /api/v1/billing/promo-codes
+ * All routes are mounted under /api/v1/protected/billing/promo-codes
  *
  * @module routes/billing/promo-codes
  */
@@ -36,7 +36,7 @@ import {
 /**
  * List all promo codes (admin only)
  *
- * GET /api/v1/billing/promo-codes
+ * GET /api/v1/protected/billing/promo-codes
  */
 export const listPromoCodesRoute = createAdminListRoute({
     method: 'get',
@@ -73,7 +73,7 @@ export const listPromoCodesRoute = createAdminListRoute({
 /**
  * Create promo code (admin only)
  *
- * POST /api/v1/billing/promo-codes
+ * POST /api/v1/protected/billing/promo-codes
  */
 export const createPromoCodeRoute = createAdminRoute({
     method: 'post',
@@ -112,7 +112,7 @@ export const createPromoCodeRoute = createAdminRoute({
 /**
  * Get promo code by ID (admin only)
  *
- * GET /api/v1/billing/promo-codes/:id
+ * GET /api/v1/protected/billing/promo-codes/:id
  */
 export const getPromoCodeRoute = createAdminRoute({
     method: 'get',
@@ -143,7 +143,7 @@ export const getPromoCodeRoute = createAdminRoute({
 /**
  * Update promo code (admin only)
  *
- * PUT /api/v1/billing/promo-codes/:id
+ * PUT /api/v1/protected/billing/promo-codes/:id
  */
 export const updatePromoCodeRoute = createAdminRoute({
     method: 'put',
@@ -179,7 +179,7 @@ export const updatePromoCodeRoute = createAdminRoute({
 /**
  * Delete promo code (admin only)
  *
- * DELETE /api/v1/billing/promo-codes/:id
+ * DELETE /api/v1/protected/billing/promo-codes/:id
  */
 export const deletePromoCodeRoute = createAdminRoute({
     method: 'delete',
@@ -209,7 +209,7 @@ export const deletePromoCodeRoute = createAdminRoute({
 /**
  * Validate promo code (authenticated)
  *
- * POST /api/v1/billing/promo-codes/validate
+ * POST /api/v1/protected/billing/promo-codes/validate
  */
 export const validatePromoCodeRoute = createProtectedRoute({
     method: 'post',
@@ -247,7 +247,7 @@ export const validatePromoCodeRoute = createProtectedRoute({
 /**
  * Apply promo code to checkout (authenticated)
  *
- * POST /api/v1/billing/promo-codes/apply
+ * POST /api/v1/protected/billing/promo-codes/apply
  */
 export const applyPromoCodeRoute = createProtectedRoute({
     method: 'post',

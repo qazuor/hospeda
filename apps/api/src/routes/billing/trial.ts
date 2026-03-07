@@ -5,11 +5,11 @@
  * Provides trial status checking and expiry management.
  *
  * Routes:
- * - GET  /api/v1/billing/trial/status - Get current trial status (authenticated)
- * - POST /api/v1/billing/trial/start - Start trial for authenticated user
- * - POST /api/v1/billing/trial/reactivate - Convert trial to paid subscription (authenticated)
- * - POST /api/v1/billing/trial/extend - Extend trial by additional days (admin only)
- * - POST /api/v1/billing/trial/check-expiry - Trigger expired trial check (admin only)
+ * - GET  /api/v1/protected/billing/trial/status - Get current trial status (authenticated)
+ * - POST /api/v1/protected/billing/trial/start - Start trial for authenticated user
+ * - POST /api/v1/protected/billing/trial/reactivate - Convert trial to paid subscription (authenticated)
+ * - POST /api/v1/protected/billing/trial/extend - Extend trial by additional days (admin only)
+ * - POST /api/v1/protected/billing/trial/check-expiry - Trigger expired trial check (admin only)
  *
  * @module routes/billing/trial
  */
@@ -94,7 +94,7 @@ const checkExpiryResponseSchema = z.object({
 });
 
 /**
- * GET /api/v1/billing/trial/status
+ * GET /api/v1/protected/billing/trial/status
  * Get trial status for authenticated user
  */
 export const getTrialStatusRoute = createSimpleRoute({
@@ -133,7 +133,7 @@ export const getTrialStatusRoute = createSimpleRoute({
 });
 
 /**
- * POST /api/v1/billing/trial/start
+ * POST /api/v1/protected/billing/trial/start
  * Start trial for authenticated user
  *
  * This endpoint starts a trial subscription for the authenticated user.
@@ -207,7 +207,7 @@ export const startTrialRoute = createSimpleRoute({
 });
 
 /**
- * POST /api/v1/billing/trial/extend
+ * POST /api/v1/protected/billing/trial/extend
  * Extend a trial subscription by additional days (admin only)
  */
 export const extendTrialRoute = createAdminRoute({
@@ -271,7 +271,7 @@ export const extendTrialRoute = createAdminRoute({
 });
 
 /**
- * POST /api/v1/billing/trial/reactivate
+ * POST /api/v1/protected/billing/trial/reactivate
  * Convert an expired or active trial to a paid subscription
  *
  * This endpoint cancels any existing trial subscription and creates
@@ -397,7 +397,7 @@ export const handleCheckExpiry = async (
 };
 
 /**
- * POST /api/v1/billing/trial/check-expiry
+ * POST /api/v1/protected/billing/trial/check-expiry
  * Trigger batch expiry check (admin only)
  *
  * This endpoint is meant to be called by a cron job or admin interface.
@@ -432,7 +432,7 @@ const reactivateSubscriptionResponseSchema = z.object({
 });
 
 /**
- * POST /api/v1/billing/trial/reactivate-subscription
+ * POST /api/v1/protected/billing/trial/reactivate-subscription
  * Reactivate a canceled subscription by creating a new one on the specified plan.
  *
  * Unlike /reactivate (trial-to-paid only), this endpoint handles any canceled

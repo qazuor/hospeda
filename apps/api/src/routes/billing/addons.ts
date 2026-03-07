@@ -9,7 +9,7 @@
  * - Listing user's active add-ons (authenticated)
  * - Canceling recurring add-ons (authenticated)
  *
- * All routes are mounted under /api/v1/billing/addons
+ * All routes are mounted under /api/v1/protected/billing/addons
  *
  * @module routes/billing/addons
  */
@@ -33,7 +33,7 @@ import { createProtectedRoute } from '../../utils/route-factory';
 /**
  * List available add-ons (authenticated)
  *
- * GET /api/v1/billing/addons
+ * GET /api/v1/protected/billing/addons
  */
 export const listAddonsRoute = createProtectedRoute({
     method: 'get',
@@ -75,7 +75,7 @@ export const listAddonsRoute = createProtectedRoute({
 /**
  * Get add-on by slug (authenticated)
  *
- * GET /api/v1/billing/addons/:slug
+ * GET /api/v1/protected/billing/addons/:slug
  */
 export const getAddonRoute = createProtectedRoute({
     method: 'get',
@@ -115,7 +115,7 @@ export const getAddonRoute = createProtectedRoute({
 /**
  * Purchase add-on (authenticated)
  *
- * POST /api/v1/billing/addons/:slug/purchase
+ * POST /api/v1/protected/billing/addons/:slug/purchase
  */
 export const purchaseAddonRoute = createProtectedRoute({
     method: 'post',
@@ -173,7 +173,7 @@ export const purchaseAddonRoute = createProtectedRoute({
 /**
  * Get user's active add-ons (authenticated)
  *
- * GET /api/v1/billing/addons/my
+ * GET /api/v1/protected/billing/addons/my
  */
 export const getUserAddonsRoute = createProtectedRoute({
     method: 'get',
@@ -211,11 +211,10 @@ export const getUserAddonsRoute = createProtectedRoute({
 /**
  * Cancel recurring add-on (authenticated)
  *
- * POST /api/v1/billing/addons/:id/cancel
+ * POST /api/v1/protected/billing/addons/:id/cancel
  *
- * Ownership verification is delegated to the service layer.
- * cancelAddon() in addon.service.ts verifies that the addon
- * belongs to the requesting user's customer via getUserAddons() lookup.
+ * Ownership is verified in the handler before calling the service,
+ * matching the defense-in-depth pattern used by other billing routes.
  */
 export const cancelAddonRoute = createProtectedRoute({
     method: 'post',
@@ -239,6 +238,16 @@ export const cancelAddonRoute = createProtectedRoute({
 
         if (!billingCustomerId) {
             throw new Error('Billing customer not found. Please contact support.');
+        }
+
+        // Verify addon ownership before delegating to service
+        const userAddons = await service.getUserAddons(actor.id);
+        if (!userAddons.success || !userAddons.data) {
+            throw new Error('Failed to verify add-on ownership.');
+        }
+        const ownsAddon = userAddons.data.some((addon: { id: string }) => addon.id === params.id);
+        if (!ownsAddon) {
+            throw new Error('Add-on not found or does not belong to your account.');
         }
 
         apiLogger.info(

@@ -24,14 +24,14 @@ import { getQZPayBilling } from './billing';
  * These routes enable users to manage their subscription and export data
  */
 const ALLOWED_ROUTES_WHEN_BLOCKED = [
-    // Billing routes
-    '/api/v1/billing',
-    '/api/v1/billing/trial',
-    '/api/v1/billing/subscriptions',
-    '/api/v1/billing/plans',
-    '/api/v1/billing/checkout',
-    '/api/v1/billing/invoices',
-    '/api/v1/billing/payments',
+    // Billing routes (protected tier)
+    '/api/v1/protected/billing',
+    '/api/v1/protected/billing/trial',
+    '/api/v1/protected/billing/subscriptions',
+    '/api/v1/protected/billing/plans',
+    '/api/v1/protected/billing/checkout',
+    '/api/v1/protected/billing/invoices',
+    '/api/v1/protected/billing/payments',
 
     // Data export routes
     '/api/v1/export',

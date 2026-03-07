@@ -5,9 +5,9 @@
  * Settings control trial periods, grace periods, payment retry logic, and notifications.
  *
  * Routes:
- * - GET  /api/v1/billing/settings - Get current billing settings (admin only)
- * - PATCH /api/v1/billing/settings - Update billing settings (admin only)
- * - POST /api/v1/billing/settings/reset - Reset to default settings (admin only)
+ * - GET  /api/v1/protected/billing/settings - Get current billing settings (admin only)
+ * - PATCH /api/v1/protected/billing/settings - Update billing settings (admin only)
+ * - POST /api/v1/protected/billing/settings/reset - Reset to default settings (admin only)
  *
  * @module routes/billing/settings
  */
@@ -53,7 +53,7 @@ const resetSettingsResponseSchema = z.object({
 });
 
 /**
- * GET /api/v1/billing/settings
+ * GET /api/v1/protected/billing/settings
  * Get current billing settings (admin only)
  */
 export const getBillingSettingsRoute = createAdminRoute({
@@ -80,7 +80,7 @@ export const getBillingSettingsRoute = createAdminRoute({
 });
 
 /**
- * PATCH /api/v1/billing/settings
+ * PATCH /api/v1/protected/billing/settings
  * Update billing settings (admin only, partial update)
  */
 export const updateBillingSettingsRoute = createAdminRoute({
@@ -138,7 +138,7 @@ export const updateBillingSettingsRoute = createAdminRoute({
 });
 
 /**
- * POST /api/v1/billing/settings/reset
+ * POST /api/v1/protected/billing/settings/reset
  * Reset billing settings to defaults (admin only)
  */
 export const resetBillingSettingsRoute = createAdminRoute({

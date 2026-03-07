@@ -5,7 +5,7 @@
  * Provides plan change functionality with proration handling.
  *
  * Routes:
- * - POST /api/v1/billing/subscriptions/change-plan - Change subscription plan (authenticated)
+ * - POST /api/v1/protected/billing/subscriptions/change-plan - Change subscription plan (authenticated)
  *
  * @remarks
  * **BILL-13 Decision (v1):** Plan changes are only supported for active subscriptions.
@@ -249,7 +249,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
 };
 
 /**
- * POST /api/v1/billing/subscriptions/change-plan
+ * POST /api/v1/protected/billing/subscriptions/change-plan
  * Change subscription plan (authenticated)
  *
  * This endpoint changes the user's subscription plan with automatic

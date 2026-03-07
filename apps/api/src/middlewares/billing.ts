@@ -121,7 +121,7 @@ function getBillingInstance(): QZPayBilling | null {
  * app.use('*', billingMiddleware);
  *
  * // Or to specific routes
- * app.use('/api/v1/billing/*', billingMiddleware);
+ * app.use('/api/v1/protected/billing/*', billingMiddleware);
  *
  * // Access in route handler
  * app.get('/customer/:id', async (c) => {
@@ -160,7 +160,7 @@ export const billingMiddleware: MiddlewareHandler = async (c, next) => {
  * ```typescript
  * import { requireBilling } from './middlewares/billing';
  *
- * app.use('/api/v1/billing/*', requireBilling);
+ * app.use('/api/v1/protected/billing/*', requireBilling);
  * ```
  */
 export const requireBilling: MiddlewareHandler = async (c, next) => {

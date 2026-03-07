@@ -221,11 +221,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         apiLogger.debug('✅ Admin routes registered successfully');
 
         // ═══════════════════════════════════════════════════════════════════════
-        // OTHER ROUTES - Exchange rates, billing, reports
+        // PROTECTED TIER - Billing and Reports
         // ═══════════════════════════════════════════════════════════════════════
 
-        app.route('/api/v1/reports', reportRoutes);
-        app.route('/api/v1/billing', createBillingRoutesHandler());
+        // Billing routes (user-facing: trial, addons, promo-codes, subscriptions, etc.)
+        app.route('/api/v1/protected/billing', createBillingRoutesHandler());
+
+        // Reports routes (bug reports, labels)
+        app.route('/api/v1/protected/reports', reportRoutes);
 
         // Cron routes (protected by CRON_SECRET)
         app.route('/api/v1/cron', cronRoutes);
