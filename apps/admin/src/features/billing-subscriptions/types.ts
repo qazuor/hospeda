@@ -1,7 +1,13 @@
 /**
  * Subscription status types matching billing system
  */
-export type SubscriptionStatus = 'active' | 'trialing' | 'cancelled' | 'past_due' | 'expired';
+export type SubscriptionStatus =
+    | 'active'
+    | 'trialing'
+    | 'cancelled'
+    | 'past_due'
+    | 'expired'
+    | 'paused';
 
 /**
  * Subscription data structure

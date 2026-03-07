@@ -37,7 +37,8 @@ export function getStatusVariant(
         trialing: 'secondary',
         cancelled: 'destructive',
         past_due: 'outline',
-        expired: 'outline'
+        expired: 'outline',
+        paused: 'secondary'
     };
     return variantMap[status];
 }
@@ -54,7 +55,8 @@ export function getStatusLabel(
         trialing: t('admin-billing.subscriptions.statuses.trialing'),
         cancelled: t('admin-billing.subscriptions.statuses.cancelled'),
         past_due: t('admin-billing.subscriptions.statuses.pastDue'),
-        expired: t('admin-billing.subscriptions.statuses.expired')
+        expired: t('admin-billing.subscriptions.statuses.expired'),
+        paused: t('admin-billing.subscriptions.statuses.paused')
     };
     return labels[status];
 }
