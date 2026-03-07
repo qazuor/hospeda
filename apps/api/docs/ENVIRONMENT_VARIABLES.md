@@ -218,6 +218,14 @@ Never commit these to version control:
 2. `.env.local` (local overrides)
 3. `.env` (defaults)
 
+## Feedback System
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `HOSPEDA_LINEAR_API_KEY` | `string` | `undefined` | Linear API key for feedback issue creation. When absent, feedback falls back to email. |
+| `HOSPEDA_FEEDBACK_FALLBACK_EMAIL` | `string` | `undefined` | Email address for fallback notifications when Linear is unavailable. |
+| `HOSPEDA_FEEDBACK_ENABLED` | `boolean` | `true` | Kill switch to disable the entire feedback system. |
+
 ---
 
 Environment configuration is automatically validated on startup. Invalid configurations will prevent the API from starting.

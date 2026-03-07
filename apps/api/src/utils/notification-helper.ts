@@ -15,7 +15,7 @@ import {
     type RetryService,
     createResendClient
 } from '@repo/notifications';
-import type { NotificationPayload } from '@repo/notifications';
+import type { NotificationPayload, SendNotificationOptions } from '@repo/notifications';
 import { apiLogger } from './logger';
 
 /**
@@ -135,7 +135,10 @@ function getNotificationService(): NotificationService | null {
  * }
  * ```
  */
-export async function sendNotification(payload: NotificationPayload): Promise<void> {
+export async function sendNotification(
+    payload: NotificationPayload,
+    options?: SendNotificationOptions
+): Promise<void> {
     try {
         apiLogger.debug(
             {
@@ -163,7 +166,7 @@ export async function sendNotification(payload: NotificationPayload): Promise<vo
         }
 
         // Send notification via NotificationService
-        const result = await notificationService.send(payload);
+        const result = await notificationService.send(payload, options);
 
         if (result.success) {
             apiLogger.info(
