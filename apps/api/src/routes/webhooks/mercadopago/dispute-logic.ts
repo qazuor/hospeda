@@ -9,6 +9,7 @@
  */
 
 import { NotificationType } from '@repo/notifications';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 
@@ -49,7 +50,7 @@ export async function processDisputeEvent({
 
     // Send admin notification for disputes
     const adminEmails =
-        process.env.ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) || [];
+        env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) ?? [];
 
     for (const adminEmail of adminEmails) {
         if (adminEmail) {

@@ -10,6 +10,7 @@
 
 import { NotificationType } from '@repo/notifications';
 import type { getQZPayBilling } from '../../../middlewares/billing';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { sendNotification } from '../../../utils/notification-helper';
 import { sanitizeErrorForNotification } from './utils';
@@ -166,7 +167,7 @@ export async function sendPaymentFailureNotifications(
 
         const sanitizedAdminReason = sanitizeErrorForNotification(failureReason, 500);
         const adminEmails =
-            process.env.ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) || [];
+            env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) ?? [];
 
         for (const adminEmail of adminEmails) {
             if (adminEmail) {

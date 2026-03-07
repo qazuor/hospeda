@@ -10,6 +10,7 @@
 import * as Sentry from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import type { Context } from 'hono';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -49,7 +50,7 @@ const DEFAULT_CONFIG: SentryConfig = {
     tracesSampleRate: isDev ? 0.0 : 0.1,
     profilesSampleRate: isDev ? 0.0 : 0.1,
     debug: false,
-    project: process.env.SENTRY_PROJECT || 'hospeda',
+    project: process.env.SENTRY_PROJECT || process.env.HOSPEDA_SENTRY_PROJECT || 'hospeda',
     appType: 'api'
 };
 
@@ -60,7 +61,7 @@ const DEFAULT_CONFIG: SentryConfig = {
  * @returns True if initialization was successful
  */
 export function initializeSentry(config: SentryConfig = {}): boolean {
-    const sentryDsn = config.dsn || process.env.SENTRY_DSN;
+    const sentryDsn = config.dsn || env.HOSPEDA_SENTRY_DSN;
 
     // Don't initialize if no DSN is provided
     if (!sentryDsn) {
@@ -75,7 +76,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
             dsn: sentryDsn,
             environment: finalConfig.environment,
             release:
-                process.env.SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || 'development',
+                env.HOSPEDA_SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || 'development',
             debug: finalConfig.debug,
 
             // Performance monitoring

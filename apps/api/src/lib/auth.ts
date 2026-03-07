@@ -24,6 +24,7 @@ import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { TrialService } from '../services/trial.service';
+import { env } from '../utils/env';
 
 const logger = createLogger('auth');
 
@@ -122,7 +123,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         return authInstance;
     }
 
-    const secret = process.env.HOSPEDA_BETTER_AUTH_SECRET;
+    const secret = env.HOSPEDA_BETTER_AUTH_SECRET;
     if (!secret) {
         throw new Error(
             'HOSPEDA_BETTER_AUTH_SECRET environment variable is required. ' +
@@ -130,7 +131,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         );
     }
 
-    const baseURL = process.env.HOSPEDA_API_URL || 'http://localhost:3001';
+    const baseURL = env.HOSPEDA_API_URL;
 
     authInstance = betterAuth({
         secret,
@@ -253,16 +254,16 @@ export function getAuth(): ReturnType<typeof betterAuth> {
          *   - Facebook Developer Console: App Settings > Facebook Login > Settings
          */
         socialProviders: {
-            ...(process.env.HOSPEDA_GOOGLE_CLIENT_ID && {
+            ...(env.HOSPEDA_GOOGLE_CLIENT_ID && {
                 google: {
-                    clientId: process.env.HOSPEDA_GOOGLE_CLIENT_ID,
-                    clientSecret: process.env.HOSPEDA_GOOGLE_CLIENT_SECRET || ''
+                    clientId: env.HOSPEDA_GOOGLE_CLIENT_ID,
+                    clientSecret: env.HOSPEDA_GOOGLE_CLIENT_SECRET || ''
                 }
             }),
-            ...(process.env.HOSPEDA_FACEBOOK_CLIENT_ID && {
+            ...(env.HOSPEDA_FACEBOOK_CLIENT_ID && {
                 facebook: {
-                    clientId: process.env.HOSPEDA_FACEBOOK_CLIENT_ID,
-                    clientSecret: process.env.HOSPEDA_FACEBOOK_CLIENT_SECRET || ''
+                    clientId: env.HOSPEDA_FACEBOOK_CLIENT_ID,
+                    clientSecret: env.HOSPEDA_FACEBOOK_CLIENT_SECRET || ''
                 }
             })
         },
@@ -387,19 +388,19 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 function parseTrustedOrigins(): string[] {
     const origins: string[] = [];
 
-    const siteUrl = process.env.HOSPEDA_SITE_URL;
+    const siteUrl = env.HOSPEDA_SITE_URL;
     if (siteUrl) {
         origins.push(siteUrl);
     }
 
-    const adminUrl = process.env.HOSPEDA_ADMIN_URL;
+    const adminUrl = env.HOSPEDA_ADMIN_URL;
     if (adminUrl) {
         origins.push(adminUrl);
     }
 
     // Default development origins
     if (origins.length === 0) {
-        if (process.env.NODE_ENV === 'production') {
+        if (env.NODE_ENV === 'production') {
             console.error(
                 '[AUTH SECURITY] HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL are not configured. ' +
                     'Falling back to localhost origins in PRODUCTION. This is a security risk.'
