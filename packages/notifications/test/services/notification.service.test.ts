@@ -81,7 +81,8 @@ describe('NotificationService', () => {
             preferenceService: mockPreferenceService,
             retryService: mockRetryService,
             db: mockDb,
-            logger: mockLogger
+            logger: mockLogger,
+            siteUrl: 'https://hospeda.com.ar'
         };
 
         // Create service instance

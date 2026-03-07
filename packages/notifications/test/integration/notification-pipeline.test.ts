@@ -95,7 +95,8 @@ describe('Notification Pipeline Integration Tests', () => {
             preferenceService: mockPreferenceService,
             retryService,
             db: mockDb,
-            logger: mockLogger
+            logger: mockLogger,
+            siteUrl: 'https://hospeda.com.ar'
         };
 
         // Create notification service

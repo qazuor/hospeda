@@ -44,6 +44,15 @@ function createTestInput(overrides?: Partial<SendEmailInput>): SendEmailInput {
     };
 }
 
+/**
+ * Default options used in tests that match NOTIFICATION_CONSTANTS defaults.
+ * These are required because ResendEmailTransport constructor mandates options.
+ */
+const DEFAULT_TRANSPORT_OPTIONS = {
+    fromEmail: NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL,
+    fromName: NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME
+} as const;
+
 describe('ResendEmailTransport', () => {
     let mockResend: ReturnType<typeof createMockResend>;
 
@@ -53,9 +62,12 @@ describe('ResendEmailTransport', () => {
     });
 
     describe('constructor', () => {
-        it('should use default from address when no options provided', async () => {
+        it('should use default from address when options match NOTIFICATION_CONSTANTS', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_123' } });
 
@@ -90,11 +102,12 @@ describe('ResendEmailTransport', () => {
             );
         });
 
-        it('should use environment variables when no options provided', async () => {
-            // Arrange
-            vi.stubEnv('RESEND_FROM_EMAIL', 'env@hospeda.com.ar');
-            vi.stubEnv('RESEND_FROM_NAME', 'Env Sender');
-            const transport = new ResendEmailTransport(mockResend.client);
+        it('should use provided options over any other source', async () => {
+            // Arrange - Options are injected via constructor (DI pattern)
+            const transport = new ResendEmailTransport(mockResend.client, {
+                fromEmail: 'injected@hospeda.com.ar',
+                fromName: 'Injected Sender'
+            });
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_123' } });
 
@@ -104,7 +117,7 @@ describe('ResendEmailTransport', () => {
             // Assert
             expect(mockResend.sendMock).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    from: 'Env Sender <env@hospeda.com.ar>'
+                    from: 'Injected Sender <injected@hospeda.com.ar>'
                 })
             );
         });
@@ -113,7 +126,10 @@ describe('ResendEmailTransport', () => {
     describe('send - success', () => {
         it('should return message ID on successful send', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_abc123' } });
 
@@ -126,7 +142,10 @@ describe('ResendEmailTransport', () => {
 
         it('should pass all input fields to Resend client', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput({
                 to: 'user@test.com',
                 subject: 'Important Email',
@@ -159,7 +178,10 @@ describe('ResendEmailTransport', () => {
     describe('send - from override', () => {
         it('should use input from address when provided', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput({
                 from: 'Override Sender <override@hospeda.com.ar>'
             });
@@ -178,7 +200,10 @@ describe('ResendEmailTransport', () => {
 
         it('should use default from when input from is undefined', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput({ from: undefined });
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_000' } });
 
@@ -197,7 +222,10 @@ describe('ResendEmailTransport', () => {
     describe('send - replyTo and tags passthrough', () => {
         it('should pass replyTo to Resend client', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput({ replyTo: 'reply@hospeda.com.ar' });
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_reply' } });
 
@@ -214,7 +242,10 @@ describe('ResendEmailTransport', () => {
 
         it('should pass tags array to Resend client', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const tags = [{ name: 'environment', value: 'production' }];
             const input = createTestInput({ tags });
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_tags' } });
@@ -228,7 +259,10 @@ describe('ResendEmailTransport', () => {
 
         it('should pass undefined replyTo and tags when not provided', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({ data: { id: 'msg_none' } });
 
@@ -248,7 +282,10 @@ describe('ResendEmailTransport', () => {
     describe('send - API error (Error object)', () => {
         it('should throw with error message when API returns Error object', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({
                 error: new Error('Rate limit exceeded')
@@ -264,7 +301,10 @@ describe('ResendEmailTransport', () => {
     describe('send - API error (string)', () => {
         it('should throw with string error when API returns string', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({
                 error: 'Invalid API key'
@@ -280,7 +320,10 @@ describe('ResendEmailTransport', () => {
     describe('send - API error (null)', () => {
         it('should throw with unknown error when API returns null error', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({
                 error: null
@@ -296,7 +339,10 @@ describe('ResendEmailTransport', () => {
     describe('send - missing message ID', () => {
         it('should throw when response data is null', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({
                 data: null
@@ -310,7 +356,10 @@ describe('ResendEmailTransport', () => {
 
         it('should throw when response data has no id', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockResolvedValue({
                 data: {}
@@ -326,7 +375,10 @@ describe('ResendEmailTransport', () => {
     describe('send - network error', () => {
         it('should wrap network errors with transport context', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockRejectedValue(new Error('Network timeout'));
 
@@ -338,7 +390,10 @@ describe('ResendEmailTransport', () => {
 
         it('should handle non-Error thrown values', async () => {
             // Arrange
-            const transport = new ResendEmailTransport(mockResend.client);
+            const transport = new ResendEmailTransport(
+                mockResend.client,
+                DEFAULT_TRANSPORT_OPTIONS
+            );
             const input = createTestInput();
             mockResend.sendMock.mockRejectedValue('string error');
 

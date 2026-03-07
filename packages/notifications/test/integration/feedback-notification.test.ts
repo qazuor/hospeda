@@ -243,7 +243,10 @@ describe('Feedback Notification Integration Tests', () => {
         it('should forward a single attachment to the Resend SDK', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();
-            const transport = new ResendEmailTransport(client);
+            const transport = new ResendEmailTransport(client, {
+                fromEmail: 'noreply@hospeda.com.ar',
+                fromName: 'Hospeda'
+            });
             sendMock.mockResolvedValue({ data: { id: 'msg_attach_single' } });
 
             const attachment = {
@@ -274,7 +277,10 @@ describe('Feedback Notification Integration Tests', () => {
         it('should forward multiple attachments to the Resend SDK', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();
-            const transport = new ResendEmailTransport(client);
+            const transport = new ResendEmailTransport(client, {
+                fromEmail: 'noreply@hospeda.com.ar',
+                fromName: 'Hospeda'
+            });
             sendMock.mockResolvedValue({ data: { id: 'msg_attach_multi' } });
 
             const attachments = [
@@ -316,7 +322,10 @@ describe('Feedback Notification Integration Tests', () => {
         it('should pass undefined attachments when field is not provided', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();
-            const transport = new ResendEmailTransport(client);
+            const transport = new ResendEmailTransport(client, {
+                fromEmail: 'noreply@hospeda.com.ar',
+                fromName: 'Hospeda'
+            });
             sendMock.mockResolvedValue({ data: { id: 'msg_no_attach' } });
 
             const input: SendEmailInput = {
@@ -339,7 +348,10 @@ describe('Feedback Notification Integration Tests', () => {
         it('should pass an empty attachments array when explicitly set to empty', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();
-            const transport = new ResendEmailTransport(client);
+            const transport = new ResendEmailTransport(client, {
+                fromEmail: 'noreply@hospeda.com.ar',
+                fromName: 'Hospeda'
+            });
             sendMock.mockResolvedValue({ data: { id: 'msg_empty_attach' } });
 
             const input: SendEmailInput = {
@@ -363,7 +375,10 @@ describe('Feedback Notification Integration Tests', () => {
         it('should forward attachments alongside other input fields', async () => {
             // Arrange
             const { client, sendMock } = createMockResend();
-            const transport = new ResendEmailTransport(client);
+            const transport = new ResendEmailTransport(client, {
+                fromEmail: 'noreply@hospeda.com.ar',
+                fromName: 'Hospeda'
+            });
             sendMock.mockResolvedValue({ data: { id: 'msg_full_input' } });
 
             const input: SendEmailInput = {
@@ -439,7 +454,8 @@ describe('Feedback Notification Integration Tests', () => {
                 preferenceService: mockPreferenceService,
                 retryService: mockRetryService,
                 db: mockDb,
-                logger: mockLogger
+                logger: mockLogger,
+                siteUrl: 'https://hospeda.com.ar'
             };
 
             (mockEmailTransport.send as Mock).mockResolvedValue({ messageId: 'msg_feedback_001' });
@@ -573,7 +589,8 @@ describe('Feedback Notification Integration Tests', () => {
                 preferenceService: mockPreferenceService,
                 retryService: mockRetryService,
                 db: mockDb,
-                logger: mockLogger
+                logger: mockLogger,
+                siteUrl: 'https://hospeda.com.ar'
             };
 
             (mockEmailTransport.send as Mock).mockResolvedValue({ messageId: 'msg_feedback_002' });
@@ -719,7 +736,8 @@ describe('Feedback Notification Integration Tests', () => {
                 preferenceService: mockPreferenceService,
                 retryService: mockRetryService,
                 db: mockDb,
-                logger: mockLogger
+                logger: mockLogger,
+                siteUrl: 'https://hospeda.com.ar'
             });
 
             (mockEmailTransport.send as Mock).mockResolvedValue({ messageId: 'msg_feedback_full' });
@@ -814,7 +832,8 @@ describe('Feedback Notification Integration Tests', () => {
                 preferenceService: mockPreferenceService,
                 retryService: null,
                 db: mockDb,
-                logger: mockLogger
+                logger: mockLogger,
+                siteUrl: 'https://hospeda.com.ar'
             });
 
             // The mockEmailTransport is a direct mock (not ResendEmailTransport), so thrown

@@ -93,7 +93,8 @@ describe('Notification Preferences Integration Tests', () => {
             preferenceService,
             retryService: null, // Not testing retry in this suite
             db: mockDb,
-            logger: mockLogger
+            logger: mockLogger,
+            siteUrl: 'https://hospeda.com.ar'
         };
 
         // Create notification service
