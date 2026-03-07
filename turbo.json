@@ -22,7 +22,7 @@
         "admin#build": {
             "dependsOn": ["^build"],
             "inputs": ["$TURBO_DEFAULT$", ".env*"],
-            "outputs": [".output/**", ".tanstack/**"]
+            "outputs": [".output/**", ".tanstack/**", ".vercel/output/**"]
         },
         "lint": {
             "outputs": []
