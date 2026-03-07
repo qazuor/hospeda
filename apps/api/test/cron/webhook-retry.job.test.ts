@@ -26,7 +26,8 @@ vi.mock('@repo/db', () => ({
 }));
 
 vi.mock('@repo/billing', () => ({
-    getAddonBySlug: vi.fn()
+    getAddonBySlug: vi.fn(),
+    createMercadoPagoAdapter: vi.fn()
 }));
 
 vi.mock('@repo/notifications', () => ({
@@ -69,11 +70,15 @@ vi.mock('../../src/routes/webhooks/mercadopago/utils', () => ({
     extractAddonFromReference: vi.fn()
 }));
 
+vi.mock('../../src/routes/webhooks/mercadopago/subscription-logic', () => ({
+    processSubscriptionUpdated: vi.fn()
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
 
-import { getAddonBySlug } from '@repo/billing';
+import { createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { webhookRetryJob } from '../../src/cron/jobs/webhook-retry.job';
 import type { CronJobContext } from '../../src/cron/types';
@@ -82,6 +87,7 @@ import {
     sendPaymentFailureNotifications,
     sendPaymentSuccessNotification
 } from '../../src/routes/webhooks/mercadopago/notifications';
+import { processSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-logic';
 import {
     extractAddonFromReference,
     extractAddonMetadata,
@@ -338,25 +344,124 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
     });
 
     // -------------------------------------------------------------------------
-    // Test 5: subscription_preapproval.updated type — no business logic
+    // Test 5: subscription_preapproval.updated type — runs processSubscriptionUpdated
     // -------------------------------------------------------------------------
-    it('should resolve subscription_preapproval.updated events without business logic', async () => {
+    it('should run processSubscriptionUpdated for subscription_preapproval.updated events', async () => {
         // Arrange
-        const event = makeDeadLetterEvent({ type: 'subscription_preapproval.updated' });
+        const event = makeDeadLetterEvent({
+            type: 'subscription_preapproval.updated',
+            providerEventId: 'mp-sub-event-1',
+            payload: {
+                data: { id: 'preapproval-123' },
+                date_created: '2024-01-01T00:00:00Z'
+            }
+        });
         const { db } = arrangeDb([event]);
 
+        const billing = makeBillingMock({ id: 'cust-1' });
         vi.mocked(getQZPayBilling).mockReturnValue(
-            makeBillingMock() as unknown as ReturnType<typeof getQZPayBilling>
+            billing as unknown as ReturnType<typeof getQZPayBilling>
         );
+
+        // createMercadoPagoAdapter must succeed for retrySubscriptionUpdated to proceed
+        const mockAdapter = { subscriptions: { retrieve: vi.fn() } };
+        vi.mocked(createMercadoPagoAdapter).mockReturnValue(
+            mockAdapter as unknown as ReturnType<typeof createMercadoPagoAdapter>
+        );
+
+        // processSubscriptionUpdated returns success
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: true,
+            statusChanged: true,
+            newStatus: 'active'
+        });
 
         const ctx = makeCronContext();
 
         // Act
         const result = await webhookRetryJob.handler(ctx);
 
-        // Assert
+        // Assert — business logic ran
         expect(result.success).toBe(true);
-        expect(extractPaymentInfo).not.toHaveBeenCalled();
+        expect(result.errors).toBe(0);
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        expect(processSubscriptionUpdated).toHaveBeenCalledWith(
+            expect.objectContaining({
+                providerEventId: 'mp-sub-event-1',
+                source: 'dead-letter-retry'
+            })
+        );
+        // markAsResolved should be called because processing succeeded
+        expect(db.update).toHaveBeenCalled();
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5a: subscription_preapproval.updated — processSubscriptionUpdated fails
+    // -------------------------------------------------------------------------
+    it('should increment attempts when processSubscriptionUpdated returns failure', async () => {
+        // Arrange
+        const event = makeDeadLetterEvent({
+            type: 'subscription_preapproval.updated',
+            providerEventId: 'mp-sub-event-fail',
+            payload: { data: { id: 'preapproval-456' } }
+        });
+        const { db } = arrangeDb([event]);
+
+        const billing = makeBillingMock({ id: 'cust-2' });
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            billing as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        const mockAdapter = { subscriptions: { retrieve: vi.fn() } };
+        vi.mocked(createMercadoPagoAdapter).mockReturnValue(
+            mockAdapter as unknown as ReturnType<typeof createMercadoPagoAdapter>
+        );
+
+        // processSubscriptionUpdated returns failure
+        vi.mocked(processSubscriptionUpdated).mockResolvedValue({
+            success: false,
+            statusChanged: false,
+            error: 'Subscription not found in MercadoPago'
+        });
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — job still completes but records an error
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(1);
+        expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
+        // incrementAttempts path: db.update is called without resolvedAt
+        const setCalls = vi.mocked(db.set).mock.calls;
+        const firstSetArg = setCalls[0]?.[0] as Record<string, unknown> | undefined;
+        expect(firstSetArg).not.toHaveProperty('resolvedAt');
+    });
+
+    // -------------------------------------------------------------------------
+    // Test 5b: subscription_preapproval.updated — billing not configured
+    // -------------------------------------------------------------------------
+    it('should mark subscription_preapproval.updated as resolved when billing is not configured', async () => {
+        // Arrange: billing returns null (not configured)
+        const event = makeDeadLetterEvent({
+            type: 'subscription_preapproval.updated',
+            providerEventId: 'mp-sub-event-no-billing'
+        });
+        const { db } = arrangeDb([event]);
+
+        vi.mocked(getQZPayBilling).mockReturnValue(null);
+
+        const ctx = makeCronContext();
+
+        // Act
+        const result = await webhookRetryJob.handler(ctx);
+
+        // Assert — retrySubscriptionUpdated returns true when billing is null,
+        // so the event is marked as resolved (not an error)
+        expect(result.success).toBe(true);
+        expect(result.errors).toBe(0);
+        expect(processSubscriptionUpdated).not.toHaveBeenCalled();
         expect(db.update).toHaveBeenCalled();
     });
 

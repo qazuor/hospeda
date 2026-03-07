@@ -260,6 +260,30 @@ export function createDbMock() {
             metadata: 'metadata',
             livemode: 'livemode',
             createdAt: 'createdAt'
+        },
+
+        // Subscription webhook processing stubs
+        billingSubscriptions: {
+            id: 'id',
+            customerId: 'customer_id',
+            planId: 'plan_id',
+            status: 'status',
+            mpSubscriptionId: 'mp_subscription_id',
+            cancelAtPeriodEnd: 'cancel_at_period_end',
+            canceledAt: 'canceled_at',
+            deletedAt: 'deleted_at',
+            createdAt: 'created_at',
+            updatedAt: 'updated_at'
+        },
+        billingSubscriptionEvents: {
+            id: 'id',
+            subscriptionId: 'subscription_id',
+            previousStatus: 'previous_status',
+            newStatus: 'new_status',
+            triggerSource: 'trigger_source',
+            providerEventId: 'provider_event_id',
+            metadata: 'metadata',
+            createdAt: 'created_at'
         }
     };
 }
