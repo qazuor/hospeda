@@ -3,7 +3,7 @@
     "extends": ["./packages/biome-config/biome.json"],
     "overrides": [
         {
-            "include": ["apps/web/src/components/event/CalendarView.client.tsx"],
+            "include": ["apps/web-old/src/components/event/CalendarView.client.tsx"],
             "linter": {
                 "rules": {
                     "a11y": {
