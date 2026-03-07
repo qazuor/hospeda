@@ -5,6 +5,7 @@
 import { createRoute } from '@hono/zod-openapi';
 import { MetricsOperationResponseSchema, MetricsSuccessResponseSchema } from '@repo/schemas';
 import { z } from 'zod';
+import { adminAuthMiddleware } from '../../middlewares/authorization';
 import {
     getApiMetrics,
     getMetrics,
@@ -112,6 +113,9 @@ const resetMetricsRoute = createRoute({
 
 // Create router
 const router = createRouter();
+
+// Enforce admin authentication on all metrics endpoints
+router.use('*', adminAuthMiddleware());
 
 // Implement routes
 router.openapi(getMetricsRoute, (c) => {
