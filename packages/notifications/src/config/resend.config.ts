@@ -1,14 +1,22 @@
 import { Resend } from 'resend';
 
 /**
- * Creates a Resend client instance
+ * Input for creating a Resend client instance.
+ */
+export interface CreateResendClientInput {
+    /** Resend API key */
+    readonly apiKey: string;
+}
+
+/**
+ * Creates a Resend client instance using dependency-injected configuration.
  *
+ * @param input - Configuration with API key
  * @returns Configured Resend client
- * @throws {Error} If RESEND_API_KEY is not set in environment
  *
  * @example
  * ```ts
- * const resend = createResendClient();
+ * const resend = createResendClient({ apiKey: env.RESEND_API_KEY });
  * await resend.emails.send({
  *   from: 'noreply@hospeda.com.ar',
  *   to: 'user@example.com',
@@ -17,12 +25,6 @@ import { Resend } from 'resend';
  * });
  * ```
  */
-export function createResendClient(): Resend {
-    const apiKey = process.env.RESEND_API_KEY;
-
-    if (!apiKey) {
-        throw new Error('RESEND_API_KEY environment variable is not set');
-    }
-
+export function createResendClient({ apiKey }: CreateResendClientInput): Resend {
     return new Resend(apiKey);
 }

@@ -49,6 +49,8 @@ export interface NotificationServiceDeps {
     db: ReturnType<typeof getDb>;
     /** Logger instance */
     logger: ILogger;
+    /** Site base URL used in email CTA links (e.g. https://hospeda.com.ar) */
+    siteUrl: string;
 }
 
 /**
@@ -80,17 +82,6 @@ export interface NotificationServiceDeps {
  */
 export class NotificationService {
     constructor(private deps: NotificationServiceDeps) {}
-
-    /**
-     * Resolve the site base URL for email CTA links.
-     *
-     * Reads from environment variables with a safe fallback for production.
-     */
-    private get siteUrl(): string {
-        return (
-            process.env.HOSPEDA_SITE_URL || process.env.PUBLIC_SITE_URL || 'https://hospeda.com.ar'
-        );
-    }
 
     /**
      * Send a notification
@@ -303,7 +294,7 @@ export class NotificationService {
                     planName: p.planName,
                     amount: p.amount,
                     currency: p.currency,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     billingPeriod: p.billingPeriod,
                     nextBillingDate: p.nextBillingDate
                 });
@@ -316,7 +307,7 @@ export class NotificationService {
                     amount: p.amount,
                     currency: p.currency,
                     planName: p.planName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     paymentMethod: p.paymentMethod
                 });
             }
@@ -327,7 +318,7 @@ export class NotificationService {
                     recipientName,
                     amount: p.amount,
                     currency: p.currency,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     failureReason: p.failureReason,
                     retryDate: p.retryDate
                 });
@@ -338,7 +329,7 @@ export class NotificationService {
                 return RenewalReminder({
                     recipientName,
                     planName: p.planName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     amount: p.amount,
                     currency: p.currency,
                     renewalDate: p.renewalDate || ''
@@ -349,7 +340,7 @@ export class NotificationService {
                 const p = payload as SubscriptionEventPayload;
                 return PlanChangeConfirmation({
                     recipientName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     oldPlanName: p.oldPlanName || '',
                     newPlanName: p.newPlanName || '',
                     amount: p.amount,
@@ -362,7 +353,7 @@ export class NotificationService {
                 return AddonExpirationWarning({
                     recipientName,
                     addonName: p.addonName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     daysRemaining: p.daysRemaining,
                     expirationDate: p.expirationDate
                 });
@@ -373,7 +364,7 @@ export class NotificationService {
                 return AddonExpired({
                     recipientName,
                     addonName: p.addonName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     expirationDate: p.expirationDate || ''
                 });
             }
@@ -383,7 +374,7 @@ export class NotificationService {
                 return AddonRenewalConfirmation({
                     recipientName,
                     addonName: p.addonName,
-                    baseUrl: this.siteUrl,
+                    baseUrl: this.deps.siteUrl,
                     amount: p.amount || 0,
                     currency: p.currency || 'ARS'
                 });

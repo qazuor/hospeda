@@ -1,5 +1,4 @@
 import type { Resend } from 'resend';
-import { NOTIFICATION_CONSTANTS } from '../../constants/notification.constants.js';
 import type {
     EmailTransport,
     SendEmailInput,
@@ -17,8 +16,11 @@ import type {
  * import { createResendClient } from '@repo/notifications';
  * import { WelcomeEmail } from './emails/welcome';
  *
- * const resend = createResendClient();
- * const transport = new ResendEmailTransport(resend);
+ * const resend = createResendClient({ apiKey: env.RESEND_API_KEY });
+ * const transport = new ResendEmailTransport(resend, {
+ *   fromEmail: 'noreply@hospeda.com.ar',
+ *   fromName: 'Hospeda'
+ * });
  *
  * const result = await transport.send({
  *   to: 'user@example.com',
@@ -38,29 +40,18 @@ export class ResendEmailTransport implements EmailTransport {
      *
      * @param resend - Configured Resend client instance
      * @param options - Transport configuration options
-     * @param options.fromEmail - Default sender email (overrides env var)
-     * @param options.fromName - Default sender name (overrides env var)
+     * @param options.fromEmail - Default sender email address (required)
+     * @param options.fromName - Default sender display name (required)
      */
     constructor(
         resend: Resend,
-        options?: {
-            fromEmail?: string;
-            fromName?: string;
+        options: {
+            fromEmail: string;
+            fromName: string;
         }
     ) {
         this.resend = resend;
-
-        const fromEmail =
-            options?.fromEmail ||
-            process.env.RESEND_FROM_EMAIL ||
-            NOTIFICATION_CONSTANTS.DEFAULT_FROM_EMAIL;
-
-        const fromName =
-            options?.fromName ||
-            process.env.RESEND_FROM_NAME ||
-            NOTIFICATION_CONSTANTS.DEFAULT_FROM_NAME;
-
-        this.defaultFrom = `${fromName} <${fromEmail}>`;
+        this.defaultFrom = `${options.fromName} <${options.fromEmail}>`;
     }
 
     /**
