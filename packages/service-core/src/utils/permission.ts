@@ -142,9 +142,9 @@ export function getEntityPermission(
         return { allowed: false, reason: EntityPermissionReasonEnum.ARCHIVED };
     }
 
-    // Actions like approve/reject/feature/publish: only admins.
+    // Actions like approve/reject/feature/publish: requires "any" permission.
     if (['approve', 'reject', 'feature', 'publish'].includes(action)) {
-        if (actor.role === RoleEnum.ADMIN) {
+        if (options?.hasAny) {
             return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
         }
         return { allowed: false, reason: EntityPermissionReasonEnum.NOT_ADMIN };
@@ -163,17 +163,17 @@ export function getEntityPermission(
 
     // --- View Logic ---
     if (action === 'view') {
-        // ARCHIVED/DRAFT/REJECTED states: only admin or the owner can view.
+        // ARCHIVED/DRAFT/REJECTED states: only users with "any" permission or owners can view.
         if (
             [LifecycleStatusEnum.ARCHIVED, LifecycleStatusEnum.DRAFT].includes(
                 entity.lifecycleState
             ) ||
             entity.moderationState === ModerationStatusEnum.REJECTED
         ) {
-            if (actor.role === RoleEnum.ADMIN) {
+            if (options?.hasAny) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
             }
-            if (actor.role === RoleEnum.HOST && entity.ownerId === actor.id) {
+            if (options?.hasOwn && entity.ownerId === actor.id) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.OWNER };
             }
             return {
@@ -194,16 +194,16 @@ export function getEntityPermission(
         ) {
             return { allowed: true, reason: EntityPermissionReasonEnum.PUBLIC_ACCESS };
         }
-        // ACTIVE + APPROVED + PRIVATE/RESTRICTED: only admin or the owner can view.
+        // ACTIVE + APPROVED + PRIVATE/RESTRICTED: only users with "any" permission or owners can view.
         if (
             entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
             entity.moderationState === ModerationStatusEnum.APPROVED &&
             [VisibilityEnum.PRIVATE, VisibilityEnum.RESTRICTED].includes(entity.visibility)
         ) {
-            if (actor.role === RoleEnum.ADMIN) {
+            if (options?.hasAny) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
             }
-            if (actor.role === RoleEnum.HOST && entity.ownerId === actor.id) {
+            if (options?.hasOwn && entity.ownerId === actor.id) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.OWNER };
             }
             return {
@@ -214,15 +214,15 @@ export function getEntityPermission(
                         : EntityPermissionReasonEnum.RESTRICTED
             };
         }
-        // ACTIVE + PENDING: only admin or the owner can view.
+        // ACTIVE + PENDING: only users with "any" permission or owners can view.
         if (
             entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
             entity.moderationState === ModerationStatusEnum.PENDING
         ) {
-            if (actor.role === RoleEnum.ADMIN) {
+            if (options?.hasAny) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
             }
-            if (actor.role === RoleEnum.HOST && entity.ownerId === actor.id) {
+            if (options?.hasOwn && entity.ownerId === actor.id) {
                 return { allowed: true, reason: EntityPermissionReasonEnum.OWNER };
             }
             return { allowed: false, reason: EntityPermissionReasonEnum.PENDING };
