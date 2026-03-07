@@ -23,6 +23,7 @@ import {
     sql
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import type {
     CreatePromoCodeInput,
@@ -101,7 +102,7 @@ export async function createPromoCode(input: CreatePromoCodeInput) {
                 newCustomersOnly: input.firstPurchaseOnly ?? false,
                 active: input.isActive ?? true,
                 expiresAt: input.expiryDate ?? null,
-                livemode: process.env.NODE_ENV === 'production'
+                livemode: env.NODE_ENV === 'production'
             })
             .returning();
 

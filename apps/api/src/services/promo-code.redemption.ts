@@ -20,6 +20,7 @@ import {
     withTransaction
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { getPromoCodeByCode } from './promo-code.crud';
 import type { PromoCode } from './promo-code.service';
@@ -233,7 +234,7 @@ export async function recordPromoCodeUsage(data: RecordUsageInput) {
                 subscriptionId: data.subscriptionId ?? null,
                 discountAmount: data.discountAmount,
                 currency: data.currency,
-                livemode: process.env.NODE_ENV === 'production'
+                livemode: env.NODE_ENV === 'production'
             })
             .returning();
 

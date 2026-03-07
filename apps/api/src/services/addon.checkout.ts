@@ -10,6 +10,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import type {
@@ -141,7 +142,7 @@ export async function createAddonCheckout(
             }
         }
 
-        const mpAccessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+        const mpAccessToken = env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
         if (!mpAccessToken) {
             return {
                 success: false,
@@ -156,8 +157,8 @@ export async function createAddonCheckout(
         const preferenceClient = new Preference(mpClient);
 
         const orderId = `addon_${addon.slug}_${Date.now()}`;
-        const webUrl = process.env.WEB_URL || 'http://localhost:4321';
-        const apiUrl = process.env.API_URL || 'http://localhost:3001';
+        const webUrl = env.HOSPEDA_SITE_URL || 'http://localhost:4321';
+        const apiUrl = env.HOSPEDA_API_URL || 'http://localhost:3001';
 
         const preference = await preferenceClient.create({
             body: {

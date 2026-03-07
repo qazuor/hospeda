@@ -19,6 +19,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { clearEntitlementCache } from '../middlewares/entitlement';
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -401,7 +402,7 @@ export class TrialService {
                                 customerId: customer.id,
                                 planName: plan.name,
                                 trialEndDate: trialEnd.toISOString(),
-                                upgradeUrl: `${process.env.WEB_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`
+                                upgradeUrl: `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`
                             });
 
                             apiLogger.debug(
