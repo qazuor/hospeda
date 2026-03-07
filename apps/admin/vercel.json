@@ -4,7 +4,6 @@
     "buildCommand": "cd ../.. && pnpm turbo run build --filter=admin",
     "outputDirectory": ".output/public",
     "installCommand": "pnpm install --frozen-lockfile",
-    "nodeVersion": "20",
 
     "headers": [
         {

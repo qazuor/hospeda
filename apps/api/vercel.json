@@ -4,7 +4,6 @@
     "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
     "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-api",
     "outputDirectory": "dist",
-    "nodeVersion": "20",
     "rewrites": [
         {
             "source": "/(.*)",
