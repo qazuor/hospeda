@@ -3,11 +3,10 @@
     "framework": null,
     "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
     "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-api",
-    "outputDirectory": "dist",
     "rewrites": [
         {
             "source": "/(.*)",
-            "destination": "/vercel.js"
+            "destination": "/api"
         }
     ],
     "headers": [
@@ -56,7 +55,7 @@
         }
     ],
     "functions": {
-        "dist/vercel.js": {
+        "api/index.js": {
             "maxDuration": 30,
             "memory": 512
         }
