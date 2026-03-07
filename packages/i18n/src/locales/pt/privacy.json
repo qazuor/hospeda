@@ -6,6 +6,7 @@
     "sections": {
         "informationCollection": {
             "title": "1. Informacoes que Coletamos",
+            "body": "Coletamos informacoes pessoais que voce nos fornece diretamente, como nome, email, telefone e endereco. Tambem coletamos dados de uso automaticamente quando voce navega em nossa plataforma, incluindo endereco IP, tipo de navegador e paginas visitadas.",
             "intro": "Coletamos informacoes que voce nos fornece diretamente, como:",
             "items": {
                 "registration": "Informacoes de cadastro (nome, email, telefone)",
@@ -27,6 +28,7 @@
         },
         "informationUse": {
             "title": "3. Como Usamos Suas Informacoes",
+            "body": "Utilizamos suas informacoes para fornecer e melhorar nossos servicos, processar transacoes, enviar notificacoes importantes e personalizar sua experiencia. Tambem podemos usar seus dados para fins de analise, marketing e seguranca.",
             "intro": "Utilizamos as informacoes coletadas para:",
             "purposes": {
                 "services": "Fornecer e melhorar nossos servicos",
@@ -39,6 +41,7 @@
         },
         "informationSharing": {
             "title": "4. Compartilhamento de Informacoes",
+            "body": "Nao vendemos suas informacoes pessoais. Compartilhamos dados com prestadores de servicos que nos ajudam a operar a plataforma, sempre sob rigorosos acordos de confidencialidade. Tambem podemos compartilhar informacoes quando exigido por lei.",
             "intro": "Podemos compartilhar suas informacoes nas seguintes circunstancias:",
             "circumstances": {
                 "hosts": "Com anfitrioes para facilitar reservas",
@@ -50,14 +53,17 @@
         },
         "cookiesTracking": {
             "title": "5. Cookies e Tecnologias de Rastreamento",
+            "body": "Utilizamos cookies e tecnologias similares para melhorar a funcionalidade do nosso site, analisar o trafego e personalizar conteudo. Voce pode configurar seu navegador para rejeitar cookies, embora isso possa afetar algumas funcionalidades da plataforma.",
             "content": "Utilizamos cookies e tecnologias similares para melhorar sua experiencia, lembrar suas preferencias e analisar o uso do nosso site. Voce pode controlar os cookies por meio das configuracoes do seu navegador."
         },
         "dataSecurity": {
             "title": "6. Seguranca dos Dados",
+            "body": "Implementamos medidas de seguranca tecnicas e organizacionais para proteger suas informacoes pessoais contra acesso nao autorizado, perda ou destruicao. No entanto, nenhum sistema de transmissao pela internet e completamente seguro.",
             "content": "Implementamos medidas de seguranca tecnicas e organizacionais adequadas para proteger suas informacoes pessoais contra acesso nao autorizado, alteracao, divulgacao ou destruicao. No entanto, nenhum metodo de transmissao pela internet e 100% seguro."
         },
         "yourRights": {
             "title": "7. Seus Direitos",
+            "body": "Voce tem direito de acessar, retificar, excluir ou se opor ao tratamento dos seus dados pessoais. Tambem pode solicitar a portabilidade dos seus dados ou revogar seu consentimento a qualquer momento. Para exercer esses direitos, entre em contato conosco pelos canais disponiveis.",
             "intro": "Voce tem direito a:",
             "rights": {
                 "access": "Acessar suas informacoes pessoais",
@@ -86,6 +92,7 @@
         },
         "contact": {
             "title": "12. Contato",
+            "body": "Se tiver duvidas ou preocupacoes sobre nossa politica de privacidade ou o tratamento dos seus dados pessoais, pode entrar em contato conosco pelos canais de comunicacao disponiveis na nossa plataforma. Responderemos suas consultas o mais breve possivel.",
             "intro": "Para exercer seus direitos ou se tiver duvidas sobre esta politica, entre em contato conosco:",
             "details": {
                 "email": "Email:",
@@ -99,6 +106,8 @@
     },
     "page": {
         "title": "Política de Privacidade",
-        "description": "Política de privacidade e proteção de dados da Hospeda"
+        "description": "Política de privacidade e proteção de dados da Hospeda",
+        "contactLink": "Ir para a pagina de contato",
+        "lastUpdated": "Ultima atualizacao"
     }
 }

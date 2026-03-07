@@ -6,6 +6,7 @@
     "sections": {
         "informationCollection": {
             "title": "1. Información que Recopilamos",
+            "body": "Recopilamos información personal que usted nos proporciona directamente, como nombre, correo electrónico, teléfono y dirección. También recopilamos datos de uso automáticamente cuando navega en nuestra plataforma, incluyendo dirección IP, tipo de navegador y páginas visitadas.",
             "intro": "Recopilamos información que usted nos proporciona directamente, como:",
             "items": {
                 "registration": "Información de registro (nombre, email, teléfono)",
@@ -27,6 +28,7 @@
         },
         "informationUse": {
             "title": "3. Cómo Usamos su Información",
+            "body": "Utilizamos su información para proporcionar y mejorar nuestros servicios, procesar transacciones, enviar notificaciones importantes y personalizar su experiencia. También podemos usar sus datos para fines de análisis, marketing y seguridad.",
             "intro": "Utilizamos la información recopilada para:",
             "purposes": {
                 "services": "Proporcionar y mejorar nuestros servicios",
@@ -39,6 +41,7 @@
         },
         "informationSharing": {
             "title": "4. Compartir Información",
+            "body": "No vendemos su información personal. Compartimos datos con proveedores de servicios que nos ayudan a operar la plataforma, siempre bajo estrictos acuerdos de confidencialidad. También podemos compartir información cuando sea requerido por ley.",
             "intro": "Podemos compartir su información en las siguientes circunstancias:",
             "circumstances": {
                 "hosts": "Con anfitriones para facilitar reservas",
@@ -50,14 +53,17 @@
         },
         "cookiesTracking": {
             "title": "5. Cookies y Tecnologías de Seguimiento",
+            "body": "Utilizamos cookies y tecnologías similares para mejorar la funcionalidad de nuestro sitio web, analizar el tráfico y personalizar contenido. Puede configurar su navegador para rechazar cookies, aunque esto puede afectar algunas funcionalidades de la plataforma.",
             "content": "Utilizamos cookies y tecnologías similares para mejorar su experiencia, recordar sus preferencias y analizar el uso de nuestro sitio. Puede controlar las cookies a través de la configuración de su navegador."
         },
         "dataSecurity": {
             "title": "6. Seguridad de los Datos",
+            "body": "Implementamos medidas de seguridad técnicas y organizativas para proteger su información personal contra acceso no autorizado, pérdida o destrucción. Sin embargo, ningún sistema de transmisión por internet es completamente seguro.",
             "content": "Implementamos medidas de seguridad técnicas y organizativas apropiadas para proteger su información personal contra acceso no autorizado, alteración, divulgación o destrucción. Sin embargo, ningún método de transmisión por internet es 100% seguro."
         },
         "yourRights": {
             "title": "7. Sus Derechos",
+            "body": "Usted tiene derecho a acceder, rectificar, eliminar u oponerse al procesamiento de sus datos personales. También puede solicitar la portabilidad de sus datos o retirar su consentimiento en cualquier momento. Para ejercer estos derechos, contáctenos a través de los canales disponibles.",
             "intro": "Usted tiene derecho a:",
             "rights": {
                 "access": "Acceder a su información personal",
@@ -86,6 +92,7 @@
         },
         "contact": {
             "title": "12. Contacto",
+            "body": "Si tiene preguntas o inquietudes sobre nuestra política de privacidad o el tratamiento de sus datos personales, puede contactarnos a través de los canales de comunicación disponibles en nuestra plataforma. Responderemos a sus consultas a la brevedad.",
             "intro": "Para ejercer sus derechos o si tiene preguntas sobre esta política, contáctenos:",
             "details": {
                 "email": "Email:",
@@ -99,6 +106,8 @@
     },
     "page": {
         "title": "Política de Privacidad",
-        "description": "Política de privacidad y protección de datos de Hospeda"
+        "description": "Política de privacidad y protección de datos de Hospeda",
+        "contactLink": "Ir a la página de contacto",
+        "lastUpdated": "Última actualización"
     }
 }

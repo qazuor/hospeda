@@ -2,10 +2,11 @@
     "title": "Términos y Condiciones - Hospeda",
     "description": "Lee nuestros términos y condiciones de uso para entender tus derechos y responsabilidades al usar Hospeda.",
     "heading": "Términos y Condiciones",
-    "lastUpdated": "Última actualización: 1 de enero de 2024",
+    "lastUpdated": "Última actualización",
     "sections": {
         "acceptance": {
             "title": "1. Aceptación de los Términos",
+            "body": "Al acceder y utilizar esta plataforma, usted acepta estar sujeto a estos términos y condiciones de uso. Si no está de acuerdo con alguno de estos términos, le pedimos que no utilice nuestros servicios. Este acuerdo constituye un contrato vinculante entre usted y Hospeda.",
             "content": "Al acceder y utilizar el sitio web de Hospeda, usted acepta estar sujeto a estos términos y condiciones de uso. Si no está de acuerdo con alguna parte de estos términos, no debe utilizar nuestro servicio."
         },
         "serviceDescription": {
@@ -14,6 +15,7 @@
         },
         "accountRegistration": {
             "title": "3. Registro de Cuenta",
+            "body": "Para acceder a ciertas funcionalidades, deberá crear una cuenta. Es su responsabilidad mantener la confidencialidad de sus credenciales y todas las actividades realizadas bajo su cuenta. Debe notificarnos inmediatamente sobre cualquier uso no autorizado.",
             "intro": "Para utilizar ciertos servicios, debe crear una cuenta proporcionando información precisa y completa. Usted es responsable de:",
             "responsibilities": {
                 "password": "Mantener la confidencialidad de su contraseña",
@@ -34,6 +36,7 @@
         },
         "userResponsibilities": {
             "title": "5. Responsabilidades del Usuario",
+            "body": "Usted se compromete a utilizar nuestros servicios de manera responsable y legal. Está prohibido usar la plataforma para actividades ilegales, fraudulentas o que violen los derechos de terceros. Nos reservamos el derecho de suspender o cancelar cuentas que incumplan estas normas.",
             "intro": "Los usuarios se comprometen a:",
             "commitments": {
                 "legal": "Usar el servicio de manera legal y apropiada",
@@ -47,13 +50,25 @@
             "title": "6. Políticas de Cancelación",
             "content": "Las políticas de cancelación varían según el anfitrión y se muestran claramente durante el proceso de reserva. Hospeda puede cobrar tarifas de servicio no reembolsables según se especifique en el momento de la reserva."
         },
+        "liability": {
+            "title": "5. Responsabilidad",
+            "body": "Hospeda actúa como intermediario entre proveedores de alojamiento y usuarios. No nos hacemos responsables de la calidad, seguridad o legalidad de los servicios ofrecidos por terceros. El uso de la plataforma es bajo su propio riesgo."
+        },
         "liabilityLimitation": {
             "title": "7. Limitación de Responsabilidad",
             "content": "Hospeda actúa como intermediario entre huéspedes y anfitriones. No somos responsables de la calidad, seguridad o legalidad de los alojamientos listados, la veracidad de las descripciones, o la capacidad de los usuarios para completar transacciones."
         },
+        "content": {
+            "title": "4. Contenido",
+            "body": "Los usuarios son responsables del contenido que publican en la plataforma. Al publicar contenido, usted otorga a Hospeda una licencia no exclusiva para usar, reproducir y distribuir dicho contenido. Nos reservamos el derecho de eliminar contenido que consideremos inapropiado."
+        },
         "intellectualProperty": {
             "title": "8. Propiedad Intelectual",
             "content": "Todo el contenido de la plataforma Hospeda, incluyendo texto, gráficos, logos, iconos, imágenes y software, es propiedad de Hospeda o sus licenciantes y está protegido por las leyes de derechos de autor."
+        },
+        "modifications": {
+            "title": "6. Modificaciones",
+            "body": "Nos reservamos el derecho de modificar estos términos y condiciones en cualquier momento. Los cambios entrarán en vigor inmediatamente después de su publicación en la plataforma. Es su responsabilidad revisar periódicamente estos términos."
         },
         "termsModifications": {
             "title": "9. Modificaciones de los Términos",
@@ -67,8 +82,18 @@
             "title": "11. Ley Aplicable",
             "content": "Estos términos se rigen por las leyes del país donde Hospeda tiene su sede principal, sin tener en cuenta los principios de conflicto de leyes."
         },
+        "usage": {
+            "title": "2. Uso del servicio",
+            "body": "Usted se compromete a utilizar nuestros servicios de manera responsable y legal. Está prohibido usar la plataforma para actividades ilegales, fraudulentas o que violen los derechos de terceros. Nos reservamos el derecho de suspender o cancelar cuentas que incumplan estas normas."
+        },
+        "accounts": {
+            "title": "3. Cuentas de usuario",
+            "body": "Para acceder a ciertas funcionalidades, deberá crear una cuenta. Es su responsabilidad mantener la confidencialidad de sus credenciales y todas las actividades realizadas bajo su cuenta. Debe notificarnos inmediatamente sobre cualquier uso no autorizado."
+        },
         "contact": {
             "title": "12. Contacto",
+            "body": "Si tiene preguntas sobre estos términos y condiciones, puede contactarnos a través de los canales de comunicación disponibles en nuestra plataforma. Haremos nuestro mejor esfuerzo para responder sus consultas a la brevedad.",
+            "cta": "Ir a la página de contacto",
             "intro": "Si tiene preguntas sobre estos términos y condiciones, puede contactarnos en:",
             "details": {
                 "email": "Email:",
@@ -80,6 +105,7 @@
             }
         }
     },
+    "lastUpdatedLabel": "Última actualización",
     "page": {
         "title": "Términos y Condiciones",
         "description": "Términos y condiciones de uso de la plataforma Hospeda"

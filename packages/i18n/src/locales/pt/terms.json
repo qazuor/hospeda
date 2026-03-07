@@ -2,10 +2,11 @@
     "title": "Termos e Condicoes - Hospeda",
     "description": "Leia nossos termos e condicoes de uso para entender seus direitos e responsabilidades ao usar a Hospeda.",
     "heading": "Termos e Condicoes",
-    "lastUpdated": "Ultima atualizacao: 1 de janeiro de 2024",
+    "lastUpdated": "Ultima atualizacao",
     "sections": {
         "acceptance": {
             "title": "1. Aceitacao dos Termos",
+            "body": "Ao acessar e usar esta plataforma, voce concorda em estar sujeito a estes termos e condicoes de uso. Se nao concordar com algum destes termos, pedimos que nao use nossos servicos. Este acordo constitui um contrato vinculante entre voce e a Hospeda.",
             "content": "Ao acessar e usar o site da Hospeda, voce concorda em estar sujeito a estes termos e condicoes de uso. Se voce nao concordar com alguma parte destes termos, nao deve usar nosso servico."
         },
         "serviceDescription": {
@@ -14,6 +15,7 @@
         },
         "accountRegistration": {
             "title": "3. Cadastro de Conta",
+            "body": "Para acessar determinadas funcionalidades, voce precisara criar uma conta. E sua responsabilidade manter a confidencialidade das suas credenciais e todas as atividades realizadas na sua conta. Voce deve nos notificar imediatamente sobre qualquer uso nao autorizado.",
             "intro": "Para usar determinados servicos, voce precisa criar uma conta fornecendo informacoes precisas e completas. Voce e responsavel por:",
             "responsibilities": {
                 "password": "Manter a confidencialidade da sua senha",
@@ -34,6 +36,7 @@
         },
         "userResponsibilities": {
             "title": "5. Responsabilidades do Usuario",
+            "body": "Voce se compromete a usar nossos servicos de forma responsavel e legal. E proibido usar a plataforma para atividades ilegais, fraudulentas ou que violem os direitos de terceiros. Nos reservamos o direito de suspender ou cancelar contas que violem estas regras.",
             "intro": "Os usuarios se comprometem a:",
             "commitments": {
                 "legal": "Usar o servico de forma legal e adequada",
@@ -67,8 +70,30 @@
             "title": "11. Lei Aplicavel",
             "content": "Estes termos sao regidos pelas leis do pais onde a Hospeda tem sua sede principal, sem considerar os principios de conflito de leis."
         },
+        "usage": {
+            "title": "2. Uso do Servico",
+            "body": "Voce se compromete a usar nossos servicos de forma responsavel e legal. E proibido usar a plataforma para atividades ilegais, fraudulentas ou que violem os direitos de terceiros. Nos reservamos o direito de suspender ou cancelar contas que violem estas regras."
+        },
+        "accounts": {
+            "title": "3. Contas de Usuario",
+            "body": "Para acessar determinadas funcionalidades, voce precisara criar uma conta. E sua responsabilidade manter a confidencialidade das suas credenciais e todas as atividades realizadas na sua conta. Voce deve nos notificar imediatamente sobre qualquer uso nao autorizado."
+        },
+        "content": {
+            "title": "4. Conteudo",
+            "body": "Os usuarios sao responsaveis pelo conteudo que publicam na plataforma. Ao publicar conteudo, voce concede a Hospeda uma licenca nao exclusiva para usar, reproduzir e distribuir esse conteudo. Nos reservamos o direito de remover conteudo que consideremos inadequado."
+        },
+        "liability": {
+            "title": "5. Responsabilidade",
+            "body": "A Hospeda atua como intermediaria entre provedores de hospedagem e usuarios. Nao nos responsabilizamos pela qualidade, seguranca ou legalidade dos servicos oferecidos por terceiros. O uso da plataforma e por sua conta e risco."
+        },
+        "modifications": {
+            "title": "6. Modificacoes",
+            "body": "Reservamo-nos o direito de modificar estes termos e condicoes a qualquer momento. As alteracoes entram em vigor imediatamente apos a publicacao na plataforma. E sua responsabilidade revisar periodicamente estes termos."
+        },
         "contact": {
             "title": "12. Contato",
+            "body": "Se tiver duvidas ou preocupacoes sobre estes termos e condicoes, pode entrar em contato conosco pelos canais de comunicacao disponiveis na nossa plataforma. Faremos o nosso melhor para responder suas consultas o mais breve possivel.",
+            "cta": "Ir para a pagina de contato",
             "intro": "Se voce tiver duvidas sobre estes termos e condicoes, pode entrar em contato conosco em:",
             "details": {
                 "email": "Email:",

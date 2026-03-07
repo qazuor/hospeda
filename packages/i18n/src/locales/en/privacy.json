@@ -6,6 +6,7 @@
     "sections": {
         "informationCollection": {
             "title": "1. Information We Collect",
+            "body": "We collect personal information you provide to us directly, such as your name, email address, phone number, and address. We also collect usage data automatically when you browse our platform, including IP address, browser type, and pages visited.",
             "intro": "We collect information you provide to us directly, such as:",
             "items": {
                 "registration": "Registration information (name, email, phone number)",
@@ -27,6 +28,7 @@
         },
         "informationUse": {
             "title": "3. How We Use Your Information",
+            "body": "We use your information to provide and improve our services, process transactions, send important notifications, and personalize your experience. We may also use your data for analytics, marketing, and security purposes.",
             "intro": "We use the information we collect to:",
             "purposes": {
                 "services": "Provide and improve our services",
@@ -39,6 +41,7 @@
         },
         "informationSharing": {
             "title": "4. Sharing Your Information",
+            "body": "We do not sell your personal information. We share data with service providers who help us operate the platform, always under strict confidentiality agreements. We may also share information when required by law.",
             "intro": "We may share your information in the following circumstances:",
             "circumstances": {
                 "hosts": "With hosts to facilitate bookings",
@@ -50,14 +53,17 @@
         },
         "cookiesTracking": {
             "title": "5. Cookies and Tracking Technologies",
+            "body": "We use cookies and similar technologies to improve the functionality of our website, analyze traffic, and personalize content. You can configure your browser to reject cookies, although this may affect some platform features.",
             "content": "We use cookies and similar technologies to improve your experience, remember your preferences, and analyze how our site is used. You can control cookies through your browser settings."
         },
         "dataSecurity": {
             "title": "6. Data Security",
+            "body": "We implement technical and organizational security measures to protect your personal information against unauthorized access, loss, or destruction. However, no internet transmission system is completely secure.",
             "content": "We implement appropriate technical and organizational security measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. However, no method of internet transmission is 100% secure."
         },
         "yourRights": {
             "title": "7. Your Rights",
+            "body": "You have the right to access, rectify, delete, or object to the processing of your personal data. You may also request data portability or withdraw your consent at any time. To exercise these rights, contact us through the available channels.",
             "intro": "You have the right to:",
             "rights": {
                 "access": "Access your personal information",
@@ -86,6 +92,7 @@
         },
         "contact": {
             "title": "12. Contact",
+            "body": "If you have questions or concerns about our privacy policy or the handling of your personal data, you can contact us through the communication channels available on our platform. We will respond to your inquiries as soon as possible.",
             "intro": "To exercise your rights or if you have questions about this policy, contact us:",
             "details": {
                 "email": "Email:",
@@ -99,6 +106,8 @@
     },
     "page": {
         "title": "Privacy Policy",
-        "description": "Privacy policy and data protection for Hospeda"
+        "description": "Privacy policy and data protection for Hospeda",
+        "contactLink": "Go to the contact page",
+        "lastUpdated": "Last updated"
     }
 }

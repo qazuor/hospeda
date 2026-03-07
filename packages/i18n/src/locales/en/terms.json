@@ -2,10 +2,11 @@
     "title": "Terms and Conditions - Hospeda",
     "description": "Read our terms and conditions of use to understand your rights and responsibilities when using Hospeda.",
     "heading": "Terms and Conditions",
-    "lastUpdated": "Last updated: January 1, 2024",
+    "lastUpdated": "Last updated",
     "sections": {
         "acceptance": {
             "title": "1. Acceptance of Terms",
+            "body": "By accessing and using this platform, you agree to be bound by these terms and conditions of use. If you disagree with any of these terms, we ask that you do not use our services. This agreement constitutes a binding contract between you and Hospeda.",
             "content": "By accessing and using the Hospeda website, you agree to be bound by these terms and conditions of use. If you disagree with any part of these terms, you must not use our service."
         },
         "serviceDescription": {
@@ -14,6 +15,7 @@
         },
         "accountRegistration": {
             "title": "3. Account Registration",
+            "body": "To access certain features, you will need to create an account. You are responsible for maintaining the confidentiality of your credentials and all activities performed under your account. You must notify us immediately of any unauthorized use.",
             "intro": "To use certain services, you must create an account by providing accurate and complete information. You are responsible for:",
             "responsibilities": {
                 "password": "Keeping your password confidential",
@@ -34,6 +36,7 @@
         },
         "userResponsibilities": {
             "title": "5. User Responsibilities",
+            "body": "You agree to use our services in a responsible and legal manner. Using the platform for illegal, fraudulent, or rights-infringing activities is prohibited. We reserve the right to suspend or cancel accounts that violate these rules.",
             "intro": "Users agree to:",
             "commitments": {
                 "legal": "Use the service in a lawful and appropriate manner",
@@ -67,8 +70,30 @@
             "title": "11. Governing Law",
             "content": "These terms are governed by the laws of the country where Hospeda has its principal place of business, without regard to conflict of law principles."
         },
+        "usage": {
+            "title": "2. Service Usage",
+            "body": "You agree to use our services in a responsible and legal manner. Using the platform for illegal, fraudulent, or rights-infringing activities is prohibited. We reserve the right to suspend or cancel accounts that violate these rules."
+        },
+        "accounts": {
+            "title": "3. User Accounts",
+            "body": "To access certain features, you will need to create an account. You are responsible for maintaining the confidentiality of your credentials and all activities performed under your account. You must notify us immediately of any unauthorized use."
+        },
+        "content": {
+            "title": "4. Content",
+            "body": "Users are responsible for the content they publish on the platform. By publishing content, you grant Hospeda a non-exclusive license to use, reproduce, and distribute such content. We reserve the right to remove content we deem inappropriate."
+        },
+        "liability": {
+            "title": "5. Liability",
+            "body": "Hospeda acts as an intermediary between accommodation providers and users. We are not responsible for the quality, safety, or legality of services offered by third parties. Use of the platform is at your own risk."
+        },
+        "modifications": {
+            "title": "6. Modifications",
+            "body": "We reserve the right to modify these terms and conditions at any time. Changes will take effect immediately upon publication on the platform. It is your responsibility to periodically review these terms."
+        },
         "contact": {
             "title": "12. Contact",
+            "body": "If you have questions or concerns about these terms and conditions, you can contact us through the communication channels available on our platform. We will do our best to respond to your inquiries promptly.",
+            "cta": "Go to the contact page",
             "intro": "If you have questions about these terms and conditions, you can reach us at:",
             "details": {
                 "email": "Email:",
