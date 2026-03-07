@@ -316,7 +316,7 @@ export class BillingMetricsService {
     ): Promise<ServiceResult<RevenueDataPoint[]>> {
         try {
             // Validate months is a positive integer within safe bounds
-            const safeMonths = Math.max(1, Math.min(120, Math.floor(Number(months))));
+            const safeMonths = Math.max(1, Math.min(24, Math.floor(Number(months))));
             const db = getDb();
 
             const result = await db.execute(sql`
