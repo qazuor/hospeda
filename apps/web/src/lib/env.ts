@@ -1,18 +1,20 @@
 /**
  * Type-safe environment variable access.
- * Resolves HOSPEDA_ vs PUBLIC_ naming with proper fallbacks.
+ * Delegates to the validated env from `src/env.ts` instead of constructing
+ * ad-hoc fallback chains with `import.meta.env`.
  */
+
+import { validateWebEnv } from '../env.js';
+
+const _env = validateWebEnv();
 
 /**
  * Get the API base URL.
  *
- * @returns The API base URL
+ * @returns The API base URL without a trailing slash
  */
 export function getApiUrl(): string {
-    const url =
-        import.meta.env.PUBLIC_API_URL ||
-        import.meta.env.HOSPEDA_API_URL ||
-        'http://localhost:3001';
+    const url = _env.PUBLIC_API_URL ?? _env.HOSPEDA_API_URL ?? 'http://localhost:3001';
     return url.replace(/\/$/, '');
 }
 
@@ -22,11 +24,7 @@ export function getApiUrl(): string {
  * @returns The site base URL
  */
 export function getSiteUrl(): string {
-    const url =
-        import.meta.env.PUBLIC_SITE_URL ||
-        import.meta.env.HOSPEDA_SITE_URL ||
-        'http://localhost:4321';
-    return url;
+    return _env.PUBLIC_SITE_URL ?? _env.HOSPEDA_SITE_URL ?? 'http://localhost:4321';
 }
 
 /**
