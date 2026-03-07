@@ -8,6 +8,7 @@ import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { initializeSections } from '@/config/sections';
+import { validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { useSession } from '@/lib/auth-client';
 import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
@@ -15,6 +16,9 @@ import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { initSentry } from '@/lib/sentry';
 import { FeedbackErrorBoundary, FeedbackFAB } from '@repo/feedback';
+
+// Validate environment variables eagerly at module load time - fails fast on misconfiguration
+validateAdminEnv();
 
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();

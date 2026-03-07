@@ -61,6 +61,26 @@ const AdminEnvSchema = z.object({
         .url()
         .optional()
         .describe('Sentry DSN for error tracking (production only)'),
+    VITE_SENTRY_RELEASE: z.string().optional().describe('Sentry release identifier'),
+    VITE_SENTRY_PROJECT: z.string().optional().describe('Sentry project slug'),
+
+    // Locale Configuration
+    VITE_SUPPORTED_LOCALES: z
+        .string()
+        .default('es,en')
+        .describe('Comma-separated list of supported locales'),
+    VITE_DEFAULT_LOCALE: z.string().default('es').describe('Default locale for the admin app'),
+
+    // Debug / Developer Flags
+    VITE_DEBUG_LAZY_SECTIONS: z.coerce
+        .boolean()
+        .default(false)
+        .describe('Enable debug logging for lazy-loaded sections'),
+    VITE_DEBUG_ACTOR_ID: z.string().optional().describe('Override actor ID for debugging purposes'),
+    VITE_ENABLE_LOGGING: z.coerce
+        .boolean()
+        .default(false)
+        .describe('Enable verbose client-side logging'),
 
     // Development
     NODE_ENV: z
@@ -124,6 +144,13 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_DEFAULT_PAGE_SIZE: import.meta.env.VITE_DEFAULT_PAGE_SIZE || '25',
             VITE_MAX_PAGE_SIZE: import.meta.env.VITE_MAX_PAGE_SIZE || '100',
             VITE_SENTRY_DSN: import.meta.env.VITE_SENTRY_DSN,
+            VITE_SENTRY_RELEASE: import.meta.env.VITE_SENTRY_RELEASE,
+            VITE_SENTRY_PROJECT: import.meta.env.VITE_SENTRY_PROJECT,
+            VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',
+            VITE_DEFAULT_LOCALE: import.meta.env.VITE_DEFAULT_LOCALE || 'es',
+            VITE_DEBUG_LAZY_SECTIONS: import.meta.env.VITE_DEBUG_LAZY_SECTIONS,
+            VITE_DEBUG_ACTOR_ID: import.meta.env.VITE_DEBUG_ACTOR_ID,
+            VITE_ENABLE_LOGGING: import.meta.env.VITE_ENABLE_LOGGING,
             NODE_ENV: import.meta.env.NODE_ENV || 'development',
             DEV: import.meta.env.DEV,
             PROD: import.meta.env.PROD
