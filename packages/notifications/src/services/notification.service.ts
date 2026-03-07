@@ -9,6 +9,7 @@ import {
     AddonRenewalConfirmation,
     AdminPaymentFailure,
     AdminSystemEvent,
+    FeedbackReportEmail,
     PaymentFailure,
     PaymentSuccess,
     PlanChangeConfirmation,
@@ -22,9 +23,11 @@ import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js'
 import type {
     AddonEventPayload,
     AdminNotificationPayload,
+    FeedbackReportPayload,
     NotificationPayload,
     PaymentNotificationPayload,
     PurchaseConfirmationPayload,
+    SendNotificationOptions,
     SubscriptionEventPayload,
     TrialEventPayload
 } from '../types/notification.types.js';
@@ -96,6 +99,7 @@ export class NotificationService {
      * renders email template, sends via transport, and logs delivery status.
      *
      * @param payload - Notification payload
+     * @param options - Optional flags to control side-effects
      * @returns Delivery result with status and message ID
      *
      * @example
@@ -117,13 +121,21 @@ export class NotificationService {
      * } else {
      *   console.error('Failed:', result.error);
      * }
+     *
+     * // Fire-and-forget feedback email: skip DB log and structured logging
+     * await notificationService.send(feedbackPayload, { skipDb: true, skipLogging: true });
      * ```
      */
-    async send(payload: NotificationPayload): Promise<DeliveryResult> {
+    async send(
+        payload: NotificationPayload,
+        options?: SendNotificationOptions
+    ): Promise<DeliveryResult> {
         const { preferenceService, emailTransport, logger } = this.deps;
         const { type, recipientEmail, userId, customerId } = payload;
 
-        logger.info({ type, recipientEmail, userId, customerId }, 'Processing notification');
+        if (!options?.skipLogging) {
+            logger.info({ type, recipientEmail, userId, customerId }, 'Processing notification');
+        }
 
         // Check if user has opted out of this notification type
         const shouldSend = await preferenceService.shouldSendNotification(userId, type);
@@ -131,17 +143,21 @@ export class NotificationService {
         if (!shouldSend) {
             const skippedReason = 'User has opted out of this notification type';
 
-            logger.info(
-                { type, userId, reason: skippedReason },
-                'Notification skipped due to user preferences'
-            );
+            if (!options?.skipLogging) {
+                logger.info(
+                    { type, userId, reason: skippedReason },
+                    'Notification skipped due to user preferences'
+                );
+            }
 
             // Log as skipped in database
-            await this.logNotification({
-                payload,
-                status: 'skipped',
-                error: skippedReason
-            });
+            if (!options?.skipDb) {
+                await this.logNotification({
+                    payload,
+                    status: 'skipped',
+                    error: skippedReason
+                });
+            }
 
             return {
                 success: false,
@@ -167,17 +183,21 @@ export class NotificationService {
                 ]
             });
 
-            logger.info(
-                { type, recipientEmail, messageId: result.messageId },
-                'Notification sent successfully'
-            );
+            if (!options?.skipLogging) {
+                logger.info(
+                    { type, recipientEmail, messageId: result.messageId },
+                    'Notification sent successfully'
+                );
+            }
 
             // Log successful delivery
-            await this.logNotification({
-                payload,
-                status: 'sent',
-                messageId: result.messageId
-            });
+            if (!options?.skipDb) {
+                await this.logNotification({
+                    payload,
+                    status: 'sent',
+                    messageId: result.messageId
+                });
+            }
 
             return {
                 success: true,
@@ -188,17 +208,21 @@ export class NotificationService {
             const errorMessage =
                 error instanceof Error ? error.message : 'Unknown error during email send';
 
-            logger.error(
-                { type, recipientEmail, error: errorMessage },
-                'Failed to send notification'
-            );
+            if (!options?.skipLogging) {
+                logger.error(
+                    { type, recipientEmail, error: errorMessage },
+                    'Failed to send notification'
+                );
+            }
 
             // Log failed delivery
-            await this.logNotification({
-                payload,
-                status: 'failed',
-                error: errorMessage
-            });
+            if (!options?.skipDb) {
+                await this.logNotification({
+                    payload,
+                    status: 'failed',
+                    error: errorMessage
+                });
+            }
 
             // Enqueue for retry if retry service available
             await this.enqueueForRetry(payload, errorMessage);
@@ -406,6 +430,23 @@ export class NotificationService {
                 });
             }
 
+            case 'feedback_report': {
+                const p = payload as FeedbackReportPayload;
+                return FeedbackReportEmail({
+                    reportType: p.reportType,
+                    title: p.reportTitle,
+                    description: p.reportDescription,
+                    reporterName: p.recipientName,
+                    reporterEmail: p.recipientEmail,
+                    severity: p.severity,
+                    stepsToReproduce: p.stepsToReproduce,
+                    expectedResult: p.expectedResult,
+                    actualResult: p.actualResult,
+                    attachmentUrls: p.attachmentUrls,
+                    environment: p.feedbackEnvironment
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -445,6 +486,12 @@ export class NotificationService {
         if (payload.type === 'admin_system_event' && 'eventDetails' in payload) {
             const details = payload.eventDetails as Record<string, unknown>;
             subjectData.eventType = (details.eventType as string) || 'unknown';
+        }
+
+        // Feedback report specific fields
+        if (payload.type === 'feedback_report' && 'reportType' in payload) {
+            subjectData.reportType = payload.reportType;
+            subjectData.reportTitle = payload.reportTitle;
         }
 
         return getSubject(payload.type, subjectData);

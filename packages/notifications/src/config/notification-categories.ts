@@ -21,5 +21,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Admin - Sent to admin email list only
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,
-    [NotificationType.ADMIN_SYSTEM_EVENT]: NotificationCategory.ADMIN
+    [NotificationType.ADMIN_SYSTEM_EVENT]: NotificationCategory.ADMIN,
+
+    // Feedback - Always sent, cannot be opted out
+    [NotificationType.FEEDBACK_REPORT]: NotificationCategory.TRANSACTIONAL
 };

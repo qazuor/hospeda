@@ -17,7 +17,8 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
     [NotificationType.TRIAL_EXPIRED]: 'Tu período de prueba ha finalizado',
     [NotificationType.ADMIN_PAYMENT_FAILURE]: '[Admin] Fallo de pago - {userEmail}',
-    [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}'
+    [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}',
+    [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}'
 };
 
 /**

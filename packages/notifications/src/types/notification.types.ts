@@ -14,7 +14,8 @@ export enum NotificationType {
     TRIAL_ENDING_REMINDER = 'trial_ending_reminder',
     TRIAL_EXPIRED = 'trial_expired',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
-    ADMIN_SYSTEM_EVENT = 'admin_system_event'
+    ADMIN_SYSTEM_EVENT = 'admin_system_event',
+    FEEDBACK_REPORT = 'feedback_report'
 }
 
 /**
@@ -97,6 +98,55 @@ export interface TrialEventPayload extends BaseNotificationPayload {
     upgradeUrl: string;
 }
 
+/** Feedback report notifications (Linear API fallback) */
+export interface FeedbackReportPayload extends BaseNotificationPayload {
+    type: NotificationType.FEEDBACK_REPORT;
+    /** Report type label (e.g. "Error de JavaScript", "Sugerencia") */
+    reportType: string;
+    /** Short title describing the feedback */
+    reportTitle: string;
+    /** Full description of the issue or suggestion */
+    reportDescription: string;
+    /** Severity level label (e.g. "Alta", "Media", "Baja") */
+    severity?: string;
+    /** Steps to reproduce the issue */
+    stepsToReproduce?: string;
+    /** What the reporter expected to happen */
+    expectedResult?: string;
+    /** What actually happened */
+    actualResult?: string;
+    /** URLs of attachments uploaded to Linear */
+    attachmentUrls?: string[];
+    /** Environment context at the time of submission */
+    feedbackEnvironment: {
+        /** URL where the feedback was submitted from */
+        currentUrl?: string;
+        /** Browser name and version */
+        browser?: string;
+        /** Operating system */
+        os?: string;
+        /** Viewport dimensions (e.g. "1920x1080") */
+        viewport?: string;
+        /** ISO 8601 timestamp of when the report was created */
+        timestamp: string;
+        /** Application source identifier (e.g. "web", "admin") */
+        appSource: string;
+        /** Deployed application version */
+        deployVersion?: string;
+        /** Authenticated user ID at the time of the report */
+        userId?: string;
+        /** Browser console errors captured at submission time */
+        consoleErrors?: string[];
+        /** JavaScript error that triggered the report */
+        errorInfo?: {
+            /** Error message */
+            message: string;
+            /** Stack trace */
+            stack?: string;
+        };
+    };
+}
+
 /** Admin notifications */
 export interface AdminNotificationPayload extends BaseNotificationPayload {
     type: NotificationType.ADMIN_PAYMENT_FAILURE | NotificationType.ADMIN_SYSTEM_EVENT;
@@ -106,6 +156,26 @@ export interface AdminNotificationPayload extends BaseNotificationPayload {
     severity: 'info' | 'warning' | 'critical';
 }
 
+/**
+ * Options for controlling notification send behavior.
+ *
+ * These flags allow callers to bypass specific side-effects of the send
+ * flow when needed (e.g., fire-and-forget feedback emails that should not
+ * pollute the billing notification log or produce structured log noise).
+ *
+ * @example
+ * ```ts
+ * // Send without logging to DB or logger
+ * await notificationService.send(payload, { skipDb: true, skipLogging: true });
+ * ```
+ */
+export interface SendNotificationOptions {
+    /** Skip writing to the billing_notification_log table */
+    skipDb?: boolean;
+    /** Skip structured logging via @repo/logger */
+    skipLogging?: boolean;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -113,4 +183,5 @@ export type NotificationPayload =
     | SubscriptionEventPayload
     | AddonEventPayload
     | TrialEventPayload
-    | AdminNotificationPayload;
+    | AdminNotificationPayload
+    | FeedbackReportPayload;

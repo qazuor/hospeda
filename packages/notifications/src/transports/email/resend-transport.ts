@@ -78,7 +78,8 @@ export class ResendEmailTransport implements EmailTransport {
                 subject: input.subject,
                 react: input.react,
                 replyTo: input.replyTo,
-                tags: input.tags
+                tags: input.tags,
+                attachments: input.attachments
             });
 
             // Resend returns { data: { id: string } } on success or { error: Error } on failure

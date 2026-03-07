@@ -16,6 +16,15 @@ export interface SendEmailInput {
     replyTo?: string;
     /** Tags for tracking/analytics */
     tags?: Array<{ name: string; value: string }>;
+    /** File attachments for the email */
+    attachments?: Array<{
+        /** Filename shown to recipient */
+        filename: string;
+        /** File content as Buffer or base64 string */
+        content: Buffer | string;
+        /** MIME type (e.g., "image/png") */
+        contentType?: string;
+    }>;
 }
 
 /**
