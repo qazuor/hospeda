@@ -15,6 +15,9 @@ import {
     PlanChangeConfirmation,
     PurchaseConfirmation,
     RenewalReminder,
+    SubscriptionCancelled,
+    SubscriptionPaused,
+    SubscriptionReactivated,
     TrialEndingReminder,
     TrialExpired
 } from '../templates/index.js';
@@ -29,6 +32,7 @@ import type {
     PurchaseConfirmationPayload,
     SendNotificationOptions,
     SubscriptionEventPayload,
+    SubscriptionLifecyclePayload,
     TrialEventPayload
 } from '../types/notification.types.js';
 import { getSubject } from '../utils/subject-builder.js';
@@ -435,6 +439,35 @@ export class NotificationService {
                     actualResult: p.actualResult,
                     attachmentUrls: p.attachmentUrls,
                     environment: p.feedbackEnvironment
+                });
+            }
+
+            case 'subscription_cancelled': {
+                const lifecyclePayload = payload as SubscriptionLifecyclePayload;
+                return SubscriptionCancelled({
+                    recipientName: payload.recipientName,
+                    planName: lifecyclePayload.planName,
+                    currentPeriodEnd: lifecyclePayload.currentPeriodEnd,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'subscription_paused': {
+                const lifecyclePayload = payload as SubscriptionLifecyclePayload;
+                return SubscriptionPaused({
+                    recipientName: payload.recipientName,
+                    planName: lifecyclePayload.planName,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'subscription_reactivated': {
+                const lifecyclePayload = payload as SubscriptionLifecyclePayload;
+                return SubscriptionReactivated({
+                    recipientName: payload.recipientName,
+                    planName: lifecyclePayload.planName,
+                    nextBillingDate: lifecyclePayload.nextBillingDate,
+                    baseUrl: this.deps.siteUrl
                 });
             }
 
