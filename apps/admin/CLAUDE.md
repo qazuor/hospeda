@@ -397,7 +397,7 @@ export function UserProfile() {
 |---------|-------|
 | `/api/v1/admin/<entity>` | ALL entity CRUD operations |
 | `/api/v1/public/auth/me` | Auth status check (exception) |
-| `/api/v1/billing/*` | Billing operations (separate tier) |
+| `/api/v1/protected/billing/*` | Billing operations (protected tier) |
 
 **Never use `/api/v1/public/*` or `/api/v1/protected/*` in admin panel code** (except auth).
 
@@ -473,22 +473,22 @@ export function useTheme() {
 
 ## Environment Variables
 
+See `apps/admin/.env.example` for a full list. Client-side variables use the `VITE_` prefix (required by Vite to expose them to the browser). Server-side secrets that the admin build process needs use the `HOSPEDA_` prefix.
+
 ```env
-# Better Auth
+# Client-side (VITE_ prefix - exposed to browser by Vite)
 VITE_BETTER_AUTH_URL=http://localhost:3001/api/auth
-
-# API Configuration
 VITE_API_URL=http://localhost:3001
-
-# App Configuration
 VITE_APP_NAME=Hospeda Admin
 ```
 
-Access variables:
+Access client-side variables via `import.meta.env`:
 
 ```ts
 const apiUrl = import.meta.env.VITE_API_URL;
 ```
+
+Never put `HOSPEDA_*` secrets in `VITE_` variables. Secrets must stay server-side only.
 
 ## Testing
 

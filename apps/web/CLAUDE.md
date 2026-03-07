@@ -392,19 +392,21 @@ Test files live in `test/` at the same level as `src/`. Minimum 90% coverage req
 
 ## Environment Variables
 
+See `apps/web/.env.example` for a full list. Variables are validated at startup by `src/lib/env.ts` (Zod-validated). Access env values exclusively through that module rather than `import.meta.env` directly.
+
 ```bash
 # Server-side (HOSPEDA_ prefix - not exposed to browser)
 HOSPEDA_API_URL=http://localhost:3001
 HOSPEDA_SITE_URL=http://localhost:4321
-HOSPEDA_BETTER_AUTH_SECRET=...
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key-min-32-chars
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
-# Client-side (PUBLIC_ prefix - exposed to browser)
+# Client-side (PUBLIC_ prefix - exposed to browser by Astro)
 PUBLIC_API_URL=http://localhost:3001
 PUBLIC_SITE_URL=http://localhost:4321
 ```
 
-Access via `import.meta.env.*`. Validated at startup by `src/lib/env.ts`.
+Server-side variables use the `HOSPEDA_` prefix. Client-side variables (safe to expose) use the `PUBLIC_` prefix. Never use a `HOSPEDA_` variable in a client component.
 
 ## Key Dependencies
 

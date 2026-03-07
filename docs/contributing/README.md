@@ -68,9 +68,11 @@ cd hospeda
 # Install dependencies
 pnpm install
 
-# Set up environment variables
-cp .env.example .env.local
-# Edit .env.local with your values
+# Set up environment variables (one per app)
+cp apps/api/.env.example apps/api/.env.local
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
+# Edit each .env.local with your values
 
 # Start local database (Docker)
 pnpm db:start

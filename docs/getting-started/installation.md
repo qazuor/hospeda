@@ -20,8 +20,10 @@ cd hospeda
 # 2. Install dependencies
 pnpm install
 
-# 3. Copy environment file
-cp .env.example .env.local
+# 3. Copy environment files (one per app)
+cp apps/api/.env.example apps/api/.env.local
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
 
 # 4. Set up database
 pnpm db:fresh
@@ -104,63 +106,58 @@ pnpm install
 
 ### 3. Environment Configuration
 
-#### Copy Environment Template
+#### Copy Environment Templates
+
+Each app has its own `.env.example`. Copy them for local development:
 
 ```bash
-cp .env.example .env.local
+cp apps/api/.env.example apps/api/.env.local
+cp apps/web/.env.example apps/web/.env.local
+cp apps/admin/.env.example apps/admin/.env.local
 ```
 
 #### Required Environment Variables
 
-Edit `.env.local` and configure:
+Edit each `.env.local` and configure at minimum:
 
-**Database (if using Docker - default):**
-
-```env
-# PostgreSQL
-DATABASE_URL="postgresql://hospeda_user:hospeda_pass@localhost:5432/hospeda_dev"
-
-# Redis
-REDIS_URL="redis://localhost:6379"
-```
-
-**Database (if using Neon cloud):**
+**Database:**
 
 ```env
-DATABASE_URL="your-neon-connection-string"
-REDIS_URL="your-redis-url"  # Or use Upstash
+# In apps/api/.env.local
+HOSPEDA_DATABASE_URL="postgresql://hospeda_user:hospeda_pass@localhost:5432/hospeda_dev"
+HOSPEDA_REDIS_URL="redis://localhost:6379"
 ```
 
 **Authentication (Better Auth):**
 
 ```env
+# In apps/api/.env.local
 HOSPEDA_BETTER_AUTH_URL="http://localhost:3001/api/auth"
-HOSPEDA_BETTER_AUTH_SECRET="your-secret-key"
+HOSPEDA_BETTER_AUTH_SECRET="your-secret-key-min-32-chars"
 ```
 
-**Payments (Mercado Pago - optional for now):**
+**Payments (Mercado Pago - optional):**
 
 ```env
-MERCADOPAGO_ACCESS_TOKEN="your-mp-access-token"
-MERCADOPAGO_PUBLIC_KEY="your-mp-public-key"
+# In apps/api/.env.local
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN="your-mp-access-token"
 ```
 
-**API Configuration:**
+**Server:**
 
 ```env
-# API Server
-API_PORT=3000
+# In apps/api/.env.local
 NODE_ENV=development
-
-# CORS
-ALLOWED_ORIGINS="http://localhost:4321,http://localhost:3001"
+API_PORT=3001
 ```
+
+For the full list of available variables, see [docs/environment-variables.md](../environment-variables.md) or run `pnpm env:check`.
 
 #### Verify Configuration
 
 ```bash
-# Check if .env.local exists and has content
-cat .env.local | grep DATABASE_URL
+# Validate all env vars against the registry
+pnpm env:check
 ```
 
 ---

@@ -92,6 +92,11 @@ pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
 # Build
 pnpm build            # Build all packages
 pnpm build:api        # Build API for production
+
+# Environment
+pnpm env:pull         # Pull env vars from remote (Vercel / secret store)
+pnpm env:push         # Push local env vars to remote
+pnpm env:check        # Validate env vars against the registry in packages/config
 ```
 
 ### Coding Standards
@@ -186,21 +191,28 @@ Common biome errors that block commits:
 
 ## Environment Configuration
 
-Key environment variables (see `.env.example`):
+See [docs/guides/environment-variables.md](docs/guides/environment-variables.md) for the full reference. Each app has its own `.env.example` in its directory (e.g., `apps/api/.env.example`).
+
+The canonical registry of all env vars lives in `packages/config`. Use `pnpm env:check` to validate your local env against it.
+
+Key environment variables:
 
 ```bash
 # Database
-HOSPEDA_DATABASE_URL=postgresql://...
+HOSPEDA_DATABASE_URL=postgresql://user:pass@localhost:5432/hospeda
 
 # Authentication (Better Auth)
-HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key-min-32-chars
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
-# API
+# Trusted origins
 HOSPEDA_API_URL=http://localhost:3001
-
-# Site
 HOSPEDA_SITE_URL=http://localhost:4321
+HOSPEDA_ADMIN_URL=http://localhost:3000
+
+# Server (no HOSPEDA_ prefix - framework-level)
+NODE_ENV=development
+API_PORT=3001
 ```
 
 ## Dependency Policy (Quick Reference)
@@ -234,7 +246,8 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Billing DB schema**: `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
 - **Billing DB schema**: `billing_customers` uses `segment` column, not `category`
 - **Pagination**: Admin routes use `page`+`pageSize` (NOT `limit`). `createAdminListRoute` rejects unknown params
-- **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix
+- **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
+- **Legacy env var names**: `LEGACY_ENV_MAPPINGS` in `apps/api/src/utils/env.ts` maps old unprefixed names (e.g., `CRON_SECRET`) to their `HOSPEDA_*` equivalents for backward compat. New code must use only `HOSPEDA_*` names.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
 
 ## Single Source of Truth

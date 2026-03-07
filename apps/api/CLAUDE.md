@@ -383,27 +383,35 @@ const schema = createOpenAPISchema({
 
 ## Environment Variables
 
-Required environment variables (see `utils/env.ts`):
+See `apps/api/.env.example` for a full list. All variables are validated at startup by the `env` object exported from `src/utils/env.ts` (Zod-validated, typed). Access env values exclusively through that object.
 
 ```env
-# Server
-API_PORT=3001
+# Server (no HOSPEDA_ prefix - framework-level)
 NODE_ENV=development
+API_PORT=3001
+API_HOST=localhost
 
 # Database
-HOSPEDA_DATABASE_URL=postgresql://...
+HOSPEDA_DATABASE_URL=postgresql://user:pass@localhost:5432/hospeda
 
-# Better Auth
-HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
+# Authentication (Better Auth)
+HOSPEDA_BETTER_AUTH_SECRET=your-secret-key-min-32-chars
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
-# CORS
+# Trusted origins
+HOSPEDA_API_URL=http://localhost:3001
+HOSPEDA_SITE_URL=http://localhost:4321
+HOSPEDA_ADMIN_URL=http://localhost:3000
+
+# CORS (comma-separated)
 API_CORS_ORIGINS=http://localhost:4321,http://localhost:3000
 
-# Rate Limiting
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX_REQUESTS=100
+# Rate limiting
+API_RATE_LIMIT_WINDOW_MS=900000
+API_RATE_LIMIT_MAX_REQUESTS=100
 ```
+
+Always use `HOSPEDA_*` names for all environment variables.
 
 ## Testing
 
@@ -526,7 +534,7 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
-- Billing endpoints from qzpay-hono (`/api/v1/billing/plans`, `/api/v1/billing/addons`) DO accept `limit` natively
+- Billing endpoints from qzpay-hono (`/api/v1/protected/billing/plans`, `/api/v1/protected/billing/addons`) DO accept `limit` natively
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
 
