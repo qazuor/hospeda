@@ -157,8 +157,26 @@ export async function createAddonCheckout(
         const preferenceClient = new Preference(mpClient);
 
         const orderId = `addon_${addon.slug}_${Date.now()}`;
-        const webUrl = env.HOSPEDA_SITE_URL || 'http://localhost:4321';
-        const apiUrl = env.HOSPEDA_API_URL || 'http://localhost:3001';
+        const webUrl = env.HOSPEDA_SITE_URL;
+        if (!webUrl) {
+            return {
+                success: false,
+                error: {
+                    code: 'PAYMENT_NOT_CONFIGURED',
+                    message: 'HOSPEDA_SITE_URL is not configured'
+                }
+            };
+        }
+        const apiUrl = env.HOSPEDA_API_URL;
+        if (!apiUrl) {
+            return {
+                success: false,
+                error: {
+                    code: 'PAYMENT_NOT_CONFIGURED',
+                    message: 'HOSPEDA_API_URL is not configured'
+                }
+            };
+        }
 
         const preference = await preferenceClient.create({
             body: {

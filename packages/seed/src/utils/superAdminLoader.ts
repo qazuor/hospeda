@@ -11,7 +11,7 @@ import { summaryTracker } from './summaryTracker.js';
 
 /**
  * Generates a cryptographically random password for the super admin seed.
- * Used when SEED_SUPER_ADMIN_PASSWORD env var is not set.
+ * Used when HOSPEDA_SEED_SUPER_ADMIN_PASSWORD env var is not set.
  */
 const generateRandomPassword = (): string => {
     const bytes = new Uint8Array(24);
@@ -50,13 +50,14 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
     }
 
     // Hash the password with bcrypt (matching Better Auth's expected format)
-    const envPassword = process.env.SEED_SUPER_ADMIN_PASSWORD;
+    const envPassword = process.env.HOSPEDA_SEED_SUPER_ADMIN_PASSWORD;
     const password = envPassword || generateRandomPassword();
     if (!envPassword) {
         logger.warn(
-            `${STATUS_ICONS.Warning} SEED_SUPER_ADMIN_PASSWORD not set. Generated random password for super admin. Set the env var for a predictable password.`
+            `${STATUS_ICONS.Warning} HOSPEDA_SEED_SUPER_ADMIN_PASSWORD not set. Generated random password for super admin. Set the env var for a predictable password.`
         );
-        logger.info(`🔑 Generated password: ${password}`);
+        // biome-ignore lint/suspicious/noConsoleLog: intentional stdout-only output to avoid shipping secrets to log aggregators
+        console.log(`Generated super admin password: ${password}`);
     }
     const hashedPassword = await hash(password, 10);
 

@@ -22,8 +22,12 @@ export const initSeedDb = () => {
         );
     }
 
-    dbLogger.log(!!process.env.HOSPEDA_DATABASE_URL, '🔍 HOSPEDA_DATABASE_URL found');
-    dbLogger.log(process.env.HOSPEDA_DATABASE_URL, '🔍 HOSPEDA_DATABASE_URL value');
+    dbLogger.log(!!process.env.HOSPEDA_DATABASE_URL, 'HOSPEDA_DATABASE_URL found');
+    const maskedUrl = (process.env.HOSPEDA_DATABASE_URL ?? '').replace(
+        /\/\/[^@]+@/,
+        '//<credentials>@'
+    );
+    dbLogger.log(maskedUrl, 'HOSPEDA_DATABASE_URL host');
 
     // Create PostgreSQL connection pool
     pool = new Pool({

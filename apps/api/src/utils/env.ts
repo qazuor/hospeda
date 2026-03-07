@@ -291,6 +291,30 @@ const ApiEnvSchema = z
                     'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
             });
         }
+        // Reject localhost/127.0.0.1 in CORS and CSRF origins in production
+        if (data.NODE_ENV === 'production') {
+            const localhostPattern = /localhost|127\.0\.0\.1/i;
+            const corsOrigins = data.API_CORS_ORIGINS?.split(',').map((o) => o.trim()) ?? [];
+            for (const origin of corsOrigins) {
+                if (localhostPattern.test(origin)) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: ['API_CORS_ORIGINS'],
+                        message: `CORS origin '${origin}' contains localhost, which is not allowed in production`
+                    });
+                }
+            }
+            const csrfOrigins = data.API_CSRF_ORIGINS?.split(',').map((o) => o.trim()) ?? [];
+            for (const origin of csrfOrigins) {
+                if (localhostPattern.test(origin)) {
+                    ctx.addIssue({
+                        code: z.ZodIssueCode.custom,
+                        path: ['API_CSRF_ORIGINS'],
+                        message: `CSRF origin '${origin}' contains localhost, which is not allowed in production`
+                    });
+                }
+            }
+        }
     });
 
 /**

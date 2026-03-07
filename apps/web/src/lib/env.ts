@@ -14,7 +14,10 @@ const _env = validateWebEnv();
  * @returns The API base URL without a trailing slash
  */
 export function getApiUrl(): string {
-    const url = _env.PUBLIC_API_URL ?? _env.HOSPEDA_API_URL ?? 'http://localhost:3001';
+    const url = _env.PUBLIC_API_URL ?? _env.HOSPEDA_API_URL;
+    if (!url) {
+        throw new Error('[web] Neither PUBLIC_API_URL nor HOSPEDA_API_URL is configured');
+    }
     return url.replace(/\/$/, '');
 }
 
@@ -24,7 +27,11 @@ export function getApiUrl(): string {
  * @returns The site base URL
  */
 export function getSiteUrl(): string {
-    return _env.PUBLIC_SITE_URL ?? _env.HOSPEDA_SITE_URL ?? 'http://localhost:4321';
+    const url = _env.PUBLIC_SITE_URL ?? _env.HOSPEDA_SITE_URL;
+    if (!url) {
+        throw new Error('[web] Neither PUBLIC_SITE_URL nor HOSPEDA_SITE_URL is configured');
+    }
+    return url;
 }
 
 /**

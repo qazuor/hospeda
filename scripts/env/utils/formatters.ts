@@ -44,6 +44,8 @@ interface FormatDiffParams {
     readonly remote: string | undefined;
     /** Optional human-readable description from the registry. */
     readonly description?: string;
+    /** When true, all values are masked (for secret/sensitive variables). */
+    readonly secret?: boolean;
 }
 
 /**
@@ -96,8 +98,9 @@ function displayValue(value: string | undefined): string {
  * ```
  */
 export function formatDiff(params: FormatDiffParams): string {
-    const { key, local, remote, description } = params;
+    const { key, local, remote, description, secret } = params;
     const lines: string[] = [];
+    const show = secret ? maskValue : displayValue;
 
     const label = colors.cyan(colors.bold(key));
     const desc = description ? colors.dim(` # ${description}`) : '';
@@ -110,10 +113,10 @@ export function formatDiff(params: FormatDiffParams): string {
 
     if (isNew) {
         lines.push(`    ${colors.dim('local :')} ${colors.dim('(not set)')}`);
-        lines.push(`    ${colors.dim('remote:')} ${colors.green(displayValue(remote))}`);
+        lines.push(`    ${colors.dim('remote:')} ${colors.green(show(remote))}`);
         lines.push(`    ${colors.green('+ New variable')}`);
     } else if (isMissing) {
-        lines.push(`    ${colors.dim('local :')} ${displayValue(local)}`);
+        lines.push(`    ${colors.dim('local :')} ${show(local)}`);
         lines.push(`    ${colors.dim('remote:')} ${colors.dim('(not set)')}`);
         lines.push(`    ${colors.red('- Not in remote')}`);
     } else if (isChanged) {
@@ -121,8 +124,8 @@ export function formatDiff(params: FormatDiffParams): string {
         lines.push(`    ${colors.dim('remote:')} ${colors.yellow(maskValue(remote))}`);
         lines.push(`    ${colors.yellow('~ Values differ')}`);
     } else if (isSame) {
-        lines.push(`    ${colors.dim('local :')} ${colors.dim(displayValue(local))}`);
-        lines.push(`    ${colors.dim('remote:')} ${colors.dim(displayValue(remote))}`);
+        lines.push(`    ${colors.dim('local :')} ${colors.dim(show(local))}`);
+        lines.push(`    ${colors.dim('remote:')} ${colors.dim(show(remote))}`);
         lines.push(`    ${colors.dim('= Identical')}`);
     } else {
         lines.push(`    ${colors.dim('(both undefined)')}`);

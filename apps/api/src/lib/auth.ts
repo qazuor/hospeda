@@ -254,18 +254,34 @@ export function getAuth(): ReturnType<typeof betterAuth> {
          *   - Facebook Developer Console: App Settings > Facebook Login > Settings
          */
         socialProviders: {
-            ...(env.HOSPEDA_GOOGLE_CLIENT_ID && {
-                google: {
-                    clientId: env.HOSPEDA_GOOGLE_CLIENT_ID,
-                    clientSecret: env.HOSPEDA_GOOGLE_CLIENT_SECRET || ''
-                }
-            }),
-            ...(env.HOSPEDA_FACEBOOK_CLIENT_ID && {
-                facebook: {
-                    clientId: env.HOSPEDA_FACEBOOK_CLIENT_ID,
-                    clientSecret: env.HOSPEDA_FACEBOOK_CLIENT_SECRET || ''
-                }
-            })
+            ...(env.HOSPEDA_GOOGLE_CLIENT_ID &&
+                (() => {
+                    if (!env.HOSPEDA_GOOGLE_CLIENT_SECRET) {
+                        throw new Error(
+                            'HOSPEDA_GOOGLE_CLIENT_SECRET is required when HOSPEDA_GOOGLE_CLIENT_ID is set'
+                        );
+                    }
+                    return {
+                        google: {
+                            clientId: env.HOSPEDA_GOOGLE_CLIENT_ID,
+                            clientSecret: env.HOSPEDA_GOOGLE_CLIENT_SECRET
+                        }
+                    };
+                })()),
+            ...(env.HOSPEDA_FACEBOOK_CLIENT_ID &&
+                (() => {
+                    if (!env.HOSPEDA_FACEBOOK_CLIENT_SECRET) {
+                        throw new Error(
+                            'HOSPEDA_FACEBOOK_CLIENT_SECRET is required when HOSPEDA_FACEBOOK_CLIENT_ID is set'
+                        );
+                    }
+                    return {
+                        facebook: {
+                            clientId: env.HOSPEDA_FACEBOOK_CLIENT_ID,
+                            clientSecret: env.HOSPEDA_FACEBOOK_CLIENT_SECRET
+                        }
+                    };
+                })())
         },
 
         plugins: [

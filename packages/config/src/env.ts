@@ -296,7 +296,7 @@ export const commonEnvSchemas = {
      */
     auth: z.object({
         HOSPEDA_BETTER_AUTH_URL: z.string().min(1, 'Better Auth URL is required'),
-        HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required').optional()
+        HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required')
     }),
 
     /**

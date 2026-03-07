@@ -29,9 +29,11 @@ const getEnvVar = (key: string): string | undefined => {
 };
 
 const getBaseUrl = (): string => {
-    // Use the API URL from environment or fallback to localhost:3001
     const url = getEnvVar('VITE_API_URL');
-    return (url ?? 'http://localhost:3001').replace(/\/$/, '');
+    if (!url) {
+        throw new Error('[admin] VITE_API_URL is not configured. Set it in your .env.local file.');
+    }
+    return url.replace(/\/$/, '');
 };
 
 export const fetchApi = async <T>({

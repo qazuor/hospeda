@@ -155,13 +155,15 @@ export interface SessionUser {
  */
 function getApiUrl(): string {
     if (typeof process !== 'undefined') {
-        return (
-            process.env.HOSPEDA_API_URL ||
-            process.env.PUBLIC_API_URL ||
-            'http://localhost:3001'
-        ).replace(/\/$/, '');
+        const url = process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL;
+        if (!url) {
+            throw new Error(
+                '[middleware] Neither HOSPEDA_API_URL nor PUBLIC_API_URL is configured'
+            );
+        }
+        return url.replace(/\/$/, '');
     }
-    return 'http://localhost:3001';
+    throw new Error('[middleware] process is not available to read API URL');
 }
 
 /**
