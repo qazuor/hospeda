@@ -13,7 +13,7 @@ import type {
     ApiSuccessResponse,
     PaginationData
 } from '../schemas/response-schemas';
-import { getResponseConfig } from '../utils/env';
+import { env, getResponseConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -340,9 +340,9 @@ export const createErrorHandler = () => {
         }
 
         // Strip error details from 5xx responses in production to prevent information leakage.
-        // API_DEBUG_ERRORS=true overrides this to show full details for production debugging.
-        const isProduction = process.env.NODE_ENV === 'production';
-        const debugErrors = process.env.API_DEBUG_ERRORS === 'true';
+        // HOSPEDA_API_DEBUG_ERRORS=true overrides this to show full details for production debugging.
+        const isProduction = env.NODE_ENV === 'production';
+        const debugErrors = env.HOSPEDA_API_DEBUG_ERRORS;
         const hideDetails = isProduction && !debugErrors && statusCode >= 500;
         const safeDetails = hideDetails ? undefined : errorDetails;
         const safeMessage = hideDetails ? responseConfig.errorMessage : errorMessage;

@@ -3,7 +3,7 @@
  * Uses Redis when available for multi-instance support, falls back to in-memory Map.
  */
 import type { Context, Next } from 'hono';
-import { getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
+import { env, getRateLimitConfig as getBaseRateLimitConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { getRedisClient } from '../utils/redis';
 
@@ -187,8 +187,8 @@ let activeStore: RateLimitStore | undefined;
 
 const getStore = (): RateLimitStore => {
     if (!activeStore) {
-        const redisUrl = process.env.HOSPEDA_REDIS_URL;
-        if (!redisUrl && process.env.NODE_ENV === 'production') {
+        const redisUrl = env.HOSPEDA_REDIS_URL;
+        if (!redisUrl && env.NODE_ENV === 'production') {
             apiLogger.warn(
                 'HOSPEDA_REDIS_URL not configured in production. ' +
                     'Rate limiting uses in-memory store which is ineffective in serverless environments.'
@@ -297,7 +297,7 @@ const getRateLimitConfig = (endpointType: 'auth' | 'public' | 'admin' | 'general
  */
 export const rateLimitMiddleware = async (c: Context, next: Next) => {
     // Skip rate limiting in test environment UNLESS explicitly testing it
-    if (process.env.NODE_ENV === 'test' && !process.env.TESTING_RATE_LIMIT) {
+    if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_RATE_LIMIT) {
         await next();
         return;
     }

@@ -11,6 +11,7 @@
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getAuth } from '../lib/auth';
+import { env } from '../utils/env';
 
 /**
  * Check if mock authentication is allowed.
@@ -25,9 +26,7 @@ import { getAuth } from '../lib/auth';
  */
 const isMockAuthAllowed = (): boolean => {
     return (
-        process.env.NODE_ENV === 'test' &&
-        process.env.DISABLE_AUTH === 'true' &&
-        process.env.CI !== 'true'
+        env.NODE_ENV === 'test' && env.HOSPEDA_DISABLE_AUTH === true && process.env.CI !== 'true'
     );
 };
 

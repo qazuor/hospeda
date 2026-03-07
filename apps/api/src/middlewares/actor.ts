@@ -15,6 +15,7 @@ import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { createGuestActor } from '../utils/actor';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { getPermissionsForRole } from '../utils/role-permissions-cache';
 import { getUserPermissions } from '../utils/user-permissions-cache';
@@ -41,8 +42,8 @@ const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
  */
 const isMockActorAllowed = (): boolean => {
     return (
-        process.env.NODE_ENV === 'test' &&
-        process.env.ALLOW_MOCK_ACTOR === 'true' &&
+        env.NODE_ENV === 'test' &&
+        env.HOSPEDA_ALLOW_MOCK_ACTOR === true &&
         process.env.CI !== 'true'
     );
 };

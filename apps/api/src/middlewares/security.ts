@@ -4,7 +4,7 @@
  */
 import type { Context, Next } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
-import { getCorsConfig, getSecurityConfig } from '../utils/env';
+import { env, getCorsConfig, getSecurityConfig } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -28,8 +28,7 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
     // In production, always apply security headers for safety
     // In other environments, respect the configuration
     const shouldApplyHeaders =
-        process.env.NODE_ENV === 'production' ||
-        (securityConfig.enabled && securityConfig.headersEnabled);
+        env.NODE_ENV === 'production' || (securityConfig.enabled && securityConfig.headersEnabled);
 
     if (!shouldApplyHeaders) {
         await next();
@@ -107,7 +106,7 @@ export const originVerificationMiddleware = async (c: Context, next: Next) => {
     }
 
     // Skip in test environment unless explicitly testing
-    if (process.env.NODE_ENV === 'test' && !process.env.TESTING_ORIGIN_VERIFICATION) {
+    if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_ORIGIN_VERIFICATION) {
         await next();
         return;
     }

@@ -7,6 +7,7 @@
 import type { Context, MiddlewareHandler, Next } from 'hono';
 import { z } from 'zod';
 import { paginationMetadataSchema } from '../schemas/response-schemas';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -107,7 +108,7 @@ const apiResponseSchema = z.union([
  * Get default configuration based on environment
  */
 const getDefaultConfig = (): ResponseValidatorConfig => ({
-    enabled: process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test',
+    enabled: env.NODE_ENV === 'development' || env.NODE_ENV === 'test',
     logWarnings: true,
     rejectInvalid: false,
     excludePaths: ['/docs', '/reference', '/ui', '/metrics', '/health', '/favicon.ico']
@@ -188,7 +189,7 @@ export const createResponseValidatorMiddleware = (
                         code: 'INTERNAL_ERROR',
                         message: 'Response validation failed',
                         details:
-                            process.env.NODE_ENV === 'development'
+                            env.NODE_ENV === 'development'
                                 ? { validationErrors: validation.errors }
                                 : undefined
                     },

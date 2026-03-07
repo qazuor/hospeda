@@ -18,6 +18,7 @@ import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
 import { createMercadoPagoAdapter } from '@repo/billing';
 import { createBillingAdapter, getDb } from '@repo/db';
 import type { MiddlewareHandler } from 'hono';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -26,13 +27,18 @@ import { apiLogger } from '../utils/logger';
  * @returns True if all required environment variables are set
  */
 function isBillingConfigured(): boolean {
-    const requiredEnvVars = ['MERCADO_PAGO_ACCESS_TOKEN', 'HOSPEDA_DATABASE_URL'];
+    const missing: string[] = [];
 
-    const missingVars = requiredEnvVars.filter((varName) => !process.env[varName]);
+    if (!env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+        missing.push('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN');
+    }
+    if (!env.HOSPEDA_DATABASE_URL) {
+        missing.push('HOSPEDA_DATABASE_URL');
+    }
 
-    if (missingVars.length > 0) {
+    if (missing.length > 0) {
         apiLogger.warn(
-            `Billing not configured. Missing environment variables: ${missingVars.join(', ')}`
+            `Billing not configured. Missing environment variables: ${missing.join(', ')}`
         );
         return false;
     }
@@ -68,12 +74,12 @@ function getBillingInstance(): QZPayBilling | null {
 
         // Create storage adapter
         const storageAdapter = createBillingAdapter(db, {
-            livemode: process.env.NODE_ENV === 'production'
+            livemode: env.NODE_ENV === 'production'
         });
 
         // Create payment adapter
         const paymentAdapter = createMercadoPagoAdapter({
-            sandbox: process.env.NODE_ENV !== 'production'
+            sandbox: env.NODE_ENV !== 'production'
         });
 
         // Create billing instance
@@ -81,7 +87,7 @@ function getBillingInstance(): QZPayBilling | null {
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
-            livemode: process.env.NODE_ENV === 'production'
+            livemode: env.NODE_ENV === 'production'
         });
 
         apiLogger.info('✅ QZPay billing initialized successfully');

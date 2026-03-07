@@ -4,6 +4,7 @@ import { logger } from '@repo/logger';
  * Collects and tracks API metrics and performance data
  */
 import type { Context, MiddlewareHandler } from 'hono';
+import { env } from '../utils/env';
 
 /**
  * Configuration for metrics optimization
@@ -323,8 +324,8 @@ export const createMetricsMiddleware = (): MiddlewareHandler => {
             // Use different thresholds for auth endpoints vs regular endpoints
             const isAuthEndpoint = endpoint.includes('/auth/');
             const threshold = isAuthEndpoint
-                ? Number(process.env.API_METRICS_SLOW_AUTH_THRESHOLD_MS) || 2000
-                : Number(process.env.API_METRICS_SLOW_REQUEST_THRESHOLD_MS) || 1000;
+                ? env.API_METRICS_SLOW_AUTH_THRESHOLD_MS
+                : env.API_METRICS_SLOW_REQUEST_THRESHOLD_MS;
 
             if (responseTime > threshold) {
                 // Log slow requests with context about threshold used
