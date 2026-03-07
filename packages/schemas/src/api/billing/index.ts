@@ -8,4 +8,5 @@ export * from './billing-query.schema.js';
 export * from './billing-settings.schema.js';
 export * from './plan-change.schema.js';
 export * from './promo-code.schema.js';
+export * from './subscription-event.schema.js';
 export * from './trial.schema.js';
