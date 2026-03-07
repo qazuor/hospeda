@@ -1,23 +1,18 @@
 /**
  * Protected exchange rate routes
- * Requires authentication and appropriate permissions
+ * Requires authentication and appropriate permissions.
+ * Only read-only operations are exposed here.
+ * Admin operations (create, delete, fetch-now, update-config) are exclusively
+ * in the admin tier at /api/v1/admin/exchange-rates.
  */
 import { createRouter } from '../../../utils/create-app.js';
-import { protectedCreateExchangeRateRoute } from './create.js';
-import { deleteExchangeRateRoute } from './delete.js';
-import { fetchNowExchangeRateRoute } from './fetch-now.js';
 import { getConfigRoute } from './get-config.js';
 import { exchangeRateHistoryRoute } from './history.js';
-import { updateConfigRoute } from './update-config.js';
 
 const router = createRouter();
 
-// Register protected routes
-router.route('/', protectedCreateExchangeRateRoute);
-router.route('/', deleteExchangeRateRoute);
-router.route('/', fetchNowExchangeRateRoute);
+// Register protected read-only routes
 router.route('/', getConfigRoute);
 router.route('/', exchangeRateHistoryRoute);
-router.route('/', updateConfigRoute);
 
 export { router as protectedExchangeRateRoutes };
