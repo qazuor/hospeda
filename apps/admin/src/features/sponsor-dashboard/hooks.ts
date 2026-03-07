@@ -87,11 +87,11 @@ async function fetchSponsorAnalytics(): Promise<SponsorAnalytics[]> {
 
 /**
  * Fetch sponsor invoices
- * Expected endpoint: GET /api/v1/billing/invoices?sponsorId=current
+ * Expected endpoint: GET /api/v1/protected/billing/invoices?sponsorId=current
  */
 async function fetchSponsorInvoices(): Promise<SponsorInvoice[]> {
     const result = await fetchApi<{ success: boolean; data: { items?: SponsorInvoice[] } }>({
-        path: '/api/v1/billing/invoices'
+        path: '/api/v1/protected/billing/invoices'
     });
     return result.data.data?.items || [];
 }

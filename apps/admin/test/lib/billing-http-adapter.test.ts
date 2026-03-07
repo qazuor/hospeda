@@ -89,13 +89,16 @@ describe('Billing HTTP Adapter', () => {
                 const mockCustomer = createMockCustomer();
 
                 server.use(
-                    http.post(`${API_URL}/api/v1/billing/customers`, async ({ request }) => {
-                        const body = (await request.json()) as QZPayCreateCustomerInput;
+                    http.post(
+                        `${API_URL}/api/v1/protected/billing/customers`,
+                        async ({ request }) => {
+                            const body = (await request.json()) as QZPayCreateCustomerInput;
 
-                        expect(body).toEqual(input);
+                            expect(body).toEqual(input);
 
-                        return HttpResponse.json({ data: mockCustomer });
-                    })
+                            return HttpResponse.json({ data: mockCustomer });
+                        }
+                    )
                 );
 
                 const adapter = createHttpBillingAdapter({
@@ -121,7 +124,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.post(`${API_URL}/api/v1/billing/customers`, () => {
+                    http.post(`${API_URL}/api/v1/protected/billing/customers`, () => {
                         return HttpResponse.json(
                             {
                                 error: {
@@ -153,7 +156,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.post(`${API_URL}/api/v1/billing/customers`, () => {
+                    http.post(`${API_URL}/api/v1/protected/billing/customers`, () => {
                         return HttpResponse.error();
                     })
                 );
@@ -184,7 +187,7 @@ describe('Billing HTTP Adapter', () => {
 
                 server.use(
                     http.put(
-                        `${API_URL}/api/v1/billing/customers/${customerId}`,
+                        `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
                         async ({ request }) => {
                             const body = (await request.json()) as QZPayUpdateCustomerInput;
                             expect(body).toEqual(updateInput);
@@ -212,7 +215,7 @@ describe('Billing HTTP Adapter', () => {
                 const customerId = 'cus_nonexistent';
 
                 server.use(
-                    http.put(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                    http.put(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                         return HttpResponse.json(
                             { error: { message: 'Customer not found' } },
                             { status: 404 }
@@ -238,10 +241,13 @@ describe('Billing HTTP Adapter', () => {
                 const customerId = 'cus_test123';
 
                 server.use(
-                    http.delete(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
-                        // DELETE typically returns empty object or success: true
-                        return HttpResponse.json({ success: true });
-                    })
+                    http.delete(
+                        `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
+                        () => {
+                            // DELETE typically returns empty object or success: true
+                            return HttpResponse.json({ success: true });
+                        }
+                    )
                 );
 
                 const adapter = createHttpBillingAdapter({
@@ -261,7 +267,7 @@ describe('Billing HTTP Adapter', () => {
                 const mockCustomer = createMockCustomer();
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                         return HttpResponse.json({ data: mockCustomer });
                     })
                 );
@@ -283,7 +289,7 @@ describe('Billing HTTP Adapter', () => {
                 const customerId = 'cus_nonexistent';
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                         return HttpResponse.json(
                             { error: { message: 'Not found' } },
                             { status: 404 }
@@ -308,7 +314,7 @@ describe('Billing HTTP Adapter', () => {
                 const mockCustomer = createMockCustomer();
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers`, ({ request }) => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
                         const url = new URL(request.url);
                         expect(url.searchParams.get('externalId')).toBe(externalId);
 
@@ -336,7 +342,7 @@ describe('Billing HTTP Adapter', () => {
                 const mockCustomer = createMockCustomer();
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers`, ({ request }) => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
                         const url = new URL(request.url);
                         expect(url.searchParams.get('email')).toBe(email);
 
@@ -373,7 +379,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers`, () => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers`, () => {
                         return HttpResponse.json({ data: mockResult });
                     })
                 );
@@ -402,7 +408,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/customers`, () => {
+                    http.get(`${API_URL}/api/v1/protected/billing/customers`, () => {
                         return HttpResponse.json({ data: mockResult });
                     })
                 );
@@ -449,12 +455,15 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.post(`${API_URL}/api/v1/billing/subscriptions`, async ({ request }) => {
-                        const body = (await request.json()) as QZPayCreateSubscriptionInput;
-                        expect(body).toEqual(input);
+                    http.post(
+                        `${API_URL}/api/v1/protected/billing/subscriptions`,
+                        async ({ request }) => {
+                            const body = (await request.json()) as QZPayCreateSubscriptionInput;
+                            expect(body).toEqual(input);
 
-                        return HttpResponse.json({ data: mockSubscription });
-                    })
+                            return HttpResponse.json({ data: mockSubscription });
+                        }
+                    )
                 );
 
                 const adapter = createHttpBillingAdapter({
@@ -490,7 +499,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/subscriptions`, ({ request }) => {
+                    http.get(`${API_URL}/api/v1/protected/billing/subscriptions`, ({ request }) => {
                         const url = new URL(request.url);
                         expect(url.searchParams.get('customerId')).toBe(customerId);
 
@@ -532,7 +541,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/payments`, ({ request }) => {
+                    http.get(`${API_URL}/api/v1/protected/billing/payments`, ({ request }) => {
                         const url = new URL(request.url);
                         expect(url.searchParams.get('customerId')).toBe(customerId);
 
@@ -571,7 +580,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/plans/${planId}`, () => {
+                    http.get(`${API_URL}/api/v1/protected/billing/plans/${planId}`, () => {
                         return HttpResponse.json({ data: mockPlan });
                     })
                 );
@@ -610,9 +619,12 @@ describe('Billing HTTP Adapter', () => {
                 const code = 'SAVE20';
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/billing/promo-codes/by-code/${code}`, () => {
-                        return HttpResponse.json({ data: mockPromoCode });
-                    })
+                    http.get(
+                        `${API_URL}/api/v1/protected/billing/promo-codes/by-code/${code}`,
+                        () => {
+                            return HttpResponse.json({ data: mockPromoCode });
+                        }
+                    )
                 );
 
                 const adapter = createHttpBillingAdapter({
@@ -635,9 +647,12 @@ describe('Billing HTTP Adapter', () => {
                 const promoCodeId = 'promo_test123';
 
                 server.use(
-                    http.post(`${API_URL}/api/v1/billing/promo-codes/${promoCodeId}/redeem`, () => {
-                        return HttpResponse.json({ success: true });
-                    })
+                    http.post(
+                        `${API_URL}/api/v1/protected/billing/promo-codes/${promoCodeId}/redeem`,
+                        () => {
+                            return HttpResponse.json({ success: true });
+                        }
+                    )
                 );
 
                 const adapter = createHttpBillingAdapter({
@@ -660,10 +675,13 @@ describe('Billing HTTP Adapter', () => {
             let capturedAuthHeader: string | null = null;
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, ({ request }) => {
-                    capturedAuthHeader = request.headers.get('Authorization');
-                    return HttpResponse.json({ data: {} });
-                })
+                http.get(
+                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
+                    ({ request }) => {
+                        capturedAuthHeader = request.headers.get('Authorization');
+                        return HttpResponse.json({ data: {} });
+                    }
+                )
             );
 
             const adapter = createHttpBillingAdapter({
@@ -687,10 +705,13 @@ describe('Billing HTTP Adapter', () => {
             let capturedAuthHeader: string | null = null;
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, ({ request }) => {
-                    capturedAuthHeader = request.headers.get('Authorization');
-                    return HttpResponse.json({ data: {} });
-                })
+                http.get(
+                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
+                    ({ request }) => {
+                        capturedAuthHeader = request.headers.get('Authorization');
+                        return HttpResponse.json({ data: {} });
+                    }
+                )
             );
 
             const adapter = createHttpBillingAdapter({
@@ -712,10 +733,13 @@ describe('Billing HTTP Adapter', () => {
             let capturedAuthHeader: string | null = null;
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, ({ request }) => {
-                    capturedAuthHeader = request.headers.get('Authorization');
-                    return HttpResponse.json({ data: {} });
-                })
+                http.get(
+                    `${API_URL}/api/v1/protected/billing/customers/${customerId}`,
+                    ({ request }) => {
+                        capturedAuthHeader = request.headers.get('Authorization');
+                        return HttpResponse.json({ data: {} });
+                    }
+                )
             );
 
             const adapter = createHttpBillingAdapter({
@@ -747,7 +771,7 @@ describe('Billing HTTP Adapter', () => {
             });
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return HttpResponse.json({ data: {} });
                 })
             );
@@ -778,7 +802,7 @@ describe('Billing HTTP Adapter', () => {
             let capturedContentType: string | null = null;
 
             server.use(
-                http.post(`${API_URL}/api/v1/billing/customers`, ({ request }) => {
+                http.post(`${API_URL}/api/v1/protected/billing/customers`, ({ request }) => {
                     capturedContentType = request.headers.get('Content-Type');
                     return HttpResponse.json({ data: {} });
                 })
@@ -803,7 +827,7 @@ describe('Billing HTTP Adapter', () => {
             const customerId = 'cus_test123';
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return new HttpResponse('Not JSON', {
                         status: 500,
                         statusText: 'Internal Server Error'
@@ -825,7 +849,7 @@ describe('Billing HTTP Adapter', () => {
             const customerId = 'cus_test123';
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return HttpResponse.json(
                         {
                             error: {
@@ -853,7 +877,7 @@ describe('Billing HTTP Adapter', () => {
             const customerId = 'cus_test123';
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return HttpResponse.json(
                         {
                             message: 'Top-level error message'
@@ -879,7 +903,7 @@ describe('Billing HTTP Adapter', () => {
             const customerId = 'cus_test123';
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return new HttpResponse(JSON.stringify({}), {
                         status: 404,
                         statusText: 'Not Found'
@@ -908,7 +932,7 @@ describe('Billing HTTP Adapter', () => {
             const mockCustomer = createMockCustomer({ id: customerId });
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return HttpResponse.json({ data: mockCustomer });
                 })
             );
@@ -931,7 +955,7 @@ describe('Billing HTTP Adapter', () => {
             const mockCustomer = createMockCustomer({ id: customerId });
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/${customerId}`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/${customerId}`, () => {
                     return HttpResponse.json(mockCustomer);
                 })
             );
@@ -1001,7 +1025,7 @@ describe('Billing HTTP Adapter', () => {
             };
 
             server.use(
-                http.get(`${API_URL}/api/v1/billing/customers/cus_test123`, () => {
+                http.get(`${API_URL}/api/v1/protected/billing/customers/cus_test123`, () => {
                     return HttpResponse.json({ data: mockCustomer });
                 })
             );

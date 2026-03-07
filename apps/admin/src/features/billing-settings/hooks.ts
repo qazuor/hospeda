@@ -14,7 +14,7 @@ export const billingSettingsQueryKeys = {
  */
 async function fetchBillingSettings(): Promise<BillingSettings> {
     const result = await fetchApi<{ success: boolean; data: BillingSettings }>({
-        path: '/api/v1/billing/settings'
+        path: '/api/v1/protected/billing/settings'
     });
     return result.data.data;
 }
@@ -26,7 +26,7 @@ async function updateBillingSettings(
     payload: UpdateBillingSettingsPayload
 ): Promise<BillingSettings> {
     const result = await fetchApi<{ success: boolean; data: BillingSettings }>({
-        path: '/api/v1/billing/settings',
+        path: '/api/v1/protected/billing/settings',
         method: 'PATCH',
         body: payload
     });

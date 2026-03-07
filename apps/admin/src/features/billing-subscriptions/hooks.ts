@@ -32,7 +32,7 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
         data: Record<string, unknown>[];
         pagination: Record<string, unknown>;
     }>({
-        path: `/api/v1/billing/subscriptions?${params.toString()}`
+        path: `/api/v1/protected/billing/subscriptions?${params.toString()}`
     });
     // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
     return { items: result.data.data, pagination: result.data.pagination };
@@ -43,7 +43,7 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
  */
 async function fetchSubscription(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/subscriptions/${id}`
+        path: `/api/v1/protected/billing/subscriptions/${id}`
     });
     return result.data.data;
 }
@@ -57,7 +57,7 @@ async function cancelSubscription(payload: {
     reason?: string;
 }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/subscriptions/${payload.id}`,
+        path: `/api/v1/protected/billing/subscriptions/${payload.id}`,
         method: 'DELETE',
         body: {
             immediate: payload.immediate,
@@ -72,7 +72,7 @@ async function cancelSubscription(payload: {
  */
 async function changePlan(payload: { subscriptionId: string; newPlanSlug: string }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/subscriptions/${payload.subscriptionId}`,
+        path: `/api/v1/protected/billing/subscriptions/${payload.subscriptionId}`,
         method: 'PUT',
         body: {
             planSlug: payload.newPlanSlug
@@ -145,7 +145,7 @@ export const useChangePlanMutation = () => {
  */
 async function extendTrial(payload: { subscriptionId: string; additionalDays: number }) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/billing/trial/extend',
+        path: '/api/v1/protected/billing/trial/extend',
         method: 'POST',
         body: payload
     });
@@ -177,7 +177,7 @@ async function fetchPaymentHistory(subscriptionId: string) {
     params.append('subscriptionId', subscriptionId);
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown>[] }>({
-        path: `/api/v1/billing/payments?${params.toString()}`
+        path: `/api/v1/protected/billing/payments?${params.toString()}`
     });
     return result.data.data;
 }
@@ -205,3 +205,48 @@ export const usePaymentHistoryQuery = (subscriptionId: string | undefined) => {
         retry: 1
     });
 };
+
+/**
+ * Fetch subscription lifecycle events (audit trail)
+ */
+async function fetchSubscriptionEvents(subscriptionId: string, page: number, pageSize: number) {
+    const params = new URLSearchParams({
+        page: String(page),
+        pageSize: String(pageSize)
+    });
+    const result = await fetchApi<{
+        success: boolean;
+        data: Array<{
+            id: string;
+            subscriptionId: string;
+            previousStatus: string;
+            newStatus: string;
+            triggerSource: string;
+            providerEventId: string | null;
+            metadata: Record<string, unknown>;
+            createdAt: string;
+        }>;
+        pagination: { page: number; pageSize: number; totalItems: number; totalPages: number };
+    }>({
+        path: `/api/v1/admin/billing/subscriptions/${subscriptionId}/events?${params.toString()}`
+    });
+    return { items: result.data.data, pagination: result.data.pagination };
+}
+
+/**
+ * Hook to query subscription lifecycle events
+ */
+export function useSubscriptionEventsQuery(params: {
+    readonly subscriptionId: string;
+    readonly page?: number;
+    readonly pageSize?: number;
+    readonly enabled?: boolean;
+}) {
+    return useQuery({
+        queryKey: ['billing-subscriptions', params.subscriptionId, 'events', params.page ?? 1],
+        queryFn: () =>
+            fetchSubscriptionEvents(params.subscriptionId, params.page ?? 1, params.pageSize ?? 10),
+        enabled: params.enabled ?? true,
+        staleTime: 60_000
+    });
+}

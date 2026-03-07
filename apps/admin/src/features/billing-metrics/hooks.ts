@@ -45,7 +45,7 @@ async function fetchBillingMetrics(
     }
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/metrics?${params.toString()}`
+        path: `/api/v1/protected/billing/metrics?${params.toString()}`
     });
     return result.data.data;
 }
@@ -69,7 +69,7 @@ async function fetchRecentActivity(
     }
 
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/metrics/activity?${params.toString()}`
+        path: `/api/v1/protected/billing/metrics/activity?${params.toString()}`
     });
     return result.data.data;
 }
@@ -86,7 +86,7 @@ async function searchCustomers(query: string): Promise<CustomerSearchResult[]> {
     params.append('q', query.trim());
 
     const result = await fetchApi<{ success: boolean; data: CustomerSearchResult[] }>({
-        path: `/api/v1/billing/customers/search?${params.toString()}`
+        path: `/api/v1/protected/billing/customers/search?${params.toString()}`
     });
     return result.data.data;
 }
@@ -96,7 +96,7 @@ async function searchCustomers(query: string): Promise<CustomerSearchResult[]> {
  */
 async function fetchCustomerUsage(customerId: string): Promise<CustomerUsageSummary> {
     const result = await fetchApi<{ success: boolean; data: CustomerUsageSummary }>({
-        path: `/api/v1/billing/customers/${customerId}/usage`
+        path: `/api/v1/protected/billing/customers/${customerId}/usage`
     });
     return result.data.data;
 }
@@ -171,7 +171,7 @@ export const useCustomerUsageQuery = (customerId: string | null) => {
  */
 async function fetchSystemUsageStats(): Promise<SystemUsageStats> {
     const result = await fetchApi<{ success: boolean; data: SystemUsageStats }>({
-        path: '/api/v1/billing/metrics/system-usage'
+        path: '/api/v1/protected/billing/metrics/system-usage'
     });
     return result.data.data;
 }
@@ -197,7 +197,7 @@ async function fetchApproachingLimits(threshold = 90): Promise<ApproachingLimits
     params.append('threshold', String(threshold));
 
     const result = await fetchApi<{ success: boolean; data: ApproachingLimitApiItem[] }>({
-        path: `/api/v1/billing/metrics/approaching-limits?${params.toString()}`
+        path: `/api/v1/protected/billing/metrics/approaching-limits?${params.toString()}`
     });
 
     const apiItems = result.data.data ?? [];

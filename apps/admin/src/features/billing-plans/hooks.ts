@@ -75,7 +75,7 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
         data: QZPayPlanRecord[];
         pagination: Record<string, unknown>;
     }>({
-        path: `/api/v1/billing/plans?${params.toString()}`
+        path: `/api/v1/protected/billing/plans?${params.toString()}`
     });
 
     // Transform QZPay records to PlanDefinition format
@@ -89,7 +89,7 @@ async function fetchPlans(filters: Record<string, unknown> = {}) {
  */
 async function createPlan(payload: CreatePlanPayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/billing/plans',
+        path: '/api/v1/protected/billing/plans',
         method: 'POST',
         body: payload
     });
@@ -101,7 +101,7 @@ async function createPlan(payload: CreatePlanPayload) {
  */
 async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/plans/${id}`,
+        path: `/api/v1/protected/billing/plans/${id}`,
         method: 'PUT',
         body: payload
     });
@@ -113,7 +113,7 @@ async function updatePlan({ id, ...payload }: UpdatePlanPayload) {
  */
 async function togglePlanActive(id: string, isActive: boolean) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/plans/${id}`,
+        path: `/api/v1/protected/billing/plans/${id}`,
         method: 'PATCH',
         body: { isActive }
     });
@@ -125,7 +125,7 @@ async function togglePlanActive(id: string, isActive: boolean) {
  */
 async function deletePlan(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/plans/${id}`,
+        path: `/api/v1/protected/billing/plans/${id}`,
         method: 'DELETE'
     });
     return result.data.data;

@@ -7,7 +7,7 @@
  *
  * Key features:
  * - Uses Better Auth for authentication (session cookie automatically included)
- * - Communicates with API at /api/v1/billing/* endpoints
+ * - Communicates with API at /api/v1/protected/billing/* endpoints
  * - Full CRUD operations for all billing entities
  * - Type-safe with QZPay core types
  * - Delegates all HTTP logic to the centralized fetchApi client
@@ -102,7 +102,7 @@ export interface HttpAdapterConfig {
  * Makes a billing API request using the centralized fetchApi client and
  * unwraps the response body envelope (supports both `{ data: T }` and bare `T`).
  *
- * @param path - The billing endpoint path (e.g., '/api/v1/billing/customers')
+ * @param path - The billing endpoint path (e.g., '/api/v1/protected/billing/customers')
  * @param method - HTTP method
  * @param body - Optional request body
  * @returns The unwrapped response value typed as T
@@ -126,29 +126,41 @@ async function billingFetch<T>(
 function createCustomerStorage(): QZPayCustomerStorage {
     return {
         create: async (input: QZPayCreateCustomerInput) => {
-            return billingFetch<QZPayCustomer>('/api/v1/billing/customers', 'POST', input);
+            return billingFetch<QZPayCustomer>(
+                '/api/v1/protected/billing/customers',
+                'POST',
+                input
+            );
         },
 
         update: async (id: string, input: QZPayUpdateCustomerInput) => {
-            return billingFetch<QZPayCustomer>(`/api/v1/billing/customers/${id}`, 'PUT', input);
+            return billingFetch<QZPayCustomer>(
+                `/api/v1/protected/billing/customers/${id}`,
+                'PUT',
+                input
+            );
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/customers/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/customers/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayCustomer>(`/api/v1/billing/customers/${id}`);
+            return billingFetch<QZPayCustomer>(`/api/v1/protected/billing/customers/${id}`);
         },
 
         findByExternalId: async (externalId: string) => {
             const params = new URLSearchParams({ externalId });
-            return billingFetch<QZPayCustomer>(`/api/v1/billing/customers?${params.toString()}`);
+            return billingFetch<QZPayCustomer>(
+                `/api/v1/protected/billing/customers?${params.toString()}`
+            );
         },
 
         findByEmail: async (email: string) => {
             const params = new URLSearchParams({ email });
-            return billingFetch<QZPayCustomer>(`/api/v1/billing/customers?${params.toString()}`);
+            return billingFetch<QZPayCustomer>(
+                `/api/v1/protected/billing/customers?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -156,7 +168,7 @@ function createCustomerStorage(): QZPayCustomerStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayCustomer>>(
-                `/api/v1/billing/customers?${params.toString()}`
+                `/api/v1/protected/billing/customers?${params.toString()}`
             );
         }
     };
@@ -168,29 +180,33 @@ function createCustomerStorage(): QZPayCustomerStorage {
 function createSubscriptionStorage(): QZPaySubscriptionStorage {
     return {
         create: async (input: QZPayCreateSubscriptionInput & { id: string }) => {
-            return billingFetch<QZPaySubscription>('/api/v1/billing/subscriptions', 'POST', input);
+            return billingFetch<QZPaySubscription>(
+                '/api/v1/protected/billing/subscriptions',
+                'POST',
+                input
+            );
         },
 
         update: async (id: string, input: QZPayUpdateSubscriptionInput) => {
             return billingFetch<QZPaySubscription>(
-                `/api/v1/billing/subscriptions/${id}`,
+                `/api/v1/protected/billing/subscriptions/${id}`,
                 'PUT',
                 input
             );
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/subscriptions/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/subscriptions/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPaySubscription>(`/api/v1/billing/subscriptions/${id}`);
+            return billingFetch<QZPaySubscription>(`/api/v1/protected/billing/subscriptions/${id}`);
         },
 
         findByCustomerId: async (customerId: string) => {
             const params = new URLSearchParams({ customerId });
             return billingFetch<QZPaySubscription[]>(
-                `/api/v1/billing/subscriptions?${params.toString()}`
+                `/api/v1/protected/billing/subscriptions?${params.toString()}`
             );
         },
 
@@ -199,7 +215,7 @@ function createSubscriptionStorage(): QZPaySubscriptionStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPaySubscription>>(
-                `/api/v1/billing/subscriptions?${params.toString()}`
+                `/api/v1/protected/billing/subscriptions?${params.toString()}`
             );
         }
     };
@@ -211,20 +227,30 @@ function createSubscriptionStorage(): QZPaySubscriptionStorage {
 function createPaymentStorage(): QZPayPaymentStorage {
     return {
         create: async (payment: QZPayPayment) => {
-            return billingFetch<QZPayPayment>('/api/v1/billing/payments', 'POST', payment);
+            return billingFetch<QZPayPayment>(
+                '/api/v1/protected/billing/payments',
+                'POST',
+                payment
+            );
         },
 
         update: async (id: string, payment: Partial<QZPayPayment>) => {
-            return billingFetch<QZPayPayment>(`/api/v1/billing/payments/${id}`, 'PUT', payment);
+            return billingFetch<QZPayPayment>(
+                `/api/v1/protected/billing/payments/${id}`,
+                'PUT',
+                payment
+            );
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayPayment>(`/api/v1/billing/payments/${id}`);
+            return billingFetch<QZPayPayment>(`/api/v1/protected/billing/payments/${id}`);
         },
 
         findByCustomerId: async (customerId: string) => {
             const params = new URLSearchParams({ customerId });
-            return billingFetch<QZPayPayment[]>(`/api/v1/billing/payments?${params.toString()}`);
+            return billingFetch<QZPayPayment[]>(
+                `/api/v1/protected/billing/payments?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -232,7 +258,7 @@ function createPaymentStorage(): QZPayPaymentStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayPayment>>(
-                `/api/v1/billing/payments?${params.toString()}`
+                `/api/v1/protected/billing/payments?${params.toString()}`
             );
         }
     };
@@ -245,7 +271,7 @@ function createPaymentMethodStorage(): QZPayPaymentMethodStorage {
     return {
         create: async (input: QZPayCreatePaymentMethodInput & { id: string }) => {
             return billingFetch<QZPayPaymentMethod>(
-                '/api/v1/billing/payment-methods',
+                '/api/v1/protected/billing/payment-methods',
                 'POST',
                 input
             );
@@ -253,37 +279,39 @@ function createPaymentMethodStorage(): QZPayPaymentMethodStorage {
 
         update: async (id: string, input: QZPayUpdatePaymentMethodInput) => {
             return billingFetch<QZPayPaymentMethod>(
-                `/api/v1/billing/payment-methods/${id}`,
+                `/api/v1/protected/billing/payment-methods/${id}`,
                 'PUT',
                 input
             );
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/payment-methods/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/payment-methods/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayPaymentMethod>(`/api/v1/billing/payment-methods/${id}`);
+            return billingFetch<QZPayPaymentMethod>(
+                `/api/v1/protected/billing/payment-methods/${id}`
+            );
         },
 
         findByCustomerId: async (customerId: string) => {
             const params = new URLSearchParams({ customerId });
             return billingFetch<QZPayPaymentMethod[]>(
-                `/api/v1/billing/payment-methods?${params.toString()}`
+                `/api/v1/protected/billing/payment-methods?${params.toString()}`
             );
         },
 
         findDefaultByCustomerId: async (customerId: string) => {
             const params = new URLSearchParams({ customerId, isDefault: 'true' });
             return billingFetch<QZPayPaymentMethod>(
-                `/api/v1/billing/payment-methods?${params.toString()}`
+                `/api/v1/protected/billing/payment-methods?${params.toString()}`
             );
         },
 
         setDefault: async (customerId: string, paymentMethodId: string) => {
             await billingFetch(
-                `/api/v1/billing/payment-methods/${paymentMethodId}/set-default`,
+                `/api/v1/protected/billing/payment-methods/${paymentMethodId}/set-default`,
                 'POST',
                 { customerId }
             );
@@ -294,7 +322,7 @@ function createPaymentMethodStorage(): QZPayPaymentMethodStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayPaymentMethod>>(
-                `/api/v1/billing/payment-methods?${params.toString()}`
+                `/api/v1/protected/billing/payment-methods?${params.toString()}`
             );
         }
     };
@@ -306,20 +334,26 @@ function createPaymentMethodStorage(): QZPayPaymentMethodStorage {
 function createInvoiceStorage(): QZPayInvoiceStorage {
     return {
         create: async (input: QZPayCreateInvoiceInput & { id: string }) => {
-            return billingFetch<QZPayInvoice>('/api/v1/billing/invoices', 'POST', input);
+            return billingFetch<QZPayInvoice>('/api/v1/protected/billing/invoices', 'POST', input);
         },
 
         update: async (id: string, invoice: Partial<QZPayInvoice>) => {
-            return billingFetch<QZPayInvoice>(`/api/v1/billing/invoices/${id}`, 'PUT', invoice);
+            return billingFetch<QZPayInvoice>(
+                `/api/v1/protected/billing/invoices/${id}`,
+                'PUT',
+                invoice
+            );
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayInvoice>(`/api/v1/billing/invoices/${id}`);
+            return billingFetch<QZPayInvoice>(`/api/v1/protected/billing/invoices/${id}`);
         },
 
         findByCustomerId: async (customerId: string) => {
             const params = new URLSearchParams({ customerId });
-            return billingFetch<QZPayInvoice[]>(`/api/v1/billing/invoices?${params.toString()}`);
+            return billingFetch<QZPayInvoice[]>(
+                `/api/v1/protected/billing/invoices?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -327,7 +361,7 @@ function createInvoiceStorage(): QZPayInvoiceStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayInvoice>>(
-                `/api/v1/billing/invoices?${params.toString()}`
+                `/api/v1/protected/billing/invoices?${params.toString()}`
             );
         }
     };
@@ -339,19 +373,19 @@ function createInvoiceStorage(): QZPayInvoiceStorage {
 function createPlanStorage(): QZPayPlanStorage {
     return {
         create: async (input: QZPayCreatePlanInput & { id: string }) => {
-            return billingFetch<QZPayPlan>('/api/v1/billing/plans', 'POST', input);
+            return billingFetch<QZPayPlan>('/api/v1/protected/billing/plans', 'POST', input);
         },
 
         update: async (id: string, plan: Partial<QZPayPlan>) => {
-            return billingFetch<QZPayPlan>(`/api/v1/billing/plans/${id}`, 'PUT', plan);
+            return billingFetch<QZPayPlan>(`/api/v1/protected/billing/plans/${id}`, 'PUT', plan);
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/plans/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/plans/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayPlan>(`/api/v1/billing/plans/${id}`);
+            return billingFetch<QZPayPlan>(`/api/v1/protected/billing/plans/${id}`);
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -359,7 +393,7 @@ function createPlanStorage(): QZPayPlanStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayPlan>>(
-                `/api/v1/billing/plans?${params.toString()}`
+                `/api/v1/protected/billing/plans?${params.toString()}`
             );
         }
     };
@@ -371,24 +405,26 @@ function createPlanStorage(): QZPayPlanStorage {
 function createPriceStorage(): QZPayPriceStorage {
     return {
         create: async (input: QZPayCreatePriceInput & { id: string }) => {
-            return billingFetch<QZPayPrice>('/api/v1/billing/prices', 'POST', input);
+            return billingFetch<QZPayPrice>('/api/v1/protected/billing/prices', 'POST', input);
         },
 
         update: async (id: string, price: Partial<QZPayPrice>) => {
-            return billingFetch<QZPayPrice>(`/api/v1/billing/prices/${id}`, 'PUT', price);
+            return billingFetch<QZPayPrice>(`/api/v1/protected/billing/prices/${id}`, 'PUT', price);
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/prices/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/prices/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayPrice>(`/api/v1/billing/prices/${id}`);
+            return billingFetch<QZPayPrice>(`/api/v1/protected/billing/prices/${id}`);
         },
 
         findByPlanId: async (planId: string) => {
             const params = new URLSearchParams({ planId });
-            return billingFetch<QZPayPrice[]>(`/api/v1/billing/prices?${params.toString()}`);
+            return billingFetch<QZPayPrice[]>(
+                `/api/v1/protected/billing/prices?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -396,7 +432,7 @@ function createPriceStorage(): QZPayPriceStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayPrice>>(
-                `/api/v1/billing/prices?${params.toString()}`
+                `/api/v1/protected/billing/prices?${params.toString()}`
             );
         }
     };
@@ -408,31 +444,37 @@ function createPriceStorage(): QZPayPriceStorage {
 function createPromoCodeStorage(): QZPayPromoCodeStorage {
     return {
         create: async (input: QZPayCreatePromoCodeInput & { id: string }) => {
-            return billingFetch<QZPayPromoCode>('/api/v1/billing/promo-codes', 'POST', input);
+            return billingFetch<QZPayPromoCode>(
+                '/api/v1/protected/billing/promo-codes',
+                'POST',
+                input
+            );
         },
 
         update: async (id: string, promoCode: Partial<QZPayPromoCode>) => {
             return billingFetch<QZPayPromoCode>(
-                `/api/v1/billing/promo-codes/${id}`,
+                `/api/v1/protected/billing/promo-codes/${id}`,
                 'PUT',
                 promoCode
             );
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/promo-codes/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/promo-codes/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayPromoCode>(`/api/v1/billing/promo-codes/${id}`);
+            return billingFetch<QZPayPromoCode>(`/api/v1/protected/billing/promo-codes/${id}`);
         },
 
         findByCode: async (code: string) => {
-            return billingFetch<QZPayPromoCode>(`/api/v1/billing/promo-codes/by-code/${code}`);
+            return billingFetch<QZPayPromoCode>(
+                `/api/v1/protected/billing/promo-codes/by-code/${code}`
+            );
         },
 
         incrementRedemptions: async (id: string) => {
-            await billingFetch(`/api/v1/billing/promo-codes/${id}/redeem`, 'POST');
+            await billingFetch(`/api/v1/protected/billing/promo-codes/${id}/redeem`, 'POST');
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -440,7 +482,7 @@ function createPromoCodeStorage(): QZPayPromoCodeStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayPromoCode>>(
-                `/api/v1/billing/promo-codes?${params.toString()}`
+                `/api/v1/protected/billing/promo-codes?${params.toString()}`
             );
         }
     };
@@ -452,24 +494,30 @@ function createPromoCodeStorage(): QZPayPromoCodeStorage {
 function createVendorStorage(): QZPayVendorStorage {
     return {
         create: async (input: QZPayCreateVendorInput & { id: string }) => {
-            return billingFetch<QZPayVendor>('/api/v1/billing/vendors', 'POST', input);
+            return billingFetch<QZPayVendor>('/api/v1/protected/billing/vendors', 'POST', input);
         },
 
         update: async (id: string, input: QZPayUpdateVendorInput) => {
-            return billingFetch<QZPayVendor>(`/api/v1/billing/vendors/${id}`, 'PUT', input);
+            return billingFetch<QZPayVendor>(
+                `/api/v1/protected/billing/vendors/${id}`,
+                'PUT',
+                input
+            );
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/vendors/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/vendors/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayVendor>(`/api/v1/billing/vendors/${id}`);
+            return billingFetch<QZPayVendor>(`/api/v1/protected/billing/vendors/${id}`);
         },
 
         findByExternalId: async (externalId: string) => {
             const params = new URLSearchParams({ externalId });
-            return billingFetch<QZPayVendor>(`/api/v1/billing/vendors?${params.toString()}`);
+            return billingFetch<QZPayVendor>(
+                `/api/v1/protected/billing/vendors?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -477,13 +525,13 @@ function createVendorStorage(): QZPayVendorStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayVendor>>(
-                `/api/v1/billing/vendors?${params.toString()}`
+                `/api/v1/protected/billing/vendors?${params.toString()}`
             );
         },
 
         createPayout: async (payout: QZPayVendorPayout) => {
             return billingFetch<QZPayVendorPayout>(
-                '/api/v1/billing/vendor-payouts',
+                '/api/v1/protected/billing/vendor-payouts',
                 'POST',
                 payout
             );
@@ -492,7 +540,7 @@ function createVendorStorage(): QZPayVendorStorage {
         findPayoutsByVendorId: async (vendorId: string) => {
             const params = new URLSearchParams({ vendorId });
             return billingFetch<QZPayVendorPayout[]>(
-                `/api/v1/billing/vendor-payouts?${params.toString()}`
+                `/api/v1/protected/billing/vendor-payouts?${params.toString()}`
             );
         }
     };
@@ -505,7 +553,7 @@ function createEntitlementStorage(): QZPayEntitlementStorage {
     return {
         createDefinition: async (entitlement: QZPayEntitlement) => {
             return billingFetch<QZPayEntitlement>(
-                '/api/v1/billing/entitlements/definitions',
+                '/api/v1/protected/billing/entitlements/definitions',
                 'POST',
                 entitlement
             );
@@ -513,17 +561,19 @@ function createEntitlementStorage(): QZPayEntitlementStorage {
 
         findDefinitionByKey: async (key: string) => {
             return billingFetch<QZPayEntitlement>(
-                `/api/v1/billing/entitlements/definitions/${key}`
+                `/api/v1/protected/billing/entitlements/definitions/${key}`
             );
         },
 
         listDefinitions: async () => {
-            return billingFetch<QZPayEntitlement[]>('/api/v1/billing/entitlements/definitions');
+            return billingFetch<QZPayEntitlement[]>(
+                '/api/v1/protected/billing/entitlements/definitions'
+            );
         },
 
         grant: async (input: QZPayGrantEntitlementInput) => {
             return billingFetch<QZPayCustomerEntitlement>(
-                '/api/v1/billing/entitlements/grant',
+                '/api/v1/protected/billing/entitlements/grant',
                 'POST',
                 input
             );
@@ -531,20 +581,20 @@ function createEntitlementStorage(): QZPayEntitlementStorage {
 
         revoke: async (customerId: string, entitlementKey: string) => {
             await billingFetch(
-                `/api/v1/billing/entitlements/${customerId}/${entitlementKey}`,
+                `/api/v1/protected/billing/entitlements/${customerId}/${entitlementKey}`,
                 'DELETE'
             );
         },
 
         findByCustomerId: async (customerId: string) => {
             return billingFetch<QZPayCustomerEntitlement[]>(
-                `/api/v1/billing/entitlements/customer/${customerId}`
+                `/api/v1/protected/billing/entitlements/customer/${customerId}`
             );
         },
 
         check: async (customerId: string, entitlementKey: string) => {
             const result = await billingFetch<{ hasAccess: boolean }>(
-                `/api/v1/billing/entitlements/${customerId}/${entitlementKey}/check`
+                `/api/v1/protected/billing/entitlements/${customerId}/${entitlementKey}/check`
             );
             return result.hasAccess;
         }
@@ -557,24 +607,32 @@ function createEntitlementStorage(): QZPayEntitlementStorage {
 function createLimitStorage(): QZPayLimitStorage {
     return {
         createDefinition: async (limit: QZPayLimit) => {
-            return billingFetch<QZPayLimit>('/api/v1/billing/limits/definitions', 'POST', limit);
+            return billingFetch<QZPayLimit>(
+                '/api/v1/protected/billing/limits/definitions',
+                'POST',
+                limit
+            );
         },
 
         findDefinitionByKey: async (key: string) => {
-            return billingFetch<QZPayLimit>(`/api/v1/billing/limits/definitions/${key}`);
+            return billingFetch<QZPayLimit>(`/api/v1/protected/billing/limits/definitions/${key}`);
         },
 
         listDefinitions: async () => {
-            return billingFetch<QZPayLimit[]>('/api/v1/billing/limits/definitions');
+            return billingFetch<QZPayLimit[]>('/api/v1/protected/billing/limits/definitions');
         },
 
         set: async (input: QZPaySetLimitInput) => {
-            return billingFetch<QZPayCustomerLimit>('/api/v1/billing/limits/set', 'POST', input);
+            return billingFetch<QZPayCustomerLimit>(
+                '/api/v1/protected/billing/limits/set',
+                'POST',
+                input
+            );
         },
 
         increment: async (input: QZPayIncrementLimitInput) => {
             return billingFetch<QZPayCustomerLimit>(
-                '/api/v1/billing/limits/increment',
+                '/api/v1/protected/billing/limits/increment',
                 'POST',
                 input
             );
@@ -582,18 +640,22 @@ function createLimitStorage(): QZPayLimitStorage {
 
         findByCustomerId: async (customerId: string) => {
             return billingFetch<QZPayCustomerLimit[]>(
-                `/api/v1/billing/limits/customer/${customerId}`
+                `/api/v1/protected/billing/limits/customer/${customerId}`
             );
         },
 
         check: async (customerId: string, limitKey: string) => {
             return billingFetch<QZPayCustomerLimit>(
-                `/api/v1/billing/limits/${customerId}/${limitKey}/check`
+                `/api/v1/protected/billing/limits/${customerId}/${limitKey}/check`
             );
         },
 
         recordUsage: async (record: QZPayUsageRecord) => {
-            return billingFetch<QZPayUsageRecord>('/api/v1/billing/usage', 'POST', record);
+            return billingFetch<QZPayUsageRecord>(
+                '/api/v1/protected/billing/usage',
+                'POST',
+                record
+            );
         }
     };
 }
@@ -604,24 +666,26 @@ function createLimitStorage(): QZPayLimitStorage {
 function createAddOnStorage(): QZPayAddOnStorage {
     return {
         create: async (input: QZPayCreateAddOnInput & { id: string }) => {
-            return billingFetch<QZPayAddOn>('/api/v1/billing/addons', 'POST', input);
+            return billingFetch<QZPayAddOn>('/api/v1/protected/billing/addons', 'POST', input);
         },
 
         update: async (id: string, input: QZPayUpdateAddOnInput) => {
-            return billingFetch<QZPayAddOn>(`/api/v1/billing/addons/${id}`, 'PUT', input);
+            return billingFetch<QZPayAddOn>(`/api/v1/protected/billing/addons/${id}`, 'PUT', input);
         },
 
         delete: async (id: string) => {
-            await billingFetch(`/api/v1/billing/addons/${id}`, 'DELETE');
+            await billingFetch(`/api/v1/protected/billing/addons/${id}`, 'DELETE');
         },
 
         findById: async (id: string) => {
-            return billingFetch<QZPayAddOn>(`/api/v1/billing/addons/${id}`);
+            return billingFetch<QZPayAddOn>(`/api/v1/protected/billing/addons/${id}`);
         },
 
         findByPlanId: async (planId: string) => {
             const params = new URLSearchParams({ planId });
-            return billingFetch<QZPayAddOn[]>(`/api/v1/billing/addons?${params.toString()}`);
+            return billingFetch<QZPayAddOn[]>(
+                `/api/v1/protected/billing/addons?${params.toString()}`
+            );
         },
 
         list: async (options?: QZPayListOptions) => {
@@ -629,7 +693,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
             if (options?.limit) params.append('limit', options.limit.toString());
             if (options?.offset) params.append('offset', options.offset.toString());
             return billingFetch<QZPayPaginatedResult<QZPayAddOn>>(
-                `/api/v1/billing/addons?${params.toString()}`
+                `/api/v1/protected/billing/addons?${params.toString()}`
             );
         },
 
@@ -643,7 +707,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
             metadata?: Record<string, unknown>;
         }) => {
             return billingFetch<QZPaySubscriptionAddOn>(
-                `/api/v1/billing/subscriptions/${input.subscriptionId}/addons`,
+                `/api/v1/protected/billing/subscriptions/${input.subscriptionId}/addons`,
                 'POST',
                 input
             );
@@ -651,7 +715,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
 
         removeFromSubscription: async (subscriptionId: string, addOnId: string) => {
             await billingFetch(
-                `/api/v1/billing/subscriptions/${subscriptionId}/addons/${addOnId}`,
+                `/api/v1/protected/billing/subscriptions/${subscriptionId}/addons/${addOnId}`,
                 'DELETE'
             );
         },
@@ -662,7 +726,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
             input: Partial<QZPaySubscriptionAddOn>
         ) => {
             return billingFetch<QZPaySubscriptionAddOn>(
-                `/api/v1/billing/subscriptions/${subscriptionId}/addons/${addOnId}`,
+                `/api/v1/protected/billing/subscriptions/${subscriptionId}/addons/${addOnId}`,
                 'PUT',
                 input
             );
@@ -670,7 +734,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
 
         findBySubscriptionId: async (subscriptionId: string) => {
             return billingFetch<QZPaySubscriptionAddOn[]>(
-                `/api/v1/billing/subscriptions/${subscriptionId}/addons`
+                `/api/v1/protected/billing/subscriptions/${subscriptionId}/addons`
             );
         },
 
@@ -680,7 +744,7 @@ function createAddOnStorage(): QZPayAddOnStorage {
         ): Promise<QZPaySubscriptionAddOn | null> => {
             try {
                 return await billingFetch<QZPaySubscriptionAddOn>(
-                    `/api/v1/billing/subscriptions/${subscriptionId}/addons/${addOnId}`
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}/addons/${addOnId}`
                 );
             } catch (error) {
                 if (error instanceof Error && error.message.includes('not found')) {

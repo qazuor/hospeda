@@ -59,7 +59,7 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
         success: boolean;
         data: { items: Record<string, unknown>[]; pagination: Record<string, unknown> };
     }>({
-        path: `/api/v1/billing/promo-codes?${params.toString()}`
+        path: `/api/v1/protected/billing/promo-codes?${params.toString()}`
     });
 
     const responseData = result.data.data;
@@ -78,7 +78,7 @@ async function fetchPromoCodes(filters: PromoCodeFilters = {}) {
  */
 async function createPromoCode(payload: CreatePromoCodePayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/billing/promo-codes',
+        path: '/api/v1/protected/billing/promo-codes',
         method: 'POST',
         body: payload
     });
@@ -90,7 +90,7 @@ async function createPromoCode(payload: CreatePromoCodePayload) {
  */
 async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/promo-codes/${id}`,
+        path: `/api/v1/protected/billing/promo-codes/${id}`,
         method: 'PUT',
         body: payload
     });
@@ -102,7 +102,7 @@ async function updatePromoCode({ id, ...payload }: UpdatePromoCodePayload) {
  */
 async function togglePromoCodeActive(id: string, isActive: boolean) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/promo-codes/${id}`,
+        path: `/api/v1/protected/billing/promo-codes/${id}`,
         method: 'PATCH',
         body: { isActive }
     });
@@ -114,7 +114,7 @@ async function togglePromoCodeActive(id: string, isActive: boolean) {
  */
 async function deletePromoCode(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/promo-codes/${id}`,
+        path: `/api/v1/protected/billing/promo-codes/${id}`,
         method: 'DELETE'
     });
     return result.data.data;

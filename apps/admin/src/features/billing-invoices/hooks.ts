@@ -32,7 +32,7 @@ async function fetchInvoices(filters: Record<string, unknown> = {}) {
         data: Record<string, unknown>[];
         pagination: Record<string, unknown>;
     }>({
-        path: `/api/v1/billing/invoices?${params.toString()}`
+        path: `/api/v1/protected/billing/invoices?${params.toString()}`
     });
     // QZPay returns { success, data: [], pagination } - transform to { items, pagination }
     return { items: result.data.data, pagination: result.data.pagination };
@@ -43,7 +43,7 @@ async function fetchInvoices(filters: Record<string, unknown> = {}) {
  */
 async function fetchInvoice(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/invoices/${id}`
+        path: `/api/v1/protected/billing/invoices/${id}`
     });
     return result.data.data;
 }
@@ -53,7 +53,7 @@ async function fetchInvoice(id: string) {
  */
 async function payInvoice(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/invoices/${id}/pay`,
+        path: `/api/v1/protected/billing/invoices/${id}/pay`,
         method: 'POST'
     });
     return result.data.data;
@@ -64,7 +64,7 @@ async function payInvoice(id: string) {
  */
 async function voidInvoice(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/billing/invoices/${id}/void`,
+        path: `/api/v1/protected/billing/invoices/${id}/void`,
         method: 'POST'
     });
     return result.data.data;
