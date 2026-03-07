@@ -53,11 +53,12 @@ yarn-error.log*
 *.local  # archivos de debug locales genéricos
 
 # =========================
-# Variables de entorno
-# (solo locales; los secrets reales van en tu gestor)
+# Environment variables
+# Note: .env.example and .env.test are NOT ignored (committed)
 # =========================
 .env
 .env.local
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
