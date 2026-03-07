@@ -49,12 +49,16 @@
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
         "lint:md:docs": "markdownlint-cli2 \"docs/**/*.md\" \"apps/**/docs/**/*.md\" \"packages/**/docs/**/*.md\"",
         "docs:check-links": "tsx scripts/check-links.ts",
-        "docs:validate-examples": "tsx scripts/validate-examples.ts"
+        "docs:validate-examples": "tsx scripts/validate-examples.ts",
+        "env:pull": "tsx scripts/env/pull.ts",
+        "env:push": "tsx scripts/env/push.ts",
+        "env:check": "tsx scripts/env/check.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
         "@commitlint/cli": "^19.8.1",
         "@commitlint/config-conventional": "^19.8.1",
+        "@inquirer/prompts": "^8.3.0",
         "@playwright/test": "^1.58.2",
         "@types/node": "^22.15.3",
         "ajv": "^8.18.0",
