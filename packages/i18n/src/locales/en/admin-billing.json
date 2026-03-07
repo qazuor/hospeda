@@ -907,7 +907,8 @@
             "trialing": "Trialing",
             "cancelled": "Cancelled",
             "pastDue": "Past Due",
-            "expired": "Expired"
+            "expired": "Expired",
+            "paused": "Paused"
         },
         "filtersTitle": "Filters",
         "searchLabel": "Search by user",
@@ -942,6 +943,32 @@
         "detailsDialog": {
             "title": "Subscription Details",
             "description": "Complete subscription information",
+            "tabs": {
+                "details": "Details",
+                "history": "History"
+            },
+            "history": {
+                "title": "Change history",
+                "loading": "Loading history...",
+                "emptyState": "No changes recorded for this subscription.",
+                "columns": {
+                    "date": "Date",
+                    "transition": "Transition",
+                    "source": "Source",
+                    "eventId": "MP Event ID"
+                },
+                "sources": {
+                    "webhook": "Webhook",
+                    "admin": "Admin",
+                    "system": "System",
+                    "cron": "Cron",
+                    "dead-letter-retry": "Retry"
+                },
+                "pagination": {
+                    "previous": "Previous",
+                    "next": "Next"
+                }
+            },
             "userSection": "User",
             "subscriptionSection": "Subscription",
             "idLabel": "ID:",
