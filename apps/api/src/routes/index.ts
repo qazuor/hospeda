@@ -6,6 +6,7 @@
  *   - Admin:     /api/v1/admin/*     (admin role + permissions)
  */
 import type { AppOpenAPI } from '../types';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 // ─── Entity route imports (from entity barrels) ───────────────────────────────
@@ -247,7 +248,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
     }
 
     // Documentation routes (disabled in production for security)
-    if (process.env.NODE_ENV !== 'production') {
+    if (env.NODE_ENV !== 'production') {
         app.route('/docs', docsIndexRoutes);
         app.route('/docs', swaggerRoutes);
         app.route('/docs', scalarRoutes);

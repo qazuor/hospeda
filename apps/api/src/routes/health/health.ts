@@ -16,8 +16,7 @@ export const healthRoutes = createSimpleRoute({
         status: 'healthy' as const,
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        version: '1.0.0',
-        environment: process.env.NODE_ENV || 'development'
+        version: '1.0.0'
     }),
     options: {
         skipAuth: true,

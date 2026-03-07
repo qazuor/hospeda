@@ -54,8 +54,7 @@ app.openapi(dbHealthRoute, async (c) => {
             },
             timestamp: new Date().toISOString(),
             uptime,
-            version: '1.0.0',
-            environment: process.env.NODE_ENV || 'development'
+            version: '1.0.0'
         };
 
         return c.json({
@@ -66,7 +65,7 @@ app.openapi(dbHealthRoute, async (c) => {
                 requestId: c.get('requestId') || 'unknown'
             }
         });
-    } catch (error) {
+    } catch (_error) {
         const responseTime = Date.now() - startTime;
 
         const data = {
@@ -74,12 +73,11 @@ app.openapi(dbHealthRoute, async (c) => {
             database: {
                 status: 'disconnected' as const,
                 responseTime,
-                error: error instanceof Error ? error.message : 'Unknown database error'
+                error: 'Database health check failed'
             },
             timestamp: new Date().toISOString(),
             uptime,
-            version: '1.0.0',
-            environment: process.env.NODE_ENV || 'development'
+            version: '1.0.0'
         };
 
         return c.json(

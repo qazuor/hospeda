@@ -18,7 +18,7 @@ import { getLocaleFromParams } from '../../lib/page-helpers';
 const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/feedback/');
 
-const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://localhost:3001';
+const apiUrl = import.meta.env.PUBLIC_API_URL;
 
 // Read query params server-side for pre-filling the form
 const params = parseFeedbackParams(Astro.url.searchParams.toString());

@@ -40,7 +40,7 @@ export function configureOpenAPI(app: AppOpenAPI) {
                     {
                         error: 'OpenAPI generation failed',
                         message: err.message,
-                        debug: process.env.NODE_ENV === 'development' ? err.stack : undefined
+                        debug: env.NODE_ENV === 'development' ? err.stack : undefined
                     },
                     500
                 );

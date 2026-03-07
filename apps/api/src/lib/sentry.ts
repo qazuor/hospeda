@@ -124,7 +124,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
             // Before breadcrumb hook - filter sensitive breadcrumbs
             beforeBreadcrumb(breadcrumb) {
                 // Skip console logs in production
-                if (process.env.NODE_ENV === 'production' && breadcrumb.category === 'console') {
+                if (env.NODE_ENV === 'production' && breadcrumb.category === 'console') {
                     return null;
                 }
                 return breadcrumb;

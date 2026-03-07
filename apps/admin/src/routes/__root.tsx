@@ -118,7 +118,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     // Uses lazy initializer to prevent recreation on every render
     const [billing] = useState(() => {
         const adapter = createHttpBillingAdapter({
-            apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:3001'
+            apiUrl: import.meta.env.VITE_API_URL
             // getAuthToken not provided - Better Auth handles auth via cookies
         });
 
@@ -146,9 +146,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                                 <GlobalErrorBoundary>
                                     <FeedbackErrorBoundary
                                         appSource="admin"
-                                        apiUrl={
-                                            import.meta.env.VITE_API_URL || 'http://localhost:3001'
-                                        }
+                                        apiUrl={import.meta.env.VITE_API_URL}
                                         feedbackPageUrl="/es/feedback"
                                         userId={session?.user.id}
                                         userEmail={session?.user.email}
@@ -162,7 +160,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     </QZPayThemeProvider>
                 </QZPayProvider>
                 <FeedbackFAB
-                    apiUrl={import.meta.env.VITE_API_URL || 'http://localhost:3001'}
+                    apiUrl={import.meta.env.VITE_API_URL}
                     appSource="admin"
                     userId={session?.user.id}
                     userEmail={session?.user.email}
