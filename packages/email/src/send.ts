@@ -1,10 +1,15 @@
 import type { ReactElement } from 'react';
-import { getResendClient } from './client.js';
+import type { Resend } from 'resend';
 
 /**
  * Input parameters for sending an email.
  */
 export interface SendEmailInput {
+    /**
+     * Configured Resend client instance (dependency-injected).
+     */
+    readonly client: Resend;
+
     /**
      * Recipient email address(es).
      * Can be a single email or array of emails.
@@ -89,10 +94,9 @@ const DEFAULT_FROM = 'Hospeda <noreply@hospeda.com.ar>';
  * ```
  */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
-    const { to, subject, react, from = DEFAULT_FROM, replyTo } = input;
+    const { client, to, subject, react, from = DEFAULT_FROM, replyTo } = input;
 
     try {
-        const client = getResendClient();
         const { data, error } = await client.emails.send({
             from,
             to: Array.isArray(to) ? [...to] : [to],

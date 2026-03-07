@@ -1,47 +1,28 @@
 import { Resend } from 'resend';
 
 /**
- * Lazy-initialized Resend client singleton.
- * @internal
+ * Input for creating an email client instance.
  */
-let resendClient: Resend | null = null;
-
-/**
- * Get the Resend client instance.
- * Initializes on first call using HOSPEDA_RESEND_API_KEY environment variable.
- *
- * @returns Configured Resend client instance
- * @throws {Error} If HOSPEDA_RESEND_API_KEY environment variable is not set
- *
- * @example
- * ```ts
- * const client = getResendClient();
- * await client.emails.send({ ... });
- * ```
- */
-export function getResendClient(): Resend {
-    if (!resendClient) {
-        const apiKey = process.env.HOSPEDA_RESEND_API_KEY;
-        if (!apiKey) {
-            throw new Error('HOSPEDA_RESEND_API_KEY environment variable is required');
-        }
-        resendClient = new Resend(apiKey);
-    }
-    return resendClient;
+export interface CreateEmailClientInput {
+    /** Resend API key */
+    readonly apiKey: string;
 }
 
 /**
- * Reset the Resend client instance.
- * Useful for testing or when credentials need to be refreshed.
+ * Creates a Resend client instance using dependency-injected configuration.
+ *
+ * The caller is responsible for reading the API key from environment variables
+ * or another configuration source and passing it here.
+ *
+ * @param input - Configuration with API key
+ * @returns Configured Resend client instance
  *
  * @example
  * ```ts
- * // In test cleanup
- * afterEach(() => {
- *   resetResendClient();
- * });
+ * const client = createEmailClient({ apiKey: env.HOSPEDA_RESEND_API_KEY });
+ * await client.emails.send({ ... });
  * ```
  */
-export function resetResendClient(): void {
-    resendClient = null;
+export function createEmailClient({ apiKey }: CreateEmailClientInput): Resend {
+    return new Resend(apiKey);
 }

@@ -6,7 +6,8 @@
  */
 
 // Client
-export { getResendClient, resetResendClient } from './client.js';
+export { createEmailClient } from './client.js';
+export type { CreateEmailClientInput } from './client.js';
 
 // Send functionality
 export { sendEmail } from './send.js';
