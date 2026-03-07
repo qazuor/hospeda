@@ -9,10 +9,12 @@ import type * as React from 'react';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { initializeSections } from '@/config/sections';
 import { useTranslations } from '@/hooks/use-translations';
+import { useSession } from '@/lib/auth-client';
 import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
 import { GlobalErrorBoundary } from '@/lib/error-boundaries';
 import { adminQzpayTheme } from '@/lib/qzpay-theme';
 import { initSentry } from '@/lib/sentry';
+import { FeedbackErrorBoundary, FeedbackFAB } from '@repo/feedback';
 
 // Initialize Sentry for error tracking (only in production with valid DSN)
 initSentry();
@@ -77,6 +79,8 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+    const { data: session } = useSession();
+
     // Use useState with lazy initializer to prevent QueryClient recreation on every render
     // This ensures the cache persists across component re-renders and navigations
     const [queryClient] = useState(
@@ -135,11 +139,31 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     <QZPayThemeProvider theme={adminQzpayTheme}>
                         <QueryClientProvider client={queryClient}>
                             <ToastProvider>
-                                <GlobalErrorBoundary>{children}</GlobalErrorBoundary>
+                                <GlobalErrorBoundary>
+                                    <FeedbackErrorBoundary
+                                        appSource="admin"
+                                        apiUrl={
+                                            import.meta.env.VITE_API_URL || 'http://localhost:3001'
+                                        }
+                                        feedbackPageUrl="/es/feedback"
+                                        userId={session?.user.id}
+                                        userEmail={session?.user.email}
+                                        userName={session?.user.name}
+                                    >
+                                        {children}
+                                    </FeedbackErrorBoundary>
+                                </GlobalErrorBoundary>
                             </ToastProvider>
                         </QueryClientProvider>
                     </QZPayThemeProvider>
                 </QZPayProvider>
+                <FeedbackFAB
+                    apiUrl={import.meta.env.VITE_API_URL || 'http://localhost:3001'}
+                    appSource="admin"
+                    userId={session?.user.id}
+                    userEmail={session?.user.email}
+                    userName={session?.user.name}
+                />
                 {process.env.NODE_ENV === 'development' && <TanstackDevtools />}
                 <Scripts />
             </body>
