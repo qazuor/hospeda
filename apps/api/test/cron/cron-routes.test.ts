@@ -6,10 +6,9 @@
  *
  * Test Coverage:
  * 1. Authentication: ✅
- *    - Valid CRON_SECRET in X-Cron-Secret header (RECOMMENDED)
+ *    - Valid HOSPEDA_CRON_SECRET in X-Cron-Secret header (RECOMMENDED)
  *    - Missing authentication
  *    - Invalid secret
- *    - CRON_AUTH_DISABLED bypass
  *    - Note: Bearer token auth skipped (conflicts with JWT validation)
  *
  * 2. Job Execution: ✅
@@ -329,41 +328,6 @@ describe('Cron Routes Integration Tests', () => {
                     // This is acceptable - the middleware correctly rejects invalid credentials
                     expect(error).toBeDefined();
                 }
-            });
-        });
-
-        describe('1.5 CRON_AUTH_DISABLED Bypass', () => {
-            it('should require authentication even when CRON_AUTH_DISABLED=true (feature removed)', async () => {
-                // Note: CRON_AUTH_DISABLED bypass was removed from cronAuthMiddleware.
-                // Authentication is now always required via CRON_SECRET.
-                // This test documents that the bypass no longer works.
-                const originalAuthDisabled = process.env.CRON_AUTH_DISABLED;
-                const originalNodeEnv = process.env.NODE_ENV;
-                process.env.CRON_AUTH_DISABLED = 'true';
-                process.env.NODE_ENV = 'development';
-
-                // Re-initialize app with new environment
-                const testApp = initApp();
-
-                // Act
-                const response = await testApp.request('/api/v1/cron', {
-                    method: 'GET',
-                    headers: {
-                        'user-agent': 'test-agent'
-                        // No authentication headers - should be rejected even with CRON_AUTH_DISABLED
-                    }
-                });
-
-                // Assert - authentication is always required now (CRON_AUTH_DISABLED is not supported)
-                expect(response.status).toBe(401);
-
-                // Restore original environment
-                if (originalAuthDisabled !== undefined) {
-                    process.env.CRON_AUTH_DISABLED = originalAuthDisabled;
-                } else {
-                    process.env.CRON_AUTH_DISABLED = undefined;
-                }
-                process.env.NODE_ENV = originalNodeEnv;
             });
         });
     });

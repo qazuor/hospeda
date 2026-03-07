@@ -159,12 +159,14 @@ describe('Environment Configuration', () => {
         it('should validate NODE_ENV enum values', async () => {
             const testCases = [
                 { envValue: 'development', extra: {} },
-                // production requires CRON_SECRET
+                // production requires HOSPEDA_CRON_SECRET and non-localhost origins
                 {
                     envValue: 'production',
                     extra: {
-                        CRON_SECRET: 'production-cron-secret-value',
-                        HOSPEDA_REDIS_URL: 'redis://localhost:6379'
+                        HOSPEDA_CRON_SECRET: 'production-cron-secret-value',
+                        HOSPEDA_REDIS_URL: 'redis://localhost:6379',
+                        API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                        API_CSRF_ORIGINS: 'https://hospeda.com.ar'
                     }
                 },
                 { envValue: 'test', extra: {} }
@@ -279,11 +281,13 @@ describe('Environment Configuration', () => {
 
         it('should require Better Auth secret', async () => {
             process.env = createValidTestEnv({
-                HOSPEDA_BETTER_AUTH_SECRET: 'my_custom_auth_secret_key_32!'
+                HOSPEDA_BETTER_AUTH_SECRET: 'my_custom_auth_secret_key_minimum_32!'
             });
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.HOSPEDA_BETTER_AUTH_SECRET).toBe('my_custom_auth_secret_key_32!');
+            expect(envModule.env.HOSPEDA_BETTER_AUTH_SECRET).toBe(
+                'my_custom_auth_secret_key_minimum_32!'
+            );
         });
     });
 
@@ -316,7 +320,9 @@ describe('Environment Configuration', () => {
 
             process.env = createValidTestEnv({
                 NODE_ENV: 'production',
-                CRON_SECRET: 'production-cron-secret-value'
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_CSRF_ORIGINS: 'https://hospeda.com.ar'
                 // HOSPEDA_REDIS_URL intentionally missing
             });
 
@@ -332,8 +338,10 @@ describe('Environment Configuration', () => {
         it('should accept HOSPEDA_REDIS_URL in production when provided', async () => {
             process.env = createValidTestEnv({
                 NODE_ENV: 'production',
-                CRON_SECRET: 'production-cron-secret-value',
-                HOSPEDA_REDIS_URL: 'redis://localhost:6379'
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value',
+                HOSPEDA_REDIS_URL: 'redis://localhost:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_CSRF_ORIGINS: 'https://hospeda.com.ar'
             });
 
             const envModule = await import('../../src/utils/env');

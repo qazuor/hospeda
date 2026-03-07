@@ -312,15 +312,15 @@ describe('Webhook Event Persistence Integration Tests', () => {
 
     describe('Webhook Health Endpoint', () => {
         it('should return webhook health statistics', async () => {
-            // Arrange - Auth required (CRON_SECRET or admin)
-            // For test environment, CRON_AUTH can be disabled
-            process.env.CRON_AUTH_DISABLED = 'true';
+            // Arrange - Auth required (HOSPEDA_CRON_SECRET)
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act
             const response = await app.request('/api/v1/webhooks/health', {
                 method: 'GET',
                 headers: {
-                    'user-agent': 'test-agent'
+                    'user-agent': 'test-agent',
+                    'x-cron-secret': 'test-secret-123'
                 }
             });
 
@@ -334,13 +334,14 @@ describe('Webhook Event Persistence Integration Tests', () => {
 
         it('should return correct statistics structure', async () => {
             // Arrange
-            process.env.CRON_AUTH_DISABLED = 'true';
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act
             const response = await app.request('/api/v1/webhooks/health', {
                 method: 'GET',
                 headers: {
-                    'user-agent': 'test-agent'
+                    'user-agent': 'test-agent',
+                    'x-cron-secret': 'test-secret-123'
                 }
             });
 
@@ -360,13 +361,14 @@ describe('Webhook Event Persistence Integration Tests', () => {
 
         it('should return statistics with correct types', async () => {
             // Arrange
-            process.env.CRON_AUTH_DISABLED = 'true';
+            process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act
             const response = await app.request('/api/v1/webhooks/health', {
                 method: 'GET',
                 headers: {
-                    'user-agent': 'test-agent'
+                    'user-agent': 'test-agent',
+                    'x-cron-secret': 'test-secret-123'
                 }
             });
 
@@ -386,9 +388,8 @@ describe('Webhook Event Persistence Integration Tests', () => {
             }
         });
 
-        it('should require authentication when CRON_AUTH is enabled', async () => {
+        it('should require authentication when HOSPEDA_CRON_SECRET is set', async () => {
             // Arrange
-            process.env.CRON_AUTH_DISABLED = undefined;
             process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request without auth
@@ -404,9 +405,8 @@ describe('Webhook Event Persistence Integration Tests', () => {
             expect(response.status).toBeGreaterThanOrEqual(401);
         });
 
-        it('should accept CRON_SECRET authentication', async () => {
+        it('should accept HOSPEDA_CRON_SECRET via Bearer token', async () => {
             // Arrange
-            process.env.CRON_AUTH_DISABLED = undefined;
             process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request with Bearer token
@@ -425,7 +425,6 @@ describe('Webhook Event Persistence Integration Tests', () => {
 
         it('should accept X-Cron-Secret header authentication', async () => {
             // Arrange
-            process.env.CRON_AUTH_DISABLED = undefined;
             process.env.HOSPEDA_CRON_SECRET = 'test-secret-123';
 
             // Act - Request with X-Cron-Secret header
