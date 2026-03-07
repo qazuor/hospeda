@@ -2,8 +2,8 @@
  * Integration tests for Usage Tracking API Endpoints
  *
  * Tests usage tracking endpoints including:
- * - GET /api/v1/billing/usage - Returns usage summary for authenticated user
- * - GET /api/v1/billing/usage/:limitKey - Returns single limit detail
+ * - GET /api/v1/protected/billing/usage - Returns usage summary for authenticated user
+ * - GET /api/v1/protected/billing/usage/:limitKey - Returns single limit detail
  * - Returns 401 for unauthenticated requests
  * - Threshold levels are correct at boundaries (80%, 90%, 100%)
  * - Admin endpoint returns any customer's usage
@@ -93,12 +93,12 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
         vi.clearAllMocks();
     });
 
-    describe('GET /api/v1/billing/usage - Usage Summary', () => {
+    describe('GET /api/v1/protected/billing/usage - Usage Summary', () => {
         it('should return 401 for unauthenticated requests', async () => {
             // Arrange - No auth headers
 
             // Act
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 headers: {
                     'user-agent': 'test-agent'
@@ -118,7 +118,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockOwner)
             });
@@ -140,7 +140,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockOwner)
             });
@@ -168,7 +168,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockOwner)
             });
@@ -221,7 +221,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockUser)
             });
@@ -232,15 +232,18 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
         });
     });
 
-    describe('GET /api/v1/billing/usage/:limitKey - Single Limit Detail', () => {
+    describe('GET /api/v1/protected/billing/usage/:limitKey - Single Limit Detail', () => {
         it('should return 401 for unauthenticated requests', async () => {
             // Act
-            const response = await app.request('/api/v1/billing/usage/owner-accommodations', {
-                method: 'GET',
-                headers: {
-                    'user-agent': 'test-agent'
+            const response = await app.request(
+                '/api/v1/protected/billing/usage/owner-accommodations',
+                {
+                    method: 'GET',
+                    headers: {
+                        'user-agent': 'test-agent'
+                    }
                 }
-            });
+            );
 
             // Assert
             expect(response.status).toBe(401);
@@ -254,10 +257,13 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage/owner-accommodations', {
-                method: 'GET',
-                ...createAuthenticatedRequest(mockOwner)
-            });
+            const response = await app.request(
+                '/api/v1/protected/billing/usage/owner-accommodations',
+                {
+                    method: 'GET',
+                    ...createAuthenticatedRequest(mockOwner)
+                }
+            );
 
             // Assert
             expect(response.status).toBe(503);
@@ -271,10 +277,13 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage/owner-accommodations', {
-                method: 'GET',
-                ...createAuthenticatedRequest(mockOwner)
-            });
+            const response = await app.request(
+                '/api/v1/protected/billing/usage/owner-accommodations',
+                {
+                    method: 'GET',
+                    ...createAuthenticatedRequest(mockOwner)
+                }
+            );
 
             // Assert
             if (response.status === 200) {
@@ -301,10 +310,13 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response = await app.request('/api/v1/billing/usage/invalid-limit-key', {
-                method: 'GET',
-                ...createAuthenticatedRequest(mockOwner)
-            });
+            const response = await app.request(
+                '/api/v1/protected/billing/usage/invalid-limit-key',
+                {
+                    method: 'GET',
+                    ...createAuthenticatedRequest(mockOwner)
+                }
+            );
 
             // Assert
             // Should return 503 (billing not configured) or 404 (invalid limit key)
@@ -319,12 +331,15 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act
-            const response1 = await app.request('/api/v1/billing/usage/owner-accommodations', {
-                method: 'GET',
-                ...createAuthenticatedRequest(mockOwner)
-            });
+            const response1 = await app.request(
+                '/api/v1/protected/billing/usage/owner-accommodations',
+                {
+                    method: 'GET',
+                    ...createAuthenticatedRequest(mockOwner)
+                }
+            );
 
-            const response2 = await app.request('/api/v1/billing/usage/owner-photos', {
+            const response2 = await app.request('/api/v1/protected/billing/usage/owner-photos', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockOwner)
             });
@@ -441,7 +456,7 @@ describe('Usage Tracking API Endpoints Integration Tests', () => {
             });
 
             // Act - Make any API request
-            const response = await app.request('/api/v1/billing/usage', {
+            const response = await app.request('/api/v1/protected/billing/usage', {
                 method: 'GET',
                 ...createAuthenticatedRequest(mockOwner)
             });

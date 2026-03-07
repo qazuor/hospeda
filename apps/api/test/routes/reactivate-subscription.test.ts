@@ -1,5 +1,5 @@
 /**
- * Unit tests for the POST /api/v1/billing/trial/reactivate-subscription route handler.
+ * Unit tests for the POST /api/v1/protected/billing/trial/reactivate-subscription route handler.
  *
  * Tests cover:
  * - Billing not configured (503)

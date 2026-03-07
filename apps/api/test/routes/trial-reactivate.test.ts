@@ -151,7 +151,7 @@ function getReactivateHandler(): (c: unknown) => Promise<unknown> {
 // ---------------------------------------------------------------------------
 
 /**
- * Tests for the POST /api/v1/billing/trial/reactivate route handler.
+ * Tests for the POST /api/v1/protected/billing/trial/reactivate route handler.
  *
  * The handler converts a trial subscription to a paid subscription by
  * calling TrialService.reactivateFromTrial with the customer ID and planId.

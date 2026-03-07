@@ -91,7 +91,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 when billing is not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/plans', {
+            const res = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -107,7 +107,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for promo code routes when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/promo-codes/validate', {
+            const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'test-agent',
@@ -128,7 +128,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for add-on routes when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/addons', {
+            const res = await app.request('/api/v1/protected/billing/addons', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -140,7 +140,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for trial routes when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/trial/status', {
+            const res = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -151,11 +151,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Promo Code Routes', () => {
-        describe('POST /api/v1/billing/promo-codes/validate', () => {
+        describe('POST /api/v1/protected/billing/promo-codes/validate', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes/validate', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -178,7 +178,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
 
                 // Missing required fields
-                const res = await app.request('/api/v1/billing/promo-codes/validate', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -196,7 +196,7 @@ describe('Billing Routes Integration', () => {
             it('should reject empty promo code', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes/validate', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -214,7 +214,7 @@ describe('Billing Routes Integration', () => {
             it('should accept valid validation request with all fields', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes/validate', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -232,11 +232,11 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('POST /api/v1/billing/promo-codes/apply', () => {
+        describe('POST /api/v1/protected/billing/promo-codes/apply', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes/apply', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -256,7 +256,7 @@ describe('Billing Routes Integration', () => {
             it('should validate checkout ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes/apply', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -276,7 +276,7 @@ describe('Billing Routes Integration', () => {
 
                 const validCheckoutId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request('/api/v1/billing/promo-codes/apply', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes/apply', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -296,7 +296,7 @@ describe('Billing Routes Integration', () => {
             it('should block non-admin users from creating promo codes', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -315,7 +315,7 @@ describe('Billing Routes Integration', () => {
             it('should block non-admin users from listing promo codes', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/promo-codes', {
+                const res = await app.request('/api/v1/protected/billing/promo-codes', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -328,7 +328,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const promoId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/promo-codes/${promoId}`, {
+                const res = await app.request(`/api/v1/protected/billing/promo-codes/${promoId}`, {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -341,7 +341,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const promoId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/promo-codes/${promoId}`, {
+                const res = await app.request(`/api/v1/protected/billing/promo-codes/${promoId}`, {
                     method: 'PUT',
                     headers: {
                         'user-agent': 'test-agent',
@@ -359,7 +359,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const promoId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/promo-codes/${promoId}`, {
+                const res = await app.request(`/api/v1/protected/billing/promo-codes/${promoId}`, {
                     method: 'DELETE',
                     headers: {
                         'user-agent': 'test-agent'
@@ -372,11 +372,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Add-on Routes', () => {
-        describe('GET /api/v1/billing/addons', () => {
+        describe('GET /api/v1/protected/billing/addons', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons', {
+                const res = await app.request('/api/v1/protected/billing/addons', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -392,7 +392,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
 
                 const res = await app.request(
-                    '/api/v1/billing/addons?billingType=one_time&targetCategory=owner&active=true',
+                    '/api/v1/protected/billing/addons?billingType=one_time&targetCategory=owner&active=true',
                     {
                         headers: {
                             'user-agent': 'test-agent'
@@ -404,11 +404,11 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('GET /api/v1/billing/addons/:slug', () => {
+        describe('GET /api/v1/protected/billing/addons/:slug', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/featured-listing', {
+                const res = await app.request('/api/v1/protected/billing/addons/featured-listing', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -420,7 +420,7 @@ describe('Billing Routes Integration', () => {
             it('should validate slug is non-empty', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/', {
+                const res = await app.request('/api/v1/protected/billing/addons/', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -431,18 +431,21 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('POST /api/v1/billing/addons/:slug/purchase', () => {
+        describe('POST /api/v1/protected/billing/addons/:slug/purchase', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/featured-listing/purchase', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
+                const res = await app.request(
+                    '/api/v1/protected/billing/addons/featured-listing/purchase',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -450,16 +453,19 @@ describe('Billing Routes Integration', () => {
             it('should accept purchase request with promo code', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/featured-listing/purchase', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        promoCode: 'SUMMER2024'
-                    })
-                });
+                const res = await app.request(
+                    '/api/v1/protected/billing/addons/featured-listing/purchase',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            promoCode: 'SUMMER2024'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -467,24 +473,27 @@ describe('Billing Routes Integration', () => {
             it('should accept purchase request without promo code', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/featured-listing/purchase', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
+                const res = await app.request(
+                    '/api/v1/protected/billing/addons/featured-listing/purchase',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
         });
 
-        describe('GET /api/v1/billing/addons/my', () => {
+        describe('GET /api/v1/protected/billing/addons/my', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/my', {
+                const res = await app.request('/api/v1/protected/billing/addons/my', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -494,21 +503,24 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('POST /api/v1/billing/addons/:id/cancel', () => {
+        describe('POST /api/v1/protected/billing/addons/:id/cancel', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const addonId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/addons/${addonId}/cancel`, {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        reason: 'No longer needed'
-                    })
-                });
+                const res = await app.request(
+                    `/api/v1/protected/billing/addons/${addonId}/cancel`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            reason: 'No longer needed'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -516,16 +528,19 @@ describe('Billing Routes Integration', () => {
             it('should validate addon ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/addons/invalid-uuid/cancel', {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        reason: 'Test'
-                    })
-                });
+                const res = await app.request(
+                    '/api/v1/protected/billing/addons/invalid-uuid/cancel',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            reason: 'Test'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -534,14 +549,17 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const addonId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/addons/${addonId}/cancel`, {
-                    method: 'POST',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({})
-                });
+                const res = await app.request(
+                    `/api/v1/protected/billing/addons/${addonId}/cancel`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -549,11 +567,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Trial Routes', () => {
-        describe('GET /api/v1/billing/trial/status', () => {
+        describe('GET /api/v1/protected/billing/trial/status', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/trial/status', {
+                const res = await app.request('/api/v1/protected/billing/trial/status', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -566,11 +584,11 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('POST /api/v1/billing/trial/start', () => {
+        describe('POST /api/v1/protected/billing/trial/start', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/trial/start', {
+                const res = await app.request('/api/v1/protected/billing/trial/start', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -585,7 +603,7 @@ describe('Billing Routes Integration', () => {
             it('should accept empty body for start trial (no userType required)', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/trial/start', {
+                const res = await app.request('/api/v1/protected/billing/trial/start', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -599,11 +617,11 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('POST /api/v1/billing/trial/check-expiry', () => {
+        describe('POST /api/v1/protected/billing/trial/check-expiry', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/trial/check-expiry', {
+                const res = await app.request('/api/v1/protected/billing/trial/check-expiry', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent'
@@ -619,7 +637,7 @@ describe('Billing Routes Integration', () => {
         it('should reject requests without user-agent header', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/plans', {
+            const res = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     // Missing user-agent
                 }
@@ -634,7 +652,7 @@ describe('Billing Routes Integration', () => {
         it('should reject POST requests without content-type header', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/promo-codes/validate', {
+            const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'test-agent'
@@ -653,7 +671,7 @@ describe('Billing Routes Integration', () => {
         it('should accept requests with valid headers', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/trial/status', {
+            const res = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent',
                     accept: 'application/json'
@@ -668,7 +686,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for plans route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/plans', {
+            const res = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -680,7 +698,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for customers route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/customers', {
+            const res = await app.request('/api/v1/protected/billing/customers', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -692,7 +710,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for subscriptions route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/subscriptions', {
+            const res = await app.request('/api/v1/protected/billing/subscriptions', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -704,7 +722,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for invoices route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/invoices', {
+            const res = await app.request('/api/v1/protected/billing/invoices', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -716,7 +734,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for payments route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/payments', {
+            const res = await app.request('/api/v1/protected/billing/payments', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -728,7 +746,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for entitlements route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/entitlements', {
+            const res = await app.request('/api/v1/protected/billing/entitlements', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -740,7 +758,7 @@ describe('Billing Routes Integration', () => {
         it('should return 503 for checkout route when billing not configured', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/checkout', {
+            const res = await app.request('/api/v1/protected/billing/checkout', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'test-agent',
@@ -756,11 +774,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Subscription Routes', () => {
-        describe('POST /api/v1/billing/subscriptions', () => {
+        describe('POST /api/v1/protected/billing/subscriptions', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/subscriptions', {
+                const res = await app.request('/api/v1/protected/billing/subscriptions', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -782,7 +800,7 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
 
                 // Missing required fields
-                const res = await app.request('/api/v1/billing/subscriptions', {
+                const res = await app.request('/api/v1/protected/billing/subscriptions', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -800,7 +818,7 @@ describe('Billing Routes Integration', () => {
             it('should accept valid subscription creation request', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/subscriptions', {
+                const res = await app.request('/api/v1/protected/billing/subscriptions', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -817,16 +835,19 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('GET /api/v1/billing/subscriptions/:id', () => {
+        describe('GET /api/v1/protected/billing/subscriptions/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
                 const data = await res.json();
@@ -836,11 +857,14 @@ describe('Billing Routes Integration', () => {
             it('should validate subscription ID format (UUID)', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/subscriptions/invalid-uuid', {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    '/api/v1/protected/billing/subscriptions/invalid-uuid',
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -850,7 +874,7 @@ describe('Billing Routes Integration', () => {
                 const validSubscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
                 const res = await app.request(
-                    `/api/v1/billing/subscriptions/${validSubscriptionId}`,
+                    `/api/v1/protected/billing/subscriptions/${validSubscriptionId}`,
                     {
                         headers: {
                             'user-agent': 'test-agent'
@@ -862,21 +886,24 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('PATCH /api/v1/billing/subscriptions/:id', () => {
+        describe('PATCH /api/v1/protected/billing/subscriptions/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        planId: '550e8400-e29b-41d4-a716-446655440001'
-                    })
-                });
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            planId: '550e8400-e29b-41d4-a716-446655440001'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
                 const data = await res.json();
@@ -886,16 +913,19 @@ describe('Billing Routes Integration', () => {
             it('should validate subscription ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/subscriptions/not-a-uuid', {
-                    method: 'PATCH',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        planId: '550e8400-e29b-41d4-a716-446655440001'
-                    })
-                });
+                const res = await app.request(
+                    '/api/v1/protected/billing/subscriptions/not-a-uuid',
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            planId: '550e8400-e29b-41d4-a716-446655440001'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -904,32 +934,38 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        planId: '550e8400-e29b-41d4-a716-446655440001'
-                    })
-                });
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            planId: '550e8400-e29b-41d4-a716-446655440001'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
         });
 
-        describe('DELETE /api/v1/billing/subscriptions/:id', () => {
+        describe('DELETE /api/v1/protected/billing/subscriptions/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
                 const data = await res.json();
@@ -939,7 +975,7 @@ describe('Billing Routes Integration', () => {
             it('should validate subscription ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/subscriptions/invalid', {
+                const res = await app.request('/api/v1/protected/billing/subscriptions/invalid', {
                     method: 'DELETE',
                     headers: {
                         'user-agent': 'test-agent'
@@ -953,12 +989,15 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -967,17 +1006,20 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const subscriptionId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/subscriptions/${subscriptionId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'content-type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        cancelAt: 'end_of_period',
-                        reason: 'Customer request'
-                    })
-                });
+                const res = await app.request(
+                    `/api/v1/protected/billing/subscriptions/${subscriptionId}`,
+                    {
+                        method: 'DELETE',
+                        headers: {
+                            'user-agent': 'test-agent',
+                            'content-type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            cancelAt: 'end_of_period',
+                            reason: 'Customer request'
+                        })
+                    }
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -985,11 +1027,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Checkout Routes', () => {
-        describe('POST /api/v1/billing/checkout', () => {
+        describe('POST /api/v1/protected/billing/checkout', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/checkout', {
+                const res = await app.request('/api/v1/protected/billing/checkout', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -1009,7 +1051,7 @@ describe('Billing Routes Integration', () => {
             it('should validate planId is provided', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/checkout', {
+                const res = await app.request('/api/v1/protected/billing/checkout', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -1026,7 +1068,7 @@ describe('Billing Routes Integration', () => {
             it('should accept checkout with promo code', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/checkout', {
+                const res = await app.request('/api/v1/protected/billing/checkout', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -1044,7 +1086,7 @@ describe('Billing Routes Integration', () => {
             it('should accept checkout with custom metadata', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/checkout', {
+                const res = await app.request('/api/v1/protected/billing/checkout', {
                     method: 'POST',
                     headers: {
                         'user-agent': 'test-agent',
@@ -1063,12 +1105,12 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('GET /api/v1/billing/checkout/:id', () => {
+        describe('GET /api/v1/protected/billing/checkout/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const customerId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/checkout/${customerId}`, {
+                const res = await app.request(`/api/v1/protected/billing/checkout/${customerId}`, {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -1082,7 +1124,7 @@ describe('Billing Routes Integration', () => {
             it('should validate checkout ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/checkout/not-valid-uuid', {
+                const res = await app.request('/api/v1/protected/billing/checkout/not-valid-uuid', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -1095,11 +1137,14 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const validCheckoutId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/checkout/${validCheckoutId}`, {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/checkout/${validCheckoutId}`,
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -1107,11 +1152,11 @@ describe('Billing Routes Integration', () => {
     });
 
     describe('Payment Routes', () => {
-        describe('GET /api/v1/billing/payments', () => {
+        describe('GET /api/v1/protected/billing/payments', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/payments', {
+                const res = await app.request('/api/v1/protected/billing/payments', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -1126,11 +1171,14 @@ describe('Billing Routes Integration', () => {
             it('should accept pagination query parameters', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/payments?page=1&limit=10', {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    '/api/v1/protected/billing/payments?page=1&limit=10',
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -1138,11 +1186,14 @@ describe('Billing Routes Integration', () => {
             it('should accept status filter', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/payments?status=succeeded', {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    '/api/v1/protected/billing/payments?status=succeeded',
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -1151,11 +1202,14 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const customerId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/payments?customerId=${customerId}`, {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/payments?customerId=${customerId}`,
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -1165,7 +1219,7 @@ describe('Billing Routes Integration', () => {
                 const customerId = '550e8400-e29b-41d4-a716-446655440000';
 
                 const res = await app.request(
-                    `/api/v1/billing/payments?page=1&limit=20&status=succeeded&customerId=${customerId}`,
+                    `/api/v1/protected/billing/payments?page=1&limit=20&status=succeeded&customerId=${customerId}`,
                     {
                         headers: {
                             'user-agent': 'test-agent'
@@ -1177,12 +1231,12 @@ describe('Billing Routes Integration', () => {
             });
         });
 
-        describe('GET /api/v1/billing/payments/:id', () => {
+        describe('GET /api/v1/protected/billing/payments/:id', () => {
             it('should return 503 when billing is not configured', async () => {
                 const app = initApp();
                 const paymentId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/payments/${paymentId}`, {
+                const res = await app.request(`/api/v1/protected/billing/payments/${paymentId}`, {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -1196,7 +1250,7 @@ describe('Billing Routes Integration', () => {
             it('should validate payment ID format', async () => {
                 const app = initApp();
 
-                const res = await app.request('/api/v1/billing/payments/invalid-id', {
+                const res = await app.request('/api/v1/protected/billing/payments/invalid-id', {
                     headers: {
                         'user-agent': 'test-agent'
                     }
@@ -1209,11 +1263,14 @@ describe('Billing Routes Integration', () => {
                 const app = initApp();
                 const validPaymentId = '550e8400-e29b-41d4-a716-446655440000';
 
-                const res = await app.request(`/api/v1/billing/payments/${validPaymentId}`, {
-                    headers: {
-                        'user-agent': 'test-agent'
+                const res = await app.request(
+                    `/api/v1/protected/billing/payments/${validPaymentId}`,
+                    {
+                        headers: {
+                            'user-agent': 'test-agent'
+                        }
                     }
-                });
+                );
 
                 expect(res.status).toBe(503);
             });
@@ -1224,9 +1281,9 @@ describe('Billing Routes Integration', () => {
         it('should return proper error format for all billing routes', async () => {
             const app = initApp();
             const routes = [
-                '/api/v1/billing/plans',
-                '/api/v1/billing/addons',
-                '/api/v1/billing/trial/status'
+                '/api/v1/protected/billing/plans',
+                '/api/v1/protected/billing/addons',
+                '/api/v1/protected/billing/trial/status'
             ];
 
             for (const route of routes) {
@@ -1250,7 +1307,7 @@ describe('Billing Routes Integration', () => {
         it('should handle malformed JSON gracefully', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/billing/promo-codes/validate', {
+            const res = await app.request('/api/v1/protected/billing/promo-codes/validate', {
                 method: 'POST',
                 headers: {
                     'user-agent': 'test-agent',

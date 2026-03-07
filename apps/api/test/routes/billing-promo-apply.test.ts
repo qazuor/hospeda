@@ -10,7 +10,7 @@
  * - No amount provided
  * - Usage recording for DB codes
  *
- * Endpoint: POST /api/v1/billing/promo-codes/apply
+ * Endpoint: POST /api/v1/protected/billing/promo-codes/apply
  *
  * Test Coverage:
  * - Discount calculation (percentage and fixed)

@@ -36,7 +36,7 @@ function createMockContext(
 ) {
     const {
         method = 'GET',
-        path = '/api/v1/billing/plans',
+        path = '/api/v1/protected/billing/plans',
         actorRole = RoleEnum.USER,
         permissions = []
     } = options;
@@ -71,7 +71,10 @@ describe('billingAdminGuardMiddleware', () => {
 
     describe('GET requests', () => {
         it('should allow GET /plans for regular users', async () => {
-            const ctx = createMockContext({ method: 'GET', path: '/api/v1/billing/plans' });
+            const ctx = createMockContext({
+                method: 'GET',
+                path: '/api/v1/protected/billing/plans'
+            });
             const middleware = billingAdminGuardMiddleware();
 
             await middleware(ctx as never, next);
@@ -83,7 +86,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow GET /customers/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'GET',
-                path: '/api/v1/billing/customers/cust_1'
+                path: '/api/v1/protected/billing/customers/cust_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -99,7 +102,10 @@ describe('billingAdminGuardMiddleware', () => {
 
     describe('plan management', () => {
         it('should block POST /plans for regular users', async () => {
-            const ctx = createMockContext({ method: 'POST', path: '/api/v1/billing/plans' });
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/plans'
+            });
             const middleware = billingAdminGuardMiddleware();
 
             await middleware(ctx as never, next);
@@ -114,7 +120,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block PUT /plans/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'PUT',
-                path: '/api/v1/billing/plans/plan_1'
+                path: '/api/v1/protected/billing/plans/plan_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -130,7 +136,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block DELETE /plans/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/plans/plan_1'
+                path: '/api/v1/protected/billing/plans/plan_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -142,7 +148,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /plans for users with ACCESS_API_ADMIN permission', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans',
+                path: '/api/v1/protected/billing/plans',
                 actorRole: RoleEnum.ADMIN,
                 permissions: [PermissionEnum.ACCESS_API_ADMIN]
             });
@@ -156,7 +162,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /plans for SUPER_ADMIN users (always bypasses)', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans',
+                path: '/api/v1/protected/billing/plans',
                 actorRole: RoleEnum.SUPER_ADMIN
             });
             const middleware = billingAdminGuardMiddleware();
@@ -173,7 +179,10 @@ describe('billingAdminGuardMiddleware', () => {
 
     describe('customer management', () => {
         it('should block POST /customers for regular users', async () => {
-            const ctx = createMockContext({ method: 'POST', path: '/api/v1/billing/customers' });
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/customers'
+            });
             const middleware = billingAdminGuardMiddleware();
 
             await middleware(ctx as never, next);
@@ -188,7 +197,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block DELETE /customers/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/customers/cust_1'
+                path: '/api/v1/protected/billing/customers/cust_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -200,7 +209,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow PUT /customers/:id for regular users (self-update)', async () => {
             const ctx = createMockContext({
                 method: 'PUT',
-                path: '/api/v1/billing/customers/cust_1'
+                path: '/api/v1/protected/billing/customers/cust_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -218,7 +227,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block POST /subscriptions for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/subscriptions'
+                path: '/api/v1/protected/billing/subscriptions'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -230,7 +239,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block DELETE /subscriptions/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/subscriptions/sub_1'
+                path: '/api/v1/protected/billing/subscriptions/sub_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -246,7 +255,10 @@ describe('billingAdminGuardMiddleware', () => {
 
     describe('invoice operations', () => {
         it('should block POST /invoices for regular users (create)', async () => {
-            const ctx = createMockContext({ method: 'POST', path: '/api/v1/billing/invoices' });
+            const ctx = createMockContext({
+                method: 'POST',
+                path: '/api/v1/protected/billing/invoices'
+            });
             const middleware = billingAdminGuardMiddleware();
 
             await middleware(ctx as never, next);
@@ -257,7 +269,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block POST /invoices/:id/void for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/invoices/inv_1/void'
+                path: '/api/v1/protected/billing/invoices/inv_1/void'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -269,7 +281,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /invoices/:id/pay for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/invoices/inv_1/pay'
+                path: '/api/v1/protected/billing/invoices/inv_1/pay'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -287,7 +299,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block POST /payments/:id/refund for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/payments/pay_1/refund'
+                path: '/api/v1/protected/billing/payments/pay_1/refund'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -299,7 +311,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /payments/:id/refund for users with ACCESS_API_ADMIN permission', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/payments/pay_1/refund',
+                path: '/api/v1/protected/billing/payments/pay_1/refund',
                 actorRole: RoleEnum.ADMIN,
                 permissions: [PermissionEnum.ACCESS_API_ADMIN]
             });
@@ -319,7 +331,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block POST /entitlements for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/entitlements'
+                path: '/api/v1/protected/billing/entitlements'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -331,7 +343,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block DELETE /entitlements/:id for regular users', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/entitlements/ent_1'
+                path: '/api/v1/protected/billing/entitlements/ent_1'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -349,7 +361,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /checkout for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/checkout'
+                path: '/api/v1/protected/billing/checkout'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -361,7 +373,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow POST /webhooks for regular users', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/webhooks'
+                path: '/api/v1/protected/billing/webhooks'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -379,7 +391,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block ADMIN role WITHOUT ACCESS_API_ADMIN permission', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans',
+                path: '/api/v1/protected/billing/plans',
                 actorRole: RoleEnum.ADMIN,
                 permissions: []
             });
@@ -397,7 +409,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow non-admin role WITH ACCESS_API_ADMIN permission', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans',
+                path: '/api/v1/protected/billing/plans',
                 actorRole: RoleEnum.USER,
                 permissions: [PermissionEnum.ACCESS_API_ADMIN]
             });
@@ -411,7 +423,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should allow SUPER_ADMIN even without explicit permissions', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/subscriptions/sub_1',
+                path: '/api/v1/protected/billing/subscriptions/sub_1',
                 actorRole: RoleEnum.SUPER_ADMIN,
                 permissions: []
             });
@@ -431,7 +443,7 @@ describe('billingAdminGuardMiddleware', () => {
                     return undefined;
                 }),
                 json: vi.fn((body: unknown, status: number) => ({ body, status })),
-                req: { method: 'POST', path: '/api/v1/billing/plans' }
+                req: { method: 'POST', path: '/api/v1/protected/billing/plans' }
             };
             const middleware = billingAdminGuardMiddleware();
 
@@ -453,7 +465,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block when actor is null', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans',
+                path: '/api/v1/protected/billing/plans',
                 actorRole: null
             });
             const middleware = billingAdminGuardMiddleware();
@@ -476,7 +488,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block directory traversal attempting to bypass admin guard', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans/../../customers/other_id'
+                path: '/api/v1/protected/billing/plans/../../customers/other_id'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -493,7 +505,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block null byte injection in resource path', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/plans/plan_123%00/admin'
+                path: '/api/v1/protected/billing/plans/plan_123%00/admin'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -506,7 +518,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block URL-encoded traversal in resource path', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/subscriptions/sub_123%2F..%2Fcustomers'
+                path: '/api/v1/protected/billing/subscriptions/sub_123%2F..%2Fcustomers'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -519,7 +531,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block parameter injection in path', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
-                path: '/api/v1/billing/entitlements/ent_123;admin=true'
+                path: '/api/v1/protected/billing/entitlements/ent_123;admin=true'
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -532,7 +544,7 @@ describe('billingAdminGuardMiddleware', () => {
         it('should block relative path escape attempt', async () => {
             const ctx = createMockContext({
                 method: 'POST',
-                path: '/api/v1/billing/subscriptions/sub_123/../../plans'
+                path: '/api/v1/protected/billing/subscriptions/sub_123/../../plans'
             });
             const middleware = billingAdminGuardMiddleware();
 

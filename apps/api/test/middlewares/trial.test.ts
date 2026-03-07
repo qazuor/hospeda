@@ -170,9 +170,9 @@ describe('Trial Middleware', () => {
     });
 
     describe('Allowed Routes When Trial Expired', () => {
-        it('should allow access to /api/v1/billing routes', async () => {
+        it('should allow access to /api/v1/protected/billing routes', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -184,9 +184,9 @@ describe('Trial Middleware', () => {
             expect(TrialService).not.toHaveBeenCalled();
         });
 
-        it('should allow access to /api/v1/billing/trial routes', async () => {
+        it('should allow access to /api/v1/protected/billing/trial routes', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing/trial' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing/trial' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -198,9 +198,9 @@ describe('Trial Middleware', () => {
             expect(TrialService).not.toHaveBeenCalled();
         });
 
-        it('should allow access to /api/v1/billing/subscriptions routes', async () => {
+        it('should allow access to /api/v1/protected/billing/subscriptions routes', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing/subscriptions' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing/subscriptions' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -212,9 +212,9 @@ describe('Trial Middleware', () => {
             expect(TrialService).not.toHaveBeenCalled();
         });
 
-        it('should allow access to /api/v1/billing/plans routes', async () => {
+        it('should allow access to /api/v1/protected/billing/plans routes', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing/plans' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing/plans' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -225,9 +225,9 @@ describe('Trial Middleware', () => {
             expect(next).toHaveBeenCalledTimes(1);
         });
 
-        it('should allow access to /api/v1/billing/checkout routes', async () => {
+        it('should allow access to /api/v1/protected/billing/checkout routes', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing/checkout' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing/checkout' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -307,7 +307,7 @@ describe('Trial Middleware', () => {
 
         it('should match routes with path starting with allowed prefix', async () => {
             // Arrange
-            const ctx = createMockContext({ path: '/api/v1/billing/invoices/123' });
+            const ctx = createMockContext({ path: '/api/v1/protected/billing/invoices/123' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -849,7 +849,7 @@ describe('Trial Middleware', () => {
             const ctx = createMockContext({
                 billingEnabled: true,
                 billingCustomerId: 'cust-trial',
-                path: '/api/v1/billing/plans'
+                path: '/api/v1/protected/billing/plans'
             });
             const next = createMockNext();
             const middleware = trialMiddleware();

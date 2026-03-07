@@ -66,8 +66,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         await closeTestDb();
     });
 
-    it('GET /api/v1/billing/plans - should return plans list or 404', async () => {
-        const response = await app.request('/api/v1/billing/plans', {
+    it('GET /api/v1/protected/billing/plans - should return plans list or 404', async () => {
+        const response = await app.request('/api/v1/protected/billing/plans', {
             method: 'GET'
         });
 
@@ -80,8 +80,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         }
     });
 
-    it('GET /api/v1/billing/subscriptions - should handle request without auth', async () => {
-        const response = await app.request('/api/v1/billing/subscriptions', {
+    it('GET /api/v1/protected/billing/subscriptions - should handle request without auth', async () => {
+        const response = await app.request('/api/v1/protected/billing/subscriptions', {
             method: 'GET'
         });
 
@@ -89,8 +89,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         expect([401, 503]).toContain(response.status);
     });
 
-    it('GET /api/v1/billing/usage - should handle request without auth', async () => {
-        const response = await app.request('/api/v1/billing/usage', {
+    it('GET /api/v1/protected/billing/usage - should handle request without auth', async () => {
+        const response = await app.request('/api/v1/protected/billing/usage', {
             method: 'GET'
         });
 
@@ -98,8 +98,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         expect([401, 503]).toContain(response.status);
     });
 
-    it('GET /api/v1/billing/addons - should return addons list or error', async () => {
-        const response = await app.request('/api/v1/billing/addons', {
+    it('GET /api/v1/protected/billing/addons - should return addons list or error', async () => {
+        const response = await app.request('/api/v1/protected/billing/addons', {
             method: 'GET'
         });
 
@@ -163,8 +163,8 @@ describe.skipIf(!isDatabaseAvailable())('Billing Routes - Smoke Tests', () => {
         expect(foundCustomer!.id).toBe(newCustomer.id);
     });
 
-    it('GET /api/v1/billing/trial - should handle trial status check', async () => {
-        const response = await app.request('/api/v1/billing/trial', {
+    it('GET /api/v1/protected/billing/trial - should handle trial status check', async () => {
+        const response = await app.request('/api/v1/protected/billing/trial', {
             method: 'GET'
         });
 

@@ -65,7 +65,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 1: Browse available plans', () => {
         it('should list all active billing plans', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/plans');
+            const response = await ownerClient.get('/api/v1/protected/billing/plans');
 
             // ASSERT
             expect(response.status).toBe(200);
@@ -77,7 +77,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should include plan details with limits and entitlements', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/plans');
+            const response = await ownerClient.get('/api/v1/protected/billing/plans');
 
             // ASSERT
             const body = await response.json();
@@ -97,7 +97,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 2: Trial management', () => {
         it('should check trial status for owner', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/trial/status');
+            const response = await ownerClient.get('/api/v1/protected/billing/trial/status');
 
             // ASSERT - May return 200 with status or 404 if no trial
             expect([200, 404]).toContain(response.status);
@@ -111,7 +111,10 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should check trial expiry as admin', async () => {
             // ACT
-            const response = await adminClient.post('/api/v1/billing/trial/check-expiry', {});
+            const response = await adminClient.post(
+                '/api/v1/protected/billing/trial/check-expiry',
+                {}
+            );
 
             // ASSERT
             expect(response.status).toBe(200);
@@ -123,7 +126,10 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should reject trial expiry check from non-admin', async () => {
             // ACT
-            const response = await ownerClient.post('/api/v1/billing/trial/check-expiry', {});
+            const response = await ownerClient.post(
+                '/api/v1/protected/billing/trial/check-expiry',
+                {}
+            );
 
             // ASSERT
             expect([401, 403]).toContain(response.status);
@@ -145,7 +151,10 @@ describe('E2E: Subscription Purchase Flow', () => {
             };
 
             // ACT
-            const response = await adminClient.post('/api/v1/billing/customers', customerData);
+            const response = await adminClient.post(
+                '/api/v1/protected/billing/customers',
+                customerData
+            );
 
             // ASSERT
             expect(response.status).toBe(201);
@@ -157,17 +166,22 @@ describe('E2E: Subscription Purchase Flow', () => {
         it('should retrieve the created customer', async () => {
             // ARRANGE
             if (!customerId) {
-                const createResponse = await adminClient.post('/api/v1/billing/customers', {
-                    email: `test-owner-${Date.now()}@hospeda.test`,
-                    name: 'Test Owner',
-                    metadata: { userId: testOwner.id }
-                });
+                const createResponse = await adminClient.post(
+                    '/api/v1/protected/billing/customers',
+                    {
+                        email: `test-owner-${Date.now()}@hospeda.test`,
+                        name: 'Test Owner',
+                        metadata: { userId: testOwner.id }
+                    }
+                );
                 const createBody = await createResponse.json();
                 customerId = createBody.id;
             }
 
             // ACT
-            const response = await adminClient.get(`/api/v1/billing/customers/${customerId}`);
+            const response = await adminClient.get(
+                `/api/v1/protected/billing/customers/${customerId}`
+            );
 
             // ASSERT
             expect(response.status).toBe(200);
@@ -182,7 +196,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 4: Subscription creation and management', () => {
         it('should list subscriptions (initially empty for new customer)', async () => {
             // ACT
-            const response = await adminClient.get('/api/v1/billing/subscriptions');
+            const response = await adminClient.get('/api/v1/protected/billing/subscriptions');
 
             // ASSERT
             expect(response.status).toBe(200);
@@ -197,7 +211,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 5: Usage tracking', () => {
         it('should return usage summary for authenticated user', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/usage');
+            const response = await ownerClient.get('/api/v1/protected/billing/usage');
 
             // ASSERT - May return 200 or error if no subscription
             expect([200, 400, 404, 503]).toContain(response.status);
@@ -229,7 +243,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
             // ACT
             const response = await ownerClient.post(
-                '/api/v1/billing/promo-codes/validate',
+                '/api/v1/protected/billing/promo-codes/validate',
                 promoData
             );
 
@@ -251,7 +265,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
             // ACT
             const response = await ownerClient.post(
-                '/api/v1/billing/promo-codes/validate',
+                '/api/v1/protected/billing/promo-codes/validate',
                 promoData
             );
 
@@ -266,7 +280,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 7: Add-on purchase flow', () => {
         it('should list available addons', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/addons');
+            const response = await ownerClient.get('/api/v1/protected/billing/addons');
 
             // ASSERT
             expect([200, 404]).toContain(response.status);
@@ -274,7 +288,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should list user active addons (initially empty)', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/addons/mine');
+            const response = await ownerClient.get('/api/v1/protected/billing/addons/mine');
 
             // ASSERT
             expect([200, 404]).toContain(response.status);
@@ -292,7 +306,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 8: Billing history and invoices', () => {
         it('should return billing history (may be empty)', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/history');
+            const response = await ownerClient.get('/api/v1/protected/billing/history');
 
             // ASSERT
             expect([200, 404]).toContain(response.status);
@@ -300,7 +314,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should return invoices list', async () => {
             // ACT
-            const response = await adminClient.get('/api/v1/billing/invoices');
+            const response = await adminClient.get('/api/v1/protected/billing/invoices');
 
             // ASSERT
             expect(response.status).toBe(200);
@@ -313,7 +327,7 @@ describe('E2E: Subscription Purchase Flow', () => {
     describe('Step 9: Admin billing management', () => {
         it('should access billing metrics as admin', async () => {
             // ACT
-            const response = await adminClient.get('/api/v1/billing/metrics');
+            const response = await adminClient.get('/api/v1/protected/billing/metrics');
 
             // ASSERT
             expect([200, 404]).toContain(response.status);
@@ -326,7 +340,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should access billing settings as admin', async () => {
             // ACT
-            const response = await adminClient.get('/api/v1/billing/settings');
+            const response = await adminClient.get('/api/v1/protected/billing/settings');
 
             // ASSERT
             expect([200, 404]).toContain(response.status);
@@ -334,7 +348,7 @@ describe('E2E: Subscription Purchase Flow', () => {
 
         it('should deny billing metrics to non-admin', async () => {
             // ACT
-            const response = await ownerClient.get('/api/v1/billing/metrics');
+            const response = await ownerClient.get('/api/v1/protected/billing/metrics');
 
             // ASSERT
             expect([401, 403, 404]).toContain(response.status);
@@ -359,7 +373,7 @@ describe('E2E: Subscription Purchase Flow', () => {
             };
 
             // ACT
-            const response = await app.request('/api/v1/billing/webhooks/mercadopago', {
+            const response = await app.request('/api/v1/protected/billing/webhooks/mercadopago', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(webhookPayload)
@@ -375,7 +389,7 @@ describe('E2E: Subscription Purchase Flow', () => {
             const invalidPayload = { invalid: true };
 
             // ACT
-            const response = await app.request('/api/v1/billing/webhooks/mercadopago', {
+            const response = await app.request('/api/v1/protected/billing/webhooks/mercadopago', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },
                 body: JSON.stringify(invalidPayload)

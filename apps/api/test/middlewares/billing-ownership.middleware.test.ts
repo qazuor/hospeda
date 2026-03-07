@@ -53,7 +53,7 @@ interface MockContextOptions {
 
 function createMockContext(options: MockContextOptions = {}) {
     const billingEnabled = options.billingEnabled ?? true;
-    const reqPath = options.reqPath ?? '/api/v1/billing/customers/cust_123';
+    const reqPath = options.reqPath ?? '/api/v1/protected/billing/customers/cust_123';
     const billingCustomerId =
         'billingCustomerId' in options ? options.billingCustomerId : 'cust_123';
 
@@ -121,7 +121,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should call next() for list endpoints without resource ID', async () => {
             const ctx = createMockContext({
                 billingCustomerId: null,
-                reqPath: '/api/v1/billing/plans'
+                reqPath: '/api/v1/protected/billing/plans'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -134,7 +134,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should return 403 for subscription resource with ID and no billingCustomerId', async () => {
             const ctx = createMockContext({
                 billingCustomerId: null,
-                reqPath: '/api/v1/billing/subscriptions/sub_123'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -150,7 +150,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should return 403 for invoice resource with ID and no billingCustomerId', async () => {
             const ctx = createMockContext({
                 billingCustomerId: null,
-                reqPath: '/api/v1/billing/invoices/inv_456'
+                reqPath: '/api/v1/protected/billing/invoices/inv_456'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -166,7 +166,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should pass through for plans with ID (public catalog, not in LOOKUP_RESOURCES)', async () => {
             const ctx = createMockContext({
                 billingCustomerId: null,
-                reqPath: '/api/v1/billing/plans/plan_abc'
+                reqPath: '/api/v1/protected/billing/plans/plan_abc'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -185,7 +185,7 @@ describe('billingOwnershipMiddleware', () => {
 
     describe('when path has no resource ID', () => {
         it('should pass through for list endpoints', async () => {
-            const ctx = createMockContext({ reqPath: '/api/v1/billing/customers' });
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/billing/customers' });
             const middleware = billingOwnershipMiddleware();
 
             await middleware(ctx as never, next);
@@ -195,7 +195,7 @@ describe('billingOwnershipMiddleware', () => {
         });
 
         it('should pass through for webhook endpoints', async () => {
-            const ctx = createMockContext({ reqPath: '/api/v1/billing/webhooks' });
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/billing/webhooks' });
             const middleware = billingOwnershipMiddleware();
 
             await middleware(ctx as never, next);
@@ -204,7 +204,7 @@ describe('billingOwnershipMiddleware', () => {
         });
 
         it('should pass through for checkout creation', async () => {
-            const ctx = createMockContext({ reqPath: '/api/v1/billing/checkout' });
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/billing/checkout' });
             const middleware = billingOwnershipMiddleware();
 
             await middleware(ctx as never, next);
@@ -213,7 +213,7 @@ describe('billingOwnershipMiddleware', () => {
         });
 
         it('should pass through for plan listing', async () => {
-            const ctx = createMockContext({ reqPath: '/api/v1/billing/plans' });
+            const ctx = createMockContext({ reqPath: '/api/v1/protected/billing/plans' });
             const middleware = billingOwnershipMiddleware();
 
             await middleware(ctx as never, next);
@@ -230,7 +230,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should allow access when customer ID matches', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/customers/cust_123'
+                reqPath: '/api/v1/protected/billing/customers/cust_123'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -243,7 +243,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should deny access when customer ID does not match', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/customers/cust_OTHER'
+                reqPath: '/api/v1/protected/billing/customers/cust_OTHER'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -270,7 +270,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_1'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -287,7 +287,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_1'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -308,7 +308,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_1/cancel'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_1/cancel'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -331,7 +331,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/invoices/inv_1'
+                reqPath: '/api/v1/protected/billing/invoices/inv_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -348,7 +348,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/invoices/inv_1/pay'
+                reqPath: '/api/v1/protected/billing/invoices/inv_1/pay'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -375,7 +375,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/payments/pay_1'
+                reqPath: '/api/v1/protected/billing/payments/pay_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -392,7 +392,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/payments/pay_1/refund'
+                reqPath: '/api/v1/protected/billing/payments/pay_1/refund'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -422,7 +422,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/entitlements/ent_1'
+                reqPath: '/api/v1/protected/billing/entitlements/ent_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -450,7 +450,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_nonexistent'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_nonexistent'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -471,7 +471,7 @@ describe('billingOwnershipMiddleware', () => {
             });
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_nonexistent'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_nonexistent'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -488,7 +488,7 @@ describe('billingOwnershipMiddleware', () => {
             mockGetQZPayBilling.mockReturnValue(null);
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_1'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_1'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -509,7 +509,7 @@ describe('billingOwnershipMiddleware', () => {
     describe('unknown resource types', () => {
         it('should pass through for plan resources (public catalog)', async () => {
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/plans/plan_basic'
+                reqPath: '/api/v1/protected/billing/plans/plan_basic'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -520,7 +520,7 @@ describe('billingOwnershipMiddleware', () => {
 
         it('should pass through for checkout resources', async () => {
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/checkout/chk_123'
+                reqPath: '/api/v1/protected/billing/checkout/chk_123'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -546,7 +546,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should handle directory traversal in resource ID', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/../../customers/cust_other'
+                reqPath: '/api/v1/protected/billing/subscriptions/../../customers/cust_other'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -565,7 +565,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should handle null byte injection in resource ID', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_123%00/admin'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123%00/admin'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -582,7 +582,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should handle encoded traversal in resource ID', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_123%2F..%2Fcustomers'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123%2F..%2Fcustomers'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -599,7 +599,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should handle parameter injection in path', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_123;admin=true'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123;admin=true'
             });
             const middleware = billingOwnershipMiddleware();
 
@@ -616,7 +616,7 @@ describe('billingOwnershipMiddleware', () => {
         it('should handle relative path escape', async () => {
             const ctx = createMockContext({
                 billingCustomerId: 'cust_123',
-                reqPath: '/api/v1/billing/subscriptions/sub_123/../../plans'
+                reqPath: '/api/v1/protected/billing/subscriptions/sub_123/../../plans'
             });
             const middleware = billingOwnershipMiddleware();
 

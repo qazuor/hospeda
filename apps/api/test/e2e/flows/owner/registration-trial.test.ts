@@ -100,7 +100,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             // The middleware runs after auth sync and ensures customer exists
 
             // Act - Attempt to access billing route (requires billing customer)
-            const response = await app.request('/api/v1/billing/trial/status', {
+            const response = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -522,7 +522,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
         it('should return trial status via API endpoint', async () => {
             // Act
-            const response = await app.request('/api/v1/billing/trial/status', {
+            const response = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -652,13 +652,13 @@ describe('Owner Registration and Trial Activation E2E', () => {
 
         it('should allow access to billing pages when trial expired', async () => {
             // Act - Access billing routes (should be allowed even when blocked)
-            const billingResponse = await app.request('/api/v1/billing/plans', {
+            const billingResponse = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
             });
 
-            const trialResponse = await app.request('/api/v1/billing/trial/status', {
+            const trialResponse = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -677,7 +677,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             // and accessing a protected route
 
             // Act - Access protected route (simulated)
-            const response = await app.request('/api/v1/billing/trial/status', {
+            const response = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -694,7 +694,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
     describe('6. Edge Cases', () => {
         it('should handle user without billing customer gracefully', async () => {
             // Act
-            const response = await app.request('/api/v1/billing/trial/status', {
+            const response = await app.request('/api/v1/protected/billing/trial/status', {
                 headers: {
                     'user-agent': 'test-agent'
                 }
@@ -708,7 +708,7 @@ describe('Owner Registration and Trial Activation E2E', () => {
             // Billing service might not be configured in test environment
 
             // Act
-            const response = await app.request('/api/v1/billing/plans', {
+            const response = await app.request('/api/v1/protected/billing/plans', {
                 headers: {
                     'user-agent': 'test-agent'
                 }

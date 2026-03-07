@@ -529,7 +529,7 @@ describe('pastDueGraceMiddleware', () => {
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/trial/reactivate'
+                reqPath: '/api/v1/protected/billing/trial/reactivate'
             });
             const middleware = pastDueGraceMiddleware();
 
@@ -550,7 +550,7 @@ describe('pastDueGraceMiddleware', () => {
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/trial/reactivate-subscription'
+                reqPath: '/api/v1/protected/billing/trial/reactivate-subscription'
             });
             const middleware = pastDueGraceMiddleware();
 
@@ -571,7 +571,7 @@ describe('pastDueGraceMiddleware', () => {
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/checkout'
+                reqPath: '/api/v1/protected/billing/checkout'
             });
             const middleware = pastDueGraceMiddleware();
 
@@ -592,7 +592,7 @@ describe('pastDueGraceMiddleware', () => {
             });
             setupBillingWith([pastDueSub]);
             const ctx = createMockContext({
-                reqPath: '/api/v1/billing/subscriptions'
+                reqPath: '/api/v1/protected/billing/subscriptions'
             });
             const middleware = pastDueGraceMiddleware();
 

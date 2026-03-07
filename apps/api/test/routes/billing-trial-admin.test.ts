@@ -4,7 +4,7 @@
  * Tests the admin-only authentication check for the trial expiry endpoint.
  * Verifies that only ADMIN and SUPER_ADMIN roles can access the endpoint.
  *
- * Endpoint: POST /api/v1/billing/trial/check-expiry
+ * Endpoint: POST /api/v1/protected/billing/trial/check-expiry
  *
  * Test Coverage:
  * - Non-admin users receive 403 Forbidden

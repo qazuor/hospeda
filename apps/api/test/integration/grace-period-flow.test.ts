@@ -415,7 +415,7 @@ describe('Past-Due Grace Period Middleware Flow', () => {
             const ctx = buildMockContext({
                 billingEnabled: true,
                 billingCustomerId: CUSTOMER_ID,
-                path: '/api/v1/billing/trial/reactivate-subscription'
+                path: '/api/v1/protected/billing/trial/reactivate-subscription'
             });
             const next = vi.fn().mockResolvedValue(undefined);
 
@@ -437,7 +437,7 @@ describe('Past-Due Grace Period Middleware Flow', () => {
             const ctx = buildMockContext({
                 billingEnabled: true,
                 billingCustomerId: CUSTOMER_ID,
-                path: '/api/v1/billing/subscriptions/reactivate'
+                path: '/api/v1/protected/billing/subscriptions/reactivate'
             });
             const next = vi.fn().mockResolvedValue(undefined);
 
