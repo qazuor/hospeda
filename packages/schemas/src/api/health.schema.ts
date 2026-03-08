@@ -32,9 +32,6 @@ export const HealthDataSchema = z.object({
         .min(0, { message: 'zodError.health.uptime.min' }),
     version: z.string({
         message: 'zodError.health.version.invalidType'
-    }),
-    environment: z.string({
-        message: 'zodError.health.environment.invalidType'
     })
 });
 export type HealthData = z.infer<typeof HealthDataSchema>;
@@ -77,9 +74,6 @@ export const DatabaseHealthDataSchema = z.object({
         .min(0, { message: 'zodError.health.uptime.min' }),
     version: z.string({
         message: 'zodError.health.version.invalidType'
-    }),
-    environment: z.string({
-        message: 'zodError.health.environment.invalidType'
     })
 });
 export type DatabaseHealthData = z.infer<typeof DatabaseHealthDataSchema>;

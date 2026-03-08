@@ -115,7 +115,7 @@ app.post('/create', async (c) => {
                         success: false,
                         error: {
                             code: 'VALIDATION_ERROR',
-                            message: `File "${file.name}" exceeds maximum size of 10MB`
+                            message: 'File validation failed: file exceeds maximum size of 10MB'
                         }
                     },
                     400
@@ -128,7 +128,7 @@ app.post('/create', async (c) => {
                         success: false,
                         error: {
                             code: 'VALIDATION_ERROR',
-                            message: `File type "${file.type}" is not allowed for "${file.name}"`
+                            message: 'File validation failed: file type is not allowed'
                         }
                     },
                     400

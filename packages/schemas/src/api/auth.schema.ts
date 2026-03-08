@@ -12,7 +12,11 @@ import { z } from 'zod';
 export const ActorSchema = z.object({
     id: z.string().describe('Actor unique identifier'),
     role: z.string().describe('Actor role (USER, ADMIN, GUEST, etc.)'),
-    permissions: z.array(z.string()).describe('Array of permission strings')
+    permissions: z.array(z.string()).describe('Array of permission strings'),
+    _isSystemActor: z
+        .boolean()
+        .optional()
+        .describe('Flag indicating this is a system actor, not a real user')
 });
 
 export type Actor = z.infer<typeof ActorSchema>;

@@ -39,8 +39,7 @@ export const HealthDatabaseSchema = z.object({
     }),
     timestamp: z.string(),
     uptime: z.number(),
-    version: z.string(),
-    environment: z.string()
+    version: z.string()
 });
 
 export type HealthDatabase = z.infer<typeof HealthDatabaseSchema>;
@@ -57,8 +56,7 @@ export const HealthSystemSchema = z.object({
     status: z.enum(['healthy', 'unhealthy']),
     timestamp: z.string(),
     uptime: z.number(),
-    version: z.string(),
-    environment: z.string()
+    version: z.string()
 });
 
 export type HealthSystem = z.infer<typeof HealthSystemSchema>;

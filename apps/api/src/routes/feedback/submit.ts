@@ -276,7 +276,7 @@ export const submitFeedbackRoute = createSimpleRoute({
                         success: false,
                         error: {
                             code: 'VALIDATION_ERROR',
-                            message: `Tipo de archivo no permitido: ${entry.type}`
+                            message: 'Tipo de archivo no permitido'
                         }
                     },
                     400
@@ -289,7 +289,7 @@ export const submitFeedbackRoute = createSimpleRoute({
                         success: false,
                         error: {
                             code: 'VALIDATION_ERROR',
-                            message: `Archivo demasiado grande: ${entry.name}`
+                            message: 'Archivo demasiado grande'
                         }
                     },
                     400

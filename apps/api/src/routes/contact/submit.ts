@@ -42,11 +42,9 @@ export const submitContactRoute = createSimpleRoute({
         apiLogger.info(
             {
                 contactType: validated.type,
-                firstName: validated.firstName,
-                lastName: validated.lastName,
-                email: validated.email,
                 accommodationId: validated.accommodationId,
-                messageLength: validated.message.length
+                messageLength: validated.message.length,
+                emailDomain: validated.email.split('@')[1]
             },
             'Contact form submission received'
         );
@@ -57,6 +55,7 @@ export const submitContactRoute = createSimpleRoute({
         };
     },
     options: {
-        skipAuth: true
+        skipAuth: true,
+        customRateLimit: { requests: 5, windowMs: 60000 }
     }
 });

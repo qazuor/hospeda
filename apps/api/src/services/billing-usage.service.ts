@@ -148,11 +148,15 @@ export async function getSystemUsage(livemode = true): Promise<ServiceResult<Sys
             },
             'Failed to get system usage stats'
         );
+        const errorMessage =
+            process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                ? `Failed to get system usage stats: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get system usage stats';
         return {
             success: false,
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: error instanceof Error ? error.message : 'Failed to get system usage stats'
+                message: errorMessage
             }
         };
     }

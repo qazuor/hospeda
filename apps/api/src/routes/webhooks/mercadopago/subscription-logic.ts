@@ -16,6 +16,12 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../../../utils/logger.js';
+
+/** Masks an ID to show only the last 4 characters */
+function maskId(id: string): string {
+    if (id.length <= 4) return '****';
+    return `***...${id.slice(-4)}`;
+}
 import {
     sendSubscriptionCancelledNotification,
     sendSubscriptionPausedNotification,
@@ -194,7 +200,7 @@ export async function processSubscriptionUpdated({
     }
 
     apiLogger.info(
-        { mpPreapprovalId, providerEventId, source },
+        { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source },
         'Processing subscription_preapproval.updated event'
     );
 
@@ -204,7 +210,7 @@ export async function processSubscriptionUpdated({
         .retrieve(mpPreapprovalId)
         .catch((error: unknown) => {
             Sentry.captureException(error, {
-                extra: { mpPreapprovalId, providerEventId, source }
+                extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
             });
             throw error;
         });
@@ -218,7 +224,7 @@ export async function processSubscriptionUpdated({
     if (mappedStatus === null) {
         // pending status - no action needed
         apiLogger.info(
-            { mpPreapprovalId, qzpayStatus, source },
+            { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
             'Subscription in pending state - no status change applied'
         );
         return { success: true, statusChanged: false };
@@ -227,11 +233,11 @@ export async function processSubscriptionUpdated({
     if (mappedStatus === undefined) {
         // Unknown status
         apiLogger.warn(
-            { mpPreapprovalId, qzpayStatus, source },
+            { mpPreapprovalId: maskId(mpPreapprovalId), qzpayStatus, source },
             `Unknown QZPay subscription status: ${qzpayStatus}`
         );
         Sentry.captureException(new Error(`Unknown QZPay subscription status: ${qzpayStatus}`), {
-            extra: { mpPreapprovalId, providerEventId, source }
+            extra: { mpPreapprovalId: maskId(mpPreapprovalId), providerEventId, source }
         });
         return { success: true, statusChanged: false };
     }
@@ -251,8 +257,8 @@ export async function processSubscriptionUpdated({
 
     if (!localSubscription) {
         apiLogger.warn(
-            { mpPreapprovalId, source },
-            `No local subscription found for mp_subscription_id=${mpPreapprovalId}`
+            { mpPreapprovalId: maskId(mpPreapprovalId), source },
+            `No local subscription found for mp_subscription_id=${maskId(mpPreapprovalId)}`
         );
         return { success: true, statusChanged: false };
     }
@@ -267,7 +273,7 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
-    // Step 7: Update billing_subscriptions
+    // Step 7: Update billing_subscriptions and insert audit log in a single transaction
     const updateData: Record<string, unknown> = {
         status: mappedStatus,
         updatedAt: new Date()
@@ -283,42 +289,44 @@ export async function processSubscriptionUpdated({
         updateData.cancelAtPeriodEnd = false;
     }
 
-    await db
-        .update(billingSubscriptions)
-        .set(updateData)
-        .where(eq(billingSubscriptions.id, localSubscription.id));
+    await db.transaction(async (tx) => {
+        await tx
+            .update(billingSubscriptions)
+            .set(updateData)
+            .where(eq(billingSubscriptions.id, localSubscription.id));
+
+        // Step 8: Insert audit log within the transaction (non-blocking on failure)
+        try {
+            await tx.insert(billingSubscriptionEvents).values({
+                subscriptionId: localSubscription.id,
+                previousStatus,
+                newStatus: mappedStatus,
+                triggerSource: source ?? 'webhook',
+                providerEventId,
+                metadata: {
+                    qzpayStatus,
+                    mpPreapprovalId
+                }
+            });
+        } catch (auditError) {
+            apiLogger.error(
+                { error: auditError, subscriptionId: localSubscription.id },
+                'Failed to insert subscription audit log entry'
+            );
+            // Do NOT throw - audit failure is non-blocking; status update must still commit
+        }
+    });
 
     apiLogger.info(
         {
             subscriptionId: localSubscription.id,
             previousStatus,
             newStatus: mappedStatus,
-            mpPreapprovalId,
+            mpPreapprovalId: maskId(mpPreapprovalId),
             source
         },
         `Subscription status updated: ${previousStatus} -> ${mappedStatus}`
     );
-
-    // Step 8: Insert audit log (non-blocking)
-    try {
-        await db.insert(billingSubscriptionEvents).values({
-            subscriptionId: localSubscription.id,
-            previousStatus,
-            newStatus: mappedStatus,
-            triggerSource: source ?? 'webhook',
-            providerEventId,
-            metadata: {
-                qzpayStatus,
-                mpPreapprovalId
-            }
-        });
-    } catch (auditError) {
-        apiLogger.error(
-            { error: auditError, subscriptionId: localSubscription.id },
-            'Failed to insert subscription audit log entry'
-        );
-        // Do NOT throw - audit failure is non-blocking
-    }
 
     // Step 9: Send notifications (fire-and-forget)
     let customer: Awaited<ReturnType<typeof billing.customers.get>> | null = null;
