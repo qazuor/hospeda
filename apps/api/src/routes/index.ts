@@ -60,7 +60,6 @@ import { contactRoutes } from './contact';
 import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
-import { protectedExchangeRateRoutes } from './exchange-rates/protected/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
 import { feedbackRoutes } from './feedback';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -174,7 +173,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/event-organizers', protectedEventOrganizerRoutes);
         app.route('/api/v1/protected/owner-promotions', protectedOwnerPromotionRoutes);
         app.route('/api/v1/protected/sponsorships', protectedSponsorshipRoutes);
-        app.route('/api/v1/protected/exchange-rates', protectedExchangeRateRoutes);
 
         apiLogger.debug('✅ Protected routes registered successfully');
 
@@ -231,7 +229,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Reports routes (bug reports, labels)
         app.route('/api/v1/protected/reports', reportRoutes);
 
-        // Cron routes (protected by CRON_SECRET)
+        // Internal: Vercel cron scheduler (requires CRON_SECRET, not a public API)
         app.route('/api/v1/cron', cronRoutes);
 
         // Webhook routes (public endpoints with signature verification)

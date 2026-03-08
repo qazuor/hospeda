@@ -220,16 +220,19 @@ export const handleWebhookError = async (
 ): Promise<undefined> => {
     const requestId = String(c.get('requestId'));
 
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorStack = error instanceof Error ? error.stack : undefined;
+
     apiLogger.error(
         {
-            error: error.message,
-            stack: error.stack,
+            error: errorMessage,
+            stack: errorStack,
             requestId
         },
         'MercadoPago webhook: Processing failed'
     );
 
-    captureWebhookError(error, {
+    captureWebhookError(error instanceof Error ? error : new Error(errorMessage), {
         provider: 'mercadopago',
         eventType: 'unknown',
         retryCount: 0
@@ -240,7 +243,7 @@ export const handleWebhookError = async (
     if (providerEventId) {
         await markEventFailedByProviderId({
             providerEventId,
-            errorMessage: error.message
+            errorMessage
         });
 
         requestProviderEventIds.delete(requestId);

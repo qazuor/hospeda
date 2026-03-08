@@ -14,14 +14,6 @@ import { apiLogger } from '../../../utils/logger';
 import type { AddonMetadata, PaymentInfo } from './types';
 
 /**
- * Storage for webhook event ID during processing.
- * Maps request ID to webhook event ID.
- *
- * @deprecated Use database-only approach for idempotency
- */
-export const webhookEventIds = new Map<string, string>();
-
-/**
  * Sanitize error message for notification to admin.
  *
  * Removes potentially sensitive information like:

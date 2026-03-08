@@ -6,6 +6,7 @@
 import { AccommodationFaqListOutputSchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory';
@@ -55,6 +56,7 @@ export const getFaqsRoute = createSimpleRoute({
     summary: 'Get accommodation FAQs',
     description: 'Retrieve all frequently asked questions for a specific accommodation',
     tags: ['Accommodations', 'FAQs'],
+    requestParams: { id: z.string().uuid() },
     responseSchema: AccommodationFaqListOutputSchema,
     handler: getFaqsHandler
 });

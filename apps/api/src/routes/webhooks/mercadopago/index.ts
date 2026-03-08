@@ -10,7 +10,6 @@
 export type { PaymentInfo, AddonMetadata } from './types';
 
 export {
-    webhookEventIds,
     sanitizeErrorForNotification,
     markWebhookEventProcessed,
     markEventProcessedByProviderId,

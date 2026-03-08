@@ -6,6 +6,7 @@
 import { AccommodationTopRatedOutputSchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory';
@@ -53,6 +54,7 @@ export const getTopRatedByDestinationRoute = createSimpleRoute({
     summary: 'Get top-rated accommodations by destination',
     description: 'Retrieve top-rated accommodations for a specific destination',
     tags: ['Accommodations'],
+    requestParams: { destinationId: z.string().uuid() },
     responseSchema: AccommodationTopRatedOutputSchema,
     handler: getTopRatedByDestinationHandler
 });
