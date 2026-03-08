@@ -8,25 +8,13 @@
  */
 
 import { createAuthClient } from 'better-auth/react';
-
-/**
- * Resolves the API base URL from environment variables.
- */
-function getBaseURL(): string {
-    if (typeof import.meta !== 'undefined' && import.meta.env?.PUBLIC_API_URL) {
-        return import.meta.env.PUBLIC_API_URL;
-    }
-    if (typeof process !== 'undefined' && process.env?.HOSPEDA_API_URL) {
-        return process.env.HOSPEDA_API_URL;
-    }
-    return 'http://localhost:3001';
-}
+import { getApiUrl } from './env.js';
 
 /**
  * Better Auth client instance configured for the Hospeda web3 app.
  */
 export const authClient = createAuthClient({
-    baseURL: getBaseURL(),
+    baseURL: getApiUrl(),
     basePath: '/api/auth'
 });
 
@@ -60,7 +48,7 @@ export async function forgetPassword({
     email: string;
     redirectTo: string;
 }): Promise<AuthApiResult> {
-    const baseURL = getBaseURL();
+    const baseURL = getApiUrl();
     try {
         const response = await fetch(`${baseURL}/api/auth/forget-password`, {
             method: 'POST',
@@ -88,7 +76,7 @@ export async function resetPassword({
     newPassword: string;
     token: string;
 }): Promise<AuthApiResult> {
-    const baseURL = getBaseURL();
+    const baseURL = getApiUrl();
     try {
         const response = await fetch(`${baseURL}/api/auth/reset-password`, {
             method: 'POST',
@@ -114,7 +102,7 @@ export async function verifyEmail({
 }: {
     token: string;
 }): Promise<AuthApiResult> {
-    const baseURL = getBaseURL();
+    const baseURL = getApiUrl();
     try {
         const response = await fetch(`${baseURL}/api/auth/verify-email`, {
             method: 'POST',

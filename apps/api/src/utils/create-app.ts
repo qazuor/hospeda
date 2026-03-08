@@ -31,6 +31,7 @@ let mockAuthLoaded = false;
  * No-ops in non-test environments.
  */
 const lazyMockAuthMiddleware: MiddlewareHandler<AppBindings> = async (c, next) => {
+    // NODE_ENV is a system variable safe to read directly from process.env
     if (process.env.NODE_ENV !== 'test') {
         await next();
         return;

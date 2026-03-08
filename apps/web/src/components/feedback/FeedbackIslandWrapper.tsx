@@ -9,8 +9,9 @@
  * ```astro
  * ---
  * import FeedbackIslandWrapper from '@/components/feedback/FeedbackIslandWrapper';
+ * import { getApiUrl } from '@/lib/env';
  * ---
- * <FeedbackIslandWrapper client:load apiUrl={import.meta.env.PUBLIC_API_URL}>
+ * <FeedbackIslandWrapper client:load apiUrl={getApiUrl()}>
  *   <MyComplexIsland />
  * </FeedbackIslandWrapper>
  * ```

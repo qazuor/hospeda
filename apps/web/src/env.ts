@@ -44,7 +44,8 @@ export const clientEnvSchema = z.object({
     PUBLIC_SITE_URL: z.string().url(),
     PUBLIC_SENTRY_DSN: z.string().url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
-    PUBLIC_VERSION: z.string().optional()
+    PUBLIC_VERSION: z.string().optional(),
+    PUBLIC_ENABLE_LOGGING: z.enum(['true', 'false']).optional()
 });
 
 /** Inferred TypeScript type for server environment variables. */

@@ -44,6 +44,7 @@ import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media'
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { sanitizeHtml } from '../../../lib/sanitize-html';
 import { toAccommodationCardProps } from '../../../lib/api/transforms';
+import { getSiteUrl } from '../../../lib/env';
 import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
 
 /**
@@ -212,7 +213,7 @@ const checkOutTime = String(extraInfo?.checkOut ?? extraInfo?.checkOutTime ?? '1
 // --- SEO ---
 
 const seoDescription = `${String(accommodation.name ?? '')} en ${city}, ${province}`;
-const canonicalUrl = `${import.meta.env.PUBLIC_SITE_URL ?? ''}${pageUrl}`;
+const canonicalUrl = `${getSiteUrl()}${pageUrl}`;
 
 // --- JSON-LD address ---
 

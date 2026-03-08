@@ -2,6 +2,7 @@
 import "@/styles/global.css";
 import { ToastContainer } from "@/components/ui/Toast.client";
 import { FeedbackFAB } from "@repo/feedback";
+import { getApiUrl } from "@/lib/env";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 
@@ -106,7 +107,7 @@ const {
     <!-- FeedbackIslandWrapper is available for wrapping interactive islands -->
     <FeedbackFAB
       client:idle
-      apiUrl={import.meta.env.PUBLIC_API_URL}
+      apiUrl={getApiUrl()}
       appSource="web"
     />
 

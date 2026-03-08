@@ -35,9 +35,6 @@ interface SentryConfig {
     appType?: string;
 }
 
-const isDev = process.env.NODE_ENV !== 'production';
-const isServerless = !!process.env.VERCEL;
-
 /**
  * Default Sentry configuration
  *
@@ -45,12 +42,8 @@ const isServerless = !!process.env.VERCEL;
  * In production: 10% sampling for traces and profiling.
  */
 const DEFAULT_CONFIG: SentryConfig = {
-    environment: process.env.NODE_ENV || 'development',
     enableTracing: true,
-    tracesSampleRate: isDev ? 0.0 : 0.1,
-    profilesSampleRate: isDev ? 0.0 : 0.1,
     debug: false,
-    project: process.env.HOSPEDA_SENTRY_PROJECT || 'hospeda',
     appType: 'api'
 };
 
@@ -69,14 +62,26 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
         return false;
     }
 
-    const finalConfig = { ...DEFAULT_CONFIG, ...config };
+    // Compute environment-dependent flags using validated env (called after validateApiEnv())
+    const isDev = env.NODE_ENV !== 'production';
+    // VERCEL is platform-injected and not part of the HOSPEDA_* schema
+    const isServerless = !!process.env.VERCEL;
+
+    const resolvedDefaults: SentryConfig = {
+        ...DEFAULT_CONFIG,
+        environment: env.NODE_ENV,
+        tracesSampleRate: isDev ? 0.0 : 0.1,
+        profilesSampleRate: isDev ? 0.0 : 0.1,
+        project: env.HOSPEDA_SENTRY_PROJECT || 'hospeda'
+    };
+
+    const finalConfig = { ...resolvedDefaults, ...config };
 
     try {
         Sentry.init({
             dsn: sentryDsn,
             environment: finalConfig.environment,
-            release:
-                env.HOSPEDA_SENTRY_RELEASE || process.env.VERCEL_GIT_COMMIT_SHA || 'development',
+            release: env.HOSPEDA_SENTRY_RELEASE || env.VERCEL_GIT_COMMIT_SHA || 'development',
             debug: finalConfig.debug,
 
             // Performance monitoring

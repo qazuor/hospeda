@@ -1,0 +1,9 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`ENV_REGISTRY ↔ Zod schema cross-validation (GAP-026) > Registry completeness snapshot > should report the count of known gaps per app 1`] = `
+{
+  "admin": 5,
+  "api": 7,
+  "web": 1,
+}
+`;

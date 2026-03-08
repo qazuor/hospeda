@@ -138,8 +138,8 @@ export const CLIENT_ADMIN_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: 'Panel de administracion de Hospeda',
-        exampleValue: 'Panel de administracion de Hospeda',
+        defaultValue: 'Admin panel for Hospeda platform',
+        exampleValue: 'Admin panel for Hospeda platform',
         apps: ['admin'],
         category: 'client-admin'
     },

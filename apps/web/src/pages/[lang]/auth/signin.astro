@@ -11,6 +11,7 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import { SignInClient } from '../../../components/auth/SignIn.client';
 import { getLocaleFromParams } from '../../../lib/page-helpers';
 import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { getSiteUrl } from '../../../lib/env';
 import { buildUrl } from '../../../lib/urls';
 
 const locale = getLocaleFromParams(Astro.params);
@@ -37,7 +38,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const currentLabels = labels[typedLocale];
 
 const returnPath = Astro.url.searchParams.get('returnUrl') || buildUrl({ locale: typedLocale, path: 'mi-cuenta' });
-const siteOrigin = import.meta.env.PUBLIC_SITE_URL || import.meta.env.HOSPEDA_SITE_URL || Astro.url.origin;
+const siteOrigin = getSiteUrl();
 const redirectTo = new URL(returnPath, siteOrigin).href;
 ---
 

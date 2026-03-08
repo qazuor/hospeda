@@ -33,7 +33,10 @@ try {
 try {
     validateWebEnv();
 } catch (error) {
-    console.warn('[env] Web app environment validation warning:', error instanceof Error ? error.message : String(error));
+    console.warn(
+        '[env] Web app environment validation warning:',
+        error instanceof Error ? error.message : String(error)
+    );
 }
 
 const HOSPEDA_API_URL = process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL;

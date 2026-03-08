@@ -3,6 +3,8 @@
  * Provides styled console output with category prefix for easy filtering.
  */
 
+import { isLoggingEnabled } from './env.js';
+
 type LogLevel = 'log' | 'info' | 'warn' | 'error' | 'debug';
 
 interface LoggerOptions {
@@ -49,5 +51,5 @@ export const webLogger = createFrontendLogger({
     category: 'HOSPEDA-WEB',
     bgColor: '#3b82f6',
     textColor: '#ffffff',
-    enabled: import.meta.env.DEV || import.meta.env.PUBLIC_ENABLE_LOGGING === 'true'
+    enabled: isLoggingEnabled()
 });

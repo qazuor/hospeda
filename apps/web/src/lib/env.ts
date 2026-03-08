@@ -51,3 +51,15 @@ export function isProduction(): boolean {
 export function isDevelopment(): boolean {
     return import.meta.env.DEV === true;
 }
+
+/**
+ * Check if client-side logging is explicitly enabled via the PUBLIC_ENABLE_LOGGING flag.
+ *
+ * Returns true when the environment variable is set to `'true'` OR when running in
+ * development mode (so developers always see logs locally without setting the flag).
+ *
+ * @returns True if logging should be active in the browser
+ */
+export function isLoggingEnabled(): boolean {
+    return import.meta.env.DEV === true || import.meta.env.PUBLIC_ENABLE_LOGGING === 'true';
+}
