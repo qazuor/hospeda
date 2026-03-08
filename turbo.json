@@ -9,9 +9,17 @@
         "HOSPEDA_BETTER_AUTH_SECRET",
         "HOSPEDA_API_URL",
         "HOSPEDA_SITE_URL",
+        "HOSPEDA_ADMIN_URL",
+        "HOSPEDA_CRON_SECRET",
+        "HOSPEDA_REDIS_URL",
         "VITE_API_URL",
+        "VITE_BETTER_AUTH_URL",
+        "VITE_SENTRY_DSN",
+        "VITE_SENTRY_RELEASE",
         "PUBLIC_API_URL",
-        "PUBLIC_SITE_URL"
+        "PUBLIC_SITE_URL",
+        "PUBLIC_SENTRY_DSN",
+        "PUBLIC_SENTRY_RELEASE"
     ],
     "tasks": {
         "build": {
