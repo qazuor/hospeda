@@ -137,16 +137,38 @@ function printAudit(audit: AppEnvAudit, verbose: boolean): void {
 
     if (!hasProblems && !verbose) return;
 
-    for (const _key of audit.ok) {
-        if (verbose) {
+    const header = `  [${audit.appName}/${audit.environment}]`;
+
+    if (!hasProblems) {
+        console.info(colors.green(`${header} ✓ ${audit.ok.length} vars OK`));
+        return;
+    }
+
+    console.info(`${header}`);
+
+    for (const key of audit.missing) {
+        console.info(colors.red(`    ✗ MISSING  ${key}`));
+    }
+
+    for (const key of audit.extra) {
+        console.info(colors.yellow(`    ? EXTRA    ${key}`));
+    }
+
+    if (verbose) {
+        for (const key of audit.ok) {
+            console.info(colors.green(`    ✓ OK       ${key}`));
         }
     }
 
-    for (const _key of audit.missing) {
-    }
+    const summary = [
+        audit.missing.length > 0 ? colors.red(`${audit.missing.length} missing`) : null,
+        audit.extra.length > 0 ? colors.yellow(`${audit.extra.length} extra`) : null,
+        colors.green(`${audit.ok.length} ok`)
+    ]
+        .filter(Boolean)
+        .join(', ');
 
-    for (const _key of audit.extra) {
-    }
+    console.info(`    ${summary}`);
 }
 
 /**
@@ -158,6 +180,7 @@ async function main(): Promise<void> {
     const isVerbose = process.argv.includes('--verbose') || process.argv.includes('-v');
 
     if (isCi) {
+        console.info('Running env:check in CI mode (no prompts)');
     }
 
     let token: string;
@@ -169,8 +192,8 @@ async function main(): Promise<void> {
     }
 
     let totalMissing = 0;
-    let _totalExtra = 0;
-    let _totalOk = 0;
+    let totalExtra = 0;
+    let totalOk = 0;
     let appsSkipped = 0;
 
     for (const appName of ALL_APPS) {
@@ -179,6 +202,9 @@ async function main(): Promise<void> {
 
             if (audit === null) {
                 if (!isCi) {
+                    console.info(
+                        colors.yellow(`  [${appName}/${environment}] skipped (not linked)`)
+                    );
                 }
                 appsSkipped++;
                 continue;
@@ -186,16 +212,22 @@ async function main(): Promise<void> {
 
             printAudit(audit, isVerbose);
             totalMissing += audit.missing.length;
-            _totalExtra += audit.extra.length;
-            _totalOk += audit.ok.length;
+            totalExtra += audit.extra.length;
+            totalOk += audit.ok.length;
         }
     }
     if (appsSkipped > 0) {
+        console.info(
+            colors.yellow(`\n⚠ ${appsSkipped} app/environment(s) skipped (not linked to Vercel)`)
+        );
     }
 
+    console.info(`\nSummary: ${totalOk} ok, ${totalMissing} missing, ${totalExtra} extra`);
     if (totalMissing > 0) {
+        console.info(colors.red(`\n✗ ${totalMissing} env var(s) missing from Vercel`));
         process.exit(1);
     }
+    console.info(colors.green('\n✓ All required env vars are configured'));
     process.exit(0);
 }
 
