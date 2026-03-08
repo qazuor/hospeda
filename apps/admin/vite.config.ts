@@ -120,22 +120,16 @@ export default defineConfig({
                 return {
                     define: {
                         'import.meta.env.VITE_API_URL': JSON.stringify(
-                            process.env.HOSPEDA_API_URL || process.env.VITE_API_URL || ''
+                            process.env.VITE_API_URL || process.env.HOSPEDA_API_URL || ''
                         ),
                         'import.meta.env.VITE_DEBUG_ACTOR_ID': JSON.stringify(
-                            process.env.HOSPEDA_DEBUG_ACTOR_ID ||
-                                process.env.VITE_DEBUG_ACTOR_ID ||
-                                ''
+                            process.env.VITE_DEBUG_ACTOR_ID || ''
                         ),
                         'import.meta.env.VITE_SUPPORTED_LOCALES': JSON.stringify(
-                            process.env.HOSPEDA_SUPPORTED_LOCALES ||
-                                process.env.VITE_SUPPORTED_LOCALES ||
-                                'en,es'
+                            process.env.VITE_SUPPORTED_LOCALES || 'es,en'
                         ),
                         'import.meta.env.VITE_DEFAULT_LOCALE': JSON.stringify(
-                            process.env.HOSPEDA_DEFAULT_LOCALE ||
-                                process.env.VITE_DEFAULT_LOCALE ||
-                                'en'
+                            process.env.VITE_DEFAULT_LOCALE || 'es'
                         ),
                         'import.meta.env.VITE_SENTRY_RELEASE': JSON.stringify(
                             process.env.VERCEL_GIT_COMMIT_SHA ||

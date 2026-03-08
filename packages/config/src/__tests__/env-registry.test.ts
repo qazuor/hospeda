@@ -19,7 +19,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *  - Docker       :  5 vars (docker-compose services)
  *  - System       :  5 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 170;
+const EXPECTED_VAR_COUNT = 171;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -343,12 +343,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(true);
         });
 
-        it('should contain all 18 VITE_* admin variables', () => {
+        it('should contain all 19 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(18);
+            expect(viteVars.length).toBe(19);
         });
     });
 

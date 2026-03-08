@@ -281,5 +281,17 @@ export const CLIENT_ADMIN_ENV_VARS = [
         exampleValue: 'es',
         apps: ['admin'],
         category: 'client-admin'
+    },
+    {
+        name: 'VITE_LOG_LEVEL',
+        description: 'Minimum log level for the admin client-side logger',
+        type: 'enum',
+        required: false,
+        secret: false,
+        defaultValue: 'INFO',
+        exampleValue: 'DEBUG',
+        enumValues: ['DEBUG', 'INFO', 'WARN', 'ERROR'] as const,
+        apps: ['admin'],
+        category: 'client-admin'
     }
 ] as const satisfies readonly EnvVarDefinition[];
