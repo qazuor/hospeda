@@ -36,10 +36,15 @@ try {
     console.warn('[env] Web app environment validation warning:', error instanceof Error ? error.message : String(error));
 }
 
-const HOSPEDA_API_URL =
-    process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL || 'http://localhost:3001';
-const HOSPEDA_SITE_URL =
-    process.env.HOSPEDA_SITE_URL || process.env.PUBLIC_SITE_URL || 'http://localhost:4321';
+const HOSPEDA_API_URL = process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL;
+const HOSPEDA_SITE_URL = process.env.HOSPEDA_SITE_URL || process.env.PUBLIC_SITE_URL;
+
+if (!HOSPEDA_API_URL || !HOSPEDA_SITE_URL) {
+    console.error(
+        '[env] Missing required URL env vars. Set HOSPEDA_API_URL/PUBLIC_API_URL and HOSPEDA_SITE_URL/PUBLIC_SITE_URL.'
+    );
+    process.exit(1);
+}
 
 const apiHostname = (() => {
     try {

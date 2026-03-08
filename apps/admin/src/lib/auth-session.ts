@@ -56,7 +56,10 @@ export const fetchAuthSession = createServerFn({ method: 'GET' }).handler(
             return UNAUTHENTICATED_STATE;
         }
 
-        const apiUrl = process.env.HOSPEDA_API_URL || 'http://localhost:3001';
+        const apiUrl = process.env.HOSPEDA_API_URL;
+        if (!apiUrl) {
+            throw new Error('HOSPEDA_API_URL environment variable is required');
+        }
         const cookieHeader = request.headers.get('cookie') || '';
 
         try {

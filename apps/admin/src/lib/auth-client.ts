@@ -23,7 +23,7 @@ function getBaseURL(): string {
     if (typeof process !== 'undefined' && process.env?.HOSPEDA_API_URL) {
         return process.env.HOSPEDA_API_URL;
     }
-    return 'http://localhost:3001';
+    throw new Error('VITE_API_URL or HOSPEDA_API_URL environment variable is required');
 }
 
 /**
