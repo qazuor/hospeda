@@ -56,8 +56,10 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
         logger.warn(
             `${STATUS_ICONS.Warning} HOSPEDA_SEED_SUPER_ADMIN_PASSWORD not set. Generated random password for super admin. Set the env var for a predictable password.`
         );
-        // biome-ignore lint/suspicious/noConsoleLog: intentional stdout-only output to avoid shipping secrets to log aggregators
-        console.log(`Generated super admin password: ${password}`);
+        console.warn(
+            `[SEED] Generated super admin password: ${password.slice(0, 4)}${'*'.repeat(Math.max(0, password.length - 4))}`
+        );
+        console.warn('[SEED] Change this password immediately after first login.');
     }
     const hashedPassword = await hash(password, 10);
 
