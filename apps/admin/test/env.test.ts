@@ -25,6 +25,7 @@ import { AdminEnvSchema } from '../src/env';
 function createValidEnv(overrides: Record<string, unknown> = {}): Record<string, unknown> {
     return {
         VITE_API_URL: 'http://localhost:3001',
+        VITE_SITE_URL: 'http://localhost:4321',
         VITE_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
         NODE_ENV: 'development',
         ...overrides
@@ -59,29 +60,19 @@ describe('AdminEnvSchema', () => {
             const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_BETTER_AUTH_URL: '' }));
             expect(result.success).toBe(false);
         });
+
+        it('should reject missing VITE_SITE_URL', () => {
+            const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_SITE_URL: undefined }));
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject invalid VITE_SITE_URL (not a URL)', () => {
+            const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_SITE_URL: 'not-a-url' }));
+            expect(result.success).toBe(false);
+        });
     });
 
     describe('optional fields', () => {
-        it('should accept VITE_SITE_URL when provided', () => {
-            const result = AdminEnvSchema.safeParse(
-                createValidEnv({ VITE_SITE_URL: 'http://localhost:4321' })
-            );
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.VITE_SITE_URL).toBe('http://localhost:4321');
-            }
-        });
-
-        it('should accept HOSPEDA_API_URL when provided', () => {
-            const result = AdminEnvSchema.safeParse(
-                createValidEnv({ HOSPEDA_API_URL: 'http://localhost:3001' })
-            );
-            expect(result.success).toBe(true);
-            if (result.success) {
-                expect(result.data.HOSPEDA_API_URL).toBe('http://localhost:3001');
-            }
-        });
-
         it('should accept VITE_SENTRY_DSN when provided', () => {
             const result = AdminEnvSchema.safeParse(
                 createValidEnv({ VITE_SENTRY_DSN: 'https://key@sentry.io/123' })

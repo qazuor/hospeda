@@ -2,49 +2,49 @@ import type { FieldConfig } from '@/components/entity-form/types/field-config.ty
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 
 /**
- * Modos disponibles para secciones y campos
+ * Available modes for sections and fields
  */
 export type ConfigMode = 'view' | 'edit' | 'create';
 
 /**
- * Configuración específica por modo para campos
+ * Mode-specific configuration for fields
  */
 export interface ModeSpecificFieldConfig {
-    /** Configuración específica para modo vista */
+    /** View mode specific configuration */
     view?: Partial<FieldConfig>;
-    /** Configuración específica para modo edición */
+    /** Edit mode specific configuration */
     edit?: Partial<FieldConfig>;
-    /** Configuración específica para modo creación */
+    /** Create mode specific configuration */
     create?: Partial<FieldConfig>;
 }
 
 /**
- * Campo consolidado que soporta múltiples modos
+ * Consolidated field that supports multiple modes
  */
 export interface ConsolidatedFieldConfig extends Omit<FieldConfig, 'modes'> {
-    /** Modos en los que este campo es visible */
+    /** Modes in which this field is visible */
     modes?: ConfigMode[];
-    /** Configuración específica por modo */
+    /** Mode-specific configuration */
     modeConfig?: ModeSpecificFieldConfig;
 }
 
 /**
- * Sección consolidada que soporta múltiples modos
+ * Consolidated section that supports multiple modes
  */
 export interface ConsolidatedSectionConfig extends Omit<SectionConfig, 'fields' | 'modes'> {
-    /** Modos en los que esta sección es visible */
+    /** Modes in which this section is visible */
     modes: ConfigMode[];
-    /** Campos de la sección con soporte para múltiples modos */
+    /** Section fields with multi-mode support */
     fields: ConsolidatedFieldConfig[];
 }
 
 /**
- * Configuración completa de entidad consolidada
+ * Complete consolidated entity configuration
  */
 export interface ConsolidatedEntityConfig {
-    /** Secciones consolidadas */
+    /** Consolidated sections */
     sections: ConsolidatedSectionConfig[];
-    /** Metadatos de la entidad */
+    /** Entity metadata */
     metadata?: {
         title?: string;
         description?: string;
@@ -54,13 +54,13 @@ export interface ConsolidatedEntityConfig {
 }
 
 /**
- * Opciones para el filtrado de secciones por modo
+ * Options for filtering sections by mode
  */
 export interface SectionFilterOptions {
-    /** Modo para el cual filtrar */
+    /** Mode to filter by */
     mode: ConfigMode;
-    /** Si incluir campos sin modo especificado (por defecto: true) */
+    /** Whether to include fields without a specified mode (default: true) */
     includeFieldsWithoutMode?: boolean;
-    /** Si aplicar configuración específica del modo (por defecto: true) */
+    /** Whether to apply mode-specific configuration (default: true) */
     applyModeSpecificConfig?: boolean;
 }

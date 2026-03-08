@@ -11,6 +11,7 @@
  */
 
 import { MainPageLayout } from '@/components/layout/MainPageLayout';
+import { env } from '@/env';
 import { useFlashyToast } from '@/hooks/use-flashy-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
@@ -267,7 +268,7 @@ function ChangePasswordPage() {
 
             setIsSubmitting(true);
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
+                const apiUrl = env.VITE_API_URL;
 
                 const response = await fetch(`${apiUrl}/api/v1/protected/auth/change-password`, {
                     method: 'POST',

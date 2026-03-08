@@ -41,16 +41,9 @@ try {
 }
 
 // Validate environment variables for Admin App
-const AdminEnvSchema = z
-    .object({
-        // Check both HOSPEDA_ (monorepo) and VITE_ (deployment) formats
-        HOSPEDA_API_URL: z.string().url('Must be a valid API URL').optional(),
-        VITE_API_URL: z.string().url('Must be a valid API URL').optional()
-    })
-    .refine((data) => data.HOSPEDA_API_URL || data.VITE_API_URL, {
-        message: 'API_URL is required (either HOSPEDA_API_URL or VITE_API_URL)',
-        path: ['API_URL']
-    });
+const AdminEnvSchema = z.object({
+    VITE_API_URL: z.string().url('Must be a valid API URL')
+});
 
 try {
     AdminEnvSchema.parse(process.env);
@@ -120,7 +113,7 @@ export default defineConfig({
                 return {
                     define: {
                         'import.meta.env.VITE_API_URL': JSON.stringify(
-                            process.env.VITE_API_URL || process.env.HOSPEDA_API_URL || ''
+                            process.env.VITE_API_URL || ''
                         ),
                         'import.meta.env.VITE_DEBUG_ACTOR_ID': JSON.stringify(
                             process.env.VITE_DEBUG_ACTOR_ID || ''

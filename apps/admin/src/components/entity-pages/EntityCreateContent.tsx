@@ -9,6 +9,7 @@ import { Icon } from '@/components/icons';
 import { Button } from '@/components/ui-wrapped/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
+import { env } from '@/env';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
@@ -366,8 +367,7 @@ export function EntityCreateContent({
                                         <div className="min-w-0 flex-1">
                                             {/* Performance metrics (development only - hidden by default) */}
                                             {import.meta.env.DEV &&
-                                                import.meta.env.VITE_DEBUG_LAZY_SECTIONS ===
-                                                    'true' && (
+                                                env.VITE_DEBUG_LAZY_SECTIONS && (
                                                     <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
                                                         Lazy Loading: {getMetrics().loadedCount}/
                                                         {getMetrics().totalSections} sections loaded

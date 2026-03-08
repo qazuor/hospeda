@@ -5,6 +5,7 @@
  * Maps URL patterns to section configurations.
  */
 
+import { adminLogger } from '../../utils/logger';
 import type { DynamicSidebarConfig, SectionConfig, SidebarConfig } from './types';
 
 /**
@@ -46,7 +47,7 @@ const sections: Map<string, SectionConfig> = new Map();
  */
 export function registerSection(section: SectionConfig): void {
     if (sections.has(section.id)) {
-        console.warn(`Section "${section.id}" is already registered. Overwriting.`);
+        adminLogger.warn(`Section "${section.id}" is already registered. Overwriting.`);
     }
     sections.set(section.id, section);
 }

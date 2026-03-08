@@ -13,12 +13,21 @@ import { adminClient } from 'better-auth/client/plugins';
 import { createAuthClient } from 'better-auth/react';
 
 /**
- * Resolves the API base URL from environment variables.
- * Supports both Vite client-side env and fallback for SSR.
+ * Resolves the API base URL for Better Auth client initialization.
+ *
+ * This function intentionally reads `import.meta.env` directly rather than
+ * going through the centralized `env` module. The reason is that
+ * `createAuthClient` is called at module-load time (top-level), which happens
+ * before the env singleton is safe to initialize in all environments (e.g.
+ * SSR, tests). Reading `import.meta.env` directly avoids triggering the
+ * full Zod validation at module-load time.
+ *
+ * All other files should use `env` from `@/env` instead of reading
+ * `import.meta.env` directly.
  */
 function getBaseURL(): string {
     if (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
+        return import.meta.env.VITE_API_URL as string;
     }
     if (typeof process !== 'undefined' && process.env?.HOSPEDA_API_URL) {
         return process.env.HOSPEDA_API_URL;

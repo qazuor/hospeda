@@ -4,6 +4,7 @@ import { LazySectionWrapper } from '@/components/entity-form/sections/LazySectio
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
+import { env } from '@/env';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
@@ -180,7 +181,7 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                 {/* Content Area */}
                 <div className="min-w-0 flex-1">
                     {/* Performance metrics (development only - hidden by default) */}
-                    {import.meta.env.DEV && import.meta.env.VITE_DEBUG_LAZY_SECTIONS === 'true' && (
+                    {import.meta.env.DEV && env.VITE_DEBUG_LAZY_SECTIONS && (
                         <div className="mb-4 rounded bg-primary/5 p-2 text-primary text-xs">
                             Lazy Loading: {getMetrics().loadedCount}/{getMetrics().totalSections}{' '}
                             sections loaded

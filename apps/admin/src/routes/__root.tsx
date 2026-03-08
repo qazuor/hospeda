@@ -8,7 +8,7 @@ import type * as React from 'react';
 
 import { ToastProvider } from '@/components/ui/ToastProvider';
 import { initializeSections } from '@/config/sections';
-import { validateAdminEnv } from '@/env';
+import { env, validateAdminEnv } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { useSession } from '@/lib/auth-client';
 import { createHttpBillingAdapter } from '@/lib/billing-http-adapter';
@@ -118,14 +118,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     // Uses lazy initializer to prevent recreation on every render
     const [billing] = useState(() => {
         const adapter = createHttpBillingAdapter({
-            apiUrl: import.meta.env.VITE_API_URL
+            apiUrl: env.VITE_API_URL
             // getAuthToken not provided - Better Auth handles auth via cookies
         });
 
         return createQZPayBilling({
             storage: adapter,
             defaultCurrency: 'ARS',
-            livemode: import.meta.env.PROD
+            livemode: env.PROD ?? false
         });
     });
 
@@ -146,7 +146,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                                 <GlobalErrorBoundary>
                                     <FeedbackErrorBoundary
                                         appSource="admin"
-                                        apiUrl={import.meta.env.VITE_API_URL}
+                                        apiUrl={env.VITE_API_URL}
                                         feedbackPageUrl="/es/feedback"
                                         userId={session?.user.id}
                                         userEmail={session?.user.email}
@@ -160,13 +160,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     </QZPayThemeProvider>
                 </QZPayProvider>
                 <FeedbackFAB
-                    apiUrl={import.meta.env.VITE_API_URL}
+                    apiUrl={env.VITE_API_URL}
                     appSource="admin"
                     userId={session?.user.id}
                     userEmail={session?.user.email}
                     userName={session?.user.name}
                 />
-                {process.env.NODE_ENV === 'development' && <TanstackDevtools />}
+                {env.NODE_ENV === 'development' && <TanstackDevtools />}
                 <Scripts />
             </body>
         </html>

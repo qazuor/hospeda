@@ -7,6 +7,7 @@
 
 import { defaultLocale, trans } from '@repo/i18n';
 import type { TranslationKey } from '@repo/i18n';
+import { adminLogger } from '../../utils/logger';
 
 /**
  * Get a translation by key without requiring hooks
@@ -25,7 +26,7 @@ export function getTranslation(key: TranslationKey, params?: Record<string, unkn
     const raw = trans[defaultLocale]?.[key];
 
     if (!raw) {
-        console.error(`Translation key not found: ${key}`);
+        adminLogger.error(`Translation key not found: ${key}`);
         return `[MISSING: ${key}]`;
     }
 

@@ -1,3 +1,4 @@
+import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { signOut } from '@/lib/auth-client';
 import { ShieldAlertIcon } from '@repo/icons';
@@ -50,10 +51,7 @@ function ForbiddenPage(): React.JSX.Element {
         }
     };
 
-    const siteUrl =
-        typeof window !== 'undefined'
-            ? (import.meta.env.VITE_SITE_URL ?? '')
-            : (import.meta.env.VITE_SITE_URL ?? '');
+    const siteUrl = env.VITE_SITE_URL ?? '';
 
     if (!isClient) {
         return (

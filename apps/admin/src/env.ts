@@ -14,8 +14,7 @@ import { z } from 'zod';
 const AdminEnvSchema = z.object({
     // API Configuration
     VITE_API_URL: z.string().url().describe('API base URL'),
-    VITE_SITE_URL: z.string().url().optional().describe('Public web app URL'),
-    HOSPEDA_API_URL: z.string().url().optional().describe('Server-side API URL for SSR auth'),
+    VITE_SITE_URL: z.string().url().describe('Public web app URL'),
 
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
@@ -136,7 +135,6 @@ export const validateAdminEnv = (): AdminEnv => {
         const envData = {
             VITE_API_URL: import.meta.env.VITE_API_URL,
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
-            HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',
@@ -241,6 +239,40 @@ export const isTest = (): boolean => {
 export const getSentryDsn = (): string | undefined => {
     return safeEnv.get('VITE_SENTRY_DSN') as string | undefined;
 };
+
+/**
+ * Lazy singleton for validated environment variables.
+ *
+ * This is the SINGLE SOURCE OF TRUTH for env vars in the admin app.
+ * All other modules must import `env` from here instead of reading
+ * `import.meta.env.*` directly.
+ *
+ * The singleton is evaluated lazily on first property access so that
+ * test files that only import `AdminEnvSchema` (for unit-testing the schema)
+ * do NOT trigger validation against real `import.meta.env` values.
+ *
+ * NOTE: `logger.ts` is the one deliberate exception. `env.ts` imports
+ * `adminLogger` (to report validation errors), which would create a circular
+ * dependency if `logger.ts` imported `env` in turn. Therefore `logger.ts`
+ * reads `import.meta.env.DEV` and `import.meta.env.VITE_ENABLE_LOGGING`
+ * directly.
+ *
+ * @example
+ * ```ts
+ * import { env } from '@/env';
+ * const apiUrl = env.VITE_API_URL;
+ * ```
+ */
+let _env: AdminEnv | undefined;
+
+export const env = new Proxy({} as AdminEnv, {
+    get(_target, prop: string) {
+        if (!_env) {
+            _env = validateAdminEnv();
+        }
+        return (_env as Record<string, unknown>)[prop];
+    }
+});
 
 // Export the schema for testing
 export { AdminEnvSchema };

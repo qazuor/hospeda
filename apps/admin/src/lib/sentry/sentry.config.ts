@@ -16,7 +16,9 @@
  * ```
  */
 
+import { env } from '@/env';
 import * as Sentry from '@sentry/react';
+import { adminLogger } from '../../utils/logger';
 
 /**
  * Sentry configuration options
@@ -41,12 +43,9 @@ export interface SentryConfig {
  */
 function getSentryConfig(): SentryConfig {
     return {
-        dsn: import.meta.env.VITE_SENTRY_DSN,
+        dsn: env.VITE_SENTRY_DSN,
         environment: import.meta.env.MODE || 'development',
-        release:
-            import.meta.env.VITE_SENTRY_RELEASE ||
-            import.meta.env.VITE_APP_VERSION ||
-            'development',
+        release: env.VITE_SENTRY_RELEASE ?? env.VITE_APP_VERSION ?? 'development',
         // Performance monitoring
         tracesSampleRate: 0.1, // 10% of transactions
         // Session replay
@@ -59,7 +58,7 @@ function getSentryConfig(): SentryConfig {
  * Project identification for multi-project Sentry organization
  */
 const PROJECT_TAGS = {
-    project: import.meta.env.VITE_SENTRY_PROJECT || 'hospeda',
+    project: env.VITE_SENTRY_PROJECT ?? 'hospeda',
     app_type: 'admin'
 };
 
@@ -71,12 +70,12 @@ function shouldInitializeSentry(): boolean {
 
     // Only initialize in production with valid DSN
     if (import.meta.env.DEV) {
-        console.debug('[Sentry] Skipping initialization in development');
+        adminLogger.debug('[Sentry] Skipping initialization in development');
         return false;
     }
 
     if (!config.dsn) {
-        console.warn('[Sentry] DSN not configured. Set VITE_SENTRY_DSN to enable.');
+        adminLogger.warn('[Sentry] DSN not configured. Set VITE_SENTRY_DSN to enable.');
         return false;
     }
 
@@ -160,7 +159,7 @@ export function initSentry(): void {
     });
 
     isInitialized = true;
-    console.info('[Sentry] Initialized successfully');
+    adminLogger.info('[Sentry] Initialized successfully');
 }
 
 /**
@@ -212,7 +211,7 @@ export function captureError(
     }
 ): string | undefined {
     if (!isInitialized) {
-        console.error('[Sentry] Not initialized, error not captured:', error);
+        adminLogger.error('[Sentry] Not initialized, error not captured:', error);
         return undefined;
     }
 

@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import { adminLogger } from '@/utils/logger';
 import { createPaginatedResponseSchema } from '@repo/schemas';
 import type { z } from 'zod';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
@@ -73,7 +74,7 @@ export const createEntityApi = <TData>(
         const parseResult = PaginatedResponseSchema.safeParse(data);
 
         if (!parseResult.success) {
-            console.error(
+            adminLogger.error(
                 `[createEntityApi] Zod validation failed for ${endpoint}:`,
                 parseResult.error.issues
             );

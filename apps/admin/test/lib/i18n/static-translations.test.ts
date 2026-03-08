@@ -48,7 +48,10 @@ describe('static-translations', () => {
 
             getTranslation('missing.key.test' as Parameters<typeof getTranslation>[0]);
 
-            expect(consoleSpy).toHaveBeenCalledWith('Translation key not found: missing.key.test');
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('Translation key not found: missing.key.test'),
+                expect.any(String)
+            );
             consoleSpy.mockRestore();
         });
     });

@@ -13,6 +13,7 @@
  * After successful password change, redirects to dashboard.
  */
 
+import { env } from '@/env';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchAuthSession } from '@/lib/auth-session';
 import type { TranslationKey } from '@repo/i18n';
@@ -290,7 +291,7 @@ function ForcedChangePasswordPage() {
 
             setIsSubmitting(true);
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
+                const apiUrl = env.VITE_API_URL;
 
                 const response = await fetch(`${apiUrl}/api/v1/protected/auth/change-password`, {
                     method: 'POST',
