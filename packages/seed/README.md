@@ -168,8 +168,8 @@ Sample data for development and testing:
 HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda
 
 # Super Admin authentication (optional)
-SEED_AUTH_PROVIDER=BETTER_AUTH
-SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID=user_xxxxxxxxxxxxx
+HOSPEDA_SEED_AUTH_PROVIDER=BETTER_AUTH
+HOSPEDA_SEED_SUPER_ADMIN_AUTH_PROVIDER_USER_ID=user_xxxxxxxxxxxxx
 ```
 
 ## Dependencies

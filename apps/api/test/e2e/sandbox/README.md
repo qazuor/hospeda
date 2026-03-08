@@ -51,10 +51,10 @@ Create a `.env.sandbox` file in `apps/api/` (this file is gitignored):
 
 ```bash
 # MercadoPago Sandbox Credentials
-MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890-abcdef-...
-MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret-here
-MERCADO_PAGO_SANDBOX=true
-MERCADO_PAGO_TIMEOUT=10000
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890-abcdef-...
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret-here
+HOSPEDA_MERCADO_PAGO_SANDBOX=true
+HOSPEDA_MERCADO_PAGO_TIMEOUT=10000
 
 # Database (use test database)
 HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda_test
@@ -77,7 +77,7 @@ Run the configuration check:
 
 ```bash
 cd apps/api
-node -e "console.log(process.env.MERCADO_PAGO_ACCESS_TOKEN ? 'Configured' : 'Not configured')"
+node -e "console.log(process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN ? 'Configured' : 'Not configured')"
 ```
 
 ## Running Tests
@@ -202,7 +202,7 @@ describe('MercadoPago Sandbox E2E', () => {
 **Solution:**
 
 1. Verify `.env.sandbox` file exists in `apps/api/`
-2. Check that `MERCADO_PAGO_ACCESS_TOKEN` is set
+2. Check that `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` is set
 3. Ensure token starts with `TEST-`
 4. Load environment variables: `source .env.sandbox`
 
@@ -223,7 +223,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
 **Solution:**
 
-1. Increase `MERCADO_PAGO_TIMEOUT` in environment (default: 5000ms)
+1. Increase `HOSPEDA_MERCADO_PAGO_TIMEOUT` in environment (default: 5000ms)
 2. Check internet connection
 3. Verify MercadoPago sandbox is operational
 4. Tests automatically retry - may just be temporary network issue
@@ -244,7 +244,7 @@ describe('MercadoPago Sandbox E2E', () => {
 
 **Solution:**
 
-1. Verify `MERCADO_PAGO_WEBHOOK_SECRET` is configured
+1. Verify `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is configured
 2. Ensure webhook secret matches MercadoPago application
 3. Check signature is correctly formatted in test
 
@@ -263,7 +263,7 @@ on:
 jobs:
   sandbox-tests:
     runs-on: ubuntu-latest
-    if: ${{ secrets.MERCADO_PAGO_TEST_TOKEN != '' }}
+    if: ${{ secrets.HOSPEDA_MERCADO_PAGO_TEST_TOKEN != '' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -284,9 +284,9 @@ jobs:
       - name: Run sandbox tests
         run: pnpm test:sandbox
         env:
-          MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.MERCADO_PAGO_TEST_TOKEN }}
-          MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.MERCADO_PAGO_WEBHOOK_SECRET }}
-          MERCADO_PAGO_SANDBOX: true
+          HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: ${{ secrets.HOSPEDA_MERCADO_PAGO_TEST_TOKEN }}
+          HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
+          HOSPEDA_MERCADO_PAGO_SANDBOX: true
           HOSPEDA_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
 ```
 

@@ -27,12 +27,12 @@ Required environment variables:
 
 ```env
 # Resend API Configuration
-RESEND_API_KEY=re_xxxxxxxxxxxxx          # Resend API key
-RESEND_FROM_EMAIL=noreply@hospeda.com.ar # Default sender email
-RESEND_FROM_NAME=Hospeda                  # Default sender name
+HOSPEDA_RESEND_API_KEY=re_xxxxxxxxxxxxx          # Resend API key
+HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.com.ar # Default sender email
+HOSPEDA_RESEND_FROM_NAME=Hospeda                  # Default sender name
 
 # Redis (Optional - for retry queue)
-REDIS_URL=redis://localhost:6379         # Redis connection URL
+HOSPEDA_REDIS_URL=redis://localhost:6379         # Redis connection URL
 ```
 
 ## Notification Types

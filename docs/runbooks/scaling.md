@@ -464,7 +464,7 @@ Vercel serverless auto-scales horizontally with no instance management required.
 
 ```bash
 # Connect to database
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 
 # Top slow queries
 SELECT
@@ -491,7 +491,7 @@ LIMIT 10;
 import { neon } from '@neondatabase/serverless';
 
 // Should use connection pooling
-export const db = neon(process.env.DATABASE_URL, {
+export const db = neon(process.env.HOSPEDA_DATABASE_URL, {
   // Connection pooling enabled by default
 });
 ```
@@ -510,7 +510,7 @@ export const db = neon(process.env.DATABASE_URL, {
 import { Pool } from 'pg';
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.HOSPEDA_DATABASE_URL,
   max: 20,  // Increase from default (10)
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,

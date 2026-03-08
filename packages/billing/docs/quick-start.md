@@ -15,14 +15,14 @@ The billing package requires MercadoPago credentials when using the payment adap
 
 ```env
 # Required for payment adapter
-MERCADO_PAGO_ACCESS_TOKEN=TEST-your-access-token
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-your-access-token
 
 # Optional
-MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret
-MERCADO_PAGO_SANDBOX=true                # default: true
-MERCADO_PAGO_TIMEOUT=5000                # default: 5000ms
-MERCADO_PAGO_PLATFORM_ID=               # marketplace tracking
-MERCADO_PAGO_INTEGRATOR_ID=             # integrator tracking
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret
+HOSPEDA_MERCADO_PAGO_SANDBOX=true                # default: true
+HOSPEDA_MERCADO_PAGO_TIMEOUT=5000                # default: 5000ms
+HOSPEDA_MERCADO_PAGO_PLATFORM_ID=               # marketplace tracking
+HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID=             # integrator tracking
 ```
 
 **Token format rules:**

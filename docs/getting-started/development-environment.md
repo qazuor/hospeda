@@ -363,8 +363,8 @@ pnpm add -D @types/package-name
 
 ```env
 # Database
-DATABASE_URL="postgresql://..."
-REDIS_URL="redis://..."
+HOSPEDA_DATABASE_URL="postgresql://..."
+HOSPEDA_REDIS_URL="redis://..."
 
 # Authentication
 HOSPEDA_BETTER_AUTH_URL="..."

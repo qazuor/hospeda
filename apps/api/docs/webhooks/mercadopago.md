@@ -175,7 +175,7 @@ Invalid or missing webhook signature.
 
 1. **Signature Verification**
    - QZPay webhook middleware verifies the `x-signature` header
-   - Uses `MERCADO_PAGO_WEBHOOK_SECRET` from environment
+   - Uses `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` from environment
    - Rejects requests with invalid signatures
 
 2. **Idempotency Check**
@@ -211,10 +211,10 @@ Required environment variables (set in `.env`):
 
 ```bash
 # MercadoPago Access Token (required)
-MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890-abcdef
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890-abcdef
 
 # Webhook Secret for signature verification (recommended)
-MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret-here
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret-here
 
 # Database connection (required)
 HOSPEDA_DATABASE_URL=postgresql://...
@@ -229,7 +229,7 @@ HOSPEDA_DATABASE_URL=postgresql://...
    - `payment.created`
    - `payment.updated`
    - `subscription_preapproval.updated`
-5. Copy the webhook secret to `MERCADO_PAGO_WEBHOOK_SECRET`
+5. Copy the webhook secret to `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET`
 
 ## Monitoring
 
@@ -311,7 +311,7 @@ pnpm test apps/api/test/integration/webhooks/mercadopago.test.ts
 
 ### Signature Verification Failures
 
-1. Verify `MERCADO_PAGO_WEBHOOK_SECRET` matches dashboard
+1. Verify `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` matches dashboard
 2. Check for whitespace or encoding issues in secret
 3. Ensure webhook secret hasn't been rotated
 4. Check system clock is synchronized (signature includes timestamp)

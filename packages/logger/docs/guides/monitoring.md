@@ -410,7 +410,7 @@ import { logger } from '@repo/logger';
  * Sentry error tracking
  */
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: process.env.HOSPEDA_SENTRY_DSN,
   environment: process.env.NODE_ENV,
   tracesSampleRate: 1.0,
 });

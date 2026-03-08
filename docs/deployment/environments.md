@@ -595,9 +595,9 @@ CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz
 
 ### Error Tracking (Sentry)
 
-#### SENTRY_DSN
+#### HOSPEDA_SENTRY_DSN
 
-**Description**: Sentry Data Source Name
+**Description**: Sentry Data Source Name (API server-side)
 
 **Format**: URL
 
@@ -605,24 +605,12 @@ CLOUDINARY_API_SECRET=abcdefghijklmnopqrstuvwxyz
 
 **Security**: Public (no sensitive data)
 
-**Example:**
-
-```env
-SENTRY_DSN=https://example123@o123456.ingest.sentry.io/123456
-```
-
-#### SENTRY_ENVIRONMENT
-
-**Description**: Sentry environment name
-
-**Values**: `development`, `staging`, `production`
-
-**Required**: No
+**Note**: For the web app use `PUBLIC_SENTRY_DSN`, for the admin app use `VITE_SENTRY_DSN`.
 
 **Example:**
 
 ```env
-SENTRY_ENVIRONMENT=production
+HOSPEDA_SENTRY_DSN=https://example123@o123456.ingest.sentry.io/123456
 ```
 
 ## Configuration by Environment
@@ -667,8 +655,7 @@ CLOUDINARY_API_KEY=dev-api-key
 CLOUDINARY_API_SECRET=dev-api-secret
 
 # Sentry (optional in development)
-# SENTRY_DSN=https://...
-# SENTRY_ENVIRONMENT=development
+# HOSPEDA_SENTRY_DSN=https://...
 ```
 
 ### Staging Environment
@@ -718,8 +705,7 @@ CLOUDINARY_API_KEY=staging-api-key
 CLOUDINARY_API_SECRET=staging-api-secret
 
 # Sentry
-SENTRY_DSN=https://staging-sentry-dsn
-SENTRY_ENVIRONMENT=staging
+HOSPEDA_SENTRY_DSN=https://staging-sentry-dsn
 ```
 
 ### Production Environment
@@ -769,8 +755,7 @@ CLOUDINARY_API_KEY=prod-api-key
 CLOUDINARY_API_SECRET=prod-api-secret
 
 # Sentry
-SENTRY_DSN=https://prod-sentry-dsn
-SENTRY_ENVIRONMENT=production
+HOSPEDA_SENTRY_DSN=https://prod-sentry-dsn
 ```
 
 ## Secret Management
@@ -903,8 +888,7 @@ const envSchema = z.object({
   CLOUDINARY_API_SECRET: z.string(),
 
   // Sentry
-  SENTRY_DSN: z.string().url().optional(),
-  SENTRY_ENVIRONMENT: z.string().optional(),
+  HOSPEDA_SENTRY_DSN: z.string().url().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

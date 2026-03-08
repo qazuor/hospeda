@@ -1677,7 +1677,7 @@ export class ProductModel extends BaseModel<Product> {
 ```typescript
 import { Redis } from 'ioredis';
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = new Redis(process.env.HOSPEDA_REDIS_URL);
 
 export class ProductModel extends BaseModel<Product> {
   private getCacheKey(id: string): string {

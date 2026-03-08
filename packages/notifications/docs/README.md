@@ -80,10 +80,10 @@ packages/notifications/
 ## Environment Variables
 
 ```env
-RESEND_API_KEY=re_xxxxxxxxxxxxx          # Resend API key
-RESEND_FROM_EMAIL=noreply@hospeda.com.ar # Sender email
-RESEND_FROM_NAME=Hospeda                  # Sender name
-REDIS_URL=redis://localhost:6379         # Redis (optional, for retries)
+HOSPEDA_RESEND_API_KEY=re_xxxxxxxxxxxxx          # Resend API key
+HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.com.ar # Sender email
+HOSPEDA_RESEND_FROM_NAME=Hospeda                  # Sender name
+HOSPEDA_REDIS_URL=redis://localhost:6379         # Redis (optional, for retries)
 ```
 
 ## Documentation Index

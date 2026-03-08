@@ -28,13 +28,13 @@ Verify all required environment variables are configured in production:
 - [ ] `HOSPEDA_RESEND_API_KEY` - Resend API key for email delivery
 - [ ] `HOSPEDA_RESEND_FROM_EMAIL` - Default sender email (e.g., `noreply@hospeda.com.ar`)
 - [ ] `HOSPEDA_RESEND_FROM_NAME` - Default sender name (e.g., `Hospeda`)
-- [ ] `RESEND_REPLY_TO` - Reply-to email address (e.g., `soporte@hospeda.com.ar`)
-- [ ] `ADMIN_NOTIFICATION_EMAILS` - Comma-separated admin emails for notifications
+- [ ] `HOSPEDA_RESEND_REPLY_TO` - Reply-to email address (e.g., `soporte@hospeda.com.ar`)
+- [ ] `HOSPEDA_ADMIN_NOTIFICATION_EMAILS` - Comma-separated admin emails for notifications
 
 #### Cron/Scheduler
 
 - [ ] `HOSPEDA_CRON_SECRET` - Secret for authenticating cron requests (REQUIRED)
-- [ ] `CRON_ADAPTER` - Set to `vercel` for Vercel, `node-cron` for VPS, or `manual` (default)
+- [ ] `HOSPEDA_CRON_ADAPTER` - Set to `vercel` for Vercel, `node-cron` for VPS, or `manual` (default)
 
 #### API Configuration
 

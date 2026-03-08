@@ -17,10 +17,10 @@ pnpm install
 ## Environment Variables
 
 ```env
-RESEND_API_KEY=re_xxxxxxxxxxxxx
-RESEND_FROM_EMAIL=noreply@hospeda.com.ar
-RESEND_FROM_NAME=Hospeda
-REDIS_URL=redis://localhost:6379  # Optional, for retry queue
+HOSPEDA_RESEND_API_KEY=re_xxxxxxxxxxxxx
+HOSPEDA_RESEND_FROM_EMAIL=noreply@hospeda.com.ar
+HOSPEDA_RESEND_FROM_NAME=Hospeda
+HOSPEDA_REDIS_URL=redis://localhost:6379  # Optional, for retry queue
 ```
 
 ## Basic Setup

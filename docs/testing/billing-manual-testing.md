@@ -63,7 +63,7 @@ HOSPEDA_BETTER_AUTH_SECRET=your-secret-key
 HOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth
 
 # Optional but recommended
-SENTRY_DSN=                  # Leave empty to disable
+HOSPEDA_SENTRY_DSN=                  # Leave empty to disable
 HOSPEDA_CRON_SECRET=test-secret      # For cron endpoint testing
 ```
 

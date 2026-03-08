@@ -76,8 +76,8 @@ project:hospeda app_type:api event_type:webhook_failure
 # =============================================================================
 
 # API - hospeda-api project
-SENTRY_DSN=https://31c6b2d7db0789020567a65cb20bf796@o4508855548313600.ingest.us.sentry.io/4510829690028032
-SENTRY_PROJECT=hospeda
+HOSPEDA_SENTRY_DSN=https://31c6b2d7db0789020567a65cb20bf796@o4508855548313600.ingest.us.sentry.io/4510829690028032
+HOSPEDA_SENTRY_PROJECT=hospeda
 SENTRY_ENVIRONMENT=production
 SENTRY_TRACES_SAMPLE_RATE=0.1
 SENTRY_PROFILES_SAMPLE_RATE=0.1
@@ -717,15 +717,15 @@ To track errors by release/version:
 
 ```bash
 # In .env or CI/CD
-SENTRY_RELEASE=hospeda-api@1.2.3
+HOSPEDA_SENTRY_RELEASE=hospeda-api@1.2.3
 ```
 
 ### 2. Configure in code
 
 ```typescript
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
-  release: process.env.SENTRY_RELEASE || `hospeda-api@${process.env.npm_package_version}`,
+  dsn: process.env.HOSPEDA_SENTRY_DSN,
+  release: process.env.HOSPEDA_SENTRY_RELEASE || `hospeda-api@${process.env.npm_package_version}`,
 });
 ```
 
@@ -775,7 +775,7 @@ sentry-cli sourcemaps upload \
 
 ```bash
 # Verify DSN is configured
-echo $SENTRY_DSN
+echo $HOSPEDA_SENTRY_DSN
 
 # If empty, Sentry silently disables itself
 ```

@@ -62,9 +62,9 @@ Last updated: 2026-03-01 (SPEC-019)
 
 ## 6. Forced Password Change Not Implemented
 
-**Risk**: The super admin seeded account does not force a password change on first login. If `SEED_SUPER_ADMIN_PASSWORD` env var is not set, a cryptographically random password is generated and printed to stdout (T-012 completed).
+**Risk**: The super admin seeded account does not force a password change on first login. If `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` env var is not set, a cryptographically random password is generated and printed to stdout (T-012 completed).
 
-**Mitigation**: Random password generation prevents default credential attacks. The previous hardcoded password `SuperAdmin123!` has been removed. Forced password change (T-013) is planned for a future iteration. Production deployments should set `SEED_SUPER_ADMIN_PASSWORD` explicitly.
+**Mitigation**: Random password generation prevents default credential attacks. The previous hardcoded password `SuperAdmin123!` has been removed. Forced password change (T-013) is planned for a future iteration. Production deployments should set `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` explicitly.
 
 **Severity**: Low (random password mitigates the main risk)
 

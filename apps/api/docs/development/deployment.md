@@ -121,8 +121,7 @@ API_CORS_ALLOW_CREDENTIALS=true
 API_RATE_LIMIT_TRUST_PROXY=true
 
 # Sentry
-SENTRY_DSN=https://xxx@o4508855548313600.ingest.us.sentry.io/xxx
-SENTRY_ENVIRONMENT=production
+HOSPEDA_SENTRY_DSN=https://xxx@o4508855548313600.ingest.us.sentry.io/xxx
 ```
 
 ### Setting Variables via CLI

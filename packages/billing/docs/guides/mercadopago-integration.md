@@ -17,21 +17,21 @@ Hospeda API
 
 ```env
 # Required
-MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890abcdef
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-1234567890abcdef
 
 # Required in production (optional in sandbox)
-MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET=your-webhook-secret
 
 # Optional
-MERCADO_PAGO_SANDBOX=true          # default: true
-MERCADO_PAGO_TIMEOUT=5000          # default: 5000ms
-MERCADO_PAGO_PLATFORM_ID=          # marketplace tracking
-MERCADO_PAGO_INTEGRATOR_ID=        # integrator tracking
+HOSPEDA_MERCADO_PAGO_SANDBOX=true          # default: true
+HOSPEDA_MERCADO_PAGO_TIMEOUT=5000          # default: 5000ms
+HOSPEDA_MERCADO_PAGO_PLATFORM_ID=          # marketplace tracking
+HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID=        # integrator tracking
 ```
 
 ### Token format
 
-| Environment | Token Prefix | `MERCADO_PAGO_SANDBOX` |
+| Environment | Token Prefix | `HOSPEDA_MERCADO_PAGO_SANDBOX` |
 |-------------|-------------|----------------------|
 | Sandbox/test | `TEST-` | `true` (default) |
 | Production | `APP_USR-` | `false` |
@@ -112,7 +112,7 @@ getDefaultCountry();  // 'AR'
 
 The `createMercadoPagoAdapter` function validates configuration at creation time:
 
-1. **Access token required** .. Throws if `MERCADO_PAGO_ACCESS_TOKEN` is not set
+1. **Access token required** .. Throws if `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN` is not set
 2. **Token format** .. Must start with `APP_USR-` or `TEST-`
 3. **Production webhook secret** .. Throws if `sandbox=false` and no webhook secret is configured
 4. **Sandbox webhook warning** .. Logs a warning if webhook secret is missing in sandbox mode

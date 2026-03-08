@@ -37,7 +37,7 @@ Comprehensive deployment checklist for the Hospeda monorepo. Covers all three ap
   - `HOSPEDA_SITE_URL` .. Public web URL
   - `HOSPEDA_ADMIN_URL` .. Admin panel URL
   - `HOSPEDA_CRON_SECRET` .. Secret for Vercel Cron authentication
-  - `SENTRY_DSN` .. Sentry error tracking DSN
+  - `HOSPEDA_SENTRY_DSN` .. Sentry error tracking DSN
 - [ ] All required env vars are set in Vercel for Web app:
   - `PUBLIC_API_URL`
   - `PUBLIC_SITE_URL`

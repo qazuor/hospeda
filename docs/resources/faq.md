@@ -18,7 +18,7 @@ Quick answers to common questions for developers working on the Hospeda project.
 
 ### How do I set up the project locally?
 
-Clone the repository, install dependencies with `pnpm install`, set up your `.env.local` file with required environment variables (DATABASE_URL, Better Auth keys), run `pnpm db:migrate` to set up the database, and finally `pnpm dev` to start development servers.
+Clone the repository, install dependencies with `pnpm install`, set up your `.env.local` file with required environment variables (`HOSPEDA_DATABASE_URL`, Better Auth keys), run `pnpm db:migrate` to set up the database, and finally `pnpm dev` to start development servers.
 
 See [Setup Guide](../getting-started/setup.md) for detailed instructions.
 
@@ -491,7 +491,7 @@ Run `pnpm typecheck` to see full error details, ensure types are imported correc
 
 ### "Database connection failed" - troubleshooting steps?
 
-Check `DATABASE_URL` in `.env.local` is correct, verify database server is running (or Docker container), ensure network connectivity to remote database, check firewall settings, verify database credentials, and test connection with `pnpm db:studio`.
+Check `HOSPEDA_DATABASE_URL` in `.env.local` is correct, verify database server is running (or Docker container), ensure network connectivity to remote database, check firewall settings, verify database credentials, and test connection with `pnpm db:studio`.
 
 ### "Authentication error" - what to check?
 

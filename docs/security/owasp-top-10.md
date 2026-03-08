@@ -3020,7 +3020,7 @@ export const cleanupOldLogs = async () => {
 import * as Sentry from '@sentry/node';
 
 Sentry.init({
-  dsn: process.env.SENTRY_DSN,
+  dsn: process.env.HOSPEDA_SENTRY_DSN,
   environment: process.env.NODE_ENV,
   tracesSampleRate: 1.0,
 

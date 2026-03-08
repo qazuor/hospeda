@@ -602,7 +602,7 @@ const verifyWebhookSignature: MiddlewareHandler = async (c, next) => {
 };
 ```
 
-3. **Ensure MERCADO_PAGO_WEBHOOK_SECRET is not hardcoded:**
+3. **Ensure HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET is not hardcoded:**
    - ✅ Verify it's loaded from environment variables
    - ✅ Ensure it's not committed to version control
    - ✅ Use different secrets for dev/staging/production

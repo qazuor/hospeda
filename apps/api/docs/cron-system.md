@@ -33,7 +33,7 @@ The cron system uses a flexible adapter pattern to support multiple deployment e
 │                    Cron Bootstrap                            │
 │                (apps/api/src/cron/bootstrap.ts)              │
 │                                                              │
-│  1. Read CRON_ADAPTER from environment                      │
+│  1. Read HOSPEDA_CRON_ADAPTER from environment               │
 │  2. Load enabled jobs from registry                         │
 │  3. Select and initialize adapter                           │
 └───────────────────────────┬─────────────────────────────────┘
@@ -126,9 +126,9 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 #### Optional
 
 ```bash
-# CRON_ADAPTER - Determines how jobs are scheduled
+# HOSPEDA_CRON_ADAPTER - Determines how jobs are scheduled
 # Options: 'manual' (default), 'node-cron', 'vercel'
-CRON_ADAPTER=manual
+HOSPEDA_CRON_ADAPTER=manual
 
 # HOSPEDA_DISABLE_AUTH - Disable authentication (DEVELOPMENT ONLY!)
 # WARNING: NEVER set to true in production
@@ -136,7 +136,7 @@ CRON_ADAPTER=manual
 HOSPEDA_DISABLE_AUTH=false
 ```
 
-### CRON_ADAPTER Options
+### HOSPEDA_CRON_ADAPTER Options
 
 | Adapter | When to Use | Scheduling Behavior | Requirements |
 |---------|-------------|---------------------|--------------|
@@ -156,7 +156,7 @@ HOSPEDA_DISABLE_AUTH=false
 
 ```bash
 # .env.local
-CRON_ADAPTER=manual  # or omit (defaults to manual)
+HOSPEDA_CRON_ADAPTER=manual  # or omit (defaults to manual)
 HOSPEDA_CRON_SECRET=dev-secret-123  # Use simple secret for dev
 
 # Optional: Disable auth for easier testing
@@ -199,7 +199,7 @@ pnpm add -D node-cron @types/node-cron
 
 # 2. Configure environment
 # .env.production
-CRON_ADAPTER=node-cron
+HOSPEDA_CRON_ADAPTER=node-cron
 HOSPEDA_CRON_SECRET=<your-production-secret>
 NODE_ENV=production
 ```
@@ -241,7 +241,7 @@ RUN pnpm build
 
 # Environment
 ENV NODE_ENV=production
-ENV CRON_ADAPTER=node-cron
+ENV HOSPEDA_CRON_ADAPTER=node-cron
 ENV HOSPEDA_CRON_SECRET=will-be-overridden-by-docker-compose
 
 # Start
@@ -258,7 +258,7 @@ CMD ["pnpm", "start"]
 
 ```bash
 # 1. Configure environment in Vercel dashboard
-CRON_ADAPTER=vercel
+HOSPEDA_CRON_ADAPTER=vercel
 HOSPEDA_CRON_SECRET=<your-vercel-secret>
 ```
 
@@ -294,7 +294,7 @@ HOSPEDA_CRON_SECRET=<your-vercel-secret>
 
   "env": {
     "NODE_ENV": "production",
-    "CRON_ADAPTER": "vercel",
+    "HOSPEDA_CRON_ADAPTER": "vercel",
     "HOSPEDA_CRON_SECRET": "@cron-secret"
   },
 
@@ -1024,10 +1024,10 @@ await sendMetrics(metrics);
 
 **Checklist:**
 
-1. ✅ Is `CRON_ADAPTER=node-cron`?
+1. ✅ Is `HOSPEDA_CRON_ADAPTER=node-cron`?
 
    ```bash
-   echo $CRON_ADAPTER
+   echo $HOSPEDA_CRON_ADAPTER
    ```
 
 2. ✅ Is `HOSPEDA_CRON_SECRET` set?
@@ -1058,7 +1058,7 @@ await sendMetrics(metrics);
 
 **Solutions:**
 
-- Set `CRON_ADAPTER=node-cron` in environment
+- Set `HOSPEDA_CRON_ADAPTER=node-cron` in environment
 - Set `HOSPEDA_CRON_SECRET` to a secure random value
 - Ensure `NODE_ENV` is not `test`
 - Enable job in definition file
@@ -1342,7 +1342,7 @@ curl http://localhost:3001/api/v1/cron \
 | Variable | Required | Default | Values |
 |----------|----------|---------|--------|
 | `HOSPEDA_CRON_SECRET` | Yes* | - | Strong random string (32+ chars) |
-| `CRON_ADAPTER` | No | `manual` | `manual`, `node-cron`, `vercel` |
+| `HOSPEDA_CRON_ADAPTER` | No | `manual` | `manual`, `node-cron`, `vercel` |
 | `HOSPEDA_DISABLE_AUTH` | No | `false` | `true` (dev only), `false` |
 
 *Required for all adapters except when `HOSPEDA_DISABLE_AUTH=true`

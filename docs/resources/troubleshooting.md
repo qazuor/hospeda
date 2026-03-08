@@ -236,7 +236,7 @@ pg_isready
 docker ps | grep postgres
 
 # Test connection with psql
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 
 # Check port availability
 lsof -i :5432
@@ -266,8 +266,8 @@ sudo systemctl start postgresql
 # 2. Create database if needed
 createdb hospeda_dev
 
-# 3. Update DATABASE_URL in .env.local
-DATABASE_URL=postgresql://user:password@localhost:5432/hospeda_dev
+# 3. Update HOSPEDA_DATABASE_URL in .env.local
+HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda_dev
 
 # 4. Test connection
 pnpm db:migrate
@@ -301,7 +301,7 @@ pnpm db:studio
 cat packages/db/migrations/[latest-migration]/migration.sql
 
 # Check database schema
-psql $DATABASE_URL -c "\d accommodations"
+psql $HOSPEDA_DATABASE_URL -c "\d accommodations"
 ```
 
 #### Check database Solution
@@ -325,7 +325,7 @@ pnpm db:fresh  # Drops, recreates, migrates, seeds
 
 # Option 3: Manual fix in production
 # 1. Connect to database
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 
 # 2. Fix manually
 ALTER TABLE accommodations ADD COLUMN IF NOT EXISTS new_column TEXT;
@@ -359,7 +359,7 @@ INSERT INTO drizzle.__migrations (hash, created_at) VALUES ('hash', NOW());
 pnpm db:studio
 
 # Test with raw SQL
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 SELECT * FROM accommodations;
 
 # Enable query logging
@@ -424,7 +424,7 @@ const results = await db.query.accommodations.findMany({
 
 ```bash
 # Check foreign key constraints
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 \d+ accommodations
 
 # Find orphaned records
@@ -610,7 +610,7 @@ ls -la .env.local
 cat .env.example
 
 # Check if variables are loaded
-node -e "console.log(process.env.DATABASE_URL)"
+node -e "console.log(process.env.HOSPEDA_DATABASE_URL)"
 
 # Compare .env.example and .env.local
 diff .env.example .env.local
@@ -624,7 +624,7 @@ cp .env.example .env.local
 
 # 2. Fill in required values
 # Edit .env.local with your values:
-# - DATABASE_URL
+# - HOSPEDA_DATABASE_URL
 # - HOSPEDA_BETTER_AUTH_SECRET
 # - HOSPEDA_BETTER_AUTH_URL
 # - etc.
@@ -817,7 +817,7 @@ cat .env.local | grep BETTER_AUTH
 # DevTools → Application → Cookies
 
 # Check database sessions table
-psql $DATABASE_URL -c "SELECT * FROM sessions ORDER BY created_at DESC LIMIT 5"
+psql $HOSPEDA_DATABASE_URL -c "SELECT * FROM sessions ORDER BY created_at DESC LIMIT 5"
 ```
 
 #### Better Auth Solution
@@ -1037,7 +1037,7 @@ pnpm test --sequence --no-coverage
 # 2. Add required environment variables to CI
 # In .github/workflows/test.yml:
 env:
-  DATABASE_URL: postgresql://localhost/test
+  HOSPEDA_DATABASE_URL: postgresql://localhost/test
   NODE_ENV: test
 
 # 3. Set up database in CI

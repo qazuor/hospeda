@@ -474,8 +474,8 @@ QZPAY_LOCALE=es-AR
 QZPAY_TIMEZONE=America/Argentina/Buenos_Aires
 
 # Payment Gateways (example)
-MERCADO_PAGO_ACCESS_TOKEN=your_access_token
-MERCADO_PAGO_PUBLIC_KEY=your_public_key
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=your_access_token
+HOSPEDA_MERCADO_PAGO_PUBLIC_KEY=your_public_key
 ```
 
 ## Best Practices

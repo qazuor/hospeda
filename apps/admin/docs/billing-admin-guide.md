@@ -478,7 +478,7 @@ Configure the following environment variables for billing functionality.
 
 ```env
 # MercadoPago Access Token (TEST- prefix for sandbox, APP_USR- for production)
-MERCADO_PAGO_ACCESS_TOKEN=TEST-your_access_token_here
+HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN=TEST-your_access_token_here
 
 # Database connection (shared)
 HOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda
@@ -491,13 +491,13 @@ HOSPEDA_API_URL=http://localhost:3001
 
 ```env
 # Webhook secret for signature verification
-MERCADO_PAGO_WEBHOOK_SECRET=your_webhook_secret_here
+HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET=your_webhook_secret_here
 
 # MercadoPago configuration
-MERCADO_PAGO_SANDBOX=true                    # Enable sandbox mode (default: true)
-MERCADO_PAGO_TIMEOUT=5000                    # Request timeout in ms (default: 5000)
-MERCADO_PAGO_PLATFORM_ID=                    # Platform ID for marketplace tracking
-MERCADO_PAGO_INTEGRATOR_ID=                  # Integrator ID for tracking
+HOSPEDA_MERCADO_PAGO_SANDBOX=true                    # Enable sandbox mode (default: true)
+HOSPEDA_MERCADO_PAGO_TIMEOUT=5000                    # Request timeout in ms (default: 5000)
+HOSPEDA_MERCADO_PAGO_PLATFORM_ID=                    # Platform ID for marketplace tracking
+HOSPEDA_MERCADO_PAGO_INTEGRATOR_ID=                  # Integrator ID for tracking
 
 # Redis (optional, for caching)
 HOSPEDA_REDIS_URL=redis://localhost:6379
@@ -508,7 +508,7 @@ HOSPEDA_REDIS_URL=redis://localhost:6379
 Before going live:
 
 - [ ] Replace `TEST-` token with production `APP_USR-` token
-- [ ] Set `MERCADO_PAGO_SANDBOX=false`
+- [ ] Set `HOSPEDA_MERCADO_PAGO_SANDBOX=false`
 - [ ] Configure webhook secret from production app
 - [ ] Update webhook URL in MercadoPago dashboard
 - [ ] Test all webhook events with production credentials

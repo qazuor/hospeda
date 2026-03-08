@@ -412,7 +412,7 @@ curl https://api.hospeda.com/metrics | jq
 
 ```sql
 -- Connect to database
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 
 -- Enable extension (if not already)
 CREATE EXTENSION IF NOT EXISTS pg_stat_statements;

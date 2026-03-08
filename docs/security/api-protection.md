@@ -2365,7 +2365,7 @@ const rateLimitStore = new Map<string, { count: number; windowStart: number }>()
 
 import { Redis } from 'ioredis';
 
-const redis = new Redis(process.env.REDIS_URL);
+const redis = new Redis(process.env.HOSPEDA_REDIS_URL);
 
 async function checkRateLimit(key: string, config: RateLimitConfig) {
   const current = await redis.get(key);

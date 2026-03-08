@@ -442,7 +442,7 @@ vercel logs --prod | grep -E '"status":(4|5)[0-9]{2}' | wc -l
 
 ```bash
 # Check database connectivity
-psql $DATABASE_URL -c "SELECT count(*) FROM accommodations"
+psql $HOSPEDA_DATABASE_URL -c "SELECT count(*) FROM accommodations"
 
 # Check for connection errors in Vercel logs
 vercel logs --prod | grep -i "database\|connection" | tail -20
@@ -664,7 +664,7 @@ git push
 
 ```bash
 # Connect to production database (with appropriate credentials)
-psql $DATABASE_URL
+psql $HOSPEDA_DATABASE_URL
 
 # Run migration manually
 \i packages/db/migrations/0XXX_rollback_feature.sql
@@ -681,7 +681,7 @@ psql $DATABASE_URL
 gh run view [run-id] --log
 
 # Or monitor database (if manual)
-psql $DATABASE_URL -c "SELECT * FROM pg_stat_activity WHERE state = 'active'"
+psql $HOSPEDA_DATABASE_URL -c "SELECT * FROM pg_stat_activity WHERE state = 'active'"
 ```
 
 ### Step 7: Verify Database State

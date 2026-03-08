@@ -1121,7 +1121,7 @@ Serverless PostgreSQL database provider used for Hospeda.
 
 ```bash
 # Connect to Neon database
-DATABASE_URL=postgresql://user:pass@host.neon.tech/db
+HOSPEDA_DATABASE_URL=postgresql://user:pass@host.neon.tech/db
 ```
 
 **Related**: PostgreSQL, Drizzle ORM

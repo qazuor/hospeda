@@ -292,18 +292,18 @@ RefinedSchema.parse({ PASSWORD: 'Password123' });
 ```typescript
 const ConditionalSchema = z.object({
   USE_REDIS: z.coerce.boolean(),
-  REDIS_URL: z.string().optional(),
+  HOSPEDA_REDIS_URL: z.string().optional(),
 }).refine(
   (data) => {
-    // If USE_REDIS is true, REDIS_URL must be provided
-    if (data.USE_REDIS && !data.REDIS_URL) {
+    // If USE_REDIS is true, HOSPEDA_REDIS_URL must be provided
+    if (data.USE_REDIS && !data.HOSPEDA_REDIS_URL) {
       return false;
     }
     return true;
   },
   {
-    message: 'REDIS_URL is required when USE_REDIS is true',
-    path: ['REDIS_URL'],
+    message: 'HOSPEDA_REDIS_URL is required when USE_REDIS is true',
+    path: ['HOSPEDA_REDIS_URL'],
   }
 );
 ```
@@ -415,10 +415,10 @@ const UrlSchema = z.object({
   ),
 
   // PostgreSQL connection string
-  DATABASE_URL: z.string().url().startsWith('postgresql://'),
+  HOSPEDA_DATABASE_URL: z.string().url().startsWith('postgresql://'),
 
   // Redis connection string
-  REDIS_URL: z.string().url().startsWith('redis://'),
+  HOSPEDA_REDIS_URL: z.string().url().startsWith('redis://'),
 });
 ```
 
