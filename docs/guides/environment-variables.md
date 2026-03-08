@@ -172,7 +172,21 @@ Set automatically by Node.js, CI, or Vercel. Do not set these manually.
 | `CI` | Set to `true` by most CI systems |
 | `VERCEL` | Set to `1` on Vercel serverless infrastructure |
 | `VERCEL_GIT_COMMIT_SHA` | Full Git commit SHA injected at Vercel build time |
-| `SENTRY_ENVIRONMENT` | Sentry environment tag for API events |
+
+### Platform Naming Exceptions
+
+The variables `VERCEL_GIT_COMMIT_SHA`, `VERCEL`, and `CI` do not follow the
+`HOSPEDA_*` naming convention. This is intentional: these variables are injected
+by the deployment platform (Vercel) or CI system (GitHub Actions) and their names
+are fixed by the platform. The project has no control over them.
+
+> **Note**: `SENTRY_ENVIRONMENT` is not used. Sentry environment is derived from `NODE_ENV` at runtime.
+
+These are accepted exceptions to the naming policy. Code that reads them (e.g.
+`apps/api/src/utils/env.ts` reading `VERCEL_GIT_COMMIT_SHA` to populate
+`HOSPEDA_SENTRY_RELEASE`) should document the reason at the call site. Do not
+attempt to rename or alias them with `HOSPEDA_` prefixes in deployment config,
+as that would add a redundant mapping with no benefit.
 
 ### Test Database (System)
 
