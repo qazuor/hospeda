@@ -17,6 +17,7 @@ import { sendEmail } from '@repo/email';
 import { ResetPasswordTemplate } from '@repo/email';
 import { VerifyEmailTemplate } from '@repo/email';
 import { createLogger } from '@repo/logger';
+import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
@@ -286,8 +287,8 @@ export function getAuth(): ReturnType<typeof betterAuth> {
 
         plugins: [
             admin({
-                defaultRole: 'HOST',
-                adminRoles: ['SUPER_ADMIN', 'ADMIN'],
+                defaultRole: RoleEnum.HOST,
+                adminRoles: [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN],
                 roles: {
                     SUPER_ADMIN: fullAdminRole,
                     ADMIN: fullAdminRole,
@@ -322,7 +323,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                             data: {
                                 ...user,
                                 slug,
-                                role: 'HOST',
+                                role: RoleEnum.HOST,
                                 settings: DEFAULT_USER_SETTINGS,
                                 visibility: 'PUBLIC',
                                 lifecycleState: 'ACTIVE'
@@ -345,7 +346,7 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                                 name: user.name || undefined
                             });
 
-                            if (customerId && user.role === 'HOST') {
+                            if (customerId && user.role === RoleEnum.HOST) {
                                 const trialService = new TrialService(billing);
                                 await trialService.startTrial({ customerId });
                                 logger.info(
@@ -417,8 +418,8 @@ function parseTrustedOrigins(): string[] {
     // Default development origins
     if (origins.length === 0) {
         if (env.NODE_ENV === 'production') {
-            console.error(
-                '[AUTH SECURITY] HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL are not configured. ' +
+            logger.error(
+                'HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL are not configured. ' +
                     'Falling back to localhost origins in PRODUCTION. This is a security risk.'
             );
         }

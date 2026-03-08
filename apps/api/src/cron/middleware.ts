@@ -4,10 +4,23 @@
  * @module cron/middleware
  */
 
+import { timingSafeEqual } from 'node:crypto';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
 import { env } from '../utils/env.js';
+
+/**
+ * Compares two strings in constant time to prevent timing attacks.
+ *
+ * @param a - First string to compare
+ * @param b - Second string to compare
+ * @returns True if strings are equal, false otherwise
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 /**
  * Middleware to authenticate cron job requests.
@@ -40,7 +53,7 @@ export const cronAuthMiddleware = async (c: Context<AppBindings>, next: Next): P
     const authHeader = c.req.header('authorization');
     if (authHeader?.startsWith('Bearer ')) {
         const token = authHeader.slice(7); // Remove "Bearer " prefix
-        if (token === cronSecret) {
+        if (timingSafeCompare(token, cronSecret)) {
             await next();
             return;
         }
@@ -48,7 +61,7 @@ export const cronAuthMiddleware = async (c: Context<AppBindings>, next: Next): P
 
     // Check X-Cron-Secret header
     const cronSecretHeader = c.req.header('x-cron-secret');
-    if (cronSecretHeader === cronSecret) {
+    if (cronSecretHeader !== undefined && timingSafeCompare(cronSecretHeader, cronSecret)) {
         await next();
         return;
     }

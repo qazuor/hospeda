@@ -1,6 +1,6 @@
 import { UserModel } from '@repo/db';
 import { AuthMeResponseSchema, PermissionEnum } from '@repo/schemas';
-import { createGuestActor } from '../../utils/actor';
+import { createGuestActor, isGuestActor } from '../../utils/actor';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 
@@ -18,7 +18,7 @@ export const authMeRoute = createSimpleRoute({
             const actor = c.get('actor');
 
             // Check if user is authenticated by checking if actor is not a guest
-            const isAuthenticated = actor.role !== 'GUEST';
+            const isAuthenticated = !isGuestActor(actor);
 
             // Return all permissions for authenticated users.
             // Permissions are public knowledge to the user themselves and needed

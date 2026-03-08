@@ -3,6 +3,7 @@
  * @module utils/string
  */
 
+import { getRandomValues } from 'node:crypto';
 import logger from '@repo/logger';
 import slugify from 'slugify';
 
@@ -125,19 +126,20 @@ export function isEmpty(str?: string | null): boolean {
 }
 
 /**
- * Generate a random string of specified length
+ * Generate a cryptographically secure random string of specified length.
+ *
+ * Uses `crypto.getRandomValues` instead of `Math.random()` to ensure
+ * the output is suitable for security-sensitive use cases (tokens, slugs, IDs).
+ *
  * @param length - Length of the random string (default: 8)
  * @param chars - Characters to use (default: alphanumeric)
- * @returns Random string
+ * @returns Cryptographically secure random string
  */
 export function randomString(
     length = 8,
     chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
 ): string {
-    let result = '';
-    const charsLength = chars.length;
-    for (let i = 0; i < length; i++) {
-        result += chars.charAt(Math.floor(Math.random() * charsLength));
-    }
-    return result;
+    const array = new Uint32Array(length);
+    getRandomValues(array);
+    return Array.from(array, (v) => chars[v % chars.length]).join('');
 }
