@@ -409,4 +409,262 @@ describe('Environment Configuration', () => {
             expect(envModule.env).toHaveProperty('API_LOG_LEVEL');
         });
     });
+
+    describe('Optional HOSPEDA_* Variables', () => {
+        it('should accept HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_SITE_URL: 'http://localhost:4321',
+                HOSPEDA_ADMIN_URL: 'http://localhost:3000'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SITE_URL).toBe('http://localhost:4321');
+            expect(envModule.env.HOSPEDA_ADMIN_URL).toBe('http://localhost:3000');
+        });
+
+        it('should accept HOSPEDA_BETTER_AUTH_URL', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_BETTER_AUTH_URL: 'http://localhost:3001/api/auth'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_BETTER_AUTH_URL).toBe('http://localhost:3001/api/auth');
+        });
+
+        it('should accept Sentry variables', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_SENTRY_DSN: 'https://key@sentry.io/123',
+                HOSPEDA_SENTRY_RELEASE: 'v1.0.0',
+                HOSPEDA_SENTRY_PROJECT: 'hospeda-api'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SENTRY_DSN).toBe('https://key@sentry.io/123');
+            expect(envModule.env.HOSPEDA_SENTRY_RELEASE).toBe('v1.0.0');
+            expect(envModule.env.HOSPEDA_SENTRY_PROJECT).toBe('hospeda-api');
+        });
+
+        it('should accept HOSPEDA_RESEND_API_KEY', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_RESEND_API_KEY: 're_test_key_123'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_RESEND_API_KEY).toBe('re_test_key_123');
+        });
+
+        it('should accept HOSPEDA_CRON_SECRET', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_CRON_SECRET: 'my-cron-secret-value'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_CRON_SECRET).toBe('my-cron-secret-value');
+        });
+
+        it('should leave optional HOSPEDA_* vars undefined when not set', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_SITE_URL).toBeUndefined();
+            expect(envModule.env.HOSPEDA_ADMIN_URL).toBeUndefined();
+            expect(envModule.env.HOSPEDA_SENTRY_DSN).toBeUndefined();
+            expect(envModule.env.HOSPEDA_RESEND_API_KEY).toBeUndefined();
+            expect(envModule.env.HOSPEDA_CRON_SECRET).toBeUndefined();
+        });
+    });
+
+    describe('CORS and CSRF Origins', () => {
+        it('should use default CORS origins', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_CORS_ORIGINS).toBe(
+                'http://localhost:3000,http://localhost:4321'
+            );
+        });
+
+        it('should accept custom CORS origins', async () => {
+            process.env = createValidTestEnv({
+                API_CORS_ORIGINS: 'https://hospeda.com.ar,https://admin.hospeda.com.ar'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_CORS_ORIGINS).toBe(
+                'https://hospeda.com.ar,https://admin.hospeda.com.ar'
+            );
+        });
+
+        it('should accept custom CSRF origins', async () => {
+            process.env = createValidTestEnv({
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe('https://hospeda.com.ar');
+        });
+    });
+
+    describe('Database Pool Configuration', () => {
+        it('should accept DB pool settings', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_DB_POOL_MAX_CONNECTIONS: '20',
+                HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS: '60000',
+                HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: '5000'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_DB_POOL_MAX_CONNECTIONS).toBe(20);
+            expect(envModule.env.HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS).toBe(60000);
+            expect(envModule.env.HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS).toBe(5000);
+        });
+
+        it('should use defaults for DB pool when not set', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_DB_POOL_MAX_CONNECTIONS).toBe(10);
+            expect(envModule.env.HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS).toBe(30000);
+            expect(envModule.env.HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS).toBe(2000);
+        });
+    });
+
+    describe('Metrics Configuration', () => {
+        it('should accept API_METRICS_ENABLED override', async () => {
+            process.env = createValidTestEnv({
+                API_METRICS_ENABLED: 'true'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_METRICS_ENABLED).toBe(true);
+        });
+
+        it('should default metrics to enabled', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_METRICS_ENABLED).toBe(true);
+        });
+    });
+
+    describe('Platform-Injected Variables', () => {
+        it('should accept VERCEL flag', async () => {
+            process.env = createValidTestEnv({ VERCEL: '1' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.VERCEL).toBe('1');
+        });
+
+        it('should accept CI flag', async () => {
+            process.env = createValidTestEnv({ CI: 'true' });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.CI).toBe('true');
+        });
+
+        it('should accept VERCEL_GIT_COMMIT_SHA', async () => {
+            process.env = createValidTestEnv({
+                VERCEL_GIT_COMMIT_SHA: 'abc123def456'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.VERCEL_GIT_COMMIT_SHA).toBe('abc123def456');
+        });
+
+        it('should leave platform vars undefined when not set', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.VERCEL).toBeUndefined();
+            expect(envModule.env.CI).toBeUndefined();
+            expect(envModule.env.VERCEL_GIT_COMMIT_SHA).toBeUndefined();
+        });
+    });
+
+    describe('Production CORS Localhost Rejection', () => {
+        it('should reject localhost in API_CORS_ORIGINS in production', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'http://localhost:3000',
+                API_CSRF_ORIGINS: 'https://hospeda.com.ar'
+            });
+
+            const { validateApiEnv } = await import('../../src/utils/env');
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept valid production CORS and CSRF origins', async () => {
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+            });
+
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_CORS_ORIGINS).toBe('https://hospeda.com.ar');
+        });
+    });
+
+    describe('Debug and Testing Variables', () => {
+        it('should accept HOSPEDA_API_DEBUG_ERRORS', async () => {
+            process.env = createValidTestEnv({
+                HOSPEDA_API_DEBUG_ERRORS: 'true'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_API_DEBUG_ERRORS).toBe(true);
+        });
+
+        it('should default HOSPEDA_API_DEBUG_ERRORS to false', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.HOSPEDA_API_DEBUG_ERRORS).toBe(false);
+        });
+    });
+
+    describe('Logging Sub-Configuration', () => {
+        it('should accept LOG sub-field overrides', async () => {
+            process.env = createValidTestEnv({
+                API_LOG_SAVE: 'true',
+                API_LOG_EXPAND_OBJECTS: 'true',
+                API_LOG_TRUNCATE_AT: '500',
+                API_LOG_STRINGIFY: 'true'
+            });
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_LOG_SAVE).toBe(true);
+            expect(envModule.env.API_LOG_EXPAND_OBJECTS).toBe(true);
+            expect(envModule.env.API_LOG_TRUNCATE_AT).toBe(500);
+            expect(envModule.env.API_LOG_STRINGIFY).toBe(true);
+        });
+
+        it('should use LOG sub-field defaults', async () => {
+            process.env = createValidTestEnv();
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+            expect(envModule.env.API_LOG_INCLUDE_TIMESTAMPS).toBe(true);
+            expect(envModule.env.API_LOG_INCLUDE_LEVEL).toBe(true);
+            expect(envModule.env.API_LOG_USE_COLORS).toBe(true);
+            expect(envModule.env.API_LOG_SAVE).toBe(false);
+            expect(envModule.env.API_LOG_EXPAND_OBJECTS).toBe(false);
+            expect(envModule.env.API_LOG_TRUNCATE_TEXT).toBe(true);
+            expect(envModule.env.API_LOG_TRUNCATE_AT).toBe(1000);
+            expect(envModule.env.API_LOG_STRINGIFY).toBe(false);
+        });
+    });
 });
