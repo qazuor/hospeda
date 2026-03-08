@@ -781,6 +781,8 @@ await sendMetrics(metrics);
 | `webhook-retry` | `0 */1 * * *` | Retry failed webhook events from dead letter queue | 5 min |
 | `notification-schedule` | `0 8 * * *` | Send scheduled notifications for trials and renewals | 2 min |
 | `addon-expiry` | `0 5 * * *` | Process expired add-ons and send warnings | 2 min |
+| `exchange-rate-fetch` | `0 6 * * *` | Fetch latest exchange rates from external providers | 2 min |
+| `dunning` | `0 3 * * *` | Process dunning for past-due subscriptions (send reminders, escalate) | 5 min |
 
 ---
 

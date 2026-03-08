@@ -37,7 +37,7 @@ All variables are prefixed with `API_CORS_`.
 | `API_CORS_ALLOW_CREDENTIALS` | `true` | Send cookies and auth headers cross-origin. Forced to `false` when origins includes `*`. |
 | `API_CORS_MAX_AGE` | `86400` | Preflight cache duration in seconds (24 hours). |
 | `API_CORS_ALLOW_METHODS` | `GET,POST,PUT,DELETE,PATCH,OPTIONS` | Allowed HTTP methods. |
-| `API_CORS_ALLOW_HEADERS` | `Content-Type,Authorization,X-Requested-With,x-actor-id,x-user-id` | Headers the client may send. |
+| `API_CORS_ALLOW_HEADERS` | `Content-Type,Authorization,X-Requested-With` | Headers the client may send. |
 | `API_CORS_EXPOSE_HEADERS` | `Content-Length,X-Request-ID` | Response headers the browser may read. |
 
 ## Production Origins
@@ -116,13 +116,10 @@ vercel env add API_CORS_MAX_AGE production
 5. **Review `API_CORS_ALLOW_HEADERS`** if adding new custom request headers. Any header
    sent by the client that is not listed here will trigger a CORS preflight failure.
 
-6. **The `x-actor-id` and `x-user-id` headers** are internal headers used by the actor
-   system. They are in the default allow list. Remove them if not needed in your deployment.
-
-7. **Rotate secrets, not CORS config.** CORS configuration is not secret. Do not mix it
+6. **Rotate secrets, not CORS config.** CORS configuration is not secret. Do not mix it
    with credential rotation. The only sensitive CORS-adjacent secret is
    `HOSPEDA_BETTER_AUTH_SECRET`.
 
-8. **Set `API_RATE_LIMIT_TRUST_PROXY=true`** when deploying behind Vercel or Cloudflare.
+7. **Set `API_RATE_LIMIT_TRUST_PROXY=true`** when deploying behind Vercel or Cloudflare.
    This enables correct IP detection from `x-forwarded-for` for rate limiting. Without it,
    all requests appear to come from the same proxy IP.
