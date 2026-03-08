@@ -6,7 +6,7 @@
  * - admin: Admin-level permissions required
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -44,15 +44,10 @@ const hasAllPermissions = (actor: Actor, permissions: PermissionEnum[]): boolean
 };
 
 /**
- * Check if actor has admin-level access
- * Returns true if actor is SUPER_ADMIN or has admin access permissions
+ * Check if actor has admin-level access.
+ * Access is granted solely based on permissions, never by role bypass.
  */
 const hasAdminAccess = (actor: Actor): boolean => {
-    // SUPER_ADMIN always has admin access
-    if (actor.role === RoleEnum.SUPER_ADMIN) {
-        return true;
-    }
-    // Check for admin access permissions
     return hasAnyPermission(actor, ADMIN_ACCESS_PERMISSIONS);
 };
 
@@ -88,6 +83,12 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
 
         // Store authorization level in context for downstream use
         c.set('authorizationLevel', level);
+
+        // Reject system actors early: they must never reach HTTP endpoints
+        if (actor._isSystemActor) {
+            apiLogger.warn(`System actor rejected from HTTP context: actorId=${actor.id}`);
+            throw new HTTPException(403, { message: 'System actors cannot access HTTP endpoints' });
+        }
 
         apiLogger.debug(
             `Authorization check: level=${level}, actorId=${actor.id}, role=${actor.role}, isGuest=${isGuestActor(actor)}`

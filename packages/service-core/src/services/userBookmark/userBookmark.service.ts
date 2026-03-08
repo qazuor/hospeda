@@ -1,6 +1,7 @@
 import { UserBookmarkModel } from '@repo/db';
 import type { UserBookmark } from '@repo/schemas';
 import {
+    PermissionEnum,
     ServiceErrorCode,
     type UserBookmarkCountByEntityInput,
     UserBookmarkCountByEntityInputSchema,
@@ -55,7 +56,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Permite solo al dueño crear bookmarks para sí mismo.
+     * Only the owner (with FAVORITE_ENTITY permission) can create bookmarks for themselves.
      */
     protected _canCreate(actor: Actor, data: UserBookmarkCreateInput): void {
         if (actor && typeof actor.id === 'string') {
@@ -69,7 +70,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Permite solo al dueño o admin acceder/modificar/eliminar el bookmark.
+     * Only the owner or an actor with appropriate admin permission can update/delete/view the bookmark.
      */
     protected _canUpdate(actor: Actor, entity: UserBookmark): void {
         canAccessBookmark(actor, entity);
@@ -106,6 +107,17 @@ export class UserBookmarkService extends BaseCrudService<
         canAccessBookmark(actor, entity);
     }
 
+    /**
+     * Returns true if the actor has the USER_BOOKMARK_VIEW_ANY permission,
+     * which grants admin-level read access to any user's bookmarks.
+     *
+     * @param actor - The actor to check
+     * @returns `true` if the actor has the view-any permission
+     */
+    private _hasViewAnyPermission(actor: Actor): boolean {
+        return actor.permissions?.includes(PermissionEnum.USER_BOOKMARK_VIEW_ANY) === true;
+    }
+
     /** Schema for findExistingBookmark input validation */
     private static readonly FindExistingBookmarkSchema = z.object({
         userId: z.string().uuid(),
@@ -130,7 +142,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkService.FindExistingBookmarkSchema,
             execute: async (validated) => {
-                if (actor.id !== validated.userId) {
+                if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
                         'FORBIDDEN: Only owner can check bookmarks'
@@ -148,7 +160,8 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Lista todos los bookmarks de un usuario.
+     * Lists all bookmarks for a given user.
+     * Accessible by the owner or any actor with USER_BOOKMARK_VIEW_ANY permission.
      */
     public async listBookmarksByUser(
         actor: Actor,
@@ -159,7 +172,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkSearchSchema,
             execute: async (validated) => {
-                if (actor.id !== validated.userId) {
+                if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
                         'FORBIDDEN: Only owner can list bookmarks'
@@ -176,7 +189,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Lista todos los bookmarks sobre una entidad.
+     * Lists all bookmarks for a given entity.
      */
     public async listBookmarksByEntity(
         actor: Actor,
@@ -203,7 +216,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Cuenta cuántos usuarios tienen bookmarkeada una entidad.
+     * Counts how many users have bookmarked a given entity.
      */
     public async countBookmarksForEntity(
         actor: Actor,
@@ -226,7 +239,8 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Cuenta cuántos bookmarks tiene un usuario.
+     * Counts how many bookmarks a user has.
+     * Accessible by the owner or any actor with USER_BOOKMARK_VIEW_ANY permission.
      */
     public async countBookmarksForUser(
         actor: Actor,
@@ -237,7 +251,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkCountByUserInputSchema,
             execute: async (validated) => {
-                if (actor.id !== validated.userId) {
+                if (actor.id !== validated.userId && !this._hasViewAnyPermission(actor)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
                         'FORBIDDEN: Only owner can count bookmarks'

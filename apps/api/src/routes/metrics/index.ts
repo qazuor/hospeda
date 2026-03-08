@@ -3,7 +3,11 @@
  * Endpoints for exposing application metrics
  */
 import { createRoute } from '@hono/zod-openapi';
-import { MetricsOperationResponseSchema, MetricsSuccessResponseSchema } from '@repo/schemas';
+import {
+    MetricsOperationResponseSchema,
+    MetricsSuccessResponseSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { z } from 'zod';
 import { adminAuthMiddleware } from '../../middlewares/authorization';
 import {
@@ -116,6 +120,9 @@ const router = createRouter();
 
 // Enforce admin authentication on all metrics endpoints
 router.use('*', adminAuthMiddleware());
+
+// Enforce METRICS_RESET permission specifically on the reset endpoint
+router.use('/reset', adminAuthMiddleware([PermissionEnum.METRICS_RESET]));
 
 // Implement routes
 router.openapi(getMetricsRoute, (c) => {

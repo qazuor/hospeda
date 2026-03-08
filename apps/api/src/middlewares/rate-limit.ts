@@ -98,7 +98,8 @@ const createRedisStore = (): RateLimitStore => ({
             const data = await redis.get(`${REDIS_KEY_PREFIX}${key}`);
             if (!data) return undefined;
             return JSON.parse(data) as RateLimitEntry;
-        } catch {
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable, falling back to in-memory store');
             return inMemoryStore.get(key);
         }
     },
@@ -112,7 +113,8 @@ const createRedisStore = (): RateLimitStore => ({
 
             const ttlSeconds = Math.ceil(windowMs / 1000);
             await redis.set(`${REDIS_KEY_PREFIX}${key}`, JSON.stringify(entry), 'EX', ttlSeconds);
-        } catch {
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable, falling back to in-memory store');
             await inMemoryStore.set(key, entry, windowMs);
         }
     },
@@ -123,7 +125,8 @@ const createRedisStore = (): RateLimitStore => ({
 
             const exists = await redis.exists(`${REDIS_KEY_PREFIX}${key}`);
             return exists === 1;
-        } catch {
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable, falling back to in-memory store');
             return inMemoryStore.has(key);
         }
     },
@@ -150,7 +153,8 @@ const createRedisStore = (): RateLimitStore => ({
                     await redis.del(...keys);
                 }
             } while (cursor !== '0');
-        } catch {
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable, falling back to in-memory store');
             await inMemoryStore.clear();
         }
     },
@@ -176,7 +180,8 @@ const createRedisStore = (): RateLimitStore => ({
                     await redis.del(...keys);
                 }
             } while (cursor !== '0');
-        } catch {
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable, falling back to in-memory store');
             await inMemoryStore.deleteByIp(ip);
         }
     }
@@ -231,13 +236,13 @@ export const resetRateLimitStore = () => {
  * @returns The endpoint type for rate limiting configuration
  */
 const getEndpointType = (path: string): 'auth' | 'public' | 'admin' | 'general' => {
-    if (path.includes('/auth/')) {
+    if (path.startsWith('/api/v1/auth/')) {
         return 'auth';
     }
-    if (path.includes('/admin/')) {
+    if (path.startsWith('/api/v1/admin/')) {
         return 'admin';
     }
-    if (path.includes('/public/')) {
+    if (path.startsWith('/api/v1/public/')) {
         return 'public';
     }
     return 'general';

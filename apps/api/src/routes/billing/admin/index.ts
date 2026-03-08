@@ -4,6 +4,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { listCustomerAddonsRoute } from './customer-addons';
+import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
 import { subscriptionEventsRoute } from './subscription-events';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
@@ -18,6 +19,9 @@ app.route('/notifications', listNotificationLogsRoute);
 
 // GET /customer-addons - List purchased add-ons across all customers
 app.route('/customer-addons', listCustomerAddonsRoute);
+
+// GET /metrics, /metrics/activity, /metrics/system-usage, /metrics/approaching-limits
+app.route('/metrics', adminMetricsRouter);
 
 // GET /subscriptions/:id/events - List lifecycle events for a subscription
 app.route('/subscriptions', subscriptionEventsRoute);

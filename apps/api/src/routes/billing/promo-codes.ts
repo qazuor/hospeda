@@ -12,7 +12,8 @@
  * @module routes/billing/promo-codes
  */
 
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import {
@@ -225,13 +226,12 @@ export const validatePromoCodeRoute = createProtectedRoute({
 
         apiLogger.debug('Validating promo code');
 
-        // Ensure user is validating for themselves (unless admin/super_admin)
+        // Ensure user is validating for themselves (unless they have admin access)
         if (
-            actor.role !== RoleEnum.ADMIN &&
-            actor.role !== RoleEnum.SUPER_ADMIN &&
+            !actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
             body.userId !== actor.id
         ) {
-            throw new Error('Cannot validate promo code for another user');
+            throw new HTTPException(403, { message: 'Forbidden: admin access required' });
         }
 
         const result = await service.validate(body.code as string, {
@@ -278,11 +278,10 @@ export const applyPromoCodeRoute = createProtectedRoute({
 
         // Verify ownership: ensure user is applying promo code to their own billing account
         if (
-            actor.role !== RoleEnum.ADMIN &&
-            actor.role !== RoleEnum.SUPER_ADMIN &&
+            !actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
             body.customerId !== billingCustomerId
         ) {
-            throw new Error("Cannot apply promo code to another user's billing account");
+            throw new HTTPException(403, { message: 'Forbidden: admin access required' });
         }
 
         const result = await service.apply(

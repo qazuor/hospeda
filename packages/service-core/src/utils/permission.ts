@@ -3,7 +3,6 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
-    RoleEnum,
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
@@ -47,8 +46,8 @@ export interface EntityPermissionInput {
 export interface EntityPermissionActor {
     /** The unique identifier of the actor. */
     id: string;
-    /** The role of the actor (e.g., USER, ADMIN, SUPER_ADMIN). */
-    role: RoleEnum;
+    /** The role of the actor. Kept for compatibility; permission checks use only `permissions`. */
+    role: string;
     /** A list of specific permissions assigned to the actor. */
     permissions: PermissionEnum[];
 }
@@ -116,13 +115,11 @@ export function getEntityPermission(
         return { allowed: false, reason: EntityPermissionReasonEnum.DENIED };
     }
 
-    // Super admin can do everything.
-    if (actor.role === RoleEnum.SUPER_ADMIN) {
-        return { allowed: true, reason: EntityPermissionReasonEnum.SUPER_ADMIN };
-    }
-
-    // Hard delete: only super admin can perform this action.
+    // Hard delete: requires explicit hardDelete permission (checked via options.hasAny).
     if (action === 'hardDelete') {
+        if (options?.hasAny) {
+            return { allowed: true, reason: EntityPermissionReasonEnum.ADMIN };
+        }
         return { allowed: false, reason: EntityPermissionReasonEnum.NOT_SUPER_ADMIN };
     }
 

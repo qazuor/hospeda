@@ -21,7 +21,7 @@
  * @module middlewares/billing-admin-guard.middleware
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 
@@ -74,15 +74,14 @@ const ADMIN_ONLY_RULES: ReadonlyArray<{
 /**
  * Checks whether the given actor has admin-level access to billing operations.
  *
- * SUPER_ADMIN always has access. Other actors must have the ACCESS_API_ADMIN
- * permission explicitly granted, regardless of role.
+ * Access is granted solely based on the ACCESS_API_ADMIN permission.
+ * Role-based bypasses are intentionally absent to enforce least-privilege.
  *
  * @param actor - The actor from context, or undefined if unauthenticated
  * @returns True if the actor should bypass admin guard restrictions
  */
 function hasAdminAccess(actor: BillingActor | undefined): boolean {
     if (!actor) return false;
-    if (actor.role === RoleEnum.SUPER_ADMIN) return true;
     if (!actor.permissions || !Array.isArray(actor.permissions)) return false;
     return actor.permissions.includes(PermissionEnum.ACCESS_API_ADMIN);
 }

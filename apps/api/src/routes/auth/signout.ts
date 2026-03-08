@@ -32,12 +32,14 @@ export const authSignOutRoute = createSimpleRoute({
                 apiLogger.debug('Sign out called without user ID - no cache to clear');
             }
 
-            const ip =
-                c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
-                c.req.header('x-real-ip') ||
-                'unknown';
-            await clearRateLimitForIp({ ip });
-            apiLogger.debug(`Rate limit entries cleared for IP ${ip} during sign out`);
+            if (userId) {
+                const ip =
+                    c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ||
+                    c.req.header('x-real-ip') ||
+                    'unknown';
+                await clearRateLimitForIp({ ip });
+                apiLogger.debug(`Rate limit entries cleared for IP ${ip} during sign out`);
+            }
 
             return {
                 message: 'Sign out successful',

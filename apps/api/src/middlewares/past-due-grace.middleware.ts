@@ -27,8 +27,9 @@ import { getQZPayBilling } from './billing';
  * grace period enforcement. See: docs/billing/grace-period-source-of-truth.md
  */
 if (PAYMENT_GRACE_PERIOD_DAYS !== 3) {
-    console.warn(
-        `[past-due-grace] PAYMENT_GRACE_PERIOD_DAYS is ${PAYMENT_GRACE_PERIOD_DAYS}, expected 3. Verify QZPay config is in sync.`
+    apiLogger.warn(
+        { configuredDays: PAYMENT_GRACE_PERIOD_DAYS, expectedDays: 3 },
+        'PAYMENT_GRACE_PERIOD_DAYS diverges from expected value. Verify QZPay config is in sync.'
     );
 }
 

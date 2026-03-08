@@ -4,14 +4,27 @@ import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 
 /**
- * Permite solo al dueño o a un admin acceder al bookmark.
- * @param actor - El usuario que realiza la acción
- * @param bookmark - El bookmark objetivo
+ * Checks if an actor has the USER_BOOKMARK_VIEW_ANY permission,
+ * which grants admin-level read access to any user's bookmarks.
+ *
+ * @param actor - The actor to check
+ * @returns `true` if the actor has the view-any permission
+ */
+function hasViewAnyPermission(actor: Actor): boolean {
+    return actor.permissions?.includes(PermissionEnum.USER_BOOKMARK_VIEW_ANY) === true;
+}
+
+/**
+ * Verifies that the actor is allowed to access the given bookmark.
+ * Allows the owner of the bookmark or any actor with USER_BOOKMARK_VIEW_ANY permission.
+ *
+ * @param actor - The actor performing the action
+ * @param bookmark - The target bookmark entity
+ * @throws {ServiceError} If the actor is not the owner and lacks admin permission
  */
 export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookmark): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
-    if (actor.id !== bookmark.userId /* && actor.role !== 'ADMIN' */) {
-        // TODO: Allow admin access if policy requires
+    if (actor.id !== bookmark.userId && !hasViewAnyPermission(actor)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'FORBIDDEN: Only owner can access bookmark'
@@ -20,9 +33,12 @@ export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookma
 };
 
 /**
- * Permite solo al dueño crear bookmarks para sí mismo.
- * @param actor - El usuario que realiza la acción
- * @param userId - El userId objetivo
+ * Verifies that the actor is allowed to create a bookmark for the given user.
+ * Only the owner (with FAVORITE_ENTITY permission) can create bookmarks for themselves.
+ *
+ * @param actor - The actor performing the action
+ * @param userId - The target user ID for the bookmark
+ * @throws {ServiceError} If the actor is not the owner or lacks the required permission
  */
 export const canCreateBookmark = (actor: Actor | undefined, userId: string): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');

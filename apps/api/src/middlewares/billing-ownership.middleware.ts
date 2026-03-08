@@ -22,6 +22,7 @@
  * @module middlewares/billing-ownership.middleware
  */
 
+import { HTTPException } from 'hono/http-exception';
 import type { AppMiddleware } from '../types';
 import { apiLogger } from '../utils/logger';
 import { getQZPayBilling } from './billing';
@@ -239,7 +240,11 @@ export function billingOwnershipMiddleware(): AppMiddleware {
             return;
         }
 
-        // Unknown resource type .. pass through
-        await next();
+        // Unknown resource type: fail closed rather than allow unverified access
+        apiLogger.warn(
+            { resourceType: resource, path: c.req.path },
+            'Unknown billing resource type in ownership check'
+        );
+        throw new HTTPException(403, { message: 'Access denied: unknown resource type' });
     };
 }

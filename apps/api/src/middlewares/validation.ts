@@ -10,7 +10,7 @@ import { type ValidationConfig, getValidationConfig } from '../types/validation-
 import { ValidationErrorCode } from '../types/validation-errors.enum';
 import { ValidationError, validationMessages } from '../types/validation-messages';
 import { transformZodError } from '../utils/zod-error-transformer';
-import { sanitizeHeaders, sanitizeObjectStrings, sanitizeQueryParams } from './sanitization';
+import { sanitizeObjectStrings } from './sanitization';
 
 export interface ValidationMiddlewareOptions {
     config?: Partial<ValidationConfig>;
@@ -101,28 +101,6 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             // Note: Body size validation is handled by Hono's bodyLimit middleware
             // in create-app.ts at the stream level, which also covers chunked
             // transfer encoding (Content-Length header check is bypassable).
-
-            // 5. Sanitize headers (if not skipped)
-            if (!options.skipSanitization) {
-                const headers = c.req.raw.headers;
-                const sanitizedHeaders = sanitizeHeaders(Object.fromEntries(headers.entries()));
-
-                // Update headers in context (shallow copy)
-                Object.assign(c.req.raw.headers, sanitizedHeaders);
-            }
-
-            // 7. Sanitize query parameters (if not skipped)
-            if (!options.skipSanitization) {
-                const url = new URL(c.req.url);
-                const sanitizedParams = sanitizeQueryParams(url.searchParams);
-                url.search = sanitizedParams.toString();
-
-                // Update URL in context
-                Object.defineProperty(c.req, 'url', {
-                    value: url.toString(),
-                    writable: false
-                });
-            }
 
             // 8. Manual Zod validation (if provided)
             if (options.manualZodSchema) {
