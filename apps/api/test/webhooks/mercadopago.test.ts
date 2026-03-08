@@ -85,8 +85,7 @@ import {
     handleWebhookError,
     handleWebhookEvent,
     markWebhookEventProcessed,
-    sanitizeErrorForNotification,
-    webhookEventIds
+    sanitizeErrorForNotification
 } from '../../src/routes/webhooks/mercadopago';
 import { AddonService } from '../../src/services/addon.service';
 import { sendNotification } from '../../src/utils/notification-helper';
@@ -125,7 +124,6 @@ function createMockEvent(partial: { id: string; type: string; data: unknown }) {
 describe('MercadoPago Webhook Handler', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        webhookEventIds.clear();
     });
 
     describe('sanitizeErrorForNotification', () => {

@@ -58,9 +58,8 @@ const entity = (overrides: Partial<EntityPermissionInput> = {}): EntityPermissio
 });
 
 describe('getEntityPermission', () => {
-    it('allows everything to super admin', () => {
+    it('allows everything to super admin with hasAny permission', () => {
         for (const action of [
-            'view',
             'update',
             'delete',
             'restore',
@@ -70,10 +69,14 @@ describe('getEntityPermission', () => {
             'feature',
             'publish'
         ] as EntityAction[]) {
-            const result = getEntityPermission(superAdmin, baseEntity, action);
+            const result = getEntityPermission(superAdmin, baseEntity, action, { hasAny: true });
             expect(result.allowed).toBe(true);
-            expect(result.reason).toBe(EntityPermissionReasonEnum.SUPER_ADMIN);
+            expect(result.reason).toBe(EntityPermissionReasonEnum.ADMIN);
         }
+        // View on public entity returns PUBLIC_ACCESS (public check comes first)
+        const viewResult = getEntityPermission(superAdmin, baseEntity, 'view', { hasAny: true });
+        expect(viewResult.allowed).toBe(true);
+        expect(viewResult.reason).toBe(EntityPermissionReasonEnum.PUBLIC_ACCESS);
     });
 
     it('only allows hardDelete to super admin', () => {
@@ -102,41 +105,49 @@ describe('getEntityPermission', () => {
         );
     });
 
-    it('allows view to admin and owner in private/restricted/pending/draft/archived/rejected cases', () => {
+    it('allows view to admin (with hasAny) and owner (with hasOwn) in private/restricted/pending/draft/archived cases', () => {
         // PRIVATE
         expect(
-            getEntityPermission(admin, entity({ visibility: VisibilityEnum.PRIVATE }), 'view')
-                .allowed
+            getEntityPermission(admin, entity({ visibility: VisibilityEnum.PRIVATE }), 'view', {
+                hasAny: true
+            }).allowed
         ).toBe(true);
         expect(
-            getEntityPermission(admin, entity({ visibility: VisibilityEnum.PRIVATE }), 'view')
-                .reason
+            getEntityPermission(admin, entity({ visibility: VisibilityEnum.PRIVATE }), 'view', {
+                hasAny: true
+            }).reason
         ).toBe(EntityPermissionReasonEnum.ADMIN);
         expect(
-            getEntityPermission(owner, entity({ visibility: VisibilityEnum.PRIVATE }), 'view')
-                .allowed
+            getEntityPermission(owner, entity({ visibility: VisibilityEnum.PRIVATE }), 'view', {
+                hasOwn: true
+            }).allowed
         ).toBe(true);
         expect(
-            getEntityPermission(owner, entity({ visibility: VisibilityEnum.PRIVATE }), 'view')
-                .reason
+            getEntityPermission(owner, entity({ visibility: VisibilityEnum.PRIVATE }), 'view', {
+                hasOwn: true
+            }).reason
         ).toBe(EntityPermissionReasonEnum.OWNER);
 
         // RESTRICTED
         expect(
-            getEntityPermission(admin, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view')
-                .allowed
+            getEntityPermission(admin, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view', {
+                hasAny: true
+            }).allowed
         ).toBe(true);
         expect(
-            getEntityPermission(admin, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view')
-                .reason
+            getEntityPermission(admin, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view', {
+                hasAny: true
+            }).reason
         ).toBe(EntityPermissionReasonEnum.ADMIN);
         expect(
-            getEntityPermission(owner, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view')
-                .allowed
+            getEntityPermission(owner, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view', {
+                hasOwn: true
+            }).allowed
         ).toBe(true);
         expect(
-            getEntityPermission(owner, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view')
-                .reason
+            getEntityPermission(owner, entity({ visibility: VisibilityEnum.RESTRICTED }), 'view', {
+                hasOwn: true
+            }).reason
         ).toBe(EntityPermissionReasonEnum.OWNER);
 
         // PENDING
@@ -144,28 +155,32 @@ describe('getEntityPermission', () => {
             getEntityPermission(
                 admin,
                 entity({ moderationState: ModerationStatusEnum.PENDING }),
-                'view'
+                'view',
+                { hasAny: true }
             ).allowed
         ).toBe(true);
         expect(
             getEntityPermission(
                 admin,
                 entity({ moderationState: ModerationStatusEnum.PENDING }),
-                'view'
+                'view',
+                { hasAny: true }
             ).reason
         ).toBe(EntityPermissionReasonEnum.ADMIN);
         expect(
             getEntityPermission(
                 owner,
                 entity({ moderationState: ModerationStatusEnum.PENDING }),
-                'view'
+                'view',
+                { hasOwn: true }
             ).allowed
         ).toBe(true);
         expect(
             getEntityPermission(
                 owner,
                 entity({ moderationState: ModerationStatusEnum.PENDING }),
-                'view'
+                'view',
+                { hasOwn: true }
             ).reason
         ).toBe(EntityPermissionReasonEnum.OWNER);
 
@@ -174,28 +189,32 @@ describe('getEntityPermission', () => {
             getEntityPermission(
                 admin,
                 entity({ lifecycleState: LifecycleStatusEnum.DRAFT }),
-                'view'
+                'view',
+                { hasAny: true }
             ).allowed
         ).toBe(true);
         expect(
             getEntityPermission(
                 admin,
                 entity({ lifecycleState: LifecycleStatusEnum.DRAFT }),
-                'view'
+                'view',
+                { hasAny: true }
             ).reason
         ).toBe(EntityPermissionReasonEnum.ADMIN);
         expect(
             getEntityPermission(
                 owner,
                 entity({ lifecycleState: LifecycleStatusEnum.DRAFT }),
-                'view'
+                'view',
+                { hasOwn: true }
             ).allowed
         ).toBe(true);
         expect(
             getEntityPermission(
                 owner,
                 entity({ lifecycleState: LifecycleStatusEnum.DRAFT }),
-                'view'
+                'view',
+                { hasOwn: true }
             ).reason
         ).toBe(EntityPermissionReasonEnum.OWNER);
 
@@ -204,7 +223,8 @@ describe('getEntityPermission', () => {
             getEntityPermission(
                 admin,
                 entity({ lifecycleState: LifecycleStatusEnum.ARCHIVED }),
-                'view'
+                'view',
+                { hasAny: true }
             ).allowed
         ).toBe(true);
     });
@@ -266,10 +286,12 @@ describe('getEntityPermission', () => {
         }
     });
 
-    it('allows approve/reject/feature/publish only to admin', () => {
+    it('allows approve/reject/feature/publish only to actors with hasAny permission', () => {
         for (const action of ['approve', 'reject', 'feature', 'publish'] as EntityAction[]) {
-            expect(getEntityPermission(admin, baseEntity, action).allowed).toBe(true);
-            expect(getEntityPermission(admin, baseEntity, action).reason).toBe(
+            expect(getEntityPermission(admin, baseEntity, action, { hasAny: true }).allowed).toBe(
+                true
+            );
+            expect(getEntityPermission(admin, baseEntity, action, { hasAny: true }).reason).toBe(
                 EntityPermissionReasonEnum.ADMIN
             );
             expect(getEntityPermission(owner, baseEntity, action).allowed).toBe(false);
@@ -360,13 +382,23 @@ describe('getEntityPermission', () => {
         );
     });
 
-    it('should return true for an admin who is not the owner', () => {
+    it('should return true for an admin who is not the owner (with hasAny)', () => {
         const nonOwnerAdmin: Actor = {
             id: 'admin-not-owner',
             role: RoleEnum.ADMIN,
             permissions: []
         };
+        // Public entity is viewable by anyone
         expect(getEntityPermission(nonOwnerAdmin, baseEntity, 'view').allowed).toBe(true);
+        // Private entity requires hasAny permission
+        expect(
+            getEntityPermission(
+                nonOwnerAdmin,
+                entity({ visibility: VisibilityEnum.PRIVATE }),
+                'view',
+                { hasAny: true }
+            ).allowed
+        ).toBe(true);
     });
 
     it('should handle an invalid actor gracefully and return false', () => {

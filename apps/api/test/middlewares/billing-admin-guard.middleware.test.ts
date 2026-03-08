@@ -159,11 +159,12 @@ describe('billingAdminGuardMiddleware', () => {
             expect(next).toHaveBeenCalledOnce();
         });
 
-        it('should allow POST /plans for SUPER_ADMIN users (always bypasses)', async () => {
+        it('should allow POST /plans for SUPER_ADMIN users with ACCESS_API_ADMIN permission', async () => {
             const ctx = createMockContext({
                 method: 'POST',
                 path: '/api/v1/protected/billing/plans',
-                actorRole: RoleEnum.SUPER_ADMIN
+                actorRole: RoleEnum.SUPER_ADMIN,
+                permissions: [PermissionEnum.ACCESS_API_ADMIN]
             });
             const middleware = billingAdminGuardMiddleware();
 
@@ -420,7 +421,7 @@ describe('billingAdminGuardMiddleware', () => {
             expect(next).toHaveBeenCalledOnce();
         });
 
-        it('should allow SUPER_ADMIN even without explicit permissions', async () => {
+        it('should block SUPER_ADMIN without explicit permissions (no role bypass)', async () => {
             const ctx = createMockContext({
                 method: 'DELETE',
                 path: '/api/v1/protected/billing/subscriptions/sub_1',
@@ -431,7 +432,7 @@ describe('billingAdminGuardMiddleware', () => {
 
             await middleware(ctx as never, next);
 
-            expect(next).toHaveBeenCalledOnce();
+            expect(next).not.toHaveBeenCalled();
         });
 
         it('should block when permissions array is undefined', async () => {
