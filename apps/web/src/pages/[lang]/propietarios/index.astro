@@ -93,7 +93,7 @@ const faqJsonLd = {
         locale={locale}
         type="website"
     />
-    <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd)} slot="head" />
+    <script type="application/ld+json" set:html={JSON.stringify(faqJsonLd).replace(/</g, '\\u003c')} slot="head" />
 
     <div class="relative overflow-hidden">
         <BackgroundPattern pattern="/images/pattern-waves.svg" size="80px 80px" opacity="opacity-30" />
