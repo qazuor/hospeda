@@ -9,7 +9,7 @@
 
 import { ProductModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Product } from '@repo/schemas/entities/product';
 import {
     ProductCreateInputSchema,
@@ -77,13 +77,13 @@ export class ProductService extends BaseCrudService<
     /**
      * Check create permission
      *
-     * Rule: Only ADMIN users can create products
+     * Rule: Only users with PRODUCT_CREATE permission can create products
      */
     protected _canCreate(actor: Actor, _data: unknown): void {
-        if (actor.role !== RoleEnum.ADMIN) {
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.PRODUCT_CREATE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only administrators can create products'
+                'Permission denied: Insufficient permissions to create products'
             );
         }
     }
@@ -91,13 +91,13 @@ export class ProductService extends BaseCrudService<
     /**
      * Check update permission
      *
-     * Rule: Only ADMIN users can update products
+     * Rule: Only users with PRODUCT_UPDATE permission can update products
      */
     protected _canUpdate(actor: Actor, _entity: Product): void {
-        if (actor.role !== RoleEnum.ADMIN) {
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.PRODUCT_UPDATE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only administrators can update products'
+                'Permission denied: Insufficient permissions to update products'
             );
         }
     }
@@ -105,13 +105,13 @@ export class ProductService extends BaseCrudService<
     /**
      * Check soft delete permission
      *
-     * Rule: Only ADMIN users can delete products
+     * Rule: Only users with PRODUCT_DELETE permission can delete products
      */
     protected _canSoftDelete(actor: Actor, _entity: Product): void {
-        if (actor.role !== RoleEnum.ADMIN) {
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.PRODUCT_DELETE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only administrators can delete products'
+                'Permission denied: Insufficient permissions to delete products'
             );
         }
     }
@@ -119,13 +119,13 @@ export class ProductService extends BaseCrudService<
     /**
      * Check hard delete permission
      *
-     * Rule: Only SUPER_ADMIN can permanently delete
+     * Rule: Only users with PRODUCT_HARD_DELETE permission can permanently delete
      */
     protected _canHardDelete(actor: Actor, _entity: Product): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.PRODUCT_HARD_DELETE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only super administrators can permanently delete products'
+                'Permission denied: Insufficient permissions to permanently delete products'
             );
         }
     }
@@ -133,13 +133,13 @@ export class ProductService extends BaseCrudService<
     /**
      * Check restore permission
      *
-     * Rule: Only ADMIN can restore
+     * Rule: Only users with PRODUCT_RESTORE permission can restore
      */
     protected _canRestore(actor: Actor, _entity: Product): void {
-        if (actor.role !== RoleEnum.ADMIN) {
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.PRODUCT_RESTORE)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Only administrators can restore products'
+                'Permission denied: Insufficient permissions to restore products'
             );
         }
     }

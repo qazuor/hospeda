@@ -12,7 +12,7 @@
 
 import { ArticleModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Article } from '@repo/schemas/entities/article';
 import {
     ArticleCreateInputSchema,
@@ -89,7 +89,7 @@ export class ArticleService extends BaseCrudService<
 
     protected _canUpdate(actor: Actor, entity: Article): void {
         if (!actor?.id) throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
-        if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+        if (entity.createdById !== actor.id && !actor.permissions?.includes(PermissionEnum.ARTICLE_UPDATE)) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Not your article');
         }
     }
@@ -99,21 +99,21 @@ export class ArticleService extends BaseCrudService<
     }
 
     protected _canHardDelete(actor: Actor, _entity: Article): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN) {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Super admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.ARTICLE_HARD_DELETE)) {
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
         }
     }
 
     protected _canRestore(actor: Actor, _entity: Article): void {
-        if (actor.role !== RoleEnum.ADMIN) {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.ARTICLE_RESTORE)) {
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
         }
     }
 
     protected _canView(actor: Actor, entity: Article): void {
         if (entity.status === 'published') return; // Public
         if (!actor?.id) throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
-        if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+        if (entity.createdById !== actor.id && !actor.permissions?.includes(PermissionEnum.ARTICLE_VIEW_ALL)) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Not published');
         }
     }

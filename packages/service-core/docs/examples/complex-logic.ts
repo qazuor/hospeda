@@ -12,7 +12,7 @@
 
 import { OrderModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Order } from '@repo/schemas/entities/order';
 import {
     OrderCreateInputSchema,
@@ -114,16 +114,16 @@ export class OrderService extends BaseCrudService<
         if (!actor?.id) throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
     }
     protected _canSoftDelete(actor: Actor, _entity: Order): void {
-        if (actor.role !== RoleEnum.ADMIN)
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.ORDER_DELETE))
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
     }
     protected _canHardDelete(actor: Actor, _entity: Order): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN)
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Super admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.ORDER_HARD_DELETE))
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
     }
     protected _canRestore(actor: Actor, _entity: Order): void {
-        if (actor.role !== RoleEnum.ADMIN)
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.ORDER_RESTORE))
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
     }
     protected _canView(_actor: Actor, _entity: Order): void {}
     protected _canList(_actor: Actor): void {}

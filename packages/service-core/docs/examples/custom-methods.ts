@@ -11,7 +11,7 @@
 
 import { BlogPostModel } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { BlogPost } from '@repo/schemas/entities/blogPost';
 import {
     BlogPostCreateInputSchema,
@@ -52,7 +52,7 @@ export class BlogService extends BaseCrudService<
         if (!actor?.id) throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
     }
     protected _canUpdate(actor: Actor, entity: BlogPost): void {
-        if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+        if (entity.createdById !== actor.id && !actor.permissions?.includes(PermissionEnum.BLOG_POST_UPDATE)) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Not your post');
         }
     }
@@ -60,16 +60,16 @@ export class BlogService extends BaseCrudService<
         this._canUpdate(actor, entity);
     }
     protected _canHardDelete(actor: Actor, _entity: BlogPost): void {
-        if (actor.role !== RoleEnum.SUPER_ADMIN)
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Super admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.BLOG_POST_HARD_DELETE))
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
     }
     protected _canRestore(actor: Actor, _entity: BlogPost): void {
-        if (actor.role !== RoleEnum.ADMIN)
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Admin only');
+        if (!actor?.id || !actor.permissions?.includes(PermissionEnum.BLOG_POST_RESTORE))
+            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Insufficient permissions');
     }
     protected _canView(actor: Actor, entity: BlogPost): void {
         if (entity.status === 'published') return;
-        if (!actor?.id || (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN)) {
+        if (!actor?.id || (entity.createdById !== actor.id && !actor.permissions?.includes(PermissionEnum.BLOG_POST_VIEW_ALL))) {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Not published');
         }
     }
