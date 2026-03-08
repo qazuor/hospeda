@@ -63,7 +63,9 @@ const ApiEnvSchema = z
         HOSPEDA_DATABASE_URL: z.string().min(1, 'Database URL is required'),
 
         // Authentication
-        HOSPEDA_BETTER_AUTH_SECRET: z.string().min(1, 'Better Auth secret is required'),
+        HOSPEDA_BETTER_AUTH_SECRET: z
+            .string()
+            .min(32, 'HOSPEDA_BETTER_AUTH_SECRET must be at least 32 characters'),
         /** Better Auth base URL used in auth.ts initialization */
         HOSPEDA_BETTER_AUTH_URL: z.string().url().optional(),
 
@@ -90,6 +92,14 @@ const ApiEnvSchema = z
         HOSPEDA_DEBUG_TESTS: z.coerce.boolean().default(false),
         /** Set true to enforce origin verification in testing */
         HOSPEDA_TESTING_ORIGIN_VERIFICATION: z.coerce.boolean().default(false),
+
+        // Platform-injected (set by Vercel/CI, not user-configured)
+        /** Set to "1" by Vercel when running in their platform */
+        VERCEL: z.string().optional(),
+        /** Set to "true" by CI environments (GitHub Actions, etc.) */
+        CI: z.string().optional(),
+        /** Git commit SHA injected by Vercel at deploy time */
+        VERCEL_GIT_COMMIT_SHA: z.string().optional(),
 
         // Build metadata
         /** Git commit SHA for health endpoint and Sentry release tagging */
@@ -289,6 +299,23 @@ const ApiEnvSchema = z
                 path: ['HOSPEDA_REDIS_URL'],
                 message:
                     'HOSPEDA_REDIS_URL is required in production for rate limiting to work across instances'
+            });
+        }
+        // OAuth cross-validation: require secret when client ID is set
+        if (data.HOSPEDA_GOOGLE_CLIENT_ID && !data.HOSPEDA_GOOGLE_CLIENT_SECRET) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_GOOGLE_CLIENT_SECRET'],
+                message:
+                    'HOSPEDA_GOOGLE_CLIENT_SECRET is required when HOSPEDA_GOOGLE_CLIENT_ID is set'
+            });
+        }
+        if (data.HOSPEDA_FACEBOOK_CLIENT_ID && !data.HOSPEDA_FACEBOOK_CLIENT_SECRET) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_FACEBOOK_CLIENT_SECRET'],
+                message:
+                    'HOSPEDA_FACEBOOK_CLIENT_SECRET is required when HOSPEDA_FACEBOOK_CLIENT_ID is set'
             });
         }
         // Reject localhost/127.0.0.1 in CORS and CSRF origins in production

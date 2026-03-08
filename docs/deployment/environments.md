@@ -297,7 +297,7 @@ export const db = drizzle(client);
 
 ### API Configuration
 
-#### HOSPEDA_API_LOG_LEVEL
+#### API_LOG_LEVEL
 
 **Description**: Logging verbosity level
 
@@ -314,13 +314,13 @@ export const db = drizzle(client);
 
 ```env
 # Development
-HOSPEDA_API_LOG_LEVEL=debug
+API_LOG_LEVEL=debug
 
 # Production
-HOSPEDA_API_LOG_LEVEL=info
+API_LOG_LEVEL=info
 ```
 
-#### HOSPEDA_API_CORS_ORIGINS
+#### API_CORS_ORIGINS
 
 **Description**: Allowed CORS origins (comma-separated)
 
@@ -331,7 +331,7 @@ HOSPEDA_API_LOG_LEVEL=info
 **Example:**
 
 ```env
-HOSPEDA_API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
+API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
 ```
 
 **Usage:**
@@ -340,12 +340,12 @@ HOSPEDA_API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
 import { cors } from 'hono/cors';
 
 app.use('*', cors({
-  origin: process.env.HOSPEDA_API_CORS_ORIGINS.split(','),
+  origin: process.env.API_CORS_ORIGINS.split(','),
   credentials: true,
 }));
 ```
 
-#### HOSPEDA_API_CACHE_TTL
+#### API_CACHE_DEFAULT_MAX_AGE
 
 **Description**: Default cache TTL in seconds
 
@@ -356,10 +356,10 @@ app.use('*', cors({
 **Example:**
 
 ```env
-HOSPEDA_API_CACHE_TTL=300
+API_CACHE_DEFAULT_MAX_AGE=300
 ```
 
-#### HOSPEDA_API_COMPRESSION_ENABLED
+#### API_COMPRESSION_ENABLED
 
 **Description**: Enable response compression
 
@@ -370,10 +370,10 @@ HOSPEDA_API_CACHE_TTL=300
 **Example:**
 
 ```env
-HOSPEDA_API_COMPRESSION_ENABLED=true
+API_COMPRESSION_ENABLED=true
 ```
 
-#### HOSPEDA_API_RATE_LIMIT_MAX
+#### API_RATE_LIMIT_MAX_REQUESTS
 
 **Description**: Maximum requests per window
 
@@ -385,13 +385,13 @@ HOSPEDA_API_COMPRESSION_ENABLED=true
 
 ```env
 # Development (relaxed)
-HOSPEDA_API_RATE_LIMIT_MAX=1000
+API_RATE_LIMIT_MAX_REQUESTS=1000
 
 # Production (strict)
-HOSPEDA_API_RATE_LIMIT_MAX=100
+API_RATE_LIMIT_MAX_REQUESTS=100
 ```
 
-#### HOSPEDA_API_RATE_LIMIT_WINDOW
+#### API_RATE_LIMIT_WINDOW_MS
 
 **Description**: Rate limit window in milliseconds
 
@@ -402,10 +402,10 @@ HOSPEDA_API_RATE_LIMIT_MAX=100
 **Example:**
 
 ```env
-HOSPEDA_API_RATE_LIMIT_WINDOW=60000
+API_RATE_LIMIT_WINDOW_MS=60000
 ```
 
-#### HOSPEDA_API_SECURITY_HEADERS_ENABLED
+#### API_SECURITY_HEADERS_ENABLED
 
 **Description**: Enable security headers
 
@@ -416,10 +416,10 @@ HOSPEDA_API_RATE_LIMIT_WINDOW=60000
 **Example:**
 
 ```env
-HOSPEDA_API_SECURITY_HEADERS_ENABLED=true
+API_SECURITY_HEADERS_ENABLED=true
 ```
 
-#### HOSPEDA_API_VALIDATION_ENABLED
+#### API_VALIDATION_AUTH_ENABLED
 
 **Description**: Enable request validation
 
@@ -430,10 +430,10 @@ HOSPEDA_API_SECURITY_HEADERS_ENABLED=true
 **Example:**
 
 ```env
-HOSPEDA_API_VALIDATION_ENABLED=true
+API_VALIDATION_AUTH_ENABLED=true
 ```
 
-#### HOSPEDA_API_METRICS_ENABLED
+#### API_METRICS_ENABLED
 
 **Description**: Enable metrics collection
 
@@ -444,7 +444,7 @@ HOSPEDA_API_VALIDATION_ENABLED=true
 **Example:**
 
 ```env
-HOSPEDA_API_METRICS_ENABLED=true
+API_METRICS_ENABLED=true
 ```
 
 ### Optional Services
@@ -649,10 +649,10 @@ HOSPEDA_BETTER_AUTH_SECRET=sk_test_dev456
 HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_dev789
 
 # API Configuration (relaxed for development)
-HOSPEDA_API_LOG_LEVEL=debug
-HOSPEDA_API_CORS_ORIGINS=http://localhost:4321,http://localhost:3000
-HOSPEDA_API_RATE_LIMIT_MAX=1000
-HOSPEDA_API_VALIDATION_ENABLED=true
+API_LOG_LEVEL=debug
+API_CORS_ORIGINS=http://localhost:4321,http://localhost:3000
+API_RATE_LIMIT_MAX_REQUESTS=1000
+API_VALIDATION_AUTH_ENABLED=true
 
 # Optional Services (can be disabled in development)
 # HOSPEDA_REDIS_URL=redis://localhost:6379
@@ -695,15 +695,15 @@ HOSPEDA_BETTER_AUTH_SECRET=YOUR_TEST_SECRET_HERE
 HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_staging789
 
 # API Configuration
-HOSPEDA_API_LOG_LEVEL=info
-HOSPEDA_API_CORS_ORIGINS=https://staging.hospeda.com,https://admin-staging.hospeda.com
-HOSPEDA_API_CACHE_TTL=300
-HOSPEDA_API_COMPRESSION_ENABLED=true
-HOSPEDA_API_RATE_LIMIT_MAX=500
-HOSPEDA_API_RATE_LIMIT_WINDOW=60000
-HOSPEDA_API_SECURITY_HEADERS_ENABLED=true
-HOSPEDA_API_VALIDATION_ENABLED=true
-HOSPEDA_API_METRICS_ENABLED=true
+API_LOG_LEVEL=info
+API_CORS_ORIGINS=https://staging.hospeda.com,https://admin-staging.hospeda.com
+API_CACHE_DEFAULT_MAX_AGE=300
+API_COMPRESSION_ENABLED=true
+API_RATE_LIMIT_MAX_REQUESTS=500
+API_RATE_LIMIT_WINDOW_MS=60000
+API_SECURITY_HEADERS_ENABLED=true
+API_VALIDATION_AUTH_ENABLED=true
+API_METRICS_ENABLED=true
 
 # Optional Services
 HOSPEDA_REDIS_URL=redis://staging-redis.example.com:6379
@@ -746,15 +746,15 @@ HOSPEDA_BETTER_AUTH_SECRET=sk_live_prod456
 HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET=whsec_prod789
 
 # API Configuration (strict security)
-HOSPEDA_API_LOG_LEVEL=info
-HOSPEDA_API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
-HOSPEDA_API_CACHE_TTL=300
-HOSPEDA_API_COMPRESSION_ENABLED=true
-HOSPEDA_API_RATE_LIMIT_MAX=100
-HOSPEDA_API_RATE_LIMIT_WINDOW=60000
-HOSPEDA_API_SECURITY_HEADERS_ENABLED=true
-HOSPEDA_API_VALIDATION_ENABLED=true
-HOSPEDA_API_METRICS_ENABLED=true
+API_LOG_LEVEL=info
+API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com
+API_CACHE_DEFAULT_MAX_AGE=300
+API_COMPRESSION_ENABLED=true
+API_RATE_LIMIT_MAX_REQUESTS=100
+API_RATE_LIMIT_WINDOW_MS=60000
+API_SECURITY_HEADERS_ENABLED=true
+API_VALIDATION_AUTH_ENABLED=true
+API_METRICS_ENABLED=true
 
 # Optional Services
 HOSPEDA_REDIS_URL=redis://prod-redis.example.com:6379
@@ -878,15 +878,15 @@ const envSchema = z.object({
   HOSPEDA_BETTER_AUTH_WEBHOOK_SECRET: z.string().startsWith('whsec_').optional(),
 
   // API Configuration
-  HOSPEDA_API_LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
-  HOSPEDA_API_CORS_ORIGINS: z.string(),
-  HOSPEDA_API_CACHE_TTL: z.coerce.number().default(300),
-  HOSPEDA_API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
-  HOSPEDA_API_RATE_LIMIT_MAX: z.coerce.number().default(100),
-  HOSPEDA_API_RATE_LIMIT_WINDOW: z.coerce.number().default(60000),
-  HOSPEDA_API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
-  HOSPEDA_API_VALIDATION_ENABLED: z.coerce.boolean().default(true),
-  HOSPEDA_API_METRICS_ENABLED: z.coerce.boolean().default(true),
+  API_LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  API_CORS_ORIGINS: z.string(),
+  API_CACHE_DEFAULT_MAX_AGE: z.coerce.number().default(300),
+  API_COMPRESSION_ENABLED: z.coerce.boolean().default(true),
+  API_RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  API_RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),
+  API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
+  API_VALIDATION_AUTH_ENABLED: z.coerce.boolean().default(true),
+  API_METRICS_ENABLED: z.coerce.boolean().default(true),
 
   // Optional Services
   HOSPEDA_REDIS_URL: z.string().startsWith('redis://').optional(),
@@ -930,7 +930,7 @@ import { env } from '@repo/config';
 
 // Type-safe access to environment variables
 const dbUrl = env.HOSPEDA_DATABASE_URL;
-const logLevel = env.HOSPEDA_API_LOG_LEVEL;
+const logLevel = env.API_LOG_LEVEL;
 ```
 
 ### Startup Validation
