@@ -281,6 +281,39 @@ export const sanitizeSearchQuery = (query: string): string => {
 };
 
 /**
+ * Sanitizes a file name to prevent path traversal attacks and log injection.
+ *
+ * Steps applied:
+ * 1. Removes path traversal sequences (`../`, `..\`, leading `/` or `\`)
+ * 2. Replaces any character that is not alphanumeric, `.`, `-`, or `_` with `_`
+ * 3. Truncates to `maxLength` characters (default 255)
+ * 4. Returns `'unnamed'` when the result is empty after sanitization
+ *
+ * @param fileName  - Raw file name supplied by the client
+ * @param maxLength - Maximum allowed length (default: 255)
+ * @returns Sanitized file name safe for use in logs and error responses
+ */
+export const sanitizeFileName = (fileName: string, maxLength = 255): string => {
+    if (!fileName || typeof fileName !== 'string') {
+        return 'unnamed';
+    }
+
+    // Remove path traversal sequences and leading separators
+    let sanitized = fileName.replace(/\.\.[/\\]/g, '').replace(/^[/\\]+/, '');
+
+    // Replace anything that is not alphanumeric, dot, hyphen, or underscore
+    sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');
+
+    // Collapse consecutive underscores that may result from the replacement
+    sanitized = sanitized.replace(/_+/g, '_').replace(/^_|_$/g, '');
+
+    // Truncate
+    sanitized = sanitized.slice(0, maxLength);
+
+    return sanitized || 'unnamed';
+};
+
+/**
  * Sanitizes a slug (lowercase, trim, only alphanumeric and hyphens)
  *
  * @param slug - The slug to sanitize

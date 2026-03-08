@@ -16,7 +16,7 @@ import { REPORT_TYPES } from '@repo/feedback/config';
 import type { NotificationPayload } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import type { Context } from 'hono';
-import { sanitizeString } from '../../middlewares/sanitization';
+import { sanitizeFileName, sanitizeString } from '../../middlewares/sanitization';
 import {
     type CreateFeedbackIssueInput,
     type FeedbackAttachment,
@@ -330,7 +330,7 @@ export const submitFeedbackRoute = createSimpleRoute({
                 const arrayBuffer = await file.arrayBuffer();
                 return {
                     buffer: Buffer.from(arrayBuffer),
-                    filename: file.name,
+                    filename: sanitizeFileName(file.name),
                     contentType: file.type,
                     size: file.size
                 };

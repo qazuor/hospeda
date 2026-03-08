@@ -1,6 +1,7 @@
 import { createLogger } from '@repo/logger';
 import { bodyLimit } from 'hono/body-limit';
 import { protectedAuthMiddleware } from '../../middlewares/authorization';
+import { sanitizeFileName } from '../../middlewares/sanitization';
 import {
     ALLOWED_FILE_TYPES,
     BugReportFormSchema,
@@ -139,20 +140,21 @@ app.post('/create', async (c) => {
         // Upload files to Linear
         const attachments: Array<{ fileName: string; assetUrl: string }> = [];
         for (const file of files) {
+            const safeFileName = sanitizeFileName(file.name);
             try {
                 const arrayBuffer = await file.arrayBuffer();
                 const buffer = Buffer.from(arrayBuffer);
                 const result = await uploadFileToLinear({
                     buffer,
                     mimeType: file.type,
-                    fileName: file.name,
+                    fileName: safeFileName,
                     fileSize: file.size
                 });
-                attachments.push({ fileName: file.name, assetUrl: result.assetUrl });
+                attachments.push({ fileName: safeFileName, assetUrl: result.assetUrl });
             } catch (error) {
                 logger.warn({
                     message: 'Failed to upload file to Linear',
-                    fileName: file.name,
+                    fileName: safeFileName,
                     error: error instanceof Error ? error.message : String(error)
                 });
                 // Continue with other files even if one fails
