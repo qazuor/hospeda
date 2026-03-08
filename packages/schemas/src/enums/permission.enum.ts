@@ -16,6 +16,7 @@ export enum PermissionCategoryEnum {
     EXCHANGE_RATE = 'EXCHANGE_RATE',
     INVOICE = 'INVOICE',
     INVOICE_LINE = 'INVOICE_LINE',
+    METRICS = 'METRICS',
     PAYMENT = 'PAYMENT',
     PAYMENT_METHOD = 'PAYMENT_METHOD',
     PERMISSION = 'PERMISSION',
@@ -218,6 +219,9 @@ export enum PermissionEnum {
     FAVORITE_ENTITY = 'entity.favorite', // Allows favoriting any entity (accommodation, post, etc.).
     HOST_CONTACT_VIEW = 'host.contact.view', // Allows viewing host contact information.
     HOST_MESSAGE_SEND = 'host.message.send', // Allows sending a message to a host.
+
+    // METRICS: Permissions related to metrics management
+    METRICS_RESET = 'metrics.reset', // Allows resetting metrics counters.
 
     // SYSTEM: System-level permissions
     AUDIT_LOG_VIEW = 'auditLog.view', // Allows viewing the audit log.
@@ -590,6 +594,7 @@ export enum PermissionEnum {
     USER_BOOKMARK_VIEW = 'userBookmark.view', // Allows viewing user bookmark information.
     USER_BOOKMARK_RESTORE = 'userBookmark.restore', // Allows restoring a deleted user bookmark.
     USER_BOOKMARK_HARD_DELETE = 'userBookmark.hardDelete', // Allows permanently deleting a user bookmark.
+    USER_BOOKMARK_VIEW_ANY = 'userBookmark.viewAny', // Allows viewing any user's bookmarks (admin support).
 
     // BENEFIT_LISTING: Permissions related to benefit listing management
     BENEFIT_LISTING_CREATE = 'benefitListing.create', // Allows creating a new benefit listing.

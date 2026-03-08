@@ -32,7 +32,8 @@ export const createGuestActor = (): Actor => ({
 export const createSystemActor = (): Actor => ({
     id: '00000000-0000-4000-8000-000000000001', // Valid UUID v4 for system actor
     role: RoleEnum.SUPER_ADMIN,
-    permissions: Object.values(PermissionEnum)
+    permissions: Object.values(PermissionEnum),
+    _isSystemActor: true
 });
 
 /**

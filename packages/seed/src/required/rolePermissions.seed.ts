@@ -132,6 +132,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_PASSWORD_RESET,
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
+        PermissionEnum.USER_BOOKMARK_VIEW_ANY,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -179,6 +180,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.TAG_CREATE,
         PermissionEnum.TAG_UPDATE,
         PermissionEnum.TAG_DELETE,
+
+        // METRICS: All permissions
+        PermissionEnum.METRICS_RESET,
 
         // POST Sponsorship management
         PermissionEnum.POST_SPONSORSHIP_MANAGE
@@ -298,6 +302,7 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_PASSWORD_RESET,
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
+        PermissionEnum.USER_BOOKMARK_VIEW_ANY,
 
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
@@ -342,6 +347,9 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.TAG_CREATE,
         PermissionEnum.TAG_UPDATE,
         PermissionEnum.TAG_DELETE,
+
+        // METRICS: All permissions
+        PermissionEnum.METRICS_RESET,
 
         // POST Sponsorship management
         PermissionEnum.POST_SPONSORSHIP_MANAGE

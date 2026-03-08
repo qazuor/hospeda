@@ -33,6 +33,8 @@ export type Actor = {
     permissions: PermissionEnum[];
     /** Entitlements granted to the actor (VIP access, premium features, etc.) */
     entitlements?: Set<string>;
+    /** Flag indicating this is a system actor, not a real user */
+    _isSystemActor?: boolean;
 };
 
 /**
