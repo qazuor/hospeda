@@ -1,9 +1,7 @@
 import type { DestinationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { createDestination } from '../../factories/destinationFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
@@ -54,18 +52,6 @@ describe('DestinationService.list', () => {
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
         expect(model.findAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 });
-    });
-
-    it.skip('should return FORBIDDEN if actor lacks permission', async () => {
-        // This test is skipped because any actor can list destinations according to business policy.
-        // If the policy changes, uncomment and adjust the test.
-        const noPermsActor = createActor({ permissions: [] });
-        vi.spyOn(permissionHelpers, 'checkCanListDestinations').mockImplementation(() => {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
-        });
-        const result = await service.list(noPermsActor, { page: 1, pageSize: 2 });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {

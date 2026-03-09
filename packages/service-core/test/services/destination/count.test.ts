@@ -1,9 +1,7 @@
 import type { DestinationModel } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
-import * as permissionHelpers from '../../../src/services/destination/destination.permission';
 import { DestinationService } from '../../../src/services/destination/destination.service';
-import { ServiceError } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { expectInternalError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
@@ -41,22 +39,6 @@ describe('DestinationService.count', () => {
         expect(result.data?.count).toBe(42);
         expect(result.error).toBeUndefined();
         expect(model.count).toHaveBeenCalled();
-    });
-
-    it.skip('should return FORBIDDEN if actor lacks permission', async () => {
-        // This test is skipped because any actor can count destinations according to business policy.
-        // If the policy changes, uncomment and adjust the test.
-        const noPermsActor = createActor({ permissions: [] });
-        vi.spyOn(permissionHelpers, 'checkCanCountDestinations').mockImplementation(() => {
-            throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied');
-        });
-        const result = await service.count(noPermsActor, {
-            country: 'AR',
-            page: 1,
-            pageSize: 10
-        });
-        expect(result.data).toBeUndefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {

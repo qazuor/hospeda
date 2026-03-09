@@ -299,27 +299,7 @@ describe('Cron Routes Integration Tests', () => {
             });
         });
 
-        describe('1.2 Valid Authentication - Authorization Header', () => {
-            it.skip('should accept request with valid Bearer token in Authorization header', async () => {
-                // Note: Skipped because Bearer tokens are validated as JWT format by auth middleware
-                // Cron routes should use X-Cron-Secret header instead
-                // Arrange & Act
-                const response = await app.request('/api/v1/cron', {
-                    method: 'GET',
-                    headers: {
-                        'user-agent': 'test-agent',
-                        'x-cron-secret': TEST_CRON_SECRET
-                    }
-                });
-
-                // Assert
-                expect(response.status).toBe(200);
-                const data = await response.json();
-                expect(data.success).toBe(true);
-            });
-        });
-
-        describe('1.3 Missing Authentication', () => {
+        describe('1.2 Missing Authentication', () => {
             it('should reject request without any authentication headers', async () => {
                 // Arrange & Act
                 try {
