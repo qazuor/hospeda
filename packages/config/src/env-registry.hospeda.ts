@@ -334,11 +334,31 @@ export const HOSPEDA_ENV_VARS = [
     },
     {
         name: 'HOSPEDA_LINEAR_TEAM_ID',
-        description: 'Linear team ID',
+        description: 'Linear team ID for issue creation',
         type: 'string',
         required: false,
         secret: false,
         exampleValue: 'team-id',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_FEEDBACK_ENABLED',
+        description: 'Kill switch to disable feedback endpoint (set to "false" to disable)',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'true',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_FEEDBACK_FALLBACK_EMAIL',
+        description: 'Email address for feedback fallback notifications when Linear is unavailable',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: 'feedback@hospeda.com',
         apps: ['api'],
         category: 'integrations'
     },

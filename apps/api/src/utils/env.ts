@@ -244,9 +244,16 @@ const ApiEnvSchema = z
         HOSPEDA_DB_POOL_IDLE_TIMEOUT_MS: z.coerce.number().default(30000),
         HOSPEDA_DB_POOL_CONNECTION_TIMEOUT_MS: z.coerce.number().default(2000),
 
-        // Linear integration
+        // Linear / Feedback integration
         HOSPEDA_LINEAR_API_KEY: z.string().optional(),
         HOSPEDA_LINEAR_TEAM_ID: z.string().optional(),
+        /** Kill switch for feedback system. Set to 'false' to disable. */
+        HOSPEDA_FEEDBACK_ENABLED: z
+            .string()
+            .optional()
+            .transform((v) => v !== 'false'),
+        /** Override fallback email for feedback reports when Linear is down */
+        HOSPEDA_FEEDBACK_FALLBACK_EMAIL: z.string().email().optional(),
 
         // Exchange rates
         HOSPEDA_EXCHANGE_RATE_API_KEY: z.string().default(''),
