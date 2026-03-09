@@ -100,7 +100,10 @@ export class BillingCustomerSyncService {
             }
 
             // Customer doesn't exist - create new one
-            apiLogger.info({ userId, email }, 'Creating new billing customer');
+            apiLogger.info(
+                { userId, emailDomain: email.split('@')[1] },
+                'Creating new billing customer'
+            );
 
             try {
                 const newCustomer = await this.billing.customers.create({
@@ -149,7 +152,7 @@ export class BillingCustomerSyncService {
             apiLogger.error(
                 {
                     userId,
-                    email,
+                    emailDomain: email.split('@')[1],
                     error: errorMessage
                 },
                 'Failed to ensure billing customer exists'
@@ -244,7 +247,7 @@ export class BillingCustomerSyncService {
             apiLogger.error(
                 {
                     userId,
-                    email,
+                    emailDomain: email.split('@')[1],
                     error: errorMessage
                 },
                 'Failed to sync billing customer data'

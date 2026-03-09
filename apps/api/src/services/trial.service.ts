@@ -456,7 +456,10 @@ export class TrialService {
                             });
 
                             apiLogger.debug(
-                                { customerId: customer.id, email: customer.email },
+                                {
+                                    customerId: customer.id,
+                                    emailDomain: customer.email.split('@')[1]
+                                },
                                 'Trial expired notification queued'
                             );
                         }

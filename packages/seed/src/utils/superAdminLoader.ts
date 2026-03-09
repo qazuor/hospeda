@@ -56,9 +56,7 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
         logger.warn(
             `${STATUS_ICONS.Warning} HOSPEDA_SEED_SUPER_ADMIN_PASSWORD not set. Generated random password for super admin. Set the env var for a predictable password.`
         );
-        console.warn(
-            `[SEED] Generated super admin password: ${password.slice(0, 4)}${'*'.repeat(Math.max(0, password.length - 4))}`
-        );
+        console.warn('[SEED] Generated random super admin password: [REDACTED]');
         console.warn('[SEED] Change this password immediately after first login.');
     }
     const hashedPassword = await hash(password, 10);
@@ -74,7 +72,7 @@ const ensureCredentialAccount = async (userId: string, email: string): Promise<v
     });
 
     logger.success({
-        msg: `${STATUS_ICONS.Success} Credential account created for super admin (email: ${email})`
+        msg: `${STATUS_ICONS.Success} Credential account created for super admin (email: ${email[0]}***@${email.split('@')[1]})`
     });
 };
 
