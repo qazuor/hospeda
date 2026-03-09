@@ -105,6 +105,16 @@
                     }
                 }
             }
+        },
+        {
+            "include": ["scripts/cli/**"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noConsoleLog": "off"
+                    }
+                }
+            }
         }
     ]
 }

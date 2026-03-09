@@ -52,7 +52,9 @@
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
         "env:pull": "tsx scripts/env/pull.ts",
         "env:push": "tsx scripts/env/push.ts",
-        "env:check": "tsx scripts/env/check.ts"
+        "env:check": "tsx scripts/env/check.ts",
+        "cli": "tsx scripts/cli.ts",
+        "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
@@ -64,6 +66,7 @@
         "ajv": "^8.18.0",
         "ajv-formats": "^3.0.1",
         "dotenv": "^17.2.3",
+        "fuse.js": "^7.1.0",
         "husky": "^9.1.7",
         "lint-staged": "^15.3.0",
         "markdownlint-cli2": "^0.18.1",
@@ -112,7 +115,10 @@
             "@remix-run/router": ">=1.23.2",
             "@remix-run/server-runtime": ">=2.17.3",
             "esbuild": ">=0.25.0",
-            "@tanstack/form-core": "0.42.1"
+            "@tanstack/form-core": "0.42.1",
+            "csstype": "3.1.3",
+            "@types/react": "19.1.10",
+            "@types/react-dom": "19.1.7"
         },
         "patchedDependencies": {
             "@tanstack/start-plugin-core@1.131.26": "patches/@tanstack__start-plugin-core@1.131.26.patch"

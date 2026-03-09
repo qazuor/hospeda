@@ -117,3 +117,8 @@ logs/
 # =========================
 scripts/ralph/runs/
 scripts/ralph/snapshots/
+
+# =========================
+# CLI Tool (local history)
+# =========================
+.cli-history.json
