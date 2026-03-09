@@ -4,6 +4,7 @@
  * Allows pre-filling the feedback form via URL query string parameters.
  * All parsed values are sanitized to prevent XSS injection.
  */
+import { REPORT_TYPE_IDS } from '../schemas/feedback.schema.js';
 import type { ReportTypeId } from '../schemas/feedback.schema.js';
 
 /**
@@ -73,8 +74,15 @@ export function serializeFeedbackParams(params: FeedbackQueryParams): string {
 export function parseFeedbackParams(search: string): FeedbackQueryParams {
     const params = new URLSearchParams(search);
 
+    // Validate type against known report type IDs to prevent injection
+    const rawType = sanitize(params.get('type'));
+    const validType =
+        rawType && (REPORT_TYPE_IDS as readonly string[]).includes(rawType)
+            ? (rawType as ReportTypeId)
+            : undefined;
+
     return {
-        type: sanitize(params.get('type')) as ReportTypeId | undefined,
+        type: validType,
         title: sanitize(params.get('title')),
         description: sanitize(params.get('description')),
         url: sanitize(params.get('url')),
