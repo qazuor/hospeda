@@ -194,6 +194,21 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
     }, []);
 
     // ------------------------------------------------------------------ //
+    // Lock body scroll when modal is open
+    // ------------------------------------------------------------------ //
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [isOpen]);
+
+    // ------------------------------------------------------------------ //
     // Focus management
     // ------------------------------------------------------------------ //
 
@@ -289,7 +304,6 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
     return (
         <div
             style={backdropStyle}
-            aria-hidden="true"
             onClick={handleBackdropClick}
             onKeyUp={(e) => {
                 if (e.key === 'Escape') onClose();
@@ -342,18 +356,16 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                         />
                     )}
 
-                    {/* Close button for desktop modal */}
-                    {!isMobile && (
-                        <button
-                            type="button"
-                            style={styles.closeButton}
-                            onClick={onClose}
-                            aria-label={FEEDBACK_STRINGS.buttons.close}
-                            data-testid="feedback-modal-close"
-                        >
-                            &#x2715;
-                        </button>
-                    )}
+                    {/* Close button (visible on both mobile and desktop) */}
+                    <button
+                        type="button"
+                        style={styles.closeButton}
+                        onClick={onClose}
+                        aria-label={FEEDBACK_STRINGS.buttons.close}
+                        data-testid="feedback-modal-close"
+                    >
+                        &#x2715;
+                    </button>
 
                     <FeedbackForm
                         {...formProps}
