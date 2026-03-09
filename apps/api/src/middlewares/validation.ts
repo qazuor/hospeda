@@ -1,6 +1,6 @@
 /**
  * Validation middleware for API requests
- * Valida headers, content-type, body size, sanitiza datos, etc.
+ * Validates headers, content-type, body size, sanitizes data, etc.
  */
 
 import type { Context, Next } from 'hono';

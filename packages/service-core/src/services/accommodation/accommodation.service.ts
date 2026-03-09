@@ -242,7 +242,7 @@ export class AccommodationService extends BaseCrudService<
     }
 
     protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
-        // Buscar el accommodation antes de borrarlo para obtener el destinationId
+        // Find the accommodation before deleting to get the destinationId
         const entity = await this.model.findById(id);
         this._lastDeletedDestinationId = entity?.destinationId;
         return id;
@@ -260,7 +260,7 @@ export class AccommodationService extends BaseCrudService<
     }
 
     protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
-        // Buscar el accommodation antes de borrarlo para obtener el destinationId
+        // Find the accommodation before deleting to get the destinationId
         const entity = await this.model.findById(id);
         this._lastDeletedDestinationId = entity?.destinationId;
         return id;

@@ -42,7 +42,12 @@ export interface LimitCheckResult {
 }
 
 /**
- * Resource name mapping for user-friendly error messages
+ * Resource name mapping for user-friendly error messages.
+ *
+ * NOTE: These are user-facing Spanish strings intentionally kept here
+ * because the default locale is Spanish (es). They should be moved to
+ * the i18n package (@repo/i18n) when multi-locale support is needed
+ * for billing/limit messages.
  */
 const RESOURCE_NAMES: Record<LimitKey, string> = {
     max_accommodations: 'alojamientos',

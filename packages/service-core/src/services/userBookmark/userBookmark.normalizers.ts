@@ -10,8 +10,8 @@ import type { Actor } from '../../types';
 // Note: Types are now imported from @repo/schemas
 
 /**
- * Normaliza el input para crear un bookmark.
- * Trimea name/description y valida entityType.
+ * Normalizes the input for creating a bookmark.
+ * Trims name/description and validates entityType.
  */
 export const normalizeCreateInput = (
     data: UserBookmarkCreateInput,
@@ -27,7 +27,7 @@ export const normalizeCreateInput = (
 };
 
 /**
- * Normaliza el input para actualizar un bookmark.
+ * Normalizes the input for updating a bookmark.
  */
 export const normalizeUpdateInput = (
     data: UserBookmarkUpdateInput,
@@ -42,7 +42,7 @@ export const normalizeUpdateInput = (
 };
 
 /**
- * Normaliza el input para listar bookmarks de usuario.
+ * Normalizes the input for listing user bookmarks.
  */
 export const normalizeListByUserInput = (
     params: UserBookmarkListByUserInput,
@@ -52,7 +52,7 @@ export const normalizeListByUserInput = (
 };
 
 /**
- * Normaliza el input para listar bookmarks de entidad.
+ * Normalizes the input for listing entity bookmarks.
  */
 export const normalizeListByEntityInput = (
     params: UserBookmarkListByEntityInput,

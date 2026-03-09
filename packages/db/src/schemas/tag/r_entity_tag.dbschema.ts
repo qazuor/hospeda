@@ -32,17 +32,17 @@ export const rEntityTagRelations = relations(rEntityTag, ({ one }) => ({
 /**
  * Polymorphic relations helper (Drizzle does NOT support native polymorphic relations).
  *
- * Para obtener la entidad relacionada, filtra por entityType y haz la query correspondiente:
+ * To get the related entity, filter by entityType and run the corresponding query:
  *
- * Ejemplo:
- *   - Para obtener los tags de un accommodation:
+ * Example:
+ *   - To get the tags of an accommodation:
  *     db.query.rEntityTag.findMany({
  *       where: (r, { eq }) => eq(r.entityType, 'ACCOMMODATION') && eq(r.entityId, accommodationId)
  *     })
- *   - Para obtener la entidad desde rEntityTag:
- *     if (entityType === 'ACCOMMODATION') => busca en accommodations por entityId
- *     if (entityType === 'DESTINATION') => busca en destinations por entityId
+ *   - To get the entity from rEntityTag:
+ *     if (entityType === 'ACCOMMODATION') => look up in accommodations by entityId
+ *     if (entityType === 'DESTINATION') => look up in destinations by entityId
  *     ...
  *
- * Puedes crear helpers de typescript para automatizar este patrón en tu código de acceso a datos.
+ * You can create TypeScript helpers to automate this pattern in your data access code.
  */
