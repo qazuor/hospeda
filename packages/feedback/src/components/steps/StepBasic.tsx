@@ -7,6 +7,20 @@
 import { REPORT_TYPES } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
 import type { ReportTypeId } from '../../schemas/feedback.schema.js';
+import {
+    buttonPrimaryDisabledStyle,
+    buttonPrimaryStyle,
+    buttonRowStyle,
+    buttonSecondaryDisabledStyle,
+    buttonSecondaryStyle,
+    errorTextStyle,
+    fieldGroupStyle,
+    inputErrorStyle,
+    inputStyle,
+    labelStyle,
+    selectStyle,
+    textareaBaseStyle
+} from '../../styles/shared.js';
 
 /** Data managed by step 1 of the feedback form */
 export interface StepBasicData {
@@ -44,103 +58,18 @@ export interface StepBasicProps {
 }
 
 const styles = {
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: '4px'
-    },
-    input: {
-        width: '100%',
-        padding: '8px 12px',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: '#d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        boxSizing: 'border-box' as const
-    },
-    inputError: {
-        borderColor: '#ef4444'
-    },
-    errorText: {
-        fontSize: '12px',
-        color: '#ef4444',
-        marginTop: '2px'
-    },
-    textarea: {
-        width: '100%',
-        padding: '8px 12px',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: '#d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        minHeight: '100px',
-        resize: 'vertical' as const,
-        boxSizing: 'border-box' as const
-    },
-    select: {
-        width: '100%',
-        padding: '8px 12px',
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        borderColor: '#d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box' as const
-    },
-    fieldGroup: {
-        marginBottom: '16px'
-    },
-    buttonRow: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: '12px',
-        marginTop: '20px'
-    },
-    buttonPrimary: {
-        padding: '8px 20px',
-        backgroundColor: '#2563eb',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'pointer'
-    },
-    buttonPrimaryDisabled: {
-        padding: '8px 20px',
-        backgroundColor: '#93c5fd',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'not-allowed'
-    },
-    buttonSecondary: {
-        padding: '8px 20px',
-        backgroundColor: 'transparent',
-        color: '#2563eb',
-        border: '1px solid #2563eb',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer'
-    },
-    buttonSecondaryDisabled: {
-        padding: '8px 20px',
-        backgroundColor: 'transparent',
-        color: '#93c5fd',
-        border: '1px solid #93c5fd',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'not-allowed'
-    }
+    label: labelStyle,
+    input: inputStyle,
+    inputError: inputErrorStyle,
+    errorText: errorTextStyle,
+    textarea: { ...textareaBaseStyle, minHeight: '100px' },
+    select: selectStyle,
+    fieldGroup: fieldGroupStyle,
+    buttonRow: buttonRowStyle,
+    buttonPrimary: buttonPrimaryStyle,
+    buttonPrimaryDisabled: buttonPrimaryDisabledStyle,
+    buttonSecondary: buttonSecondaryStyle,
+    buttonSecondaryDisabled: buttonSecondaryDisabledStyle
 } as const;
 
 /**

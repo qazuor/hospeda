@@ -12,6 +12,7 @@ import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
+import { buttonPrimaryStyle, buttonSecondaryStyle } from '../styles/shared.js';
 import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
 import { StepDetails } from './steps/StepDetails.js';
@@ -133,26 +134,8 @@ const styles = {
         justifyContent: 'center',
         gap: '12px'
     },
-    buttonPrimary: {
-        padding: '8px 20px',
-        backgroundColor: '#2563eb',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'pointer'
-    },
-    buttonSecondary: {
-        padding: '8px 20px',
-        backgroundColor: 'transparent',
-        color: '#2563eb',
-        border: '1px solid #2563eb',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer'
-    }
+    buttonPrimary: buttonPrimaryStyle,
+    buttonSecondary: buttonSecondaryStyle
 } as const;
 
 /**

@@ -54,12 +54,12 @@ describe('Web app — BaseLayout has FeedbackFAB', () => {
         expect(content).toContain('FeedbackFAB');
     });
 
-    it('should mount FeedbackFAB with client:idle directive', () => {
+    it('should mount FeedbackFAB with client:only directive', () => {
         // Arrange
         const content = readFileSync(webPath('src/layouts/BaseLayout.astro'), 'utf8');
 
-        // Assert — FAB is deferred so it does not block the main thread
-        expect(content).toContain('client:idle');
+        // Assert — FAB uses client:only to skip SSR (accesses window in initializer)
+        expect(content).toContain('client:only');
     });
 
     it('should pass appSource="web" to FeedbackFAB', () => {
@@ -99,12 +99,12 @@ describe('Web app — standalone feedback page', () => {
         expect(content).toContain('FeedbackForm');
     });
 
-    it('should mount FeedbackForm with client:load directive', () => {
+    it('should mount FeedbackForm with client:only directive', () => {
         // Arrange
         const content = readFileSync(webPath('src/pages/[lang]/feedback.astro'), 'utf8');
 
-        // Assert — form must be interactive immediately on this dedicated page
-        expect(content).toContain('client:load');
+        // Assert — form uses client:only to skip SSR (accesses window in initializer)
+        expect(content).toContain('client:only');
     });
 
     it('should pass appSource="standalone" to FeedbackForm', () => {

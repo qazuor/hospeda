@@ -9,6 +9,17 @@ import { useState } from 'react';
 import { FEEDBACK_CONFIG, SEVERITY_LEVELS } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
 import type { FeedbackEnvironment, SeverityId } from '../../schemas/feedback.schema.js';
+import {
+    buttonPrimaryDisabledStyle,
+    buttonPrimaryStyle,
+    buttonRowStyle,
+    buttonSecondaryStyle,
+    fieldGroupStyle,
+    inputStyle,
+    labelStyle,
+    selectStyle,
+    textareaBaseStyle
+} from '../../styles/shared.js';
 
 /** Data managed by step 2 of the feedback form (all optional) */
 export interface StepDetailsData {
@@ -56,79 +67,15 @@ export interface StepDetailsProps {
 }
 
 const styles = {
-    label: {
-        display: 'block',
-        fontSize: '14px',
-        fontWeight: '600',
-        color: '#374151',
-        marginBottom: '4px'
-    },
-    input: {
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        boxSizing: 'border-box' as const
-    },
-    textarea: {
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        minHeight: '80px',
-        resize: 'vertical' as const,
-        boxSizing: 'border-box' as const
-    },
-    select: {
-        width: '100%',
-        padding: '8px 12px',
-        border: '1px solid #d1d5db',
-        borderRadius: '6px',
-        fontSize: '14px',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box' as const
-    },
-    fieldGroup: {
-        marginBottom: '16px'
-    },
-    buttonRow: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        gap: '12px',
-        marginTop: '20px'
-    },
-    buttonPrimary: {
-        padding: '8px 20px',
-        backgroundColor: '#2563eb',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'pointer'
-    },
-    buttonPrimaryDisabled: {
-        padding: '8px 20px',
-        backgroundColor: '#93c5fd',
-        color: '#fff',
-        border: 'none',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '600',
-        cursor: 'not-allowed'
-    },
-    buttonSecondary: {
-        padding: '8px 20px',
-        backgroundColor: 'transparent',
-        color: '#2563eb',
-        border: '1px solid #2563eb',
-        borderRadius: '6px',
-        fontSize: '14px',
-        fontWeight: '500',
-        cursor: 'pointer'
-    },
+    label: labelStyle,
+    input: inputStyle,
+    textarea: { ...textareaBaseStyle, minHeight: '80px' },
+    select: selectStyle,
+    fieldGroup: fieldGroupStyle,
+    buttonRow: buttonRowStyle,
+    buttonPrimary: buttonPrimaryStyle,
+    buttonPrimaryDisabled: buttonPrimaryDisabledStyle,
+    buttonSecondary: buttonSecondaryStyle,
     uploadArea: {
         border: '2px dashed #d1d5db',
         borderRadius: '6px',

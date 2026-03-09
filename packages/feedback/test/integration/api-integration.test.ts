@@ -47,23 +47,23 @@ describe('API app — feedback route', () => {
         expect(existsSync(apiPath('src/routes/feedback/index.ts'))).toBe(true);
     });
 
-    it('should have a feedback submit route at src/routes/feedback/submit.ts', () => {
+    it('should have a feedback submit route at src/routes/feedback/public/submit.ts', () => {
         // Assert — the POST handler for feedback submission must exist
-        expect(existsSync(apiPath('src/routes/feedback/submit.ts'))).toBe(true);
+        expect(existsSync(apiPath('src/routes/feedback/public/submit.ts'))).toBe(true);
     });
 
-    it('should export feedbackRoutes from the route index', () => {
+    it('should export publicFeedbackRoutes from the route index', () => {
         // Arrange
         const content = readFileSync(apiPath('src/routes/feedback/index.ts'), 'utf8');
 
         // Assert — named export following project convention (no default exports)
         expect(content).toContain('export');
-        expect(content).toContain('feedbackRoutes');
+        expect(content).toContain('publicFeedbackRoutes');
     });
 
-    it('should import the submit route inside the feedback route index', () => {
+    it('should import the submit route inside the public route index', () => {
         // Arrange
-        const content = readFileSync(apiPath('src/routes/feedback/index.ts'), 'utf8');
+        const content = readFileSync(apiPath('src/routes/feedback/public/index.ts'), 'utf8');
 
         // Assert — route index must wire up the actual submit handler
         expect(content).toContain('submitFeedbackRoute');
