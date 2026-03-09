@@ -6,7 +6,7 @@ import { ProductTypeEnumSchema } from '../../src/enums/product-type.schema.js';
 describe('ProductTypeEnumSchema', () => {
     it('should validate valid product type values', () => {
         // Test each enum value
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         Object.values(ProductTypeEnum).forEach((productType) => {
             expect(() => ProductTypeEnumSchema.parse(productType)).not.toThrow();
         });
@@ -49,7 +49,7 @@ describe('ProductTypeEnumSchema', () => {
             []
         ];
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         invalidProductTypes.forEach((productType) => {
             expect(() => ProductTypeEnumSchema.parse(productType)).toThrow(ZodError);
         });
@@ -86,7 +86,7 @@ describe('ProductTypeEnumSchema', () => {
         const enumValues = Object.values(ProductTypeEnum);
         expect(enumValues).toHaveLength(expectedProductTypes.length);
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         expectedProductTypes.forEach((expectedType) => {
             expect(enumValues).toContain(expectedType);
         });

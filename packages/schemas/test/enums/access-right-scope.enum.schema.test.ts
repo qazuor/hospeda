@@ -6,7 +6,7 @@ import { AccessRightScopeEnum } from '../../src/enums/index.js';
 describe('AccessRightScopeEnumSchema', () => {
     it('should validate valid access right scope values', () => {
         // Test each enum value
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         Object.values(AccessRightScopeEnum).forEach((scope) => {
             expect(() => AccessRightScopeEnumSchema.parse(scope)).not.toThrow();
         });
@@ -52,7 +52,7 @@ describe('AccessRightScopeEnumSchema', () => {
             []
         ];
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         invalidScopes.forEach((scope) => {
             expect(() => AccessRightScopeEnumSchema.parse(scope)).toThrow(ZodError);
         });
@@ -82,7 +82,7 @@ describe('AccessRightScopeEnumSchema', () => {
         const enumValues = Object.values(AccessRightScopeEnum);
         expect(enumValues).toHaveLength(requiredScopes.length);
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         requiredScopes.forEach((required) => {
             expect(enumValues).toContain(required);
         });
@@ -114,7 +114,7 @@ describe('AccessRightScopeEnumSchema', () => {
         ];
         expect(scopes).toHaveLength(5);
 
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         scopes.forEach((scope) => {
             expect(typeof scope).toBe('string');
             expect(scope.length).toBeGreaterThan(0);
@@ -139,7 +139,7 @@ describe('AccessRightScopeEnumSchema', () => {
 
         // All scopes should be valid
         const allScopes = [...businessDomainScopes, ...systemScopes];
-        // biome-ignore lint/complexity/noForEach: <explanation>
+        // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating enum values in test assertions
         allScopes.forEach((scope) => {
             expect(() => AccessRightScopeEnumSchema.parse(scope)).not.toThrow();
         });

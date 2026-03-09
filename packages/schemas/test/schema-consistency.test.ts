@@ -113,21 +113,21 @@ describe('Schema Consistency Validation', () => {
 
             // AccommodationSearchSchema should have all base keys
             const accomSearchKeys = Object.keys(AccommodationSearchSchema.shape);
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating schema keys in test assertions
             baseSearchKeys.forEach((key) => {
                 expect(accomSearchKeys).toContain(key);
             });
 
             // UserSearchSchema should have all base keys
             const userSearchKeys = Object.keys(UserSearchSchema.shape);
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating schema keys in test assertions
             baseSearchKeys.forEach((key) => {
                 expect(userSearchKeys).toContain(key);
             });
 
             // FeatureSearchSchema should have all base keys
             const featureSearchKeys = Object.keys(FeatureSearchSchema.shape);
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating schema keys in test assertions
             baseSearchKeys.forEach((key) => {
                 expect(featureSearchKeys).toContain(key);
             });

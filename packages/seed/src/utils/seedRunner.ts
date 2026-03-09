@@ -135,6 +135,6 @@ export async function seedRunner<T>({
     }
 
     logger.info(`${SECTION_SEPARATOR}`);
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    // biome-ignore lint/suspicious/noConsoleLog: seed runner uses console.log for visual spacing in terminal output
     console.log('\n');
 }

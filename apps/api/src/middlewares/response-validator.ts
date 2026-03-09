@@ -7,8 +7,9 @@
 import type { Context, MiddlewareHandler, Next } from 'hono';
 import { z } from 'zod';
 import { paginationMetadataSchema } from '../schemas/response-schemas';
-import { env } from '../utils/env';
+import { env, validateApiEnv } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+validateApiEnv();
 
 /**
  * Configuration for response validation middleware

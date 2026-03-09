@@ -39,7 +39,7 @@ function extractKeys(obj: Record<string, unknown>, prefix = ''): string[] {
  * Main function to generate types
  */
 function generateTypes(): void {
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    // biome-ignore lint/suspicious/noConsoleLog: CLI script uses console.log for user-facing progress output
     console.log('🔄 Generating translation types...');
 
     const allKeys = new Set<string>();
@@ -50,7 +50,7 @@ function generateTypes(): void {
             .filter((dirent) => dirent.isDirectory())
             .map((dirent) => dirent.name);
 
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: CLI script uses console.log for user-facing progress output
         console.log(`📁 Found locales: ${locales.join(', ')}`);
 
         // Process each locale
@@ -58,7 +58,7 @@ function generateTypes(): void {
             const localeDir = join(LOCALES_DIR, locale);
             const files = readdirSync(localeDir).filter((file) => file.endsWith('.json'));
 
-            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+            // biome-ignore lint/suspicious/noConsoleLog: CLI script uses console.log for user-facing progress output
             console.log(`📄 Processing ${files.length} files for locale '${locale}'`);
 
             // Process each translation file
@@ -105,9 +105,9 @@ export type TranslationKeys = TranslationKey;
         // Write the generated types
         writeFileSync(OUTPUT_FILE, typeDefinition, 'utf-8');
 
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: CLI script uses console.log for user-facing progress output
         console.log(`✅ Generated ${sortedKeys.length} translation keys`);
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: CLI script uses console.log for user-facing progress output
         console.log(`📝 Types written to: ${OUTPUT_FILE}`);
     } catch (error) {
         console.error('❌ Error generating types:', error);

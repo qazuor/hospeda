@@ -23,7 +23,7 @@ export async function validateAllManifests(continueOnError = false): Promise<voi
     const separator = '#'.repeat(90);
     const subSeparator = '─'.repeat(90);
 
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    // biome-ignore lint/suspicious/noConsoleLog: seed validation uses console.log for visual spacing in terminal output
     console.log('\n');
     logger.info(`${separator}`);
     logger.info(`${STATUS_ICONS.Debug} VALIDATING MANIFESTS AGAINST FILES`);

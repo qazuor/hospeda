@@ -85,7 +85,7 @@ const preProcessPost = async (item: unknown, context: SeedContext) => {
         }
         postData.relatedDestinationId = realRelatedDestinationId;
     } else {
-        // biome-ignore lint/performance/noDelete: <explanation>
+        // biome-ignore lint/performance/noDelete: removing optional property from seed data object when no mapping exists
         delete postData.relatedDestinationId;
     }
 
@@ -100,7 +100,7 @@ const preProcessPost = async (item: unknown, context: SeedContext) => {
         }
         postData.relatedAccommodationId = realRelatedAccommodationId;
     } else {
-        // biome-ignore lint/performance/noDelete: <explanation>
+        // biome-ignore lint/performance/noDelete: removing optional property from seed data object when no mapping exists
         delete postData.relatedAccommodationId;
     }
 
@@ -111,7 +111,7 @@ const preProcessPost = async (item: unknown, context: SeedContext) => {
         }
         postData.relatedEventId = realRelatedEventId;
     } else {
-        // biome-ignore lint/performance/noDelete: <explanation>
+        // biome-ignore lint/performance/noDelete: removing optional property from seed data object when no mapping exists
         delete postData.relatedEventId;
     }
 

@@ -12,23 +12,23 @@ const adminRoot = join(projectRoot, 'apps/admin');
 const packagesRoot = join(projectRoot, 'packages');
 const viteCache = join(adminRoot, 'node_modules/.vite');
 
-// biome-ignore lint/suspicious/noConsoleLog: <explanation>
+// biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
 console.log('🚀 Starting admin dev server with auto-cache clearing...\n');
 
 // Function to clear Vite cache
 function clearViteCache() {
     if (existsSync(viteCache)) {
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
         console.log('🧹 Clearing Vite cache...');
         rmSync(viteCache, { recursive: true, force: true });
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
         console.log('✅ Cache cleared\n');
     }
 }
 
 // Start the dev server
 function startDevServer() {
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
     console.log('📦 Starting Vite dev server...');
     const devProcess = spawn('pnpm', ['dev'], {
         cwd: adminRoot,
@@ -46,7 +46,7 @@ function startDevServer() {
 
 // Watch packages for changes
 function watchPackages() {
-    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+    // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
     console.log('👀 Watching packages for changes...\n');
 
     let timeout;
@@ -58,7 +58,7 @@ function watchPackages() {
                 filename.endsWith('.js') ||
                 filename.endsWith('.jsx'))
         ) {
-            // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+            // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
             console.log(`📝 File changed: ${filename}`);
 
             // Debounce cache clearing
@@ -85,7 +85,7 @@ async function main() {
 
     // Handle cleanup
     const cleanup = () => {
-        // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+        // biome-ignore lint/suspicious/noConsoleLog: dev script uses console.log for user-facing progress output
         console.log('\n🛑 Shutting down...');
         watcher.close();
         devProcess.kill();

@@ -54,7 +54,7 @@ describe('EventOrganizerSchema', () => {
         it('should reject event organizer with invalid data', () => {
             const invalidCases = createEventOrganizerInvalidCases();
 
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating test fixture cases
             invalidCases.forEach((invalidCase) => {
                 expect(() => EventOrganizerSchema.parse(invalidCase)).toThrow(ZodError);
             });
@@ -72,7 +72,7 @@ describe('EventOrganizerSchema', () => {
         it('should reject event organizer invalid cases', () => {
             const invalidCases = createEventOrganizerInvalidCases();
 
-            // biome-ignore lint/complexity/noForEach: <explanation>
+            // biome-ignore lint/complexity/noForEach: forEach is clearer than for-of for iterating test fixture cases
             invalidCases.forEach((invalidCase) => {
                 expect(() => EventOrganizerSchema.parse(invalidCase)).toThrow(ZodError);
             });

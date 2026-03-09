@@ -277,7 +277,7 @@ describe('User CRUD Schemas', () => {
                 try {
                     const _parsedUser = UserSchema.parse(user);
                 } catch (error) {
-                    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+                    // biome-ignore lint/suspicious/noConsoleLog: console.log used for debugging schema parse failures in tests
                     console.log('UserSchema parsing failed:', (error as Error).message);
                 }
 
@@ -285,7 +285,7 @@ describe('User CRUD Schemas', () => {
                 try {
                     const _parsedOutput = UserCreateOutputSchema.parse(user);
                 } catch (error) {
-                    // biome-ignore lint/suspicious/noConsoleLog: <explanation>
+                    // biome-ignore lint/suspicious/noConsoleLog: console.log used for debugging schema parse failures in tests
                     console.log('UserCreateOutputSchema parsing failed:', (error as Error).message);
                 }
 

@@ -16,7 +16,7 @@ const bookmarkNormalizer = (data: Record<string, unknown>) => {
         [key: string]: unknown;
     };
     // HACK: to dont modify all jsons
-    // biome-ignore lint/performance/noDelete: <explanation>
+    // biome-ignore lint/performance/noDelete: removing optional property from seed data object to avoid DB insertion errors
     delete cleanData.lifecycleState;
     return cleanData;
 };
