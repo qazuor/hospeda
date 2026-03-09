@@ -35,6 +35,15 @@ export function getSiteUrl(): string {
 }
 
 /**
+ * Get the deploy version (git hash or release tag).
+ *
+ * @returns The deploy version string, or undefined if not set
+ */
+export function getDeployVersion(): string | undefined {
+    return _env.PUBLIC_VERSION;
+}
+
+/**
  * Check if running in production.
  *
  * @returns True if in production mode

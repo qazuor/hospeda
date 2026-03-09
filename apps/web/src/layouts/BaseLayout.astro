@@ -2,7 +2,7 @@
 import "@/styles/global.css";
 import { ToastContainer } from "@/components/ui/Toast.client";
 import { FeedbackFAB } from "@repo/feedback";
-import { getApiUrl } from "@/lib/env";
+import { getApiUrl, getDeployVersion } from "@/lib/env";
 import Header from "./Header.astro";
 import Footer from "./Footer.astro";
 
@@ -109,6 +109,7 @@ const {
       client:only="react"
       apiUrl={getApiUrl()}
       appSource="web"
+      deployVersion={getDeployVersion()}
       userId={Astro.locals.user?.id}
       userEmail={Astro.locals.user?.email}
       userName={Astro.locals.user?.name}
