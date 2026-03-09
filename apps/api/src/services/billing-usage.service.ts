@@ -222,11 +222,15 @@ export async function getApproachingLimits(
             { error: error instanceof Error ? error.message : String(error) },
             'Failed to get approaching limits'
         );
+        const errorMessage =
+            process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                ? `Failed to get approaching limits: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get approaching limits';
         return {
             success: false,
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: error instanceof Error ? error.message : 'Failed to get approaching limits'
+                message: errorMessage
             }
         };
     }

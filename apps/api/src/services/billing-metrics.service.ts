@@ -292,12 +292,15 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get overview metrics'
             );
+            const errorMessage =
+                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                    ? `Failed to get overview metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    : 'Failed to get overview metrics';
             return {
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error ? error.message : 'Failed to get overview metrics'
+                    message: errorMessage
                 }
             };
         }
@@ -355,12 +358,15 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get revenue time series'
             );
+            const errorMessage =
+                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                    ? `Failed to get revenue time series: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    : 'Failed to get revenue time series';
             return {
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error ? error.message : 'Failed to get revenue time series'
+                    message: errorMessage
                 }
             };
         }
@@ -414,12 +420,15 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get recent activity'
             );
+            const errorMessage =
+                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                    ? `Failed to get recent activity: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    : 'Failed to get recent activity';
             return {
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error ? error.message : 'Failed to get recent activity'
+                    message: errorMessage
                 }
             };
         }
@@ -465,14 +474,15 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get subscription breakdown'
             );
+            const errorMessage =
+                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
+                    ? `Failed to get subscription breakdown: ${error instanceof Error ? error.message : 'Unknown error'}`
+                    : 'Failed to get subscription breakdown';
             return {
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : 'Failed to get subscription breakdown'
+                    message: errorMessage
                 }
             };
         }
