@@ -13,6 +13,7 @@
  */
 import { FeedbackForm, parseFeedbackParams } from '@repo/feedback';
 import type { ReportTypeId } from '@repo/feedback';
+import { StandaloneFeedbackWrapper } from '../../components/feedback/StandaloneFeedbackWrapper';
 import { getApiUrl } from '../../lib/env';
 import { getLocaleFromParams } from '../../lib/page-helpers';
 
@@ -111,12 +112,13 @@ const prefillData = (params.type || params.title || params.description || params
         <p>Ayudanos a mejorar reportando cualquier problema que encuentres.</p>
       </div>
 
-      <FeedbackForm
-        client:load
-        apiUrl={apiUrl}
-        appSource="standalone"
-        prefillData={prefillData}
-      />
+      <StandaloneFeedbackWrapper client:load>
+        <FeedbackForm
+          apiUrl={apiUrl}
+          appSource="standalone"
+          prefillData={prefillData}
+        />
+      </StandaloneFeedbackWrapper>
 
       <noscript>
         <div class="fallback">
