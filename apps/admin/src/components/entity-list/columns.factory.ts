@@ -35,96 +35,32 @@ import {
 } from '@/components/table/DataTable';
 import type { ColumnConfig, LinkHandler } from './types';
 
-/**
- * Badge option configuration
- */
-export type BadgeOption = {
-    readonly value: string;
-    readonly label: string;
-    readonly color: BadgeColor;
-};
+// Re-export types and constants for backward compatibility
+export type {
+    BadgeOption,
+    BadgeColumnOptions,
+    ColumnFactoryConfig,
+    NameColumnOptions
+} from './columns.factory.types';
+export {
+    VISIBILITY_BADGE_OPTIONS,
+    LIFECYCLE_STATE_BADGE_OPTIONS,
+    MODERATION_STATE_BADGE_OPTIONS
+} from './columns.factory.types';
 
-/**
- * Factory configuration
- */
-export type ColumnFactoryConfig = {
-    /** Entity type for styling */
-    readonly entityType: EntityType;
-    /** Base path for entity routes */
-    readonly basePath: string;
-    /** Primary color for entity badges */
-    readonly primaryColor?: BadgeColor;
-};
-
-/**
- * Name column options
- */
-export type NameColumnOptions<TData> = {
-    /** Header text (default: 'Name') */
-    readonly header?: string;
-    /** Field to access for name value (default: 'name') */
-    readonly accessorKey?: string;
-    /** Field to use in link params */
-    readonly linkField?: 'id' | 'slug';
-    /** Custom link handler override */
-    readonly linkHandler?: LinkHandler<TData>;
-    /** Enable sorting (default: true) */
-    readonly enableSorting?: boolean;
-};
-
-/**
- * Badge column options
- */
-export type BadgeColumnOptions = {
-    /** Column ID */
-    readonly id: string;
-    /** Header text */
-    readonly header: string;
-    /** Field to access for value */
-    readonly accessorKey: string;
-    /** Badge options for each value */
-    readonly badgeOptions: readonly BadgeOption[];
-    /** Enable sorting (default: true) */
-    readonly enableSorting?: boolean;
-    /** Visible on table by default */
-    readonly startVisibleOnTable?: boolean;
-    /** Visible on grid by default */
-    readonly startVisibleOnGrid?: boolean;
-};
+import type {
+    BadgeColumnOptions,
+    ColumnFactoryConfig,
+    NameColumnOptions
+} from './columns.factory.types';
+import {
+    LIFECYCLE_STATE_BADGE_OPTIONS,
+    MODERATION_STATE_BADGE_OPTIONS,
+    VISIBILITY_BADGE_OPTIONS
+} from './columns.factory.types';
 
 // Note: TData in NameColumnOptions is intentionally unused but kept for future type safety
 // when we add more specific type constraints
-
-/**
- * Common visibility badge options
- */
-export const VISIBILITY_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'PUBLIC', label: 'Public', color: BadgeColor.PURPLE },
-    { value: 'PRIVATE', label: 'Private', color: BadgeColor.CYAN },
-    { value: 'HIDDEN', label: 'Hidden', color: BadgeColor.PINK },
-    { value: 'RESTRICTED', label: 'Restricted', color: BadgeColor.ORANGE }
-];
-
-/**
- * Common lifecycle state badge options
- */
-export const LIFECYCLE_STATE_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'DRAFT', label: 'Draft', color: BadgeColor.GRAY },
-    { value: 'ACTIVE', label: 'Active', color: BadgeColor.GREEN },
-    { value: 'INACTIVE', label: 'Inactive', color: BadgeColor.YELLOW },
-    { value: 'ARCHIVED', label: 'Archived', color: BadgeColor.ORANGE },
-    { value: 'DELETED', label: 'Deleted', color: BadgeColor.RED }
-];
-
-/**
- * Common moderation state badge options
- */
-export const MODERATION_STATE_BADGE_OPTIONS: readonly BadgeOption[] = [
-    { value: 'PENDING', label: 'Pending', color: BadgeColor.YELLOW },
-    { value: 'APPROVED', label: 'Approved', color: BadgeColor.GREEN },
-    { value: 'REJECTED', label: 'Rejected', color: BadgeColor.RED },
-    { value: 'UNDER_REVIEW', label: 'Under Review', color: BadgeColor.BLUE }
-];
 
 /**
  * Creates a column factory for a specific entity type
@@ -494,7 +430,6 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
 
         /**
          * Returns common columns that most entities have
-         * Includes: isFeatured, visibility, lifecycleState, moderationState, createdAt
          */
         commonColumns: (): readonly ColumnConfig<TData>[] => [
             {
@@ -543,7 +478,6 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
 
         /**
          * Returns rating-related columns
-         * Includes: averageRating, reviewsCount
          */
         ratingColumns: (): readonly ColumnConfig<TData>[] => [
             {
@@ -564,7 +498,6 @@ export const createEntityColumnsFactory = <TData extends { id: string; [key: str
 
         /**
          * Returns media-related columns
-         * Includes: featuredImage, gallery
          */
         mediaColumns: (
             featuredImageKey = 'media.featuredImage',

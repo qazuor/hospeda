@@ -12,6 +12,9 @@ import { useTranslations } from '@/hooks/use-translations';
 import { formatCurrency } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 
+import type { DiscountBadgeLabels, FeeBadgeLabels } from './pricing-components';
+import { DiscountItem, FeeItem } from './pricing-components';
+
 export const Route = createFileRoute('/_authed/accommodations/$id_/pricing')({
     component: AccommodationPricingPage
 });
@@ -40,6 +43,22 @@ function AccommodationPricingPage() {
         additionalFees && Object.values(additionalFees).some((fee) => fee !== undefined);
     const hasDiscounts =
         discounts && Object.values(discounts).some((discount) => discount !== undefined);
+
+    // Build badge label objects once to avoid repetition
+    const feeBadgeLabels: FeeBadgeLabels = {
+        included: t('admin-pages.accommodations.pricing.badges.included'),
+        optional: t('admin-pages.accommodations.pricing.badges.optional'),
+        percentage: t('admin-pages.accommodations.pricing.badges.percentage'),
+        perStay: t('admin-pages.accommodations.pricing.badges.perStay'),
+        perNight: t('admin-pages.accommodations.pricing.badges.perNight'),
+        perGuest: t('admin-pages.accommodations.pricing.badges.perGuest')
+    };
+
+    const discountBadgeLabels: DiscountBadgeLabels = {
+        percentage: t('admin-pages.accommodations.pricing.badges.percentage'),
+        perStay: t('admin-pages.accommodations.pricing.badges.perStay'),
+        perNight: t('admin-pages.accommodations.pricing.badges.perNight')
+    };
 
     return (
         <div className="space-y-4">
@@ -116,26 +135,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.cleaning}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.tax && (
@@ -145,26 +145,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.tax}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.lateCheckout && (
@@ -174,26 +155,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.lateCheckout}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.pets && (
@@ -203,26 +165,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.pets}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.parking && (
@@ -232,26 +175,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.parking}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.extraGuest && (
@@ -261,26 +185,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 fee={additionalFees.extraGuest}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         )}
                                         {additionalFees?.others?.map((other, index) => (
@@ -290,26 +195,7 @@ function AccommodationPricingPage() {
                                                 name={other.name}
                                                 fee={other}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    included: t(
-                                                        'admin-pages.accommodations.pricing.badges.included'
-                                                    ),
-                                                    optional: t(
-                                                        'admin-pages.accommodations.pricing.badges.optional'
-                                                    ),
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    ),
-                                                    perGuest: t(
-                                                        'admin-pages.accommodations.pricing.badges.perGuest'
-                                                    )
-                                                }}
+                                                badges={feeBadgeLabels}
                                             />
                                         ))}
                                     </div>
@@ -334,17 +220,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 discount={discounts.weekly}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    )
-                                                }}
+                                                badges={discountBadgeLabels}
                                             />
                                         )}
                                         {discounts?.monthly && (
@@ -354,17 +230,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 discount={discounts.monthly}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    )
-                                                }}
+                                                badges={discountBadgeLabels}
                                             />
                                         )}
                                         {discounts?.lastMinute && (
@@ -374,17 +240,7 @@ function AccommodationPricingPage() {
                                                 )}
                                                 discount={discounts.lastMinute}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    )
-                                                }}
+                                                badges={discountBadgeLabels}
                                             />
                                         )}
                                         {discounts?.others?.map((other, index) => (
@@ -394,17 +250,7 @@ function AccommodationPricingPage() {
                                                 name={other.name}
                                                 discount={other}
                                                 formatPrice={formatPrice}
-                                                badges={{
-                                                    percentage: t(
-                                                        'admin-pages.accommodations.pricing.badges.percentage'
-                                                    ),
-                                                    perStay: t(
-                                                        'admin-pages.accommodations.pricing.badges.perStay'
-                                                    ),
-                                                    perNight: t(
-                                                        'admin-pages.accommodations.pricing.badges.perNight'
-                                                    )
-                                                }}
+                                                badges={discountBadgeLabels}
                                             />
                                         ))}
                                     </div>
@@ -414,122 +260,6 @@ function AccommodationPricingPage() {
                     </div>
                 )}
             </div>
-        </div>
-    );
-}
-
-type FeeData = {
-    price?: number;
-    currency?: string;
-    isIncluded?: boolean;
-    isOptional?: boolean;
-    isPercent?: boolean;
-    isPerStay?: boolean;
-    isPerNight?: boolean;
-    isPerGuest?: boolean;
-};
-
-type FeeBadgeLabels = {
-    included: string;
-    optional: string;
-    percentage: string;
-    perStay: string;
-    perNight: string;
-    perGuest: string;
-};
-
-type DiscountBadgeLabels = {
-    percentage: string;
-    perStay: string;
-    perNight: string;
-};
-
-function FeeItem({
-    name,
-    fee,
-    formatPrice,
-    badges: badgeLabels
-}: {
-    name: string;
-    fee: FeeData;
-    formatPrice: (amount?: number, curr?: string) => string;
-    badges: FeeBadgeLabels;
-}) {
-    const badges: string[] = [];
-    if (fee.isIncluded) badges.push(badgeLabels.included);
-    if (fee.isOptional) badges.push(badgeLabels.optional);
-    if (fee.isPercent) badges.push(badgeLabels.percentage);
-    if (fee.isPerStay) badges.push(badgeLabels.perStay);
-    if (fee.isPerNight) badges.push(badgeLabels.perNight);
-    if (fee.isPerGuest) badges.push(badgeLabels.perGuest);
-
-    return (
-        <div className="flex items-start justify-between border-b pb-3 last:border-0">
-            <div>
-                <p className="font-medium text-sm">{name}</p>
-                {badges.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                        {badges.map((badge) => (
-                            <Badge
-                                key={badge}
-                                variant="outline"
-                                className="text-xs"
-                            >
-                                {badge}
-                            </Badge>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <p className="font-semibold text-sm">
-                {fee.isPercent && fee.price
-                    ? `${fee.price}%`
-                    : formatPrice(fee.price, fee.currency)}
-            </p>
-        </div>
-    );
-}
-
-function DiscountItem({
-    name,
-    discount,
-    formatPrice,
-    badges: badgeLabels
-}: {
-    name: string;
-    discount: FeeData;
-    formatPrice: (amount?: number, curr?: string) => string;
-    badges: DiscountBadgeLabels;
-}) {
-    const badges: string[] = [];
-    if (discount.isPercent) badges.push(badgeLabels.percentage);
-    if (discount.isPerStay) badges.push(badgeLabels.perStay);
-    if (discount.isPerNight) badges.push(badgeLabels.perNight);
-
-    return (
-        <div className="flex items-start justify-between border-b pb-3 last:border-0">
-            <div>
-                <p className="font-medium text-sm">{name}</p>
-                {badges.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
-                        {badges.map((badge) => (
-                            <Badge
-                                key={badge}
-                                variant="success"
-                                className="text-xs"
-                            >
-                                {badge}
-                            </Badge>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <p className="font-semibold text-green-600 text-sm dark:text-green-400">
-                -
-                {discount.isPercent && discount.price
-                    ? `${discount.price}%`
-                    : formatPrice(discount.price, discount.currency)}
-            </p>
         </div>
     );
 }

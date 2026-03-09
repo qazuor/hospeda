@@ -19,197 +19,12 @@ import { AlertTriangleIcon, CheckCircleIcon, ShieldIcon, XCircleIcon } from '@re
 import { createFileRoute, useNavigate, useRouteContext } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 
-/** Password validation rules */
-const PASSWORD_RULES = {
-    minLength: 8,
-    hasUppercase: /[A-Z]/,
-    hasLowercase: /[a-z]/,
-    hasNumber: /[0-9]/,
-    hasSpecial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/
-} as const;
-
-/** Individual rule check result */
-interface PasswordRule {
-    readonly key: string;
-    readonly labelKey: TranslationKey;
-    readonly passed: boolean;
-}
-
-/**
- * Checks all password rules against a given password
- */
-function checkPasswordRules({ password }: { readonly password: string }): readonly PasswordRule[] {
-    return [
-        {
-            key: 'minLength',
-            labelKey: 'admin-pages.me.changePassword.requirements.minLength' as TranslationKey,
-            passed: password.length >= PASSWORD_RULES.minLength
-        },
-        {
-            key: 'uppercase',
-            labelKey: 'admin-pages.me.changePassword.requirements.uppercase' as TranslationKey,
-            passed: PASSWORD_RULES.hasUppercase.test(password)
-        },
-        {
-            key: 'lowercase',
-            labelKey: 'admin-pages.me.changePassword.requirements.lowercase' as TranslationKey,
-            passed: PASSWORD_RULES.hasLowercase.test(password)
-        },
-        {
-            key: 'number',
-            labelKey: 'admin-pages.me.changePassword.requirements.number' as TranslationKey,
-            passed: PASSWORD_RULES.hasNumber.test(password)
-        },
-        {
-            key: 'special',
-            labelKey: 'admin-pages.me.changePassword.requirements.special' as TranslationKey,
-            passed: PASSWORD_RULES.hasSpecial.test(password)
-        }
-    ];
-}
-
-/** Strength levels */
-const STRENGTH_LEVELS = [
-    {
-        labelKey: 'admin-pages.me.changePassword.strength.veryWeak' as TranslationKey,
-        color: 'bg-red-500',
-        textColor: 'text-red-600 dark:text-red-400'
-    },
-    {
-        labelKey: 'admin-pages.me.changePassword.strength.weak' as TranslationKey,
-        color: 'bg-orange-500',
-        textColor: 'text-orange-600 dark:text-orange-400'
-    },
-    {
-        labelKey: 'admin-pages.me.changePassword.strength.fair' as TranslationKey,
-        color: 'bg-yellow-500',
-        textColor: 'text-yellow-600 dark:text-yellow-400'
-    },
-    {
-        labelKey: 'admin-pages.me.changePassword.strength.strong' as TranslationKey,
-        color: 'bg-emerald-500',
-        textColor: 'text-emerald-600 dark:text-emerald-400'
-    },
-    {
-        labelKey: 'admin-pages.me.changePassword.strength.veryStrong' as TranslationKey,
-        color: 'bg-green-600',
-        textColor: 'text-green-600 dark:text-green-400'
-    }
-] as const;
-
-/**
- * Maps known API error messages to translation keys.
- * Uses substring matching to handle variations in API error messages.
- */
-function mapApiErrorToTranslationKey({
-    message
-}: {
-    readonly message: string;
-}): { readonly key: TranslationKey; readonly field: string | null } | null {
-    const normalized = message.toLowerCase();
-
-    if (normalized.includes('current password') || normalized.includes('incorrect')) {
-        return {
-            key: 'admin-pages.me.changePassword.error.wrongCurrent' as TranslationKey,
-            field: 'currentPassword'
-        };
-    }
-
-    if (normalized.includes('no credential') || normalized.includes('account found')) {
-        return {
-            key: 'admin-pages.me.changePassword.error.generic' as TranslationKey,
-            field: null
-        };
-    }
-
-    if (normalized.includes('at least 8') || normalized.includes('too short')) {
-        return {
-            key: 'admin-pages.me.changePassword.error.tooShort' as TranslationKey,
-            field: 'newPassword'
-        };
-    }
-
-    return null;
-}
+import { PasswordRequirements, PasswordStrengthIndicator } from './password-strength-components';
+import { checkPasswordRules, mapApiErrorToTranslationKey } from './password-validation';
 
 export const Route = createFileRoute('/_authed/me/change-password')({
     component: ChangePasswordPage
 });
-
-/**
- * Password strength indicator bar
- */
-function PasswordStrengthIndicator({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
-    const { t } = useTranslations();
-    const passedCount = rules.filter((r) => r.passed).length;
-    const strengthIndex = passedCount === 0 ? 0 : Math.min(passedCount - 1, 4);
-    const level = STRENGTH_LEVELS[strengthIndex];
-
-    return (
-        <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-                <span className="text-muted-foreground text-xs">
-                    {t('admin-pages.me.changePassword.strength.label' as TranslationKey)}
-                </span>
-                <span className={`font-medium text-xs ${level.textColor}`}>
-                    {t(level.labelKey)}
-                </span>
-            </div>
-            <div className="flex gap-1">
-                {STRENGTH_LEVELS.map((lvl, i) => (
-                    <div
-                        key={lvl.labelKey}
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                            i <= strengthIndex ? level.color : 'bg-muted'
-                        }`}
-                    />
-                ))}
-            </div>
-        </div>
-    );
-}
-
-/**
- * Password requirements checklist
- */
-function PasswordRequirements({
-    rules
-}: {
-    readonly rules: readonly PasswordRule[];
-}) {
-    const { t } = useTranslations();
-
-    return (
-        <div className="space-y-1.5">
-            <p className="font-medium text-muted-foreground text-xs">
-                {t('admin-pages.me.changePassword.requirements.title' as TranslationKey)}
-            </p>
-            <ul className="space-y-1">
-                {rules.map((rule) => (
-                    <li
-                        key={rule.key}
-                        className={`flex items-center gap-1.5 text-xs transition-colors ${
-                            rule.passed
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-muted-foreground'
-                        }`}
-                    >
-                        {rule.passed ? (
-                            <CheckCircleIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                        ) : (
-                            <XCircleIcon className="h-3.5 w-3.5 flex-shrink-0" />
-                        )}
-                        {t(rule.labelKey)}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
 
 function ChangePasswordPage() {
     const { t } = useTranslations();
@@ -279,17 +94,14 @@ function ChangePasswordPage() {
 
                 if (!response.ok) {
                     const data = await response.json().catch(() => null);
-                    // Extract error message from various API response formats
                     const apiMessage = data?.error?.message || data?.message || data?.error || '';
 
-                    // Try to map the API error to a specific translated message
                     const mapped = mapApiErrorToTranslationKey({
                         message: typeof apiMessage === 'string' ? apiMessage : ''
                     });
 
                     if (mapped) {
                         if (mapped.field) {
-                            // Show error on the specific field
                             setFieldErrors((prev) => ({
                                 ...prev,
                                 [mapped.field as string]: t(mapped.key)
@@ -298,7 +110,6 @@ function ChangePasswordPage() {
                             setFormError(t(mapped.key));
                         }
                     } else {
-                        // Show the raw API message if available, otherwise generic
                         const displayMessage =
                             typeof apiMessage === 'string' && apiMessage.length > 0
                                 ? apiMessage

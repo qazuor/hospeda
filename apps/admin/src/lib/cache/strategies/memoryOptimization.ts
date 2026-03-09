@@ -1,46 +1,18 @@
 import { adminLogger } from '@/utils/logger';
 import type { QueryClient } from '@tanstack/react-query';
 
-/**
- * Memory optimization configuration
- */
-export type MemoryOptimizationConfig = {
-    /** Maximum cache size in MB */
-    readonly maxCacheSizeMB?: number;
-    /** Maximum number of queries to keep in cache */
-    readonly maxQueries?: number;
-    /** Garbage collection interval in milliseconds */
-    readonly gcInterval?: number;
-    /** Stale time threshold for cleanup (ms) */
-    readonly staleThreshold?: number;
-    /** Whether to enable automatic cleanup */
-    readonly autoCleanup?: boolean;
-    /** Memory pressure threshold (0-1) */
-    readonly memoryPressureThreshold?: number;
-};
+import type {
+    CacheStats,
+    CleanupResult,
+    MemoryOptimizationConfig
+} from './memoryOptimization.types';
 
-/**
- * Cache statistics
- */
-export type CacheStats = {
-    readonly totalQueries: number;
-    readonly activeQueries: number;
-    readonly staleQueries: number;
-    readonly estimatedSizeMB: number;
-    readonly memoryPressure: number;
-    readonly oldestQueryAge: number;
-    readonly newestQueryAge: number;
-};
-
-/**
- * Cleanup result
- */
-export type CleanupResult = {
-    readonly queriesRemoved: number;
-    readonly memoryFreedMB: number;
-    readonly executionTime: number;
-    readonly trigger: 'manual' | 'automatic' | 'memory-pressure' | 'scheduled';
-};
+// Re-export types for backward compatibility
+export type {
+    CacheStats,
+    CleanupResult,
+    MemoryOptimizationConfig
+} from './memoryOptimization.types';
 
 /**
  * Memory optimization and cache management
@@ -84,24 +56,16 @@ export class MemoryOptimizationManager {
         };
     }
 
-    /**
-     * Start automatic memory monitoring
-     */
+    /** Start automatic memory monitoring */
     startMonitoring(): void {
-        if (this.monitoringInterval) {
-            return; // Already monitoring
-        }
-
+        if (this.monitoringInterval) return;
         adminLogger.info('Starting cache memory monitoring');
-
         this.monitoringInterval = setInterval(() => {
             this.performAutomaticCleanup();
         }, this.config.gcInterval);
     }
 
-    /**
-     * Stop automatic memory monitoring
-     */
+    /** Stop automatic memory monitoring */
     stopMonitoring(): void {
         if (this.monitoringInterval) {
             clearInterval(this.monitoringInterval);
@@ -110,14 +74,12 @@ export class MemoryOptimizationManager {
         }
     }
 
-    /**
-     * Get current cache statistics
-     */
+    /** Get current cache statistics */
     getCacheStats(): CacheStats {
         const queryCache = this.queryClient.getQueryCache();
         const allQueries = queryCache.getAll();
-
         const now = Date.now();
+
         const activeQueries = allQueries.filter(
             (query) => query.state.status === 'pending' || query.getObserversCount() > 0
         );
@@ -126,22 +88,15 @@ export class MemoryOptimizationManager {
             return now - lastUpdated > this.config.staleThreshold;
         });
 
-        // Estimate memory usage (rough approximation)
         const estimatedSizeMB = this.estimateCacheSize(allQueries);
-
-        // Calculate memory pressure
         const memoryPressure = Math.min(
             estimatedSizeMB / this.config.maxCacheSizeMB,
             allQueries.length / this.config.maxQueries
         );
 
-        // Find oldest and newest queries
         const queryAges = allQueries
             .map((query) => now - (query.state.dataUpdatedAt || now))
             .filter((age) => age >= 0);
-
-        const oldestQueryAge = queryAges.length > 0 ? Math.max(...queryAges) : 0;
-        const newestQueryAge = queryAges.length > 0 ? Math.min(...queryAges) : 0;
 
         return {
             totalQueries: allQueries.length,
@@ -149,14 +104,12 @@ export class MemoryOptimizationManager {
             staleQueries: staleQueries.length,
             estimatedSizeMB,
             memoryPressure,
-            oldestQueryAge,
-            newestQueryAge
+            oldestQueryAge: queryAges.length > 0 ? Math.max(...queryAges) : 0,
+            newestQueryAge: queryAges.length > 0 ? Math.min(...queryAges) : 0
         };
     }
 
-    /**
-     * Perform manual cache cleanup
-     */
+    /** Perform manual cache cleanup */
     async cleanup(force = false): Promise<CleanupResult> {
         const startTime = Date.now();
         const initialStats = this.getCacheStats();
@@ -169,12 +122,8 @@ export class MemoryOptimizationManager {
             })
         );
 
-        let queriesRemoved = 0;
+        let queriesRemoved = this.removeStaleQueries();
 
-        // Remove stale queries
-        queriesRemoved += this.removeStaleQueries();
-
-        // Remove excess queries if over limits
         if (
             force ||
             this.shouldCleanupBySize(initialStats) ||
@@ -183,52 +132,38 @@ export class MemoryOptimizationManager {
             queriesRemoved += this.removeExcessQueries();
         }
 
-        // Force garbage collection on remaining queries
         this.queryClient.getQueryCache().clear();
 
         const finalStats = this.getCacheStats();
-        const memoryFreedMB = Math.max(
-            0,
-            initialStats.estimatedSizeMB - finalStats.estimatedSizeMB
-        );
-        const executionTime = Date.now() - startTime;
-
         const result: CleanupResult = {
             queriesRemoved,
-            memoryFreedMB,
-            executionTime,
+            memoryFreedMB: Math.max(0, initialStats.estimatedSizeMB - finalStats.estimatedSizeMB),
+            executionTime: Date.now() - startTime,
             trigger: 'manual'
         };
 
         this.recordCleanup(result);
-
         adminLogger.info(
             'Cache cleanup completed',
             JSON.stringify({
                 queriesRemoved,
-                memoryFreedMB: memoryFreedMB.toFixed(2),
-                executionTime
+                memoryFreedMB: result.memoryFreedMB.toFixed(2),
+                executionTime: result.executionTime
             })
         );
 
         return result;
     }
 
-    /**
-     * Remove specific query patterns
-     */
+    /** Remove specific query patterns */
     removeQueryPatterns(patterns: readonly string[]): number {
         let removed = 0;
         const queryCache = this.queryClient.getQueryCache();
 
         for (const pattern of patterns) {
             const matchingQueries = queryCache.findAll({
-                predicate: (query) => {
-                    const queryKey = query.queryKey.join('.');
-                    return queryKey.includes(pattern);
-                }
+                predicate: (query) => query.queryKey.join('.').includes(pattern)
             });
-
             for (const query of matchingQueries) {
                 queryCache.remove(query);
                 removed++;
@@ -242,9 +177,7 @@ export class MemoryOptimizationManager {
         return removed;
     }
 
-    /**
-     * Get cleanup history and analytics
-     */
+    /** Get cleanup history and analytics */
     getCleanupAnalytics(): {
         readonly totalCleanups: number;
         readonly totalQueriesRemoved: number;
@@ -279,73 +212,50 @@ export class MemoryOptimizationManager {
         };
     }
 
-    /**
-     * Clear cleanup history
-     */
+    /** Clear cleanup history */
     clearAnalytics(): void {
         this.cleanupHistory.length = 0;
         adminLogger.debug('Cache cleanup analytics cleared');
     }
 
-    /**
-     * Perform automatic cleanup based on configuration
-     */
     private async performAutomaticCleanup(): Promise<void> {
-        if (!this.config.autoCleanup) {
-            return;
-        }
+        if (!this.config.autoCleanup) return;
 
         const stats = this.getCacheStats();
-
-        // Check if cleanup is needed
         const needsCleanup =
             this.shouldCleanupByPressure(stats) ||
             this.shouldCleanupBySize(stats) ||
             this.shouldCleanupByCount(stats);
 
-        if (!needsCleanup) {
-            return;
-        }
+        if (!needsCleanup) return;
 
         const trigger = this.shouldCleanupByPressure(stats) ? 'memory-pressure' : 'automatic';
-
         const startTime = Date.now();
+        let queriesRemoved = this.removeStaleQueries();
 
-        let queriesRemoved = 0;
-
-        // Remove stale queries first
-        queriesRemoved += this.removeStaleQueries();
-
-        // Remove excess queries if still needed
         if (this.shouldCleanupBySize(stats) || this.shouldCleanupByCount(stats)) {
             queriesRemoved += this.removeExcessQueries();
         }
 
         const finalStats = this.getCacheStats();
-        const memoryFreedMB = Math.max(0, stats.estimatedSizeMB - finalStats.estimatedSizeMB);
-
         const result: CleanupResult = {
             queriesRemoved,
-            memoryFreedMB,
+            memoryFreedMB: Math.max(0, stats.estimatedSizeMB - finalStats.estimatedSizeMB),
             executionTime: Date.now() - startTime,
             trigger
         };
 
         this.recordCleanup(result);
-
         adminLogger.info(
             'Automatic cache cleanup completed',
             JSON.stringify({
                 trigger,
                 queriesRemoved,
-                memoryFreedMB: memoryFreedMB.toFixed(2)
+                memoryFreedMB: result.memoryFreedMB.toFixed(2)
             })
         );
     }
 
-    /**
-     * Remove stale queries from cache
-     */
     private removeStaleQueries(): number {
         const queryCache = this.queryClient.getQueryCache();
         const now = Date.now();
@@ -353,8 +263,7 @@ export class MemoryOptimizationManager {
 
         const staleQueries = queryCache.findAll({
             predicate: (query) => {
-                const lastUpdated = query.state.dataUpdatedAt || 0;
-                const age = now - lastUpdated;
+                const age = now - (query.state.dataUpdatedAt || 0);
                 return age > this.config.staleThreshold && query.getObserversCount() === 0;
             }
         });
@@ -363,122 +272,78 @@ export class MemoryOptimizationManager {
             queryCache.remove(query);
             removed++;
         }
-
         return removed;
     }
 
-    /**
-     * Remove excess queries to stay within limits
-     */
     private removeExcessQueries(): number {
         const queryCache = this.queryClient.getQueryCache();
         const allQueries = queryCache.getAll();
         let removed = 0;
 
-        // Sort queries by priority (least important first)
         const sortedQueries = allQueries
-            .filter((query) => query.getObserversCount() === 0) // Only remove unobserved queries
+            .filter((query) => query.getObserversCount() === 0)
             .sort((a, b) => {
-                // Prioritize by: age (older first), then by size (larger first)
                 const ageA = Date.now() - (a.state.dataUpdatedAt || 0);
                 const ageB = Date.now() - (b.state.dataUpdatedAt || 0);
-
-                if (ageA !== ageB) {
-                    return ageB - ageA; // Older queries first
-                }
-
-                // Estimate size by data complexity (rough heuristic)
-                const sizeA = this.estimateQuerySize(a);
-                const sizeB = this.estimateQuerySize(b);
-                return sizeB - sizeA; // Larger queries first
+                if (ageA !== ageB) return ageB - ageA;
+                return this.estimateQuerySize(b) - this.estimateQuerySize(a);
             });
 
-        // Remove queries until we're under limits
         const stats = this.getCacheStats();
-        const targetQueries = Math.floor(this.config.maxQueries * 0.8); // 80% of max
+        const targetQueries = Math.floor(this.config.maxQueries * 0.8);
         const queriesToRemove = Math.max(0, stats.totalQueries - targetQueries);
 
         for (let i = 0; i < Math.min(queriesToRemove, sortedQueries.length); i++) {
             queryCache.remove(sortedQueries[i]);
             removed++;
         }
-
         return removed;
     }
 
-    /**
-     * Check if cleanup is needed due to memory pressure
-     */
     private shouldCleanupByPressure(stats: CacheStats): boolean {
         return stats.memoryPressure > this.config.memoryPressureThreshold;
     }
 
-    /**
-     * Check if cleanup is needed due to cache size
-     */
     private shouldCleanupBySize(stats: CacheStats): boolean {
         return stats.estimatedSizeMB > this.config.maxCacheSizeMB;
     }
 
-    /**
-     * Check if cleanup is needed due to query count
-     */
     private shouldCleanupByCount(stats: CacheStats): boolean {
         return stats.totalQueries > this.config.maxQueries;
     }
 
-    /**
-     * Estimate total cache size in MB
-     */
     // biome-ignore lint/suspicious/noExplicitAny: Query objects have dynamic structure from TanStack Query
     private estimateCacheSize(queries: readonly any[]): number {
         let totalSize = 0;
-
         for (const query of queries) {
             totalSize += this.estimateQuerySize(query);
         }
-
-        return totalSize / (1024 * 1024); // Convert to MB
+        return totalSize / (1024 * 1024);
     }
 
-    /**
-     * Estimate individual query size in bytes
-     */
     // biome-ignore lint/suspicious/noExplicitAny: Query objects have dynamic structure from TanStack Query
     private estimateQuerySize(query: any): number {
         try {
-            // Rough estimation based on JSON serialization
             const data = query.state.data;
             if (!data) return 0;
-
-            const serialized = JSON.stringify(data);
-            return serialized.length * 2; // Approximate UTF-16 encoding
+            return JSON.stringify(data).length * 2;
         } catch {
-            return 1024; // Default 1KB if estimation fails
+            return 1024;
         }
     }
 
-    /**
-     * Record cleanup result for analytics
-     */
     private recordCleanup(result: CleanupResult): void {
         this.cleanupHistory.push(result);
-
-        // Keep only recent history
         if (this.cleanupHistory.length > this.maxHistorySize) {
             this.cleanupHistory.splice(0, this.cleanupHistory.length - this.maxHistorySize);
         }
     }
 }
 
-/**
- * Default memory optimization manager instance
- */
+/** Default memory optimization manager instance */
 let defaultMemoryManager: MemoryOptimizationManager | null = null;
 
-/**
- * Get or create the default memory manager
- */
+/** Get or create the default memory manager */
 export const getMemoryManager = (
     queryClient: QueryClient,
     config?: MemoryOptimizationConfig
@@ -489,9 +354,7 @@ export const getMemoryManager = (
     return defaultMemoryManager;
 };
 
-/**
- * Convenience function for cache cleanup
- */
+/** Convenience function for cache cleanup */
 export const cleanupCache = async (
     queryClient: QueryClient,
     force = false
