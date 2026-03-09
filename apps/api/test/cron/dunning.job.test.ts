@@ -8,6 +8,11 @@
  * - Production mode (processRetries + processCancellations)
  * - Unexpected error handling
  *
+ * Mocking strategy: mocks the service layer (qzpay-core lifecycle,
+ * billing middleware, billing settings) instead of raw DB access.
+ * The only remaining @repo/db mock is for the onEvent audit callback
+ * which has inline DB insert (no service abstraction).
+ *
  * @module test/cron/dunning.job
  */
 
@@ -40,10 +45,12 @@ const {
     };
 });
 
+// Service layer mock: subscription lifecycle from qzpay-core
 vi.mock('@qazuor/qzpay-core', () => ({
     createSubscriptionLifecycle: mockCreateSubscriptionLifecycle
 }));
 
+// Service layer mock: billing middleware
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
 }));
@@ -57,20 +64,25 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// Minimal @repo/db mock: only for the onEvent audit insert callback.
+// The dunning job's onEvent handler writes directly to billingDunningAttempts.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({ insert: mockDbInsert }),
     billingDunningAttempts: { _: 'billingDunningAttempts' }
 }));
 
+// Service layer mock: billing config constants
 vi.mock('@repo/billing', () => ({
     DUNNING_RETRY_INTERVALS: [1, 3, 5, 7],
     DUNNING_GRACE_PERIOD_DAYS: 7
 }));
 
+// Service layer mock: billing settings loader
 vi.mock('../../src/utils/billing-settings', () => ({
     loadBillingSettings: mockLoadBillingSettings
 }));
 
+// Service layer mock: notification sender
 vi.mock('../../src/routes/webhooks/mercadopago/notifications', () => ({
     sendSubscriptionCancelledNotification: vi.fn().mockResolvedValue(undefined)
 }));
@@ -476,7 +488,7 @@ describe('dunningJob', () => {
     });
 
     // -----------------------------------------------------------------------
-    // Dunning attempt audit logging
+    // Dunning attempt audit logging (tests onEvent callback)
     // -----------------------------------------------------------------------
 
     describe('audit logging via onEvent', () => {

@@ -3,12 +3,22 @@
  *
  * Comprehensive test suite for webhook processing including:
  * - Pure function utilities (sanitize, extract)
- * - Database operations (mark processed, idempotency)
  * - Payment notification handlers
  * - Error handling
+ *
+ * Mocking strategy: mocks service-layer dependencies (billing, notifications,
+ * AddonService) and webhook utility functions instead of raw DB access.
+ * The DB-level tests for event persistence (handleWebhookEvent,
+ * markWebhookEventProcessed) are tested in webhook-idempotency-db.test.ts.
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Hoisted mock state for env module (must be hoisted so vi.mock factories can reference it)
+const mockEnv = vi.hoisted(() => {
+    const env: Record<string, string | undefined> = {};
+    return env;
+});
 
 // Mock modules BEFORE imports
 vi.mock('@qazuor/qzpay-hono', () => ({
@@ -20,6 +30,8 @@ vi.mock('@repo/billing', () => ({
     getAddonBySlug: vi.fn()
 }));
 
+// Mock @repo/db with minimal stubs -- only needed because some modules
+// import table schemas at load time. No query chain mocking needed.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
     billingWebhookEvents: {
@@ -33,7 +45,7 @@ vi.mock('@repo/db', () => ({
         processedAt: 'processedAt',
         createdAt: 'createdAt'
     },
-    eq: vi.fn((field, value) => ({ field, value }))
+    eq: vi.fn((field: unknown, value: unknown) => ({ field, value }))
 }));
 
 vi.mock('@repo/notifications', () => ({
@@ -49,10 +61,20 @@ vi.mock('../../src/lib/sentry', () => ({
     captureWebhookError: vi.fn()
 }));
 
+// Mock env module so notifications.ts can read admin email addresses.
+// The production code uses `env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS`, not
+// `process.env`, so we must mock the validated env object.
+vi.mock('../../src/utils/env', () => ({
+    env: new Proxy(mockEnv, {
+        get: (_target, prop) => mockEnv[prop as string]
+    })
+}));
+
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
+// Service layer mock: AddonService
 vi.mock('../../src/services/addon.service', () => ({
     AddonService: vi.fn().mockImplementation(() => ({
         confirmPurchase: vi.fn()
@@ -68,6 +90,7 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// Service layer mock: notification helper
 vi.mock('../../src/utils/notification-helper', () => ({
     sendNotification: vi.fn()
 }));
@@ -124,7 +147,15 @@ function createMockEvent(partial: { id: string; type: string; data: unknown }) {
 describe('MercadoPago Webhook Handler', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Reset mockEnv between tests
+        for (const key of Object.keys(mockEnv)) {
+            delete mockEnv[key];
+        }
     });
+
+    // =======================================================================
+    // Pure function tests (no DB, no services)
+    // =======================================================================
 
     describe('sanitizeErrorForNotification', () => {
         it('should remove stack traces', () => {
@@ -152,8 +183,6 @@ describe('MercadoPago Webhook Handler', () => {
 
             const result = sanitizeErrorForNotification(error);
 
-            // Path regex runs first and replaces /user and /db segments.
-            // Verify sensitive path segments are replaced with [path].
             expect(result).not.toContain('//user');
             expect(result).not.toContain('/db');
             expect(result).toContain('[path]');
@@ -221,51 +250,34 @@ describe('MercadoPago Webhook Handler', () => {
 
         it('should return null for null input', () => {
             const result = extractAddonMetadata(null);
-
             expect(result).toBeNull();
         });
 
         it('should return null for undefined input', () => {
             const result = extractAddonMetadata(undefined);
-
             expect(result).toBeNull();
         });
 
         it('should return null for non-object input', () => {
             const result = extractAddonMetadata('not an object');
-
             expect(result).toBeNull();
         });
 
         it('should return null when addonSlug is missing', () => {
-            const metadata = {
-                customerId: 'cust_123'
-            };
-
+            const metadata = { customerId: 'cust_123' };
             const result = extractAddonMetadata(metadata);
-
             expect(result).toBeNull();
         });
 
         it('should return null when customerId is empty string', () => {
-            const metadata = {
-                addonSlug: 'premium-photos',
-                customerId: ''
-            };
-
+            const metadata = { addonSlug: 'premium-photos', customerId: '' };
             const result = extractAddonMetadata(metadata);
-
             expect(result).toBeNull();
         });
 
         it('should return null when values are not strings', () => {
-            const metadata = {
-                addonSlug: 123,
-                customerId: true
-            };
-
+            const metadata = { addonSlug: 123, customerId: true };
             const result = extractAddonMetadata(metadata);
-
             expect(result).toBeNull();
         });
     });
@@ -273,37 +285,27 @@ describe('MercadoPago Webhook Handler', () => {
     describe('extractAddonFromReference', () => {
         it('should extract slug from valid addon reference pattern', () => {
             const reference = 'addon_premium-photos_1234567890';
-
             const result = extractAddonFromReference(reference);
-
             expect(result).toBe('premium-photos');
         });
 
         it('should return null for non-matching pattern', () => {
-            const reference = 'invalid-pattern';
-
-            const result = extractAddonFromReference(reference);
-
+            const result = extractAddonFromReference('invalid-pattern');
             expect(result).toBeNull();
         });
 
         it('should return null for non-string input', () => {
             const result = extractAddonFromReference(123);
-
             expect(result).toBeNull();
         });
 
         it('should return null for empty string', () => {
             const result = extractAddonFromReference('');
-
             expect(result).toBeNull();
         });
 
         it('should return null for addon prefix without full match', () => {
-            const reference = 'addon_';
-
-            const result = extractAddonFromReference(reference);
-
+            const result = extractAddonFromReference('addon_');
             expect(result).toBeNull();
         });
     });
@@ -330,48 +332,34 @@ describe('MercadoPago Webhook Handler', () => {
         });
 
         it('should default currency to ARS when not provided', () => {
-            const data = {
-                transaction_amount: 99.99,
-                status: 'approved'
-            };
-
+            const data = { transaction_amount: 99.99, status: 'approved' };
             const result = extractPaymentInfo(data);
-
             expect(result?.currency).toBe('ARS');
         });
 
         it('should return null when amount is missing', () => {
-            const data = {
-                status: 'approved'
-            };
-
+            const data = { status: 'approved' };
             const result = extractPaymentInfo(data);
-
             expect(result).toBeNull();
         });
 
         it('should return null when status is missing', () => {
-            const data = {
-                transaction_amount: 99.99
-            };
-
+            const data = { transaction_amount: 99.99 };
             const result = extractPaymentInfo(data);
-
             expect(result).toBeNull();
         });
 
         it('should handle null statusDetail and paymentMethod', () => {
-            const data = {
-                transaction_amount: 99.99,
-                status: 'approved'
-            };
-
+            const data = { transaction_amount: 99.99, status: 'approved' };
             const result = extractPaymentInfo(data);
-
             expect(result?.statusDetail).toBeNull();
             expect(result?.paymentMethod).toBeNull();
         });
     });
+
+    // =======================================================================
+    // DB-dependent event persistence tests (minimal DB mocking)
+    // =======================================================================
 
     describe('markWebhookEventProcessed', () => {
         it('should update webhook event status on first try', async () => {
@@ -485,8 +473,6 @@ describe('MercadoPago Webhook Handler', () => {
                 status: 'pending',
                 payload: event
             });
-            // Handler stores providerEventId internally for error handling
-            // (requestProviderEventIds is private). We verify the DB insert succeeded.
             expect(result).toBeUndefined();
         });
 
@@ -582,8 +568,6 @@ describe('MercadoPago Webhook Handler', () => {
                 error: null,
                 processedAt: null
             });
-            // Handler stores providerEventId internally for error handling
-            // (requestProviderEventIds is private). We verify the DB update succeeded.
             expect(result).toBeUndefined();
         });
 
@@ -604,6 +588,10 @@ describe('MercadoPago Webhook Handler', () => {
             expect(result).toBeUndefined();
         });
     });
+
+    // =======================================================================
+    // Service-layer tests (mock services, not DB)
+    // =======================================================================
 
     describe('handlePaymentUpdated - payment notifications', () => {
         it('should send success notification on approved payment', async () => {
@@ -693,7 +681,7 @@ describe('MercadoPago Webhook Handler', () => {
                 }
             });
 
-            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@example.com';
+            mockEnv.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@example.com';
 
             await handlePaymentUpdated(context, event);
 
@@ -889,9 +877,6 @@ describe('MercadoPago Webhook Handler', () => {
 
             // Calling handleWebhookError again with same requestId should NOT call update
             // because the internal map entry was cleaned up
-            vi.mocked(getDb).mockReturnValue({ update: vi.fn() } as unknown as ReturnType<
-                typeof getDb
-            >);
             const mockUpdate2 = vi.fn();
             vi.mocked(getDb).mockReturnValue({ update: mockUpdate2 } as unknown as ReturnType<
                 typeof getDb

@@ -5,6 +5,11 @@
  * Tests authentication, authorization, filtering, pagination, and response structure.
  *
  * Endpoint: GET /api/v1/admin/billing/notifications
+ *
+ * NOTE: This test mocks the DB layer (@repo/db) directly because the
+ * `listNotificationLogsHandler` handler queries the database inline via
+ * `getDb().select().from(billingNotificationLog)...` with no service abstraction.
+ * Moving to service-layer mocking would require production code changes (out of scope).
  */
 
 import type { Context } from 'hono';

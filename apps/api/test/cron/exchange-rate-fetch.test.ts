@@ -2,6 +2,13 @@
  * Exchange Rate Fetch Cron Job Tests
  *
  * Tests for the exchange rate fetching cron job.
+ *
+ * Mocking strategy: mocks the service layer (@repo/service-core)
+ * instead of the DB layer (@repo/db). The ExchangeRateFetcher,
+ * DolarApiClient, and ExchangeRateApiClient from service-core handle
+ * all data access, so we mock them at the service boundary.
+ *
+ * @module test/cron/exchange-rate-fetch
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,14 +23,14 @@ vi.mock('../../src/utils/env.js', () => ({
     }
 }));
 
-// Mock modules
+// Mock @repo/db only to satisfy the ExchangeRateModel import resolution.
+// The model is passed to ExchangeRateFetcher which is itself fully mocked,
+// so no DB behavior is needed here.
 vi.mock('@repo/db', () => ({
-    ExchangeRateModel: vi.fn().mockImplementation(() => ({
-        findAll: vi.fn().mockResolvedValue({ items: [] }),
-        create: vi.fn().mockResolvedValue({})
-    }))
+    ExchangeRateModel: vi.fn()
 }));
 
+// Mock service layer: these classes encapsulate all data fetching and storage.
 vi.mock('@repo/service-core', () => ({
     DolarApiClient: vi.fn().mockImplementation(() => ({
         fetchAll: vi.fn().mockResolvedValue({
@@ -71,8 +78,6 @@ describe('Exchange Rate Fetch Cron Job', () => {
             startedAt: new Date('2024-01-01T00:00:00Z'),
             dryRun: false
         };
-
-        // Environment is mocked via vi.mock for env module
     });
 
     afterEach(() => {

@@ -12,6 +12,10 @@
  * - Error handling during processing
  * - Dry run mode behavior
  *
+ * Mocking strategy: mocks the AddonExpirationService (service layer) for
+ * business logic. The only remaining @repo/db mock is for the private
+ * wasNotificationSent() helper which has inline DB access (no service).
+ *
  * @module test/cron/addon-expiry
  */
 
@@ -20,11 +24,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addonExpiryJob } from '../../src/cron/jobs/addon-expiry.job';
 import type { CronJobContext } from '../../src/cron/types';
 
-// Mock @repo/db (used by wasNotificationSent for idempotency checks)
-const mockDbSelect = vi.fn();
-const mockDbFrom = vi.fn();
-const mockDbWhere = vi.fn();
+// ---------------------------------------------------------------------------
+// Mock: wasNotificationSent's DB dependency (no service layer exists for this)
+// ---------------------------------------------------------------------------
 const mockDbLimit = vi.fn();
+const mockDbWhere = vi.fn();
+const mockDbFrom = vi.fn();
+const mockDbSelect = vi.fn();
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
@@ -41,27 +47,29 @@ vi.mock('@repo/db', () => ({
     gte: vi.fn((...args: unknown[]) => ({ op: 'gte', args }))
 }));
 
-// Mock AddonExpirationService
+// ---------------------------------------------------------------------------
+// Mock: Service layer (AddonExpirationService)
+// ---------------------------------------------------------------------------
 vi.mock('../../src/services/addon-expiration.service', () => ({
     AddonExpirationService: vi.fn()
 }));
 
-// Mock notification helper
+// Mock notification helper (service-level dependency)
 vi.mock('../../src/utils/notification-helper', () => ({
     sendNotification: vi.fn()
 }));
 
-// Mock billing middleware
+// Mock billing middleware (provides billing context)
 vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-// Mock customer lookup
+// Mock customer lookup (service-level dependency)
 vi.mock('../../src/utils/customer-lookup', () => ({
     lookupCustomerDetails: vi.fn()
 }));
 
-// Mock apiLogger (used by wasNotificationSent error handler)
+// Mock apiLogger
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
         info: vi.fn(),
@@ -72,7 +80,6 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 import { getQZPayBilling } from '../../src/middlewares/billing';
-// Import mocked modules after mocking
 import { AddonExpirationService } from '../../src/services/addon-expiration.service';
 import { lookupCustomerDetails } from '../../src/utils/customer-lookup';
 import { sendNotification } from '../../src/utils/notification-helper';
@@ -136,7 +143,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -168,7 +175,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -200,7 +207,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -250,11 +257,10 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
-            // Mock billing and customer lookup
-            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as any);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'customer@example.com',
                 name: 'Customer Name',
@@ -308,11 +314,10 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
-            // Mock billing and customer lookup
-            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as any);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'customer@example.com',
                 name: 'Customer Name',
@@ -365,11 +370,10 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
-            // Mock billing and customer lookup
-            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as any);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'customer@example.com',
                 name: 'Customer Name',
@@ -407,7 +411,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -433,7 +437,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -456,7 +460,7 @@ describe('Add-on Expiry Cron Job', () => {
                 findExpiringAddons: vi.fn()
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -497,11 +501,10 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockResolvedValue(undefined);
 
-            // Mock billing and customer lookup
-            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as any);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'customer@example.com',
                 name: 'Customer Name',
@@ -545,11 +548,10 @@ describe('Add-on Expiry Cron Job', () => {
                     })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
             vi.mocked(sendNotification).mockRejectedValue(new Error('Email service unavailable'));
 
-            // Mock billing and customer lookup
-            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as any);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
             vi.mocked(lookupCustomerDetails).mockResolvedValue({
                 email: 'customer@example.com',
                 name: 'Customer Name',
@@ -583,7 +585,7 @@ describe('Add-on Expiry Cron Job', () => {
                 })
             };
 
-            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as any);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);

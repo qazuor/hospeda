@@ -14,6 +14,11 @@
  * - Dry run mode behavior
  * - Batch size respect (50 max)
  *
+ * NOTE: This test mocks the DB layer (@repo/db) directly because the
+ * webhook-retry.job.ts handler queries `billingWebhookDeadLetter` and
+ * `billingWebhookEvents` tables via `getDb()` with no service abstraction.
+ * Moving to service-layer mocking would require production code changes (out of scope).
+ *
  * @module test/cron/webhook-retry
  */
 
