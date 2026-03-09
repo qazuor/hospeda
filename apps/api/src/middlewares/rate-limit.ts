@@ -246,7 +246,14 @@ export const getClientIp = ({ c }: { c: Context }): string => {
     const trustProxy = baseRateLimitConfig.trustProxy;
 
     if (!trustProxy) {
-        return 'untrusted-proxy';
+        // When proxy is not trusted, use the socket remote address instead of
+        // a shared bucket so each real client gets its own rate limit window.
+        // NOTE: trustProxy=true should only be enabled behind Vercel/Cloudflare.
+        const socketIp =
+            c.req.raw && 'socket' in c.req.raw
+                ? (c.req.raw as { socket?: { remoteAddress?: string } }).socket?.remoteAddress
+                : undefined;
+        return socketIp ?? 'unknown';
     }
 
     const cfConnectingIp = c.req.header('cf-connecting-ip');

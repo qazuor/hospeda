@@ -144,7 +144,9 @@ const getOptions = (level: SanitizationLevel): sanitizeHtml.IOptions => {
 export const sanitizeString = (
     input: string,
     level: SanitizationLevel = SanitizationLevel.STRICT,
-    maxLength = 1000
+    maxLength = 1000,
+    /** When true, preserve newlines in multiline fields (e.g. stepsToReproduce) */
+    preserveNewlines = false
 ): string => {
     if (!input || typeof input !== 'string') {
         return '';
@@ -168,8 +170,15 @@ export const sanitizeString = (
     // Remove stray angle brackets that might remain after decoding
     sanitized = sanitized.replace(/[<>]/g, '');
 
-    // Normalize whitespace
-    sanitized = sanitized.replace(/\s+/g, ' ').trim();
+    // Normalize whitespace (preserve newlines for multiline fields like stepsToReproduce)
+    if (preserveNewlines) {
+        sanitized = sanitized
+            .replace(/[^\S\n]+/g, ' ')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+    } else {
+        sanitized = sanitized.replace(/\s+/g, ' ').trim();
+    }
 
     // Truncate if needed
     return sanitized.slice(0, maxLength);

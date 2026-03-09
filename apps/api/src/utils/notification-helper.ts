@@ -24,7 +24,6 @@ import { apiLogger } from './logger';
  * Initialized only when first needed
  */
 let notificationServiceInstance: NotificationService | null = null;
-let initializationFailed = false;
 
 /**
  * Simple mock functions for PreferenceService
@@ -47,11 +46,6 @@ const mockUpdateUserSettings = async (
  * @returns NotificationService instance or null if initialization failed
  */
 function getNotificationService(): NotificationService | null {
-    // Return null if initialization previously failed
-    if (initializationFailed) {
-        return null;
-    }
-
     // Return existing instance if already initialized
     if (notificationServiceInstance) {
         return notificationServiceInstance;
@@ -63,7 +57,6 @@ function getNotificationService(): NotificationService | null {
             apiLogger.warn(
                 'HOSPEDA_RESEND_API_KEY not set in environment. Notifications will not be sent.'
             );
-            initializationFailed = true;
             return null;
         }
 
@@ -104,10 +97,10 @@ function getNotificationService(): NotificationService | null {
         return notificationServiceInstance;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        apiLogger.warn(
-            `Failed to initialize NotificationService: ${errorMessage}. Notifications will not be sent.`
+        // Do NOT set a permanent flag - retry on next call (GAP-031-86)
+        apiLogger.error(
+            `Failed to initialize NotificationService (will retry on next call): ${errorMessage}`
         );
-        initializationFailed = true;
         return null;
     }
 }
