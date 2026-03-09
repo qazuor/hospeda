@@ -6,11 +6,12 @@
  * - Dashboard overview metrics (admin only)
  * - Recent subscription activity (admin only)
  *
- * All routes are mounted under /api/v1/protected/billing/metrics
+ * All routes are mounted under /api/v1/admin/billing/metrics
  *
  * @module routes/billing/metrics
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getBillingMetricsService } from '../../services/billing-metrics.service';
@@ -98,7 +99,7 @@ const ActivityQuerySchema = z.object({
 /**
  * Get billing dashboard metrics (admin only)
  *
- * GET /api/v1/protected/billing/metrics
+ * GET /api/v1/admin/billing/metrics
  */
 export const getDashboardMetricsRoute = createAdminRoute({
     method: 'get',
@@ -107,6 +108,7 @@ export const getDashboardMetricsRoute = createAdminRoute({
     description:
         'Returns complete dashboard metrics including overview, revenue time series, and subscription breakdown. Admin only.',
     tags: ['Billing - Metrics'],
+    requiredPermissions: [PermissionEnum.BILLING_METRICS_READ],
     requestQuery: MetricsQuerySchema.shape,
     responseSchema: DashboardMetricsResponseSchema,
     handler: async (_c, _params, _body, query) => {
@@ -201,7 +203,7 @@ export const getDashboardMetricsRoute = createAdminRoute({
 /**
  * Get recent subscription activity (admin only)
  *
- * GET /api/v1/protected/billing/metrics/activity
+ * GET /api/v1/admin/billing/metrics/activity
  */
 export const getRecentActivityRoute = createAdminRoute({
     method: 'get',
@@ -209,6 +211,7 @@ export const getRecentActivityRoute = createAdminRoute({
     summary: 'Get recent subscription activity',
     description: 'Returns recent subscription status changes. Admin only.',
     tags: ['Billing - Metrics'],
+    requiredPermissions: [PermissionEnum.BILLING_METRICS_READ],
     requestQuery: ActivityQuerySchema.shape,
     responseSchema: z.array(RecentActivityItemSchema),
     handler: async (_c, _params, _body, query) => {
@@ -300,7 +303,7 @@ const ApproachingLimitsQuerySchema = z.object({
 /**
  * Get system-wide usage statistics (admin only)
  *
- * GET /api/v1/protected/billing/metrics/system-usage
+ * GET /api/v1/admin/billing/metrics/system-usage
  */
 export const getSystemUsageRoute = createAdminRoute({
     method: 'get',
@@ -309,6 +312,7 @@ export const getSystemUsageRoute = createAdminRoute({
     description:
         'Returns aggregated system usage statistics including customer counts, subscription states, revenue totals, and add-on purchase counts. Admin only.',
     tags: ['Billing - Metrics'],
+    requiredPermissions: [PermissionEnum.BILLING_METRICS_READ],
     requestQuery: {
         livemode: z
             .enum(['true', 'false'])
@@ -344,7 +348,7 @@ export const getSystemUsageRoute = createAdminRoute({
 /**
  * Get customers approaching their limits (admin only)
  *
- * GET /api/v1/protected/billing/metrics/approaching-limits
+ * GET /api/v1/admin/billing/metrics/approaching-limits
  */
 export const getApproachingLimitsRoute = createAdminRoute({
     method: 'get',
@@ -353,6 +357,7 @@ export const getApproachingLimitsRoute = createAdminRoute({
     description:
         'Returns a list of customers whose usage is at or above the specified threshold percentage. Useful for proactive capacity management. Admin only.',
     tags: ['Billing - Metrics'],
+    requiredPermissions: [PermissionEnum.BILLING_METRICS_READ],
     requestQuery: ApproachingLimitsQuerySchema.shape,
     responseSchema: z.array(ApproachingLimitItemSchema),
     handler: async (_c, _params, _body, query) => {

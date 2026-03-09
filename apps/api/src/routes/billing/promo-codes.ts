@@ -45,6 +45,7 @@ export const listPromoCodesRoute = createAdminListRoute({
     summary: 'List promo codes',
     description: 'Returns a paginated list of all promo codes. Admin only.',
     tags: ['Billing - Promo Codes'],
+    requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_READ],
     requestQuery: ListPromoCodesQuerySchema.shape,
     responseSchema: PromoCodeResponseSchema,
     handler: async (_c, _params, _body, query) => {
@@ -91,6 +92,7 @@ export const createPromoCodeRoute = createAdminRoute({
     summary: 'Create promo code',
     description: 'Creates a new promo code. Admin only.',
     tags: ['Billing - Promo Codes'],
+    requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestBody: CreatePromoCodeSchema,
     responseSchema: PromoCodeResponseSchema,
     handler: async (_c, _params, body) => {
@@ -139,6 +141,7 @@ export const getPromoCodeRoute = createAdminRoute({
     summary: 'Get promo code',
     description: 'Returns a promo code by ID. Admin only.',
     tags: ['Billing - Promo Codes'],
+    requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_READ],
     requestParams: {
         id: z.string().uuid('Invalid promo code ID')
     },
@@ -179,6 +182,7 @@ export const updatePromoCodeRoute = createAdminRoute({
     summary: 'Update promo code',
     description: 'Updates a promo code. Admin only.',
     tags: ['Billing - Promo Codes'],
+    requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestParams: {
         id: z.string().uuid('Invalid promo code ID')
     },
@@ -224,6 +228,7 @@ export const deletePromoCodeRoute = createAdminRoute({
     summary: 'Delete promo code',
     description: 'Soft deletes a promo code. Admin only.',
     tags: ['Billing - Promo Codes'],
+    requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestParams: {
         id: z.string().uuid('Invalid promo code ID')
     },

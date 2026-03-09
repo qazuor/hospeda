@@ -690,5 +690,8 @@ export enum PermissionEnum {
     SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage', // Allows managing service order pricing and charges.
 
     // BILLING: Cross-cutting billing admin permissions
-    BILLING_READ_ALL = 'billing.readAll' // Allows viewing all billing data (notifications, usage, webhooks).
+    BILLING_READ_ALL = 'billing.readAll', // Allows viewing all billing data (notifications, usage, webhooks).
+    BILLING_PROMO_CODE_READ = 'billing.promoCode.read', // Allows viewing promo codes.
+    BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
+    BILLING_METRICS_READ = 'billing.metrics.read' // Allows viewing billing metrics and analytics.
 }

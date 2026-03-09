@@ -185,7 +185,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.METRICS_RESET,
 
         // POST Sponsorship management
-        PermissionEnum.POST_SPONSORSHIP_MANAGE
+        PermissionEnum.POST_SPONSORSHIP_MANAGE,
+
+        // BILLING: All billing admin permissions
+        PermissionEnum.BILLING_READ_ALL,
+        PermissionEnum.BILLING_PROMO_CODE_READ,
+        PermissionEnum.BILLING_PROMO_CODE_MANAGE,
+        PermissionEnum.BILLING_METRICS_READ
     ],
 
     [RoleEnum.ADMIN]: [
@@ -352,7 +358,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.METRICS_RESET,
 
         // POST Sponsorship management
-        PermissionEnum.POST_SPONSORSHIP_MANAGE
+        PermissionEnum.POST_SPONSORSHIP_MANAGE,
+
+        // BILLING: All billing admin permissions
+        PermissionEnum.BILLING_READ_ALL,
+        PermissionEnum.BILLING_PROMO_CODE_READ,
+        PermissionEnum.BILLING_PROMO_CODE_MANAGE,
+        PermissionEnum.BILLING_METRICS_READ
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [
