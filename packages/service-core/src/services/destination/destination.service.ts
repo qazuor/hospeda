@@ -348,7 +348,7 @@ export class DestinationService extends BaseCrudService<
                         reviewsCount: destination.reviewsCount ?? 0,
                         averageRating: destination.averageRating ?? 0,
                         attractionsCount: destination.attractions?.length ?? 0,
-                        eventsCount: 0 // Feature gap: implement events count when event-destination relation is added
+                        eventsCount: null // No event-destination relation exists yet
                     }
                 };
             }

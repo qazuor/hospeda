@@ -1,4 +1,4 @@
-import { EventLocationModel } from '@repo/db';
+import { EventLocationModel, EventModel } from '@repo/db';
 import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
     EventLocationCreateInputSchema,
@@ -297,7 +297,7 @@ export class EventLocationService extends BaseCrudService<
                 state: string | undefined;
                 country: string | undefined;
                 placeName: string | undefined;
-                totalEvents?: number; // Could be extended with actual event count
+                totalEvents: number;
             };
         }>
     > {
@@ -315,6 +315,10 @@ export class EventLocationService extends BaseCrudService<
                 );
             }
 
+            // Count events associated with this location
+            const eventModel = new EventModel();
+            const totalEvents = await eventModel.count({ locationId: id, deletedAt: null });
+
             // Build stats object
             const stats = {
                 id: location.id,
@@ -322,7 +326,7 @@ export class EventLocationService extends BaseCrudService<
                 state: location.state ?? undefined,
                 country: location.country ?? undefined,
                 placeName: location.placeName ?? undefined,
-                totalEvents: 0 // Feature gap: implement actual event count when events integration is ready
+                totalEvents
             };
 
             return {

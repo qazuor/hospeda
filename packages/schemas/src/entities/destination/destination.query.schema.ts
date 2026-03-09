@@ -223,7 +223,7 @@ export const DestinationStatsSchema = z.object({
         .pipe(z.number().min(0).max(5))
         .default(0),
     attractionsCount: z.number().int().min(0).default(0),
-    eventsCount: z.number().int().min(0).default(0)
+    eventsCount: z.number().int().min(0).nullable().default(null)
 });
 export type DestinationStats = z.infer<typeof DestinationStatsSchema>;
 

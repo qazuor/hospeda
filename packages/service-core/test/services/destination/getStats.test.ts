@@ -56,7 +56,7 @@ describe('DestinationService.getStats', () => {
             reviewsCount: 10,
             averageRating: 4.2,
             attractionsCount: 0,
-            eventsCount: 0
+            eventsCount: null
         });
     });
 
@@ -110,7 +110,7 @@ describe('DestinationService.getStats', () => {
             reviewsCount: 0,
             averageRating: 0,
             attractionsCount: 0,
-            eventsCount: 0
+            eventsCount: null
         });
     });
 

@@ -686,7 +686,7 @@ export class PostService extends BaseCrudService<
      * Removes a comment from a post. (Stub)
      * @param actor - The user or system performing the action
      * @param params - The post ID and comment ID
-     * @returns Result of the operation
+     * @returns NOT_IMPLEMENTED error
      */
     public async removeComment(
         actor: Actor,
@@ -698,8 +698,10 @@ export class PostService extends BaseCrudService<
             schema: z.object({ postId: z.string(), commentId: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
-                // Feature gap: implement comment removal logic
-                return { success: false };
+                throw new ServiceError(
+                    ServiceErrorCode.NOT_IMPLEMENTED,
+                    'removeComment is not implemented yet'
+                );
             }
         });
     }
