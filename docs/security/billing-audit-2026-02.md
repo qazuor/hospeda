@@ -349,9 +349,9 @@ handler: async (c, _params, body) => {
 
 ```typescript
 // Throw HTTPException instead of generic Error
+// Use permission-based checks instead of role checks
 if (
-  actor.role !== RoleEnum.ADMIN &&
-  actor.role !== RoleEnum.SUPER_ADMIN &&
+  !actor.permissions.includes(PermissionEnum.BILLING_PROMO_CODE_VALIDATE_ANY) &&
   body.userId !== actor.id
 ) {
   throw new HTTPException(403, {
@@ -359,14 +359,14 @@ if (
   });
 }
 
-// Add audit logging for admin validations
-if (actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN) {
+// Add audit logging for cross-user validations
+if (body.userId !== actor.id) {
   apiLogger.info({
     action: 'admin_promo_code_validation',
     adminId: actor.id,
     targetUserId: body.userId,
     code: body.code
-  }, 'Admin validated promo code for another user');
+  }, 'User validated promo code for another user');
 }
 ```
 
@@ -1229,21 +1229,24 @@ if (auth?.userId) {
 
 1. ✅ **Route-level authorization** via `createAdminRoute`, `createProtectedRoute`
 2. ✅ **Ownership checks** in promo code and addon services
-3. ✅ **Role checks** on sensitive operations (trial extension, metrics)
+3. ✅ **Permission checks** on sensitive operations (trial extension, metrics)
 
 **Evidence:**
 
 ```typescript
 // apps/api/src/routes/billing/trial.ts:228
 const actor = getActorFromContext(c);
+// NOTE: This should use permission-based checks instead of role checks:
+// if (!actor.permissions.includes(PermissionEnum.BILLING_TRIAL_MANAGE)) {
 if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
   throw new HTTPException(403, { message: 'Admin access required' });
 }
 ```
 
-**Minor Issue (addressed in M-002):**
+**Minor Issues (addressed in M-002 and SPEC-037):**
 
 ⚠️ Promo code validation uses generic `Error` instead of `HTTPException`
+⚠️ Trial extension uses role checks instead of permission checks (see SPEC-037)
 
 ---
 

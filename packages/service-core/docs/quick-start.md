@@ -181,65 +181,65 @@ export class ProductService extends BaseCrudService<
 
   /**
    * Check if actor can create a product
-   * Rule: Only ADMIN users can create products
+   * Rule: Requires PRODUCT_CREATE permission
    */
   protected _canCreate(actor: Actor, data: unknown): void {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only administrators can create products'
+        'Permission denied: PRODUCT_CREATE required'
       );
     }
   }
 
   /**
    * Check if actor can update a product
-   * Rule: Only ADMIN users can update products
+   * Rule: Requires PRODUCT_UPDATE permission
    */
   protected _canUpdate(actor: Actor, entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_UPDATE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only administrators can update products'
+        'Permission denied: PRODUCT_UPDATE required'
       );
     }
   }
 
   /**
    * Check if actor can soft-delete a product
-   * Rule: Only ADMIN users can delete products
+   * Rule: Requires PRODUCT_DELETE permission
    */
   protected _canSoftDelete(actor: Actor, entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only administrators can delete products'
+        'Permission denied: PRODUCT_DELETE required'
       );
     }
   }
 
   /**
    * Check if actor can hard-delete a product
-   * Rule: Only SUPER_ADMIN can permanently delete
+   * Rule: Requires PRODUCT_HARD_DELETE permission
    */
   protected _canHardDelete(actor: Actor, entity: Product): void {
-    if (actor.role !== RoleEnum.SUPER_ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_HARD_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only super administrators can permanently delete products'
+        'Permission denied: PRODUCT_HARD_DELETE required'
       );
     }
   }
 
   /**
    * Check if actor can restore a deleted product
-   * Rule: Only ADMIN can restore
+   * Rule: Requires PRODUCT_RESTORE permission
    */
   protected _canRestore(actor: Actor, entity: Product): void {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_RESTORE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only administrators can restore products'
+        'Permission denied: PRODUCT_RESTORE required'
       );
     }
   }
@@ -298,13 +298,13 @@ export class ProductService extends BaseCrudService<
 
   /**
    * Check if actor can update product visibility
-   * Rule: Only ADMIN can change visibility
+   * Rule: Requires PRODUCT_STATUS_MANAGE permission
    */
   protected _canUpdateVisibility(actor: Actor, entity: Product, newVisibility: unknown): void {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.PRODUCT_STATUS_MANAGE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only administrators can update product visibility'
+        'Permission denied: PRODUCT_STATUS_MANAGE required'
       );
     }
   }
@@ -671,8 +671,8 @@ protected _canCreate(actor: Actor, data: unknown): void {
 
 // ✅ GOOD: Implement all hooks
 protected _canCreate(actor: Actor, data: unknown): void {
-  if (actor.role !== RoleEnum.ADMIN) {
-    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Admin only');
+  if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied: PRODUCT_CREATE required');
   }
 }
 ```
@@ -703,9 +703,9 @@ ProductCreateInputSchema          // Actual schema
 // Debug actor
 console.log('Actor:', actor.id, actor.role, actor.permissions);
 
-// Make sure role matches permission requirements
-if (actor.role !== RoleEnum.ADMIN) {
-  console.log('User is not admin, operation will fail');
+// Make sure actor has required permissions
+if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
+  console.log('User lacks PRODUCT_CREATE permission, operation will fail');
 }
 ```
 

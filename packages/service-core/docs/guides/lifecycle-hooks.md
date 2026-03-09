@@ -536,8 +536,8 @@ protected async _beforeList(
   options: ListOptions,
   actor: Actor
 ): Promise<ListOptions> {
-  // Non-admin users only see published articles
-  if (actor.role !== RoleEnum.ADMIN) {
+  // Users without ARTICLE_VIEW_ANY permission only see published articles
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY)) {
     return {
       ...options,
       filters: {
@@ -581,7 +581,7 @@ protected async _afterList(
   const filtered = result.items.filter(article => {
     if (article.status === 'published') return true;
     if (article.createdById === actor.id) return true;
-    if (actor.role === RoleEnum.ADMIN) return true;
+    if (actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY)) return true;
     return false;
   });
 
@@ -603,8 +603,8 @@ protected async _beforeSearch(
   params: ArticleSearchInput,
   actor: Actor
 ): Promise<ArticleSearchInput> {
-  // Force status filter for non-admins
-  if (actor.role !== RoleEnum.ADMIN && !params.status) {
+  // Force status filter for users without view-any permission
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY) && !params.status) {
     return {
       ...params,
       status: 'published'
@@ -643,7 +643,7 @@ protected async _beforeCount(
   actor: Actor
 ): Promise<ArticleSearchInput> {
   // Same filters as search
-  if (actor.role !== RoleEnum.ADMIN && !params.status) {
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY) && !params.status) {
     return {
       ...params,
       status: 'published'

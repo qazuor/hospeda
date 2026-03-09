@@ -219,23 +219,23 @@ Services implement fine-grained permission checks through hooks:
 **Common Patterns:**
 
 ```typescript
-// Role-based check
+// Permission-based check
 protected _canCreate(actor: Actor, data: unknown): void {
-  if (actor.role !== RoleEnum.ADMIN) {
-    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Only admins can create products');
+  if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied: PRODUCT_CREATE required');
   }
 }
 
-// Permission-based check
+// Specific permission check
 protected _canUpdate(actor: Actor, entity: Product): void {
   if (!actor.permissions.includes(PermissionEnum.PRODUCT_UPDATE)) {
-    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Missing PRODUCT_UPDATE permission');
+    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied: PRODUCT_UPDATE required');
   }
 }
 
-// Ownership check
+// Ownership + permission check
 protected _canUpdate(actor: Actor, entity: Post): void {
-  if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+  if (entity.createdById !== actor.id && !actor.permissions.includes(PermissionEnum.POST_UPDATE_ANY)) {
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'You can only update your own posts');
   }
 }

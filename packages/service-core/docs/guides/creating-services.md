@@ -395,10 +395,9 @@ protected _canUpdate(actor: Actor, entity: Article): void {
   }
 
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
   const hasPermission = actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE_ANY);
 
-  if (!isOwner && !isAdmin && !hasPermission) {
+  if (!isOwner && !hasPermission) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only update your own articles'
@@ -418,9 +417,9 @@ protected _canSoftDelete(actor: Actor, entity: Article): void {
   }
 
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasDeleteAny = actor.permissions.includes(PermissionEnum.ARTICLE_DELETE_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasDeleteAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only delete your own articles'
@@ -430,26 +429,26 @@ protected _canSoftDelete(actor: Actor, entity: Article): void {
 
 /**
  * Check if actor can hard delete an article
- * Rule: Only super admins
+ * Rule: Requires ARTICLE_HARD_DELETE permission
  */
 protected _canHardDelete(actor: Actor, entity: Article): void {
-  if (actor.role !== RoleEnum.SUPER_ADMIN) {
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_HARD_DELETE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only super administrators can permanently delete articles'
+      'Permission ARTICLE_HARD_DELETE required to permanently delete articles'
     );
   }
 }
 
 /**
  * Check if actor can restore an article
- * Rule: Only admins
+ * Rule: Requires ARTICLE_RESTORE permission
  */
 protected _canRestore(actor: Actor, entity: Article): void {
-  if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_RESTORE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only administrators can restore articles'
+      'Permission ARTICLE_RESTORE required to restore articles'
     );
   }
 }
@@ -471,9 +470,9 @@ protected _canView(actor: Actor, entity: Article): void {
   }
 
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasViewAny = actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasViewAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only view your own draft articles'
@@ -508,10 +507,10 @@ protected _canCount(actor: Actor): void {
 
 1. **Public Resources**: No checks (empty hook body)
 2. **Authenticated Only**: Check `actor.id` exists
-3. **Role-Based**: Check `actor.role === RoleEnum.ADMIN`
-4. **Permission-Based**: Check `actor.permissions.includes(PermissionEnum.XXX)`
-5. **Ownership**: Compare `entity.createdById === actor.id`
-6. **Hierarchical**: Combine role + ownership + permissions
+3. **Permission-Based**: Check `actor.permissions.includes(PermissionEnum.XXX)`
+4. **Ownership**: Compare `entity.createdById === actor.id`
+5. **Ownership + Permission**: Combine ownership + `_ANY` permission
+6. **Hierarchical**: Combine ownership + multiple permissions
 
 ### Step 6: Implement Core Logic Methods
 

@@ -1520,7 +1520,7 @@ export const downloadFileRoute = createOpenApiRoute({
     }
 
     // Check access permissions
-    if (file.ownerId !== actor.userId && actor.role !== 'admin') {
+    if (file.ownerId !== actor.userId && !actor.permissions?.includes(PermissionEnum.FILE_VIEW_ANY)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
 

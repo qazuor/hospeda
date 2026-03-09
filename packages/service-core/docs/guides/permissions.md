@@ -244,11 +244,11 @@ protected _canCreate(actor: Actor, data: unknown): void {
   }
 
   // Optional: Check data-based rules
-  // e.g., only admins can create featured articles
-  if ((data as any).isFeatured && actor.role !== RoleEnum.ADMIN) {
+  // e.g., only users with ARTICLE_FEATURE permission can create featured articles
+  if ((data as any).isFeatured && !actor.permissions.includes(PermissionEnum.ARTICLE_FEATURE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only admins can create featured articles'
+      'Permission ARTICLE_FEATURE required to create featured articles'
     );
   }
 }
@@ -283,11 +283,10 @@ protected _canUpdate(actor: Actor, entity: Article): void {
   }
 
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
   const hasUpdateAny = actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE_ANY);
 
-  // Owner can update their own, admins can update any, or explicit permission
-  if (!isOwner && !isAdmin && !hasUpdateAny) {
+  // Owner can update their own, or users with ARTICLE_UPDATE_ANY permission
+  if (!isOwner && !hasUpdateAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only update your own articles'
@@ -325,9 +324,9 @@ protected _canSoftDelete(actor: Actor, entity: Article): void {
   }
 
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasDeleteAny = actor.permissions.includes(PermissionEnum.ARTICLE_DELETE_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasDeleteAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only delete your own articles'
@@ -360,11 +359,11 @@ protected abstract _canHardDelete(
 
 ```typescript
 protected _canHardDelete(actor: Actor, entity: Article): void {
-  // Only super admins can permanently delete
-  if (actor.role !== RoleEnum.SUPER_ADMIN) {
+  // Only users with ARTICLE_HARD_DELETE permission can permanently delete
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_HARD_DELETE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only super administrators can permanently delete articles'
+      'Permission ARTICLE_HARD_DELETE required to permanently delete articles'
     );
   }
 }
@@ -394,11 +393,11 @@ protected abstract _canRestore(
 
 ```typescript
 protected _canRestore(actor: Actor, entity: Article): void {
-  // Only admins can restore deleted content
-  if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
+  // Only users with ARTICLE_RESTORE permission can restore deleted content
+  if (!actor.permissions.includes(PermissionEnum.ARTICLE_RESTORE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only administrators can restore articles'
+      'Permission ARTICLE_RESTORE required to restore articles'
     );
   }
 }
@@ -441,11 +440,11 @@ protected _canView(actor: Actor, entity: Article): void {
     );
   }
 
-  // Check ownership or admin role
+  // Check ownership or view-any permission
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasViewAny = actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasViewAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
       'You can only view your own draft articles'
@@ -536,22 +535,22 @@ protected _canCount(actor: Actor): void {
 
 ## Implementation Patterns
 
-### Pattern 1: Role-Based Permissions
+### Pattern 1: Permission-Based (Simple)
 
-Simple role checking:
+Check for a specific permission:
 
 ```typescript
 protected _canCreate(actor: Actor, data: unknown): void {
-  if (actor.role !== RoleEnum.ADMIN) {
+  if (!actor.permissions.includes(PermissionEnum.PRODUCT_CREATE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only administrators can create products'
+      'Permission denied: PRODUCT_CREATE required'
     );
   }
 }
 ```
 
-### Pattern 2: Permission-Based
+### Pattern 2: Permission-Based (Specific)
 
 Check for specific permission:
 
@@ -583,37 +582,37 @@ protected _canUpdate(actor: Actor, entity: Article): void {
 }
 ```
 
-### Pattern 4: Hybrid (Role + Permission)
+### Pattern 4: Ownership OR Permission
 
-Combine multiple checks:
+Combine ownership with permission checks:
 
 ```typescript
 protected _canUpdate(actor: Actor, entity: Article): void {
-  const isAdmin = actor.role === RoleEnum.ADMIN;
-  const hasPermission = actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE_ANY);
+  const isOwner = entity.createdById === actor.id;
+  const hasUpdateAny = actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE_ANY);
 
-  if (!isAdmin && !hasPermission) {
+  if (!isOwner && !hasUpdateAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Administrator role or ARTICLE_UPDATE_ANY permission required'
+      'You can only update your own articles or need ARTICLE_UPDATE_ANY permission'
     );
   }
 }
 ```
 
-### Pattern 5: Ownership OR Admin
+### Pattern 5: Ownership OR Delete-Any Permission
 
 Most common pattern:
 
 ```typescript
 protected _canDelete(actor: Actor, entity: Article): void {
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasDeleteAny = actor.permissions.includes(PermissionEnum.ARTICLE_DELETE_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasDeleteAny) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'You can only delete your own articles or be an administrator'
+      'You can only delete your own articles or need ARTICLE_DELETE_ANY permission'
     );
   }
 }
@@ -635,12 +634,12 @@ protected _canView(actor: Actor, entity: Article): void {
     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
   }
 
-  // Private: only owner and admins
+  // Private: only owner and users with view-any permission
   if (entity.visibility === VisibilityEnum.PRIVATE) {
     const isOwner = entity.createdById === actor.id;
-    const isAdmin = actor.role === RoleEnum.ADMIN;
+    const hasViewAny = actor.permissions.includes(PermissionEnum.ARTICLE_VIEW_ANY);
 
-    if (!isOwner && !isAdmin) {
+    if (!isOwner && !hasViewAny) {
       throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Access denied');
     }
   }
@@ -708,31 +707,31 @@ protected _canView(actor: Actor, entity: UserProfile): void {
     throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Auth required');
   }
 
-  if (entity.userId !== actor.id && actor.role !== RoleEnum.ADMIN) {
+  if (entity.userId !== actor.id && !actor.permissions.includes(PermissionEnum.USER_VIEW_ANY)) {
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Not your profile');
   }
 }
 ```
 
-### Scenario 3: Admin-Only Resources
+### Scenario 3: Restricted Resources
 
-Resources only admins can manage:
+Resources only users with specific permissions can manage:
 
 ```typescript
 protected _canCreate(actor: Actor, data: unknown): void {
-  if (actor.role !== RoleEnum.ADMIN) {
+  if (!actor.permissions.includes(PermissionEnum.CONFIG_CREATE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only administrators can create system configurations'
+      'Permission CONFIG_CREATE required to create system configurations'
     );
   }
 }
 
 protected _canUpdate(actor: Actor, entity: Config): void {
-  if (actor.role !== RoleEnum.ADMIN) {
+  if (!actor.permissions.includes(PermissionEnum.CONFIG_UPDATE)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Only administrators can update system configurations'
+      'Permission CONFIG_UPDATE required to update system configurations'
     );
   }
 }
@@ -800,13 +799,13 @@ function assertHasPermission(actor: Actor, permission: PermissionEnum): void {
 }
 
 /**
- * Check if actor is admin
+ * Check if actor has a specific admin-level permission
  */
-function assertIsAdmin(actor: Actor): void {
-  if (actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN) {
+function assertHasAdminPermission(actor: Actor, permission: PermissionEnum): void {
+  if (!actor.permissions.includes(permission)) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Administrator access required'
+      `Permission required: ${permission}`
     );
   }
 }
@@ -827,19 +826,20 @@ function assertIsOwner<T extends { createdById: string }>(
 }
 
 /**
- * Check if actor is owner OR admin
+ * Check if actor is owner OR has a specific permission
  */
-function assertIsOwnerOrAdmin<T extends { createdById: string }>(
+function assertIsOwnerOrHasPermission<T extends { createdById: string }>(
   actor: Actor,
-  entity: T
+  entity: T,
+  permission: PermissionEnum
 ): void {
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN;
+  const hasPermissionGranted = actor.permissions.includes(permission);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasPermissionGranted) {
     throw new ServiceError(
       ServiceErrorCode.FORBIDDEN,
-      'Access denied: must be owner or administrator'
+      `Access denied: must be owner or have ${permission} permission`
     );
   }
 }
@@ -847,7 +847,7 @@ function assertIsOwnerOrAdmin<T extends { createdById: string }>(
 // Usage in hooks
 protected _canUpdate(actor: Actor, entity: Article): void {
   assertAuthenticated(actor);
-  assertIsOwnerOrAdmin(actor, entity);
+  assertIsOwnerOrHasPermission(actor, entity, PermissionEnum.ARTICLE_UPDATE_ANY);
 }
 ```
 
@@ -1004,9 +1004,9 @@ protected _canUpdate(actor: Actor, entity: Article): void {
 
   // Authorization: What can you do?
   const isOwner = entity.createdById === actor.id;
-  const isAdmin = actor.role === RoleEnum.ADMIN;
+  const hasUpdateAny = actor.permissions.includes(PermissionEnum.ARTICLE_UPDATE_ANY);
 
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && !hasUpdateAny) {
     throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Access denied');
   }
 }

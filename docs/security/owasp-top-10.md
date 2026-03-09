@@ -111,11 +111,10 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
 };
 
 export const hasPermission = (
-  role: UserRole,
+  userPermissions: Permission[],
   permission: Permission
 ): boolean => {
-  if (role === UserRole.ADMIN) return true;
-  return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
+  return userPermissions.includes(permission);
 };
 ```
 
@@ -134,15 +133,15 @@ export const requirePermission = (permission: Permission) => {
       return c.json({ error: 'Authentication required' }, 401);
     }
 
-    // Fetch user role from database
+    // Fetch user permissions from database
     const user = await getUserById(userId);
-    const role = user.role as UserRole;
+    const userPermissions = user.permissions as Permission[];
 
-    if (!hasPermission(role, permission)) {
+    if (!hasPermission(userPermissions, permission)) {
       return c.json({ error: 'Insufficient permissions' }, 403);
     }
 
-    c.set('userRole', role);
+    c.set('userPermissions', userPermissions);
     await next();
   });
 };
@@ -175,8 +174,8 @@ export class AccommodationService extends BaseCrudService {
 
     const accommodation = result.data;
 
-    // Verify ownership (unless admin)
-    if (!this.ctx.actor.isAdmin()) {
+    // Verify ownership (unless user has update-any permission)
+    if (!this.ctx.actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_UPDATE)) {
       if (accommodation.ownerId !== this.ctx.actor.id) {
         return Result.fail('Unauthorized: You do not own this accommodation');
       }
@@ -196,7 +195,7 @@ export class AccommodationService extends BaseCrudService {
 
     const accommodation = result.data;
 
-    if (!this.ctx.actor.isAdmin() && accommodation.ownerId !== this.ctx.actor.id) {
+    if (!this.ctx.actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_DELETE) && accommodation.ownerId !== this.ctx.actor.id) {
       return Result.fail('Unauthorized: You do not own this accommodation');
     }
 
@@ -2171,8 +2170,8 @@ app.use('/api/auth/*', rateLimiter({
 const user = await getUserById(userId);
 const hasMFA = user.twoFactorEnabled;
 
-// Require MFA for admin users
-if (user.role === 'admin' && !hasMFA) {
+// Require MFA for users with admin-level permissions
+if (user.permissions?.includes(PermissionEnum.ADMIN_PANEL_ACCESS) && !hasMFA) {
   return c.json({
     error: 'MFA required for admin accounts',
     action: 'enable_mfa',
@@ -2957,8 +2956,8 @@ class AnomalyDetector {
 export const auditMiddleware = createMiddleware(async (c, next) => {
   const user = c.get('user');
 
-  // Only audit admin actions
-  if (user.role === 'admin') {
+  // Only audit actions from users with admin permissions
+  if (user.permissions?.includes(PermissionEnum.ADMIN_PANEL_ACCESS)) {
     const startTime = Date.now();
 
     await next();

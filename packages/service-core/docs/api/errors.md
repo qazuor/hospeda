@@ -298,8 +298,8 @@ if (!actor.permissions.includes(PermissionEnum.UPDATE_ACCOMMODATION)) {
   );
 }
 
-// Not resource owner
-if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+// Not resource owner and lacks update-any permission
+if (entity.createdById !== actor.id && !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_UPDATE)) {
   throw new ServiceError(
     ServiceErrorCode.FORBIDDEN,
     'You can only update your own accommodations',
@@ -307,12 +307,12 @@ if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
   );
 }
 
-// Role check failed
-if (actor.role !== RoleEnum.ADMIN) {
+// Permission check failed
+if (!actor.permissions.includes(PermissionEnum.SYSTEM_CONFIG_MANAGE)) {
   throw new ServiceError(
     ServiceErrorCode.FORBIDDEN,
-    'Only administrators can perform this action',
-    { requiredRole: RoleEnum.ADMIN, userRole: actor.role }
+    'Permission SYSTEM_CONFIG_MANAGE required to perform this action',
+    { requiredPermission: PermissionEnum.SYSTEM_CONFIG_MANAGE }
   );
 }
 

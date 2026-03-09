@@ -1411,7 +1411,7 @@ protected abstract _executeCount(
 ): Promise<{ count: number }>
 ```
 
-#### Core Logic Must be implemented by concrete services
+#### Core Logic Must implement count query
 
 Executes the actual count query based on search filters.
 
@@ -1440,7 +1440,7 @@ protected async _executeCount(
 protected abstract getDefaultListRelations(): ListRelationsConfig
 ```
 
-#### Core Logic Must be implemented by concrete services
+#### Core Logic Must define default list relations
 
 Defines which relations should be included by default when listing entities.
 
@@ -1612,7 +1612,7 @@ export class AccommodationService extends BaseCrudService<
   }
 
   protected async _canSoftDelete(actor: Actor, entity: Accommodation): Promise<void> {
-    if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+    if (entity.createdById !== actor.id && !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
         'No permission to delete this accommodation'
@@ -1621,16 +1621,16 @@ export class AccommodationService extends BaseCrudService<
   }
 
   protected async _canHardDelete(actor: Actor, entity: Accommodation): Promise<void> {
-    if (actor.role !== RoleEnum.ADMIN) {
+    if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_HARD_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only admins can permanently delete accommodations'
+        'Permission ACCOMMODATION_LISTING_HARD_DELETE required to permanently delete accommodations'
       );
     }
   }
 
   protected async _canRestore(actor: Actor, entity: Accommodation): Promise<void> {
-    if (entity.createdById !== actor.id && actor.role !== RoleEnum.ADMIN) {
+    if (entity.createdById !== actor.id && !actor.permissions.includes(PermissionEnum.ACCOMMODATION_LISTING_RESTORE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
         'No permission to restore this accommodation'

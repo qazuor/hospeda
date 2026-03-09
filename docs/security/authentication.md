@@ -1195,7 +1195,7 @@ export const Route = createFileRoute('/_authed/admin')({
   beforeLoad: async ({ context }) => {
     const { user } = context;
 
-    if (user.role !== 'admin') {
+    if (!user.permissions?.includes(PermissionEnum.ADMIN_PANEL_ACCESS)) {
       throw redirect({
         to: '/',
         search: {
@@ -1234,8 +1234,8 @@ export class AccommodationService extends BaseService {
       );
     }
 
-    // Check ownership (unless admin)
-    if (existing.ownerId !== actor.userId && actor.role !== 'admin') {
+    // Check ownership (unless user has update-any permission)
+    if (existing.ownerId !== actor.userId && !actor.permissions?.includes(PermissionEnum.ACCOMMODATION_LISTING_UPDATE)) {
       return ServiceResult.failure(
         'You do not have permission to update this accommodation',
         ServiceErrorCode.FORBIDDEN
