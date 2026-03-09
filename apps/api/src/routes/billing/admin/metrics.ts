@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { getBillingMetricsService } from '../../../services/billing-metrics.service';
 import { getApproachingLimits, getSystemUsage } from '../../../services/billing-usage.service';
 import { createRouter } from '../../../utils/create-app';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -283,7 +284,11 @@ export const getRecentActivityRoute = createAdminRoute({
         const result = await service.getRecentActivity(limit, livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch recent activity');
+            const rawMessage = result.error?.message ?? 'Failed to fetch recent activity';
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to fetch recent activity: ${rawMessage}`
+                : 'Failed to fetch recent activity';
+            throw new Error(safeMessage);
         }
 
         return result.data;
@@ -318,7 +323,11 @@ export const getSystemUsageRoute = createAdminRoute({
         const result = await getSystemUsage(livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch system usage stats');
+            const rawMessage = result.error?.message ?? 'Failed to fetch system usage stats';
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to fetch system usage stats: ${rawMessage}`
+                : 'Failed to fetch system usage stats';
+            throw new Error(safeMessage);
         }
 
         return result.data;
@@ -348,7 +357,11 @@ export const getApproachingLimitsRoute = createAdminRoute({
         const result = await getApproachingLimits(threshold, livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch approaching limits');
+            const rawMessage = result.error?.message ?? 'Failed to fetch approaching limits';
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to fetch approaching limits: ${rawMessage}`
+                : 'Failed to fetch approaching limits';
+            throw new Error(safeMessage);
         }
 
         return result.data;

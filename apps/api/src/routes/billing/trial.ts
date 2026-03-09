@@ -20,6 +20,7 @@ import { z } from 'zod';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { TrialService } from '../../services/trial.service';
 import { createRouter } from '../../utils/create-app';
+import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute, createSimpleRoute } from '../../utils/route-factory';
 
@@ -174,11 +175,9 @@ export const startTrialRoute = createSimpleRoute({
             });
 
             if (!subscriptionId) {
-                return {
-                    success: false,
-                    subscriptionId: null,
+                throw new HTTPException(409, {
                     message: 'User already has a subscription or trial could not be created'
-                };
+                });
             }
 
             return {
@@ -187,6 +186,10 @@ export const startTrialRoute = createSimpleRoute({
                 message: 'Trial started successfully'
             };
         } catch (error) {
+            if (error instanceof HTTPException) {
+                throw error;
+            }
+
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             apiLogger.error(
@@ -197,11 +200,13 @@ export const startTrialRoute = createSimpleRoute({
                 'Failed to start trial'
             );
 
-            return {
-                success: false,
-                subscriptionId: null,
-                message: `Failed to start trial: ${errorMessage}`
-            };
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to start trial: ${errorMessage}`
+                : 'Failed to start trial';
+
+            throw new HTTPException(500, {
+                message: safeMessage
+            });
         }
     }
 });
@@ -260,12 +265,13 @@ export const extendTrialRoute = createAdminRoute({
                 'Failed to extend trial'
             );
 
-            return {
-                success: false,
-                previousTrialEnd: null,
-                newTrialEnd: null,
-                message: `Failed to extend trial: ${errorMessage}`
-            };
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to extend trial: ${errorMessage}`
+                : 'Failed to extend trial';
+
+            throw new HTTPException(500, {
+                message: safeMessage
+            });
         }
     }
 });
@@ -340,11 +346,13 @@ export const reactivateTrialRoute = createSimpleRoute({
                 'Failed to reactivate from trial'
             );
 
-            return {
-                success: false,
-                subscriptionId: null,
-                message: `Failed to reactivate: ${errorMessage}`
-            };
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to reactivate: ${errorMessage}`
+                : 'Failed to reactivate';
+
+            throw new HTTPException(500, {
+                message: safeMessage
+            });
         }
     }
 });
@@ -390,8 +398,12 @@ export const handleCheckExpiry = async (
             'Failed to run expired trial check'
         );
 
+        const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+            ? `Failed to check expired trials: ${errorMessage}`
+            : 'Failed to check expired trials';
+
         throw new HTTPException(500, {
-            message: `Failed to check expired trials: ${errorMessage}`
+            message: safeMessage
         });
     }
 };
@@ -504,12 +516,13 @@ export const reactivateSubscriptionRoute = createSimpleRoute({
                 'Failed to reactivate subscription'
             );
 
-            return {
-                success: false,
-                subscriptionId: null,
-                previousPlanId: null,
-                message: `Failed to reactivate subscription: ${errorMessage}`
-            };
+            const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to reactivate subscription: ${errorMessage}`
+                : 'Failed to reactivate subscription';
+
+            throw new HTTPException(500, {
+                message: safeMessage
+            });
         }
     }
 });
