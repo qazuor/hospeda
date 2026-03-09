@@ -63,8 +63,12 @@ export function collectEnvironmentData(input: CollectEnvironmentInput): Feedback
         os = osInfo.name ? `${osInfo.name} ${osInfo.version ?? ''}`.trim() : undefined;
     }
 
+    // Strip query string and hash to avoid leaking OAuth tokens or session
+    // fragments that may appear in the URL (e.g., ?code=xxx&state=yyy)
+    const safeUrl = isBrowser ? `${window.location.origin}${window.location.pathname}` : undefined;
+
     return {
-        currentUrl: isBrowser ? window.location.href : undefined,
+        currentUrl: safeUrl,
         browser,
         os,
         viewport: isBrowser ? `${window.innerWidth}x${window.innerHeight}` : undefined,
