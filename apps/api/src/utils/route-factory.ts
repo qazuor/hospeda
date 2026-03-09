@@ -5,6 +5,7 @@ import type { PermissionEnum } from '@repo/schemas';
 import { PaginationQuerySchema, ServiceErrorCode } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
 import { secureHeaders } from 'hono/secure-headers';
+import { createPerRouteRateLimitMiddleware } from '../middlewares/rate-limit';
 import type { AuthorizationLevel, OwnershipConfig } from '../types/authorization';
 import { createRouter } from './create-app';
 import { createOpenAPISchema } from './openapi-schema';
@@ -184,6 +185,16 @@ const createRequestOptions = (requestOptions: CreateRequestOptionsInterface) => 
  * Helper function to apply route-specific middlewares
  */
 const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: RouteOptions) => {
+    // Apply per-route rate limiting BEFORE other middlewares
+    if (options?.customRateLimit) {
+        app.use(
+            createPerRouteRateLimitMiddleware({
+                requests: options.customRateLimit.requests,
+                windowMs: options.customRateLimit.windowMs
+            })
+        );
+    }
+
     if (options?.middlewares) {
         for (const middleware of options.middlewares) {
             app.use(middleware);

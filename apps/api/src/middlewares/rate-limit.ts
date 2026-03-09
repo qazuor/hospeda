@@ -230,6 +230,118 @@ export const resetRateLimitStore = () => {
     memoryStore.clear();
 };
 
+// ─── Shared IP Extraction ─────────────────────────────────────────────────────
+
+/**
+ * Extracts the real client IP from the request, respecting proxy trust configuration.
+ *
+ * When trustProxy is true, checks headers in order: cf-connecting-ip, x-forwarded-for (first), x-real-ip.
+ * When trustProxy is false, returns 'untrusted-proxy' so all requests share a single bucket.
+ *
+ * @param params - Object containing the Hono context
+ * @returns The client IP string
+ */
+export const getClientIp = ({ c }: { c: Context }): string => {
+    const baseRateLimitConfig = getBaseRateLimitConfig();
+    const trustProxy = baseRateLimitConfig.trustProxy;
+
+    if (!trustProxy) {
+        return 'untrusted-proxy';
+    }
+
+    const cfConnectingIp = c.req.header('cf-connecting-ip');
+    if (cfConnectingIp) {
+        return cfConnectingIp;
+    }
+
+    const forwardedFor = c.req.header('x-forwarded-for');
+    if (forwardedFor) {
+        return forwardedFor.split(',')[0]?.trim() || 'unknown';
+    }
+
+    const realIp = c.req.header('x-real-ip');
+    if (realIp) {
+        return realIp;
+    }
+
+    return 'unknown';
+};
+
+// ─── Per-Route Rate Limit Middleware ──────────────────────────────────────────
+
+/**
+ * Creates a per-route rate limit middleware that enforces custom limits.
+ * This runs as a route-level middleware, AFTER the global rate limiter,
+ * applying stricter per-route limits on top of the global tier limits.
+ *
+ * @param params - Custom rate limit configuration
+ * @returns Hono middleware handler
+ */
+export const createPerRouteRateLimitMiddleware = ({
+    requests,
+    windowMs
+}: {
+    requests: number;
+    windowMs: number;
+}): ((c: Context, next: Next) => Promise<undefined | Response>) => {
+    return async (c: Context, next: Next) => {
+        // Skip in test environment unless explicitly testing
+        if (env.NODE_ENV === 'test' && !env.HOSPEDA_TESTING_RATE_LIMIT) {
+            await next();
+            return;
+        }
+
+        const clientIp = getClientIp({ c });
+        const path = c.req.path;
+        const store = getStore();
+        const now = Date.now();
+        const windowStart = Math.floor(now / windowMs) * windowMs;
+        const resetTime = windowStart + windowMs;
+
+        // Use a distinct key prefix for per-route limits
+        const storeKey = `route:${path}:${clientIp}`;
+
+        const currentData = await store.get(storeKey);
+        let count = 0;
+
+        if (currentData && currentData.windowStart === windowStart) {
+            count = currentData.count;
+        }
+
+        if (count >= requests) {
+            const responseBody = {
+                success: false,
+                error: {
+                    code: 'RATE_LIMIT_EXCEEDED',
+                    message: 'Too many requests to this endpoint. Please try again later.'
+                }
+            };
+
+            const responseHeaders = new Headers();
+            responseHeaders.set('Content-Type', 'application/json');
+            responseHeaders.set('X-RateLimit-Limit', requests.toString());
+            responseHeaders.set('X-RateLimit-Remaining', '0');
+            responseHeaders.set('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
+            responseHeaders.set('X-RateLimit-Type', 'per-route');
+            responseHeaders.set('Retry-After', Math.ceil((resetTime - now) / 1000).toString());
+
+            return new Response(JSON.stringify(responseBody), {
+                status: 429,
+                headers: responseHeaders
+            });
+        }
+
+        await store.set(storeKey, { count: count + 1, windowStart }, windowMs);
+
+        c.header('X-RateLimit-Limit', requests.toString());
+        c.header('X-RateLimit-Remaining', (requests - count - 1).toString());
+        c.header('X-RateLimit-Reset', Math.floor(resetTime / 1000).toString());
+        c.header('X-RateLimit-Type', 'per-route');
+
+        await next();
+    };
+};
+
 /** Supported rate limit endpoint categories */
 type RateLimitEndpointType = 'auth' | 'public' | 'admin' | 'billing' | 'webhook' | 'general';
 
@@ -253,7 +365,12 @@ const getEndpointType = (path: string, method: string): RateLimitEndpointType =>
     if (path.includes('/billing/') && method === 'POST') {
         return 'billing';
     }
-    if (path.startsWith('/api/v1/auth/')) {
+    if (
+        path.startsWith('/api/auth/') ||
+        path.startsWith('/api/v1/auth/') ||
+        path.startsWith('/api/v1/public/auth/') ||
+        path.startsWith('/api/v1/protected/auth/')
+    ) {
         return 'auth';
     }
     if (path.startsWith('/api/v1/admin/')) {
@@ -354,28 +471,11 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
         return;
     }
 
-    // Get client IP with proxy trust validation
-    const baseRateLimitConfig = getBaseRateLimitConfig();
-    const trustProxy = baseRateLimitConfig.trustProxy;
+    // Get client IP using shared extraction utility
+    const clientIp = getClientIp({ c });
 
-    let clientIp = 'unknown';
-
-    if (trustProxy) {
-        // Only trust proxy headers when explicitly configured
-        // This should only be enabled when running behind a trusted reverse proxy
-        const forwardedFor = c.req.header('x-forwarded-for');
-        const realIp = c.req.header('x-real-ip');
-        const cfConnectingIp = c.req.header('cf-connecting-ip');
-
-        if (forwardedFor) {
-            clientIp = forwardedFor.split(',')[0]?.trim() || 'unknown';
-        } else if (realIp) {
-            clientIp = realIp;
-        } else if (cfConnectingIp) {
-            clientIp = cfConnectingIp;
-        }
-    } else {
-        // When not trusting proxies, all requests share a single rate limit bucket
+    // Warn once when proxy is not trusted
+    if (clientIp === 'untrusted-proxy') {
         const store = getStore();
         const warningLogged = await store.has('__proxy_warning_logged__');
         if (!warningLogged) {
@@ -390,8 +490,6 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
                 config.windowMs
             );
         }
-        // Use a generic identifier when we cannot trust the IP
-        clientIp = 'untrusted-proxy';
     }
 
     const store = getStore();
