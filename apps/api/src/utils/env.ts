@@ -256,8 +256,11 @@ const ApiEnvSchema = z
         HOSPEDA_EXCHANGE_RATE_API_BASE_URL: z.string().url().optional(),
 
         // Cron
-        /** Shared secret for authenticating cron HTTP requests. Required in production. */
-        HOSPEDA_CRON_SECRET: z.string().optional(),
+        /** Shared secret for authenticating cron HTTP requests. Required in production (min 32 chars). */
+        HOSPEDA_CRON_SECRET: z
+            .string()
+            .min(32, 'HOSPEDA_CRON_SECRET must be at least 32 characters for security')
+            .optional(),
         /** Cron adapter: manual (default), vercel, or node-cron */
         HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'node-cron']).default('manual'),
 
@@ -332,12 +335,13 @@ const ApiEnvSchema = z
                     });
                 }
             }
-            const csrfOrigins = data.API_CSRF_ORIGINS?.split(',').map((o) => o.trim()) ?? [];
+            const csrfOrigins =
+                data.API_SECURITY_CSRF_ORIGINS?.split(',').map((o) => o.trim()) ?? [];
             for (const origin of csrfOrigins) {
                 if (localhostPattern.test(origin)) {
                     ctx.addIssue({
                         code: z.ZodIssueCode.custom,
-                        path: ['API_CSRF_ORIGINS'],
+                        path: ['API_SECURITY_CSRF_ORIGINS'],
                         message: `CSRF origin '${origin}' contains localhost, which is not allowed in production`
                     });
                 }

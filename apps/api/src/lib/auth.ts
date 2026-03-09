@@ -305,7 +305,12 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         advanced: {
             database: {
                 generateId: () => crypto.randomUUID()
-            }
+            },
+            /** Explicitly enable CSRF protection (origin header + Fetch Metadata checks) */
+            disableCSRFCheck: false,
+            /** Explicitly enable origin validation for redirects */
+            disableOriginCheck: false,
+            useSecureCookies: env.NODE_ENV === 'production'
         },
 
         databaseHooks: {
@@ -418,9 +423,9 @@ function parseTrustedOrigins(): string[] {
     // Default development origins
     if (origins.length === 0) {
         if (env.NODE_ENV === 'production') {
-            logger.error(
-                'HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL are not configured. ' +
-                    'Falling back to localhost origins in PRODUCTION. This is a security risk.'
+            throw new Error(
+                'HOSPEDA_SITE_URL and HOSPEDA_ADMIN_URL must be configured in production. ' +
+                    'Cannot fall back to localhost origins in production environment.'
             );
         }
         origins.push('http://localhost:3000', 'http://localhost:4321');
