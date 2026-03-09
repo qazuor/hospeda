@@ -110,6 +110,16 @@ export function useAutoCollect(input: UseAutoCollectInput): UseAutoCollectResult
         }));
     }, [getErrors]);
 
+    // Update environment when auth props change (e.g., user logs in/out).
+    useEffect(() => {
+        setEnvironment((prev) => ({
+            ...prev,
+            userId: input.userId,
+            appSource: input.appSource,
+            deployVersion: input.deployVersion
+        }));
+    }, [input.userId, input.appSource, input.deployVersion]);
+
     const updateField = useCallback(
         <K extends keyof FeedbackEnvironment>(key: K, value: FeedbackEnvironment[K]) => {
             setEnvironment((prev) => ({ ...prev, [key]: value }));
