@@ -7,12 +7,12 @@ import type {
 } from '@/features/accommodations/types/consolidated-config.types';
 
 /**
- * Filtra campos por modo específico
+ * Filters fields by a specific mode
  *
- * @param fields - Array de campos consolidados
- * @param mode - Modo para filtrar
- * @param options - Opciones de filtrado
- * @returns Array de campos filtrados y configurados para el modo
+ * @param fields - Array of consolidated fields
+ * @param mode - Mode to filter by
+ * @param options - Filtering options
+ * @returns Array of fields filtered and configured for the mode
  */
 export const filterFieldsByMode = (
     fields: ConsolidatedFieldConfig[],
@@ -26,21 +26,21 @@ export const filterFieldsByMode = (
 
     return fields
         .filter((field) => {
-            // Si el campo no tiene modos especificados, incluirlo según la opción
+            // If the field has no specified modes, include it based on the option
             if (!field.modes || field.modes.length === 0) {
                 return includeFieldsWithoutMode;
             }
 
-            // Verificar si el campo es visible en este modo
+            // Check if the field is visible in this mode
             return field.modes.includes(mode);
         })
         .map((field) => {
-            // Si no se debe aplicar configuración específica del modo, retornar tal como está
+            // If mode-specific config should not be applied, return as-is
             if (!applyModeSpecificConfig || !field.modeConfig) {
                 return field;
             }
 
-            // Aplicar configuración específica del modo si existe
+            // Apply mode-specific configuration if it exists
             const modeSpecificConfig = field.modeConfig[mode];
             if (modeSpecificConfig) {
                 return {
@@ -54,12 +54,12 @@ export const filterFieldsByMode = (
 };
 
 /**
- * Filtra secciones por modo específico
+ * Filters sections by a specific mode
  *
- * @param sections - Array de secciones consolidadas
- * @param mode - Modo para filtrar ('view', 'edit', 'create')
- * @param options - Opciones de filtrado
- * @returns Array de secciones filtradas para el modo especificado
+ * @param sections - Array of consolidated sections
+ * @param mode - Mode to filter by ('view', 'edit', 'create')
+ * @param options - Filtering options
+ * @returns Array of sections filtered for the specified mode
  *
  * @example
  * ```typescript
@@ -76,33 +76,33 @@ export const filterSectionsByMode = (
 
     return sections
         .filter((section) => {
-            // Verificar si la sección es visible en este modo
+            // Check if the section is visible in this mode
             return section.modes.includes(mode);
         })
         .map((section) => {
-            // Filtrar campos de la sección por el modo
+            // Filter section fields by mode
             const filteredFields = filterFieldsByMode(section.fields, mode, {
                 includeFieldsWithoutMode,
                 applyModeSpecificConfig
             });
 
-            // Retornar sección con campos filtrados
+            // Return section with filtered fields
             return {
                 ...section,
                 fields: filteredFields
             } as SectionConfig;
         })
         .filter((section) => {
-            // Excluir secciones que no tienen campos después del filtrado
+            // Exclude sections that have no fields after filtering
             return section.fields.length > 0;
         });
 };
 
 /**
- * Obtiene todos los modos únicos de un conjunto de secciones consolidadas
+ * Gets all unique modes from a set of consolidated sections
  *
- * @param sections - Array de secciones consolidadas
- * @returns Array de modos únicos
+ * @param sections - Array of consolidated sections
+ * @returns Array of unique modes
  */
 export const getAvailableModes = (sections: ConsolidatedSectionConfig[]): ConfigMode[] => {
     const modesSet = new Set<ConfigMode>();
@@ -117,10 +117,10 @@ export const getAvailableModes = (sections: ConsolidatedSectionConfig[]): Config
 };
 
 /**
- * Valida que una configuración consolidada sea válida
+ * Validates that a consolidated configuration is valid
  *
- * @param sections - Array de secciones consolidadas a validar
- * @returns Objeto con resultado de validación y errores si los hay
+ * @param sections - Array of consolidated sections to validate
+ * @returns Object with the validation result and errors if any
  */
 export const validateConsolidatedConfig = (
     sections: ConsolidatedSectionConfig[]
@@ -128,24 +128,24 @@ export const validateConsolidatedConfig = (
     const errors: string[] = [];
 
     sections.forEach((section, sectionIndex) => {
-        // Validar que la sección tenga al menos un modo
+        // Validate that the section has at least one mode
         if (!section.modes || section.modes.length === 0) {
             errors.push(`Section at index ${sectionIndex} (${section.id}) has no modes defined`);
         }
 
-        // Validar que la sección tenga campos
+        // Validate that the section has fields
         if (!section.fields || section.fields.length === 0) {
             errors.push(`Section at index ${sectionIndex} (${section.id}) has no fields defined`);
         }
 
-        // Validar campos
+        // Validate fields
         section.fields?.forEach((field: ConsolidatedFieldConfig, fieldIndex: number) => {
-            // Validar que el campo tenga ID
+            // Validate that the field has an ID
             if (!field.id) {
                 errors.push(`Field at index ${fieldIndex} in section ${section.id} has no ID`);
             }
 
-            // Validar que si tiene modos específicos, sean válidos
+            // Validate that if specific modes are defined, they are valid
             if (field.modes) {
                 const invalidModes = field.modes.filter(
                     (mode: string) => !['view', 'edit', 'create'].includes(mode)

@@ -84,8 +84,6 @@ export const useEntityView = () => {
                 if (!hasVisibleFieldsWithData) return false;
             }
 
-            // TODO: Check section visibility conditions (visibleIf)
-            // For now, show all permitted sections
             return true;
         });
     }, [context.config.sections, context.userPermissions, context.showEmptyFields, hasFieldValue]);

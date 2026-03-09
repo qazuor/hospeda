@@ -11,8 +11,8 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import { useTranslations } from '@/hooks/use-translations';
 import { authClient } from '@/lib/auth-client';
 import { adminLogger } from '@/utils/logger';
-import { UserSwitch } from '@phosphor-icons/react';
 import type { TranslationKey } from '@repo/i18n';
+import { UserSwitchIcon } from '@repo/icons';
 import { PermissionEnum } from '@repo/schemas';
 import { useCallback, useState } from 'react';
 
@@ -65,7 +65,7 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                     disabled={isLoading}
                     className="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 font-medium text-amber-900 text-sm transition-colors hover:bg-amber-100 disabled:opacity-50 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900"
                 >
-                    <UserSwitch size={16} />
+                    <UserSwitchIcon size={16} />
                     {t('admin-common.impersonation.start' as TranslationKey)}
                 </button>
             ) : (
@@ -76,7 +76,7 @@ export function ImpersonateButton({ userId, variant = 'icon' }: ImpersonateButto
                     title={t('admin-common.impersonation.start' as TranslationKey)}
                     className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-amber-100 hover:text-amber-900 disabled:opacity-50 dark:hover:bg-amber-950 dark:hover:text-amber-200"
                 >
-                    <UserSwitch size={16} />
+                    <UserSwitchIcon size={16} />
                 </button>
             )}
         </PermissionGate>

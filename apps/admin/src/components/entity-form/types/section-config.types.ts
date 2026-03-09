@@ -1,7 +1,7 @@
 import type { PermissionEnum } from '@repo/schemas';
 import type * as React from 'react';
 import type { LayoutTypeEnum } from '../enums/form-config.enums';
-import type { Actor, FieldConfig } from './field-config.types';
+import type { FieldConfig } from './field-config.types';
 
 /**
  * Section configuration type
@@ -27,9 +27,6 @@ export type SectionConfig = {
         view?: PermissionEnum[];
         edit?: PermissionEnum[];
     };
-    visibleIf?: (actor: Actor, entity?: unknown) => boolean;
-    editableIf?: (actor: Actor, entity?: unknown) => boolean;
-
     // Fields in this section
     fields: FieldConfig[];
 

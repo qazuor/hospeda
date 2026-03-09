@@ -367,9 +367,6 @@ export type FieldConfig = {
         view?: PermissionEnum[];
         edit?: PermissionEnum[];
     };
-    visibleIf?: (actor: Actor, entity?: unknown) => boolean;
-    editableIf?: (actor: Actor, entity?: unknown) => boolean;
-
     // Async validation
     asyncValidation?: AsyncValidationConfig;
 

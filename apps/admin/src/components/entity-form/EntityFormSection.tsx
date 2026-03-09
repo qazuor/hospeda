@@ -86,13 +86,7 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         }, [config.permissions, userPermissions]);
 
         // Check visibility conditions
-        const isVisible = React.useMemo(() => {
-            if (!config.visibleIf) return hasViewPermission;
-
-            // TODO: Implement predicate evaluation
-            // For now, just check permissions
-            return hasViewPermission;
-        }, [config.visibleIf, hasViewPermission]);
+        const isVisible = hasViewPermission;
 
         // Filter visible and accessible fields
         const visibleFields = React.useMemo(() => {

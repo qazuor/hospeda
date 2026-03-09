@@ -96,12 +96,6 @@ export const useSectionProgress = (
                 if (!hasViewPermission) return false;
             }
 
-            // Check visibleIf condition
-            if (field.visibleIf) {
-                // Simple implementation - can be enhanced with more complex logic
-                return true; // For now, assume visible
-            }
-
             return true;
         },
         [userPermissions]

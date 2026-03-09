@@ -65,8 +65,6 @@ export const useEntityForm = () => {
                 if (!hasPermission) return false;
             }
 
-            // TODO: Check section visibility conditions (visibleIf)
-            // For now, show all permitted sections
             return true;
         });
     }, [context.config.sections, context.userPermissions]);
@@ -81,8 +79,6 @@ export const useEntityForm = () => {
                 if (!hasPermission) return false;
             }
 
-            // TODO: Check section editability conditions (editableIf)
-            // For now, show all permitted sections
             return true;
         });
     }, [context.config.sections, context.userPermissions]);

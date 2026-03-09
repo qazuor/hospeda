@@ -1,7 +1,7 @@
 import { EventLocationsRoute } from '@/features/event-locations/config/event-locations.config';
 import { createFileRoute } from '@tanstack/react-router';
 
-// HACK: Prevent TypeScript error for TanStack Router auto-generated import
+// TanStack Router requirement: bare reference prevents unused-import removal by bundler
 createFileRoute;
 
 export const Route = EventLocationsRoute;
