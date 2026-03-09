@@ -1,4 +1,4 @@
-import { Section, Text } from '@react-email/components';
+import { Column, Link, Row, Section, Text } from '@react-email/components';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
@@ -166,10 +166,43 @@ export function FeedbackReportEmail({
                     label="Nombre"
                     value={reporterName}
                 />
-                <InfoRow
-                    label="Email"
-                    value={reporterEmail}
-                />
+                <Row style={{ marginBottom: '12px' }}>
+                    <Column style={{ width: '40%', verticalAlign: 'top' as const }}>
+                        <Text
+                            style={{
+                                color: '#64748b',
+                                fontSize: '14px',
+                                lineHeight: '20px',
+                                margin: '0'
+                            }}
+                        >
+                            Email
+                        </Text>
+                    </Column>
+                    <Column
+                        style={{
+                            width: '60%',
+                            textAlign: 'right' as const,
+                            verticalAlign: 'top' as const
+                        }}
+                    >
+                        <Text
+                            style={{
+                                fontSize: '14px',
+                                fontWeight: '600',
+                                lineHeight: '20px',
+                                margin: '0'
+                            }}
+                        >
+                            <Link
+                                href={`mailto:${reporterEmail}`}
+                                style={styles.link}
+                            >
+                                {reporterEmail}
+                            </Link>
+                        </Text>
+                    </Column>
+                </Row>
             </Section>
 
             {/* Description */}
@@ -222,7 +255,13 @@ export function FeedbackReportEmail({
                             key={url}
                             style={styles.fieldValue}
                         >
-                            {index + 1}. {url}
+                            {index + 1}.{' '}
+                            <Link
+                                href={url}
+                                style={styles.link}
+                            >
+                                {url}
+                            </Link>
                         </Text>
                     ))}
                 </Section>
@@ -240,10 +279,43 @@ export function FeedbackReportEmail({
                     value={formatTimestamp(environment.timestamp)}
                 />
                 {environment.currentUrl && (
-                    <InfoRow
-                        label="URL"
-                        value={environment.currentUrl}
-                    />
+                    <Row style={{ marginBottom: '12px' }}>
+                        <Column style={{ width: '40%', verticalAlign: 'top' as const }}>
+                            <Text
+                                style={{
+                                    color: '#64748b',
+                                    fontSize: '14px',
+                                    lineHeight: '20px',
+                                    margin: '0'
+                                }}
+                            >
+                                URL
+                            </Text>
+                        </Column>
+                        <Column
+                            style={{
+                                width: '60%',
+                                textAlign: 'right' as const,
+                                verticalAlign: 'top' as const
+                            }}
+                        >
+                            <Text
+                                style={{
+                                    fontSize: '14px',
+                                    fontWeight: '600',
+                                    lineHeight: '20px',
+                                    margin: '0'
+                                }}
+                            >
+                                <Link
+                                    href={environment.currentUrl}
+                                    style={styles.link}
+                                >
+                                    {environment.currentUrl}
+                                </Link>
+                            </Text>
+                        </Column>
+                    </Row>
                 )}
                 {environment.browser && (
                     <InfoRow
@@ -397,6 +469,11 @@ const styles = {
         whiteSpace: 'pre-wrap' as const,
         wordBreak: 'break-all' as const,
         margin: '8px 0 0'
+    },
+    link: {
+        color: '#2563eb',
+        textDecoration: 'underline',
+        wordBreak: 'break-all' as const
     },
     footerNote: {
         color: '#64748b',
