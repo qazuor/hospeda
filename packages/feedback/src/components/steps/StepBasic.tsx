@@ -4,7 +4,6 @@
  * Step 1 of the feedback form. Collects the report type, title, description,
  * and optionally the reporter's email and name when the user is not authenticated.
  */
-import { useState } from 'react';
 import { REPORT_TYPES } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
 import type { ReportTypeId } from '../../schemas/feedback.schema.js';
@@ -60,7 +59,6 @@ const styles = {
         borderColor: '#d1d5db',
         borderRadius: '6px',
         fontSize: '14px',
-        outline: 'none',
         boxSizing: 'border-box' as const
     },
     inputError: {
@@ -81,7 +79,6 @@ const styles = {
         fontSize: '14px',
         minHeight: '100px',
         resize: 'vertical' as const,
-        outline: 'none',
         boxSizing: 'border-box' as const
     },
     select: {
@@ -92,7 +89,6 @@ const styles = {
         borderColor: '#d1d5db',
         borderRadius: '6px',
         fontSize: '14px',
-        outline: 'none',
         backgroundColor: '#fff',
         boxSizing: 'border-box' as const
     },
@@ -134,6 +130,16 @@ const styles = {
         fontSize: '14px',
         fontWeight: '500',
         cursor: 'pointer'
+    },
+    buttonSecondaryDisabled: {
+        padding: '8px 20px',
+        backgroundColor: 'transparent',
+        color: '#93c5fd',
+        border: '1px solid #93c5fd',
+        borderRadius: '6px',
+        fontSize: '14px',
+        fontWeight: '500',
+        cursor: 'not-allowed'
     }
 } as const;
 
@@ -167,12 +173,9 @@ export function StepBasic({
     onSubmit,
     isSubmitting
 }: StepBasicProps) {
-    const [typeHovered, setTypeHovered] = useState(false);
-
     const getInputStyle = (field: keyof StepBasicData) => ({
         ...styles.input,
-        ...(errors[field] ? styles.inputError : {}),
-        ...(typeHovered && field === 'type' ? { borderColor: '#2563eb' } : {})
+        ...(errors[field] ? styles.inputError : {})
     });
 
     return (
@@ -193,8 +196,6 @@ export function StepBasic({
                     }}
                     value={data.type}
                     onChange={(e) => onChange('type', e.target.value as ReportTypeId)}
-                    onMouseEnter={() => setTypeHovered(true)}
-                    onMouseLeave={() => setTypeHovered(false)}
                     aria-invalid={!!errors.type}
                     aria-describedby={errors.type ? 'feedback-type-error' : undefined}
                 >
@@ -347,7 +348,7 @@ export function StepBasic({
             <div style={styles.buttonRow}>
                 <button
                     type="button"
-                    style={styles.buttonSecondary}
+                    style={isSubmitting ? styles.buttonSecondaryDisabled : styles.buttonSecondary}
                     onClick={onGoToStep2}
                     disabled={isSubmitting}
                 >
