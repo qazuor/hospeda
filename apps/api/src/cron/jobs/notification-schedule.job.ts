@@ -237,7 +237,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             continue;
                         }
 
-                        const upgradeUrl = `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
+                        const upgradeUrl = `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`;
 
                         // Fire-and-forget notification
                         sendNotification({
@@ -319,7 +319,7 @@ export const notificationScheduleJob: CronJobDefinition = {
                             continue;
                         }
 
-                        const upgradeUrl = `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`;
+                        const upgradeUrl = `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`;
 
                         // Fire-and-forget notification
                         sendNotification({

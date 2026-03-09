@@ -452,7 +452,7 @@ export class TrialService {
                                 customerId: customer.id,
                                 planName: plan.name,
                                 trialEndDate: trialEnd.toISOString(),
-                                upgradeUrl: `${env.HOSPEDA_SITE_URL || 'https://hospeda.com'}/mi-cuenta/suscripcion`
+                                upgradeUrl: `${env.HOSPEDA_SITE_URL}/mi-cuenta/suscripcion`
                             });
 
                             apiLogger.debug(
