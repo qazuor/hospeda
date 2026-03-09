@@ -146,7 +146,6 @@ export class EventService extends BaseCrudService<
         _entity: Event,
         _newVisibility: VisibilityEnum
     ): void {
-        // TODO: Implement visibility update permission logic if needed
         checkCanUpdateEvent(actor);
     }
 

@@ -41,7 +41,7 @@ export const normalizeCreateInput = (
         description: data.description?.trim(),
         logo: data.logo?.trim(),
         contactInfo: normalizedContactInfo,
-        socialNetworks: data.socialNetworks, // TODO: normalizeSocial if exists
+        socialNetworks: data.socialNetworks, // Feature gap: add normalizeSocialNetworks utility when social network normalization is needed
         lifecycleState: data.lifecycleState,
         adminInfo
     };
@@ -77,7 +77,7 @@ export const normalizeUpdateInput = (
     if (data.contactInfo) {
         result.contactInfo = normalizeContactInfo(data.contactInfo) as typeof data.contactInfo;
     }
-    if (data.socialNetworks) result.socialNetworks = data.socialNetworks; // TODO: normalizeSocial
+    if (data.socialNetworks) result.socialNetworks = data.socialNetworks; // Feature gap: add normalizeSocialNetworks utility
     if (data.lifecycleState) result.lifecycleState = data.lifecycleState;
     if (data.adminInfo) result.adminInfo = normalizeAdminInfo(data.adminInfo);
     return result;

@@ -1,5 +1,3 @@
-// TODO: Add destinationReview-specific helpers if needed.
-
 import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
 
 /**

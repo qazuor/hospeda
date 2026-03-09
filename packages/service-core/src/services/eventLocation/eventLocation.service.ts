@@ -322,7 +322,7 @@ export class EventLocationService extends BaseCrudService<
                 state: location.state ?? undefined,
                 country: location.country ?? undefined,
                 placeName: location.placeName ?? undefined,
-                totalEvents: 0 // TODO: Implement actual event count when events integration is ready
+                totalEvents: 0 // Feature gap: implement actual event count when events integration is ready
             };
 
             return {

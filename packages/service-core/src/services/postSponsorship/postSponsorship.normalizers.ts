@@ -16,7 +16,6 @@ export const normalizeCreateInput = (
         ...data,
         message: typeof data.message === 'string' ? data.message.trim() : data.message,
         description: data.description.trim()
-        // TODO: normalize paid, dates if needed
     };
 };
 
@@ -34,6 +33,5 @@ export const normalizeUpdateInput = (
     const normalized: PostSponsorshipUpdateInput = { ...data };
     if (typeof data.message === 'string') normalized.message = data.message.trim();
     if (typeof data.description === 'string') normalized.description = data.description.trim();
-    // TODO: normalize paid, dates if needed
     return normalized;
 };
