@@ -28,6 +28,44 @@ import { apiLogger } from '../../utils/logger';
 import { sendNotification } from '../../utils/notification-helper';
 import { createSimpleRoute } from '../../utils/route-factory';
 
+/**
+ * Magic byte signatures for allowed image formats.
+ * Each entry maps a MIME type to the expected leading bytes.
+ */
+const MAGIC_BYTES: Record<string, readonly number[]> = {
+    'image/png': [0x89, 0x50, 0x4e, 0x47],
+    'image/jpeg': [0xff, 0xd8, 0xff],
+    'image/gif': [0x47, 0x49, 0x46, 0x38],
+    'image/webp': [0x52, 0x49, 0x46, 0x46] // RIFF header (WebP starts with RIFF....WEBP)
+};
+
+/**
+ * Validates that a buffer's leading bytes match the expected magic signature
+ * for the declared MIME type. Prevents upload of disguised executables.
+ */
+function validateMagicBytes({
+    buffer,
+    declaredType
+}: { buffer: Buffer; declaredType: string }): boolean {
+    const expected = MAGIC_BYTES[declaredType];
+    if (!expected) return false;
+
+    if (buffer.length < expected.length) return false;
+
+    for (let i = 0; i < expected.length; i++) {
+        if (buffer[i] !== expected[i]) return false;
+    }
+
+    // WebP has an additional check: bytes 8-11 must be "WEBP"
+    if (declaredType === 'image/webp') {
+        if (buffer.length < 12) return false;
+        const webpTag = String.fromCharCode(buffer[8], buffer[9], buffer[10], buffer[11]);
+        if (webpTag !== 'WEBP') return false;
+    }
+
+    return true;
+}
+
 // ─── Field limits (shared between Zod schema and sanitization) ───────────────
 
 /** Maximum lengths for user-supplied text fields */
@@ -428,8 +466,28 @@ export const submitFeedbackRoute = createSimpleRoute({
         const feedbackAttachments: FeedbackAttachment[] = [];
         for (const file of attachments) {
             const arrayBuffer = await file.arrayBuffer();
+            const buffer = Buffer.from(arrayBuffer);
+
+            // Validate magic bytes match declared MIME type (GAP-031-21)
+            if (!validateMagicBytes({ buffer, declaredType: file.type })) {
+                apiLogger.warn(
+                    { filename: file.name, declaredType: file.type },
+                    'Attachment magic bytes do not match declared MIME type'
+                );
+                return ctx.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'VALIDATION_ERROR',
+                            message: 'El archivo no es una imagen valida'
+                        }
+                    },
+                    400
+                );
+            }
+
             feedbackAttachments.push({
-                buffer: Buffer.from(arrayBuffer),
+                buffer,
                 filename: sanitizeFileName(file.name),
                 contentType: file.type,
                 size: file.size
