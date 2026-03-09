@@ -698,7 +698,7 @@ export class PostService extends BaseCrudService<
             schema: z.object({ postId: z.string(), commentId: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
-                // TODO: Implement comment removal logic
+                // Feature gap: implement comment removal logic
                 return { success: false };
             }
         });

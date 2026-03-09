@@ -71,7 +71,7 @@ describe('DestinationService - setAdminInfo', () => {
         const result = await service.setAdminInfo({
             actor: superAdmin,
             id: entity.id,
-            adminInfo: {} as AdminInfoType
+            adminInfo: 'not-an-object' as unknown as AdminInfoType
         });
         expectValidationError(result);
     });
