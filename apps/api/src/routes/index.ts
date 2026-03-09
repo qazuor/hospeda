@@ -77,6 +77,7 @@ import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks'
 import { adminWebhookRouter } from './webhooks/admin';
 
 import { ApiInfoSchema } from '@repo/schemas';
+import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
 import { createSimpleRoute } from '../utils/route-factory';
 
 const rootRoute = createSimpleRoute({
@@ -156,6 +157,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // ═══════════════════════════════════════════════════════════════════════
         // PROTECTED ROUTES - Authentication required, own resources
         // ═══════════════════════════════════════════════════════════════════════
+
+        // Enforce past-due grace period on ALL protected routes.
+        // Users whose subscription grace period has expired get 402.
+        // Exempt paths (payment-methods, checkout, reactivate) are handled
+        // inside the middleware itself.
+        app.use('/api/v1/protected/*', pastDueGraceMiddleware());
 
         apiLogger.debug('🔗 Registering protected routes...');
 

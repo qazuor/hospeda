@@ -41,7 +41,8 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
     '/trial/reactivate',
     '/trial/reactivate-subscription',
     '/checkout',
-    '/subscriptions/reactivate'
+    '/subscriptions/reactivate',
+    '/payment-methods'
 ] as const;
 
 /**
