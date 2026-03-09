@@ -1,297 +1,407 @@
-import type { Sponsorship } from '@repo/schemas';
-import { /* SponsorshipEntityTypeEnum, */ SponsorshipStatusEnum } from '@repo/schemas'; // SponsorshipEntityTypeEnum doesn't exist
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { SponsorshipModel } from '../../src/models/sponsorship/sponsorship.model';
+import * as logger from '../../src/utils/logger';
 
-// Mock the database client more simply
+const mockFindOne = vi.fn();
+
 vi.mock('../../src/client', () => ({
-    getDb: vi.fn(() => ({})) // Return empty object, we'll override methods in model
+    getDb: vi.fn()
 }));
 
-// Mock logger to avoid console output during tests
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
     logError: vi.fn()
 }));
 
-// Mock database operations
-vi.mock('../../src/utils/db-utils', () => ({
-    buildWhereClause: vi.fn(() => ({}))
-}));
-
-// Create a mock sponsorship data
-const mockSponsorshipData: Sponsorship = {
-    id: 'sponsorship-id-1',
-    clientId: 'client-id-1',
-    entityType: 'POST' as any, // SponsorshipEntityTypeEnum doesn't exist
-    entityId: 'post-id-1',
-    fromDate: new Date('2024-01-01'),
-    toDate: new Date('2024-12-31'),
-    status: SponsorshipStatusEnum.ACTIVE,
-    priority: 50,
-    spentAmount: 0.0,
-    impressionCount: 0,
-    clickCount: 0,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    createdById: 'user-id-1',
-    updatedById: 'user-id-1',
-    deletedAt: undefined,
-    deletedById: undefined
-};
-
-// SKIPPED: Many methods tested here are not yet implemented in SponsorshipModel
-describe.skip('SponsorshipModel', () => {
+describe('SponsorshipModel', () => {
     let model: SponsorshipModel;
+    let getDb: ReturnType<typeof vi.fn>;
+    let logQuery: ReturnType<typeof vi.fn>;
+    let logError: ReturnType<typeof vi.fn>;
 
-    beforeEach(async () => {
-        vi.clearAllMocks();
+    beforeEach(() => {
         model = new SponsorshipModel();
+        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
+        logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
+        logError = logger.logError as ReturnType<typeof vi.fn>;
+        vi.clearAllMocks();
+        model.findOne = mockFindOne;
+    });
 
-        // Mock the specific methods that are called by the sponsorship model
-        vi.spyOn(model, 'findById').mockImplementation(async (id: string) => {
-            if (id === 'sponsorship-id-1') {
-                return mockSponsorshipData;
-            }
-            return null;
+    describe('getTableName', () => {
+        it('should return correct table name', () => {
+            const tableName = (model as unknown as { getTableName: () => string }).getTableName();
+            expect(tableName).toBe('sponsorships');
         });
+    });
 
-        vi.spyOn(model, 'findAll').mockImplementation(async () => ({
-            items: [mockSponsorshipData],
-            total: 1
-        }));
-
-        vi.spyOn(model, 'count').mockImplementation(async () => 1);
-
-        vi.spyOn(model, 'create').mockImplementation(async (data: any) => ({
-            ...mockSponsorshipData,
-            ...data,
-            id: 'sponsorship-id-1'
-        }));
-
-        // Mock database operations for insert/update
-        const mockDb = {
-            insert: vi.fn(() => ({
-                values: vi.fn((data) => ({
-                    returning: vi.fn(() =>
-                        Promise.resolve([
-                            {
-                                id: 'sponsorship-id-1',
-                                clientId: data.clientId,
-                                entityType: data.entityType, // This will be dynamic based on input
-                                entityId: data.entityId,
-                                fromDate: data.fromDate,
-                                toDate: data.toDate,
-                                status: data.status,
-                                createdAt: new Date(),
-                                updatedAt: new Date(),
-                                createdById: undefined,
-                                updatedById: undefined,
-                                deletedAt: null,
-                                deletedById: null,
-                                adminInfo: null
-                            }
-                        ])
-                    )
-                }))
-            })),
-            update: vi.fn(() => ({
-                set: vi.fn(() => ({
-                    where: vi.fn(() => ({
-                        returning: vi.fn(() =>
-                            Promise.resolve([
-                                {
-                                    id: 'sponsorship-id-1',
-                                    status: 'ACTIVE',
-                                    createdAt: new Date(),
-                                    updatedAt: new Date()
-                                }
-                            ])
-                        )
-                    }))
-                }))
-            })),
-            query: {
-                sponsorships: {
-                    findFirst: vi.fn(() =>
-                        Promise.resolve({
-                            id: 'sponsorship-id-1',
-                            status: 'ACTIVE'
+    describe('findBySlug', () => {
+        it('should find a sponsorship by slug', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => ({
+                            limit: () =>
+                                Promise.resolve([
+                                    { id: 's1', slug: 'test-sponsorship', status: 'active' }
+                                ])
                         })
-                    )
+                    })
+                })
+            });
+
+            const result = await model.findBySlug('test-sponsorship');
+
+            expect(result).toEqual({ id: 's1', slug: 'test-sponsorship', status: 'active' });
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findBySlug',
+                { slug: 'test-sponsorship' },
+                expect.any(Array)
+            );
+        });
+
+        it('should return null for non-existent slug', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => ({ limit: () => Promise.resolve([]) })
+                    })
+                })
+            });
+
+            const result = await model.findBySlug('non-existent');
+
+            expect(result).toBeNull();
+        });
+
+        it('should throw on database error', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => ({ limit: () => Promise.reject(new Error('db error')) })
+                    })
+                })
+            });
+
+            await expect(model.findBySlug('fail')).rejects.toThrow('db error');
+            expect(logError).toHaveBeenCalledWith(
+                'sponsorships',
+                'findBySlug',
+                { slug: 'fail' },
+                expect.any(Error)
+            );
+        });
+    });
+
+    describe('findBySponsorUserId', () => {
+        it('should find sponsorships by sponsor user id', async () => {
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [{ id: 's1', sponsorUserId: 'user1' } as never],
+                total: 1
+            });
+
+            const result = await model.findBySponsorUserId('user1');
+
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockFindAll).toHaveBeenCalledWith({
+                sponsorUserId: 'user1',
+                deletedAt: null
+            });
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findBySponsorUserId',
+                { sponsorUserId: 'user1' },
+                expect.any(Object)
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should throw on database error', async () => {
+            vi.spyOn(model, 'findAll').mockRejectedValue(new Error('db error'));
+
+            await expect(model.findBySponsorUserId('user1')).rejects.toThrow('db error');
+            expect(logError).toHaveBeenCalledWith(
+                'sponsorships',
+                'findBySponsorUserId',
+                { sponsorUserId: 'user1' },
+                expect.any(Error)
+            );
+        });
+    });
+
+    describe('findActiveByTarget', () => {
+        it('should find active sponsorships by target', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () =>
+                            Promise.resolve([
+                                { id: 's1', targetType: 'post', targetId: 'p1', status: 'active' }
+                            ])
+                    })
+                })
+            });
+
+            const result = await model.findActiveByTarget('post', 'p1');
+
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findActiveByTarget',
+                { targetType: 'post', targetId: 'p1' },
+                expect.any(Array)
+            );
+        });
+
+        it('should return empty when no active sponsorships found', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.resolve([])
+                    })
+                })
+            });
+
+            const result = await model.findActiveByTarget('post', 'p1');
+
+            expect(result.items).toHaveLength(0);
+            expect(result.total).toBe(0);
+        });
+
+        it('should throw on database error', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.reject(new Error('db error'))
+                    })
+                })
+            });
+
+            await expect(model.findActiveByTarget('post', 'p1')).rejects.toThrow('db error');
+            expect(logError).toHaveBeenCalledWith(
+                'sponsorships',
+                'findActiveByTarget',
+                { targetType: 'post', targetId: 'p1' },
+                expect.any(Error)
+            );
+        });
+    });
+
+    describe('findByStatus', () => {
+        it('should find sponsorships by status', async () => {
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [{ id: 's1', status: 'active' } as never],
+                total: 1
+            });
+
+            const result = await model.findByStatus('active');
+
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockFindAll).toHaveBeenCalledWith({
+                status: 'active',
+                deletedAt: null
+            });
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findByStatus',
+                { status: 'active' },
+                expect.any(Object)
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should throw on database error', async () => {
+            vi.spyOn(model, 'findAll').mockRejectedValue(new Error('db error'));
+
+            await expect(model.findByStatus('active')).rejects.toThrow('db error');
+            expect(logError).toHaveBeenCalledWith(
+                'sponsorships',
+                'findByStatus',
+                { status: 'active' },
+                expect.any(Error)
+            );
+        });
+    });
+
+    describe('findWithRelations', () => {
+        it('should return result with relations', async () => {
+            const db = {
+                query: {
+                    sponsorships: {
+                        findFirst: vi.fn().mockResolvedValue({
+                            id: 's1',
+                            sponsorUser: { id: 'u1', name: 'Test User' }
+                        })
+                    }
                 }
-            }
-        };
+            };
+            getDb.mockReturnValue(db);
 
-        // Override getDb for this instance
-        const { getDb } = await import('../../src/client');
-        vi.mocked(getDb).mockReturnValue(mockDb as any);
-    });
+            const where = { id: 's1' };
+            const relations = { sponsorUser: true };
+            const result = await model.findWithRelations(where, relations);
 
-    describe('Constructor', () => {
-        it('should be properly instantiated', () => {
-            expect(model).toBeDefined();
-            expect(model).toBeInstanceOf(SponsorshipModel);
+            expect(result).toEqual({
+                id: 's1',
+                sponsorUser: { id: 'u1', name: 'Test User' }
+            });
+            expect(db.query.sponsorships.findFirst).toHaveBeenCalled();
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findWithRelations',
+                { where, relations },
+                { id: 's1', sponsorUser: { id: 'u1', name: 'Test User' } }
+            );
+        });
+
+        it('should fall back to findOne when no relations requested', async () => {
+            getDb.mockReturnValue({});
+            const where = { id: 's2' };
+            const relations = { sponsorUser: false };
+            mockFindOne.mockResolvedValue({ id: 's2', status: 'active' });
+
+            const result = await model.findWithRelations(where, relations);
+
+            expect(result).toEqual({ id: 's2', status: 'active' });
+            expect(mockFindOne).toHaveBeenCalledWith(where);
+            expect(logQuery).toHaveBeenCalledWith(
+                'sponsorships',
+                'findWithRelations',
+                { where, relations },
+                { id: 's2', status: 'active' }
+            );
+        });
+
+        it('should log and throw on error', async () => {
+            const db = {
+                query: {
+                    sponsorships: {
+                        findFirst: vi.fn().mockRejectedValue(new Error('db error'))
+                    }
+                }
+            };
+            getDb.mockReturnValue(db);
+
+            const where = { id: 's3' };
+            const relations = { sponsorUser: true };
+
+            await expect(model.findWithRelations(where, relations)).rejects.toThrow('db error');
+            expect(logError).toHaveBeenCalledWith(
+                'sponsorships',
+                'findWithRelations',
+                { where, relations },
+                expect.any(Error)
+            );
         });
     });
 
-    describe('Base Model Properties', () => {
-        it('should be properly instantiated', () => {
-            expect(model).toBeDefined();
-            expect(model).toBeInstanceOf(SponsorshipModel);
-        });
-    });
-
-    describe('sponsorPost', () => {
-        it('should create a post sponsorship', async () => {
-            const result = await model.sponsorPost({
-                clientId: 'client-id-1',
-                postId: 'post-id-1',
-                fromDate: new Date('2024-01-01'),
-                toDate: new Date('2024-12-31')
+    describe('findAll', () => {
+        it('should return items and total', async () => {
+            getDb.mockReturnValue({
+                select: (args?: unknown) => ({
+                    from: () => ({
+                        where: () => {
+                            if (args && typeof args === 'object' && 'count' in args) {
+                                return Promise.resolve([{ count: '2' }]);
+                            }
+                            const qb = {
+                                limit: () => ({
+                                    offset: () =>
+                                        Promise.resolve([
+                                            { id: 's1', status: 'active' },
+                                            { id: 's2', status: 'expired' }
+                                        ])
+                                }),
+                                $dynamic: () => qb
+                            };
+                            return qb;
+                        }
+                    })
+                })
             });
 
-            expect(result).toBeDefined();
-            expect(result.entityType).toBe(SponsorshipEntityTypeEnum.POST);
-            expect(result.entityId).toBe('post-id-1');
-            expect(result.clientId).toBe('client-id-1');
+            const result = await model.findAll({});
+
+            expect(result).toEqual({
+                items: [
+                    { id: 's1', status: 'active' },
+                    { id: 's2', status: 'expired' }
+                ],
+                total: 2
+            });
+            expect(logQuery).toHaveBeenCalled();
         });
     });
 
-    describe('sponsorEvent', () => {
-        it('should create an event sponsorship', async () => {
-            const result = await model.sponsorEvent({
-                clientId: 'client-id-1',
-                eventId: 'event-id-1',
-                fromDate: new Date('2024-01-01'),
-                toDate: new Date('2024-12-31')
+    describe('findById', () => {
+        it('should find a sponsorship by id', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => ({
+                            limit: () => [{ id: 's1', status: 'active' }]
+                        })
+                    })
+                })
             });
 
-            expect(result).toBeDefined();
-            expect(result.entityType).toBe(SponsorshipEntityTypeEnum.EVENT);
-            expect(result.entityId).toBe('event-id-1');
-            expect(result.clientId).toBe('client-id-1');
+            const result = await model.findById('s1');
+
+            expect(result).toEqual({ id: 's1', status: 'active' });
+            expect(logQuery).toHaveBeenCalled();
+        });
+
+        it('should return null for non-existent id', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({ where: () => ({ limit: () => [] }) })
+                })
+            });
+
+            const result = await model.findById('non-existent');
+
+            expect(result).toBeNull();
         });
     });
 
-    describe('getSponsoredEntity', () => {
-        it('should return the sponsored post entity', async () => {
-            await expect(async () => {
-                await model.getSponsoredEntity('sponsorship-id-1');
-            }).rejects.toThrow('Method getSponsoredEntity not implemented');
+    describe('softDelete', () => {
+        it('should soft delete and return count', async () => {
+            getDb.mockReturnValue({
+                update: () => ({
+                    set: () => ({
+                        where: () => ({ returning: () => [{ id: 's1' }] })
+                    })
+                })
+            });
+
+            const result = await model.softDelete({ id: 's1' });
+
+            expect(result).toBe(1);
+            expect(logQuery).toHaveBeenCalled();
         });
     });
 
-    describe('isActive', () => {
-        it('should return true for active sponsorship', async () => {
-            const result = await model.isActive('sponsorship-id-1');
-            expect(typeof result).toBe('boolean');
-        });
-    });
+    describe('restore', () => {
+        it('should restore and return count', async () => {
+            getDb.mockReturnValue({
+                update: () => ({
+                    set: () => ({
+                        where: () => ({ returning: () => [{ id: 's1' }] })
+                    })
+                })
+            });
 
-    describe('calculateCost', () => {
-        it('should calculate sponsorship cost', async () => {
-            const result = await model.calculateCost('sponsorship-id-1');
-            expect(result).toBeGreaterThan(0);
-            expect(typeof result).toBe('number');
-        });
-    });
+            const result = await model.restore({ id: 's1' });
 
-    describe('getVisibilityStats', () => {
-        it('should return visibility statistics', async () => {
-            const result = await model.getVisibilityStats('sponsorship-id-1');
-            expect(result).toHaveProperty('impressions');
-            expect(result).toHaveProperty('clicks');
-            expect(result).toHaveProperty('reach');
-            expect(result).toHaveProperty('engagement');
-            expect(typeof result.impressions).toBe('number');
-            expect(typeof result.clicks).toBe('number');
-            expect(typeof result.reach).toBe('number');
-            expect(typeof result.engagement).toBe('number');
-        });
-    });
-
-    describe('activate', () => {
-        it('should activate a sponsorship', async () => {
-            const result = await model.activate('sponsorship-id-1');
-            expect(result).toBeDefined();
-            expect(result.id).toBe('sponsorship-id-1');
-        });
-    });
-
-    describe('pause', () => {
-        it('should pause a sponsorship', async () => {
-            const result = await model.pause('sponsorship-id-1');
-            expect(result).toBeDefined();
-            expect(result.id).toBe('sponsorship-id-1');
-        });
-    });
-
-    describe('expire', () => {
-        it('should expire a sponsorship', async () => {
-            const result = await model.expire('sponsorship-id-1');
-            expect(result).toBeDefined();
-            expect(result.id).toBe('sponsorship-id-1');
-        });
-    });
-
-    describe('cancel', () => {
-        it('should cancel a sponsorship', async () => {
-            const result = await model.cancel('sponsorship-id-1');
-            expect(result).toBeDefined();
-            expect(result.id).toBe('sponsorship-id-1');
-        });
-    });
-
-    describe('findActive', () => {
-        it('should find active sponsorships', async () => {
-            const result = await model.findActive();
-            expect(Array.isArray(result)).toBe(true);
-        });
-    });
-
-    describe('findByClient', () => {
-        it('should find sponsorships by client ID', async () => {
-            const result = await model.findByClient('client-id-1');
-            expect(Array.isArray(result)).toBe(true);
-        });
-    });
-
-    describe('findByEntity', () => {
-        it('should find sponsorships by entity ID and type', async () => {
-            const result = await model.findByEntity('post-id-1', SponsorshipEntityTypeEnum.POST);
-            expect(Array.isArray(result)).toBe(true);
-        });
-    });
-
-    describe('withTarget', () => {
-        it('should return sponsorship with target entity populated', async () => {
-            const result = await model.withTarget('sponsorship-id-1');
-            expect(result).toBeDefined();
-            expect(result).toHaveProperty('target');
-        });
-    });
-
-    describe('getImpressions', () => {
-        it('should return impression count', async () => {
-            const result = await model.getImpressions('sponsorship-id-1');
-            expect(typeof result).toBe('number');
-            expect(result).toBeGreaterThanOrEqual(0);
-        });
-    });
-
-    describe('getClicks', () => {
-        it('should return click count', async () => {
-            const result = await model.getClicks('sponsorship-id-1');
-            expect(typeof result).toBe('number');
-            expect(result).toBeGreaterThanOrEqual(0);
-        });
-    });
-
-    describe('calculateROI', () => {
-        it('should calculate return on investment', async () => {
-            const result = await model.calculateROI('sponsorship-id-1');
-            expect(typeof result).toBe('number');
+            expect(result).toBe(1);
+            expect(logQuery).toHaveBeenCalled();
         });
     });
 });

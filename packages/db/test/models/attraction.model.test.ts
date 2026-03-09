@@ -1,273 +1,252 @@
-import type { Attraction, AttractionIdType } from '@repo/schemas';
-import { LifecycleStatusEnum } from '@repo/schemas';
-import { Pool } from 'pg';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { initializeDb } from '../../src/client';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { AttractionModel } from '../../src/models/destination/attraction.model';
+import * as logger from '../../src/utils/logger';
 
-/**
- * Test suite for AttractionModel.
- * Tests CRUD operations, validation, and edge cases for attractions.
- *
- * NOTE: These are integration tests that require a properly configured test database
- * with all migrations applied. Skipped until database setup is complete.
- */
-describe.skip('AttractionModel', () => {
+vi.mock('../../src/client', () => ({
+    getDb: vi.fn()
+}));
+
+vi.mock('../../src/utils/logger', () => ({
+    logQuery: vi.fn(),
+    logError: vi.fn()
+}));
+
+describe('AttractionModel', () => {
     let model: AttractionModel;
-    let testPool: Pool;
-
-    beforeAll(() => {
-        testPool = new Pool({
-            connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/hospeda_test'
-        });
-        initializeDb(testPool);
-    });
+    let getDb: ReturnType<typeof vi.fn>;
+    let logQuery: ReturnType<typeof vi.fn>;
+    let logError: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         model = new AttractionModel();
+        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
+        logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
+        logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
     });
 
-    afterEach(() => {
-        vi.restoreAllMocks();
+    describe('getTableName', () => {
+        it('should return correct table name', () => {
+            const tableName = (model as unknown as { getTableName: () => string }).getTableName();
+            expect(tableName).toBe('attractions');
+        });
     });
 
-    describe('create', () => {
-        it('should create a new attraction with valid data', async () => {
-            const attractionData: Partial<Attraction> = {
-                name: 'Historical Museum',
-                slug: 'historical-museum',
-                description: 'A museum showcasing local history and culture',
-                icon: '🏛️',
-                isBuiltin: false,
-                isFeatured: true,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
-            };
+    describe('findAll', () => {
+        it('should return items and total', async () => {
+            getDb.mockReturnValue({
+                select: (args?: unknown) => ({
+                    from: () => ({
+                        where: () => {
+                            if (args && typeof args === 'object' && 'count' in args) {
+                                return Promise.resolve([{ count: '2' }]);
+                            }
+                            const qb = {
+                                limit: () => ({
+                                    offset: () =>
+                                        Promise.resolve([
+                                            { id: '1', name: 'Beach' },
+                                            { id: '2', name: 'Park' }
+                                        ])
+                                }),
+                                $dynamic: () => qb
+                            };
+                            return qb;
+                        }
+                    })
+                })
+            });
 
-            const created = await model.create(attractionData);
+            const result = await model.findAll({});
 
-            expect(created).toBeDefined();
-            expect(created.id).toBeDefined();
-            expect(created.name).toBe('Historical Museum');
-            expect(created.slug).toBe('historical-museum');
-            expect(created.isFeatured).toBe(true);
-            expect(created.createdAt).toBeDefined();
-            expect(created.updatedAt).toBeDefined();
-        });
-
-        it('should create attraction with minimal required fields', async () => {
-            const minimalData: Partial<Attraction> = {
-                name: 'Beach',
-                slug: 'beach',
-                description: 'Beautiful sandy beach',
-                icon: '🏖️'
-            };
-
-            const created = await model.create(minimalData);
-
-            expect(created).toBeDefined();
-            expect(created.name).toBe('Beach');
-            expect(created.isBuiltin).toBe(false);
-            expect(created.isFeatured).toBe(false);
+            expect(result).toEqual({
+                items: [
+                    { id: '1', name: 'Beach' },
+                    { id: '2', name: 'Park' }
+                ],
+                total: 2
+            });
+            expect(logQuery).toHaveBeenCalled();
         });
     });
 
     describe('findById', () => {
         it('should find an attraction by id', async () => {
-            const created = await model.create({
-                name: 'Park',
-                slug: 'park',
-                description: 'A beautiful park',
-                icon: '🌳'
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => ({ limit: () => [{ id: 'a1', name: 'Museum' }] })
+                    })
+                })
             });
 
-            const found = await model.findById(created.id);
+            const result = await model.findById('a1');
 
-            expect(found).toBeDefined();
-            expect(found?.id).toBe(created.id);
-            expect(found?.name).toBe('Park');
+            expect(result).toEqual({ id: 'a1', name: 'Museum' });
+            expect(logQuery).toHaveBeenCalled();
         });
 
         it('should return null for non-existent id', async () => {
-            const found = await model.findById(
-                '00000000-0000-0000-0000-000000000000' as AttractionIdType
-            );
-
-            expect(found).toBeNull();
-        });
-    });
-
-    describe('findOne', () => {
-        it('should find attraction by slug', async () => {
-            await model.create({
-                name: 'Zoo',
-                slug: 'city-zoo',
-                description: 'A large zoo with many animals',
-                icon: '🦁'
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({ where: () => ({ limit: () => [] }) })
+                })
             });
 
-            const found = await model.findOne({ slug: 'city-zoo' });
+            const result = await model.findById('non-existent');
 
-            expect(found).toBeDefined();
-            expect(found?.slug).toBe('city-zoo');
-            expect(found?.name).toBe('Zoo');
-        });
-
-        it('should return null when no match found', async () => {
-            const found = await model.findOne({ slug: 'non-existent' });
-
-            expect(found).toBeNull();
-        });
-    });
-
-    describe('findAll', () => {
-        beforeEach(async () => {
-            // Create test data
-            await model.create({
-                name: 'Featured Attraction 1',
-                slug: 'featured-1',
-                description: 'First featured attraction',
-                icon: '⭐',
-                isFeatured: true
-            });
-
-            await model.create({
-                name: 'Regular Attraction',
-                slug: 'regular',
-                description: 'Regular attraction',
-                icon: '📍',
-                isFeatured: false
-            });
-
-            await model.create({
-                name: 'Featured Attraction 2',
-                slug: 'featured-2',
-                description: 'Second featured attraction',
-                icon: '⭐',
-                isFeatured: true
-            });
-        });
-
-        it('should find all attractions', async () => {
-            const { items } = await model.findAll({});
-
-            expect(items.length).toBeGreaterThanOrEqual(3);
-        });
-
-        it('should filter by isFeatured', async () => {
-            const { items } = await model.findAll({ isFeatured: true });
-
-            expect(items.length).toBeGreaterThanOrEqual(2);
-            for (const item of items) {
-                expect(item.isFeatured).toBe(true);
-            }
-        });
-
-        it('should filter by isBuiltin', async () => {
-            const { items } = await model.findAll({ isBuiltin: false });
-
-            expect(items.length).toBeGreaterThanOrEqual(3);
-            for (const item of items) {
-                expect(item.isBuiltin).toBe(false);
-            }
-        });
-    });
-
-    describe('update', () => {
-        it('should update attraction properties', async () => {
-            const created = await model.create({
-                name: 'Old Name',
-                slug: 'old-slug',
-                description: 'Old description',
-                icon: '🏛️'
-            });
-
-            const updated = await model.update(created.id, {
-                name: 'New Name',
-                description: 'New description',
-                isFeatured: true
-            });
-
-            expect(updated).toBeDefined();
-            expect(updated?.name).toBe('New Name');
-            expect(updated?.description).toBe('New description');
-            expect(updated?.isFeatured).toBe(true);
-            expect(updated?.slug).toBe('old-slug'); // Should not change
-        });
-    });
-
-    describe('softDelete', () => {
-        it('should soft delete an attraction', async () => {
-            const created = await model.create({
-                name: 'To Delete',
-                slug: 'to-delete',
-                description: 'Will be deleted',
-                icon: '🗑️'
-            });
-
-            await model.softDelete({ id: created.id });
-
-            const found = await model.findById(created.id);
-            expect(found?.deletedAt).toBeDefined();
-            expect(found?.lifecycleState).toBe(LifecycleStatusEnum.DELETED);
-        });
-    });
-
-    describe('restore', () => {
-        it('should restore a soft-deleted attraction', async () => {
-            const created = await model.create({
-                name: 'To Restore',
-                slug: 'to-restore',
-                description: 'Will be restored',
-                icon: '♻️'
-            });
-
-            await model.softDelete({ id: created.id });
-            await model.restore({ id: created.id });
-
-            const restored = await model.findById(created.id);
-            expect(restored?.deletedAt).toBeNull();
-            expect(restored?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            expect(result).toBeNull();
         });
     });
 
     describe('count', () => {
-        it('should count all attractions', async () => {
-            await model.create({
-                name: 'Count Test 1',
-                slug: 'count-1',
-                description: 'For counting',
-                icon: '1️⃣'
+        it('should return the count', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.resolve([{ count: '5' }])
+                    })
+                })
             });
 
-            await model.create({
-                name: 'Count Test 2',
-                slug: 'count-2',
-                description: 'For counting',
-                icon: '2️⃣'
-            });
+            const result = await model.count({});
 
-            const count = await model.count({});
-            expect(count).toBeGreaterThanOrEqual(2);
-        });
-
-        it('should count with filters', async () => {
-            await model.create({
-                name: 'Featured Count',
-                slug: 'featured-count',
-                description: 'Featured for counting',
-                icon: '⭐',
-                isFeatured: true
-            });
-
-            const count = await model.count({ isFeatured: true });
-            expect(count).toBeGreaterThanOrEqual(1);
+            expect(result).toBe(5);
+            expect(logQuery).toHaveBeenCalled();
         });
     });
 
-    describe('getTableName', () => {
-        it('should return correct table name', () => {
-            expect(model.getTableName()).toBe('attractions');
+    describe('update', () => {
+        it('should update and return the entity', async () => {
+            getDb.mockReturnValue({
+                update: () => ({
+                    set: () => ({
+                        where: () => ({
+                            returning: () => [{ id: 'a1', name: 'Updated Museum' }]
+                        })
+                    })
+                })
+            });
+
+            const result = await model.update({ id: 'a1' }, { name: 'Updated Museum' });
+
+            expect(result).toEqual({ id: 'a1', name: 'Updated Museum' });
+            expect(logQuery).toHaveBeenCalled();
+        });
+    });
+
+    describe('softDelete', () => {
+        it('should soft delete and return count', async () => {
+            getDb.mockReturnValue({
+                update: () => ({
+                    set: () => ({
+                        where: () => ({ returning: () => [{ id: 'a1' }] })
+                    })
+                })
+            });
+
+            const result = await model.softDelete({ id: 'a1' });
+
+            expect(result).toBe(1);
+            expect(logQuery).toHaveBeenCalled();
+        });
+    });
+
+    describe('restore', () => {
+        it('should restore and return count', async () => {
+            getDb.mockReturnValue({
+                update: () => ({
+                    set: () => ({
+                        where: () => ({ returning: () => [{ id: 'a1' }] })
+                    })
+                })
+            });
+
+            const result = await model.restore({ id: 'a1' });
+
+            expect(result).toBe(1);
+            expect(logQuery).toHaveBeenCalled();
+        });
+    });
+
+    describe('hardDelete', () => {
+        it('should hard delete and return count', async () => {
+            getDb.mockReturnValue({
+                delete: () => ({
+                    where: () => ({ returning: () => [{ id: 'a1' }] })
+                })
+            });
+
+            const result = await model.hardDelete({ id: 'a1' });
+
+            expect(result).toBe(1);
+            expect(logQuery).toHaveBeenCalled();
+        });
+    });
+
+    describe('error handling', () => {
+        it('should throw DbError on database failure', async () => {
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => {
+                            throw new Error('connection failed');
+                        }
+                    })
+                })
+            });
+
+            await expect(model.findAll({})).rejects.toThrow('connection failed');
+            expect(logError).toHaveBeenCalled();
+        });
+    });
+
+    describe('findAllWithRelations', () => {
+        it('should fall back to findAll when no relations specified', async () => {
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [{ id: '1', name: 'Beach' } as never],
+                total: 1
+            });
+
+            const result = await model.findAllWithRelations({});
+
+            expect(mockFindAll).toHaveBeenCalledWith({}, {});
+            expect(result.items).toHaveLength(1);
+            expect(logQuery).toHaveBeenCalledWith(
+                'attractions',
+                'findAllWithRelations',
+                expect.objectContaining({ relations: {} }),
+                'Falling back to findAll - no relations requested'
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should use query.attractions.findMany with relations', async () => {
+            const mockFindMany = vi
+                .fn()
+                .mockResolvedValue([{ id: '1', name: 'Beach', destination: { id: 'd1' } }]);
+            vi.spyOn(model, 'count').mockResolvedValue(1);
+
+            getDb.mockReturnValue({
+                query: {
+                    attractions: {
+                        findMany: mockFindMany
+                    }
+                }
+            });
+
+            const result = await model.findAllWithRelations({ destination: true });
+
+            expect(mockFindMany).toHaveBeenCalledWith({
+                where: undefined,
+                with: { destination: true },
+                limit: 20,
+                offset: 0
+            });
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
         });
     });
 });
