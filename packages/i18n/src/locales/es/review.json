@@ -1,18 +1,30 @@
 {
     "form": {
         "ratingLabel": "Calificación",
+        "ratingAspects": {
+            "cleanliness": "Limpieza",
+            "hospitality": "Hospitalidad",
+            "services": "Servicios",
+            "accuracy": "Exactitud",
+            "communication": "Comunicación",
+            "location": "Ubicación"
+        },
         "titleLabel": "Título",
         "titlePlaceholder": "Resumen de tu experiencia",
         "contentLabel": "Comentario",
         "contentPlaceholder": "Comparte tu experiencia en detalle...",
         "submitButton": "Enviar reseña",
+        "submittingButton": "Enviando...",
         "cancelButton": "Cancelar",
+        "submitSuccess": "Tu reseña fue enviada con éxito",
         "errors": {
             "ratingRequired": "Debes seleccionar una calificación",
             "titleRequired": "El título es requerido",
             "titleMinLength": "El título debe tener al menos 3 caracteres",
             "contentRequired": "El comentario es requerido",
-            "contentMinLength": "El comentario debe tener al menos 10 caracteres"
+            "contentMinLength": "El comentario debe tener al menos 10 caracteres",
+            "submitFailed": "Error al enviar la reseña. Por favor, intenta de nuevo.",
+            "alreadyReviewed": "Ya has enviado una reseña para este alojamiento."
         }
     },
     "list": {

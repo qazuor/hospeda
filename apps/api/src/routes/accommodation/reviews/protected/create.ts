@@ -37,7 +37,8 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         const input = body as z.infer<typeof AccommodationReviewCreateInputSchema>;
         const payload = {
             ...input,
-            accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>
+            accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,
+            userId: actor.id
         };
         const service = new AccommodationReviewService({ logger: apiLogger });
         const result = await service.create(actor, payload);

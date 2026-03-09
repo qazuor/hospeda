@@ -1,18 +1,30 @@
 {
     "form": {
         "ratingLabel": "Rating",
+        "ratingAspects": {
+            "cleanliness": "Cleanliness",
+            "hospitality": "Hospitality",
+            "services": "Services",
+            "accuracy": "Accuracy",
+            "communication": "Communication",
+            "location": "Location"
+        },
         "titleLabel": "Title",
         "titlePlaceholder": "Summary of your experience",
         "contentLabel": "Review",
         "contentPlaceholder": "Share your experience in detail...",
         "submitButton": "Submit review",
+        "submittingButton": "Submitting...",
         "cancelButton": "Cancel",
+        "submitSuccess": "Your review was submitted successfully",
         "errors": {
             "ratingRequired": "You must select a rating",
             "titleRequired": "Title is required",
             "titleMinLength": "Title must be at least 3 characters",
             "contentRequired": "Review is required",
-            "contentMinLength": "Review must be at least 10 characters"
+            "contentMinLength": "Review must be at least 10 characters",
+            "submitFailed": "Failed to submit your review. Please try again.",
+            "alreadyReviewed": "You have already submitted a review for this accommodation."
         }
     },
     "list": {

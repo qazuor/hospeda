@@ -75,6 +75,7 @@ describe('create', () => {
             updatedById: userId,
             adminInfo: undefined
         };
+        vi.spyOn(reviewModel, 'findOne').mockResolvedValue(null);
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
         vi.spyOn(reviewModel, 'findAll').mockResolvedValue({ items: [createdReview], total: 1 });
         // Use 'as unknown as { accommodationService: ... }' to access the private property for testing

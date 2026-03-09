@@ -1,18 +1,30 @@
 {
     "form": {
         "ratingLabel": "Avaliação",
+        "ratingAspects": {
+            "cleanliness": "Limpeza",
+            "hospitality": "Hospitalidade",
+            "services": "Serviços",
+            "accuracy": "Precisão",
+            "communication": "Comunicação",
+            "location": "Localização"
+        },
         "titleLabel": "Título",
         "titlePlaceholder": "Resumo da sua experiência",
         "contentLabel": "Comentário",
         "contentPlaceholder": "Compartilhe sua experiência em detalhes...",
         "submitButton": "Enviar avaliação",
+        "submittingButton": "Enviando...",
         "cancelButton": "Cancelar",
+        "submitSuccess": "Sua avaliação foi enviada com sucesso",
         "errors": {
             "ratingRequired": "Você deve selecionar uma avaliação",
             "titleRequired": "O título é obrigatório",
             "titleMinLength": "O título deve ter pelo menos 3 caracteres",
             "contentRequired": "O comentário é obrigatório",
-            "contentMinLength": "O comentário deve ter pelo menos 10 caracteres"
+            "contentMinLength": "O comentário deve ter pelo menos 10 caracteres",
+            "submitFailed": "Erro ao enviar a avaliação. Por favor, tente novamente.",
+            "alreadyReviewed": "Você já enviou uma avaliação para esta hospedagem."
         }
     },
     "list": {

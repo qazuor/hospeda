@@ -2,14 +2,34 @@ import { StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
+import { reviewsApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
 import { addToast } from '../../store/toast-store';
+
+/**
+ * Rating aspect keys matching the AccommodationRatingSchema.
+ */
+const RATING_ASPECTS = [
+    'cleanliness',
+    'hospitality',
+    'services',
+    'accuracy',
+    'communication',
+    'location'
+] as const;
+
+type RatingAspect = (typeof RATING_ASPECTS)[number];
+
+/**
+ * Ratings object with one 0-5 score per aspect.
+ */
+export type AspectRatings = Readonly<Record<RatingAspect, number>>;
 
 /**
  * Form data for review submission.
  */
 export interface ReviewFormData {
-    readonly rating: number;
+    readonly ratings: AspectRatings;
     readonly title: string;
     readonly content: string;
 }
@@ -19,7 +39,7 @@ export interface ReviewFormData {
  */
 export interface ReviewFormProps {
     /**
-     * Entity ID to review.
+     * Entity ID to review (accommodation UUID).
      */
     readonly entityId: string;
 
@@ -35,9 +55,7 @@ export interface ReviewFormProps {
     readonly locale?: string;
 
     /**
-     * Callback fired when form is submitted with valid data.
-     * NOTE: Actual API integration is deferred. This callback receives the
-     * validated form data for future wiring.
+     * Callback fired after the review is successfully submitted.
      */
     readonly onSubmit?: (data: ReviewFormData) => void;
 
@@ -47,7 +65,7 @@ export interface ReviewFormProps {
     readonly onCancel?: () => void;
 
     /**
-     * Additional CSS classes applied to the `<form>` element.
+     * Additional CSS classes applied to the form element.
      */
     readonly className?: string;
 }
@@ -56,38 +74,29 @@ export interface ReviewFormProps {
  * Per-field validation error messages.
  */
 interface ValidationErrors {
-    rating?: string;
+    ratings?: string;
     title?: string;
     content?: string;
 }
 
+const INITIAL_RATINGS: AspectRatings = {
+    cleanliness: 0,
+    hospitality: 0,
+    services: 0,
+    accuracy: 0,
+    communication: 0,
+    location: 0
+};
+
 /**
  * ReviewForm component.
  *
- * Renders a review form with a clickable 5-star rating input, a title field,
- * and a content textarea. Performs client-side validation (rating required,
- * title min 3 chars, content min 10 chars) before submission.
- *
- * Submit is a placeholder: shows a success toast and logs data to the console.
- * Actual API integration is deferred.
- *
- * Intentionally uses manual validation (no react-hook-form) because the form
- * is simple (3 fields, basic rules) and adding a heavy form library is not
- * justified (YAGNI).
+ * Renders a review form with per-aspect star ratings (cleanliness, hospitality,
+ * services, accuracy, communication, location), a title field, and a content
+ * textarea. Submits to POST /api/v1/protected/accommodations/:id/reviews.
  *
  * @param props - Component props.
  * @returns The rendered review form.
- *
- * @example
- * ```tsx
- * <ReviewForm
- *   entityId="abc-123"
- *   entityType="accommodation"
- *   locale="es"
- *   onSubmit={(data) => console.log('Review:', data)}
- *   onCancel={() => setShowForm(false)}
- * />
- * ```
  */
 export function ReviewForm({
     entityId,
@@ -97,30 +106,29 @@ export function ReviewForm({
     onCancel,
     className = ''
 }: ReviewFormProps): JSX.Element {
-    const [rating, setRating] = useState<number>(0);
-    const [hoveredRating, setHoveredRating] = useState<number>(0);
+    const [ratings, setRatings] = useState<AspectRatings>(INITIAL_RATINGS);
+    const [hoveredRatings, setHoveredRatings] = useState<AspectRatings>(INITIAL_RATINGS);
     const [title, setTitle] = useState<string>('');
     const [content, setContent] = useState<string>('');
     const [errors, setErrors] = useState<ValidationErrors>({});
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'review' });
     const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
     /**
      * Validates the form fields and returns any per-field error messages.
-     *
-     * @param data - Snapshot of form fields to validate.
-     * @returns An object with field-level error messages, or `{}` when valid.
      */
     const validateForm = (data: {
-        rating: number;
+        ratings: AspectRatings;
         title: string;
         content: string;
     }): ValidationErrors => {
         const validationErrors: ValidationErrors = {};
 
-        if (data.rating < 1) {
-            validationErrors.rating = t('form.errors.ratingRequired');
+        const allRated = RATING_ASPECTS.every((aspect) => data.ratings[aspect] >= 1);
+        if (!allRated) {
+            validationErrors.ratings = t('form.errors.ratingRequired');
         }
 
         if (!data.title.trim()) {
@@ -139,16 +147,13 @@ export function ReviewForm({
     };
 
     /**
-     * Handles the form submit event: validates fields, then fires the
-     * placeholder submit (toast + console.log). Actual API wiring is deferred.
-     *
-     * @param e - The React form submit event.
+     * Handles the form submit event: validates, calls API, shows toast.
      */
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
         e.preventDefault();
 
         const formData: ReviewFormData = {
-            rating,
+            ratings,
             title: title.trim(),
             content: content.trim()
         };
@@ -160,29 +165,54 @@ export function ReviewForm({
             return;
         }
 
-        // Placeholder submit: show toast. API integration is deferred.
-        // TODO: Replace with actual API call to POST /api/v1/protected/reviews
-        addToast({ type: 'success', message: t('form.submitSuccessPlaceholder') });
+        setIsSubmitting(true);
 
-        onSubmit?.(formData);
+        try {
+            const result = await reviewsApi.createAccommodationReview({
+                accommodationId: entityId,
+                body: {
+                    rating: formData.ratings,
+                    title: formData.title || undefined,
+                    content: formData.content || undefined
+                }
+            });
+
+            if (!result.ok) {
+                const errorMessage =
+                    result.error.code === 'ALREADY_EXISTS'
+                        ? t('form.errors.alreadyReviewed')
+                        : t('form.errors.submitFailed');
+                addToast({ type: 'error', message: errorMessage });
+                return;
+            }
+
+            addToast({ type: 'success', message: t('form.submitSuccess') });
+            onSubmit?.(formData);
+
+            // Reset form after successful submission
+            setRatings(INITIAL_RATINGS);
+            setTitle('');
+            setContent('');
+            setErrors({});
+        } catch (_err) {
+            addToast({ type: 'error', message: t('form.errors.submitFailed') });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     /**
-     * Updates the selected star rating and clears the rating error if set.
-     *
-     * @param value - Star value selected (1-5).
+     * Updates the selected star rating for a specific aspect and clears errors.
      */
-    const handleStarClick = (value: number): void => {
-        setRating(value);
-        if (errors.rating) {
-            setErrors((prev) => ({ ...prev, rating: undefined }));
+    const handleStarClick = ({ aspect, value }: { aspect: RatingAspect; value: number }): void => {
+        setRatings((prev) => ({ ...prev, [aspect]: value }));
+        if (errors.ratings) {
+            setErrors((prev) => ({ ...prev, ratings: undefined }));
         }
     };
 
     /**
      * Updates the title field and clears its error if set.
-     *
-     * @param e - The React change event from the input element.
      */
     const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         setTitle(e.target.value);
@@ -193,8 +223,6 @@ export function ReviewForm({
 
     /**
      * Updates the content field and clears its error if set.
-     *
-     * @param e - The React change event from the textarea element.
      */
     const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>): void => {
         setContent(e.target.value);
@@ -204,32 +232,52 @@ export function ReviewForm({
     };
 
     /**
-     * Renders a single interactive star button.
-     *
-     * @param index - Zero-based index of the star (0-4).
-     * @returns A button element wrapping a StarIcon.
+     * Renders a single interactive star button for a rating aspect.
      */
-    const renderStar = (index: number): JSX.Element => {
+    const renderStar = ({
+        aspect,
+        index
+    }: { aspect: RatingAspect; index: number }): JSX.Element => {
         const value = index + 1;
-        const isFilled = value <= (hoveredRating || rating);
+        const isFilled = value <= (hoveredRatings[aspect] || ratings[aspect]);
 
         return (
             <button
-                key={index}
+                key={`${aspect}-${index}`}
                 type="button"
-                onClick={() => handleStarClick(value)}
-                onMouseEnter={() => setHoveredRating(value)}
-                onMouseLeave={() => setHoveredRating(0)}
+                onClick={() => handleStarClick({ aspect, value })}
+                onMouseEnter={() => setHoveredRatings((prev) => ({ ...prev, [aspect]: value }))}
+                onMouseLeave={() => setHoveredRatings((prev) => ({ ...prev, [aspect]: 0 }))}
                 aria-label={tUi('accessibility.rateStars', undefined, { count: value })}
-                className="rounded p-1 transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                className="rounded p-0.5 transition-transform hover:scale-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                disabled={isSubmitting}
             >
                 <StarIcon
-                    size={32}
+                    size={24}
                     weight={isFilled ? 'fill' : 'regular'}
                     className={isFilled ? 'text-accent' : 'text-muted-foreground'}
                     aria-hidden="true"
                 />
             </button>
+        );
+    };
+
+    /**
+     * Renders the star rating row for one aspect.
+     */
+    const renderAspectRating = (aspect: RatingAspect): JSX.Element => {
+        return (
+            <div
+                key={aspect}
+                className="flex items-center justify-between gap-4"
+            >
+                <span className="min-w-[120px] text-foreground text-sm">
+                    {t(`form.ratingAspects.${aspect}`)}
+                </span>
+                <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }, (_, i) => renderStar({ aspect, index: i }))}
+                </div>
+            </div>
         );
     };
 
@@ -240,33 +288,26 @@ export function ReviewForm({
             data-entity-id={entityId}
             data-entity-type={entityType}
         >
-            {/* Rating Field */}
-            <div>
-                <span
-                    id="rating-label"
-                    className="mb-2 block font-medium text-foreground text-sm"
-                >
+            {/* Rating Aspects */}
+            <fieldset
+                aria-required="true"
+                aria-invalid={!!errors.ratings}
+                className="m-0 space-y-2 border-none p-0"
+            >
+                <legend className="mb-3 block font-medium text-foreground text-sm">
                     {t('form.ratingLabel')}
-                </span>
-                <div
-                    role="radiogroup"
-                    aria-labelledby="rating-label"
-                    aria-required="true"
-                    aria-invalid={!!errors.rating}
-                    className="flex gap-1"
+                </legend>
+                {RATING_ASPECTS.map((aspect) => renderAspectRating(aspect))}
+            </fieldset>
+            {errors.ratings && (
+                <p
+                    className="mt-2 text-destructive text-sm"
+                    role="alert"
+                    aria-live="polite"
                 >
-                    {Array.from({ length: 5 }, (_, i) => renderStar(i))}
-                </div>
-                {errors.rating && (
-                    <p
-                        className="mt-2 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.rating}
-                    </p>
-                )}
-            </div>
+                    {errors.ratings}
+                </p>
+            )}
 
             {/* Title Field */}
             <div>
@@ -285,6 +326,7 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.title}
                     aria-describedby={errors.title ? 'title-error' : undefined}
+                    disabled={isSubmitting}
                     className={`w-full rounded-md border bg-card px-4 py-2 text-card-foreground focus:outline-none focus:ring-2 ${
                         errors.title
                             ? 'border-destructive focus:border-destructive focus:ring-destructive'
@@ -320,6 +362,7 @@ export function ReviewForm({
                     aria-required="true"
                     aria-invalid={!!errors.content}
                     aria-describedby={errors.content ? 'content-error' : undefined}
+                    disabled={isSubmitting}
                     className={`resize-vertical w-full rounded-md border bg-card px-4 py-2 text-card-foreground focus:outline-none focus:ring-2 ${
                         errors.content
                             ? 'border-destructive focus:border-destructive focus:ring-destructive'
@@ -344,6 +387,7 @@ export function ReviewForm({
                     <button
                         type="button"
                         onClick={onCancel}
+                        disabled={isSubmitting}
                         className="rounded-md border border-border bg-card px-6 py-2 text-card-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
                         {t('form.cancelButton')}
@@ -351,9 +395,10 @@ export function ReviewForm({
                 )}
                 <button
                     type="submit"
-                    className="rounded-md bg-primary px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
+                    disabled={isSubmitting}
+                    className="rounded-md bg-primary px-6 py-2 text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                    {t('form.submitButton')}
+                    {isSubmitting ? t('form.submittingButton') : t('form.submitButton')}
                 </button>
             </div>
         </form>

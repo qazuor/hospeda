@@ -4,8 +4,8 @@
  *
  * ReviewList: empty state, review listing, sort dropdown, pagination (load more),
  *   write-review button visibility.
- * ReviewForm: initial render, star rating interaction, title/content validation,
- *   successful submission, cancel callback, validation error display.
+ * ReviewForm: initial render, per-aspect star rating interaction, title/content validation,
+ *   successful submission via API, cancel callback, validation error display.
  */
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,15 +41,25 @@ vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
 
+vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    reviewsApi: {
+        createAccommodationReview: vi.fn()
+    }
+}));
+
 import { ReviewForm } from '../../../src/components/review/ReviewForm.client';
 import type { Review } from '../../../src/components/review/ReviewList.client';
 import { ReviewList } from '../../../src/components/review/ReviewList.client';
+import { reviewsApi } from '../../../src/lib/api/endpoints-protected';
 import { addToast } from '../../../src/store/toast-store';
 
 const addToastMock = addToast as ReturnType<typeof vi.fn>;
+const createReviewMock = reviewsApi.createAccommodationReview as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
     addToastMock.mockClear();
+    createReviewMock.mockClear();
+    createReviewMock.mockResolvedValue({ ok: true, data: {} });
 });
 
 const sampleReviews: Review[] = [
@@ -167,7 +177,7 @@ describe('ReviewList.client.tsx', () => {
                     totalCount={2}
                 />
             );
-            // Content is wrapped in &ldquo; ... &rdquo;
+            // Content is wrapped in special quote chars
             expect(screen.getByText(/Absolutely loved it/)).toBeInTheDocument();
         });
 
@@ -316,6 +326,20 @@ describe('ReviewList.client.tsx', () => {
 // ReviewForm tests
 // ────────────────────────────────────────────────────────────
 
+/** Helper: click the Nth star (1-based) for every aspect rating row */
+function clickStarsForAllAspects(container: HTMLElement, starValue: number): void {
+    // Each aspect group has 5 star buttons; 6 aspects = 30 buttons total
+    const allStarButtons = container.querySelectorAll('fieldset button');
+    const aspectCount = 6;
+    for (let aspect = 0; aspect < aspectCount; aspect++) {
+        const buttonIndex = aspect * 5 + (starValue - 1);
+        const btn = allStarButtons[buttonIndex];
+        if (btn) {
+            fireEvent.click(btn);
+        }
+    }
+}
+
 describe('ReviewForm.client.tsx', () => {
     describe('Initial render', () => {
         it('should render a form element', () => {
@@ -325,22 +349,19 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            // The form element has no accessible name so getByRole('form') is not usable.
-            // Use a direct DOM query instead.
             expect(document.querySelector('form')).toBeInTheDocument();
         });
 
-        it('should render 5 interactive star buttons', () => {
+        it('should render 30 interactive star buttons (5 per aspect x 6 aspects)', () => {
             render(
                 <ReviewForm
                     entityId="acc-1"
                     entityType="accommodation"
                 />
             );
-            // Star buttons have role=radiogroup container; star buttons themselves
-            const radiogroup = screen.getByRole('radiogroup');
-            const starButtons = within(radiogroup).getAllByRole('button');
-            expect(starButtons).toHaveLength(5);
+            const group = screen.getByRole('group', { name: /form.ratingLabel/i });
+            const starButtons = within(group).getAllByRole('button');
+            expect(starButtons).toHaveLength(30);
         });
 
         it('should render title input', () => {
@@ -360,7 +381,6 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            // Textarea with id review-content
             expect(document.getElementById('review-content')).toBeInTheDocument();
         });
 
@@ -397,24 +417,28 @@ describe('ReviewForm.client.tsx', () => {
     });
 
     describe('Star rating interaction', () => {
-        it('should fill stars up to clicked star value', () => {
+        it('should fill stars up to clicked star value within an aspect', () => {
             render(
                 <ReviewForm
                     entityId="acc-1"
                     entityType="accommodation"
                 />
             );
-            const radiogroup = screen.getByRole('radiogroup');
-            const starButtons = within(radiogroup).getAllByRole('button');
+            const group = screen.getByRole('group', { name: /form.ratingLabel/i });
+            const starButtons = within(group).getAllByRole('button');
+            // Click the 3rd star of the first aspect (cleanliness)
             const thirdStar = starButtons[2];
             if (!thirdStar) throw new Error('Third star not found');
 
             fireEvent.click(thirdStar);
 
-            // Stars 1-3 should be filled; get all star icons inside radiogroup
-            const icons = within(radiogroup).getAllByTestId('star-icon');
-            const filledIcons = icons.filter((el) => el.getAttribute('data-weight') === 'fill');
-            expect(filledIcons.length).toBeGreaterThanOrEqual(3);
+            const icons = within(group).getAllByTestId('star-icon');
+            // First 3 icons in the first aspect row should be filled
+            const firstAspectIcons = icons.slice(0, 5);
+            const filledIcons = firstAspectIcons.filter(
+                (el) => el.getAttribute('data-weight') === 'fill'
+            );
+            expect(filledIcons).toHaveLength(3);
         });
 
         it('should clear rating error when a star is clicked', async () => {
@@ -425,15 +449,17 @@ describe('ReviewForm.client.tsx', () => {
                 />
             );
 
-            // Submit without rating to trigger error
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            // Submit without ratings to trigger error
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
 
             await waitFor(() => {
                 expect(screen.getByText('form.errors.ratingRequired')).toBeInTheDocument();
             });
 
-            const radiogroup = screen.getByRole('radiogroup');
-            const starButtons = within(radiogroup).getAllByRole('button');
+            const group = screen.getByRole('group', { name: /form.ratingLabel/i });
+            const starButtons = within(group).getAllByRole('button');
             fireEvent.click(starButtons[0] as HTMLButtonElement);
 
             await waitFor(() => {
@@ -450,7 +476,9 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
                 expect(screen.getByText('form.errors.ratingRequired')).toBeInTheDocument();
             });
@@ -463,7 +491,9 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
                 expect(screen.getByText('form.errors.titleRequired')).toBeInTheDocument();
             });
@@ -476,7 +506,9 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
                 expect(screen.getByText('form.errors.contentRequired')).toBeInTheDocument();
             });
@@ -492,7 +524,9 @@ describe('ReviewForm.client.tsx', () => {
             fireEvent.change(document.getElementById('review-title') as HTMLInputElement, {
                 target: { value: 'Hi' }
             });
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
                 expect(screen.getByText('form.errors.titleMinLength')).toBeInTheDocument();
             });
@@ -508,7 +542,9 @@ describe('ReviewForm.client.tsx', () => {
             fireEvent.change(document.getElementById('review-content') as HTMLTextAreaElement, {
                 target: { value: 'Short' }
             });
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
                 expect(screen.getByText('form.errors.contentMinLength')).toBeInTheDocument();
             });
@@ -516,9 +552,9 @@ describe('ReviewForm.client.tsx', () => {
     });
 
     describe('Successful submission', () => {
-        it('should call onSubmit with form data when valid', async () => {
+        it('should call the API and onSubmit with form data when valid', async () => {
             const onSubmit = vi.fn();
-            render(
+            const { container } = render(
                 <ReviewForm
                     entityId="acc-1"
                     entityType="accommodation"
@@ -526,10 +562,8 @@ describe('ReviewForm.client.tsx', () => {
                 />
             );
 
-            // Select 4 stars
-            const radiogroup = screen.getByRole('radiogroup');
-            const starButtons = within(radiogroup).getAllByRole('button');
-            fireEvent.click(starButtons[3] as HTMLButtonElement);
+            // Rate all 6 aspects with 4 stars
+            clickStarsForAllAspects(container, 4);
 
             fireEvent.change(document.getElementById('review-title') as HTMLInputElement, {
                 target: { value: 'Great place!' }
@@ -542,24 +576,45 @@ describe('ReviewForm.client.tsx', () => {
                 fireEvent.submit(document.querySelector('form') as HTMLFormElement);
             });
 
+            expect(createReviewMock).toHaveBeenCalledWith({
+                accommodationId: 'acc-1',
+                body: {
+                    rating: {
+                        cleanliness: 4,
+                        hospitality: 4,
+                        services: 4,
+                        accuracy: 4,
+                        communication: 4,
+                        location: 4
+                    },
+                    title: 'Great place!',
+                    content: 'This is a detailed and wonderful review content.'
+                }
+            });
+
             expect(onSubmit).toHaveBeenCalledWith({
-                rating: 4,
+                ratings: {
+                    cleanliness: 4,
+                    hospitality: 4,
+                    services: 4,
+                    accuracy: 4,
+                    communication: 4,
+                    location: 4
+                },
                 title: 'Great place!',
                 content: 'This is a detailed and wonderful review content.'
             });
         });
 
         it('should show success toast on valid submission', async () => {
-            render(
+            const { container } = render(
                 <ReviewForm
                     entityId="acc-1"
                     entityType="accommodation"
                 />
             );
 
-            const radiogroup = screen.getByRole('radiogroup');
-            const starButtons = within(radiogroup).getAllByRole('button');
-            fireEvent.click(starButtons[4] as HTMLButtonElement);
+            clickStarsForAllAspects(container, 5);
             fireEvent.change(document.getElementById('review-title') as HTMLInputElement, {
                 target: { value: 'Amazing!' }
             });
@@ -572,6 +627,67 @@ describe('ReviewForm.client.tsx', () => {
             });
 
             expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'success' }));
+        });
+
+        it('should show error toast when API returns an error', async () => {
+            createReviewMock.mockResolvedValue({
+                ok: false,
+                error: { status: 400, message: 'Bad request', code: 'VALIDATION_ERROR' }
+            });
+
+            const { container } = render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+
+            clickStarsForAllAspects(container, 4);
+            fireEvent.change(document.getElementById('review-title') as HTMLInputElement, {
+                target: { value: 'Test title' }
+            });
+            fireEvent.change(document.getElementById('review-content') as HTMLTextAreaElement, {
+                target: { value: 'Long enough content that meets minimum requirement.' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+
+            expect(addToastMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }));
+        });
+
+        it('should show duplicate review message when API returns ALREADY_EXISTS', async () => {
+            createReviewMock.mockResolvedValue({
+                ok: false,
+                error: { status: 409, message: 'Already exists', code: 'ALREADY_EXISTS' }
+            });
+
+            const { container } = render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+
+            clickStarsForAllAspects(container, 4);
+            fireEvent.change(document.getElementById('review-title') as HTMLInputElement, {
+                target: { value: 'Test title' }
+            });
+            fireEvent.change(document.getElementById('review-content') as HTMLTextAreaElement, {
+                target: { value: 'Long enough content that meets minimum requirement.' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+
+            expect(addToastMock).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: 'error',
+                    message: 'form.errors.alreadyReviewed'
+                })
+            );
         });
     });
 
@@ -598,10 +714,12 @@ describe('ReviewForm.client.tsx', () => {
                     entityType="accommodation"
                 />
             );
-            fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
             await waitFor(() => {
-                const radiogroup = screen.getByRole('radiogroup');
-                expect(radiogroup).toHaveAttribute('aria-invalid', 'true');
+                const group = screen.getByRole('group', { name: /form.ratingLabel/i });
+                expect(group).toHaveAttribute('aria-invalid', 'true');
             });
         });
 

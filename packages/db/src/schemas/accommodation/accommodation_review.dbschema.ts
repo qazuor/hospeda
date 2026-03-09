@@ -1,6 +1,6 @@
 import type { AccommodationRatingInput, AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
@@ -31,7 +31,12 @@ export const accommodationReviews = pgTable(
         accommodation_reviews_accommodationId_idx: index(
             'accommodation_reviews_accommodationId_idx'
         ).on(table.accommodationId),
-        accommodation_reviews_userId_idx: index('accommodation_reviews_userId_idx').on(table.userId)
+        accommodation_reviews_userId_idx: index('accommodation_reviews_userId_idx').on(
+            table.userId
+        ),
+        accommodation_reviews_user_accommodation_uniq: uniqueIndex(
+            'accommodation_reviews_user_accommodation_uniq'
+        ).on(table.userId, table.accommodationId)
     })
 );
 

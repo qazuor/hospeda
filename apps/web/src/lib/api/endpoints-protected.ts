@@ -385,6 +385,43 @@ export interface ExchangeRateItem {
     readonly fetchedAt: string;
 }
 
+// --- Reviews (Protected) ---
+
+/** Data sent when creating an accommodation review */
+export interface CreateAccommodationReviewBody {
+    readonly rating: {
+        readonly cleanliness: number;
+        readonly hospitality: number;
+        readonly services: number;
+        readonly accuracy: number;
+        readonly communication: number;
+        readonly location: number;
+    };
+    readonly title?: string;
+    readonly content?: string;
+}
+
+/** Protected review API endpoints */
+export const reviewsApi = {
+    /**
+     * Create a new review for an accommodation.
+     * @param accommodationId - The accommodation UUID
+     * @param body - Review data (rating aspects, title, content)
+     */
+    createAccommodationReview({
+        accommodationId,
+        body
+    }: {
+        accommodationId: string;
+        body: CreateAccommodationReviewBody;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${accommodationId}/reviews`,
+            body
+        });
+    }
+};
+
 /** Public exchange rate API endpoints */
 export const exchangeRatesApi = {
     /**

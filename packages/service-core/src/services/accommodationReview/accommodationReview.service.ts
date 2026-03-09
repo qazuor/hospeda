@@ -14,10 +14,17 @@ import {
     type AccommodationReviewWithUserListWrapper,
     type AccommodationReviewsByUserInput,
     AccommodationReviewsByUserSchema,
-    type CountResponse
+    type CountResponse,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import {
+    type Actor,
+    type PaginatedListOutput,
+    type ServiceContext,
+    ServiceError,
+    type ServiceOutput
+} from '../../types';
 import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
@@ -131,6 +138,29 @@ export class AccommodationReviewService extends BaseCrudService<
         const stats = calculateStatsFromReviews(reviews);
         // Update stats in Accommodation via AccommodationService
         await this.accommodationService.updateStatsFromReview(accommodationId, stats);
+    }
+
+    /**
+     * Enforces one review per user per accommodation.
+     * Checks for an existing non-deleted review before allowing creation.
+     * @throws {ServiceError} If the user already has a review for this accommodation.
+     */
+    protected async _beforeCreate(
+        data: AccommodationReviewCreateInput,
+        _actor: Actor
+    ): Promise<Partial<AccommodationReview>> {
+        const existing = await this.model.findOne({
+            userId: data.userId,
+            accommodationId: data.accommodationId,
+            deletedAt: null
+        } as Partial<AccommodationReview>);
+        if (existing) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'You have already submitted a review for this accommodation.'
+            );
+        }
+        return data as Partial<AccommodationReview>;
     }
 
     protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
