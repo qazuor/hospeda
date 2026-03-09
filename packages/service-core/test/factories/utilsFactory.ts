@@ -37,7 +37,11 @@ export type IdTypes =
     | 'serviceOrder'
     | 'file'
     | 'exchangeRateConfig'
-    | 'exchangeRate';
+    | 'exchangeRate'
+    | 'ownerPromotion'
+    | 'sponsorship'
+    | 'sponsorshipLevel'
+    | 'sponsorshipPackage';
 
 function generateValidUuidFromLabel(label: string): string {
     const hash = crypto.createHash('md5').update(label).digest('hex');
