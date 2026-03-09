@@ -12,6 +12,7 @@
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { apiLogger } from '../../../utils/logger';
+import { cleanupRequestProviderEventId } from './event-handler';
 import { processPaymentUpdated } from './payment-logic';
 import { markEventProcessedByProviderId } from './utils';
 
@@ -35,6 +36,7 @@ export const handlePaymentCreated: QZPayWebhookHandler = async (c, event) => {
     );
 
     await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+    cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
 
     return undefined; // Continue to default processing
 };
@@ -93,6 +95,7 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
     }
 
     await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+    cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
 
     return undefined;
 };

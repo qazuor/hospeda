@@ -64,7 +64,9 @@ export const trialExpiryJob: CronJobDefinition = {
                 logger.info('Running in dry-run mode');
 
                 // Get all trialing subscriptions using pagination
-                const allSubscriptionsResult = await billing.subscriptions.list();
+                const allSubscriptionsResult = await billing.subscriptions.list({
+                    filters: { status: 'trialing' }
+                });
 
                 if (
                     !allSubscriptionsResult ||

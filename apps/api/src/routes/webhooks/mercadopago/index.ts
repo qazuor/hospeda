@@ -23,5 +23,9 @@ export {
 export { handlePaymentCreated, handlePaymentUpdated } from './payment-handler';
 export { handleSubscriptionUpdated } from './subscription-handler';
 export { handleDisputeOpened } from './dispute-handler';
-export { handleWebhookEvent, handleWebhookError } from './event-handler';
+export {
+    handleWebhookEvent,
+    handleWebhookError,
+    cleanupRequestProviderEventId
+} from './event-handler';
 export { createMercadoPagoWebhookRoutes } from './router';

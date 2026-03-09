@@ -282,9 +282,9 @@ export const cancelAddonRoute = createProtectedRoute({
  */
 export const addonsRouter = createRouter();
 
-// Mount all routes
+// Mount all routes (literal paths before parameterized to prevent matching conflicts)
 addonsRouter.route('/', listAddonsRoute);
+addonsRouter.route('/', getUserAddonsRoute);
 addonsRouter.route('/', getAddonRoute);
 addonsRouter.route('/', purchaseAddonRoute);
-addonsRouter.route('/', getUserAddonsRoute);
 addonsRouter.route('/', cancelAddonRoute);

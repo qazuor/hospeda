@@ -27,6 +27,7 @@
 
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { processDisputeEvent } from './dispute-logic';
+import { cleanupRequestProviderEventId } from './event-handler';
 import { markEventProcessedByProviderId } from './utils';
 
 /**
@@ -38,7 +39,7 @@ import { markEventProcessedByProviderId } from './utils';
  * @param c - Hono context
  * @param event - Parsed QZPay webhook event
  */
-export const handleDisputeOpened: QZPayWebhookHandler = async (_c, event) => {
+export const handleDisputeOpened: QZPayWebhookHandler = async (c, event) => {
     const eventData = event.data as Record<string, unknown> | undefined;
 
     await processDisputeEvent({
@@ -50,6 +51,7 @@ export const handleDisputeOpened: QZPayWebhookHandler = async (_c, event) => {
     await markEventProcessedByProviderId({
         providerEventId: String(event.id)
     });
+    cleanupRequestProviderEventId(String(c.get('requestId') || event.id));
 
     return undefined;
 };

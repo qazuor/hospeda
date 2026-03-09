@@ -9,6 +9,7 @@
 
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { apiLogger } from '../../../utils/logger.js';
+import { cleanupRequestProviderEventId } from './event-handler.js';
 import { processSubscriptionUpdated } from './subscription-logic.js';
 import { getWebhookDependencies, markEventProcessedByProviderId } from './utils.js';
 
@@ -22,12 +23,14 @@ import { getWebhookDependencies, markEventProcessedByProviderId } from './utils.
  * @param c - Hono context
  * @param event - Parsed QZPay webhook event
  */
-export const handleSubscriptionUpdated: QZPayWebhookHandler = async (_c, event) => {
+export const handleSubscriptionUpdated: QZPayWebhookHandler = async (c, event) => {
     const deps = getWebhookDependencies();
+    const requestId = String(c.get('requestId') || event.id);
 
     if (!deps) {
         apiLogger.warn('Billing not configured, skipping subscription sync');
         await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+        cleanupRequestProviderEventId(requestId);
         return undefined;
     }
 
@@ -41,6 +44,7 @@ export const handleSubscriptionUpdated: QZPayWebhookHandler = async (_c, event) 
 
     if (result.success) {
         await markEventProcessedByProviderId({ providerEventId: String(event.id) });
+        cleanupRequestProviderEventId(requestId);
     }
     // If !success, the error will propagate and the event handler
     // will mark it as failed + add to dead letter queue

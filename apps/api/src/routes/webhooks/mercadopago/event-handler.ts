@@ -25,6 +25,16 @@ import { markEventFailedByProviderId } from './utils';
 const requestProviderEventIds = new Map<string, string>();
 
 /**
+ * Clean up the requestProviderEventIds entry for a given requestId.
+ * Must be called after successful webhook processing to prevent memory leaks.
+ *
+ * @param requestId - The request ID to clean up
+ */
+export function cleanupRequestProviderEventId(requestId: string): void {
+    requestProviderEventIds.delete(requestId);
+}
+
+/**
  * Generic event handler for all webhook events.
  *
  * Logs all webhook events for monitoring and debugging.

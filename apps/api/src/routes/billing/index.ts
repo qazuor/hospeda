@@ -13,9 +13,10 @@
  * - Promo code management (custom routes)
  * - Add-on purchase flow (custom routes)
  * - Trial management (custom routes)
- * - Billing metrics and analytics (custom routes)
- * - Billing settings configuration (custom routes)
  * - Usage tracking (custom routes)
+ *
+ * Admin-only routes (metrics, settings, notifications) are mounted
+ * separately under /api/v1/admin/billing via billing/admin/index.ts.
  *
  * All routes are mounted under /api/v1/protected/billing
  *
@@ -34,11 +35,8 @@ import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
-import { metricsRouter } from './metrics';
-import { notificationsRouter } from './notifications';
 import { planChangeRouter } from './plan-change';
 import { promoCodesRouter } from './promo-codes';
-import { settingsRouter } from './settings';
 import { trialRouter } from './trial';
 import { usageRouter } from './usage';
 
@@ -186,23 +184,11 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
 
-    // Mount custom metrics routes (admin-only access)
-    const metricsWrapper = createRouter();
-    metricsWrapper.use('*', billingAdminGuardMiddleware());
-    metricsWrapper.route('/', metricsRouter);
-    router.route('/metrics', metricsWrapper);
-
-    // Mount custom settings routes
-    router.route('/settings', settingsRouter);
-
     // Mount custom usage tracking routes
     router.route('/usage', usageRouter);
 
-    // Mount custom notification management routes
-    router.route('/notifications', notificationsRouter);
-
     apiLogger.debug(
-        'Billing routes configured with custom promo code, add-on, trial, plan-change, metrics, settings, usage, and notification routes'
+        'Billing routes configured with custom promo code, add-on, trial, plan-change, and usage routes'
     );
 
     return router;
