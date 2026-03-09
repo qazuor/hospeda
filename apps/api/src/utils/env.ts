@@ -13,6 +13,7 @@ import { createLogger } from '@repo/logger';
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
+import { apiLogger } from './logger.js';
 
 // ESM-compatible __dirname
 const __filename = fileURLToPath(import.meta.url);
@@ -370,6 +371,7 @@ export let env: z.infer<typeof ApiEnvSchema>;
  */
 export const validateApiEnv = (): void => {
     env = _validateApiEnv() as z.infer<typeof ApiEnvSchema>;
+    apiLogger.log(env, 'validateApiEnv');
 };
 
 // Export the schema for testing

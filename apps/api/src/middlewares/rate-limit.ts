@@ -230,12 +230,29 @@ export const resetRateLimitStore = () => {
     memoryStore.clear();
 };
 
+/** Supported rate limit endpoint categories */
+type RateLimitEndpointType = 'auth' | 'public' | 'admin' | 'billing' | 'webhook' | 'general';
+
 /**
- * Determines the endpoint type based on the request path
+ * Determines the endpoint type based on the request path and method.
+ *
+ * The order matters: more specific categories (billing, webhook) are checked
+ * before broader ones (admin, public) so that a POST to a billing path under
+ * `/admin/` still gets the restrictive billing limits.
+ *
  * @param path - The request path
+ * @param method - The HTTP method (uppercase)
  * @returns The endpoint type for rate limiting configuration
  */
-const getEndpointType = (path: string): 'auth' | 'public' | 'admin' | 'general' => {
+const getEndpointType = (path: string, method: string): RateLimitEndpointType => {
+    // Webhook endpoints get their own high-throughput bucket
+    if (path.includes('/webhooks/') || path.includes('/webhook/')) {
+        return 'webhook';
+    }
+    // Financial POST operations on billing paths get restrictive limits
+    if (path.includes('/billing/') && method === 'POST') {
+        return 'billing';
+    }
     if (path.startsWith('/api/v1/auth/')) {
         return 'auth';
     }
@@ -249,11 +266,12 @@ const getEndpointType = (path: string): 'auth' | 'public' | 'admin' | 'general' 
 };
 
 /**
- * Gets rate limiting configuration for a specific endpoint type
- * @param endpointType - The type of endpoint
+ * Gets rate limiting configuration for a specific endpoint type.
+ *
+ * @param endpointType - The category of endpoint
  * @returns Rate limiting configuration for the endpoint type
  */
-const getRateLimitConfig = (endpointType: 'auth' | 'public' | 'admin' | 'general') => {
+const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
     const baseConfig = getBaseRateLimitConfig();
 
     switch (endpointType) {
@@ -284,6 +302,24 @@ const getRateLimitConfig = (endpointType: 'auth' | 'public' | 'admin' | 'general
                 standardHeaders: baseConfig.standardHeaders,
                 legacyHeaders: baseConfig.legacyHeaders
             };
+        case 'billing':
+            return {
+                enabled: baseConfig.billingEnabled,
+                windowMs: baseConfig.billingWindowMs,
+                maxRequests: baseConfig.billingMaxRequests,
+                message: baseConfig.billingMessage,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
+        case 'webhook':
+            return {
+                enabled: baseConfig.webhookEnabled,
+                windowMs: baseConfig.webhookWindowMs,
+                maxRequests: baseConfig.webhookMaxRequests,
+                message: baseConfig.webhookMessage,
+                standardHeaders: baseConfig.standardHeaders,
+                legacyHeaders: baseConfig.legacyHeaders
+            };
         default:
             return {
                 enabled: baseConfig.enabled,
@@ -308,7 +344,8 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     }
 
     const path = c.req.path;
-    const endpointType = getEndpointType(path);
+    const method = c.req.method.toUpperCase();
+    const endpointType = getEndpointType(path, method);
     const config = getRateLimitConfig(endpointType);
 
     // Skip if rate limiting is disabled for this endpoint type

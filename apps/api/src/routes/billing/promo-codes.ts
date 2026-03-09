@@ -240,7 +240,13 @@ export const validatePromoCodeRoute = createProtectedRoute({
             amount: body.amount as number | undefined
         });
 
-        return result;
+        // Strip internal fields: only expose what the client needs
+        return {
+            valid: result.valid,
+            ...(result.errorCode !== undefined && { errorCode: result.errorCode }),
+            ...(result.errorMessage !== undefined && { errorMessage: result.errorMessage }),
+            ...(result.discountAmount !== undefined && { discountAmount: result.discountAmount })
+        };
     }
 });
 
