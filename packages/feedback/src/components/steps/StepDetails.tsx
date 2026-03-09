@@ -69,7 +69,6 @@ const styles = {
         border: '1px solid #d1d5db',
         borderRadius: '6px',
         fontSize: '14px',
-        outline: 'none',
         boxSizing: 'border-box' as const
     },
     textarea: {
@@ -80,7 +79,6 @@ const styles = {
         fontSize: '14px',
         minHeight: '80px',
         resize: 'vertical' as const,
-        outline: 'none',
         boxSizing: 'border-box' as const
     },
     select: {
@@ -89,7 +87,6 @@ const styles = {
         border: '1px solid #d1d5db',
         borderRadius: '6px',
         fontSize: '14px',
-        outline: 'none',
         backgroundColor: '#fff',
         boxSizing: 'border-box' as const
     },
@@ -214,7 +211,6 @@ const styles = {
         border: '1px solid #e5e7eb',
         borderRadius: '4px',
         fontSize: '12px',
-        outline: 'none',
         backgroundColor: '#fff',
         boxSizing: 'border-box' as const
     },
@@ -320,7 +316,7 @@ export function StepDetails({
                         onChange('severity', val === '' ? undefined : (val as SeverityId));
                     }}
                 >
-                    <option value="">-- Opcional --</option>
+                    <option value="">{FEEDBACK_STRINGS.fields.severityOptional}</option>
                     {SEVERITY_LEVELS.map((level) => (
                         <option
                             key={level.id}
@@ -372,7 +368,7 @@ export function StepDetails({
                             e.target.value === '' ? undefined : e.target.value
                         )
                     }
-                    placeholder="Lo que esperabas que pasara..."
+                    placeholder={FEEDBACK_STRINGS.fields.expectedResultPlaceholder}
                 />
             </div>
 
@@ -391,7 +387,7 @@ export function StepDetails({
                     onChange={(e) =>
                         onChange('actualResult', e.target.value === '' ? undefined : e.target.value)
                     }
-                    placeholder="Lo que realmente ocurrio..."
+                    placeholder={FEEDBACK_STRINGS.fields.actualResultPlaceholder}
                 />
             </div>
 
@@ -413,7 +409,9 @@ export function StepDetails({
                         <input
                             id="feedback-files"
                             type="file"
-                            accept="image/*"
+                            accept={(FEEDBACK_CONFIG.allowedFileTypes as readonly string[]).join(
+                                ','
+                            )}
                             multiple
                             style={{ display: 'none' }}
                             onChange={handleFileChange}
