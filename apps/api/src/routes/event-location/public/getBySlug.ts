@@ -2,7 +2,7 @@
  * Public get event location by slug endpoint
  * Returns a single event location by its slug
  */
-import { EventLocationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventLocationPublicSchema } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const publicGetEventLocationBySlugRoute = createPublicRoute({
         const result = await eventLocationService.getBySlug(actor, params.slug as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

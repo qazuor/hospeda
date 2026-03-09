@@ -2,11 +2,7 @@
  * Public owner promotion list endpoint
  * Returns paginated list of public owner promotions
  */
-import {
-    OwnerPromotionSchema,
-    OwnerPromotionSearchSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { OwnerPromotionSchema, OwnerPromotionSearchSchema } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -34,7 +30,7 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
         const result = await ownerPromotionService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

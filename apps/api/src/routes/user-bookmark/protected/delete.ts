@@ -3,7 +3,7 @@
  * Soft-deletes a bookmark owned by the authenticated user.
  * @route DELETE /api/v1/protected/user-bookmarks/{id}
  */
-import { type ServiceErrorCode, UserBookmarkIdSchema } from '@repo/schemas';
+import { UserBookmarkIdSchema } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -32,7 +32,7 @@ export const deleteUserBookmarkRoute = createProtectedRoute({
         const result = await bookmarkService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

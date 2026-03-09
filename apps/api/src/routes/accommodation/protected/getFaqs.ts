@@ -38,7 +38,7 @@ const getFaqsHandler = async (c: Context) => {
     });
 
     if (result.error) {
-        throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        throw new ServiceError(result.error.code, result.error.message);
     }
 
     return {

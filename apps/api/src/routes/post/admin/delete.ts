@@ -2,12 +2,7 @@
  * Admin delete (soft) post endpoint
  * Allows admins to soft delete any post
  */
-import {
-    DeleteResultSchema,
-    PermissionEnum,
-    PostIdSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, PermissionEnum, PostIdSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeletePostRoute = createAdminRoute({
         const result = await postService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

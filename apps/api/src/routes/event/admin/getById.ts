@@ -2,12 +2,7 @@
  * Admin get event by ID endpoint
  * Returns full event information including admin fields
  */
-import {
-    EventAdminSchema,
-    EventIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventAdminSchema, EventIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetEventByIdRoute = createAdminRoute({
         const result = await eventService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

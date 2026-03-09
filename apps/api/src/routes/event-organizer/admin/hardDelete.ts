@@ -2,7 +2,7 @@
  * Admin hard delete event organizer endpoint
  * Permanently deletes an event organizer
  */
-import { EventOrganizerIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { EventOrganizerIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const adminHardDeleteEventOrganizerRoute = createAdminRoute({
         const result = await eventOrganizerService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

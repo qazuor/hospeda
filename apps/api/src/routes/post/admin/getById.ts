@@ -2,12 +2,7 @@
  * Admin get post by ID endpoint
  * Returns full post information including admin fields
  */
-import {
-    PermissionEnum,
-    PostAdminSchema,
-    PostIdSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostAdminSchema, PostIdSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetPostByIdRoute = createAdminRoute({
         const result = await postService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

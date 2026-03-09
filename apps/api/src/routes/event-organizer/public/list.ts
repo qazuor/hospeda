@@ -2,11 +2,7 @@
  * Public event organizer list endpoint
  * Returns paginated list of public event organizers
  */
-import {
-    EventOrganizerPublicSchema,
-    EventOrganizerSearchHttpSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventOrganizerPublicSchema, EventOrganizerSearchHttpSchema } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -34,7 +30,7 @@ export const publicListEventOrganizersRoute = createPublicListRoute({
         const result = await eventOrganizerService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

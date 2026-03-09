@@ -2,11 +2,7 @@
  * Public get sponsorship level by ID endpoint
  * Returns a single sponsorship level by its ID
  */
-import {
-    type ServiceErrorCode,
-    SponsorshipLevelIdSchema,
-    SponsorshipLevelSchema
-} from '@repo/schemas';
+import { SponsorshipLevelIdSchema, SponsorshipLevelSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipLevelService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -32,7 +28,7 @@ export const sponsorshipLevelGetByIdRoute = createPublicRoute({
         const result = await sponsorshipLevelService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

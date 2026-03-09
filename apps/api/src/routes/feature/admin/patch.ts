@@ -6,8 +6,7 @@ import {
     FeatureAdminSchema,
     FeatureIdSchema,
     FeaturePatchInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,7 +45,7 @@ export const adminPatchFeatureRoute = createAdminRoute({
         const result = await featureService.update(actor, id, domainInput as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

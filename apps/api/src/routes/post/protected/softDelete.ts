@@ -2,7 +2,7 @@
  * Protected soft delete post endpoint
  * Requires authentication and ownership
  */
-import { PermissionEnum, PostIdSchema, type ServiceErrorCode, SuccessSchema } from '@repo/schemas';
+import { PermissionEnum, PostIdSchema, SuccessSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,7 +30,7 @@ export const protectedSoftDeletePostRoute = createProtectedRoute({
         const result = await postService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

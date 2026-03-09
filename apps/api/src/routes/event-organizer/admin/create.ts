@@ -6,8 +6,7 @@ import {
     EventOrganizerAdminSchema,
     type EventOrganizerCreateInput,
     EventOrganizerCreateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,7 +39,7 @@ export const adminCreateEventOrganizerRoute = createAdminRoute({
         const result = await eventOrganizerService.create(actor, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

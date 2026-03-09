@@ -2,12 +2,7 @@
  * Public get events by author endpoint
  * Returns events created by a specific author
  */
-import {
-    EventByAuthorHttpSchema,
-    EventPublicSchema,
-    type ServiceErrorCode,
-    UserIdSchema
-} from '@repo/schemas';
+import { EventByAuthorHttpSchema, EventPublicSchema, UserIdSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -37,8 +32,7 @@ export const publicGetEventsByAuthorRoute = createPublicListRoute({
             page: page ?? 1,
             pageSize: pageSize ?? 20
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data as never;
     },
     options: {

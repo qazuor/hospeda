@@ -8,7 +8,6 @@ import {
     type EventUpdateHttp,
     EventUpdateHttpSchema,
     PermissionEnum,
-    type ServiceErrorCode,
     httpToDomainEventUpdate
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
@@ -52,7 +51,7 @@ export const protectedUpdateEventRoute = createProtectedRoute({
         const result = await eventService.update(actor, id, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

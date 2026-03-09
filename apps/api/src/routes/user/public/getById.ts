@@ -2,7 +2,7 @@
  * Public get user by ID endpoint
  * Returns minimal public user information
  */
-import { type ServiceErrorCode, UserIdSchema, UserPublicSchema } from '@repo/schemas';
+import { UserIdSchema, UserPublicSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,7 +30,7 @@ export const publicGetUserByIdRoute = createPublicRoute({
         const result = await userService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

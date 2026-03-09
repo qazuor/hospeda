@@ -2,12 +2,7 @@
  * Admin delete (soft) user endpoint
  * Allows admins to soft delete any user
  */
-import {
-    DeleteResultSchema,
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserIdSchema
-} from '@repo/schemas';
+import { DeleteResultSchema, PermissionEnum, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteUserRoute = createAdminRoute({
         const result = await userService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

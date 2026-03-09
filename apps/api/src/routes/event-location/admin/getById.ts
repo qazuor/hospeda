@@ -2,12 +2,7 @@
  * Admin get event location by ID endpoint
  * Returns full event location information including admin fields
  */
-import {
-    EventLocationAdminSchema,
-    EventLocationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventLocationAdminSchema, EventLocationIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetEventLocationByIdRoute = createAdminRoute({
         const result = await eventLocationService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

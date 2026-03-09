@@ -3,7 +3,6 @@
  * Toggles the user's newsletter email preference.
  * @route POST /api/v1/protected/users/me/newsletter/toggle
  */
-import type { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -33,15 +32,12 @@ export const newsletterToggleRoute = createProtectedRoute({
         const getResult = await userService.getById(actor, actor.id);
 
         if (getResult.error) {
-            throw new ServiceError(
-                getResult.error.code as ServiceErrorCode,
-                getResult.error.message
-            );
+            throw new ServiceError(getResult.error.code, getResult.error.message);
         }
 
         const user = getResult.data;
         if (!user) {
-            throw new ServiceError('NOT_FOUND' as ServiceErrorCode, 'User not found');
+            throw new ServiceError('NOT_FOUND', 'User not found');
         }
 
         // Toggle allowEmails
@@ -63,10 +59,7 @@ export const newsletterToggleRoute = createProtectedRoute({
         } as never);
 
         if (updateResult.error) {
-            throw new ServiceError(
-                updateResult.error.code as ServiceErrorCode,
-                updateResult.error.message
-            );
+            throw new ServiceError(updateResult.error.code, updateResult.error.message);
         }
 
         return { subscribed: newAllowEmails };

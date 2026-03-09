@@ -2,7 +2,7 @@
  * Admin hard delete event location endpoint
  * Permanently deletes an event location
  */
-import { EventLocationIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { EventLocationIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const adminHardDeleteEventLocationRoute = createAdminRoute({
         const result = await eventLocationService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

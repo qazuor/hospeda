@@ -7,8 +7,7 @@ import {
     EventIdSchema,
     type EventUpdateInput,
     EventUpdateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,7 +45,7 @@ export const adminUpdateEventRoute = createAdminRoute({
         const result = await eventService.update(actor, id as string, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

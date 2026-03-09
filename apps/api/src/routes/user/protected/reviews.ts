@@ -3,11 +3,7 @@
  * Returns paginated reviews by the authenticated user (accommodation + destination combined).
  * @route GET /api/v1/protected/users/me/reviews
  */
-import {
-    AccommodationReviewListItemSchema,
-    DestinationReviewListItemSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationReviewListItemSchema, DestinationReviewListItemSchema } from '@repo/schemas';
 import {
     AccommodationReviewService,
     DestinationReviewService,
@@ -88,16 +84,10 @@ export const userReviewsRoute = createProtectedRoute({
         ]);
 
         if (accResult.error) {
-            throw new ServiceError(
-                accResult.error.code as ServiceErrorCode,
-                accResult.error.message
-            );
+            throw new ServiceError(accResult.error.code, accResult.error.message);
         }
         if (destResult.error) {
-            throw new ServiceError(
-                destResult.error.code as ServiceErrorCode,
-                destResult.error.message
-            );
+            throw new ServiceError(destResult.error.code, destResult.error.message);
         }
 
         const accommodationReviews = accResult.data?.accommodationReviews ?? [];

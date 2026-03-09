@@ -2,13 +2,7 @@
  * Admin patch tag endpoint
  * Allows admins to partially update any tag
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    TagIdSchema,
-    TagPatchInputSchema,
-    TagSchema
-} from '@repo/schemas';
+import { PermissionEnum, TagIdSchema, TagPatchInputSchema, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -46,7 +40,7 @@ export const adminPatchTagRoute = createAdminRoute({
         const result = await tagService.update(actor, id, domainInput as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

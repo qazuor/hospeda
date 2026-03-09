@@ -2,12 +2,7 @@
  * Public endpoint to get features for an accommodation
  * Returns paginated list of features associated with an accommodation
  */
-import {
-    AccommodationIdSchema,
-    BaseHttpSearchSchema,
-    FeatureListItemSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationIdSchema, BaseHttpSearchSchema, FeatureListItemSchema } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,8 +33,7 @@ export const publicGetFeaturesForAccommodationRoute = createPublicListRoute({
             accommodationId: params.accommodationId as string
         });
 
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
 
         return {
             items: result.data.features,

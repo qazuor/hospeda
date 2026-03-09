@@ -2,12 +2,7 @@
  * Admin restore user endpoint
  * Restores a soft-deleted user - Admin only
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserAdminSchema,
-    UserIdSchema
-} from '@repo/schemas';
+import { PermissionEnum, UserAdminSchema, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -33,8 +28,7 @@ export const adminRestoreUserRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await userService.restore(actor, id);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

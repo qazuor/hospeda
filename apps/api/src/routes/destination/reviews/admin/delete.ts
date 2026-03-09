@@ -2,12 +2,7 @@
  * Admin soft delete destination review endpoint
  * Allows admins to soft delete any destination review
  */
-import {
-    DeleteResultSchema,
-    DestinationReviewIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, DestinationReviewIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteDestinationReviewRoute = createAdminRoute({
         const result = await destinationReviewService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

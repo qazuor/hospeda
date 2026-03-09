@@ -2,7 +2,7 @@
  * Public destination by ID endpoint
  * Returns destination details by ID
  */
-import { DestinationIdSchema, DestinationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationIdSchema, DestinationPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,8 +28,7 @@ export const publicGetDestinationByIdRoute = createPublicRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await destinationService.getById(actor, params.id as string);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

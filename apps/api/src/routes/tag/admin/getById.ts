@@ -2,7 +2,7 @@
  * Admin get tag by ID endpoint
  * Returns full tag information including admin fields
  */
-import { PermissionEnum, type ServiceErrorCode, TagIdSchema, TagSchema } from '@repo/schemas';
+import { PermissionEnum, TagIdSchema, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -31,7 +31,7 @@ export const adminGetTagByIdRoute = createAdminRoute({
         const result = await tagService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

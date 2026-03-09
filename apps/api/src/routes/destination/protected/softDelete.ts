@@ -2,7 +2,7 @@
  * Protected soft delete destination endpoint
  * Requires authentication and ownership or admin permission
  */
-import { DestinationIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,8 +28,7 @@ export const protectedSoftDeleteDestinationRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationService.softDelete(actor, id);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return { id };
     }
 });

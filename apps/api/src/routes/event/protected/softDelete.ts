@@ -2,7 +2,7 @@
  * Protected soft delete event endpoint
  * Requires authentication and ownership
  */
-import { EventIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { EventIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -40,7 +40,7 @@ export const protectedSoftDeleteEventRoute = createProtectedRoute({
         const result = await eventService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

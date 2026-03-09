@@ -2,12 +2,7 @@
  * Admin soft delete amenity endpoint
  * Soft deletes an amenity
  */
-import {
-    AmenityIdSchema,
-    DeleteResultSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AmenityIdSchema, DeleteResultSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -38,7 +33,7 @@ export const adminDeleteAmenityRoute = createAdminRoute({
         const result = await amenityService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

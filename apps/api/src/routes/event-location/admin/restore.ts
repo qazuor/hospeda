@@ -2,12 +2,7 @@
  * Admin restore event location endpoint
  * Restores a soft-deleted event location
  */
-import {
-    EventLocationAdminSchema,
-    EventLocationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventLocationAdminSchema, EventLocationIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminRestoreEventLocationRoute = createAdminRoute({
         const result = await eventLocationService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

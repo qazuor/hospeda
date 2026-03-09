@@ -3,7 +3,6 @@
  * Allows users to update their own profile
  */
 import {
-    type ServiceErrorCode,
     UserIdSchema,
     UserProtectedSchema,
     type UserUpdateInput,
@@ -47,7 +46,7 @@ export const protectedUpdateUserRoute = createProtectedRoute({
         const result = await userService.update(actor, id as string, userData);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         // Invalidate cache for the updated user

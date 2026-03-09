@@ -5,7 +5,6 @@
  * @route POST /api/v1/protected/user-bookmarks
  */
 import {
-    type ServiceErrorCode,
     type UserBookmarkCreateInput,
     UserBookmarkCreateInputSchema,
     UserBookmarkSchema
@@ -60,10 +59,7 @@ export const createUserBookmarkRoute = createProtectedRoute({
             // Bookmark exists: delete it (toggle off)
             const deleteResult = await bookmarkService.softDelete(actor, existingResult.data.id);
             if (deleteResult.error) {
-                throw new ServiceError(
-                    deleteResult.error.code as ServiceErrorCode,
-                    deleteResult.error.message
-                );
+                throw new ServiceError(deleteResult.error.code, deleteResult.error.message);
             }
             return { toggled: false, bookmark: null };
         }
@@ -75,7 +71,7 @@ export const createUserBookmarkRoute = createProtectedRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return { toggled: true, bookmark: result.data };

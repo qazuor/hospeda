@@ -2,7 +2,7 @@
  * Protected sponsorship list endpoint
  * Returns paginated list of sponsorships (authenticated users only)
  */
-import { type ServiceErrorCode, SponsorshipSchema, SponsorshipSearchSchema } from '@repo/schemas';
+import { SponsorshipSchema, SponsorshipSearchSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -30,7 +30,7 @@ export const protectedSponsorshipListRoute = createProtectedListRoute({
         const result = await sponsorshipService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

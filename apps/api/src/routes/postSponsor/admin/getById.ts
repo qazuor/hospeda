@@ -2,12 +2,7 @@
  * Admin get post sponsor by ID endpoint
  * Returns full post sponsor information including admin fields
  */
-import {
-    PermissionEnum,
-    PostSponsorIdSchema,
-    PostSponsorSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostSponsorIdSchema, PostSponsorSchema } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetPostSponsorByIdRoute = createAdminRoute({
         const result = await postSponsorService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

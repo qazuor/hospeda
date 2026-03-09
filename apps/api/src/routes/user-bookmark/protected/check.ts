@@ -3,7 +3,7 @@
  * Returns whether the authenticated user has bookmarked a specific entity.
  * @route GET /api/v1/protected/user-bookmarks/check
  */
-import { EntityTypeEnum, type ServiceErrorCode } from '@repo/schemas';
+import { EntityTypeEnum } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -47,7 +47,7 @@ export const checkUserBookmarkRoute = createProtectedRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

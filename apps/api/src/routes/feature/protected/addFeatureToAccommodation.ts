@@ -7,8 +7,7 @@ import {
     AccommodationIdSchema,
     type AddFeatureToAccommodationInput,
     AddFeatureToAccommodationInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -43,8 +42,7 @@ export const protectedAddFeatureToAccommodationRoute = createProtectedRoute({
             comments: parsed.comments
         };
         const result = await featureService.addFeatureToAccommodation(actor, payload);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

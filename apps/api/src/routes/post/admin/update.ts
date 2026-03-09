@@ -7,8 +7,7 @@ import {
     PostAdminSchema,
     PostIdSchema,
     type PostUpdateInput,
-    PostUpdateInputSchema,
-    type ServiceErrorCode
+    PostUpdateInputSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,7 +45,7 @@ export const adminUpdatePostRoute = createAdminRoute({
         const result = await postService.update(actor, id as string, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

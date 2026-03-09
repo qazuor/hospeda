@@ -7,7 +7,6 @@ import {
     DestinationCreateHttpSchema,
     DestinationProtectedSchema,
     PermissionEnum,
-    type ServiceErrorCode,
     httpToDomainDestinationCreate
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
@@ -42,7 +41,7 @@ export const protectedCreateDestinationRoute = createProtectedRoute({
         const result = await destinationService.create(actor, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

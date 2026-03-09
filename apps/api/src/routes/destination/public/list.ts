@@ -2,11 +2,7 @@
  * Public destination list endpoint
  * Returns paginated list of public destinations
  */
-import {
-    DestinationPublicSchema,
-    DestinationSearchHttpSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DestinationPublicSchema, DestinationSearchHttpSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -126,7 +122,7 @@ export const publicListDestinationsRoute = createPublicListRoute({
         );
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         // Enrich with attractions (batch query via junction table)

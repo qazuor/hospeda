@@ -2,12 +2,7 @@
  * Admin get user by ID endpoint
  * Returns full user information including admin fields
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserAdminSchema,
-    UserIdSchema
-} from '@repo/schemas';
+import { PermissionEnum, UserAdminSchema, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetUserByIdRoute = createAdminRoute({
         const result = await userService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

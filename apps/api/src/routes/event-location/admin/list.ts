@@ -5,8 +5,7 @@
 import {
     EventLocationAdminSchema,
     EventLocationAdminSearchSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +37,7 @@ export const adminListEventLocationsRoute = createAdminListRoute({
         const result = await eventLocationService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

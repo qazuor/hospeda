@@ -6,8 +6,7 @@ import {
     type FeatureCreateInput,
     FeatureCreateInputSchema,
     FeatureProtectedSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -38,8 +37,7 @@ export const protectedCreateFeatureRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = body as FeatureCreateInput;
         const result = await featureService.create(actor, input);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

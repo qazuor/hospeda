@@ -2,13 +2,7 @@
  * Admin patch post endpoint
  * Allows admins to partially update any post
  */
-import {
-    PermissionEnum,
-    PostAdminSchema,
-    PostIdSchema,
-    PostPatchInputSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostAdminSchema, PostIdSchema, PostPatchInputSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -44,7 +38,7 @@ export const adminPatchPostRoute = createAdminRoute({
         const result = await postService.update(actor, id, domainInput as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

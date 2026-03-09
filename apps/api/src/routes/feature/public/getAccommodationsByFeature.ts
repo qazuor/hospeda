@@ -2,12 +2,7 @@
  * Public endpoint to get accommodations by feature
  * Returns paginated list of accommodations that have a specific feature
  */
-import {
-    AccommodationListItemSchema,
-    BaseHttpSearchSchema,
-    FeatureIdSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationListItemSchema, BaseHttpSearchSchema, FeatureIdSchema } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -35,8 +30,7 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
         const result = await featureService.getAccommodationsByFeature(actor, {
             featureId: params.featureId as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         const { page, pageSize } = extractPaginationParams(query || {});
         return {
             items: result.data.accommodations,

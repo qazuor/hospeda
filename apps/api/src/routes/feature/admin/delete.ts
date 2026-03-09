@@ -2,12 +2,7 @@
  * Admin soft delete feature endpoint
  * Soft deletes a feature
  */
-import {
-    DeleteResultSchema,
-    FeatureIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, FeatureIdSchema, PermissionEnum } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteFeatureRoute = createAdminRoute({
         const result = await featureService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

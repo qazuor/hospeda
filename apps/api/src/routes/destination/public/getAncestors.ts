@@ -2,7 +2,7 @@
  * Public endpoint for getting all ancestors of a destination
  * Returns the ancestor chain from root to parent
  */
-import { DestinationIdSchema, DestinationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationIdSchema, DestinationPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -34,8 +34,7 @@ export const publicGetDestinationAncestorsRoute = createPublicRoute({
         const result = await destinationService.getAncestors(actor, {
             destinationId: params.id as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

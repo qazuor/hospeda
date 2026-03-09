@@ -2,12 +2,7 @@
  * Admin soft delete attraction endpoint
  * Soft deletes an attraction
  */
-import {
-    AttractionIdSchema,
-    DeleteResultSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AttractionIdSchema, DeleteResultSchema, PermissionEnum } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteAttractionRoute = createAdminRoute({
         const result = await attractionService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

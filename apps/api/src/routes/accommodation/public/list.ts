@@ -13,8 +13,7 @@
 import {
     AccommodationPublicSchema,
     AccommodationSearchHttpSchema,
-    type ListRelationsConfig,
-    type ServiceErrorCode
+    type ListRelationsConfig
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
@@ -143,7 +142,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

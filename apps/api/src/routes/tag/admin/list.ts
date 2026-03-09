@@ -2,12 +2,7 @@
  * Admin tag list endpoint
  * Returns all tags with full admin access
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    TagAdminSearchSchema,
-    TagSchema
-} from '@repo/schemas';
+import { PermissionEnum, TagAdminSearchSchema, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -38,7 +33,7 @@ export const adminListTagsRoute = createAdminListRoute({
         const result = await tagService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

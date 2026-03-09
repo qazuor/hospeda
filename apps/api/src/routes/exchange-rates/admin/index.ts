@@ -10,8 +10,7 @@ import type {
     ExchangeRateSearchInput,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
-    PriceCurrencyEnum,
-    ServiceErrorCode
+    PriceCurrencyEnum
 } from '@repo/schemas';
 import {
     ExchangeRateConfigSchema,
@@ -67,7 +66,7 @@ const adminCreateRoute = createAdminRoute({
             body as ExchangeRateCreateInput
         );
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
         return result.data;
     }
@@ -92,7 +91,7 @@ const adminDeleteRoute = createAdminRoute({
             id: params.id as string
         });
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
         return null;
     }
@@ -154,7 +153,7 @@ const adminGetConfigRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const result = await exchangeRateConfigService.getConfig({ actor });
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
         return result.data as ExchangeRateConfig;
     }
@@ -182,7 +181,7 @@ const adminUpdateConfigRoute = createAdminRoute({
             data: body as ExchangeRateConfigUpdateInput
         });
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
         return result.data as ExchangeRateConfig;
     }
@@ -231,7 +230,7 @@ const adminHistoryRoute = createAdminListRoute({
 
         const result = await exchangeRateService.search(actor, filters);
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
         return {
             items: result.data?.items || [],

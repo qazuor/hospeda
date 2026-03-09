@@ -2,7 +2,7 @@
  * Public get event organizer by slug endpoint
  * Returns a single event organizer by its slug
  */
-import { EventOrganizerPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventOrganizerPublicSchema } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const publicGetEventOrganizerBySlugRoute = createPublicRoute({
         const result = await eventOrganizerService.getBySlug(actor, params.slug as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

@@ -2,7 +2,7 @@
  * Public get post stats endpoint
  * Returns statistics about posts
  */
-import { PostStatsSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PostStatsSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -25,8 +25,7 @@ export const publicGetPostStatsRoute = createPublicRoute({
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
         const result = await postService.getStats(actor, {});
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

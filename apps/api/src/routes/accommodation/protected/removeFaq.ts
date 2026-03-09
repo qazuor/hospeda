@@ -3,12 +3,7 @@
  * Remove an existing FAQ from an accommodation
  */
 
-import {
-    AccommodationFaqIdSchema,
-    AccommodationIdSchema,
-    DeleteResultSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -42,7 +37,7 @@ export const removeFaqRoute = createCRUDRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

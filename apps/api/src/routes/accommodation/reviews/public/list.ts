@@ -5,8 +5,7 @@
 import {
     AccommodationIdSchema,
     AccommodationReviewSchema,
-    AccommodationReviewsByAccommodationHttpSchema,
-    type ServiceErrorCode
+    AccommodationReviewsByAccommodationHttpSchema
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,8 +40,7 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
             sortBy: 'createdAt' as const,
             sortOrder: 'desc' as const
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: result.data.accommodationReviews || [],
             pagination: getPaginationResponse(result.data.total || 0, { page, pageSize })

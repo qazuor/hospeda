@@ -2,7 +2,7 @@
  * Admin restore tag endpoint
  * Restores a soft-deleted tag
  */
-import { PermissionEnum, type ServiceErrorCode, TagIdSchema, TagSchema } from '@repo/schemas';
+import { PermissionEnum, TagIdSchema, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -31,7 +31,7 @@ export const adminRestoreTagRoute = createAdminRoute({
         const result = await tagService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

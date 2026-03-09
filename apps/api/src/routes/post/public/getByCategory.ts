@@ -6,8 +6,7 @@ import {
     type PostCategoryEnum,
     PostCategoryEnumSchema,
     PostListItemSchema,
-    PostsByCategoryHttpSchema,
-    type ServiceErrorCode
+    PostsByCategoryHttpSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -37,8 +36,7 @@ export const publicGetPostsByCategoryRoute = createPublicListRoute({
         const result = await postService.getByCategory(actor, {
             category: params.category as PostCategoryEnum
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: (result.data as never) || [],
             pagination: getPaginationResponse(0, { page, pageSize })

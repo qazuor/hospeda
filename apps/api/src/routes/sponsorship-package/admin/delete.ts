@@ -2,12 +2,7 @@
  * Admin soft delete sponsorship package endpoint
  * Requires admin authentication
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    SponsorshipPackageIdSchema,
-    SuccessSchema
-} from '@repo/schemas';
+import { PermissionEnum, SponsorshipPackageIdSchema, SuccessSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipPackageService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -35,7 +30,7 @@ export const deleteSponsorshipPackageRoute = createAdminRoute({
         const result = await sponsorshipPackageService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

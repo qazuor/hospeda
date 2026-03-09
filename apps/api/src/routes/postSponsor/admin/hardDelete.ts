@@ -2,7 +2,7 @@
  * Admin hard delete post sponsor endpoint
  * Permanently deletes a post sponsor
  */
-import { PermissionEnum, PostSponsorIdSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, PostSponsorIdSchema } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const adminHardDeletePostSponsorRoute = createAdminRoute({
         const result = await postSponsorService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

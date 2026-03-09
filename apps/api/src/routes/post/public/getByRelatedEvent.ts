@@ -2,7 +2,7 @@
  * Public get posts by related event endpoint
  * Returns posts related to a specific event
  */
-import { EventIdSchema, PostListItemSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventIdSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,8 +30,7 @@ export const publicGetPostsByRelatedEventRoute = createPublicListRoute({
         const result = await postService.getByRelatedEvent(actor, {
             eventId: params.eventId as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: (result.data as never) || [],
             pagination: getPaginationResponse(0, { page, pageSize })

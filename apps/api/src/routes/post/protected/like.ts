@@ -2,7 +2,7 @@
  * Protected like post endpoint
  * Requires authentication
  */
-import { PostIdSchema, type ServiceErrorCode, SuccessSchema } from '@repo/schemas';
+import { PostIdSchema, SuccessSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -29,7 +29,7 @@ export const protectedLikePostRoute = createProtectedRoute({
         const result = await postService.like(actor, { postId: id });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

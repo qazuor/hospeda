@@ -2,11 +2,7 @@
  * Public event location list endpoint
  * Returns paginated list of public event locations
  */
-import {
-    EventLocationPublicSchema,
-    EventLocationSearchHttpSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventLocationPublicSchema, EventLocationSearchHttpSchema } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -34,7 +30,7 @@ export const publicListEventLocationsRoute = createPublicListRoute({
         const result = await eventLocationService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

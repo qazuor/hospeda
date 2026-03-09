@@ -2,7 +2,7 @@
  * Public destination by slug endpoint
  * Returns destination details by slug
  */
-import { DestinationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationPublicSchema } from '@repo/schemas';
 import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -28,8 +28,7 @@ export const publicGetDestinationBySlugRoute = createPublicRoute({
         const actor = getActorFromContext(ctx);
         const slug = params.slug as string;
         const result = await destinationService.getBySlug(actor, slug);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

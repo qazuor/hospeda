@@ -2,12 +2,7 @@
  * Admin soft delete tag endpoint
  * Soft deletes a tag
  */
-import {
-    DeleteResultSchema,
-    PermissionEnum,
-    type ServiceErrorCode,
-    TagIdSchema
-} from '@repo/schemas';
+import { DeleteResultSchema, PermissionEnum, TagIdSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -38,7 +33,7 @@ export const adminDeleteTagRoute = createAdminRoute({
         const result = await tagService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

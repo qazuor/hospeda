@@ -2,12 +2,7 @@
  * Admin get destination by ID endpoint
  * Returns full destination information including admin fields
  */
-import {
-    DestinationAdminSchema,
-    DestinationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DestinationAdminSchema, DestinationIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetDestinationByIdRoute = createAdminRoute({
         const result = await destinationService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

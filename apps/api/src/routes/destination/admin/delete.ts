@@ -2,12 +2,7 @@
  * Admin delete (soft) destination endpoint
  * Allows admins to soft delete any destination
  */
-import {
-    DeleteResultSchema,
-    DestinationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, DestinationIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteDestinationRoute = createAdminRoute({
         const result = await destinationService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

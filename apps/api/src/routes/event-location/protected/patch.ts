@@ -6,8 +6,7 @@ import {
     EventLocationIdSchema,
     EventLocationProtectedSchema,
     EventLocationUpdateHttpSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -48,7 +47,7 @@ export const protectedPatchEventLocationRoute = createProtectedRoute({
         const result = await eventLocationService.update(actor, params.id as string, body);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

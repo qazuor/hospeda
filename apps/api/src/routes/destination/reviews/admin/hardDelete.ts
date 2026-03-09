@@ -2,7 +2,7 @@
  * Admin hard delete destination review endpoint
  * Permanently deletes a destination review - Admin only
  */
-import { DestinationReviewIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationReviewIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -28,8 +28,7 @@ export const adminHardDeleteDestinationReviewRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationReviewService.hardDelete(actor, id);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return { id };
     }
 });

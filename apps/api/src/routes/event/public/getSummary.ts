@@ -2,7 +2,7 @@
  * Public get event summary endpoint
  * Returns event summary
  */
-import { EventIdSchema, EventSummarySchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventIdSchema, EventSummarySchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -29,8 +29,7 @@ export const publicGetEventSummaryRoute = createPublicRoute({
         if (!validation.success) throw validation.error;
         const actor = getActorFromContext(ctx);
         const result = await eventService.getSummary(actor, { eventId: id });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data ?? null;
     },
     options: {

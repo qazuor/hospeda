@@ -5,8 +5,7 @@
 import {
     FeatureListItemSchema,
     type HttpFeatureSearch,
-    HttpFeatureSearchSchema,
-    type ServiceErrorCode
+    HttpFeatureSearchSchema
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -37,7 +36,7 @@ export const publicSearchFeaturesRoute = createPublicListRoute({
         const result = await featureService.search(actor, searchParams);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

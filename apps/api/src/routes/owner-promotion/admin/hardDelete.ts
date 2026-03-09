@@ -2,7 +2,7 @@
  * Admin hard delete owner promotion endpoint
  * Permanently deletes an owner promotion
  */
-import { OwnerPromotionIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { OwnerPromotionIdSchema, PermissionEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -36,7 +36,7 @@ export const adminHardDeleteOwnerPromotionRoute = createAdminRoute({
         const result = await ownerPromotionService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

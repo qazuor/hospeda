@@ -2,12 +2,7 @@
  * Admin post list endpoint
  * Returns all posts including deleted ones
  */
-import {
-    PermissionEnum,
-    PostAdminSchema,
-    PostAdminSearchSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostAdminSchema, PostAdminSearchSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -39,7 +34,7 @@ export const adminListPostsRoute = createAdminListRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

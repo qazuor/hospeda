@@ -6,8 +6,7 @@ import {
     type AttractionCreateInput,
     AttractionCreateInputSchema,
     AttractionProtectedSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -39,7 +38,7 @@ export const protectedCreateAttractionRoute = createProtectedRoute({
         const result = await attractionService.create(actor, body as AttractionCreateInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

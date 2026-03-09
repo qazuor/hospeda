@@ -2,12 +2,7 @@
  * Admin get amenity by ID endpoint
  * Returns full amenity information including admin fields
  */
-import {
-    AmenityAdminSchema,
-    AmenityIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AmenityAdminSchema, AmenityIdSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
@@ -36,7 +31,7 @@ export const adminGetAmenityByIdRoute = createAdminRoute({
         const result = await amenityService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

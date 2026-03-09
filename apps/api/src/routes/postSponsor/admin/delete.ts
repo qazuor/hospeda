@@ -2,12 +2,7 @@
  * Admin soft delete post sponsor endpoint
  * Allows admins to soft delete any post sponsor
  */
-import {
-    DeleteResultSchema,
-    PermissionEnum,
-    PostSponsorIdSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, PermissionEnum, PostSponsorIdSchema } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminDeletePostSponsorRoute = createAdminRoute({
         const result = await postSponsorService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

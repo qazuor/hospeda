@@ -2,12 +2,7 @@
  * Admin get destination review by ID endpoint
  * Returns full destination review information
  */
-import {
-    DestinationReviewIdSchema,
-    DestinationReviewSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DestinationReviewIdSchema, DestinationReviewSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetDestinationReviewByIdRoute = createAdminRoute({
         const result = await destinationReviewService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

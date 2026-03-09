@@ -2,11 +2,7 @@
  * Public destination summary endpoint
  * Returns destination summary data
  */
-import {
-    DestinationIdSchema,
-    DestinationSummarySchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DestinationIdSchema, DestinationSummarySchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -34,8 +30,7 @@ export const publicGetDestinationSummaryRoute = createPublicRoute({
         const result = await destinationService.getSummary(actor, {
             destinationId: params.id as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

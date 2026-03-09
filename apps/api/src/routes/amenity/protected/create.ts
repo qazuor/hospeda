@@ -7,7 +7,6 @@ import {
     AmenityCreateHttpSchema,
     AmenityProtectedSchema,
     PermissionEnum,
-    type ServiceErrorCode,
     httpToDomainAmenityCreate
 } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
@@ -42,7 +41,7 @@ export const protectedCreateAmenityRoute = createProtectedRoute({
         const result = await amenityService.create(actor, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

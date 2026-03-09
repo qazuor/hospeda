@@ -6,8 +6,7 @@ import {
     DestinationIdSchema,
     DestinationProtectedSchema,
     DestinationUpdateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -39,8 +38,7 @@ export const protectedUpdateDestinationRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationService.update(actor, id, body as never);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

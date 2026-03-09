@@ -42,7 +42,7 @@ export const publicGetTagBySlugRoute = createPublicRoute({
         const result = await tagService.getBySlug(actor, slug);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         if (!result.data) {

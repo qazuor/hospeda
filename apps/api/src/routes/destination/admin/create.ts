@@ -6,8 +6,7 @@ import {
     DestinationAdminSchema,
     type DestinationCreateInput,
     DestinationCreateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,7 +40,7 @@ export const adminCreateDestinationRoute = createAdminRoute({
         const result = await destinationService.create(actor, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

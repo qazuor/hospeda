@@ -2,7 +2,7 @@
  * Public get accommodation by slug endpoint
  * Returns a single accommodation by its slug
  */
-import { AccommodationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
         const result = await accommodationService.getBySlug(actor, params.slug as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

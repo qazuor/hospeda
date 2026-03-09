@@ -8,7 +8,6 @@ import {
     PostProtectedSchema,
     type PostUpdateHttp,
     PostUpdateHttpSchema,
-    type ServiceErrorCode,
     httpToDomainPostUpdate
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
@@ -45,7 +44,7 @@ export const protectedUpdatePostRoute = createProtectedRoute({
         const result = await postService.update(actor, id, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

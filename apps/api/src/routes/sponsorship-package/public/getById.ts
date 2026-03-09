@@ -2,11 +2,7 @@
  * Public get sponsorship package by ID endpoint
  * Returns a single sponsorship package by its ID
  */
-import {
-    type ServiceErrorCode,
-    SponsorshipPackageIdSchema,
-    SponsorshipPackageSchema
-} from '@repo/schemas';
+import { SponsorshipPackageIdSchema, SponsorshipPackageSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipPackageService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -32,7 +28,7 @@ export const sponsorshipPackageGetByIdRoute = createPublicRoute({
         const result = await sponsorshipPackageService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

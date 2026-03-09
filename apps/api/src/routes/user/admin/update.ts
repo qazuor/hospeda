@@ -4,7 +4,6 @@
  */
 import {
     PermissionEnum,
-    type ServiceErrorCode,
     UserAdminSchema,
     UserIdSchema,
     type UserUpdateInput,
@@ -47,7 +46,7 @@ export const adminUpdateUserRoute = createAdminRoute({
         const result = await userService.update(actor, id as string, userData);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         // Invalidate cache for the updated user

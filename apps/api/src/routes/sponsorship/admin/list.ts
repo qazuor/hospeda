@@ -2,12 +2,7 @@
  * Admin sponsorship list endpoint
  * Returns all sponsorships with full admin access
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    SponsorshipSchema,
-    SponsorshipSearchSchema
-} from '@repo/schemas';
+import { PermissionEnum, SponsorshipSchema, SponsorshipSearchSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -37,7 +32,7 @@ export const adminListSponsorshipsRoute = createAdminListRoute({
         const result = await sponsorshipService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

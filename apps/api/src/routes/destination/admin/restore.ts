@@ -2,7 +2,7 @@
  * Admin restore destination endpoint
  * Restores a soft-deleted destination - Admin only
  */
-import { DestinationIdSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationIdSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -27,8 +27,7 @@ export const adminRestoreDestinationRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationService.restore(actor, id);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return { id };
     }
 });

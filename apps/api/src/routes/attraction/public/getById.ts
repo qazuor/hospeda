@@ -2,7 +2,7 @@
  * Public get attraction by ID endpoint
  * Returns a single attraction by its ID
  */
-import { AttractionIdSchema, AttractionPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { AttractionIdSchema, AttractionPublicSchema } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,7 +30,7 @@ export const publicGetAttractionByIdRoute = createPublicRoute({
         const result = await attractionService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

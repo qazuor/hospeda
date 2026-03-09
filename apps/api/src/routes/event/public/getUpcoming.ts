@@ -2,7 +2,7 @@
  * Public get upcoming events endpoint
  * Returns paginated list of upcoming events
  */
-import { EventPublicSchema, EventUpcomingHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventPublicSchema, EventUpcomingHttpSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -40,8 +40,7 @@ export const publicGetUpcomingEventsRoute = createPublicListRoute({
             page: page ?? 1,
             pageSize: pageSize ?? 20
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data as never;
     },
     options: {

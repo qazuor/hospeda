@@ -2,7 +2,7 @@
  * Protected get sponsorship by ID endpoint
  * Returns a single sponsorship by its ID
  */
-import { type ServiceErrorCode, SponsorshipIdSchema, SponsorshipSchema } from '@repo/schemas';
+import { SponsorshipIdSchema, SponsorshipSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,7 +28,7 @@ export const protectedSponsorshipGetByIdRoute = createProtectedRoute({
         const result = await sponsorshipService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

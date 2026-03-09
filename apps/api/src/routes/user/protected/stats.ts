@@ -5,7 +5,6 @@
  */
 import { getPlanBySlug } from '@repo/billing';
 import { and, billingCustomers, billingSubscriptions, desc, eq, getDb, or } from '@repo/db';
-import type { ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationReviewService,
     DestinationReviewService,
@@ -53,7 +52,7 @@ export const userStatsRoute = createProtectedRoute({
 
         if (bookmarkCountResult.error) {
             throw new ServiceError(
-                bookmarkCountResult.error.code as ServiceErrorCode,
+                bookmarkCountResult.error.code,
                 bookmarkCountResult.error.message
             );
         }

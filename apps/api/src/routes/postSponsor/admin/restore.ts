@@ -2,12 +2,7 @@
  * Admin restore post sponsor endpoint
  * Restores a soft-deleted post sponsor
  */
-import {
-    PermissionEnum,
-    PostSponsorIdSchema,
-    PostSponsorSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostSponsorIdSchema, PostSponsorSchema } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminRestorePostSponsorRoute = createAdminRoute({
         const result = await postSponsorService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

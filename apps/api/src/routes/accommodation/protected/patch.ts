@@ -6,8 +6,7 @@ import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -48,7 +47,7 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         const result = await accommodationService.update(actor, params.id as string, body);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

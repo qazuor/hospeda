@@ -5,8 +5,7 @@
 import {
     DestinationReviewAdminSearchSchema,
     DestinationReviewSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -36,7 +35,7 @@ export const adminListDestinationReviewsRoute = createAdminListRoute({
         const result = await destinationReviewService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

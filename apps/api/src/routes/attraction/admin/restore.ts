@@ -2,12 +2,7 @@
  * Admin restore attraction endpoint
  * Restores a soft-deleted attraction
  */
-import {
-    AttractionAdminSchema,
-    AttractionIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AttractionAdminSchema, AttractionIdSchema, PermissionEnum } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminRestoreAttractionRoute = createAdminRoute({
         const result = await attractionService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

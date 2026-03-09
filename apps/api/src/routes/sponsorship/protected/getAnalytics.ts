@@ -2,12 +2,7 @@
  * Protected get sponsorship analytics endpoint
  * Returns analytics data for a sponsorship
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    SponsorshipAnalyticsSchema,
-    SponsorshipIdSchema
-} from '@repo/schemas';
+import { PermissionEnum, SponsorshipAnalyticsSchema, SponsorshipIdSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -35,11 +30,11 @@ export const protectedGetSponsorshipAnalyticsRoute = createProtectedRoute({
         const result = await sponsorshipService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         if (!result.data) {
-            throw new ServiceError('NOT_FOUND' as ServiceErrorCode, 'Sponsorship not found');
+            throw new ServiceError('NOT_FOUND', 'Sponsorship not found');
         }
 
         return result.data.analytics;

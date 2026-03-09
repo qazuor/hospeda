@@ -2,11 +2,7 @@
  * Public get accommodation by ID endpoint
  * Returns a single accommodation by its ID
  */
-import {
-    AccommodationIdSchema,
-    AccommodationPublicSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -34,7 +30,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         const result = await accommodationService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

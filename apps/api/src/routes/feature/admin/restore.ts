@@ -2,12 +2,7 @@
  * Admin restore feature endpoint
  * Restores a soft-deleted feature
  */
-import {
-    FeatureAdminSchema,
-    FeatureIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { FeatureAdminSchema, FeatureIdSchema, PermissionEnum } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminRestoreFeatureRoute = createAdminRoute({
         const result = await featureService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

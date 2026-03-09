@@ -2,12 +2,7 @@
  * Admin soft delete owner promotion endpoint
  * Allows admins to soft delete any owner promotion
  */
-import {
-    DeleteResultSchema,
-    OwnerPromotionIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, OwnerPromotionIdSchema, PermissionEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminDeleteOwnerPromotionRoute = createAdminRoute({
         const result = await ownerPromotionService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

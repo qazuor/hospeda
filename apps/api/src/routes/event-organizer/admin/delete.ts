@@ -2,12 +2,7 @@
  * Admin soft delete event organizer endpoint
  * Allows admins to soft delete any event organizer
  */
-import {
-    DeleteResultSchema,
-    EventOrganizerIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, EventOrganizerIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminDeleteEventOrganizerRoute = createAdminRoute({
         const result = await eventOrganizerService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

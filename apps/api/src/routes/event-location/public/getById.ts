@@ -2,11 +2,7 @@
  * Public get event location by ID endpoint
  * Returns a single event location by its ID
  */
-import {
-    EventLocationIdSchema,
-    EventLocationPublicSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventLocationIdSchema, EventLocationPublicSchema } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -34,7 +30,7 @@ export const publicGetEventLocationByIdRoute = createPublicRoute({
         const result = await eventLocationService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

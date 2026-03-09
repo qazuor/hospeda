@@ -2,7 +2,7 @@
  * Public get featured posts endpoint
  * Returns featured posts with pagination
  */
-import { PostFeaturedHttpSchema, PostListItemSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PostFeaturedHttpSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -34,8 +34,7 @@ export const publicGetFeaturedPostsRoute = createPublicListRoute({
             fromDate: fromDate ? new Date(fromDate) : undefined,
             toDate: toDate ? new Date(toDate) : undefined
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: (result.data as never) || [],
             pagination: getPaginationResponse(0, { page, pageSize })

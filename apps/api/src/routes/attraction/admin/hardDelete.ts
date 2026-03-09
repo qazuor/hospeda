@@ -2,7 +2,7 @@
  * Admin hard delete attraction endpoint
  * Permanently deletes an attraction
  */
-import { AttractionIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { AttractionIdSchema, PermissionEnum } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const adminHardDeleteAttractionRoute = createAdminRoute({
         const result = await attractionService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

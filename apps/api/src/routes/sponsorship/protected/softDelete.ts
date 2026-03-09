@@ -2,12 +2,7 @@
  * Protected soft delete sponsorship endpoint
  * Requires authentication and SPONSORSHIP_DELETE permission
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    SponsorshipIdSchema,
-    SuccessSchema
-} from '@repo/schemas';
+import { PermissionEnum, SponsorshipIdSchema, SuccessSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -35,7 +30,7 @@ export const protectedDeleteSponsorshipRoute = createProtectedRoute({
         const result = await sponsorshipService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

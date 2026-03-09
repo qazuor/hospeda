@@ -2,11 +2,7 @@
  * Public get event organizer by ID endpoint
  * Returns a single event organizer by its ID
  */
-import {
-    EventOrganizerIdSchema,
-    EventOrganizerPublicSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventOrganizerIdSchema, EventOrganizerPublicSchema } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -34,7 +30,7 @@ export const publicGetEventOrganizerByIdRoute = createPublicRoute({
         const result = await eventOrganizerService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

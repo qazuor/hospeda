@@ -7,7 +7,6 @@ import {
     EventCreateHttpSchema,
     EventProtectedSchema,
     PermissionEnum,
-    type ServiceErrorCode,
     httpToDomainEventCreate
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
@@ -42,7 +41,7 @@ export const protectedCreateEventRoute = createProtectedRoute({
         const result = await eventService.create(actor, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

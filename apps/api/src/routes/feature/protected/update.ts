@@ -7,8 +7,7 @@ import {
     FeatureProtectedSchema,
     type FeatureUpdateInput,
     FeatureUpdateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -36,8 +35,7 @@ export const protectedUpdateFeatureRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = body as FeatureUpdateInput;
         const result = await featureService.update(actor, params.id as string, input);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

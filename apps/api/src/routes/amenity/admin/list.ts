@@ -2,12 +2,7 @@
  * Admin amenity list endpoint
  * Returns all amenities with full admin access
  */
-import {
-    AmenityAdminSchema,
-    AmenityAdminSearchSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AmenityAdminSchema, AmenityAdminSearchSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -38,7 +33,7 @@ export const adminListAmenitiesRoute = createAdminListRoute({
         const result = await amenityService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

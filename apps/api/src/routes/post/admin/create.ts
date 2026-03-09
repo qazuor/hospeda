@@ -6,8 +6,7 @@ import {
     PermissionEnum,
     PostAdminSchema,
     type PostCreateInput,
-    PostCreateInputSchema,
-    type ServiceErrorCode
+    PostCreateInputSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,7 +40,7 @@ export const adminCreatePostRoute = createAdminRoute({
         const result = await postService.create(actor, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

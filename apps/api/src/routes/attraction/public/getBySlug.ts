@@ -2,7 +2,7 @@
  * Public get attraction by slug endpoint
  * Returns a single attraction by its slug
  */
-import { AttractionPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { AttractionPublicSchema } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const publicGetAttractionBySlugRoute = createPublicRoute({
         const result = await attractionService.getBySlug(actor, params.slug as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

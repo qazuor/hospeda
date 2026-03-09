@@ -2,7 +2,7 @@
  * Admin hard delete feature endpoint
  * Permanently deletes a feature
  */
-import { FeatureIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { FeatureIdSchema, PermissionEnum } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const adminHardDeleteFeatureRoute = createAdminRoute({
         const result = await featureService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

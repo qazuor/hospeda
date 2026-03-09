@@ -7,8 +7,7 @@ import {
     FeatureIdSchema,
     PermissionEnum,
     RemovalResultSchema,
-    type RemoveFeatureFromAccommodationInput,
-    type ServiceErrorCode
+    type RemoveFeatureFromAccommodationInput
 } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -39,8 +38,7 @@ export const protectedRemoveFeatureFromAccommodationRoute = createProtectedRoute
             featureId: params.featureId as string
         };
         const result = await featureService.removeFeatureFromAccommodation(actor, payload);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });

@@ -9,8 +9,7 @@ import {
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
     FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType,
-    type ServiceErrorCode
+    type FaqUpdatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -51,7 +50,7 @@ export const updateFaqRoute = createCRUDRoute({
         const result = await accommodationService.updateFaq(actor, input);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

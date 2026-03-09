@@ -2,7 +2,7 @@
  * Protected get user by ID endpoint
  * Allows users to view their own full profile or public info of others
  */
-import { type ServiceErrorCode, UserIdSchema, UserProtectedSchema } from '@repo/schemas';
+import { UserIdSchema, UserProtectedSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -33,7 +33,7 @@ export const protectedGetUserByIdRoute = createProtectedRoute({
         const result = await userService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

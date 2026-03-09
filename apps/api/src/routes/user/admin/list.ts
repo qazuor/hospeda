@@ -2,12 +2,7 @@
  * Admin user list endpoint
  * Returns all users with full admin access
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserAdminSchema,
-    UserAdminSearchSchema
-} from '@repo/schemas';
+import { PermissionEnum, UserAdminSchema, UserAdminSearchSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -38,7 +33,7 @@ export const adminListUsersRoute = createAdminListRoute({
         const result = await userService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

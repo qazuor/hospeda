@@ -2,12 +2,7 @@
  * Admin get attraction by ID endpoint
  * Returns full attraction information including admin fields
  */
-import {
-    AttractionAdminSchema,
-    AttractionIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AttractionAdminSchema, AttractionIdSchema, PermissionEnum } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetAttractionByIdRoute = createAdminRoute({
         const result = await attractionService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

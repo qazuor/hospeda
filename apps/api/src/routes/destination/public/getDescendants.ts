@@ -5,8 +5,7 @@
 import {
     DestinationIdSchema,
     DestinationPublicSchema,
-    DestinationTypeEnumSchema,
-    type ServiceErrorCode
+    DestinationTypeEnumSchema
 } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -52,8 +51,7 @@ export const publicGetDestinationDescendantsRoute = createPublicRoute({
                 | import('@repo/schemas').DestinationTypeEnum
                 | undefined
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

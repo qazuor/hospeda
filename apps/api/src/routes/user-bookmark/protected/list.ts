@@ -3,7 +3,7 @@
  * Returns paginated bookmarks for the authenticated user, optionally filtered by entity type.
  * @route GET /api/v1/protected/user-bookmarks
  */
-import { type EntityTypeEnum, type ServiceErrorCode, UserBookmarkSchema } from '@repo/schemas';
+import { type EntityTypeEnum, UserBookmarkSchema } from '@repo/schemas';
 import { ServiceError, UserBookmarkService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -50,7 +50,7 @@ export const listUserBookmarksRoute = createProtectedRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

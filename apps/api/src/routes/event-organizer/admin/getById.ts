@@ -2,12 +2,7 @@
  * Admin get event organizer by ID endpoint
  * Returns full event organizer information including admin fields
  */
-import {
-    EventOrganizerAdminSchema,
-    EventOrganizerIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { EventOrganizerAdminSchema, EventOrganizerIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +31,7 @@ export const adminGetEventOrganizerByIdRoute = createAdminRoute({
         const result = await eventOrganizerService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

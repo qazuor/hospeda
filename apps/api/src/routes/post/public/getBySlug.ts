@@ -2,7 +2,7 @@
  * Public get post by slug endpoint
  * Returns a single post by its slug
  */
-import { PostPublicSchema, PostSlugSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PostPublicSchema, PostSlugSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -26,8 +26,7 @@ export const publicGetPostBySlugRoute = createPublicRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await postService.getBySlug(actor, params.slug as string);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

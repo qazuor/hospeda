@@ -8,8 +8,7 @@ import {
     AccommodationFaqSingleOutputSchema,
     AccommodationIdSchema,
     FaqCreatePayloadSchema,
-    type FaqCreatePayloadType,
-    type ServiceErrorCode
+    type FaqCreatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -49,7 +48,7 @@ export const addFaqRoute = createCRUDRoute({
         const result = await accommodationService.addFaq(actor, input);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

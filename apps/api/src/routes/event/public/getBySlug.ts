@@ -2,7 +2,7 @@
  * Public get event by slug endpoint
  * Returns event details by slug
  */
-import { EventPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventPublicSchema } from '@repo/schemas';
 import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -28,8 +28,7 @@ export const publicGetEventBySlugRoute = createPublicRoute({
         const actor = getActorFromContext(ctx);
         const slug = params.slug as string;
         const result = await eventService.getBySlug(actor, slug);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

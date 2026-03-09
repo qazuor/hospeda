@@ -2,12 +2,7 @@
  * Admin soft delete event location endpoint
  * Allows admins to soft delete any event location
  */
-import {
-    DeleteResultSchema,
-    EventLocationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { DeleteResultSchema, EventLocationIdSchema, PermissionEnum } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminDeleteEventLocationRoute = createAdminRoute({
         const result = await eventLocationService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

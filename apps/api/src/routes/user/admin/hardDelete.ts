@@ -2,7 +2,7 @@
  * Admin hard delete user endpoint
  * Permanently deletes a user - Admin only
  */
-import { PermissionEnum, type ServiceErrorCode, UserIdSchema } from '@repo/schemas';
+import { PermissionEnum, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,8 +28,7 @@ export const adminHardDeleteUserRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await userService.hardDelete(actor, id);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return { id };
     }
 });

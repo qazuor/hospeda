@@ -2,13 +2,7 @@
  * Admin update post SEO endpoint
  * Updates SEO metadata for a specific post
  */
-import {
-    PermissionEnum,
-    PostAdminSchema,
-    PostIdSchema,
-    SeoSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostAdminSchema, PostIdSchema, SeoSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -44,7 +38,7 @@ export const adminUpdatePostSeoRoute = createAdminRoute({
         const result = await postService.update(actor, id as string, { seo: body });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

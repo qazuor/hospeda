@@ -2,7 +2,7 @@
  * Protected soft delete amenity endpoint
  * Requires authentication and AMENITY_DELETE permission
  */
-import { AmenityIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { AmenityIdSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -33,7 +33,7 @@ export const protectedSoftDeleteAmenityRoute = createProtectedRoute({
         const result = await amenityService.softDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return { success: true };

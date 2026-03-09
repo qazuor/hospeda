@@ -6,8 +6,7 @@ import {
     EventIdSchema,
     EventProtectedSchema,
     EventUpdateHttpSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -47,7 +46,7 @@ export const protectedPatchEventRoute = createProtectedRoute({
         const result = await eventService.update(actor, params.id as string, body);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

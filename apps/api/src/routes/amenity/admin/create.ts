@@ -6,8 +6,7 @@ import {
     AmenityAdminSchema,
     type AmenityCreateInput,
     AmenityCreateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -41,7 +40,7 @@ export const adminCreateAmenityRoute = createAdminRoute({
         const result = await amenityService.create(actor, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

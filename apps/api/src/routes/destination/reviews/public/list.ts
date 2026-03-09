@@ -5,8 +5,7 @@
 import {
     DestinationIdSchema,
     DestinationReviewSchema,
-    DestinationReviewsByDestinationHttpSchema,
-    type ServiceErrorCode
+    DestinationReviewsByDestinationHttpSchema
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -35,8 +34,7 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         const { page, pageSize } = extractPaginationParams(query || {});
         const service = new DestinationReviewService({ logger: apiLogger });
         const result = await service.list(actor, { page, pageSize });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: result.data.items,
             pagination: getPaginationResponse(result.data.total, { page, pageSize })

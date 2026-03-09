@@ -2,7 +2,7 @@
  * Protected soft delete attraction endpoint
  * Requires authentication and ownership
  */
-import { AttractionIdSchema, PermissionEnum, type ServiceErrorCode } from '@repo/schemas';
+import { AttractionIdSchema, PermissionEnum } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -31,7 +31,7 @@ export const protectedSoftDeleteAttractionRoute = createProtectedRoute({
         const result = await attractionService.softDelete(actor, id);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return { id };

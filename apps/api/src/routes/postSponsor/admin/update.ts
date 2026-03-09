@@ -6,8 +6,7 @@ import {
     PermissionEnum,
     PostSponsorIdSchema,
     PostSponsorSchema,
-    PostSponsorUpdateInputSchema,
-    type ServiceErrorCode
+    PostSponsorUpdateInputSchema
 } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -43,7 +42,7 @@ export const adminUpdatePostSponsorRoute = createAdminRoute({
         const result = await postSponsorService.update(actor, id as string, body as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

@@ -2,11 +2,7 @@
  * Public feature list endpoint
  * Returns paginated list of public features
  */
-import {
-    FeatureListItemSchema,
-    FeatureSearchHttpSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { FeatureListItemSchema, FeatureSearchHttpSchema } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +34,7 @@ export const publicListFeaturesRoute = createPublicListRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

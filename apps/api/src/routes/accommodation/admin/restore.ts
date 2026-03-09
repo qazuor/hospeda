@@ -2,12 +2,7 @@
  * Admin restore accommodation endpoint
  * Restores a soft-deleted accommodation
  */
-import {
-    AccommodationAdminSchema,
-    AccommodationIdSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationAdminSchema, AccommodationIdSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -37,7 +32,7 @@ export const adminRestoreAccommodationRoute = createAdminRoute({
         const result = await accommodationService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

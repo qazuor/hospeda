@@ -2,7 +2,7 @@
  * Public post list endpoint
  * Returns paginated list of public posts
  */
-import { PostPublicSchema, PostSearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import { PostPublicSchema, PostSearchHttpSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -30,7 +30,7 @@ export const publicListPostsRoute = createPublicListRoute({
         const result = await postService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

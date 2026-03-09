@@ -5,8 +5,7 @@
 import {
     AccommodationReviewIdSchema,
     AccommodationReviewSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -37,7 +36,7 @@ export const adminRestoreAccommodationReviewRoute = createAdminRoute({
         const result = await accommodationReviewService.restore(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

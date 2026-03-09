@@ -5,7 +5,6 @@
 import {
     LifecycleStatusEnum,
     PermissionEnum,
-    type ServiceErrorCode,
     UserAdminSchema,
     type UserCreateInput,
     UserCreateInputSchema,
@@ -54,7 +53,7 @@ export const adminCreateUserRoute = createAdminRoute({
         });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

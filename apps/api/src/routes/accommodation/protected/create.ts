@@ -7,7 +7,6 @@ import {
     AccommodationCreateHttpSchema,
     AccommodationProtectedSchema,
     PermissionEnum,
-    type ServiceErrorCode,
     httpToDomainAccommodationCreate
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
@@ -43,7 +42,7 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         const result = await accommodationService.create(actor, domainInput);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

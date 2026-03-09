@@ -2,12 +2,7 @@
  * Protected patch user endpoint
  * Allows users to partially update their own profile
  */
-import {
-    type ServiceErrorCode,
-    UserIdSchema,
-    UserPatchInputSchema,
-    UserProtectedSchema
-} from '@repo/schemas';
+import { UserIdSchema, UserPatchInputSchema, UserProtectedSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -48,7 +43,7 @@ export const protectedPatchUserRoute = createProtectedRoute({
         const result = await userService.update(actor, id, domainInput as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         // Invalidate cache for the updated user

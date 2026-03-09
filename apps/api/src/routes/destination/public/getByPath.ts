@@ -2,7 +2,7 @@
  * Public endpoint for looking up a destination by its materialized path
  * Enables SEO-friendly URL resolution
  */
-import { DestinationPublicSchema, type ServiceErrorCode } from '@repo/schemas';
+import { DestinationPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -44,8 +44,7 @@ export const publicGetDestinationByPathRoute = createPublicRoute({
         const result = await destinationService.getByPath(actor, {
             path: (query?.path ?? '') as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     },
     options: {

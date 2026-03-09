@@ -1,8 +1,4 @@
-import {
-    AccommodationIdSchema,
-    AccommodationSummarySchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -36,7 +32,7 @@ const getSummaryHandler = async (ctx: Context, params: Record<string, unknown>) 
     const result = await accommodationService.getById(actor, id);
 
     if (result.error) {
-        throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        throw new ServiceError(result.error.code, result.error.message);
     }
 
     // Return null if accommodation not found (schema is nullable)

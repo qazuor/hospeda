@@ -2,13 +2,7 @@
  * Admin patch user endpoint
  * Allows admins to partially update any user
  */
-import {
-    PermissionEnum,
-    type ServiceErrorCode,
-    UserAdminSchema,
-    UserIdSchema,
-    UserPatchInputSchema
-} from '@repo/schemas';
+import { PermissionEnum, UserAdminSchema, UserIdSchema, UserPatchInputSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -47,7 +41,7 @@ export const adminPatchUserRoute = createAdminRoute({
         const result = await userService.update(actor, id, domainInput as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         // Invalidate cache for the updated user

@@ -6,8 +6,7 @@ import {
     type OwnerPromotionCreateInput,
     OwnerPromotionCreateInputSchema,
     OwnerPromotionSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,7 +39,7 @@ export const adminCreateOwnerPromotionRoute = createAdminRoute({
         const result = await ownerPromotionService.create(actor, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

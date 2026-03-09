@@ -2,12 +2,7 @@
  * Admin post sponsor list endpoint
  * Returns all post sponsors with full admin access
  */
-import {
-    PermissionEnum,
-    PostSponsorAdminSearchSchema,
-    PostSponsorSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { PermissionEnum, PostSponsorAdminSearchSchema, PostSponsorSchema } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -38,7 +33,7 @@ export const adminListPostSponsorsRoute = createAdminListRoute({
         const result = await postSponsorService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

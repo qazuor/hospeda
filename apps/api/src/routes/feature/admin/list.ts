@@ -2,12 +2,7 @@
  * Admin feature list endpoint
  * Returns all features with full admin access
  */
-import {
-    FeatureAdminSchema,
-    FeatureAdminSearchSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { FeatureAdminSchema, FeatureAdminSearchSchema, PermissionEnum } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -38,7 +33,7 @@ export const adminListFeaturesRoute = createAdminListRoute({
         const result = await featureService.list(actor, { ...query });
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

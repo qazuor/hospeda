@@ -2,7 +2,7 @@
  * Public event list endpoint
  * Returns paginated list of public events
  */
-import { EventPublicSchema, EventSearchHttpSchema, type ServiceErrorCode } from '@repo/schemas';
+import { EventPublicSchema, EventSearchHttpSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -30,7 +30,7 @@ export const publicListEventsRoute = createPublicListRoute({
         const result = await eventService.list(actor, query || {});
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

@@ -4,7 +4,6 @@
  */
 import {
     PermissionEnum,
-    type ServiceErrorCode,
     SponsorshipLevelCreateInputSchema,
     SponsorshipLevelSchema
 } from '@repo/schemas';
@@ -38,7 +37,7 @@ export const createSponsorshipLevelRoute = createAdminRoute({
         const result = await sponsorshipLevelService.create(actor, body as never);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

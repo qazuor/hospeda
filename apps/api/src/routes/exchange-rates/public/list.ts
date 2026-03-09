@@ -2,8 +2,7 @@ import type {
     ExchangeRateSearchInput,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
-    PriceCurrencyEnum,
-    ServiceErrorCode
+    PriceCurrencyEnum
 } from '@repo/schemas';
 import {
     ExchangeRateSchema,
@@ -78,7 +77,7 @@ export const publicListExchangeRatesRoute = createPublicListRoute({
         const result = await exchangeRateService.search(actor, filters);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

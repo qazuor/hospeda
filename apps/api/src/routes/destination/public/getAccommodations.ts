@@ -2,11 +2,7 @@
  * Public destination accommodations endpoint
  * Returns accommodations for a specific destination
  */
-import {
-    AccommodationPublicSchema,
-    DestinationIdSchema,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationPublicSchema, DestinationIdSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -37,8 +33,7 @@ export const publicGetDestinationAccommodationsRoute = createPublicRoute({
             page: 1,
             pageSize: 100
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data || [];
     },
     options: {

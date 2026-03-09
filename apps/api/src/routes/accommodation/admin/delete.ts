@@ -2,12 +2,7 @@
  * Admin delete (soft) accommodation endpoint
  * Allows admins to soft delete any accommodation
  */
-import {
-    AccommodationIdSchema,
-    DeleteResultSchema,
-    PermissionEnum,
-    type ServiceErrorCode
-} from '@repo/schemas';
+import { AccommodationIdSchema, DeleteResultSchema, PermissionEnum } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -38,7 +33,7 @@ export const adminDeleteAccommodationRoute = createAdminRoute({
         const result = await accommodationService.softDelete(actor, id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

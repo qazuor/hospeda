@@ -7,8 +7,7 @@ import {
     AttractionIdSchema,
     type AttractionUpdateInput,
     AttractionUpdateInputSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -46,7 +45,7 @@ export const adminUpdateAttractionRoute = createAdminRoute({
         const result = await attractionService.update(actor, id as string, data);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

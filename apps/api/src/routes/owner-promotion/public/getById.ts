@@ -2,7 +2,7 @@
  * Public get owner promotion by ID endpoint
  * Returns a single owner promotion by its ID
  */
-import { OwnerPromotionIdSchema, OwnerPromotionSchema, type ServiceErrorCode } from '@repo/schemas';
+import { OwnerPromotionIdSchema, OwnerPromotionSchema } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -28,7 +28,7 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
         const result = await ownerPromotionService.getById(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return result.data;

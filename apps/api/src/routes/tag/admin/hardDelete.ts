@@ -2,7 +2,7 @@
  * Admin hard delete tag endpoint
  * Permanently deletes a tag
  */
-import { PermissionEnum, type ServiceErrorCode, TagIdSchema } from '@repo/schemas';
+import { PermissionEnum, TagIdSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -35,7 +35,7 @@ export const adminHardDeleteTagRoute = createAdminRoute({
         const result = await tagService.hardDelete(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+            throw new ServiceError(result.error.code, result.error.message);
         }
 
         return {

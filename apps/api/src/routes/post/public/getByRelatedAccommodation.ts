@@ -2,7 +2,7 @@
  * Public get posts by related accommodation endpoint
  * Returns posts related to a specific accommodation
  */
-import { AccommodationIdSchema, PostListItemSchema, type ServiceErrorCode } from '@repo/schemas';
+import { AccommodationIdSchema, PostListItemSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -30,8 +30,7 @@ export const publicGetPostsByRelatedAccommodationRoute = createPublicListRoute({
         const result = await postService.getByRelatedAccommodation(actor, {
             accommodationId: params.accommodationId as string
         });
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return {
             items: (result.data as never) || [],
             pagination: getPaginationResponse(0, { page, pageSize })

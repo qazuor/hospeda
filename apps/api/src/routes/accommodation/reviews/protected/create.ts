@@ -7,8 +7,7 @@ import {
     AccommodationIdSchema,
     AccommodationReviewCreateInputSchema,
     AccommodationReviewSchema,
-    PermissionEnum,
-    type ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -42,8 +41,7 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         };
         const service = new AccommodationReviewService({ logger: apiLogger });
         const result = await service.create(actor, payload);
-        if (result.error)
-            throw new ServiceError(result.error.code as ServiceErrorCode, result.error.message);
+        if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;
     }
 });
