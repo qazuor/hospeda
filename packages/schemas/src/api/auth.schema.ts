@@ -22,10 +22,18 @@ export const ActorSchema = z.object({
 export type Actor = z.infer<typeof ActorSchema>;
 
 /**
+ * Actor response schema for API responses.
+ * Omits `_isSystemActor` which is an internal-only flag.
+ */
+export const ActorResponseSchema = ActorSchema.omit({ _isSystemActor: true });
+
+export type ActorResponse = z.infer<typeof ActorResponseSchema>;
+
+/**
  * Auth status response schema for /auth/me endpoint
  */
 export const AuthMeResponseSchema = z.object({
-    actor: ActorSchema,
+    actor: ActorResponseSchema,
     isAuthenticated: z.boolean().describe('Whether the actor is authenticated (not a guest)'),
     passwordChangeRequired: z
         .boolean()
@@ -63,7 +71,7 @@ export const AuthStatusResponseSchema = z.object({
     data: z.object({
         isAuthenticated: z.boolean().describe('Whether user is authenticated'),
         userId: z.string().nullish().describe('User ID if authenticated'),
-        actor: ActorSchema
+        actor: ActorResponseSchema
     }),
     metadata: z.object({
         timestamp: z.string().describe('Response timestamp'),
