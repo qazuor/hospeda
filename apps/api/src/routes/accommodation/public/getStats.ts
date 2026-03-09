@@ -1,6 +1,7 @@
 import { AccommodationIdSchema, AccommodationStatsSchema } from '@repo/schemas';
 import { AccommodationService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
@@ -32,7 +33,9 @@ const getStatsHandler = async (ctx: Context, params: Record<string, unknown>) =>
     const statsResult = await accommodationService.getStats(actor, { idOrSlug: id });
 
     if (statsResult.error) {
-        throw new Error(statsResult.error.message);
+        throw new HTTPException(500, {
+            message: statsResult.error.message
+        });
     }
 
     // Return null if stats not found (schema is nullable)

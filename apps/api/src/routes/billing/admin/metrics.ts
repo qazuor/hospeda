@@ -14,6 +14,7 @@
  */
 
 import { PermissionEnum } from '@repo/schemas';
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getBillingMetricsService } from '../../../services/billing-metrics.service';
 import { getApproachingLimits, getSystemUsage } from '../../../services/billing-usage.service';
@@ -288,7 +289,16 @@ export const getRecentActivityRoute = createAdminRoute({
             const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
                 ? `Failed to fetch recent activity: ${rawMessage}`
                 : 'Failed to fetch recent activity';
-            throw new Error(safeMessage);
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: safeMessage
+            });
         }
 
         return result.data;
@@ -327,7 +337,16 @@ export const getSystemUsageRoute = createAdminRoute({
             const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
                 ? `Failed to fetch system usage stats: ${rawMessage}`
                 : 'Failed to fetch system usage stats';
-            throw new Error(safeMessage);
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: safeMessage
+            });
         }
 
         return result.data;
@@ -361,7 +380,16 @@ export const getApproachingLimitsRoute = createAdminRoute({
             const safeMessage = env.HOSPEDA_API_DEBUG_ERRORS
                 ? `Failed to fetch approaching limits: ${rawMessage}`
                 : 'Failed to fetch approaching limits';
-            throw new Error(safeMessage);
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: safeMessage
+            });
         }
 
         return result.data;

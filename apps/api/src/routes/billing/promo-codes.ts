@@ -61,7 +61,16 @@ export const listPromoCodesRoute = createAdminListRoute({
         });
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         return {
@@ -103,7 +112,16 @@ export const createPromoCodeRoute = createAdminRoute({
         });
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         return result.data;
@@ -134,7 +152,16 @@ export const getPromoCodeRoute = createAdminRoute({
 
         // Check for error or missing data
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Promo code not found');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 404;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Promo code not found'
+            });
         }
 
         return result.data;
@@ -170,7 +197,16 @@ export const updatePromoCodeRoute = createAdminRoute({
         });
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         return result.data;
@@ -200,7 +236,16 @@ export const deletePromoCodeRoute = createAdminRoute({
         const result = await service.delete(params.id as string);
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         return null;
@@ -279,7 +324,9 @@ export const applyPromoCodeRoute = createProtectedRoute({
         const billingCustomerId = c.get('billingCustomerId');
 
         if (!billingCustomerId) {
-            throw new Error('Billing customer not found. Please contact support.');
+            throw new HTTPException(422, {
+                message: 'Billing customer not found. Please contact support.'
+            });
         }
 
         // Verify ownership: ensure user is applying promo code to their own billing account
@@ -297,7 +344,16 @@ export const applyPromoCodeRoute = createProtectedRoute({
         );
 
         if (result.success === false) {
-            throw new Error(result.error?.message ?? 'Unknown error applying promo code');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error applying promo code'
+            });
         }
 
         return {

@@ -14,6 +14,7 @@
  * @module routes/billing/addons
  */
 
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -61,11 +62,22 @@ export const listAddonsRoute = createProtectedRoute({
         });
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         if (!result.data) {
-            throw new Error('Failed to list add-ons');
+            throw new HTTPException(500, {
+                message: 'Failed to list add-ons'
+            });
         }
 
         return result.data;
@@ -101,11 +113,22 @@ export const getAddonRoute = createProtectedRoute({
         const result = await service.getById(params.slug as string);
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Failed to get add-on');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Failed to get add-on'
+            });
         }
 
         if (!result.data) {
-            throw new Error('Add-on not found');
+            throw new HTTPException(404, {
+                message: 'Add-on not found'
+            });
         }
 
         return result.data;
@@ -138,7 +161,9 @@ export const purchaseAddonRoute = createProtectedRoute({
         const billingCustomerId = c.get('billingCustomerId');
 
         if (!billingCustomerId) {
-            throw new Error('Billing customer not found. Please contact support.');
+            throw new HTTPException(422, {
+                message: 'Billing customer not found. Please contact support.'
+            });
         }
 
         apiLogger.info(
@@ -159,11 +184,22 @@ export const purchaseAddonRoute = createProtectedRoute({
         });
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         if (!result.data) {
-            throw new Error('Failed to create checkout session');
+            throw new HTTPException(500, {
+                message: 'Failed to create checkout session'
+            });
         }
 
         return result.data;
@@ -197,11 +233,22 @@ export const getUserAddonsRoute = createProtectedRoute({
         const result = await service.getUserAddons(actor.id);
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         if (!result.data) {
-            throw new Error('Failed to get user add-ons');
+            throw new HTTPException(500, {
+                message: 'Failed to get user add-ons'
+            });
         }
 
         return result.data;
@@ -237,17 +284,33 @@ export const cancelAddonRoute = createProtectedRoute({
         const billingCustomerId = c.get('billingCustomerId');
 
         if (!billingCustomerId) {
-            throw new Error('Billing customer not found. Please contact support.');
+            throw new HTTPException(422, {
+                message: 'Billing customer not found. Please contact support.'
+            });
         }
 
-        // Verify addon ownership before delegating to service
-        const userAddons = await service.getUserAddons(actor.id);
-        if (!userAddons.success || !userAddons.data) {
-            throw new Error('Failed to verify add-on ownership.');
-        }
-        const ownsAddon = userAddons.data.some((addon: { id: string }) => addon.id === params.id);
-        if (!ownsAddon) {
-            throw new Error('Add-on not found or does not belong to your account.');
+        // Verify addon ownership with a direct atomic query instead of fetching all user addons
+        const { getDb } = await import('@repo/db/client');
+        const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
+        const { and, eq } = await import('drizzle-orm');
+        const db = getDb();
+
+        const [ownedAddon] = await db
+            .select({ id: billingAddonPurchases.id })
+            .from(billingAddonPurchases)
+            .where(
+                and(
+                    eq(billingAddonPurchases.id, params.id as string),
+                    eq(billingAddonPurchases.customerId, billingCustomerId),
+                    eq(billingAddonPurchases.status, 'active')
+                )
+            )
+            .limit(1);
+
+        if (!ownedAddon) {
+            throw new HTTPException(404, {
+                message: 'Add-on not found or does not belong to your account.'
+            });
         }
 
         apiLogger.info(
@@ -268,7 +331,16 @@ export const cancelAddonRoute = createProtectedRoute({
         });
 
         if (!result.success) {
-            throw new Error(result.error?.message ?? 'Unknown error');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Unknown error'
+            });
         }
 
         return null;

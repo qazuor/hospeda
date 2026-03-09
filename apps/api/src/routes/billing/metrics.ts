@@ -11,6 +11,7 @@
  * @module routes/billing/metrics
  */
 
+import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getBillingMetricsService } from '../../services/billing-metrics.service';
 import { getApproachingLimits, getSystemUsage } from '../../services/billing-usage.service';
@@ -220,7 +221,16 @@ export const getRecentActivityRoute = createAdminRoute({
         const result = await service.getRecentActivity(limit, livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch recent activity');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Failed to fetch recent activity'
+            });
         }
 
         return result.data;
@@ -315,7 +325,16 @@ export const getSystemUsageRoute = createAdminRoute({
         const result = await getSystemUsage(livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch system usage stats');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Failed to fetch system usage stats'
+            });
         }
 
         return result.data;
@@ -345,7 +364,16 @@ export const getApproachingLimitsRoute = createAdminRoute({
         const result = await getApproachingLimits(threshold, livemode);
 
         if (!result.success || !result.data) {
-            throw new Error(result.error?.message ?? 'Failed to fetch approaching limits');
+            const statusMap: Record<string, number> = {
+                NOT_FOUND: 404,
+                VALIDATION_ERROR: 400,
+                PERMISSION_DENIED: 403,
+                INTERNAL_ERROR: 500
+            };
+            const status = statusMap[result.error?.code ?? ''] ?? 500;
+            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+                message: result.error?.message ?? 'Failed to fetch approaching limits'
+            });
         }
 
         return result.data;
