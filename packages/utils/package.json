@@ -13,8 +13,8 @@
     },
     "license": "MIT",
     "scripts": {
-        "build": "tsc",
-        "dev": "tsc --watch",
+        "build": "tsup",
+        "dev": "echo 'Dev mode uses tsconfig paths (no build)'",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
         "format": "biome format --write .",
@@ -30,6 +30,7 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^22.15.3",
+        "tsup": "^8.4.0",
         "typescript": "^5.8.3",
         "vitest": "^3.1.3"
     }
