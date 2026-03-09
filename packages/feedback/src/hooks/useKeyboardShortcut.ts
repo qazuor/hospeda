@@ -40,6 +40,21 @@ export function useKeyboardShortcut({ onToggle }: UseKeyboardShortcutInput): voi
         const { key, ctrl, shift } = FEEDBACK_CONFIG.keyboardShortcut;
 
         function handleKeyDown(event: KeyboardEvent) {
+            // Skip shortcut when focus is inside text inputs to avoid
+            // interfering with typing (e.g., Ctrl+Shift+F in a textarea)
+            const target = event.target as HTMLElement | null;
+            if (target) {
+                const tagName = target.tagName;
+                if (
+                    tagName === 'INPUT' ||
+                    tagName === 'TEXTAREA' ||
+                    tagName === 'SELECT' ||
+                    target.isContentEditable
+                ) {
+                    return;
+                }
+            }
+
             const isCtrlOrCmd = ctrl ? event.ctrlKey || event.metaKey : true;
             const isShift = shift ? event.shiftKey : true;
 
