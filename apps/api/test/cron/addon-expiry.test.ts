@@ -20,6 +20,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { addonExpiryJob } from '../../src/cron/jobs/addon-expiry.job';
 import type { CronJobContext } from '../../src/cron/types';
 
+// Mock @repo/db (used by wasNotificationSent for idempotency checks)
+const mockDbSelect = vi.fn();
+const mockDbFrom = vi.fn();
+const mockDbWhere = vi.fn();
+const mockDbLimit = vi.fn();
+
+vi.mock('@repo/db', () => ({
+    getDb: vi.fn(() => ({
+        select: mockDbSelect
+    })),
+    billingNotificationLog: {
+        id: 'id',
+        type: 'type',
+        customerId: 'customer_id',
+        createdAt: 'created_at'
+    },
+    eq: vi.fn((...args: unknown[]) => ({ op: 'eq', args })),
+    and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
+    gte: vi.fn((...args: unknown[]) => ({ op: 'gte', args }))
+}));
+
 // Mock AddonExpirationService
 vi.mock('../../src/services/addon-expiration.service', () => ({
     AddonExpirationService: vi.fn()
@@ -38,6 +59,16 @@ vi.mock('../../src/middlewares/billing', () => ({
 // Mock customer lookup
 vi.mock('../../src/utils/customer-lookup', () => ({
     lookupCustomerDetails: vi.fn()
+}));
+
+// Mock apiLogger (used by wasNotificationSent error handler)
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
 }));
 
 import { getQZPayBilling } from '../../src/middlewares/billing';
@@ -66,6 +97,12 @@ function createMockContext(overrides?: Partial<CronJobContext>): CronJobContext 
 describe('Add-on Expiry Cron Job', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Set up default DB chain for wasNotificationSent: returns empty (no prior notification)
+        mockDbLimit.mockResolvedValue([]);
+        mockDbWhere.mockReturnValue({ limit: mockDbLimit });
+        mockDbFrom.mockReturnValue({ where: mockDbWhere });
+        mockDbSelect.mockReturnValue({ from: mockDbFrom });
     });
 
     describe('Job Definition', () => {
@@ -298,7 +335,7 @@ describe('Add-on Expiry Cron Job', () => {
             );
         });
 
-        it('should not send duplicate warnings (idempotency)', async () => {
+        it('should not send duplicate warnings (idempotency via DB)', async () => {
             // Arrange
             const ctx = createMockContext();
             const mockAddons = [
@@ -338,6 +375,12 @@ describe('Add-on Expiry Cron Job', () => {
                 name: 'Customer Name',
                 userId: 'user-123'
             });
+
+            // First call to wasNotificationSent returns [] (not sent yet),
+            // second call returns a row (already sent today via billing_notification_log)
+            mockDbLimit
+                .mockResolvedValueOnce([]) // 3-day check: not sent yet, allow
+                .mockResolvedValueOnce([{ id: 'log-1' }]); // 1-day check: already sent, skip
 
             // Act
             const result = await addonExpiryJob.handler(ctx);

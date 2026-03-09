@@ -51,6 +51,7 @@ vi.mock('@repo/logger', () => {
         warn: vi.fn(),
         error: vi.fn(),
         debug: vi.fn(),
+        log: vi.fn(),
         registerLogMethod: vi.fn().mockReturnThis(),
         permission: vi.fn()
     });
@@ -181,9 +182,22 @@ vi.mock('../../src/cron/registry', () => ({
             })
         },
         {
+            name: 'notification-log-purge',
+            description: 'Test notification log purge job',
+            schedule: '0 3 * * *',
+            enabled: true,
+            handler: vi.fn().mockResolvedValue({
+                success: true,
+                message: 'Test purge job completed',
+                processed: 0,
+                errors: 0,
+                durationMs: 50
+            })
+        },
+        {
             name: 'disabled-job',
             description: 'Test disabled job',
-            schedule: '0 3 * * *',
+            schedule: '0 4 * * *',
             enabled: false,
             handler: vi.fn()
         }
@@ -204,9 +218,22 @@ vi.mock('../../src/cron/registry', () => ({
                 })
             },
             {
+                name: 'notification-log-purge',
+                description: 'Test notification log purge job',
+                schedule: '0 3 * * *',
+                enabled: true,
+                handler: vi.fn().mockResolvedValue({
+                    success: true,
+                    message: 'Test purge job completed',
+                    processed: 0,
+                    errors: 0,
+                    durationMs: 50
+                })
+            },
+            {
                 name: 'disabled-job',
                 description: 'Test disabled job',
-                schedule: '0 3 * * *',
+                schedule: '0 4 * * *',
                 enabled: false,
                 handler: vi.fn()
             }
@@ -218,6 +245,13 @@ vi.mock('../../src/cron/registry', () => ({
             name: 'trial-expiry',
             description: 'Test trial expiry job',
             schedule: '0 2 * * *',
+            enabled: true,
+            handler: vi.fn()
+        },
+        {
+            name: 'notification-log-purge',
+            description: 'Test notification log purge job',
+            schedule: '0 3 * * *',
             enabled: true,
             handler: vi.fn()
         }

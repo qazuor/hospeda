@@ -54,6 +54,18 @@ vi.mock('../../src/utils/redis', () => ({
     getRedisClient: vi.fn().mockResolvedValue(undefined)
 }));
 
+// Mock billing settings loader
+vi.mock('../../src/utils/billing-settings', () => ({
+    loadBillingSettings: vi.fn().mockResolvedValue({
+        gracePeriodDays: 7,
+        maxPaymentRetries: 3,
+        retryIntervalHours: 24,
+        trialExpiryReminderDays: 3,
+        sendTrialExpiryReminder: true,
+        sendPaymentFailedNotification: true
+    })
+}));
+
 // Mock @repo/notifications
 vi.mock('@repo/notifications', async () => {
     const actual = await vi.importActual('@repo/notifications');
@@ -227,8 +239,10 @@ describe('Notification Schedule Cron Job', () => {
             expect(mockTrialService.findTrialsEndingSoon).toHaveBeenCalledWith({ daysAhead: 1 });
         });
 
-        it('should not send duplicate reminders (idempotency)', async () => {
+        it('should send both 3-day and 1-day reminders for same customer (different idempotency keys)', async () => {
             // Arrange
+            // Since idempotency keys now include daysAhead (:d3 vs :d1),
+            // the same customer appearing in both windows gets both notifications.
             const ctx = createMockContext();
             const mockTrial = {
                 id: 'sub-1',
@@ -267,10 +281,58 @@ describe('Notification Schedule Cron Job', () => {
             // Act
             const result = await notificationScheduleJob.handler(ctx);
 
-            // Assert
+            // Assert - both sent because idempotency keys differ (:d3 vs :d1)
             expect(result.success).toBe(true);
-            expect(result.processed).toBe(1); // Should only count once
-            expect(sendNotification).toHaveBeenCalledTimes(1); // Should only send once
+            expect(result.processed).toBe(2);
+            expect(sendNotification).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not send duplicate reminders for same customer and same daysAhead (idempotency)', async () => {
+            // Arrange
+            // When the same customer appears twice in the SAME daysAhead window,
+            // idempotency prevents the second send.
+            const ctx = createMockContext();
+            const mockTrial = {
+                id: 'sub-1',
+                customerId: 'cust-1',
+                userEmail: 'user@example.com',
+                userName: 'User',
+                userId: 'user-1',
+                planSlug: 'owner-basico',
+                trialEnd: new Date('2024-06-18T00:00:00Z'),
+                daysRemaining: 3
+            };
+
+            const mockBilling = {};
+            const mockTrialService = {
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([mockTrial, mockTrial]) // 3 days - same customer twice
+                    .mockResolvedValueOnce([]) // 1 day
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(RetryService).mockImplementation(
+                () =>
+                    ({
+                        processRetries: vi.fn().mockResolvedValue({
+                            processed: 0,
+                            succeeded: 0,
+                            failed: 0,
+                            permanentlyFailed: 0
+                        })
+                    }) as any
+            );
+
+            // Act
+            const result = await notificationScheduleJob.handler(ctx);
+
+            // Assert - only one sent because idempotency key matches for same daysAhead
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(1);
+            expect(sendNotification).toHaveBeenCalledTimes(1);
         });
 
         it('should handle no trials ending soon', async () => {
@@ -348,18 +410,21 @@ describe('Notification Schedule Cron Job', () => {
             const ctx = createMockContext();
             const mockBilling = {};
             const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([
-                    {
-                        id: 'sub-1',
-                        customerId: 'cust-1',
-                        userEmail: 'user@example.com',
-                        userName: 'User',
-                        userId: 'user-1',
-                        planSlug: 'owner-basico',
-                        trialEnd: new Date('2024-06-18T00:00:00Z'),
-                        daysRemaining: 3
-                    }
-                ])
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([
+                        {
+                            id: 'sub-1',
+                            customerId: 'cust-1',
+                            userEmail: 'user@example.com',
+                            userName: 'User',
+                            userId: 'user-1',
+                            planSlug: 'owner-basico',
+                            trialEnd: new Date('2024-06-18T00:00:00Z'),
+                            daysRemaining: 3
+                        }
+                    ])
+                    .mockResolvedValueOnce([]) // 1 day - empty
             };
 
             vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);

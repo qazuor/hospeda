@@ -35,11 +35,16 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+vi.mock('../../src/routes/webhooks/mercadopago/event-handler', () => ({
+    cleanupRequestProviderEventId: vi.fn()
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
 
 import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';
+import { cleanupRequestProviderEventId } from '../../src/routes/webhooks/mercadopago/event-handler';
 import { handleSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-handler';
 import { processSubscriptionUpdated } from '../../src/routes/webhooks/mercadopago/subscription-logic';
 import {
@@ -61,6 +66,19 @@ function makeSubscriptionEvent(overrides: Partial<QZPayWebhookEvent> = {}): QZPa
         data: { id: 'preapproval-abc', status: 'active' },
         created: new Date('2024-01-15T10:00:00Z'),
         ...overrides
+    };
+}
+
+/**
+ * Build a minimal mock Hono context with a working `get` method.
+ */
+function makeMockContext(overrides: Record<string, unknown> = {}) {
+    const store: Record<string, unknown> = { requestId: 'test-request-id', ...overrides };
+    return {
+        get: vi.fn((key: string) => store[key]),
+        set: vi.fn((key: string, value: unknown) => {
+            store[key] = value;
+        })
     };
 }
 
@@ -115,7 +133,7 @@ describe('handleSubscriptionUpdated', () => {
         vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
 
         // Act
-        await handleSubscriptionUpdated(null as never, event);
+        await handleSubscriptionUpdated(makeMockContext() as never, event);
 
         // Assert
         expect(processSubscriptionUpdated).toHaveBeenCalledOnce();
@@ -126,6 +144,7 @@ describe('handleSubscriptionUpdated', () => {
             providerEventId: 'mp-event-123',
             source: 'webhook'
         });
+        expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
     });
 
     // -------------------------------------------------------------------------
@@ -146,13 +165,14 @@ describe('handleSubscriptionUpdated', () => {
         vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
 
         // Act
-        await handleSubscriptionUpdated(null as never, event);
+        await handleSubscriptionUpdated(makeMockContext() as never, event);
 
         // Assert
         expect(markEventProcessedByProviderId).toHaveBeenCalledOnce();
         expect(markEventProcessedByProviderId).toHaveBeenCalledWith({
             providerEventId: 'mp-event-456'
         });
+        expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
     });
 
     // -------------------------------------------------------------------------
@@ -167,7 +187,7 @@ describe('handleSubscriptionUpdated', () => {
         vi.mocked(markEventProcessedByProviderId).mockResolvedValue(undefined);
 
         // Act
-        await handleSubscriptionUpdated(null as never, event);
+        await handleSubscriptionUpdated(makeMockContext() as never, event);
 
         // Assert — no business logic, but event is still marked processed
         expect(processSubscriptionUpdated).not.toHaveBeenCalled();
@@ -175,6 +195,7 @@ describe('handleSubscriptionUpdated', () => {
         expect(markEventProcessedByProviderId).toHaveBeenCalledWith({
             providerEventId: 'mp-event-no-billing'
         });
+        expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
     });
 
     // -------------------------------------------------------------------------
@@ -193,12 +214,14 @@ describe('handleSubscriptionUpdated', () => {
         vi.mocked(processSubscriptionUpdated).mockRejectedValue(mpApiError);
 
         // Act & Assert — error must propagate so the event enters the dead letter queue
-        await expect(handleSubscriptionUpdated(null as never, event)).rejects.toThrow(
+        await expect(handleSubscriptionUpdated(makeMockContext() as never, event)).rejects.toThrow(
             'MercadoPago API timeout'
         );
 
-        // markEventProcessedByProviderId must NOT be called when processing fails
+        // Neither markEventProcessedByProviderId nor cleanupRequestProviderEventId
+        // must be called when processing throws
         expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
+        expect(cleanupRequestProviderEventId).not.toHaveBeenCalled();
     });
 
     // -------------------------------------------------------------------------
@@ -219,10 +242,12 @@ describe('handleSubscriptionUpdated', () => {
         });
 
         // Act
-        await handleSubscriptionUpdated(null as never, event);
+        await handleSubscriptionUpdated(makeMockContext() as never, event);
 
-        // Assert — when result.success is false, markEventProcessedByProviderId is NOT called
+        // Assert — when result.success is false, neither markEventProcessedByProviderId
+        // nor cleanupRequestProviderEventId is called
         // (the event handler upstream will mark it as failed + add to dead letter queue)
         expect(markEventProcessedByProviderId).not.toHaveBeenCalled();
+        expect(cleanupRequestProviderEventId).not.toHaveBeenCalled();
     });
 });

@@ -40,6 +40,18 @@ vi.mock('../../src/services/notification-retry.service', () => ({
     })
 }));
 
+// Mock billing settings loader
+vi.mock('../../src/utils/billing-settings', () => ({
+    loadBillingSettings: vi.fn().mockResolvedValue({
+        gracePeriodDays: 7,
+        maxPaymentRetries: 3,
+        retryIntervalHours: 24,
+        trialExpiryReminderDays: 3,
+        sendTrialExpiryReminder: true,
+        sendPaymentFailedNotification: true
+    })
+}));
+
 // Mock Redis client - configurable per test
 const mockRedisSet = vi.fn().mockResolvedValue('OK');
 const mockRedisExists = vi.fn().mockResolvedValue(0);
@@ -104,18 +116,21 @@ describe('Notification Idempotency Key Persistence', () => {
             trialEnd.setDate(trialEnd.getDate() + 3);
 
             const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([
-                    {
-                        id: 'sub-1',
-                        customerId: 'cust-1',
-                        userEmail: 'user@test.com',
-                        userName: 'Test User',
-                        userId: 'user-1',
-                        planSlug: 'owner-basico',
-                        trialEnd,
-                        daysRemaining: 3
-                    }
-                ])
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([
+                        {
+                            id: 'sub-1',
+                            customerId: 'cust-1',
+                            userEmail: 'user@test.com',
+                            userName: 'Test User',
+                            userId: 'user-1',
+                            planSlug: 'owner-basico',
+                            trialEnd,
+                            daysRemaining: 3
+                        }
+                    ])
+                    .mockResolvedValueOnce([]) // 1 day - empty
             };
 
             const mockBilling = {
@@ -170,18 +185,21 @@ describe('Notification Idempotency Key Persistence', () => {
             trialEnd.setDate(trialEnd.getDate() + 3);
 
             const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([
-                    {
-                        id: 'sub-1',
-                        customerId: 'cust-1',
-                        userEmail: 'user@test.com',
-                        userName: 'Test User',
-                        userId: 'user-1',
-                        planSlug: 'owner-basico',
-                        trialEnd,
-                        daysRemaining: 3
-                    }
-                ])
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([
+                        {
+                            id: 'sub-1',
+                            customerId: 'cust-1',
+                            userEmail: 'user@test.com',
+                            userName: 'Test User',
+                            userId: 'user-1',
+                            planSlug: 'owner-basico',
+                            trialEnd,
+                            daysRemaining: 3
+                        }
+                    ])
+                    .mockResolvedValueOnce([]) // 1 day - empty
             };
 
             const mockBilling = {
@@ -228,18 +246,21 @@ describe('Notification Idempotency Key Persistence', () => {
             trialEnd.setDate(trialEnd.getDate() + 3);
 
             const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([
-                    {
-                        id: 'sub-1',
-                        customerId: 'cust-fallback',
-                        userEmail: 'fallback@test.com',
-                        userName: 'Fallback User',
-                        userId: 'user-fallback',
-                        planSlug: 'owner-basico',
-                        trialEnd,
-                        daysRemaining: 3
-                    }
-                ])
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([
+                        {
+                            id: 'sub-1',
+                            customerId: 'cust-fallback',
+                            userEmail: 'fallback@test.com',
+                            userName: 'Fallback User',
+                            userId: 'user-fallback',
+                            planSlug: 'owner-basico',
+                            trialEnd,
+                            daysRemaining: 3
+                        }
+                    ])
+                    .mockResolvedValueOnce([]) // 1 day - empty
             };
 
             const mockBilling = {
@@ -298,6 +319,7 @@ describe('Notification Idempotency Key Persistence', () => {
                 }
             ];
 
+            // Both runs return same customer for both 3-day and 1-day windows
             const mockTrialService = {
                 findTrialsEndingSoon: vi.fn().mockResolvedValue(trialData)
             };
@@ -335,8 +357,9 @@ describe('Notification Idempotency Key Persistence', () => {
             const ctx2 = createMockContext();
             await notificationScheduleJob.handler(ctx2);
 
-            // Assert - notification was sent only once (second run skipped as duplicate)
-            expect(sendNotification).toHaveBeenCalledTimes(1);
+            // Assert - first run sends 2 notifications (d3 + d1 have different keys),
+            // second run sends 0 (both keys already exist in fallback map)
+            expect(sendNotification).toHaveBeenCalledTimes(2);
         });
 
         it('should fall back to in-memory when Redis throws error', async () => {
@@ -349,18 +372,21 @@ describe('Notification Idempotency Key Persistence', () => {
             trialEnd.setDate(trialEnd.getDate() + 3);
 
             const mockTrialService = {
-                findTrialsEndingSoon: vi.fn().mockResolvedValue([
-                    {
-                        id: 'sub-1',
-                        customerId: 'cust-error',
-                        userEmail: 'error@test.com',
-                        userName: 'Error User',
-                        userId: 'user-error',
-                        planSlug: 'owner-basico',
-                        trialEnd,
-                        daysRemaining: 3
-                    }
-                ])
+                findTrialsEndingSoon: vi
+                    .fn()
+                    .mockResolvedValueOnce([
+                        {
+                            id: 'sub-1',
+                            customerId: 'cust-error',
+                            userEmail: 'error@test.com',
+                            userName: 'Error User',
+                            userId: 'user-error',
+                            planSlug: 'owner-basico',
+                            trialEnd,
+                            daysRemaining: 3
+                        }
+                    ])
+                    .mockResolvedValueOnce([]) // 1 day - empty
             };
 
             const mockBilling = {

@@ -17,13 +17,26 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-const { mockGetQZPayBilling, mockCreateSubscriptionLifecycle, mockDbInsert } = vi.hoisted(() => {
+const {
+    mockGetQZPayBilling,
+    mockCreateSubscriptionLifecycle,
+    mockDbInsert,
+    mockLoadBillingSettings
+} = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
     return {
         mockGetQZPayBilling: vi.fn(),
         mockCreateSubscriptionLifecycle: vi.fn(),
-        mockDbInsert: mockInsert
+        mockDbInsert: mockInsert,
+        mockLoadBillingSettings: vi.fn().mockResolvedValue({
+            gracePeriodDays: 7,
+            maxPaymentRetries: 4,
+            retryIntervalHours: 24,
+            trialExpiryReminderDays: 3,
+            sendTrialExpiryReminder: true,
+            sendPaymentFailedNotification: true
+        })
     };
 });
 
@@ -47,6 +60,19 @@ vi.mock('../../src/utils/logger', () => ({
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({ insert: mockDbInsert }),
     billingDunningAttempts: { _: 'billingDunningAttempts' }
+}));
+
+vi.mock('@repo/billing', () => ({
+    DUNNING_RETRY_INTERVALS: [1, 3, 5, 7],
+    DUNNING_GRACE_PERIOD_DAYS: 7
+}));
+
+vi.mock('../../src/utils/billing-settings', () => ({
+    loadBillingSettings: mockLoadBillingSettings
+}));
+
+vi.mock('../../src/routes/webhooks/mercadopago/notifications', () => ({
+    sendSubscriptionCancelledNotification: vi.fn().mockResolvedValue(undefined)
 }));
 
 // ---------------------------------------------------------------------------

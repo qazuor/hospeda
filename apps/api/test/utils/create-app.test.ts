@@ -55,6 +55,36 @@ vi.mock('../../src/middlewares/sentry', () => ({
     sentryMiddleware: vi.fn(() => vi.fn())
 }));
 
+vi.mock('../../src/middlewares/response-validator', () => ({
+    responseValidatorMiddleware: vi.fn(() => vi.fn())
+}));
+
+vi.mock('../../src/middlewares/billing', () => ({
+    billingMiddleware: vi.fn(() => vi.fn())
+}));
+
+vi.mock('../../src/middlewares/billing-customer', () => ({
+    billingCustomerMiddleware: vi.fn(() => vi.fn())
+}));
+
+vi.mock('../../src/middlewares/entitlement', () => ({
+    entitlementMiddleware: vi.fn(() => vi.fn())
+}));
+
+vi.mock('../../src/middlewares/trial', () => ({
+    trialMiddleware: vi.fn(() => vi.fn())
+}));
+
+vi.mock('../../src/utils/logger.js', () => ({
+    apiLogger: {
+        log: vi.fn(),
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
 // Mock Hono modules
 vi.mock('hono/request-id', () => ({
     requestId: vi.fn(() => vi.fn())

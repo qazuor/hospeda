@@ -137,11 +137,17 @@ vi.mock('@repo/billing', () => {
 });
 
 // Use vi.hoisted to ensure mock functions are defined before vi.mock runs (hoisting)
-const { mockPreferenceCreate, mockApplyAddonEntitlements, mockRemoveAddonEntitlements } =
+const { mockPreferenceCreate, mockApplyAddonEntitlements, mockRemoveAddonEntitlements, mockEnv } =
     vi.hoisted(() => ({
         mockPreferenceCreate: vi.fn(),
         mockApplyAddonEntitlements: vi.fn(),
-        mockRemoveAddonEntitlements: vi.fn()
+        mockRemoveAddonEntitlements: vi.fn(),
+        mockEnv: {
+            NODE_ENV: 'test',
+            HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: 'test-token',
+            HOSPEDA_SITE_URL: 'http://localhost:4321',
+            HOSPEDA_API_URL: 'http://localhost:3001'
+        } as Record<string, string>
     }));
 
 // Mock mercadopago
@@ -158,6 +164,11 @@ vi.mock('../../src/services/addon-entitlement.service', () => ({
         applyAddonEntitlements: mockApplyAddonEntitlements,
         removeAddonEntitlements: mockRemoveAddonEntitlements
     }))
+}));
+
+// Mock env to provide required environment variables (uses hoisted mockEnv for per-test mutation)
+vi.mock('../../src/utils/env', () => ({
+    env: mockEnv
 }));
 
 // Mock logger to avoid console spam
@@ -197,10 +208,11 @@ describe('AddonService', () => {
         service = new AddonService(mockBilling);
         serviceWithoutBilling = new AddonService(null);
 
-        // Set up default environment
-        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
-        process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
-        process.env.API_URL = 'http://localhost:3001';
+        // Reset default environment values on the hoisted mockEnv object
+        mockEnv.NODE_ENV = 'test';
+        mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
+        mockEnv.HOSPEDA_SITE_URL = 'http://localhost:4321';
+        mockEnv.HOSPEDA_API_URL = 'http://localhost:3001';
     });
 
     describe('listAvailable', () => {
@@ -442,8 +454,7 @@ describe('AddonService', () => {
 
         it('should return error when MERCADO_PAGO_ACCESS_TOKEN not set', async () => {
             // Arrange - set env var to empty string (falsy) to trigger check
-            const originalToken = process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN;
-            process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = '';
+            mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = '';
             (mockBilling.customers.get as Mock).mockResolvedValue({ id: 'cust_123' });
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active' }
@@ -456,9 +467,6 @@ describe('AddonService', () => {
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('PAYMENT_NOT_CONFIGURED');
             expect(result.error?.message).toContain('not configured');
-
-            // Restore
-            process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = originalToken || 'test-token';
         });
 
         it('should create MercadoPago preference and return checkout URL', async () => {

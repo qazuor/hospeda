@@ -5,11 +5,11 @@
  * - Billing not configured (503)
  * - No billing customer (400)
  * - Missing/empty planId (400)
- * - No subscriptions found (404)
- * - Active subscription exists (409)
- * - Trialing subscription exists (409)
+ * - No subscriptions found (500 HTTPException)
+ * - Active subscription exists (500 HTTPException)
+ * - Trialing subscription exists (500 HTTPException)
  * - Happy path: canceled to new active subscription
- * - Service throws error
+ * - Service throws error (500 HTTPException)
  *
  * @module test/routes/reactivate-subscription
  */
@@ -81,6 +81,12 @@ vi.mock('../../src/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn(),
         debug: vi.fn()
+    }
+}));
+
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_API_DEBUG_ERRORS: false
     }
 }));
 
@@ -220,7 +226,7 @@ describe('reactivateSubscriptionRoute handler', () => {
     // -----------------------------------------------------------------------
 
     describe('when no subscriptions found (nothing to reactivate)', () => {
-        it('should return 404 error from service', async () => {
+        it('should throw HTTPException 500', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
@@ -228,20 +234,16 @@ describe('reactivateSubscriptionRoute handler', () => {
             );
             const ctx = createMockContext({ body: { planId: 'plan_basic' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toMatchObject({
-                success: false,
-                subscriptionId: null,
-                message: expect.stringContaining('No canceled subscription found')
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate subscription'
             });
         });
     });
 
     describe('when active subscription exists', () => {
-        it('should return 409 error from service', async () => {
+        it('should throw HTTPException 500', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
@@ -249,20 +251,16 @@ describe('reactivateSubscriptionRoute handler', () => {
             );
             const ctx = createMockContext({ body: { planId: 'plan_pro' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toMatchObject({
-                success: false,
-                subscriptionId: null,
-                message: expect.stringContaining('active subscription exists')
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate subscription'
             });
         });
     });
 
     describe('when trialing subscription exists', () => {
-        it('should return 409 error from service', async () => {
+        it('should throw HTTPException 500', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(
@@ -272,14 +270,10 @@ describe('reactivateSubscriptionRoute handler', () => {
             );
             const ctx = createMockContext({ body: { planId: 'plan_pro' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toMatchObject({
-                success: false,
-                subscriptionId: null,
-                message: expect.stringContaining('trialing subscription exists')
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate subscription'
             });
         });
     });
@@ -338,21 +332,16 @@ describe('reactivateSubscriptionRoute handler', () => {
     // -----------------------------------------------------------------------
 
     describe('when service throws an error', () => {
-        it('should return success=false with error message', async () => {
+        it('should throw HTTPException 500 with generic message', async () => {
             // Arrange
             const handler = getReactivateSubscriptionHandler();
             mockReactivateSubscription.mockRejectedValue(new Error('Unexpected billing error'));
             const ctx = createMockContext({ body: { planId: 'plan_basic' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toEqual({
-                success: false,
-                subscriptionId: null,
-                previousPlanId: null,
-                message: 'Failed to reactivate subscription: Unexpected billing error'
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate subscription'
             });
         });
     });

@@ -592,10 +592,11 @@ describe('Promo Code Apply Functionality', () => {
             const result = await service.apply('ERROR', checkoutId, 1000);
 
             // Assert
-            // The atomic redemption failure should propagate as VALIDATION_ERROR
+            // When the transaction throws, the outer catch in applyPromoCode
+            // returns INTERNAL_ERROR (the error is not a validation issue).
             expect(result.success).toBe(false);
             if (!result.success) {
-                expect(result.error.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+                expect(result.error.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             }
         });
 

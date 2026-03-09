@@ -44,7 +44,19 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_ADMIN_ENABLED: true,
         API_RATE_LIMIT_ADMIN_WINDOW_MS: 1000,
         API_RATE_LIMIT_ADMIN_MAX_REQUESTS: 2, // Lower limit for admin
-        API_RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.'
+        API_RATE_LIMIT_ADMIN_MESSAGE: 'Too many admin requests, please try again later.',
+
+        // Billing rate limiting
+        API_RATE_LIMIT_BILLING_ENABLED: true,
+        API_RATE_LIMIT_BILLING_WINDOW_MS: 1000,
+        API_RATE_LIMIT_BILLING_MAX_REQUESTS: 2, // Low limit for billing POST
+        API_RATE_LIMIT_BILLING_MESSAGE: 'Too many billing requests, please try again later.',
+
+        // Webhook rate limiting
+        API_RATE_LIMIT_WEBHOOK_ENABLED: true,
+        API_RATE_LIMIT_WEBHOOK_WINDOW_MS: 1000,
+        API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS: 8, // High throughput for webhooks
+        API_RATE_LIMIT_WEBHOOK_MESSAGE: 'Too many webhook requests, please try again later.'
     };
 
     const getRateLimitConfig = () => ({
@@ -75,7 +87,19 @@ vi.mock('../../src/utils/env', () => {
         adminEnabled: mockEnv.API_RATE_LIMIT_ADMIN_ENABLED,
         adminWindowMs: mockEnv.API_RATE_LIMIT_ADMIN_WINDOW_MS,
         adminMaxRequests: mockEnv.API_RATE_LIMIT_ADMIN_MAX_REQUESTS,
-        adminMessage: mockEnv.API_RATE_LIMIT_ADMIN_MESSAGE
+        adminMessage: mockEnv.API_RATE_LIMIT_ADMIN_MESSAGE,
+
+        // Billing-specific
+        billingEnabled: mockEnv.API_RATE_LIMIT_BILLING_ENABLED,
+        billingWindowMs: mockEnv.API_RATE_LIMIT_BILLING_WINDOW_MS,
+        billingMaxRequests: mockEnv.API_RATE_LIMIT_BILLING_MAX_REQUESTS,
+        billingMessage: mockEnv.API_RATE_LIMIT_BILLING_MESSAGE,
+
+        // Webhook-specific
+        webhookEnabled: mockEnv.API_RATE_LIMIT_WEBHOOK_ENABLED,
+        webhookWindowMs: mockEnv.API_RATE_LIMIT_WEBHOOK_WINDOW_MS,
+        webhookMaxRequests: mockEnv.API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS,
+        webhookMessage: mockEnv.API_RATE_LIMIT_WEBHOOK_MESSAGE
     });
 
     return {
@@ -531,20 +555,23 @@ describe('Rate Limit Middleware', () => {
 
             // Setup different endpoint types
             app.get('/test', (c) => c.json({ success: true })); // general (3 requests)
-            app.get('/auth/login', (c) => c.json({ success: true })); // auth (5 requests)
-            app.get('/public/data', (c) => c.json({ success: true })); // public (10 requests)
-            app.get('/admin/users', (c) => c.json({ success: true })); // admin (2 requests)
+            app.get('/api/v1/auth/login', (c) => c.json({ success: true })); // auth (5 requests)
+            app.get('/api/v1/public/data', (c) => c.json({ success: true })); // public (10 requests)
+            app.get('/api/v1/admin/users', (c) => c.json({ success: true })); // admin (2 requests)
+            app.post('/api/v1/admin/billing/subscribe', (c) => c.json({ success: true })); // billing POST (2 requests)
+            app.get('/api/v1/admin/billing/plans', (c) => c.json({ success: true })); // billing GET -> admin (2 requests)
+            app.post('/api/v1/public/webhooks/mercadopago', (c) => c.json({ success: true })); // webhook (8 requests)
         });
 
         it('should apply different limits for auth endpoints', async () => {
             // Auth endpoints should allow 5 requests
             for (let i = 0; i < 5; i++) {
-                const res = await app.request('/auth/login');
+                const res = await app.request('/api/v1/auth/login');
                 expect(res.status).toBe(200);
             }
 
             // 6th request should be rate limited
-            const res = await app.request('/auth/login');
+            const res = await app.request('/api/v1/auth/login');
             expect(res.status).toBe(429);
 
             const data = await res.json();
@@ -556,12 +583,12 @@ describe('Rate Limit Middleware', () => {
         it('should apply different limits for public endpoints', async () => {
             // Public endpoints should allow 10 requests
             for (let i = 0; i < 10; i++) {
-                const res = await app.request('/public/data');
+                const res = await app.request('/api/v1/public/data');
                 expect(res.status).toBe(200);
             }
 
             // 11th request should be rate limited
-            const res = await app.request('/public/data');
+            const res = await app.request('/api/v1/public/data');
             expect(res.status).toBe(429);
 
             const data = await res.json();
@@ -571,23 +598,86 @@ describe('Rate Limit Middleware', () => {
         it('should apply different limits for admin endpoints', async () => {
             // Admin endpoints should allow only 2 requests
             for (let i = 0; i < 2; i++) {
-                const res = await app.request('/admin/users');
+                const res = await app.request('/api/v1/admin/users');
                 expect(res.status).toBe(200);
             }
 
             // 3rd request should be rate limited
-            const res = await app.request('/admin/users');
+            const res = await app.request('/api/v1/admin/users');
             expect(res.status).toBe(429);
 
             const data = await res.json();
             expect(data.error.message).toBe('Too many admin requests, please try again later.');
         });
 
+        it('should apply billing limits only to POST requests on billing paths', async () => {
+            // POST to billing endpoint should use billing limits (2 requests)
+            for (let i = 0; i < 2; i++) {
+                const res = await app.request('/api/v1/admin/billing/subscribe', {
+                    method: 'POST'
+                });
+                expect(res.status).toBe(200);
+            }
+
+            // 3rd POST should be rate limited
+            const res = await app.request('/api/v1/admin/billing/subscribe', {
+                method: 'POST'
+            });
+            expect(res.status).toBe(429);
+
+            const data = await res.json();
+            expect(data.error.message).toBe('Too many billing requests, please try again later.');
+        });
+
+        it('should apply admin limits to GET requests on billing paths', async () => {
+            // GET on billing path should fall through to admin (not billing)
+            const res = await app.request('/api/v1/admin/billing/plans');
+            expect(res.status).toBe(200);
+            expect(res.headers.get('X-RateLimit-Type')).toBe('admin');
+        });
+
+        it('should apply webhook limits to webhook endpoints', async () => {
+            // Webhook endpoints should allow 8 requests
+            for (let i = 0; i < 8; i++) {
+                const res = await app.request('/api/v1/public/webhooks/mercadopago', {
+                    method: 'POST'
+                });
+                expect(res.status).toBe(200);
+            }
+
+            // 9th request should be rate limited
+            const res = await app.request('/api/v1/public/webhooks/mercadopago', {
+                method: 'POST'
+            });
+            expect(res.status).toBe(429);
+
+            const data = await res.json();
+            expect(data.error.message).toBe('Too many webhook requests, please try again later.');
+        });
+
         it('should include endpoint type in rate limit headers', async () => {
-            const res = await app.request('/auth/login');
+            const res = await app.request('/api/v1/auth/login');
             expect(res.status).toBe(200);
             expect(res.headers.get('X-RateLimit-Type')).toBe('auth');
             expect(res.headers.get('X-RateLimit-Limit')).toBe('5');
+        });
+
+        it('should include billing endpoint type in rate limit headers', async () => {
+            const res = await app.request('/api/v1/admin/billing/subscribe', {
+                method: 'POST'
+            });
+            expect(res.status).toBe(200);
+            expect(res.headers.get('X-RateLimit-Type')).toBe('billing');
+            expect(res.headers.get('X-RateLimit-Limit')).toBe('2');
+        });
+
+        it('should include webhook endpoint type in rate limit headers', async () => {
+            const res = await app.request('/api/v1/public/webhooks/mercadopago', {
+                method: 'POST'
+            });
+            expect(res.status).toBe(200);
+            expect(res.headers.get('X-RateLimit-Type')).toBe('webhook');
+            expect(res.headers.get('X-RateLimit-Limit')).toBe('8');
         });
 
         it('should track different endpoint types independently', async () => {
@@ -602,7 +692,7 @@ describe('Rate Limit Middleware', () => {
             expect(generalRes.status).toBe(429);
 
             // But auth endpoint should still work (different limit and counter)
-            const authRes = await app.request('/auth/login');
+            const authRes = await app.request('/api/v1/auth/login');
             expect(authRes.status).toBe(200);
         });
     });
@@ -652,15 +742,15 @@ describe('Rate Limit Middleware', () => {
             const multiApp = new Hono();
             multiApp.use('*', rateLimitMiddleware);
             multiApp.get('/test', (c) => c.json({ success: true })); // general (limit: 3)
-            multiApp.get('/auth/login', (c) => c.json({ success: true })); // auth    (limit: 5)
-            multiApp.get('/admin/users', (c) => c.json({ success: true })); // admin   (limit: 2)
+            multiApp.get('/api/v1/auth/login', (c) => c.json({ success: true })); // auth    (limit: 5)
+            multiApp.get('/api/v1/admin/users', (c) => c.json({ success: true })); // admin   (limit: 2)
 
             const ip = '192.168.1.50';
 
             // Make requests on all three endpoint types to build up counts
             await multiApp.request('/test', { headers: { 'X-Forwarded-For': ip } });
-            await multiApp.request('/auth/login', { headers: { 'X-Forwarded-For': ip } });
-            await multiApp.request('/admin/users', { headers: { 'X-Forwarded-For': ip } });
+            await multiApp.request('/api/v1/auth/login', { headers: { 'X-Forwarded-For': ip } });
+            await multiApp.request('/api/v1/admin/users', { headers: { 'X-Forwarded-For': ip } });
 
             // Act: clear all rate limit entries for this IP
             await clearRateLimitForIp({ ip });
@@ -671,12 +761,12 @@ describe('Rate Limit Middleware', () => {
             });
             expect(resGeneral.status).toBe(200);
 
-            const resAuth = await multiApp.request('/auth/login', {
+            const resAuth = await multiApp.request('/api/v1/auth/login', {
                 headers: { 'X-Forwarded-For': ip }
             });
             expect(resAuth.status).toBe(200);
 
-            const resAdmin = await multiApp.request('/admin/users', {
+            const resAdmin = await multiApp.request('/api/v1/admin/users', {
                 headers: { 'X-Forwarded-For': ip }
             });
             expect(resAdmin.status).toBe(200);

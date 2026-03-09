@@ -8,7 +8,7 @@
  * - Missing planId in body (400)
  * - Empty string planId in body (400)
  * - Service returns null subscriptionId
- * - Service throws an error
+ * - Service throws an error (500 HTTPException)
  * - Correct parameters forwarded to reactivateFromTrial
  * - reactivateFromTrial returns a subscriptionId in the response
  * - Canceled subscription reactivation
@@ -85,6 +85,12 @@ vi.mock('../../src/utils/logger', () => ({
         warn: vi.fn(),
         error: vi.fn(),
         debug: vi.fn()
+    }
+}));
+
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_API_DEBUG_ERRORS: false
     }
 }));
 
@@ -313,37 +319,29 @@ describe('reactivateTrialRoute handler', () => {
     // -----------------------------------------------------------------------
 
     describe('when reactivateFromTrial throws an error', () => {
-        it('should return success=false with the error message', async () => {
+        it('should throw HTTPException 500 with generic message', async () => {
             // Arrange
             const handler = getReactivateHandler();
             mockReactivateFromTrial.mockRejectedValue(new Error('No trial subscription found'));
             const ctx = createMockContext({ body: { planId: 'plan_basic' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toEqual({
-                success: false,
-                subscriptionId: null,
-                message: 'Failed to reactivate: No trial subscription found'
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate'
             });
         });
 
-        it('should return success=false when service throws with a non-Error object', async () => {
+        it('should throw HTTPException 500 when service throws with a non-Error object', async () => {
             // Arrange
             const handler = getReactivateHandler();
             mockReactivateFromTrial.mockRejectedValue('unexpected string error');
             const ctx = createMockContext({ body: { planId: 'plan_basic' } });
 
-            // Act
-            const result = await handler(ctx);
-
-            // Assert
-            expect(result).toEqual({
-                success: false,
-                subscriptionId: null,
-                message: 'Failed to reactivate: unexpected string error'
+            // Act & Assert
+            await expect(handler(ctx)).rejects.toMatchObject({
+                status: 500,
+                message: 'Failed to reactivate'
             });
         });
     });

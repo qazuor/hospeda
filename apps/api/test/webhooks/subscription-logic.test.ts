@@ -20,6 +20,11 @@ import {
     shouldSendReactivationEmail
 } from '../../src/routes/webhooks/mercadopago/subscription-logic';
 
+// Mock the entitlement middleware so clearEntitlementCache is a no-op
+vi.mock('../../src/middlewares/entitlement.js', () => ({
+    clearEntitlementCache: vi.fn()
+}));
+
 // Hoisted mock stubs for notification functions - declared before any imports are resolved.
 const { mockSendCancelled, mockSendPaused, mockSendReactivated } = vi.hoisted(() => ({
     mockSendCancelled: vi.fn().mockResolvedValue(undefined),
@@ -69,6 +74,10 @@ describe('subscription-logic', () => {
 
         it("should map 'finished' to SubscriptionStatusEnum.EXPIRED", () => {
             expect(QZPAY_TO_HOSPEDA_STATUS.finished).toBe(SubscriptionStatusEnum.EXPIRED);
+        });
+
+        it("should map 'past_due' to SubscriptionStatusEnum.PAST_DUE", () => {
+            expect(QZPAY_TO_HOSPEDA_STATUS.past_due).toBe(SubscriptionStatusEnum.PAST_DUE);
         });
 
         it("should map 'pending' to null (no status change)", () => {
@@ -328,18 +337,28 @@ function makeMpSubscription(
 /**
  * Creates a chainable Drizzle-like mock db instance that resolves to the
  * given rows when the chain terminates (simulates `.select().from().where().limit()`).
+ *
+ * The mock also provides a `transaction(cb)` method that executes the callback
+ * with a `tx` object containing its own `update` and `insert` chains, mirroring
+ * how the implementation calls `db.transaction(async (tx) => { ... })`.
  */
 function makeDbMock(selectRows: unknown[], insertShouldFail = false) {
-    const insertValuesChain = {
+    const txInsertValuesChain = {
         values: vi.fn().mockResolvedValue(undefined)
     };
     if (insertShouldFail) {
-        insertValuesChain.values = vi.fn().mockRejectedValue(new Error('insert failed'));
+        txInsertValuesChain.values = vi.fn().mockRejectedValue(new Error('insert failed'));
     }
 
-    const updateSetChain = {
+    const txUpdateSetChain = {
         set: vi.fn().mockReturnThis(),
         where: vi.fn().mockResolvedValue(undefined)
+    };
+
+    /** Transaction object passed to the callback of db.transaction() */
+    const tx = {
+        insert: vi.fn().mockReturnValue(txInsertValuesChain),
+        update: vi.fn().mockReturnValue(txUpdateSetChain)
     };
 
     const selectChain = {
@@ -350,8 +369,15 @@ function makeDbMock(selectRows: unknown[], insertShouldFail = false) {
 
     return {
         select: vi.fn().mockReturnValue(selectChain),
-        insert: vi.fn().mockReturnValue(insertValuesChain),
-        update: vi.fn().mockReturnValue(updateSetChain)
+        /** @deprecated Direct insert/update on db - kept for backwards compat assertions */
+        insert: vi.fn().mockReturnValue(txInsertValuesChain),
+        update: vi.fn().mockReturnValue(txUpdateSetChain),
+        /** Executes the callback with a mock transaction object */
+        transaction: vi.fn(async (cb: (txArg: typeof tx) => Promise<void>) => {
+            await cb(tx);
+        }),
+        /** The transaction mock object, exposed for assertions */
+        tx
     };
 }
 
@@ -452,7 +478,9 @@ describe('processSubscriptionUpdated', () => {
 
         expect(Sentry.captureException).toHaveBeenCalledWith(
             retrieveError,
-            expect.objectContaining({ extra: expect.objectContaining({ mpPreapprovalId }) })
+            expect.objectContaining({
+                extra: expect.objectContaining({ mpPreapprovalId: '***...-001' })
+            })
         );
     });
 
@@ -505,7 +533,9 @@ describe('processSubscriptionUpdated', () => {
         expect(result).toEqual({ success: true, statusChanged: false });
         expect(Sentry.captureException).toHaveBeenCalledWith(
             expect.objectContaining({ message: expect.stringContaining('Unknown QZPay') }),
-            expect.objectContaining({ extra: expect.objectContaining({ mpPreapprovalId }) })
+            expect.objectContaining({
+                extra: expect.objectContaining({ mpPreapprovalId: '***...-001' })
+            })
         );
         expect(dbMock.select).not.toHaveBeenCalled();
     });
@@ -533,7 +563,7 @@ describe('processSubscriptionUpdated', () => {
 
         // Assert
         expect(result).toEqual({ success: true, statusChanged: false });
-        expect(dbMock.update).not.toHaveBeenCalled();
+        expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
     // TC-06: Same status - no change
@@ -560,7 +590,7 @@ describe('processSubscriptionUpdated', () => {
 
         // Assert
         expect(result).toEqual({ success: true, statusChanged: false });
-        expect(dbMock.update).not.toHaveBeenCalled();
+        expect(dbMock.transaction).not.toHaveBeenCalled();
     });
 
     // TC-07: Status change to CANCELLED - DB update, event log, and correct result
@@ -590,8 +620,9 @@ describe('processSubscriptionUpdated', () => {
             statusChanged: true,
             newStatus: SubscriptionStatusEnum.CANCELLED
         });
-        expect(dbMock.update).toHaveBeenCalled();
-        expect(dbMock.insert).toHaveBeenCalled();
+        expect(dbMock.transaction).toHaveBeenCalled();
+        expect(dbMock.tx.update).toHaveBeenCalled();
+        expect(dbMock.tx.insert).toHaveBeenCalled();
     });
 
     // TC-08: Status change to PAUSED - DB update, event log, and correct result
@@ -621,8 +652,9 @@ describe('processSubscriptionUpdated', () => {
             statusChanged: true,
             newStatus: SubscriptionStatusEnum.PAUSED
         });
-        expect(dbMock.update).toHaveBeenCalled();
-        expect(dbMock.insert).toHaveBeenCalled();
+        expect(dbMock.transaction).toHaveBeenCalled();
+        expect(dbMock.tx.update).toHaveBeenCalled();
+        expect(dbMock.tx.insert).toHaveBeenCalled();
     });
 
     // TC-09: Status change to ACTIVE (reactivation from paused) - resets cancelAtPeriodEnd
@@ -657,8 +689,9 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Verify the update included cancelAtPeriodEnd: false
-        const updateMock = dbMock.update({});
-        expect(updateMock.set).toHaveBeenCalledWith(
+        expect(dbMock.transaction).toHaveBeenCalled();
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
             expect.objectContaining({ cancelAtPeriodEnd: false })
         );
     });
@@ -689,8 +722,8 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert: canceledAt must NOT appear in the update payload
-        const updateChain = dbMock.update({});
-        expect(updateChain.set).toHaveBeenCalledWith(
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
             expect.not.objectContaining({ canceledAt: expect.any(Date) })
         );
     });
@@ -720,8 +753,8 @@ describe('processSubscriptionUpdated', () => {
         });
 
         // Assert: cancelAtPeriodEnd NOT in update payload since it was already false
-        const updateChain = dbMock.update({});
-        expect(updateChain.set).toHaveBeenCalledWith(
+        const txUpdateChain = dbMock.tx.update({});
+        expect(txUpdateChain.set).toHaveBeenCalledWith(
             expect.not.objectContaining({ cancelAtPeriodEnd: false })
         );
     });
@@ -748,10 +781,10 @@ describe('processSubscriptionUpdated', () => {
             source: 'dead-letter-retry'
         });
 
-        // Assert: insert called with correct audit data
-        expect(dbMock.insert).toHaveBeenCalled();
-        const insertChain = dbMock.insert({});
-        expect(insertChain.values).toHaveBeenCalledWith(
+        // Assert: insert called with correct audit data inside the transaction
+        expect(dbMock.tx.insert).toHaveBeenCalled();
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
             expect.objectContaining({
                 subscriptionId: localSub.id,
                 previousStatus: SubscriptionStatusEnum.ACTIVE,
@@ -819,12 +852,13 @@ describe('processSubscriptionUpdated', () => {
             providerEventId: 'evt-014'
         });
 
-        // Assert: DB was still updated, but notifications were skipped
+        // Assert: DB was still updated (inside transaction), but notifications were skipped
         expect(result).toEqual({
             success: true,
             statusChanged: true,
             newStatus: SubscriptionStatusEnum.PAUSED
         });
-        expect(dbMock.update).toHaveBeenCalled();
+        expect(dbMock.transaction).toHaveBeenCalled();
+        expect(dbMock.tx.update).toHaveBeenCalled();
     });
 });

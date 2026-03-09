@@ -2,7 +2,7 @@
  * Tests for shared dispute processing logic.
  * @module test/routes/webhooks/dispute-logic
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before imports
 vi.mock('../../../src/utils/logger', () => ({
@@ -18,18 +18,21 @@ vi.mock('../../../src/utils/notification-helper', () => ({
     sendNotification: vi.fn().mockResolvedValue(undefined)
 }));
 
+vi.mock('../../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_ADMIN_NOTIFICATION_EMAILS: undefined as string | undefined
+    }
+}));
+
 import { processDisputeEvent } from '../../../src/routes/webhooks/mercadopago/dispute-logic';
+import { env } from '../../../src/utils/env';
 import { apiLogger } from '../../../src/utils/logger';
 import { sendNotification } from '../../../src/utils/notification-helper';
 
 describe('processDisputeEvent', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        vi.stubEnv('ADMIN_NOTIFICATION_EMAILS', 'admin@test.com');
-    });
-
-    afterEach(() => {
-        vi.unstubAllEnvs();
+        (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
     });
 
     it('should log dispute at warn level', async () => {
@@ -76,7 +79,7 @@ describe('processDisputeEvent', () => {
     });
 
     it('should not send notification when no admin emails configured', async () => {
-        vi.stubEnv('ADMIN_NOTIFICATION_EMAILS', '');
+        (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = '';
 
         await processDisputeEvent({
             eventData: { id: 'dispute-3' },

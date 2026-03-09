@@ -6,13 +6,19 @@
  * - Marking events as processed
  * - Admin notification dispatch (BILL-17)
  */
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockMarkProcessed = vi.fn().mockResolvedValue(undefined);
 const mockSendNotification = vi.fn().mockResolvedValue(undefined);
+const mockCleanupRequestProviderEventId = vi.fn();
 
 vi.mock('../../../src/routes/webhooks/mercadopago/utils', () => ({
     markEventProcessedByProviderId: (...args: unknown[]) => mockMarkProcessed(...args)
+}));
+
+vi.mock('../../../src/routes/webhooks/mercadopago/event-handler', () => ({
+    cleanupRequestProviderEventId: (...args: unknown[]) =>
+        mockCleanupRequestProviderEventId(...args)
 }));
 
 vi.mock('../../../src/utils/logger', () => ({
@@ -28,7 +34,14 @@ vi.mock('../../../src/utils/notification-helper', () => ({
     sendNotification: (...args: unknown[]) => mockSendNotification(...args)
 }));
 
+vi.mock('../../../src/utils/env', () => ({
+    env: {
+        HOSPEDA_ADMIN_NOTIFICATION_EMAILS: undefined as string | undefined
+    }
+}));
+
 import { handleDisputeOpened } from '../../../src/routes/webhooks/mercadopago/dispute-handler';
+import { env } from '../../../src/utils/env';
 import { apiLogger } from '../../../src/utils/logger';
 
 function createMockContext(): { get: ReturnType<typeof vi.fn> } {
@@ -41,15 +54,9 @@ function createMockContext(): { get: ReturnType<typeof vi.fn> } {
 }
 
 describe('handleDisputeOpened', () => {
-    const originalEnv = process.env;
-
     beforeEach(() => {
         vi.clearAllMocks();
-        process.env = { ...originalEnv };
-    });
-
-    afterEach(() => {
-        process.env = originalEnv;
+        (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = undefined;
     });
 
     it('should log dispute at warn level with event metadata', async () => {
@@ -139,7 +146,8 @@ describe('handleDisputeOpened', () => {
     describe('admin notification (BILL-17)', () => {
         it('should send ADMIN_SYSTEM_EVENT notification with severity critical to admin emails', async () => {
             // Arrange
-            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin1@test.com,admin2@test.com';
+            (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS =
+                'admin1@test.com,admin2@test.com';
             const c = createMockContext();
             const event = {
                 id: 33333,
@@ -180,7 +188,7 @@ describe('handleDisputeOpened', () => {
 
         it('should include dispute metadata in eventDetails', async () => {
             // Arrange
-            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
+            (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
             const c = createMockContext();
             const event = {
                 id: 44444,
@@ -214,7 +222,7 @@ describe('handleDisputeOpened', () => {
 
         it('should not block webhook processing if notification fails', async () => {
             // Arrange
-            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
+            (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@test.com';
             mockSendNotification.mockRejectedValueOnce(new Error('Notification service down'));
             const c = createMockContext();
             const event = {
@@ -239,7 +247,7 @@ describe('handleDisputeOpened', () => {
 
         it('should skip notification when ADMIN_NOTIFICATION_EMAILS is not set', async () => {
             // Arrange
-            process.env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = undefined;
+            (env as Record<string, unknown>).HOSPEDA_ADMIN_NOTIFICATION_EMAILS = undefined;
             const c = createMockContext();
             const event = {
                 id: 66666,

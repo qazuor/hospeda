@@ -9,6 +9,17 @@ vi.mock('dotenv', () => ({
     config: vi.fn()
 }));
 
+// Mock apiLogger used by env.ts
+vi.mock('../../src/utils/logger', () => ({
+    apiLogger: {
+        log: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
 // Store original process.env
 const originalEnv = process.env;
 
