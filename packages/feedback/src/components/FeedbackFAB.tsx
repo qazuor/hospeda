@@ -16,7 +16,7 @@
  * acting as a kill switch for the entire feedback system.
  */
 import { useCallback, useEffect, useState } from 'react';
-import { FEEDBACK_CONFIG } from '../config/feedback.config.js';
+import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
@@ -118,7 +118,6 @@ const FAB_BASE: React.CSSProperties = {
     justifyContent: 'center',
     cursor: 'pointer',
     border: 'none',
-    outline: 'none',
     transition: 'box-shadow 0.2s ease, transform 0.2s ease'
 };
 
@@ -154,8 +153,8 @@ const MINIMIZE_BTN: React.CSSProperties = {
     position: 'absolute',
     top: '-6px',
     right: '-6px',
-    width: '18px',
-    height: '18px',
+    width: '24px',
+    height: '24px',
     borderRadius: '50%',
     backgroundColor: '#1e40af',
     color: '#ffffff',
@@ -311,19 +310,14 @@ export function FeedbackFAB({
     prefillData
 }: FeedbackFABProps): React.JSX.Element | null {
     // ------------------------------------------------------------------
-    // Kill switch
-    // ------------------------------------------------------------------
-
-    if (!FEEDBACK_CONFIG.enabled) return null;
-
-    // ------------------------------------------------------------------
-    // State
+    // State (all hooks MUST be before any conditional return)
     // ------------------------------------------------------------------
 
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
     const [isHovered, setIsHovered] = useState<boolean>(false);
     const [isPulsing, setIsPulsing] = useState<boolean>(false);
+    const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
     // ------------------------------------------------------------------
     // Keyboard shortcut
@@ -369,14 +363,17 @@ export function FeedbackFAB({
 
         const PULSE_INTERVAL_MS = 30_000;
         const PULSE_DURATION_MS = 600;
+        let pulseTimeout: ReturnType<typeof setTimeout> | undefined;
 
         const interval = setInterval(() => {
             setIsPulsing(true);
-            const timeout = setTimeout(() => setIsPulsing(false), PULSE_DURATION_MS);
-            return () => clearTimeout(timeout);
+            pulseTimeout = setTimeout(() => setIsPulsing(false), PULSE_DURATION_MS);
         }, PULSE_INTERVAL_MS);
 
-        return () => clearInterval(interval);
+        return () => {
+            clearInterval(interval);
+            if (pulseTimeout) clearTimeout(pulseTimeout);
+        };
     }, [isMinimized]);
 
     // ------------------------------------------------------------------
@@ -402,11 +399,7 @@ export function FeedbackFAB({
 
     // ------------------------------------------------------------------
     // Desktop FAB size upgrade via media query (48px -> 56px)
-    // We apply it via an inline style override using a media-safe approach.
-    // Since inline styles cannot target media queries, we use a size state.
     // ------------------------------------------------------------------
-
-    const [isDesktop, setIsDesktop] = useState<boolean>(false);
 
     useEffect(() => {
         if (typeof window === 'undefined') return;
@@ -418,6 +411,12 @@ export function FeedbackFAB({
         mql.addEventListener('change', handleChange);
         return () => mql.removeEventListener('change', handleChange);
     }, []);
+
+    // ------------------------------------------------------------------
+    // Kill switch (AFTER all hooks to satisfy Rules of Hooks)
+    // ------------------------------------------------------------------
+
+    if (!FEEDBACK_CONFIG.enabled) return null;
 
     // ------------------------------------------------------------------
     // Derived styles
@@ -439,41 +438,66 @@ export function FeedbackFAB({
     const minimizedStyle: React.CSSProperties = isHovered ? FAB_MINIMIZED_HOVERED : FAB_MINIMIZED;
 
     // ------------------------------------------------------------------
+    // Tooltip: derive shortcut label from config instead of hardcoding
+    // ------------------------------------------------------------------
+
+    const tooltipId = 'feedback-fab-tooltip';
+    const tooltipText = `${FEEDBACK_STRINGS.fab.tooltipBase} (${getShortcutLabel()})`;
+
+    // ------------------------------------------------------------------
+    // Shared modal props
+    // ------------------------------------------------------------------
+
+    const modalElement = (
+        <FeedbackModal
+            isOpen={isOpen}
+            onClose={handleClose}
+            formProps={{
+                apiUrl,
+                appSource,
+                deployVersion,
+                userId,
+                userEmail,
+                userName,
+                prefillData
+            }}
+        />
+    );
+
+    // ------------------------------------------------------------------
     // Render: minimized state
     // ------------------------------------------------------------------
 
     if (isMinimized) {
         return (
             <>
-                <button
-                    type="button"
-                    style={minimizedStyle}
-                    onClick={handleMinimizedClick}
-                    onMouseEnter={() => setIsHovered(true)}
-                    onMouseLeave={() => setIsHovered(false)}
-                    onFocus={() => setIsHovered(true)}
-                    onBlur={() => setIsHovered(false)}
-                    aria-label={FEEDBACK_STRINGS.fab.tooltip}
-                    title={FEEDBACK_STRINGS.fab.tooltip}
-                    data-testid="feedback-fab-minimized"
-                >
-                    {isHovered && <BugIcon />}
-                    {isHovered && <span style={TOOLTIP}>{FEEDBACK_STRINGS.fab.tooltip}</span>}
-                </button>
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <button
+                        type="button"
+                        style={minimizedStyle}
+                        onClick={handleMinimizedClick}
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                        onFocus={() => setIsHovered(true)}
+                        onBlur={() => setIsHovered(false)}
+                        aria-label={tooltipText}
+                        aria-describedby={isHovered ? tooltipId : undefined}
+                        data-testid="feedback-fab-minimized"
+                    >
+                        {isHovered && <BugIcon />}
+                    </button>
+                    {isHovered && (
+                        <span
+                            id={tooltipId}
+                            style={TOOLTIP}
+                            role="tooltip"
+                        >
+                            {FEEDBACK_STRINGS.fab.tooltip}
+                        </span>
+                    )}
+                </div>
 
-                <FeedbackModal
-                    isOpen={isOpen}
-                    onClose={handleClose}
-                    formProps={{
-                        apiUrl,
-                        appSource,
-                        deployVersion,
-                        userId,
-                        userEmail,
-                        userName,
-                        prefillData
-                    }}
-                />
+                {modalElement}
             </>
         );
     }
@@ -484,7 +508,6 @@ export function FeedbackFAB({
 
     return (
         <>
-            {/* Style tag ensures the pulse class works without a CSS file */}
             <div style={{ position: 'relative', display: 'inline-block' }}>
                 <button
                     type="button"
@@ -496,20 +519,22 @@ export function FeedbackFAB({
                     onFocus={() => setIsHovered(true)}
                     onBlur={() => setIsHovered(false)}
                     aria-label={FEEDBACK_STRINGS.fab.tooltip}
+                    aria-describedby={isHovered ? tooltipId : undefined}
                     data-testid="feedback-fab"
                 >
                     <BugIcon />
-
-                    {/* Tooltip on hover */}
-                    {isHovered && (
-                        <span
-                            style={TOOLTIP}
-                            role="tooltip"
-                        >
-                            {FEEDBACK_STRINGS.fab.tooltip}
-                        </span>
-                    )}
                 </button>
+
+                {/* Tooltip rendered outside button to avoid duplicate screen reader announcement */}
+                {isHovered && (
+                    <span
+                        id={tooltipId}
+                        style={TOOLTIP}
+                        role="tooltip"
+                    >
+                        {tooltipText}
+                    </span>
+                )}
 
                 {/* Minimize button: small circle in top-right corner of the FAB */}
                 <button
@@ -523,19 +548,7 @@ export function FeedbackFAB({
                 </button>
             </div>
 
-            <FeedbackModal
-                isOpen={isOpen}
-                onClose={handleClose}
-                formProps={{
-                    apiUrl,
-                    appSource,
-                    deployVersion,
-                    userId,
-                    userEmail,
-                    userName,
-                    prefillData
-                }}
-            />
+            {modalElement}
         </>
     );
 }

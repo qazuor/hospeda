@@ -164,3 +164,18 @@ export const FEEDBACK_CONFIG = {
     /** Kill switch for the entire feedback system */
     enabled: true
 } as const;
+
+/**
+ * Builds a human-readable keyboard shortcut label from the config.
+ * E.g., "Ctrl+Shift+F" or "Cmd+Shift+F" depending on platform.
+ *
+ * @returns Shortcut label string derived from FEEDBACK_CONFIG.keyboardShortcut
+ */
+export function getShortcutLabel(): string {
+    const { key, ctrl, shift } = FEEDBACK_CONFIG.keyboardShortcut;
+    const parts: string[] = [];
+    if (ctrl) parts.push('Ctrl');
+    if (shift) parts.push('Shift');
+    parts.push(key.toUpperCase());
+    return parts.join('+');
+}

@@ -35,6 +35,7 @@ export const FEEDBACK_STRINGS = {
     /** Floating action button (FAB) strings */
     fab: {
         tooltip: 'Reportar un problema (Ctrl+Shift+F)',
+        tooltipBase: 'Reportar un problema',
         minimizeTooltip: 'Minimizar'
     },
 
@@ -57,7 +58,10 @@ export const FEEDBACK_STRINGS = {
         stepsToReproduce: 'Pasos para reproducir',
         stepsPlaceholder: '1. Ir a...\n2. Hacer click en...',
         expectedResult: 'Resultado esperado',
+        expectedResultPlaceholder: 'Lo que esperabas que pasara...',
         actualResult: 'Resultado actual',
+        actualResultPlaceholder: 'Lo que realmente ocurrio...',
+        severityOptional: '-- Opcional --',
         emailPlaceholder: 'email@ejemplo.com',
         namePlaceholder: 'Tu nombre',
         attachments: 'Capturas de pantalla',
