@@ -9,6 +9,7 @@
 | [AFIP Research](../../.claude/specs/SPEC-028-iva-tax-handling/afip-research.md) | Research on AFIP integration options and requirements (moved to SPEC-028) |
 | [Dispute Handling v1](dispute-handling-v1.md) | Manual dispute resolution strategy |
 | [Grace Period Source of Truth](grace-period-source-of-truth.md) | Where grace period logic lives |
+| [v1 Launch Strategy](v1-launch-strategy.md) | What's in v1 vs v2, known limitations, launch checklist |
 
 ## Package Documentation
 
