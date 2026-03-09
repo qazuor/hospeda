@@ -36,6 +36,7 @@ const description = t('error.404.description', 'La pagina que buscas no existe o
 const heading = t('error.404.heading', 'Pagina no encontrada');
 const message = t('error.404.message', 'Lo sentimos, no pudimos encontrar la pagina que buscas. Puede haber sido movida o eliminada.');
 const goHomeLabel = t('error.404.goHome', 'Volver al inicio');
+const reportLabel = t('error.404.report', 'Reportar un problema');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const homeUrl = buildUrl({ locale });
@@ -123,13 +124,21 @@ const homeUrl = buildUrl({ locale });
             </p>
 
             <!-- Home link -->
-            <a
-                href={homeUrl}
-                class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-            >
-                <HomeIcon size={20} weight="regular" aria-hidden="true" />
-                {goHomeLabel}
-            </a>
+            <div class="flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <a
+                    href={homeUrl}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-base font-semibold text-primary-foreground transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                    <HomeIcon size={20} weight="regular" aria-hidden="true" />
+                    {goHomeLabel}
+                </a>
+                <a
+                    href={buildUrl({ locale, path: 'feedback' })}
+                    class="inline-flex items-center justify-center gap-2 rounded-lg border border-border px-6 py-3 text-base font-semibold text-muted-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                >
+                    {reportLabel}
+                </a>
+            </div>
         </div>
     </div>
 </BaseLayout>
