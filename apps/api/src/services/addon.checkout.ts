@@ -421,17 +421,20 @@ export async function confirmAddonPurchase(
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
         const db = getDb();
 
-        await db.insert(billingAddonPurchases).values({
-            customerId: input.customerId,
-            subscriptionId: input.subscriptionId || activeSubscription.id,
-            addonSlug: input.addonSlug,
-            status: 'active',
-            purchasedAt: now,
-            expiresAt,
-            paymentId: input.paymentId || null,
-            limitAdjustments,
-            entitlementAdjustments,
-            metadata: input.metadata || {}
+        // Wrap DB operations in a transaction to ensure atomicity
+        await db.transaction(async (tx) => {
+            await tx.insert(billingAddonPurchases).values({
+                customerId: input.customerId,
+                subscriptionId: input.subscriptionId || activeSubscription.id,
+                addonSlug: input.addonSlug,
+                status: 'active',
+                purchasedAt: now,
+                expiresAt,
+                paymentId: input.paymentId || null,
+                limitAdjustments,
+                entitlementAdjustments,
+                metadata: input.metadata || {}
+            });
         });
 
         apiLogger.info(
@@ -446,7 +449,9 @@ export async function confirmAddonPurchase(
             'Inserted add-on purchase into billing_addon_purchases table'
         );
 
-        // Apply entitlements to JSON metadata for backward compatibility
+        // Apply entitlements to JSON metadata for backward compatibility.
+        // This uses the billing SDK (not direct DB), so it runs outside the
+        // transaction. Failure is non-fatal and logged as a warning.
         const result = await entitlementService.applyAddonEntitlements({
             customerId: input.customerId,
             addonSlug: input.addonSlug
