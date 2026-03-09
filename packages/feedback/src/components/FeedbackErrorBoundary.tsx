@@ -367,11 +367,14 @@ export class FeedbackErrorBoundary extends Component<
                 />
             );
         } catch {
-            // FeedbackModal failed to render — open new-tab fallback
+            // FeedbackModal failed to render — open new-tab fallback.
+            // Use microtask to avoid setState during render phase.
             if (feedbackPageUrl) {
                 openFeedbackTab(feedbackPageUrl, error, appSource);
             }
-            this.setState({ showInlineForm: false });
+            Promise.resolve().then(() => {
+                this.setState({ showInlineForm: false });
+            });
             return null;
         }
     }
