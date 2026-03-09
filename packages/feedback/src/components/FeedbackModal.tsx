@@ -1,12 +1,15 @@
 /**
  * @repo/feedback - FeedbackModal component
  *
- * Wraps FeedbackForm in a responsive container:
+ * Wraps FeedbackForm in a responsive container using native `<dialog>` with
+ * `.showModal()` for proper accessibility and stacking context:
  * - Desktop (>= 640px): Centered modal overlay with close button
  * - Mobile (< 640px): Bottom-anchored drawer that slides up
  *
- * Handles focus trapping, keyboard navigation (Escape to close, Tab cycling),
- * and ARIA attributes for accessibility compliance.
+ * The native dialog API provides built-in backdrop (`::backdrop`), focus
+ * trapping (background becomes `inert`), Escape key handling (`cancel`
+ * event), and body scroll lock. Manual Tab cycling is kept for consistent
+ * wrap-around behavior across browsers.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
@@ -43,6 +46,9 @@ export interface FeedbackModalProps {
 
 const TITLE_ID = 'feedback-modal-title';
 
+/** CSS for the native `::backdrop` pseudo-element (cannot be set inline). */
+const BACKDROP_CSS = 'dialog[data-feedback-modal]::backdrop{background:rgba(0,0,0,0.5)}';
+
 /**
  * Returns all focusable elements within a container element.
  *
@@ -63,23 +69,39 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 }
 
 const styles = {
-    backdrop: {
+    /** Desktop dialog: full-viewport flex container, centered content */
+    dialogDesktop: {
         position: 'fixed' as const,
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
+        width: '100vw',
+        height: '100vh',
+        maxWidth: 'none',
+        maxHeight: 'none',
+        margin: 0,
+        padding: '24px',
+        border: 'none',
+        background: 'transparent',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        boxSizing: 'border-box' as const
     },
-    backdropMobile: {
+    /** Mobile dialog: full-viewport flex container, bottom-aligned content */
+    dialogMobile: {
         position: 'fixed' as const,
         inset: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        zIndex: 9999,
+        width: '100vw',
+        height: '100vh',
+        maxWidth: 'none',
+        maxHeight: 'none',
+        margin: 0,
+        padding: 0,
+        border: 'none',
+        background: 'transparent',
         display: 'flex',
         alignItems: 'flex-end',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        boxSizing: 'border-box' as const
     },
     modal: {
         position: 'relative' as const,
@@ -144,13 +166,17 @@ const styles = {
 /**
  * FeedbackModal component.
  *
- * Renders FeedbackForm inside an accessible, responsive overlay container.
- * On desktop (viewport >= 640px) it shows a centered modal card. On mobile
- * it shows a bottom-anchored drawer with a drag handle visual indicator.
+ * Renders FeedbackForm inside an accessible, responsive overlay using the
+ * native `<dialog>` element with `.showModal()`. On desktop (viewport
+ * >= 640px) it shows a centered modal card. On mobile it shows a
+ * bottom-anchored drawer with a drag handle visual indicator.
  *
- * Focus is trapped inside the dialog while open. Pressing Escape or clicking
- * the backdrop closes the modal. When the modal closes, focus returns to the
- * element that was focused before the modal opened.
+ * The native dialog API provides: `::backdrop` overlay, background `inert`
+ * (focus trapping), `cancel` event (Escape key), and body scroll lock.
+ * Manual Tab wrap-around is kept for consistent UX across browsers.
+ *
+ * When the modal closes, focus returns to the element that was focused
+ * before the modal opened.
  *
  * @param props - See {@link FeedbackModalProps}
  *
@@ -171,6 +197,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
         return window.innerWidth < MOBILE_BREAKPOINT;
     });
 
+    const dialogRef = useRef<HTMLDialogElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const previousFocusRef = useRef<Element | null>(null);
 
@@ -194,31 +221,53 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
     }, []);
 
     // ------------------------------------------------------------------ //
-    // Lock body scroll when modal is open
+    // Show / close dialog via native .showModal() / .close()
     // ------------------------------------------------------------------ //
 
     useEffect(() => {
-        if (!isOpen) return;
+        const dialog = dialogRef.current;
+        if (!dialog) return;
 
-        const previousOverflow = document.body.style.overflow;
-        document.body.style.overflow = 'hidden';
-
-        return () => {
-            document.body.style.overflow = previousOverflow;
-        };
+        if (isOpen) {
+            previousFocusRef.current = document.activeElement;
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        } else {
+            if (dialog.open) {
+                dialog.close();
+            }
+            // Restore focus to the element that was active before opening
+            if (previousFocusRef.current instanceof HTMLElement) {
+                previousFocusRef.current.focus();
+            }
+        }
     }, [isOpen]);
 
     // ------------------------------------------------------------------ //
-    // Focus management
+    // Native cancel event (Escape key) — let React state drive close
+    // ------------------------------------------------------------------ //
+
+    useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+
+        const handleCancel = (e: Event) => {
+            e.preventDefault();
+            onClose();
+        };
+
+        dialog.addEventListener('cancel', handleCancel);
+        return () => dialog.removeEventListener('cancel', handleCancel);
+    }, [onClose]);
+
+    // ------------------------------------------------------------------ //
+    // Focus first element after showing
     // ------------------------------------------------------------------ //
 
     useEffect(() => {
         if (!isOpen) return;
 
-        // Store previously focused element to restore on close
-        previousFocusRef.current = document.activeElement;
-
-        // Focus the first focusable element inside the modal
         const frame = requestAnimationFrame(() => {
             if (!containerRef.current) return;
             const focusable = getFocusableElements(containerRef.current);
@@ -232,60 +281,40 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
         return () => cancelAnimationFrame(frame);
     }, [isOpen]);
 
-    useEffect(() => {
-        if (isOpen) return;
-
-        // Restore focus when modal closes
-        if (previousFocusRef.current && previousFocusRef.current instanceof HTMLElement) {
-            previousFocusRef.current.focus();
-        }
-    }, [isOpen]);
-
     // ------------------------------------------------------------------ //
-    // Keyboard handling
+    // Tab wrap-around (native dialog makes background inert, but
+    // wrap-around from last→first is not guaranteed across browsers)
     // ------------------------------------------------------------------ //
 
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLElement>) => {
-            if (e.key === 'Escape') {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>) => {
+        if (e.key !== 'Tab' || !containerRef.current) return;
+
+        const focusable = getFocusableElements(containerRef.current);
+        if (focusable.length === 0) return;
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+
+        if (e.shiftKey) {
+            if (document.activeElement === first) {
                 e.preventDefault();
-                onClose();
-                return;
+                last?.focus();
             }
-
-            if (e.key !== 'Tab' || !containerRef.current) return;
-
-            const focusable = getFocusableElements(containerRef.current);
-            if (focusable.length === 0) return;
-
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-
-            if (e.shiftKey) {
-                // Shift+Tab: wrap from first to last
-                if (document.activeElement === first) {
-                    e.preventDefault();
-                    last?.focus();
-                }
-            } else {
-                // Tab: wrap from last to first
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first?.focus();
-                }
+        } else {
+            if (document.activeElement === last) {
+                e.preventDefault();
+                first?.focus();
             }
-        },
-        [onClose]
-    );
+        }
+    }, []);
 
     // ------------------------------------------------------------------ //
-    // Backdrop click handler
+    // Backdrop click — click on dialog (outside content) closes
     // ------------------------------------------------------------------ //
 
-    const handleBackdropClick = useCallback(
-        (e: React.MouseEvent<HTMLDivElement>) => {
-            // Only close if clicking the backdrop itself, not the modal content
-            if (e.target === e.currentTarget) {
+    const handleDialogClick = useCallback(
+        (e: React.MouseEvent<HTMLDialogElement>) => {
+            if (e.target === dialogRef.current) {
                 onClose();
             }
         },
@@ -296,44 +325,23 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
     // Render
     // ------------------------------------------------------------------ //
 
-    if (!isOpen) return null;
-
-    const backdropStyle = isMobile ? styles.backdropMobile : styles.backdrop;
+    const dialogStyle = isMobile ? styles.dialogMobile : styles.dialogDesktop;
     const contentStyle = isMobile ? styles.drawer : styles.modal;
 
     return (
-        <div
-            style={backdropStyle}
-            onClick={handleBackdropClick}
-            onKeyUp={(e) => {
-                if (e.key === 'Escape') onClose();
-            }}
-            data-testid="feedback-modal-backdrop"
-        >
-            {/*
-             * <dialog> satisfies Biome's useSemanticElements rule.
-             * It is unstyled here; all visual styles are on the inner div
-             * so that the focus trap ref and content layout work correctly.
-             */}
+        <>
+            {/* ::backdrop cannot be styled inline; inject minimal CSS */}
+            <style>{BACKDROP_CSS}</style>
             <dialog
-                aria-modal="true"
+                ref={dialogRef}
                 aria-labelledby={TITLE_ID}
-                open
-                style={{
-                    position: 'relative',
-                    border: 'none',
-                    padding: 0,
-                    margin: 0,
-                    background: 'transparent',
-                    maxWidth: isMobile ? 'none' : '640px',
-                    width: isMobile ? '100%' : 'calc(100% - 48px)',
-                    inset: 'unset'
-                }}
+                onClick={handleDialogClick}
                 onKeyDown={handleKeyDown}
+                style={dialogStyle}
+                data-feedback-modal=""
                 data-testid="feedback-modal-dialog"
-                onClick={(e) => e.stopPropagation()}
             >
-                {/* Inner container: holds all visual styles and serves as focus trap boundary */}
+                {/* Inner container: visual styles and focus trap boundary */}
                 <div
                     ref={containerRef}
                     style={contentStyle}
@@ -373,6 +381,6 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                     />
                 </div>
             </dialog>
-        </div>
+        </>
     );
 }
