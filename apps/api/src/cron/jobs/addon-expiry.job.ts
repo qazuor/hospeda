@@ -15,21 +15,17 @@
  * @module cron/jobs/addon-expiry
  */
 
+import { and, billingNotificationLog, eq, getDb, gte } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { AddonExpirationService } from '../../services/addon-expiration.service.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
+import { apiLogger } from '../../utils/logger.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * Set of sent notification idempotency keys to prevent duplicates within the same run
- * Format: `${type}:${customerId}:${addonSlug}:${YYYY-MM-DD}`
- */
-const sentNotifications = new Set<string>();
-
-/**
- * Generate idempotency key for an add-on notification
+ * Generate idempotency key for an add-on notification.
  *
  * Ensures we don't send the same notification multiple times on the same day.
  *
@@ -48,32 +44,49 @@ function generateIdempotencyKey(
 }
 
 /**
- * Check if notification was already sent today
+ * Check if notification was already sent today by querying the billing_notification_log table.
+ * This persists idempotency across cron runs (unlike an in-memory Set).
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
  * @param addonSlug - Add-on slug
- * @returns Whether notification was already sent
+ * @returns Whether notification was already sent today
  */
-function wasNotificationSent(
+async function wasNotificationSent(
     type: NotificationType,
     customerId: string,
     addonSlug: string
-): boolean {
-    const key = generateIdempotencyKey(type, customerId, addonSlug);
-    return sentNotifications.has(key);
-}
+): Promise<boolean> {
+    try {
+        const db = getDb();
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
 
-/**
- * Mark notification as sent
- *
- * @param type - Notification type
- * @param customerId - Billing customer ID
- * @param addonSlug - Add-on slug
- */
-function markNotificationSent(type: NotificationType, customerId: string, addonSlug: string): void {
-    const key = generateIdempotencyKey(type, customerId, addonSlug);
-    sentNotifications.add(key);
+        const existing = await db
+            .select({ id: billingNotificationLog.id })
+            .from(billingNotificationLog)
+            .where(
+                and(
+                    eq(billingNotificationLog.type, type),
+                    eq(billingNotificationLog.customerId, customerId),
+                    gte(billingNotificationLog.createdAt, todayStart)
+                )
+            )
+            .limit(1);
+
+        return existing.length > 0;
+    } catch (error) {
+        apiLogger.warn(
+            {
+                type,
+                customerId,
+                addonSlug,
+                error: error instanceof Error ? error.message : String(error)
+            },
+            'Failed to check notification log, allowing send to avoid missing notifications'
+        );
+        return false;
+    }
 }
 
 /**
@@ -101,8 +114,8 @@ export const addonExpiryJob: CronJobDefinition = {
         let errors = 0;
         let warningsSent = 0;
 
-        // Clear sent notifications set at start of each run
-        sentNotifications.clear();
+        // Idempotency is now handled via billing_notification_log DB lookups
+        // instead of an in-memory Set, so state persists across cron runs.
 
         try {
             // Create add-on expiration service
@@ -173,9 +186,9 @@ export const addonExpiryJob: CronJobDefinition = {
                     // Send ADDON_EXPIRATION_WARNING for 3-day add-ons
                     for (const addon of expiring3Days) {
                         try {
-                            // Check idempotency
+                            // Check idempotency via DB lookup (persists across cron runs)
                             if (
-                                wasNotificationSent(
+                                await wasNotificationSent(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
                                     addon.customerId,
                                     addon.addonSlug
@@ -212,7 +225,7 @@ export const addonExpiryJob: CronJobDefinition = {
                                 continue;
                             }
 
-                            // Fire-and-forget notification
+                            // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                             sendNotification({
                                 type: NotificationType.ADDON_EXPIRATION_WARNING,
                                 recipientEmail: customerDetails.email,
@@ -238,11 +251,6 @@ export const addonExpiryJob: CronJobDefinition = {
                                 });
                             });
 
-                            markNotificationSent(
-                                NotificationType.ADDON_EXPIRATION_WARNING,
-                                addon.customerId,
-                                addon.addonSlug
-                            );
                             warningsSent++;
 
                             logger.debug('Sent add-on expiration warning (3 days)', {
@@ -289,9 +297,9 @@ export const addonExpiryJob: CronJobDefinition = {
                     // Send ADDON_EXPIRATION_WARNING for 1-day add-ons
                     for (const addon of expiring1Day) {
                         try {
-                            // Check idempotency
+                            // Check idempotency via DB lookup (persists across cron runs)
                             if (
-                                wasNotificationSent(
+                                await wasNotificationSent(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
                                     addon.customerId,
                                     addon.addonSlug
@@ -328,7 +336,7 @@ export const addonExpiryJob: CronJobDefinition = {
                                 continue;
                             }
 
-                            // Fire-and-forget notification
+                            // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                             sendNotification({
                                 type: NotificationType.ADDON_EXPIRATION_WARNING,
                                 recipientEmail: customerDetails.email,
@@ -354,11 +362,6 @@ export const addonExpiryJob: CronJobDefinition = {
                                 });
                             });
 
-                            markNotificationSent(
-                                NotificationType.ADDON_EXPIRATION_WARNING,
-                                addon.customerId,
-                                addon.addonSlug
-                            );
                             warningsSent++;
 
                             logger.debug('Sent add-on expiration warning (1 day)', {

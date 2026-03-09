@@ -22,9 +22,11 @@
 
 import { createSubscriptionLifecycle } from '@qazuor/qzpay-core';
 import type { LifecycleEvent, QZPayCurrency } from '@qazuor/qzpay-core';
-import { DUNNING_GRACE_PERIOD_DAYS, DUNNING_RETRY_INTERVALS } from '@repo/billing';
+import { DUNNING_RETRY_INTERVALS } from '@repo/billing';
 import { billingDunningAttempts, getDb } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
+import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -87,14 +89,6 @@ async function recordDunningAttempt(event: LifecycleEvent): Promise<void> {
 const RETRY_INTERVALS: readonly number[] = DUNNING_RETRY_INTERVALS;
 
 /**
- * Maximum number of retry attempts before cancellation.
- */
-const MAX_RETRY_ATTEMPTS = RETRY_INTERVALS.length;
-
-/** Local alias for dunning grace period from @repo/billing */
-const GRACE_PERIOD_DAYS = DUNNING_GRACE_PERIOD_DAYS;
-
-/**
  * Dunning cron job definition.
  *
  * Schedule: Daily at 6:00 AM UTC (0 6 * * *)
@@ -112,12 +106,18 @@ export const dunningJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
+        // Load settings from DB, falling back to compile-time constants
+        const billingSettings = await loadBillingSettings();
+        const effectiveGracePeriod = billingSettings.gracePeriodDays;
+        const effectiveMaxRetries = billingSettings.maxPaymentRetries;
+
         logger.info('Starting dunning job', {
             dryRun,
             startedAt: startedAt.toISOString(),
             retryIntervals: RETRY_INTERVALS,
-            maxRetryAttempts: MAX_RETRY_ATTEMPTS,
-            gracePeriodDays: GRACE_PERIOD_DAYS
+            maxRetryAttempts: effectiveMaxRetries,
+            gracePeriodDays: effectiveGracePeriod,
+            settingsSource: 'database-with-fallback'
         });
 
         try {
@@ -139,8 +139,9 @@ export const dunningJob: CronJobDefinition = {
             const storage = billing.getStorage();
 
             // Build the subscription lifecycle service with Hospeda's dunning config
+            // Uses DB settings for grace period; retry intervals still use compile-time schedule
             const lifecycle = createSubscriptionLifecycle(billing, storage, {
-                gracePeriodDays: GRACE_PERIOD_DAYS,
+                gracePeriodDays: effectiveGracePeriod,
                 retryIntervals: [...RETRY_INTERVALS],
                 trialConversionDays: 0,
 
@@ -230,6 +231,53 @@ export const dunningJob: CronJobDefinition = {
                                 logData,
                                 'Dunning: subscription canceled due to non-payment'
                             );
+
+                            // Send cancellation notification to the customer (best-effort)
+                            try {
+                                const customer = await billing.customers.get(event.customerId);
+                                if (customer) {
+                                    const customerName = String(
+                                        customer.metadata?.name || customer.email
+                                    );
+                                    const userId = customer.metadata?.userId
+                                        ? String(customer.metadata.userId)
+                                        : null;
+
+                                    await sendSubscriptionCancelledNotification({
+                                        customerId: event.customerId,
+                                        customerEmail: customer.email ?? '',
+                                        customerName,
+                                        userId,
+                                        planName:
+                                            ((event.data as Record<string, unknown>)
+                                                .planName as string) ?? 'Unknown',
+                                        mpSubscriptionId: event.subscriptionId,
+                                        previousStatus: 'past_due'
+                                    }).catch((err) => {
+                                        apiLogger.debug(
+                                            {
+                                                error:
+                                                    err instanceof Error
+                                                        ? err.message
+                                                        : String(err),
+                                                subscriptionId: event.subscriptionId
+                                            },
+                                            'Dunning cancellation notification failed (non-blocking)'
+                                        );
+                                    });
+                                }
+                            } catch (notifErr) {
+                                apiLogger.debug(
+                                    {
+                                        error:
+                                            notifErr instanceof Error
+                                                ? notifErr.message
+                                                : String(notifErr),
+                                        subscriptionId: event.subscriptionId
+                                    },
+                                    'Failed to send dunning cancellation notification (non-blocking)'
+                                );
+                            }
                             break;
                         case 'subscription.retry_failed':
                             apiLogger.warn(logData, 'Dunning: payment retry failed');
@@ -257,8 +305,8 @@ export const dunningJob: CronJobDefinition = {
 
                 logger.info('Dry run complete - would process past-due subscriptions', {
                     pastDueCount: pastDue.length,
-                    maxRetryAttempts: MAX_RETRY_ATTEMPTS,
-                    gracePeriodDays: GRACE_PERIOD_DAYS
+                    maxRetryAttempts: effectiveMaxRetries,
+                    gracePeriodDays: effectiveGracePeriod
                 });
 
                 return {
@@ -271,7 +319,7 @@ export const dunningJob: CronJobDefinition = {
                         dryRun: true,
                         pastDueCount: pastDue.length,
                         retryIntervals: RETRY_INTERVALS,
-                        gracePeriodDays: GRACE_PERIOD_DAYS
+                        gracePeriodDays: effectiveGracePeriod
                     }
                 };
             }

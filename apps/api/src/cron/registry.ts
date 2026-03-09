@@ -8,6 +8,7 @@ import {
     addonExpiryJob,
     dunningJob,
     exchangeRateFetchJob,
+    notificationLogPurgeJob,
     notificationScheduleJob,
     searchIndexRefreshJob,
     trialExpiryJob,
@@ -26,7 +27,8 @@ export const cronJobs: CronJobDefinition[] = [
     addonExpiryJob,
     exchangeRateFetchJob,
     dunningJob,
-    searchIndexRefreshJob
+    searchIndexRefreshJob,
+    notificationLogPurgeJob
 ];
 
 /**

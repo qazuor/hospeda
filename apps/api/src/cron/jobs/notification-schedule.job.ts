@@ -22,6 +22,7 @@ import { type NotificationPayload, NotificationType, RetryService } from '@repo/
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDbNotificationRetries } from '../../services/notification-retry.service.js';
 import { TrialService } from '../../services/trial.service.js';
+import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { env } from '../../utils/env.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -74,14 +75,22 @@ function purgeStaleFallbackEntries(): void {
 /**
  * Generate idempotency key for a notification.
  * Ensures we don't send the same notification multiple times on the same day.
+ * When daysAhead is provided, it is included in the key so that reminders for
+ * different day windows (e.g. 3-day vs 1-day) are tracked independently.
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
+ * @param daysAhead - Optional day window to include in the key
  * @returns Idempotency key
  */
-function generateIdempotencyKey(type: NotificationType, customerId: string): string {
+function generateIdempotencyKey(
+    type: NotificationType,
+    customerId: string,
+    daysAhead?: number
+): string {
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-    return `${type}:${customerId}:${today}`;
+    const daySuffix = daysAhead !== undefined ? `:d${daysAhead}` : '';
+    return `${type}:${customerId}:${today}${daySuffix}`;
 }
 
 /**
@@ -90,10 +99,15 @@ function generateIdempotencyKey(type: NotificationType, customerId: string): str
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
+ * @param daysAhead - Optional day window for key differentiation
  * @returns Whether notification was already sent
  */
-async function wasNotificationSent(type: NotificationType, customerId: string): Promise<boolean> {
-    const key = generateIdempotencyKey(type, customerId);
+async function wasNotificationSent(
+    type: NotificationType,
+    customerId: string,
+    daysAhead?: number
+): Promise<boolean> {
+    const key = generateIdempotencyKey(type, customerId, daysAhead);
 
     try {
         const redis = await getRedisClient();
@@ -114,9 +128,14 @@ async function wasNotificationSent(type: NotificationType, customerId: string): 
  *
  * @param type - Notification type
  * @param customerId - Billing customer ID
+ * @param daysAhead - Optional day window for key differentiation
  */
-async function markNotificationSent(type: NotificationType, customerId: string): Promise<void> {
-    const key = generateIdempotencyKey(type, customerId);
+async function markNotificationSent(
+    type: NotificationType,
+    customerId: string,
+    daysAhead?: number
+): Promise<void> {
+    const key = generateIdempotencyKey(type, customerId, daysAhead);
 
     try {
         const redis = await getRedisClient();
@@ -148,9 +167,16 @@ export const notificationScheduleJob: CronJobDefinition = {
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
 
+        // Load settings from DB, falling back to compile-time constants
+        const billingSettings = await loadBillingSettings();
+        const trialReminderDays = billingSettings.trialExpiryReminderDays;
+
         logger.info('Starting notification schedule job', {
             dryRun,
-            startedAt: startedAt.toISOString()
+            startedAt: startedAt.toISOString(),
+            trialReminderDays,
+            sendTrialExpiryReminder: billingSettings.sendTrialExpiryReminder,
+            settingsSource: 'database-with-fallback'
         });
 
         let processed = 0;
@@ -178,13 +204,13 @@ export const notificationScheduleJob: CronJobDefinition = {
             // Create trial service
             const trialService = new TrialService(billing);
 
-            // 1. Find trials ending in 3 days
-            logger.info('Finding trials ending in 3 days');
+            // 1. Find trials ending within the configured reminder window
+            logger.info('Finding trials ending soon', { daysAhead: trialReminderDays });
             const trialsEnding3Days = await trialService.findTrialsEndingSoon({
-                daysAhead: 3
+                daysAhead: trialReminderDays
             });
 
-            logger.info('Found trials ending in 3 days', {
+            logger.info('Found trials ending soon', {
                 count: trialsEnding3Days.length
             });
 
@@ -197,11 +223,12 @@ export const notificationScheduleJob: CronJobDefinition = {
                 // Send TRIAL_ENDING_REMINDER for 3-day trials
                 for (const trial of trialsEnding3Days) {
                     try {
-                        // Check idempotency
+                        // Check idempotency (include daysAhead to differentiate 3-day vs 1-day)
                         if (
                             await wasNotificationSent(
                                 NotificationType.TRIAL_ENDING_REMINDER,
-                                trial.customerId
+                                trial.customerId,
+                                trialReminderDays
                             )
                         ) {
                             logger.debug('Skipping duplicate notification (3 days)', {
@@ -225,7 +252,8 @@ export const notificationScheduleJob: CronJobDefinition = {
                             upgradeUrl,
                             idempotencyKey: generateIdempotencyKey(
                                 NotificationType.TRIAL_ENDING_REMINDER,
-                                trial.customerId
+                                trial.customerId,
+                                trialReminderDays
                             )
                         }).catch((notifError) => {
                             logger.debug('Trial ending notification failed (will retry)', {
@@ -239,13 +267,14 @@ export const notificationScheduleJob: CronJobDefinition = {
 
                         await markNotificationSent(
                             NotificationType.TRIAL_ENDING_REMINDER,
-                            trial.customerId
+                            trial.customerId,
+                            trialReminderDays
                         );
                         processed++;
 
                         logger.debug('Sent trial ending reminder (3 days)', {
                             customerId: trial.customerId,
-                            daysRemaining: 3
+                            daysRemaining: trialReminderDays
                         });
                     } catch (error) {
                         errors++;
@@ -276,11 +305,12 @@ export const notificationScheduleJob: CronJobDefinition = {
                 // Send TRIAL_ENDING_REMINDER for 1-day trials
                 for (const trial of trialsEnding1Day) {
                     try {
-                        // Check idempotency
+                        // Check idempotency (include daysAhead=1 to differentiate from multi-day reminder)
                         if (
                             await wasNotificationSent(
                                 NotificationType.TRIAL_ENDING_REMINDER,
-                                trial.customerId
+                                trial.customerId,
+                                1
                             )
                         ) {
                             logger.debug('Skipping duplicate notification (1 day)', {
@@ -304,7 +334,8 @@ export const notificationScheduleJob: CronJobDefinition = {
                             upgradeUrl,
                             idempotencyKey: generateIdempotencyKey(
                                 NotificationType.TRIAL_ENDING_REMINDER,
-                                trial.customerId
+                                trial.customerId,
+                                1
                             )
                         }).catch((notifError) => {
                             logger.debug('Trial ending notification failed (will retry)', {
@@ -318,7 +349,8 @@ export const notificationScheduleJob: CronJobDefinition = {
 
                         await markNotificationSent(
                             NotificationType.TRIAL_ENDING_REMINDER,
-                            trial.customerId
+                            trial.customerId,
+                            1
                         );
                         processed++;
 
@@ -357,7 +389,11 @@ export const notificationScheduleJob: CronJobDefinition = {
                         if (!sub.currentPeriodEnd) return false;
                         const endDate = new Date(sub.currentPeriodEnd);
                         const msRemaining = endDate.getTime() - now.getTime();
-                        const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+                        // Use Math.max to guard against Math.ceil(0) returning 0 at exact midnight
+                        const daysRemaining = Math.max(
+                            Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
+                            1
+                        );
                         return reminderDaysSet.has(daysRemaining);
                     });
 
@@ -387,7 +423,11 @@ export const notificationScheduleJob: CronJobDefinition = {
 
                         const endDate = new Date(subscription.currentPeriodEnd);
                         const msRemaining = endDate.getTime() - now.getTime();
-                        const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+                        // Use Math.max to guard against Math.ceil(0) returning 0 at exact midnight
+                        const daysRemaining = Math.max(
+                            Math.ceil(msRemaining / (1000 * 60 * 60 * 24)),
+                            1
+                        );
 
                         if (!reminderDaysSet.has(daysRemaining)) continue;
 

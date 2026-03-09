@@ -21,3 +21,4 @@ export { addonExpiryJob } from './addon-expiry.job.js';
 export { exchangeRateFetchJob } from './exchange-rate-fetch.job.js';
 export { dunningJob } from './dunning.job.js';
 export { searchIndexRefreshJob } from './search-index-refresh.job.js';
+export { notificationLogPurgeJob } from './notification-log-purge.job.js';
