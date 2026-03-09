@@ -5,13 +5,13 @@
  * form state for both steps, attachment list, client-side validation,
  * and success/error states after submission.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FEEDBACK_CONFIG } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
-import { feedbackFormSchema } from '../schemas/feedback.schema.js';
+import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
 import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
 import { StepDetails } from './steps/StepDetails.js';
@@ -169,7 +169,7 @@ function buildInitialBasicData(
     prefillData?: FeedbackFormProps['prefillData']
 ): StepBasicData {
     return {
-        type: prefillData?.type ?? 'bug-js',
+        type: prefillData?.type ?? REPORT_TYPE_IDS[0],
         title: prefillData?.title ?? '',
         description: prefillData?.description ?? '',
         reporterEmail: userEmail ?? '',
@@ -306,7 +306,8 @@ export function FeedbackForm({
 
     /**
      * Validates only step 1 fields (type, title, description, email, name).
-     * Returns true if valid, false if errors were set on step 1 fields.
+     * Only parses the combined data to check step 1 fields, ignoring
+     * environment/details errors that belong to step 2.
      */
     const validateStep1 = useCallback((): boolean => {
         const combined = {
@@ -398,6 +399,8 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     const handleSubmit = useCallback(async () => {
+        // validate() already runs safeParse and sets errors, so we only
+        // need to build the combined data once for submission.
         if (!validate()) return;
 
         const combined = {
@@ -407,12 +410,10 @@ export function FeedbackForm({
             environment
         };
 
-        // feedbackFormSchema.safeParse already succeeded in validate(), so
-        // we can safely cast here.
-        const parsed = feedbackFormSchema.safeParse(combined);
-        if (!parsed.success) return;
+        // validate() confirmed the data is valid, so use parse() directly
+        const parsed = feedbackFormSchema.parse(combined);
 
-        await submit(parsed.data, attachments.length > 0 ? attachments : undefined, honeypot);
+        await submit(parsed, attachments.length > 0 ? attachments : undefined, honeypot);
     }, [basicData, detailsData, attachments, environment, validate, submit, honeypot]);
 
     // ------------------------------------------------------------------ //
@@ -429,15 +430,14 @@ export function FeedbackForm({
     }, [userEmail, userName, resetSubmit]);
 
     // ------------------------------------------------------------------ //
-    // Derived state
+    // Transition to success step when submit result arrives
     // ------------------------------------------------------------------ //
 
-    const isSuccess = submitState.result !== null;
-
-    // Transition to success step when submit result arrives.
-    if (isSuccess && step !== 'success') {
-        setStep('success');
-    }
+    useEffect(() => {
+        if (submitState.result !== null && step !== 'success') {
+            setStep('success');
+        }
+    }, [submitState.result, step]);
 
     // ------------------------------------------------------------------ //
     // Success screen
