@@ -237,7 +237,7 @@ describe('UserBookmark Query Schemas', () => {
             expect(() => UserBookmarkListByUserOutputSchema.parse(validOutput)).not.toThrow();
         });
 
-        it.skip('should validate output with bookmarks array - SKIPPED: Schema mismatch - UserBookmarkListItemSchema picks "notes" and "isPrivate" fields that do not exist in base UserBookmarkSchema', () => {
+        it('should validate output with bookmarks array', () => {
             const bookmarks = createUserBookmarkListFixture(3);
             const validOutput = createPaginatedResponse(bookmarks, 1, 10, 3);
             expect(() => UserBookmarkListByUserOutputSchema.parse(validOutput)).not.toThrow();
@@ -277,7 +277,7 @@ describe('UserBookmark Query Schemas', () => {
             expect(() => UserBookmarkListByEntityOutputSchema.parse(validOutput)).not.toThrow();
         });
 
-        it.skip('should validate output with bookmarks array - SKIPPED: Schema mismatch - UserBookmarkListItemSchema picks "notes" and "isPrivate" fields that do not exist in base UserBookmarkSchema', () => {
+        it('should validate output with bookmarks array', () => {
             const bookmarks = createUserBookmarkListFixture(5);
             const validOutput = createPaginatedResponse(bookmarks, 1, 10, 5);
             expect(() => UserBookmarkListByEntityOutputSchema.parse(validOutput)).not.toThrow();
@@ -341,16 +341,9 @@ describe('UserBookmark Query Schemas', () => {
     });
 
     describe('UserBookmarkPaginatedListOutputSchema', () => {
-        it.skip('should validate output with bookmarks and pagination - SKIPPED: Schema mismatch - UserBookmarkListItemSchema picks "notes" and "isPrivate" fields that do not exist in base UserBookmarkSchema', () => {
+        it('should validate output with bookmarks and pagination', () => {
             const bookmarks = createUserBookmarkListFixture(3);
-            const validOutput = {
-                bookmarks,
-                pagination: {
-                    page: 1,
-                    pageSize: 20,
-                    total: 3
-                }
-            };
+            const validOutput = createPaginatedResponse(bookmarks, 1, 20, 3);
             expect(() => UserBookmarkPaginatedListOutputSchema.parse(validOutput)).not.toThrow();
         });
 

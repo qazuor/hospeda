@@ -74,9 +74,7 @@ describe('Amenity Query Schemas', () => {
     });
 
     describe('AmenityListWithUsageCountSchema', () => {
-        it.skip('should validate amenity with usage count (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityListItemSchema tries to pick
-            // fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should validate amenity with usage count', () => {
             const amenityWithCount = {
                 ...createValidAmenity(),
                 accommodationCount: 15
@@ -87,17 +85,13 @@ describe('Amenity Query Schemas', () => {
             expect(result.accommodationCount).toBe(15);
         });
 
-        it.skip('should validate amenity without usage count (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityListItemSchema tries to pick
-            // fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should validate amenity without usage count', () => {
             const amenityWithoutCount = createValidAmenity();
 
             expect(() => AmenityListWithUsageCountSchema.parse(amenityWithoutCount)).not.toThrow();
         });
 
-        it.skip('should reject negative accommodation count (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityListItemSchema tries to pick
-            // fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should reject negative accommodation count', () => {
             const invalidAmenity = {
                 ...createValidAmenity(),
                 accommodationCount: -5
@@ -106,9 +100,7 @@ describe('Amenity Query Schemas', () => {
             expect(() => AmenityListWithUsageCountSchema.parse(invalidAmenity)).toThrow(ZodError);
         });
 
-        it.skip('should reject non-integer accommodation count (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityListItemSchema tries to pick
-            // fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should reject non-integer accommodation count', () => {
             const invalidAmenity = {
                 ...createValidAmenity(),
                 accommodationCount: 15.5
@@ -119,9 +111,7 @@ describe('Amenity Query Schemas', () => {
     });
 
     describe('AmenitySearchForListOutputSchema', () => {
-        it.skip('should validate valid search output (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityListItemSchema tries to pick
-            // fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should validate valid search output', () => {
             const validOutput = {
                 data: [
                     {
@@ -200,36 +190,38 @@ describe('Amenity Query Schemas', () => {
     });
 
     describe('AmenityAccommodationsOutputSchema', () => {
-        it.skip('should validate accommodations output (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityAccommodationsOutputSchema uses AmenityListItemSchema
-            // which tries to pick fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should validate accommodations output', () => {
             const validOutput = {
-                accommodations: [
+                data: [
                     {
-                        id: '550e8400-e29b-41d4-a716-446655440000',
-                        slug: 'hotel-a',
-                        name: 'Hotel A',
-                        summary: 'A great hotel',
-                        type: 'HOTEL',
-                        isFeatured: false,
-                        reviewsCount: 0,
-                        averageRating: 0,
-                        createdAt: new Date(),
-                        updatedAt: new Date(),
-                        createdById: '550e8400-e29b-41d4-a716-446655440002',
-                        updatedById: '550e8400-e29b-41d4-a716-446655440002'
+                        ...createValidAmenity(),
+                        accommodationCount: 5
                     }
-                ]
+                ],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 1,
+                    totalPages: 1,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => AmenityAccommodationsOutputSchema.parse(validOutput)).not.toThrow();
         });
 
-        it.skip('should validate empty accommodations output (skipped due to schema field mismatch)', () => {
-            // This test is skipped because AmenityAccommodationsOutputSchema uses AmenityListItemSchema
-            // which tries to pick fields 'category' and 'usageCount' that don't exist in AmenitySchema
+        it('should validate empty accommodations output', () => {
             const emptyOutput = {
-                accommodations: []
+                data: [],
+                pagination: {
+                    page: 1,
+                    pageSize: 10,
+                    total: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false
+                }
             };
 
             expect(() => AmenityAccommodationsOutputSchema.parse(emptyOutput)).not.toThrow();

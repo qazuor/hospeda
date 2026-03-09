@@ -231,17 +231,13 @@ describe('Attraction Query Schemas', () => {
 
     describe('Output Schemas', () => {
         describe('AttractionSearchOutputSchema', () => {
-            it.skip('should validate valid search output - SKIPPED: Schema tries to pick non-existent summary field', () => {
+            it('should validate valid search output', () => {
                 const validOutput = {
                     data: [createValidAttraction(), createValidAttraction()],
-                    total: 2,
-                    page: 1,
-                    pageSize: 20,
-                    totalPages: 1,
                     pagination: {
                         page: 1,
                         pageSize: 10,
-                        total: 3,
+                        total: 2,
                         totalPages: 1,
                         hasNextPage: false,
                         hasPreviousPage: false
@@ -259,7 +255,7 @@ describe('Attraction Query Schemas', () => {
                 expect(() => AttractionSearchOutputSchema.parse(invalidOutput)).toThrow(ZodError);
             });
 
-            it.skip('should allow optional pagination fields - SKIPPED: Schema field mismatch', () => {
+            it('should allow optional pagination fields', () => {
                 const minimalOutput = {
                     data: [createValidAttraction()],
                     pagination: {
@@ -294,14 +290,13 @@ describe('Attraction Query Schemas', () => {
         });
 
         describe('AttractionListOutputSchema', () => {
-            it.skip('should validate valid list output - SKIPPED: Schema field mismatch', () => {
+            it('should validate valid list output', () => {
                 const validOutput = {
                     data: [createValidAttraction(), createValidAttraction()],
-                    total: 2,
                     pagination: {
                         page: 1,
                         pageSize: 10,
-                        total: 3,
+                        total: 2,
                         totalPages: 1,
                         hasNextPage: false,
                         hasPreviousPage: false
@@ -329,13 +324,13 @@ describe('Attraction Query Schemas', () => {
         });
 
         describe('AttractionWithDestinationCountSchema', () => {
-            it.skip('should validate attraction with destination count - SKIPPED: Schema field mismatch', () => {
+            it('should validate attraction with destination count', () => {
                 const validData = createAttractionWithDestinationCount();
 
                 expect(() => AttractionWithDestinationCountSchema.parse(validData)).not.toThrow();
             });
 
-            it.skip('should allow optional destination count - SKIPPED: Schema field mismatch', () => {
+            it('should allow optional destination count', () => {
                 const dataWithoutCount = {
                     ...createValidAttraction(),
                     destinationCount: undefined
@@ -346,7 +341,7 @@ describe('Attraction Query Schemas', () => {
                 ).not.toThrow();
             });
 
-            it.skip('should validate destination count is non-negative - SKIPPED: Schema field mismatch', () => {
+            it('should validate destination count is non-negative', () => {
                 const invalidData = {
                     ...createValidAttraction(),
                     destinationCount: -1
@@ -359,13 +354,12 @@ describe('Attraction Query Schemas', () => {
         });
 
         describe('AttractionListWithCountsOutputSchema', () => {
-            it.skip('should validate valid list with counts output - SKIPPED: Schema field mismatch', () => {
+            it('should validate valid list with counts output', () => {
                 const validOutput = {
                     data: [
                         createAttractionWithDestinationCount(),
                         createAttractionWithDestinationCount()
                     ],
-                    total: 2,
                     pagination: {
                         page: 1,
                         pageSize: 10,
@@ -381,7 +375,7 @@ describe('Attraction Query Schemas', () => {
         });
 
         describe('AttractionsByDestinationOutputSchema', () => {
-            it.skip('should validate valid attractions by destination output - SKIPPED: Schema mismatch - AttractionListItemSchema picks "summary" field that does not exist in base AttractionSchema', () => {
+            it('should validate valid attractions by destination output', () => {
                 const attractions = [createValidAttraction(), createValidAttraction()];
                 const validOutput = createPaginatedResponse(attractions, 1, 10, 2);
 
@@ -473,7 +467,7 @@ describe('Attraction Query Schemas', () => {
     });
 
     describe('Schema Integration', () => {
-        it.skip('should work with complete query flow - SKIPPED: Schema mismatch - AttractionListItemSchema picks "summary" field that does not exist in base AttractionSchema', () => {
+        it('should work with complete query flow', () => {
             // Search input
             const searchInput = {
                 filters: {

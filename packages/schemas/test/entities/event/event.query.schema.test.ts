@@ -335,21 +335,27 @@ describe('Event Query Schemas', () => {
     });
 
     describe('EventSummaryOutputSchema', () => {
-        it.skip('should require summary field - SKIPPED: Schema tries to pick non-existent startDate field', () => {
+        it('should reject empty object (missing required fields)', () => {
             const invalidOutput = {};
 
             const result = EventSummaryOutputSchema.safeParse(invalidOutput);
             expect(result.success).toBe(false);
         });
 
-        it.skip('should validate structure with summary object - SKIPPED: Schema field mismatch', () => {
+        it('should validate a complete event summary', () => {
             const validOutput = {
-                summary: {} // Empty object to test structure, may fail due to required fields in EventSummarySchema
+                id: '550e8400-e29b-41d4-a716-446655440000',
+                slug: 'test-event',
+                name: 'Test Event Name',
+                summary: 'This is a test event summary text',
+                category: 'MUSIC',
+                date: { start: new Date('2025-06-01') },
+                isFeatured: false,
+                createdAt: new Date()
             };
 
-            EventSummaryOutputSchema.safeParse(validOutput);
-            // Note: This test may fail because EventSummarySchema requires specific fields
-            // This is expected behavior and shows the schema is working correctly
+            const result = EventSummaryOutputSchema.safeParse(validOutput);
+            expect(result.success).toBe(true);
         });
     });
 
