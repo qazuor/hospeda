@@ -147,7 +147,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                                     <FeedbackErrorBoundary
                                         appSource="admin"
                                         apiUrl={env.VITE_API_URL}
-                                        feedbackPageUrl="/es/feedback"
+                                        feedbackPageUrl={`${env.VITE_SITE_URL}/es/feedback`}
                                         userId={session?.user.id}
                                         userEmail={session?.user.email}
                                         userName={session?.user.name}
@@ -159,13 +159,19 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         </QueryClientProvider>
                     </QZPayThemeProvider>
                 </QZPayProvider>
-                <FeedbackFAB
-                    apiUrl={env.VITE_API_URL}
+                <FeedbackErrorBoundary
                     appSource="admin"
-                    userId={session?.user.id}
-                    userEmail={session?.user.email}
-                    userName={session?.user.name}
-                />
+                    apiUrl={env.VITE_API_URL}
+                    feedbackPageUrl={`${env.VITE_SITE_URL}/es/feedback`}
+                >
+                    <FeedbackFAB
+                        apiUrl={env.VITE_API_URL}
+                        appSource="admin"
+                        userId={session?.user.id}
+                        userEmail={session?.user.email}
+                        userName={session?.user.name}
+                    />
+                </FeedbackErrorBoundary>
                 {env.NODE_ENV === 'development' && <TanstackDevtools />}
                 <Scripts />
             </body>
