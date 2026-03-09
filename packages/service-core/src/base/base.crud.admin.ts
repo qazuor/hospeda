@@ -1,5 +1,5 @@
 import type { AdminInfoType } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { AdminInfoSchema, ServiceErrorCode } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import { type BaseModel, ServiceError, type ServiceInput, type ServiceOutput } from '../types';
@@ -40,7 +40,7 @@ export abstract class BaseCrudAdmin<
         return this.runWithLoggingAndValidation({
             methodName: 'getAdminInfo',
             input,
-            schema: z.object({ id: z.string(), actor: z.any() }),
+            schema: z.object({ id: z.string() }),
             execute: async ({ id }, actor) => {
                 const entity = await this.model.findById(id);
                 if (!entity) {
@@ -69,7 +69,7 @@ export abstract class BaseCrudAdmin<
         return this.runWithLoggingAndValidation({
             methodName: 'setAdminInfo',
             input,
-            schema: z.object({ id: z.string(), adminInfo: z.any(), actor: z.any() }),
+            schema: z.object({ id: z.string(), adminInfo: AdminInfoSchema }),
             execute: async ({ id, adminInfo }, actor) => {
                 const entity = await this.model.findById(id);
                 if (!entity) {

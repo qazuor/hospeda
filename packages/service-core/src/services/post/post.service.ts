@@ -671,7 +671,7 @@ export class PostService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'addComment',
             input: { ...params, actor },
-            schema: z.object({ postId: z.string(), comment: z.string(), actor: z.any() }).strict(),
+            schema: z.object({ postId: z.string(), comment: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
                 throw new ServiceError(
@@ -695,9 +695,7 @@ export class PostService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'removeComment',
             input: { ...params, actor },
-            schema: z
-                .object({ postId: z.string(), commentId: z.string(), actor: z.any() })
-                .strict(),
+            schema: z.object({ postId: z.string(), commentId: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
                 this._canComment(actor);
                 // TODO: Implement comment removal logic

@@ -464,7 +464,7 @@ export abstract class BaseCrudWrite<
         return this.runWithLoggingAndValidation({
             methodName: `setFeaturedStatus(id=${input.id}, isFeatured=${input.isFeatured})`,
             input,
-            schema: z.object({ id: z.string(), isFeatured: z.boolean(), actor: z.any() }),
+            schema: z.object({ id: z.string(), isFeatured: z.boolean() }),
             execute: async (validData, actor) => {
                 const entity = await this._getAndValidateEntity(
                     this.model,

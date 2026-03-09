@@ -51,7 +51,7 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         this.logMethodStart(methodName, params, actor);
         try {
             validateActor(actor);
-            // biome-ignore lint/suspicious/noImplicitAnyLet: <explanation>
+            // biome-ignore lint/suspicious/noImplicitAnyLet: type is inferred after safeParseAsync which returns a discriminated union that cannot be annotated ahead of time
             let validationResult;
             try {
                 validationResult = await schema.safeParseAsync(params);
