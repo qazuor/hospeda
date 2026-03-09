@@ -6,7 +6,7 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -24,7 +24,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     ): Promise<{ count: number }> {
         const db = getDb();
 
-        const whereClauses = [];
+        const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
@@ -56,7 +56,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     ): Promise<{ items: Accommodation[]; total: number }> {
         const db = getDb();
 
-        const whereClauses = [];
+        const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
@@ -127,7 +127,7 @@ export class AccommodationModel extends BaseModel<Accommodation> {
     }> {
         const db = getDb();
 
-        const whereClauses = [];
+        const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
             whereClauses.push(eq(accommodations.ownerId, params.ownerId));
         }
@@ -239,14 +239,12 @@ export class AccommodationModel extends BaseModel<Accommodation> {
 
         // Single query with all relations loaded via Drizzle's `with` clause
         const results = await db.query.accommodations.findMany({
-            where: (fields, { eq, ne: neOp }) => {
-                const clauses: SQL<unknown>[] = [];
+            where: (fields, { eq, ne: neOp, isNull: isNullOp }) => {
+                const clauses: SQL<unknown>[] = [isNullOp(fields.deletedAt)];
                 if (destinationId) clauses.push(eq(fields.destinationId, destinationId));
                 if (type) clauses.push(eq(fields.type, type as unknown as typeof fields.type));
                 if (onlyFeatured) clauses.push(eq(fields.isFeatured, true));
                 if (excludeRestricted) clauses.push(neOp(fields.visibility, 'RESTRICTED'));
-                if (clauses.length === 0) return undefined;
-                if (clauses.length === 1) return clauses[0];
                 return and(...clauses);
             },
             with: {

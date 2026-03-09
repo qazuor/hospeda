@@ -35,7 +35,7 @@ export const billingAddonPurchases = pgTable(
             onDelete: 'set null'
         }),
         addonSlug: varchar('addon_slug', { length: 100 }).notNull(),
-        addonId: uuid('addon_id').references(() => billingAddons.id, { onDelete: 'restrict' }),
+        addonId: uuid('addon_id').references(() => billingAddons.id, { onDelete: 'set null' }),
         status: varchar('status', { length: 50 }).notNull().default('pending'),
         purchasedAt: timestamp('purchased_at', { withTimezone: true }).defaultNow().notNull(),
         expiresAt: timestamp('expires_at', { withTimezone: true }),
@@ -64,7 +64,12 @@ export const billingAddonPurchases = pgTable(
         ),
         addonPurchases_active_customer_idx: index('addonPurchases_active_customer_idx')
             .on(table.customerId)
-            .where(sql`status = 'active'`)
+            .where(sql`status = 'active'`),
+        addonPurchases_entitlement_idx: index('addonPurchases_entitlement_idx').on(
+            table.customerId,
+            table.status,
+            table.expiresAt
+        )
     })
 );
 

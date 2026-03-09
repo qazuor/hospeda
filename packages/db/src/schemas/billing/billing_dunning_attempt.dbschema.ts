@@ -6,6 +6,7 @@ import {
     pgTable,
     text,
     timestamp,
+    uniqueIndex,
     uuid,
     varchar
 } from 'drizzle-orm/pg-core';
@@ -26,7 +27,7 @@ export const billingDunningAttempts = pgTable(
         id: uuid('id').primaryKey().defaultRandom(),
         subscriptionId: uuid('subscription_id')
             .notNull()
-            .references(() => billingSubscriptions.id, { onDelete: 'cascade' }),
+            .references(() => billingSubscriptions.id, { onDelete: 'set null' }),
         customerId: uuid('customer_id')
             .notNull()
             .references(() => billingCustomers.id, { onDelete: 'restrict' }),
@@ -34,11 +35,11 @@ export const billingDunningAttempts = pgTable(
         result: varchar('result', { length: 50 }).notNull(),
         amount: integer('amount'),
         currency: varchar('currency', { length: 3 }),
-        paymentId: uuid('payment_id'),
+        paymentId: varchar('payment_id', { length: 255 }),
         failureCode: varchar('failure_code', { length: 100 }),
         errorMessage: text('error_message'),
         provider: varchar('provider', { length: 50 }).notNull().default('mercadopago'),
-        metadata: jsonb('metadata').$type<Record<string, unknown>>().default({}),
+        metadata: jsonb('metadata').$type<Record<string, unknown>>().notNull().default({}),
         attemptedAt: timestamp('attempted_at', { withTimezone: true }).defaultNow().notNull(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull()
     },
@@ -50,7 +51,7 @@ export const billingDunningAttempts = pgTable(
             table.customerId
         ),
         dunningAttempts_result_idx: index('dunningAttempts_result_idx').on(table.result),
-        dunningAttempts_subscription_attempt_idx: index(
+        dunningAttempts_subscription_attempt_idx: uniqueIndex(
             'dunningAttempts_subscription_attempt_idx'
         ).on(table.subscriptionId, table.attemptNumber),
         dunningAttempts_customer_result_idx: index('dunningAttempts_customer_result_idx').on(

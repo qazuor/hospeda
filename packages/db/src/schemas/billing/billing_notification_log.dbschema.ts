@@ -10,7 +10,7 @@ export const billingNotificationLog = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         customerId: uuid('customer_id').references(() => billingCustomers.id, {
-            onDelete: 'restrict'
+            onDelete: 'set null'
         }),
         type: varchar('type', { length: 100 }).notNull(),
         channel: varchar('channel', { length: 50 }).notNull(),
