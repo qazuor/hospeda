@@ -28,6 +28,12 @@ export interface WithRetryOptions<T> {
     maxRetries?: number;
     /** Logger for retry diagnostics (optional) */
     logger?: RetryLogger;
+    /**
+     * Predicate to determine whether an error is retriable.
+     * Defaults to retrying all errors. Return `false` to immediately
+     * rethrow without further retry attempts (e.g. for 4xx HTTP errors).
+     */
+    isRetriable?: (error: Error) => boolean;
 }
 
 /**
@@ -55,7 +61,8 @@ export interface WithRetryOptions<T> {
 export async function withRetry<T>({
     fn,
     maxRetries = 3,
-    logger
+    logger,
+    isRetriable
 }: WithRetryOptions<T>): Promise<T> {
     let lastError: Error | undefined;
 
@@ -64,6 +71,15 @@ export async function withRetry<T>({
             return await fn();
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(String(error));
+
+            // Abort immediately for non-retriable errors (e.g. 4xx client errors)
+            if (isRetriable && !isRetriable(lastError)) {
+                logger?.warn(
+                    { attempt, error: lastError.message },
+                    'Non-retriable error, aborting retries'
+                );
+                throw lastError;
+            }
 
             if (attempt < maxRetries) {
                 const delayMs = 2 ** (attempt - 1) * 1000; // 1s, 2s, 4s

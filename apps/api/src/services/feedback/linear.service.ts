@@ -9,6 +9,60 @@ import { createLogger } from '@repo/logger';
 const logger = createLogger('linear-feedback-service');
 
 // ---------------------------------------------------------------------------
+// Markdown / content safety helpers
+// ---------------------------------------------------------------------------
+
+/** Allowed presigned URL hosts for SSRF prevention (GAP-031-48) */
+const ALLOWED_UPLOAD_HOST_PATTERN = /^https:\/\/[a-z0-9-]+\.s3[a-z0-9.-]*\.amazonaws\.com\//i;
+
+/** Patterns that indicate sensitive data in console errors (GAP-031-24) */
+const SENSITIVE_PATTERNS = /sk_live_|pk_live_|Bearer |api_key=|apikey=|secret=|password=|token=/gi;
+
+/** Redact server paths like /home/user/... or /app/... (GAP-031-24) */
+const SERVER_PATH_PATTERN = /\/(home|app|usr|var|tmp)\/[^\s)]+/g;
+
+/**
+ * Escape Markdown special characters in user-supplied text to prevent
+ * injection of links, images, and formatting in Linear issues.
+ *
+ * @param text - Raw user text
+ * @returns Text with Markdown metacharacters escaped
+ */
+function escapeMarkdown(text: string): string {
+    return text
+        .replace(/([\\`*_{}[\]()#+\-.!|])/g, '\\$1')
+        .replace(/!\[/g, '\\!\\[')
+        .replace(/\[([^\]]+)\]\(/g, '\\[$1\\](');
+}
+
+/**
+ * Sanitize a console error string: redact API keys, server paths,
+ * and truncate to a safe length.
+ *
+ * @param entry - Raw console error text
+ * @param maxLength - Maximum length after sanitization
+ * @returns Sanitized string
+ */
+function sanitizeConsoleError(entry: string, maxLength = 500): string {
+    return entry
+        .replace(SENSITIVE_PATTERNS, '[REDACTED]')
+        .replace(SERVER_PATH_PATTERN, '/[redacted-path]')
+        .slice(0, maxLength);
+}
+
+/**
+ * Truncate a stack trace to `maxLines` and redact server paths.
+ *
+ * @param stack - Raw stack trace
+ * @param maxLines - Maximum number of lines to keep
+ * @returns Truncated and redacted stack trace
+ */
+function truncateStack(stack: string, maxLines = 10): string {
+    const lines = stack.split('\n').slice(0, maxLines);
+    return lines.join('\n').replace(SERVER_PATH_PATTERN, '/[redacted-path]').replace(/`/g, "'");
+}
+
+// ---------------------------------------------------------------------------
 // Types for the injected config (mirrors @repo/feedback/config shapes)
 // ---------------------------------------------------------------------------
 
@@ -275,7 +329,18 @@ export class LinearFeedbackService {
             }
         }
 
-        logger.debug({ uploadUrl: uploadData.uploadUrl }, 'PUT file to Linear presigned URL');
+        // Validate that the upload URL is a legitimate S3 host (GAP-031-48: SSRF)
+        if (!ALLOWED_UPLOAD_HOST_PATTERN.test(uploadData.uploadUrl)) {
+            const hostname = new URL(uploadData.uploadUrl).hostname;
+            throw new Error(`Unexpected upload URL host: ${hostname}`);
+        }
+
+        // Log without query params to avoid leaking S3 credentials (GAP-031-55)
+        const urlForLog = new URL(uploadData.uploadUrl);
+        logger.debug(
+            { uploadHost: urlForLog.hostname, uploadPath: urlForLog.pathname },
+            'PUT file to Linear presigned URL'
+        );
 
         const uploadResponse = await fetch(uploadData.uploadUrl, {
             method: 'PUT',
@@ -346,10 +411,10 @@ export class LinearFeedbackService {
             'Creating Linear issue from feedback'
         );
 
-        // 5. Create the issue
+        // 5. Create the issue (use reportTypeId in title per spec, GAP-031-39)
         const issuePayload = await this.client.createIssue({
             teamId: linear.teamId,
-            title: `[${input.reportType}] ${input.title}`,
+            title: `[${input.reportTypeId}] ${input.title}`,
             description: body,
             priority,
             labelIds,
@@ -395,11 +460,13 @@ export class LinearFeedbackService {
     private buildIssueBody(input: CreateFeedbackIssueInput, assetUrls: readonly string[]): string {
         const sections: string[] = [];
 
-        // Reporter
-        sections.push(`## Reportado por\n**${input.reporterName}** (${input.reporterEmail})`);
+        // Reporter (escape user-supplied text to prevent Markdown injection, GAP-031-38)
+        sections.push(
+            `## Reportado por\n**${escapeMarkdown(input.reporterName)}** (${escapeMarkdown(input.reporterEmail)})`
+        );
 
         // Description
-        sections.push(`## Descripcion\n${input.description}`);
+        sections.push(`## Descripcion\n${escapeMarkdown(input.description)}`);
 
         // Severity label (informational - priority is set as a field)
         if (input.severityId) {
@@ -412,15 +479,15 @@ export class LinearFeedbackService {
 
         // Steps to reproduce
         if (input.stepsToReproduce) {
-            sections.push(`## Pasos para reproducir\n${input.stepsToReproduce}`);
+            sections.push(`## Pasos para reproducir\n${escapeMarkdown(input.stepsToReproduce)}`);
         }
 
         // Expected / actual results
         if (input.expectedResult) {
-            sections.push(`## Resultado esperado\n${input.expectedResult}`);
+            sections.push(`## Resultado esperado\n${escapeMarkdown(input.expectedResult)}`);
         }
         if (input.actualResult) {
-            sections.push(`## Resultado actual\n${input.actualResult}`);
+            sections.push(`## Resultado actual\n${escapeMarkdown(input.actualResult)}`);
         }
 
         // Embedded images
@@ -441,15 +508,19 @@ export class LinearFeedbackService {
         if (env.userId) envLines.push(`- **User ID:** ${env.userId}`);
         sections.push(`## Entorno\n${envLines.join('\n')}`);
 
-        // Console errors
+        // Console errors (sanitized: redact API keys, paths, truncate each, GAP-031-24)
         if (env.consoleErrors && env.consoleErrors.length > 0) {
-            sections.push(`## Errores de consola\n\`\`\`\n${env.consoleErrors.join('\n')}\n\`\`\``);
+            const sanitized = env.consoleErrors.map((e) => sanitizeConsoleError(e));
+            sections.push(`## Errores de consola\n\`\`\`\n${sanitized.join('\n')}\n\`\`\``);
         }
 
-        // Uncaught JS error
+        // Uncaught JS error (truncate & escape stack, GAP-031-20/54)
         if (env.errorInfo) {
-            const stackPart = env.errorInfo.stack ? `\n\`\`\`\n${env.errorInfo.stack}\n\`\`\`` : '';
-            sections.push(`## Error\n**${env.errorInfo.message}**${stackPart}`);
+            const escapedMessage = escapeMarkdown(env.errorInfo.message);
+            const stackPart = env.errorInfo.stack
+                ? `\n\`\`\`\n${truncateStack(env.errorInfo.stack)}\n\`\`\``
+                : '';
+            sections.push(`## Error\n**${escapedMessage}**${stackPart}`);
         }
 
         // Footer
@@ -499,12 +570,22 @@ export class LinearFeedbackService {
             labelIds.push(reportType.linearLabelId);
         }
 
-        // Source app label
+        // Source app label (GAP-031-17: type-safe guard instead of unsafe cast)
         const sourceLabels = this.feedbackConfig.linear.labels.source;
-        const appSourceKey = input.appSource as keyof typeof sourceLabels;
-        const sourceLabelId = sourceLabels[appSourceKey];
-        if (sourceLabelId && !sourceLabelId.startsWith('PLACEHOLDER_')) {
-            labelIds.push(sourceLabelId);
+        const validSources = ['web', 'admin', 'standalone'] as const;
+        if (validSources.includes(input.appSource as (typeof validSources)[number])) {
+            const sourceLabelId = sourceLabels[input.appSource as keyof typeof sourceLabels];
+            if (sourceLabelId && !sourceLabelId.startsWith('PLACEHOLDER_')) {
+                labelIds.push(sourceLabelId);
+            }
+        } else {
+            logger.warn({ appSource: input.appSource }, 'Invalid appSource for label lookup');
+        }
+
+        // Environment (beta) label (GAP-031-32: spec requires report + source + beta)
+        const betaLabelId = this.feedbackConfig.linear.labels.environment.beta;
+        if (betaLabelId && !betaLabelId.startsWith('PLACEHOLDER_')) {
+            labelIds.push(betaLabelId);
         }
 
         return labelIds;

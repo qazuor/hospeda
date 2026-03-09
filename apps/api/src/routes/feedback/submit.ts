@@ -16,7 +16,7 @@ import { REPORT_TYPES } from '@repo/feedback/config';
 import type { NotificationPayload } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import type { Context } from 'hono';
-import { sanitizeFileName, sanitizeString } from '../../middlewares/sanitization';
+import { sanitizeEmail, sanitizeFileName, sanitizeString } from '../../middlewares/sanitization';
 import {
     type CreateFeedbackIssueInput,
     type FeedbackAttachment,
@@ -27,6 +27,20 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { sendNotification } from '../../utils/notification-helper';
 import { createSimpleRoute } from '../../utils/route-factory';
+
+// ─── Field limits (shared between Zod schema and sanitization) ───────────────
+
+/** Maximum lengths for user-supplied text fields */
+const FIELD_LIMITS = {
+    title: 200,
+    description: 5000,
+    stepsToReproduce: 3000,
+    expectedResult: 1000,
+    actualResult: 1000,
+    reporterName: 100,
+    /** Max size of the JSON `data` field in bytes */
+    dataFieldBytes: 32 * 1024
+} as const;
 
 // ─── Zod v4 schemas (API-local, mirrors @repo/feedback schemas) ──────────────
 
@@ -61,11 +75,11 @@ const environmentSchema = z.object({
     appSource: APP_SOURCE_ENUM,
     deployVersion: z.string().optional(),
     userId: z.string().optional(),
-    consoleErrors: z.array(z.string()).optional(),
+    consoleErrors: z.array(z.string().max(500)).max(20).optional(),
     errorInfo: z
         .object({
-            message: z.string(),
-            stack: z.string().optional()
+            message: z.string().max(1000),
+            stack: z.string().max(5000).optional()
         })
         .optional()
 });
@@ -78,14 +92,14 @@ const environmentSchema = z.object({
  */
 const feedbackSubmitSchema = z.object({
     type: REPORT_TYPES_ENUM,
-    title: z.string().min(5).max(200),
-    description: z.string().min(10).max(5000),
+    title: z.string().min(5).max(FIELD_LIMITS.title),
+    description: z.string().min(10).max(FIELD_LIMITS.description),
     severity: SEVERITY_ENUM.optional(),
-    stepsToReproduce: z.string().max(3000).optional(),
-    expectedResult: z.string().max(1000).optional(),
-    actualResult: z.string().max(1000).optional(),
+    stepsToReproduce: z.string().max(FIELD_LIMITS.stepsToReproduce).optional(),
+    expectedResult: z.string().max(FIELD_LIMITS.expectedResult).optional(),
+    actualResult: z.string().max(FIELD_LIMITS.actualResult).optional(),
     reporterEmail: z.string().email(),
-    reporterName: z.string().min(2).max(100),
+    reporterName: z.string().min(2).max(FIELD_LIMITS.reporterName),
     environment: environmentSchema
 });
 
@@ -116,36 +130,41 @@ function resolveReportTypeLabel(reportTypeId: string): string {
 /**
  * Resolve the human-readable severity label for an optional severity ID.
  *
+ * Uses FEEDBACK_CONFIG.severityLevels as the single source of truth.
+ *
  * @param severityId - Severity identifier (e.g. "critical") or undefined
  * @returns Display label or undefined when not provided
  */
 function resolveSeverityLabel(severityId?: string): string | undefined {
     if (!severityId) return undefined;
-    const SEVERITY_LABELS: Record<string, string> = {
-        critical: 'Critico',
-        high: 'Alto',
-        medium: 'Medio',
-        low: 'Bajo'
-    };
-    return SEVERITY_LABELS[severityId] ?? severityId;
+    const entry = FEEDBACK_CONFIG.severityLevels.find((s) => s.id === severityId);
+    return entry?.label ?? severityId;
 }
 
 /**
- * Build and return a lazy-initialized LinearFeedbackService.
+ * Lazy singleton for LinearFeedbackService.
  *
- * Returns null when the Linear API key is not configured in the environment.
+ * Avoids re-creating the service (and its underlying LinearClient) on every
+ * request. Returns null when the Linear API key is not configured.
  */
-function buildLinearService(): LinearFeedbackService | null {
+let linearServiceInstance: LinearFeedbackService | null = null;
+let linearServiceChecked = false;
+
+function getLinearService(): LinearFeedbackService | null {
+    if (linearServiceChecked) return linearServiceInstance;
+    linearServiceChecked = true;
+
     const apiKey = env.HOSPEDA_LINEAR_API_KEY;
     if (!apiKey) {
         apiLogger.warn('HOSPEDA_LINEAR_API_KEY not set - Linear issue creation is disabled');
         return null;
     }
 
-    return new LinearFeedbackService({
+    linearServiceInstance = new LinearFeedbackService({
         apiKey,
         feedbackConfig: FEEDBACK_CONFIG
     });
+    return linearServiceInstance;
 }
 
 // ─── Route ───────────────────────────────────────────────────────────────────
@@ -174,7 +193,32 @@ export const submitFeedbackRoute = createSimpleRoute({
     tags: ['Feedback'],
     responseSchema: FeedbackResponseSchema,
     handler: async (ctx: Context) => {
-        // ── 1. Parse multipart form data ─────────────────────────────────────
+        // ── 0. Kill switch: reject early when feedback is disabled ────────────
+        if (env.HOSPEDA_FEEDBACK_ENABLED === false) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: { code: 'SERVICE_UNAVAILABLE', message: 'Feedback disabled' }
+                },
+                503
+            );
+        }
+
+        // ── 1. Body size limit before parsing (GAP-031-49: anti-DoS) ─────────
+        const contentLength = Number(ctx.req.header('content-length') ?? 0);
+        const maxBodySize =
+            FEEDBACK_CONFIG.maxAttachments * FEEDBACK_CONFIG.maxFileSize + 64 * 1024;
+        if (contentLength > maxBodySize) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: { code: 'PAYLOAD_TOO_LARGE', message: 'Request too large' }
+                },
+                413
+            );
+        }
+
+        // ── 2. Parse multipart form data ─────────────────────────────────────
         let formData: FormData;
         try {
             formData = await ctx.req.formData();
@@ -188,20 +232,31 @@ export const submitFeedbackRoute = createSimpleRoute({
             );
         }
 
-        // ── 2. Honeypot check (bots fill hidden `website` field) ─────────────
+        // ── 3. Honeypot check (bots fill hidden `website` field) ─────────────
         const honeypot = formData.get('website');
         if (honeypot) {
             apiLogger.debug('Feedback honeypot triggered - silent discard');
             return { linearIssueId: null, message: 'Reporte recibido' };
         }
 
-        // ── 3. Extract and parse JSON data field ─────────────────────────────
+        // ── 4. Extract and parse JSON data field ─────────────────────────────
         const dataStr = formData.get('data');
         if (!dataStr || typeof dataStr !== 'string') {
             return ctx.json(
                 {
                     success: false,
                     error: { code: 'VALIDATION_ERROR', message: 'Campo "data" requerido' }
+                },
+                400
+            );
+        }
+
+        // ── Size limit on JSON data field before parsing (GAP-031-52) ────────
+        if (dataStr.length > FIELD_LIMITS.dataFieldBytes) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: { code: 'VALIDATION_ERROR', message: 'Campo "data" demasiado grande' }
                 },
                 400
             );
@@ -223,7 +278,7 @@ export const submitFeedbackRoute = createSimpleRoute({
             );
         }
 
-        // ── 4. Validate with Zod ─────────────────────────────────────────────
+        // ── 5. Validate with Zod ─────────────────────────────────────────────
         const parseResult = feedbackSubmitSchema.safeParse(rawData);
         if (!parseResult.success) {
             return ctx.json(
@@ -244,25 +299,81 @@ export const submitFeedbackRoute = createSimpleRoute({
 
         const parsed = parseResult.data;
 
-        // ── 4b. Sanitize user-supplied text fields against XSS ───────────
+        // ── 5b. Sanitize ALL user-supplied fields against XSS ────────────
         const validated = {
             ...parsed,
-            title: sanitizeString(parsed.title, undefined, 200),
-            description: sanitizeString(parsed.description, undefined, 5000),
-            reporterName: sanitizeString(parsed.reporterName, undefined, 100),
+            title: sanitizeString(parsed.title, undefined, FIELD_LIMITS.title),
+            description: sanitizeString(parsed.description, undefined, FIELD_LIMITS.description),
+            reporterName: sanitizeString(parsed.reporterName, undefined, FIELD_LIMITS.reporterName),
+            reporterEmail: sanitizeEmail(parsed.reporterEmail),
             stepsToReproduce: parsed.stepsToReproduce
-                ? sanitizeString(parsed.stepsToReproduce, undefined, 5000)
+                ? sanitizeString(
+                      parsed.stepsToReproduce,
+                      undefined,
+                      FIELD_LIMITS.stepsToReproduce,
+                      true
+                  )
                 : undefined,
             expectedResult: parsed.expectedResult
-                ? sanitizeString(parsed.expectedResult, undefined, 2000)
+                ? sanitizeString(
+                      parsed.expectedResult,
+                      undefined,
+                      FIELD_LIMITS.expectedResult,
+                      true
+                  )
                 : undefined,
             actualResult: parsed.actualResult
-                ? sanitizeString(parsed.actualResult, undefined, 2000)
-                : undefined
+                ? sanitizeString(parsed.actualResult, undefined, FIELD_LIMITS.actualResult, true)
+                : undefined,
+            environment: {
+                ...parsed.environment,
+                browser: parsed.environment.browser
+                    ? sanitizeString(parsed.environment.browser, undefined, 200)
+                    : undefined,
+                os: parsed.environment.os
+                    ? sanitizeString(parsed.environment.os, undefined, 200)
+                    : undefined,
+                viewport: parsed.environment.viewport
+                    ? sanitizeString(parsed.environment.viewport, undefined, 100)
+                    : undefined,
+                deployVersion: parsed.environment.deployVersion
+                    ? sanitizeString(parsed.environment.deployVersion, undefined, 100)
+                    : undefined,
+                consoleErrors: parsed.environment.consoleErrors?.map((e) =>
+                    sanitizeString(e, undefined, 500)
+                ),
+                errorInfo: parsed.environment.errorInfo
+                    ? {
+                          message: sanitizeString(
+                              parsed.environment.errorInfo.message,
+                              undefined,
+                              1000
+                          ),
+                          stack: parsed.environment.errorInfo.stack
+                              ? sanitizeString(parsed.environment.errorInfo.stack, undefined, 2000)
+                              : undefined
+                      }
+                    : undefined
+            }
         };
 
-        // ── 5. Validate attachments ──────────────────────────────────────────
+        // ── 6. Validate attachments ──────────────────────────────────────────
         const rawFiles = formData.getAll('attachments');
+
+        // Validate count BEFORE processing any files (GAP-031-26: anti-DoS)
+        if (rawFiles.length > FEEDBACK_CONFIG.maxAttachments) {
+            return ctx.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'VALIDATION_ERROR',
+                        message: `Maximo ${FEEDBACK_CONFIG.maxAttachments} archivos permitidos`
+                    }
+                },
+                400
+            );
+        }
+
         const attachments: File[] = [];
 
         for (const entry of rawFiles) {
@@ -299,20 +410,7 @@ export const submitFeedbackRoute = createSimpleRoute({
             attachments.push(entry);
         }
 
-        if (attachments.length > FEEDBACK_CONFIG.maxAttachments) {
-            return ctx.json(
-                {
-                    success: false,
-                    error: {
-                        code: 'VALIDATION_ERROR',
-                        message: `Maximo ${FEEDBACK_CONFIG.maxAttachments} archivos permitidos`
-                    }
-                },
-                400
-            );
-        }
-
-        // ── 6. Log submission for audit trail ────────────────────────────────
+        // ── 7. Log submission for audit trail ────────────────────────────────
         apiLogger.info(
             {
                 feedbackType: validated.type,
@@ -324,22 +422,23 @@ export const submitFeedbackRoute = createSimpleRoute({
             'Feedback submission received'
         );
 
-        // ── 7. Convert File objects to FeedbackAttachment buffers ────────────
-        const feedbackAttachments: FeedbackAttachment[] = await Promise.all(
-            attachments.map(async (file) => {
-                const arrayBuffer = await file.arrayBuffer();
-                return {
-                    buffer: Buffer.from(arrayBuffer),
-                    filename: sanitizeFileName(file.name),
-                    contentType: file.type,
-                    size: file.size
-                };
-            })
-        );
+        // ── 8. Convert File objects to FeedbackAttachment buffers ────────────
+        // Process sequentially to avoid holding all buffers in memory at once
+        // (GAP-031-50: 5x10MB = 50MB simultaneous with Promise.all)
+        const feedbackAttachments: FeedbackAttachment[] = [];
+        for (const file of attachments) {
+            const arrayBuffer = await file.arrayBuffer();
+            feedbackAttachments.push({
+                buffer: Buffer.from(arrayBuffer),
+                filename: sanitizeFileName(file.name),
+                contentType: file.type,
+                size: file.size
+            });
+        }
 
-        // ── 8. Attempt Linear issue creation with exponential backoff ─────────
+        // ── 9. Attempt Linear issue creation with exponential backoff ─────────
         const reportTypeLabel = resolveReportTypeLabel(validated.type);
-        const linearService = buildLinearService();
+        const linearService = getLinearService();
 
         if (linearService) {
             const issueInput: CreateFeedbackIssueInput = {
@@ -372,7 +471,18 @@ export const submitFeedbackRoute = createSimpleRoute({
                 const issueResult = await withRetry({
                     fn: () => linearService.createIssue(issueInput),
                     maxRetries: 3,
-                    logger: apiLogger
+                    logger: apiLogger,
+                    isRetriable: (err) => {
+                        // Don't retry client errors (4xx) - only network/server errors
+                        const msg = err.message;
+                        return !(
+                            msg.includes('400') ||
+                            msg.includes('401') ||
+                            msg.includes('403') ||
+                            msg.includes('404') ||
+                            msg.includes('422')
+                        );
+                    }
                 });
 
                 apiLogger.info(
@@ -396,11 +506,11 @@ export const submitFeedbackRoute = createSimpleRoute({
             }
         }
 
-        // ── 9. Email fallback when Linear is unavailable or all retries failed ─
+        // ── 10. Email fallback when Linear is unavailable or all retries failed ─
         const fallbackPayload: NotificationPayload = {
             type: NotificationType.FEEDBACK_REPORT,
-            recipientEmail: validated.reporterEmail,
-            recipientName: validated.reporterName,
+            recipientEmail: env.HOSPEDA_FEEDBACK_FALLBACK_EMAIL ?? FEEDBACK_CONFIG.fallbackEmail,
+            recipientName: 'Hospeda Feedback Team',
             userId: validated.environment.userId ?? null,
             reportType: reportTypeLabel,
             reportTitle: validated.title,
