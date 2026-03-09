@@ -15,11 +15,36 @@ const MAX_BUFFER_SIZE = 10;
 /** Maximum character length of each captured error entry. */
 const MAX_ENTRY_LENGTH = 500;
 
+/**
+ * Patterns that indicate sensitive data in console error output.
+ * Matched case-insensitively and replaced with `[REDACTED]`.
+ */
+const SENSITIVE_PATTERNS = [
+    /Bearer\s+[A-Za-z0-9\-._~+/]+=*/gi,
+    /password\s*[=:]\s*\S+/gi,
+    /secret\s*[=:]\s*\S+/gi,
+    /token\s*[=:]\s*\S+/gi,
+    /api[_-]?key\s*[=:]\s*\S+/gi,
+    /authorization\s*[=:]\s*\S+/gi
+];
+
+/**
+ * Strips sensitive patterns (tokens, passwords, API keys) from a string
+ * to prevent accidental leakage in feedback reports.
+ */
+function redactSensitive(input: string): string {
+    let result = input;
+    for (const pattern of SENSITIVE_PATTERNS) {
+        result = result.replace(pattern, '[REDACTED]');
+    }
+    return result;
+}
+
 // ---------------------------------------------------------------------------
 // Module-level singleton state
 // ---------------------------------------------------------------------------
 
-/** Shared circular buffer across all hook instances */
+/** Shared circular buffer across all hook instances (treated as immutable externally) */
 const sharedBuffer: string[] = [];
 
 /** Number of active hook instances using the capture */
@@ -56,7 +81,9 @@ function installInterceptor(): void {
             })
             .join(' ');
 
-        const entry = `${new Date().toISOString()} ${serialized}`.slice(0, MAX_ENTRY_LENGTH);
+        const entry = redactSensitive(
+            `${new Date().toISOString()} ${serialized}`.slice(0, MAX_ENTRY_LENGTH)
+        );
 
         if (sharedBuffer.length >= MAX_BUFFER_SIZE) {
             sharedBuffer.shift();
