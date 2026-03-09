@@ -9,6 +9,13 @@
             "matchUpdateTypes": ["minor", "patch"],
             "automerge": false,
             "description": "Disable automerge for minor/patch updates - require manual review"
+        },
+        {
+            "matchUpdateTypes": ["patch"],
+            "matchCategories": ["security"],
+            "schedule": ["at any time"],
+            "automerge": false,
+            "description": "Security patches should not wait for weekend schedule"
         }
     ],
     "prConcurrentLimit": 5,
