@@ -103,12 +103,15 @@ const {
 
     <ToastContainer client:load locale={locale as 'es' | 'en' | 'pt'} />
 
-    <!-- Feedback FAB: low-priority island, deferred until browser is idle -->
+    <!-- Feedback FAB: client-only (uses localStorage/window in useState initializer) -->
     <!-- FeedbackIslandWrapper is available for wrapping interactive islands -->
     <FeedbackFAB
-      client:idle
+      client:only="react"
       apiUrl={getApiUrl()}
       appSource="web"
+      userId={Astro.locals.user?.id}
+      userEmail={Astro.locals.user?.email}
+      userName={Astro.locals.user?.name}
     />
 
     <!-- Scroll reveal observer (is:inline to run after DOM is parsed) -->
