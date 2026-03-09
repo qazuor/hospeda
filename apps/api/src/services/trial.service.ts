@@ -17,7 +17,10 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
+import { SubscriptionStatusEnum } from '@repo/schemas';
+import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
@@ -102,6 +105,19 @@ export interface TrialEndingSubscription {
     trialEnd: Date;
     /** Days remaining */
     daysRemaining: number;
+}
+
+/**
+ * In-memory flag to prevent concurrent blockExpiredTrials runs.
+ * Only one run should execute at a time to avoid double-cancelling subscriptions.
+ */
+let blockExpiredTrialsRunning = false;
+
+/**
+ * Reset the concurrent-run guard. Intended for testing only.
+ */
+export function resetBlockExpiredTrialsGuard(): void {
+    blockExpiredTrialsRunning = false;
 }
 
 /**
@@ -343,6 +359,14 @@ export class TrialService {
             return 0;
         }
 
+        // Guard against concurrent execution
+        if (blockExpiredTrialsRunning) {
+            apiLogger.warn('blockExpiredTrials is already running, skipping concurrent invocation');
+            return 0;
+        }
+
+        blockExpiredTrialsRunning = true;
+
         try {
             apiLogger.info('Starting expired trial blocking batch job');
 
@@ -374,6 +398,32 @@ export class TrialService {
                         // Get customer details for notification
                         const customer = await this.billing.customers.get(subscription.customerId);
                         const plan = await this.billing.plans.get(subscription.planId);
+
+                        // Capture to Sentry if customer lookup fails so we can investigate
+                        if (!customer) {
+                            const lookupError = new Error(
+                                `Customer not found during blockExpiredTrials: ${subscription.customerId}`
+                            );
+                            Sentry.captureException(lookupError, {
+                                extra: {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId,
+                                    planId: subscription.planId,
+                                    trialEnd: trialEnd.toISOString()
+                                },
+                                tags: {
+                                    module: 'trial-service',
+                                    operation: 'blockExpiredTrials'
+                                }
+                            });
+                            apiLogger.warn(
+                                {
+                                    subscriptionId: subscription.id,
+                                    customerId: subscription.customerId
+                                },
+                                'Customer not found during blockExpiredTrials, proceeding with cancellation'
+                            );
+                        }
 
                         // Update subscription to cancel (QZPay doesn't support 'expired' status)
                         await this.billing.subscriptions.cancel(subscription.id);
@@ -438,6 +488,8 @@ export class TrialService {
             );
 
             return 0;
+        } finally {
+            blockExpiredTrialsRunning = false;
         }
     }
 
@@ -492,6 +544,9 @@ export class TrialService {
                     newTrialEnd: newTrialEnd.toISOString()
                 }
             });
+
+            // Clear entitlement cache to reflect trial extension immediately
+            clearEntitlementCache(subscription.customerId);
 
             apiLogger.info(
                 {
@@ -550,22 +605,8 @@ export class TrialService {
             const existingSubscriptions =
                 await this.billing.subscriptions.getByCustomerId(customerId);
 
-            // Cancel existing trial subscriptions
-            if (existingSubscriptions && existingSubscriptions.length > 0) {
-                for (const sub of existingSubscriptions) {
-                    if (sub.status === 'trialing' || sub.status === 'canceled') {
-                        await this.billing.subscriptions.cancel(sub.id);
-                        apiLogger.debug(
-                            {
-                                subscriptionId: sub.id
-                            },
-                            'Cancelled trial subscription'
-                        );
-                    }
-                }
-            }
-
-            // Create new paid subscription
+            // Create new paid subscription FIRST to avoid leaving user without a subscription
+            // if cancellation succeeds but creation fails
             const now = new Date();
 
             const newSubscription = await this.billing.subscriptions.create({
@@ -576,6 +617,57 @@ export class TrialService {
                     convertedAt: now.toISOString()
                 }
             });
+
+            // Record reactivation event in audit log (best-effort)
+            try {
+                const db = getDb();
+                await db.insert(billingSubscriptionEvents).values({
+                    subscriptionId: newSubscription.id,
+                    previousStatus: SubscriptionStatusEnum.TRIALING,
+                    newStatus: SubscriptionStatusEnum.ACTIVE,
+                    triggerSource: 'trial-reactivation',
+                    metadata: {
+                        convertedFromTrial: true,
+                        customerId,
+                        planId
+                    }
+                });
+            } catch (auditError) {
+                apiLogger.error(
+                    { error: auditError, subscriptionId: newSubscription.id },
+                    'Failed to insert reactivation event (non-blocking)'
+                );
+            }
+
+            // Cancel existing trial subscriptions only after new subscription is created
+            if (existingSubscriptions && existingSubscriptions.length > 0) {
+                for (const sub of existingSubscriptions) {
+                    if (sub.status === 'trialing') {
+                        try {
+                            await this.billing.subscriptions.cancel(sub.id);
+                            apiLogger.debug(
+                                {
+                                    subscriptionId: sub.id
+                                },
+                                'Cancelled trial subscription'
+                            );
+                        } catch (cancelError) {
+                            // Log but do not throw: the new subscription is already active
+                            const cancelMsg =
+                                cancelError instanceof Error
+                                    ? cancelError.message
+                                    : String(cancelError);
+                            apiLogger.warn(
+                                { subscriptionId: sub.id, error: cancelMsg },
+                                'Failed to cancel old trial subscription after reactivation'
+                            );
+                        }
+                    }
+                }
+            }
+
+            // Clear entitlement cache to reflect new subscription immediately
+            clearEntitlementCache(customerId);
 
             apiLogger.info(
                 {
@@ -652,7 +744,42 @@ export class TrialService {
 
             const previousPlanId = canceledSub.planId ?? null;
 
+            // Create new paid subscription FIRST to avoid leaving user without a subscription
+            // if cancellation succeeds but creation fails
+            const newSubscription = await this.billing.subscriptions.create({
+                customerId,
+                planId,
+                metadata: {
+                    reactivatedFromCanceled: 'true',
+                    reactivatedAt: new Date().toISOString(),
+                    previousPlanId: previousPlanId ?? undefined
+                }
+            });
+
+            // Record reactivation event in audit log (best-effort)
+            try {
+                const db = getDb();
+                await db.insert(billingSubscriptionEvents).values({
+                    subscriptionId: newSubscription.id,
+                    previousStatus: SubscriptionStatusEnum.CANCELLED,
+                    newStatus: SubscriptionStatusEnum.ACTIVE,
+                    triggerSource: 'subscription-reactivation',
+                    metadata: {
+                        reactivatedFromCanceled: true,
+                        customerId,
+                        planId,
+                        previousPlanId
+                    }
+                });
+            } catch (auditError) {
+                apiLogger.error(
+                    { error: auditError, subscriptionId: newSubscription.id },
+                    'Failed to insert reactivation event (non-blocking)'
+                );
+            }
+
             // Cancel all existing canceled subscriptions (idempotent cleanup)
+            // Done after creation so user always has an active subscription
             for (const sub of subscriptions) {
                 if (sub.status === 'canceled') {
                     try {
@@ -663,16 +790,8 @@ export class TrialService {
                 }
             }
 
-            // Create new paid subscription
-            const newSubscription = await this.billing.subscriptions.create({
-                customerId,
-                planId,
-                metadata: {
-                    reactivatedFromCanceled: 'true',
-                    reactivatedAt: new Date().toISOString(),
-                    previousPlanId: previousPlanId ?? undefined
-                }
-            });
+            // Clear entitlement cache to reflect new subscription immediately
+            clearEntitlementCache(customerId);
 
             apiLogger.info(
                 {
@@ -749,9 +868,11 @@ export class TrialService {
                 const msRemaining = trialEnd.getTime() - now.getTime();
                 const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
 
-                // Check if trial ends within the specified days
-                // We want trials ending within daysAhead days, but not already expired
-                const isEndingSoon = daysRemaining <= daysAhead && daysRemaining > 0;
+                // Check if trial ends exactly on the specified day window.
+                // Using exact match (===) instead of range (<=) to prevent duplicate
+                // reminders when the cron runs with different daysAhead values
+                // (e.g. a 3-day query should not also pick up 1-day trials).
+                const isEndingSoon = daysRemaining === daysAhead;
 
                 if (isEndingSoon) {
                     try {

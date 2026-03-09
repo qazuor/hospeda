@@ -16,6 +16,7 @@
  */
 
 import type { EntitlementKey, LimitKey } from '@repo/billing';
+import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
@@ -185,6 +186,10 @@ async function loadEntitlements(
         apiLogger.error(
             `Error loading entitlements for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`
         );
+        Sentry.captureException(error, {
+            tags: { subsystem: 'billing-entitlements', action: 'load' },
+            extra: { customerId }
+        });
         return null;
     }
 }
@@ -275,12 +280,16 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             c.set('userEntitlements', cached.entitlements);
             c.set('userLimits', cached.limits);
         } catch (error) {
-            // Log error but don't break the request
+            // Log error but don't break the request (fail-open strategy, see ADR-016)
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             apiLogger.warn(
                 `Error in entitlement middleware for customer ${billingCustomerId}: ${errorMessage}`
             );
+            Sentry.captureException(error, {
+                tags: { subsystem: 'billing-entitlements', action: 'middleware' },
+                extra: { billingCustomerId }
+            });
 
             // Set empty entitlements and continue - don't break the request
             c.set('userEntitlements', new Set<EntitlementKey>());

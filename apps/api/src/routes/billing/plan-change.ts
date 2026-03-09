@@ -15,10 +15,11 @@
  * @module routes/billing/plan-change
  */
 
-import type { BillingIntervalEnum } from '@repo/schemas';
+import { BillingIntervalEnum } from '@repo/schemas';
 import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
@@ -146,14 +147,22 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 3. Check if user is trying to change to the same plan
+        // 3. Reject one_time billing interval (uses a separate payment flow)
+        if (billingInterval === BillingIntervalEnum.ONE_TIME) {
+            throw new HTTPException(422, {
+                message:
+                    'One-time plans cannot be used for subscription plan changes. Use the purchase flow instead.'
+            });
+        }
+
+        // 4. Check if user is trying to change to the same plan
         if (activeSubscription.planId === newPlanId) {
             throw new HTTPException(400, {
                 message: 'Cannot change to the same plan'
             });
         }
 
-        // 4. Get current plan to compare prices
+        // 5. Get current plan to compare prices
         const currentPlan = await billing.plans.get(activeSubscription.planId);
 
         if (!currentPlan) {
@@ -162,7 +171,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 5. Find the price matching the requested billing interval
+        // 6. Find the price matching the requested billing interval
         // Map our enum to QZPay's interval format (includes intervalCount for quarterly/semi_annual)
         const { interval: qzpayInterval, intervalCount: qzpayIntervalCount } =
             mapBillingIntervalToQZPay(billingInterval);
@@ -178,7 +187,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 6. Get current subscription interval and find matching price from current plan
+        // 7. Get current subscription interval and find matching price from current plan
         const currentInterval = activeSubscription.interval;
 
         const currentPrice = currentPlan.prices.find((p) => p.billingInterval === currentInterval);
@@ -189,10 +198,16 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             });
         }
 
-        // 7. Determine if this is an upgrade or downgrade
-        const isUpgrade = targetPrice.unitAmount > currentPrice.unitAmount;
+        // 8. Determine if this is an upgrade or downgrade
+        // Normalize prices by intervalCount so multi-month plans are comparable
+        // e.g., "6 months at $600" -> $100/month vs "1 month at $120" -> $120/month
+        const currentIntervalCount = currentPrice.intervalCount ?? 1;
+        const targetIntervalCount = targetPrice.intervalCount ?? 1;
+        const normalizedCurrentPrice = currentPrice.unitAmount / currentIntervalCount;
+        const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
+        const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
 
-        // 8. Change the plan with appropriate proration behavior
+        // 9. Change the plan with appropriate proration behavior
         const result = await billing.subscriptions.changePlan(activeSubscription.id, {
             newPlanId,
             newPriceId: targetPrice.id,
@@ -200,7 +215,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             applyAt: isUpgrade ? 'immediately' : 'period_end'
         });
 
-        // 9. Map to response format
+        // 10. Map to response format
         const response: {
             subscriptionId: string;
             previousPlanId: string;
@@ -222,6 +237,9 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         if (isUpgrade && result.proration) {
             response.proratedAmount = result.proration.chargeAmount - result.proration.creditAmount;
         }
+
+        // Clear entitlement cache to reflect plan change immediately
+        clearEntitlementCache(billingCustomerId);
 
         return response;
     } catch (error) {

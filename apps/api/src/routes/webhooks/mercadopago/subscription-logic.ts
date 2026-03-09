@@ -15,6 +15,7 @@ import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
+import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { apiLogger } from '../../../utils/logger.js';
 
 /** Masks an ID to show only the last 4 characters */
@@ -45,6 +46,7 @@ export const QZPAY_TO_HOSPEDA_STATUS: Record<string, SubscriptionStatusEnum | nu
     paused: SubscriptionStatusEnum.PAUSED,
     canceled: SubscriptionStatusEnum.CANCELLED,
     finished: SubscriptionStatusEnum.EXPIRED,
+    past_due: SubscriptionStatusEnum.PAST_DUE,
     pending: null
 } as const;
 
@@ -316,6 +318,9 @@ export async function processSubscriptionUpdated({
             // Do NOT throw - audit failure is non-blocking; status update must still commit
         }
     });
+
+    // Clear entitlement cache to reflect status change immediately
+    clearEntitlementCache(localSubscription.customerId);
 
     apiLogger.info(
         {
