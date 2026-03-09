@@ -12,7 +12,7 @@ import { useAutoCollect } from '../hooks/useAutoCollect.js';
 import { useFeedbackSubmit } from '../hooks/useFeedbackSubmit.js';
 import type { AppSourceId, FeedbackEnvironment, ReportTypeId } from '../schemas/feedback.schema.js';
 import { REPORT_TYPE_IDS, feedbackFormSchema } from '../schemas/feedback.schema.js';
-import { buttonPrimaryStyle, buttonSecondaryStyle } from '../styles/shared.js';
+import { SuccessScreen } from './SuccessScreen.js';
 import { StepBasic } from './steps/StepBasic.js';
 import type { StepBasicData } from './steps/StepBasic.js';
 import { StepDetails } from './steps/StepDetails.js';
@@ -87,55 +87,7 @@ const styles = {
         marginBottom: '16px',
         fontSize: '14px',
         color: '#b91c1c'
-    },
-    successContainer: {
-        textAlign: 'center' as const,
-        padding: '24px 16px'
-    },
-    successIcon: {
-        fontSize: '48px',
-        color: '#16a34a',
-        marginBottom: '12px',
-        lineHeight: 1
-    },
-    successTitle: {
-        fontSize: '18px',
-        fontWeight: '700',
-        color: '#111827',
-        marginBottom: '8px'
-    },
-    successMessage: {
-        fontSize: '14px',
-        color: '#374151',
-        marginBottom: '6px'
-    },
-    successIssue: {
-        fontSize: '13px',
-        color: '#6b7280',
-        marginBottom: '4px'
-    },
-    successIssueId: {
-        fontWeight: '600',
-        color: '#2563eb'
-    },
-    successIssueLink: {
-        color: '#2563eb',
-        textDecoration: 'none',
-        fontSize: '12px'
-    },
-    successThanks: {
-        fontSize: '13px',
-        color: '#6b7280',
-        marginTop: '12px',
-        marginBottom: '24px'
-    },
-    successButtonRow: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '12px'
-    },
-    buttonPrimary: buttonPrimaryStyle,
-    buttonSecondary: buttonSecondaryStyle
+    }
 } as const;
 
 /**
@@ -427,60 +379,13 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     if (step === 'success' && submitState.result) {
-        const { linearIssueId, linearIssueUrl } = submitState.result;
-
         return (
-            <div style={styles.container}>
-                <div style={styles.successContainer}>
-                    <div style={styles.successIcon}>&#10003;</div>
-
-                    <p style={styles.successTitle}>{FEEDBACK_STRINGS.success.title}</p>
-                    <p style={styles.successMessage}>{FEEDBACK_STRINGS.success.message}</p>
-
-                    {linearIssueId ? (
-                        <p style={styles.successIssue}>
-                            {FEEDBACK_STRINGS.success.issueLabel}:{' '}
-                            {linearIssueUrl ? (
-                                <a
-                                    href={linearIssueUrl}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={styles.successIssueLink}
-                                >
-                                    <span style={styles.successIssueId}>{linearIssueId}</span>
-                                </a>
-                            ) : (
-                                <span style={styles.successIssueId}>{linearIssueId}</span>
-                            )}
-                        </p>
-                    ) : (
-                        <p style={styles.successIssue}>
-                            {FEEDBACK_STRINGS.success.fallbackMessage}
-                        </p>
-                    )}
-
-                    <p style={styles.successThanks}>{FEEDBACK_STRINGS.success.thanks}</p>
-
-                    <div style={styles.successButtonRow}>
-                        <button
-                            type="button"
-                            style={styles.buttonSecondary}
-                            onClick={handleReset}
-                        >
-                            {FEEDBACK_STRINGS.buttons.submitAnother}
-                        </button>
-                        {onClose && (
-                            <button
-                                type="button"
-                                style={styles.buttonPrimary}
-                                onClick={onClose}
-                            >
-                                {FEEDBACK_STRINGS.buttons.close}
-                            </button>
-                        )}
-                    </div>
-                </div>
-            </div>
+            <SuccessScreen
+                linearIssueId={submitState.result.linearIssueId}
+                linearIssueUrl={submitState.result.linearIssueUrl}
+                onReset={handleReset}
+                onClose={onClose}
+            />
         );
     }
 

@@ -20,6 +20,13 @@ import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js'
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
+import {
+    FAB_FULL,
+    FAB_MINIMIZED,
+    FAB_MINIMIZED_HOVERED,
+    MINIMIZE_BTN,
+    TOOLTIP
+} from '../styles/fab.js';
 import { FeedbackModal } from './FeedbackModal.js';
 
 // ---------------------------------------------------------------------------
@@ -103,86 +110,6 @@ function MinimizeIcon(): React.JSX.Element {
         </svg>
     );
 }
-
-// ---------------------------------------------------------------------------
-// Inline styles
-// ---------------------------------------------------------------------------
-
-const FAB_BASE: React.CSSProperties = {
-    position: 'fixed',
-    bottom: '24px',
-    right: '24px',
-    zIndex: 9998,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    cursor: 'pointer',
-    border: 'none',
-    transition: 'box-shadow 0.2s ease, transform 0.2s ease'
-};
-
-const FAB_FULL: React.CSSProperties = {
-    ...FAB_BASE,
-    width: '48px',
-    height: '48px',
-    borderRadius: '50%',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    boxShadow: '0 4px 16px rgba(37, 99, 235, 0.45), 0 2px 6px rgba(0, 0, 0, 0.2)'
-};
-
-const FAB_MINIMIZED: React.CSSProperties = {
-    ...FAB_BASE,
-    width: '24px',
-    height: '24px',
-    borderRadius: '50%',
-    backgroundColor: '#93c5fd',
-    boxShadow: '0 2px 6px rgba(0, 0, 0, 0.15)'
-};
-
-const FAB_MINIMIZED_HOVERED: React.CSSProperties = {
-    ...FAB_MINIMIZED,
-    width: '48px',
-    height: '48px',
-    backgroundColor: '#2563eb',
-    color: '#ffffff',
-    boxShadow: '0 4px 16px rgba(37, 99, 235, 0.45)'
-};
-
-const MINIMIZE_BTN: React.CSSProperties = {
-    position: 'absolute',
-    top: '-6px',
-    right: '-6px',
-    width: '24px',
-    height: '24px',
-    borderRadius: '50%',
-    backgroundColor: '#1e40af',
-    color: '#ffffff',
-    border: 'none',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 0,
-    zIndex: 1,
-    boxShadow: '0 1px 4px rgba(0, 0, 0, 0.25)'
-};
-
-const TOOLTIP: React.CSSProperties = {
-    position: 'absolute',
-    right: '56px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    backgroundColor: '#1f2937',
-    color: '#f9fafb',
-    fontSize: '13px',
-    lineHeight: '1.4',
-    padding: '6px 10px',
-    borderRadius: '6px',
-    whiteSpace: 'nowrap',
-    pointerEvents: 'none',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
-};
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (exported for testability)
