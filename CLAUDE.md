@@ -63,6 +63,11 @@ The API uses a three-tier route architecture:
 ### Key Commands
 
 ```bash
+# Interactive CLI (discover and run all commands)
+pnpm cli              # Interactive menu with fuzzy search
+pnpm cli <command>    # Run a command directly (e.g., pnpm cli db:start)
+pnpm test:cli         # Run CLI tool tests
+
 # Development
 pnpm dev              # Start all apps
 pnpm dev:admin        # Start admin only
@@ -285,7 +290,7 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 - **ALWAYS** update task status when starting work (`pending` → `in_progress`)
 - **ALWAYS** run quality gate before marking a task `completed`
 - **ALWAYS** update spec status when all its tasks are done (`in-progress` → `completed`)
-- **NEVER** leave a task as `in_progress` at the end of a session without documenting progress in `/diary`
+- **NEVER** leave a task as `in_progress` at the end of a session without documenting progress via `mem_session_summary`
 - **NEVER** start working on code without first checking if there's a relevant spec/task
 - When a spec is first worked on, update its status from `draft` → `in-progress`
 - If requirements change mid-work, use `/task-master:replan` instead of ad-hoc modifications
