@@ -85,4 +85,79 @@ describe('UserBookmarkService.listBookmarksByEntity', () => {
         });
         expectInternalError(result);
     });
+
+    describe('ownership filtering (GAP-037-12)', () => {
+        it('should filter by actor userId when actor lacks USER_BOOKMARK_VIEW_ANY', async () => {
+            asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+            const regularActor = createActor({
+                id: 'regular-user-id',
+                permissions: [PermissionEnum.USER_BOOKMARK_MANAGE]
+            });
+
+            await service.listBookmarksByEntity(regularActor, {
+                entityId: bookmark.entityId,
+                entityType: bookmark.entityType,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            });
+
+            expect(asMock(modelMock.findAll)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    entityId: bookmark.entityId,
+                    entityType: bookmark.entityType,
+                    deletedAt: null,
+                    userId: 'regular-user-id'
+                }),
+                { page: 1, pageSize: 10 }
+            );
+        });
+
+        it('should NOT filter by userId when actor has USER_BOOKMARK_VIEW_ANY', async () => {
+            asMock(modelMock.findAll).mockResolvedValue({ items: [bookmark], total: 1 });
+            const adminActor = createActor({
+                id: 'admin-user-id',
+                permissions: [
+                    PermissionEnum.USER_BOOKMARK_MANAGE,
+                    PermissionEnum.USER_BOOKMARK_VIEW_ANY
+                ]
+            });
+
+            await service.listBookmarksByEntity(adminActor, {
+                entityId: bookmark.entityId,
+                entityType: bookmark.entityType,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            });
+
+            const callArgs = asMock(modelMock.findAll).mock.calls[0];
+            expect(callArgs?.[0]).toEqual({
+                entityId: bookmark.entityId,
+                entityType: bookmark.entityType,
+                deletedAt: null
+            });
+            expect(callArgs?.[0]).not.toHaveProperty('userId');
+        });
+
+        it('should return only actor own bookmarks for entity without VIEW_ANY', async () => {
+            const ownBookmark = createUserBookmark({ userId: actor.id });
+            asMock(modelMock.findAll).mockResolvedValue({ items: [ownBookmark], total: 1 });
+
+            const result = await service.listBookmarksByEntity(actor, {
+                entityId: bookmark.entityId,
+                entityType: bookmark.entityType,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            });
+
+            expectSuccess(result);
+            expect(result.data?.bookmarks).toHaveLength(1);
+            expect(result.data?.bookmarks?.[0]?.userId).toBe(actor.id);
+        });
+    });
 });

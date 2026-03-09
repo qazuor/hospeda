@@ -189,7 +189,9 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Lists all bookmarks for a given entity.
+     * Lists bookmarks for a given entity.
+     * If the actor has USER_BOOKMARK_VIEW_ANY permission, returns all bookmarks.
+     * Otherwise, returns only the actor's own bookmarks for that entity.
      */
     public async listBookmarksByEntity(
         actor: Actor,
@@ -202,14 +204,16 @@ export class UserBookmarkService extends BaseCrudService<
             execute: async (validated) => {
                 this._canList(actor);
                 const { page, pageSize } = validated;
-                const { items } = await this.model.findAll(
-                    {
-                        entityId: validated.entityId,
-                        entityType: validated.entityType,
-                        deletedAt: null
-                    },
-                    { page, pageSize }
-                );
+                const filter: Record<string, unknown> = {
+                    entityId: validated.entityId,
+                    entityType: validated.entityType,
+                    deletedAt: null
+                };
+                // If the actor lacks VIEW_ANY, restrict to their own bookmarks only
+                if (!this._hasViewAnyPermission(actor)) {
+                    filter.userId = actor.id;
+                }
+                const { items } = await this.model.findAll(filter, { page, pageSize });
                 return { bookmarks: items };
             }
         });
