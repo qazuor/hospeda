@@ -4,7 +4,8 @@
  * Handles feedback form submission via multipart/form-data and manages
  * loading, error, and success states.
  */
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { FEEDBACK_STRINGS } from '../config/strings.js';
 import type { FeedbackFormData } from '../schemas/feedback.schema.js';
 
 /**
@@ -40,11 +41,52 @@ interface UseFeedbackSubmitInput {
 }
 
 /**
+ * Validates that the API URL uses a safe protocol (http or https).
+ *
+ * @param url - The API URL to validate
+ * @returns true if the URL uses http: or https: protocol
+ */
+function isValidApiUrl(url: string): boolean {
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Serializes an error to a string for JSON payloads.
+ * Avoids the `JSON.stringify(error) === '{}'` problem by extracting
+ * the message and name properties explicitly.
+ *
+ * @param err - The caught error value
+ * @returns A human-readable error string
+ */
+function serializeError(err: unknown): string {
+    if (err instanceof Error) {
+        return err.message;
+    }
+    if (typeof err === 'string') {
+        return err;
+    }
+    try {
+        const str = JSON.stringify(err);
+        return str === '{}' ? String(err) : str;
+    } catch {
+        return String(err);
+    }
+}
+
+/**
  * Handles feedback form submission via multipart/form-data.
  *
  * Builds a `FormData` payload from the validated form values and optional
  * file attachments, posts it to `POST /api/v1/public/feedback`, and manages
  * `isSubmitting`, `error`, and `result` states throughout the lifecycle.
+ *
+ * Uses an AbortController to cancel in-flight requests when the component
+ * unmounts, preventing setState on unmounted components.
  *
  * Call `reset()` to clear all state (e.g., when reopening the form).
  *
@@ -72,8 +114,33 @@ export function useFeedbackSubmit({ apiUrl }: UseFeedbackSubmitInput): {
         result: null
     });
 
+    // AbortController ref to cancel in-flight requests on unmount
+    const abortControllerRef = useRef<AbortController | null>(null);
+
+    // Cleanup: abort any pending request when the component unmounts
+    useEffect(() => {
+        return () => {
+            abortControllerRef.current?.abort();
+        };
+    }, []);
+
     const submit = useCallback(
         async (data: FeedbackFormData, attachments?: File[], honeypotValue?: string) => {
+            // Validate apiUrl origin before sending data
+            if (!isValidApiUrl(apiUrl)) {
+                setState({
+                    isSubmitting: false,
+                    error: 'URL de API invalida',
+                    result: null
+                });
+                return;
+            }
+
+            // Abort any previous in-flight request
+            abortControllerRef.current?.abort();
+            const controller = new AbortController();
+            abortControllerRef.current = controller;
+
             setState({ isSubmitting: true, error: null, result: null });
 
             try {
@@ -96,8 +163,19 @@ export function useFeedbackSubmit({ apiUrl }: UseFeedbackSubmitInput): {
 
                 const response = await fetch(`${apiUrl}/api/v1/public/feedback`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+
+                // Handle 429 rate limiting specifically
+                if (response.status === 429) {
+                    setState({
+                        isSubmitting: false,
+                        error: FEEDBACK_STRINGS.rateLimit.message,
+                        result: null
+                    });
+                    return;
+                }
 
                 let json: {
                     success: boolean;
@@ -131,9 +209,14 @@ export function useFeedbackSubmit({ apiUrl }: UseFeedbackSubmitInput): {
                     result: json.data ?? null
                 });
             } catch (err) {
+                // Do not setState if the request was aborted (component unmounted)
+                if (err instanceof DOMException && err.name === 'AbortError') {
+                    return;
+                }
+
                 setState({
                     isSubmitting: false,
-                    error: err instanceof Error ? err.message : 'Error de conexion',
+                    error: serializeError(err) || 'Error de conexion',
                     result: null
                 });
             }
@@ -142,6 +225,7 @@ export function useFeedbackSubmit({ apiUrl }: UseFeedbackSubmitInput): {
     );
 
     const reset = useCallback(() => {
+        abortControllerRef.current?.abort();
         setState({ isSubmitting: false, error: null, result: null });
     }, []);
 
