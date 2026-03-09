@@ -35,7 +35,6 @@ export const normalizeCreateInput = (input: EventCreateInput): Partial<Event> =>
 export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }): Partial<Event> => {
     const adminInfo = normalizeAdminInfo(input.adminInfo);
     // Exclude the original date property from rest
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { adminInfo: _adminInfo, date: _date, id, ...rest } = input;
     let date: EventDate | undefined = undefined;
     if (input.date?.start) {
@@ -48,7 +47,6 @@ export const normalizeUpdateInput = (input: EventUpdateInput & { id?: string }):
         };
     }
     // Remove locationId and organizerId from rest to avoid type conflicts
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { locationId, organizerId, ...restWithoutIds } = rest;
     return {
         id,

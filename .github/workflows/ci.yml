@@ -122,12 +122,18 @@ jobs:
             echo "📦 Package: $PACKAGE_NAME"
             echo "   Coverage: $COVERAGE_ROUNDED%"
 
+            # Determine threshold per package (web app uses 80% due to Astro SSG component testing limitations)
+            THRESHOLD=90
+            if [ "$PACKAGE_NAME" = "web" ]; then
+              THRESHOLD=80
+            fi
+
             # Check if below threshold
-            if (( $(echo "$COVERAGE < 90" | bc -l) )); then
-              echo "   ❌ FAIL: Coverage below 90% threshold"
+            if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
+              echo "   ❌ FAIL: Coverage below ${THRESHOLD}% threshold"
               FAILED=1
             else
-              echo "   ✅ PASS: Coverage meets 90% threshold"
+              echo "   ✅ PASS: Coverage meets ${THRESHOLD}% threshold"
             fi
 
             # Accumulate for global average

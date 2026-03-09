@@ -385,19 +385,12 @@ describe('Amenity Query Schemas', () => {
             expect(() => AmenityFiltersSchema.parse(emptyFilters)).not.toThrow();
         });
 
-        it('should reject invalid usage count ranges', () => {
-            const invalidFilters = [
-                { minUsageCount: -1 },
-                { maxUsageCount: -5 },
-                { popularityThreshold: 0 }
-            ];
-
-            invalidFilters.forEach((filter, index) => {
-                expect(
-                    () => AmenityFiltersSchema.parse(filter),
-                    `Invalid filter case ${index} should throw`
-                ).toThrow(ZodError);
-            });
+        it('should pass unknown fields through (strip behavior)', () => {
+            // Fields that were removed from the schema should be stripped silently
+            const filtersWithExtras = { name: 'test', minUsageCount: 5 };
+            const result = AmenityFiltersSchema.parse(filtersWithExtras);
+            expect(result.name).toBe('test');
+            expect((result as Record<string, unknown>).minUsageCount).toBeUndefined();
         });
 
         it('should reject invalid string lengths', () => {

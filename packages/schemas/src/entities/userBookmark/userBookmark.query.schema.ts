@@ -143,8 +143,8 @@ export const UserBookmarkListItemSchema = UserBookmarkSchema.pick({
     userId: true,
     entityId: true,
     entityType: true,
-    notes: true,
-    isPrivate: true,
+    name: true,
+    description: true,
     createdAt: true,
     updatedAt: true
 });
@@ -191,7 +191,7 @@ export const UserBookmarkSummarySchema = UserBookmarkSchema.pick({
     userId: true,
     entityId: true,
     entityType: true,
-    notes: true,
+    name: true,
     createdAt: true
 });
 

@@ -36,27 +36,7 @@ export const AttractionFiltersSchema = z.object({
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Location filters
-    destinationId: z.string().uuid().optional(),
-
-    // Type/category filters
-    category: z.string().optional(),
-    subcategory: z.string().optional(),
-
-    // Accessibility filters
-    isAccessible: z.boolean().optional(),
-    isIndoor: z.boolean().optional(),
-    isOutdoor: z.boolean().optional(),
-
-    // Pricing filters
-    isFree: z.boolean().optional(),
-    hasEntryFee: z.boolean().optional(),
-
-    // Tags filter
-    tags: z.array(z.string().uuid()).optional(),
-
-    // Operating status
-    isOperational: z.boolean().optional(),
-    isTemporarilyClosed: z.boolean().optional()
+    destinationId: z.string().uuid().optional()
 });
 
 // ============================================================================
@@ -84,27 +64,7 @@ export const AttractionSearchSchema = BaseSearchSchema.extend({
     lifecycleState: LifecycleStatusEnumSchema.optional(),
 
     // Location filters
-    destinationId: z.string().uuid().optional(),
-
-    // Type/category filters
-    category: z.string().optional(),
-    subcategory: z.string().optional(),
-
-    // Accessibility filters
-    isAccessible: z.boolean().optional(),
-    isIndoor: z.boolean().optional(),
-    isOutdoor: z.boolean().optional(),
-
-    // Pricing filters
-    isFree: z.boolean().optional(),
-    hasEntryFee: z.boolean().optional(),
-
-    // Tags filter
-    tags: z.array(z.string().uuid()).optional(),
-
-    // Operating status
-    isOperational: z.boolean().optional(),
-    isTemporarilyClosed: z.boolean().optional()
+    destinationId: z.string().uuid().optional()
 });
 
 // ============================================================================
@@ -282,21 +242,10 @@ export const HttpAttractionSearchSchema = HttpPaginationSchema.merge(HttpSorting
 
     // Location filters
     destinationId: z.string().uuid().optional(),
-    city: z.string().optional(),
-    country: z.string().length(2).optional(),
 
     // Content filters with coercion
     hasDescription: HttpQueryFields.hasDescription(),
-    hasMedia: HttpQueryFields.hasMedia(),
-    hasCoordinates: HttpQueryFields.hasCoordinates(),
-
-    // Numeric filters with coercion
-    minVisitorsPerYear: HttpQueryFields.minVisitorsPerYear(),
-    maxVisitorsPerYear: HttpQueryFields.maxVisitorsPerYear(),
-
-    // Boolean filters with coercion
-    isOpen: HttpQueryFields.isOpen(),
-    acceptsReservations: HttpQueryFields.acceptsReservations()
+    hasMedia: HttpQueryFields.hasMedia()
 });
 
 export type HttpAttractionSearch = z.infer<typeof HttpAttractionSearchSchema>;
@@ -320,10 +269,7 @@ export const ATTRACTION_SEARCH_METADATA: OpenApiSchemaMetadata = {
         q: 'museum',
         isFeatured: true,
         destinationId: '123e4567-e89b-12d3-a456-426614174000',
-        city: 'Barcelona',
-        country: 'ES',
-        hasMedia: true,
-        isOpen: true
+        hasMedia: true
     },
     fields: {
         page: {
@@ -351,22 +297,8 @@ export const ATTRACTION_SEARCH_METADATA: OpenApiSchemaMetadata = {
             example: '123e4567-e89b-12d3-a456-426614174000',
             format: 'uuid'
         },
-        city: {
-            description: 'Filter by city name',
-            example: 'Barcelona'
-        },
-        country: {
-            description: 'Filter by country code (ISO 3166-1 alpha-2)',
-            example: 'ES',
-            minLength: 2,
-            maxLength: 2
-        },
         hasMedia: {
             description: 'Filter attractions with media content',
-            example: true
-        },
-        isOpen: {
-            description: 'Filter attractions currently open',
             example: true
         }
     },

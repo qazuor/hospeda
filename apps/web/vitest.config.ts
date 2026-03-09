@@ -19,6 +19,9 @@ export default defineConfig(
                 'src/**/*.test.ts',
                 'src/**/*.test.tsx'
             ],
+            // Web app uses 80% coverage threshold (vs 90% monorepo default) because
+            // Astro components cannot be rendered in Vitest (no DOM renderer), so tests
+            // read source files and assert on content, which limits achievable coverage.
             coverage: {
                 provider: 'v8',
                 reporter: ['text', 'json', 'html'],

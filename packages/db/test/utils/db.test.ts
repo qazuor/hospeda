@@ -15,7 +15,6 @@ const mockPool = {} as unknown as MockPool;
  * Direct property mutation does not work with ESM live bindings.
  * @ts-expect-error setDb accepts non-null type but null is valid for test teardown.
  */
-// biome-ignore lint/suspicious/noExplicitAny: intentional test teardown cast
 const resetDbClient = () => dbUtils.setDb(null as any);
 
 // This file uses '@ts-expect-error' in Pool mocks because it's not possible to replicate the entire Pool interface in tests. Only used methods are mocked.

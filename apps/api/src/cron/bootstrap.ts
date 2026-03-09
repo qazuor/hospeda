@@ -49,7 +49,6 @@ export const startCronScheduler = async (port: number): Promise<void> => {
     // node-cron adapter: schedule jobs in-process
     try {
         // Dynamic import to avoid requiring node-cron as a hard dependency
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         const nodeCron = await import('node-cron');
 
         const enabledJobs = getEnabledCronJobs();

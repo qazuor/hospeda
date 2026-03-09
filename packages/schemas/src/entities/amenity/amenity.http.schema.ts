@@ -131,12 +131,10 @@ export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): Amenit
     // Amenity-specific filters that exist in BOTH HTTP and domain schemas
     name: httpParams.name,
     slug: httpParams.slug,
-    category: httpParams.category,
+    type: httpParams.type,
     icon: httpParams.icon,
     hasIcon: httpParams.hasIcon,
     hasDescription: httpParams.hasDescription,
-    minUsageCount: httpParams.minUsageCount,
-    maxUsageCount: httpParams.maxUsageCount,
     createdAfter: httpParams.createdAfter,
     createdBefore: httpParams.createdBefore
 

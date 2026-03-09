@@ -29,17 +29,12 @@ export const AmenityFiltersSchema = z.object({
     // Basic filters
     name: z.string().optional(),
     slug: z.string().optional(),
-    category: z.string().optional(),
+    type: z.string().optional(),
     icon: z.string().optional(),
 
     // Content filters
     hasIcon: z.boolean().optional(),
     hasDescription: z.boolean().optional(),
-
-    // Usage filters
-    minUsageCount: z.number().int().min(0).optional(),
-    maxUsageCount: z.number().int().min(0).optional(),
-    isUnused: z.boolean().optional(),
 
     // Date filters
     createdAfter: z.date().optional(),
@@ -49,14 +44,7 @@ export const AmenityFiltersSchema = z.object({
     nameStartsWith: z.string().min(1).max(50).optional(),
     nameEndsWith: z.string().min(1).max(50).optional(),
     nameContains: z.string().min(1).max(50).optional(),
-    descriptionContains: z.string().min(1).max(100).optional(),
-
-    // Popularity filters
-    isPopular: z.boolean().optional(),
-    popularityThreshold: z.number().int().min(1).optional(),
-
-    // Category grouping
-    categories: z.array(z.string()).optional()
+    descriptionContains: z.string().min(1).max(100).optional()
 });
 export type AmenityFilters = z.infer<typeof AmenityFiltersSchema>;
 
@@ -72,17 +60,12 @@ export const AmenitySearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from nested structure)
     name: z.string().optional(),
     slug: z.string().optional(),
-    category: z.string().optional(),
+    type: z.string().optional(),
     icon: z.string().optional(),
 
     // Content filters
     hasIcon: z.boolean().optional(),
     hasDescription: z.boolean().optional(),
-
-    // Usage filters
-    minUsageCount: z.number().int().min(0).optional(),
-    maxUsageCount: z.number().int().min(0).optional(),
-    isUnused: z.boolean().optional(),
 
     // Date filters
     createdAfter: z.date().optional(),
@@ -93,13 +76,6 @@ export const AmenitySearchSchema = BaseSearchSchema.extend({
     nameEndsWith: z.string().min(1).max(50).optional(),
     nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional(),
-
-    // Popularity filters
-    isPopular: z.boolean().optional(),
-    popularityThreshold: z.number().int().min(1).optional(),
-
-    // Category grouping
-    categories: z.array(z.string()).optional(),
 
     // Search options (preserved from original)
     searchInDescription: z.boolean().default(true).optional(),
@@ -122,22 +98,15 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     // Basic filters
     name: z.string().optional(),
     slug: z.string().optional(),
-    category: z.string().optional(),
+    type: z.string().optional(),
     icon: z.string().optional(),
 
     // Boolean filters with coercion
     hasIcon: HttpQueryFields.hasIcon(),
     hasDescription: HttpQueryFields.hasDescription(),
-    isUnused: HttpQueryFields.isUnused(),
-    isPopular: HttpQueryFields.isPopular(),
     searchInDescription: HttpQueryFields.searchInDescription(),
     fuzzySearch: HttpQueryFields.fuzzySearch(),
     groupByCategory: HttpQueryFields.groupByCategory(),
-
-    // Numeric filters with coercion
-    minUsageCount: HttpQueryFields.minUsageCount(),
-    maxUsageCount: HttpQueryFields.maxUsageCount(),
-    popularityThreshold: HttpQueryFields.popularityThreshold(),
 
     // Date filters with coercion
     createdAfter: HttpQueryFields.createdAfter(),
@@ -147,13 +116,7 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     nameStartsWith: z.string().min(1).max(50).optional(),
     nameEndsWith: z.string().min(1).max(50).optional(),
     nameContains: z.string().min(1).max(50).optional(),
-    descriptionContains: z.string().min(1).max(100).optional(),
-
-    // Array filters (comma-separated)
-    categories: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional()
+    descriptionContains: z.string().min(1).max(100).optional()
 });
 
 export type HttpAmenitySearch = z.infer<typeof HttpAmenitySearchSchema>;
@@ -168,21 +131,13 @@ export const AmenitySearchSchemaWithMetadata = applyOpenApiMetadata(
         entityNameLower: 'amenities',
         exampleQuery: 'pool',
         fields: {
-            category: {
-                description: 'Filter by amenity category',
+            type: {
+                description: 'Filter by amenity type',
                 example: 'pool'
             },
             hasIcon: {
                 description: 'Filter amenities with icons',
                 example: true
-            },
-            isPopular: {
-                description: 'Filter popular amenities',
-                example: true
-            },
-            minUsageCount: {
-                description: 'Minimum usage count across accommodations',
-                example: 10
             }
         }
     })
@@ -319,9 +274,8 @@ export const AmenitySummarySchema = AmenitySchema.pick({
     slug: true,
     name: true,
     description: true,
-    category: true,
-    icon: true,
-    usageCount: true
+    type: true,
+    icon: true
 });
 export type AmenitySummary = z.infer<typeof AmenitySummarySchema>;
 
