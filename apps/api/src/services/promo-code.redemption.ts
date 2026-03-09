@@ -332,7 +332,57 @@ export async function applyPromoCode(code: string, customerId: string, amount?: 
 
         const finalAmount = Math.max(0, effectiveAmount - discountAmount);
 
-        const redeemResult = await tryRedeemAtomically(promoCode.id);
+        // Redeem and record usage in a single transaction so that if the
+        // purchase fails downstream the usage record is also rolled back.
+        const redeemResult = await withTransaction(async (tx) => {
+            // Lock and increment usage count
+            const queryResult = await tx.execute<QZPayBillingPromoCode>(
+                sql`SELECT * FROM ${billingPromoCodes}
+                    WHERE id = ${promoCode.id}
+                    FOR UPDATE`
+            );
+            const lockedPromoCode = queryResult.rows?.[0];
+
+            if (!lockedPromoCode) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: ServiceErrorCode.NOT_FOUND,
+                        message: 'Promo code not found'
+                    }
+                };
+            }
+
+            const currentUsed = lockedPromoCode.usedCount ?? 0;
+            const maxUses = lockedPromoCode.maxUses;
+
+            if (maxUses !== null && currentUsed >= maxUses) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: 'PROMO_CODE_MAX_USES' as string,
+                        message: 'This promo code has reached its maximum number of uses'
+                    }
+                };
+            }
+
+            await tx
+                .update(billingPromoCodes)
+                .set({ usedCount: sql`${billingPromoCodes.usedCount} + 1` })
+                .where(eq(billingPromoCodes.id, promoCode.id));
+
+            // Record usage in same transaction
+            await tx.insert(billingPromoCodeUsage).values({
+                promoCodeId: promoCode.id,
+                customerId,
+                subscriptionId: null,
+                discountAmount,
+                currency: 'ARS',
+                livemode: env.NODE_ENV === 'production'
+            });
+
+            return { success: true as const };
+        });
 
         if (!redeemResult.success) {
             return {
@@ -345,13 +395,6 @@ export async function applyPromoCode(code: string, customerId: string, amount?: 
                 }
             };
         }
-
-        await recordPromoCodeUsage({
-            promoCodeId: promoCode.id,
-            customerId,
-            discountAmount,
-            currency: 'ARS'
-        });
 
         apiLogger.info(
             {
