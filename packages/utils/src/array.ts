@@ -13,7 +13,9 @@ export function isEmptyArray<T>(arr?: T[] | null): boolean {
 }
 
 /**
- * Get a random item from an array
+ * Get a random item from an array.
+ *
+ * @warning Non-cryptographic. Uses Math.random() which is not suitable for security-sensitive selections.
  * @param arr - Array to get item from
  * @returns Random item
  */
@@ -23,7 +25,9 @@ export function getRandomItem<T>(arr: T[]): T | undefined {
 }
 
 /**
- * Shuffle an array
+ * Shuffle an array using Fisher-Yates algorithm.
+ *
+ * @warning Non-cryptographic. Uses Math.random() which is not suitable for security-sensitive shuffling.
  * @param arr - Array to shuffle
  * @returns Shuffled array
  */

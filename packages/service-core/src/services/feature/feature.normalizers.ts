@@ -246,18 +246,5 @@ export const normalizeViewInput = (
  * ```
  */
 export const normalizeFeatureOutput = (feature: Feature, _actor: Actor): Feature => {
-    // For now, return the feature as-is
-    // In the future, this could:
-    // 1. Remove adminInfo for non-admin actors
-    // 2. Filter out internal fields based on permissions
-    // 3. Transform relationships to simpler formats
-    // 4. Add computed fields (e.g., accommodation count)
-
-    // Example of future permission-based filtering:
-    // if (!hasPermission(actor, 'FEATURE_VIEW_ADMIN_INFO')) {
-    //   const { adminInfo, ...rest } = feature;
-    //   return rest as Feature;
-    // }
-
     return feature;
 };

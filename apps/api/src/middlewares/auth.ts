@@ -8,6 +8,7 @@
  * @module auth-middleware
  */
 
+import { RoleEnum } from '@repo/schemas';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getAuth } from '../lib/auth';
@@ -86,7 +87,7 @@ export const authMiddleware = () => {
                     image: null,
                     createdAt: now,
                     updatedAt: now,
-                    role: 'USER',
+                    role: RoleEnum.USER,
                     banned: false,
                     banReason: null,
                     banExpires: null

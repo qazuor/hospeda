@@ -4,7 +4,7 @@
  * @module cron/middleware
  */
 
-import { timingSafeEqual } from 'node:crypto';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AppBindings } from '../types';
@@ -18,8 +18,10 @@ import { env } from '../utils/env.js';
  * @returns True if strings are equal, false otherwise
  */
 function timingSafeCompare(a: string, b: string): boolean {
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+    // Hash both inputs to fixed-length buffers to prevent length-based timing leaks
+    const hashA = createHash('sha256').update(a).digest();
+    const hashB = createHash('sha256').update(b).digest();
+    return timingSafeEqual(hashA, hashB);
 }
 
 /**
