@@ -1,5 +1,8 @@
+import { createLogger } from '@repo/logger';
 import { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import type { ExchangeRateFetchResult, FetchOperationResult } from './types.js';
+
+const logger = createLogger('ExchangeRateApiClient');
 
 /**
  * Response format from ExchangeRate-API /latest endpoint.
@@ -126,7 +129,7 @@ export class ExchangeRateApiClient {
             // Log quota information from response
             const quotaRemaining = response.headers.get('x-ratelimit-remaining');
             if (quotaRemaining) {
-                console.info(`ExchangeRate-API quota remaining: ${quotaRemaining} requests`);
+                logger.info(`ExchangeRate-API quota remaining: ${quotaRemaining} requests`);
             }
 
             const rates = this.parseRates(data, fetchedAt);

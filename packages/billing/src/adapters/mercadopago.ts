@@ -11,6 +11,9 @@ import {
     createQZPayMercadoPagoAdapter
 } from '@qazuor/qzpay-mercadopago';
 import { getEnv, getEnvBoolean, getEnvNumber } from '@repo/config';
+import { createLogger } from '@repo/logger';
+
+const logger = createLogger('billing:mercadopago');
 import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.js';
 
 /**
@@ -165,7 +168,7 @@ export function createMercadoPagoAdapter(
     }
 
     if (sandbox && !webhookSecret) {
-        console.warn(
+        logger.warn(
             '[billing] MercadoPago webhook secret is not configured in sandbox mode. ' +
                 'Webhook signature verification will be skipped. Set HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET for proper testing.'
         );

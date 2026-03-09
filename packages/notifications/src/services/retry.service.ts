@@ -1,5 +1,8 @@
+import { createLogger } from '@repo/logger';
 import type Redis from 'ioredis';
 import { NOTIFICATION_CONSTANTS } from '../constants/notification.constants.js';
+
+const logger = createLogger('notifications');
 
 /**
  * Retryable notification data structure
@@ -48,7 +51,7 @@ export class RetryService {
     async enqueue(notification: RetryableNotification, retryAfterMs: number): Promise<void> {
         // If Redis is not available, log warning and skip gracefully
         if (!this.redis) {
-            console.warn(
+            logger.warn(
                 `[RetryService] Redis not available, cannot enqueue notification ${notification.id} for retry`
             );
             return;
@@ -67,7 +70,7 @@ export class RetryService {
                 NOTIFICATION_CONSTANTS.REDIS_RETRY_TTL_SECONDS
             );
         } catch (error) {
-            console.error(
+            logger.error(
                 `[RetryService] Failed to enqueue notification ${notification.id}:`,
                 error
             );
@@ -110,7 +113,7 @@ export class RetryService {
 
             return notifications;
         } catch (error) {
-            console.error('[RetryService] Failed to dequeue ready notifications:', error);
+            logger.error('[RetryService] Failed to dequeue ready notifications:', error);
             throw error;
         }
     }
@@ -180,7 +183,7 @@ export class RetryService {
     }> {
         // If Redis is not available, return empty stats
         if (!this.redis) {
-            console.warn('[RetryService] Redis not available, cannot process retries');
+            logger.warn('[RetryService] Redis not available, cannot process retries');
             return { processed: 0, succeeded: 0, failed: 0, permanentlyFailed: 0 };
         }
 
@@ -194,11 +197,11 @@ export class RetryService {
             const notifications = await this.dequeueReady();
 
             if (notifications.length === 0) {
-                console.info('[RetryService] No notifications ready for retry');
+                logger.info('[RetryService] No notifications ready for retry');
                 return { processed: 0, succeeded: 0, failed: 0, permanentlyFailed: 0 };
             }
 
-            console.info(
+            logger.info(
                 `[RetryService] Processing ${notifications.length} notifications ready for retry`
             );
 
@@ -215,7 +218,7 @@ export class RetryService {
 
                     if (result.success) {
                         succeeded++;
-                        console.info(
+                        logger.info(
                             `[RetryService] Retry succeeded for notification ${notification.id} (attempt ${notification.attemptCount})`
                         );
                     } else {
@@ -226,7 +229,7 @@ export class RetryService {
                         // Check if max retries reached
                         if (RetryService.isMaxRetriesReached(newAttemptCount)) {
                             permanentlyFailed++;
-                            console.error(
+                            logger.error(
                                 `[RetryService] Max retries (${NOTIFICATION_CONSTANTS.MAX_RETRY_ATTEMPTS}) reached for notification ${notification.id}, marking as permanently failed`
                             );
 
@@ -248,7 +251,7 @@ export class RetryService {
                             await this.enqueue(updatedNotification, retryDelay);
 
                             failed++;
-                            console.warn(
+                            logger.warn(
                                 `[RetryService] Retry failed for notification ${notification.id} (attempt ${newAttemptCount}), re-enqueueing with delay ${retryDelay}ms`
                             );
                         }
@@ -256,7 +259,7 @@ export class RetryService {
                 } catch (error) {
                     // Error processing this specific notification
                     failed++;
-                    console.error(
+                    logger.error(
                         `[RetryService] Error processing retry for notification ${notification.id}:`,
                         error
                     );
@@ -285,7 +288,7 @@ export class RetryService {
                 }
             }
 
-            console.info('[RetryService] Retry processing complete', {
+            logger.info('[RetryService] Retry processing complete', {
                 processed,
                 succeeded,
                 failed,
@@ -294,7 +297,7 @@ export class RetryService {
 
             return { processed, succeeded, failed, permanentlyFailed };
         } catch (error) {
-            console.error('[RetryService] Failed to process retries:', error);
+            logger.error('[RetryService] Failed to process retries:', error);
             throw error;
         }
     }
@@ -313,7 +316,7 @@ export class RetryService {
         try {
             await this.options.onPermanentFailure(notification);
         } catch (callbackError) {
-            console.error(
+            logger.error(
                 `[RetryService] onPermanentFailure callback failed for notification ${notification.id}:`,
                 callbackError
             );

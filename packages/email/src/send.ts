@@ -1,5 +1,8 @@
+import { createLogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import type { Resend } from 'resend';
+
+const logger = createLogger('email');
 
 /**
  * Input parameters for sending an email.
@@ -106,14 +109,14 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
         });
 
         if (error) {
-            console.error('[email] Failed to send:', error.message);
+            logger.error('Failed to send:', error.message);
             return { success: false, error: error.message };
         }
 
         return { success: true, messageId: data?.id };
     } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        console.error('[email] Failed to send:', message);
+        logger.error('Failed to send:', message);
         return { success: false, error: message };
     }
 }

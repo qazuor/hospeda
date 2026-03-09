@@ -24,8 +24,9 @@
         "clean": "rm -rf node_modules dist"
     },
     "dependencies": {
-        "resend": "^4.0.0",
-        "@react-email/components": "^0.0.30"
+        "@react-email/components": "^0.0.30",
+        "@repo/logger": "workspace:*",
+        "resend": "^4.0.0"
     },
     "peerDependencies": {
         "react": ">=18.2.0 || ^19"

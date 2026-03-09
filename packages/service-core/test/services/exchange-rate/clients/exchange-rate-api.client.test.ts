@@ -2,6 +2,17 @@ import { ExchangeRateSourceEnum, ExchangeRateTypeEnum, PriceCurrencyEnum } from 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExchangeRateApiClient } from '../../../../src/services/exchange-rate/clients/exchange-rate-api.client.js';
 
+const mockLoggerInstance = vi.hoisted(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn()
+}));
+
+vi.mock('@repo/logger', () => ({
+    createLogger: vi.fn(() => mockLoggerInstance)
+}));
+
 describe('ExchangeRateApiClient', () => {
     let client: ExchangeRateApiClient;
     let fetchMock: ReturnType<typeof vi.fn>;
@@ -277,7 +288,7 @@ describe('ExchangeRateApiClient', () => {
         });
 
         it('should log quota information when available in headers', async () => {
-            const consoleSpy = vi.spyOn(console, 'info');
+            mockLoggerInstance.info.mockClear();
 
             const mockResponse = {
                 result: 'success',
@@ -305,11 +316,9 @@ describe('ExchangeRateApiClient', () => {
 
             await client.fetchLatestRates();
 
-            expect(consoleSpy).toHaveBeenCalledWith(
+            expect(mockLoggerInstance.info).toHaveBeenCalledWith(
                 'ExchangeRate-API quota remaining: 1500 requests'
             );
-
-            consoleSpy.mockRestore();
         });
     });
 

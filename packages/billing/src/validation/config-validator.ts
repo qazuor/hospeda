@@ -4,11 +4,14 @@
  * to catch configuration errors early before they cause runtime issues.
  */
 
+import { createLogger } from '@repo/logger';
 import { ALL_ADDONS, ALL_PLANS, DEFAULT_PROMO_CODES } from '../config/index.js';
 import type { PromoCodeDefinition } from '../config/promo-codes.config.js';
 import type { AddonDefinition } from '../types/addon.types.js';
 import { EntitlementKey } from '../types/entitlement.types.js';
 import type { PlanCategory, PlanDefinition } from '../types/plan.types.js';
+
+const logger = createLogger('billing:config-validator');
 
 /**
  * Result of billing configuration validation
@@ -267,9 +270,9 @@ export function validateBillingConfigOrThrow(): void {
 
     // Log warnings if present
     if (result.warnings.length > 0) {
-        console.warn('⚠️  Billing configuration warnings:');
+        logger.warn('Billing configuration warnings:');
         for (const warning of result.warnings) {
-            console.warn(`  - ${warning}`);
+            logger.warn(`  - ${warning}`);
         }
     }
 
