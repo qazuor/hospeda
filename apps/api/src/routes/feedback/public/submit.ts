@@ -16,17 +16,17 @@ import { REPORT_TYPES } from '@repo/feedback/config';
 import type { NotificationPayload } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import type { Context } from 'hono';
-import { sanitizeEmail, sanitizeFileName, sanitizeString } from '../../middlewares/sanitization';
+import { sanitizeEmail, sanitizeFileName, sanitizeString } from '../../../middlewares/sanitization';
 import {
     type CreateFeedbackIssueInput,
     type FeedbackAttachment,
     LinearFeedbackService
-} from '../../services/feedback/linear.service';
-import { withRetry } from '../../services/feedback/retry';
-import { env } from '../../utils/env';
-import { apiLogger } from '../../utils/logger';
-import { sendNotification } from '../../utils/notification-helper';
-import { createSimpleRoute } from '../../utils/route-factory';
+} from '../../../services/feedback/linear.service';
+import { withRetry } from '../../../services/feedback/retry';
+import { env } from '../../../utils/env';
+import { apiLogger } from '../../../utils/logger';
+import { sendNotification } from '../../../utils/notification-helper';
+import { createSimpleRoute } from '../../../utils/route-factory';
 
 /**
  * Magic byte signatures for allowed image formats.
@@ -223,7 +223,7 @@ function getLinearService(): LinearFeedbackService | null {
  */
 export const submitFeedbackRoute = createSimpleRoute({
     method: 'post',
-    path: '/feedback',
+    path: '/',
     summary: 'Submit beta feedback',
     description:
         'Accepts multipart form data with a JSON data field and optional image attachments. ' +

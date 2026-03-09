@@ -1,11 +1,7 @@
 /**
- * Public feedback routes.
+ * Feedback route barrel export.
  *
- * Mounts the POST /feedback endpoint for beta feedback submissions.
- * No authentication required - rate limited by IP.
+ * Follows the standard entity directory pattern (public/, protected/, admin/).
+ * Currently only public routes exist (unauthenticated feedback submission).
  */
-import { createRouter } from '../../utils/create-app';
-import { submitFeedbackRoute } from './submit';
-
-/** Public feedback route group */
-export const feedbackRoutes = createRouter().route('/', submitFeedbackRoute);
+export { publicFeedbackRoutes } from './public/index';

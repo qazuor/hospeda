@@ -61,7 +61,7 @@ import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
-import { feedbackRoutes } from './feedback';
+import { publicFeedbackRoutes } from './feedback';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
 import { reportRoutes } from './reports';
@@ -150,7 +150,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/sponsorship-packages', publicSponsorshipPackageRoutes);
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
-        app.route('/api/v1/public', feedbackRoutes);
+        app.route('/api/v1/public/feedback', publicFeedbackRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
