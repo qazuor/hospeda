@@ -112,7 +112,7 @@ const prefillData = (params.type || params.title || params.description || params
         <p>Ayudanos a mejorar reportando cualquier problema que encuentres.</p>
       </div>
 
-      <StandaloneFeedbackWrapper client:load>
+      <StandaloneFeedbackWrapper client:only="react">
         <FeedbackForm
           apiUrl={apiUrl}
           appSource="standalone"
