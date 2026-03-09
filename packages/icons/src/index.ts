@@ -344,6 +344,7 @@ export { SortIcon } from './icons/system/SortIcon';
 export { StarIcon } from './icons/system/StarIcon';
 export { UserIcon } from './icons/system/UserIcon';
 export { UsersIcon } from './icons/system/UsersIcon';
+export { UserSwitchIcon } from './icons/system/UserSwitchIcon';
 export { VideoIcon } from './icons/system/VideoIcon';
 export { ZoomInIcon } from './icons/system/ZoomInIcon';
 export { ZoomOutIcon } from './icons/system/ZoomOutIcon';

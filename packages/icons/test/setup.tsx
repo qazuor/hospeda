@@ -5,7 +5,7 @@
 
 import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
-// biome-ignore lint/correctness/noUnusedImports: <explanation>
+// biome-ignore lint/correctness/noUnusedImports: React import required for JSX transform in test environment
 import React from 'react';
 import { afterEach, beforeAll, vi } from 'vitest';
 
