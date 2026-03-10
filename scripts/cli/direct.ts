@@ -107,7 +107,11 @@ export async function handleDirect({
         return 1;
     }
 
-    const exactMatch = allCommands.find((c) => c.id === args.commandId);
+    // Strip ANSI escape sequences from user-provided command ID to prevent terminal injection
+    // biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally matching ANSI escape sequences
+    const sanitizedId = args.commandId.replace(/\x1b\[[0-9;]*m/g, '');
+
+    const exactMatch = allCommands.find((c) => c.id === sanitizedId);
 
     if (exactMatch) {
         return executeCommand({
@@ -117,13 +121,13 @@ export async function handleDirect({
         });
     }
 
-    const matches = searchCommands({ fuse, query: args.commandId });
+    const matches = searchCommands({ fuse, query: sanitizedId });
     if (matches.length === 0) {
-        console.log(`Command '${args.commandId}' not found. No similar commands found.`);
+        console.log(`Command '${sanitizedId}' not found. No similar commands found.`);
         return 1;
     }
 
-    console.log(`Command '${args.commandId}' not found. Did you mean:`);
+    console.log(`Command '${sanitizedId}' not found. Did you mean:`);
     const top5 = matches.slice(0, 5);
     for (let i = 0; i < top5.length; i++) {
         const cmd = top5[i];
