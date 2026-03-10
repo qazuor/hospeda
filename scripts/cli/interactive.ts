@@ -1,14 +1,24 @@
-import { Separator, search } from '@inquirer/prompts';
+import { Separator, confirm, input, search } from '@inquirer/prompts';
 import type Fuse from 'fuse.js';
 import { CATEGORY_DISPLAY_ORDER, CATEGORY_LABELS } from './categories.js';
-import { formatBanner, formatDangerWarning, formatExecutionInfo, formatResult } from './format.js';
-import { getRecentCommands, recordCommand } from './history.js';
+import {
+    MIN_ID_PAD,
+    formatBanner,
+    formatDangerWarning,
+    formatExecutionInfo,
+    formatResult
+} from './format.js';
+import { getRecentCommands, readHistory, recordCommand } from './history.js';
 import { runCommand } from './runner.js';
 import { searchCommands } from './search.js';
-import type { CliCommand, CliHistory } from './types.js';
+import type { CliCommand } from './types.js';
+import { isExitPromptError } from './utils.js';
 
 type SearchChoice = { name: string; value: string; description?: string };
 type SearchItem = SearchChoice | Separator;
+
+/** Width used to pad the separator fill after the category label */
+const SEPARATOR_FILL_WIDTH = 48;
 
 /**
  * Builds the choice array for the interactive search prompt.
@@ -17,12 +27,10 @@ type SearchItem = SearchChoice | Separator;
  */
 export function buildChoices({
     commands,
-    recentIds,
-    _categories
+    recentIds
 }: {
     commands: readonly CliCommand[];
     recentIds: readonly string[];
-    _categories?: undefined;
 }): SearchItem[] {
     const choices: SearchItem[] = [];
     const curatedCommands = commands.filter((c) => c.curated);
@@ -48,7 +56,11 @@ export function buildChoices({
         const cmds = byCategory.get(category);
         if (!cmds || cmds.length === 0) continue;
         const label = CATEGORY_LABELS[category];
-        choices.push(new Separator(`── ${label} ${'─'.repeat(Math.max(0, 48 - label.length))}`));
+        choices.push(
+            new Separator(
+                `── ${label} ${'─'.repeat(Math.max(0, SEPARATOR_FILL_WIDTH - label.length))}`
+            )
+        );
         for (const cmd of cmds) {
             choices.push(formatChoice({ cmd }));
         }
@@ -60,32 +72,33 @@ export function buildChoices({
 /**
  * Runs the interactive CLI loop: shows the search prompt,
  * handles command selection, execution, and loop continuation.
+ * History is re-read at the start of each iteration so the
+ * "Recent" section reflects commands run during the current session.
  */
 export async function runInteractiveLoop({
     allCommands,
-    history,
     fuse
 }: {
     allCommands: readonly CliCommand[];
-    history: CliHistory;
     fuse: Fuse<CliCommand>;
 }): Promise<void> {
     console.log(formatBanner());
     console.log('');
 
-    const recent = getRecentCommands({ history });
-    const recentIds = recent.map((e) => e.id);
-    const defaultChoices = buildChoices({ commands: allCommands, recentIds });
-
     while (true) {
         try {
+            const currentHistory = await readHistory();
+            const recent = getRecentCommands({ history: currentHistory });
+            const recentIds = recent.map((e) => e.id);
+            const currentChoices = buildChoices({ commands: allCommands, recentIds });
+
             const commandId = await search<string>({
                 message: 'Select a command (type to search):',
-                source: async (input) => {
-                    if (!input || input.trim().length === 0) {
-                        return defaultChoices;
+                source: async (searchInput) => {
+                    if (!searchInput || searchInput.trim().length === 0) {
+                        return currentChoices;
                     }
-                    const results = searchCommands({ fuse, query: input });
+                    const results = searchCommands({ fuse, query: searchInput });
                     return results.map((cmd) => formatChoice({ cmd }));
                 }
             });
@@ -96,7 +109,6 @@ export async function runInteractiveLoop({
             if (cmd.dangerous) {
                 console.log(formatDangerWarning({ cmd }));
                 try {
-                    const { confirm } = await import('@inquirer/prompts');
                     const confirmed = await confirm({ message: 'Are you sure?', default: false });
                     if (!confirmed) {
                         console.log('Cancelled.');
@@ -126,18 +138,12 @@ export async function runInteractiveLoop({
                 process.exit(exitCode);
             }
 
-            const { input } = await import('@inquirer/prompts');
             await input({ message: 'Press Enter to return to menu...' });
             console.clear();
             console.log(formatBanner());
             console.log('');
         } catch (error: unknown) {
-            if (
-                error !== null &&
-                typeof error === 'object' &&
-                'name' in error &&
-                (error as { name: string }).name === 'ExitPromptError'
-            ) {
+            if (isExitPromptError(error)) {
                 return;
             }
             throw error;
@@ -148,7 +154,7 @@ export async function runInteractiveLoop({
 /** Formats a CliCommand as a search prompt choice */
 function formatChoice({ cmd }: { cmd: CliCommand }): SearchChoice {
     const dangerPrefix = cmd.dangerous ? '⚠ ' : '';
-    const id = cmd.id.padEnd(20);
+    const id = cmd.id.padEnd(MIN_ID_PAD);
     return {
         name: `${id}${dangerPrefix}${cmd.description}`,
         value: cmd.id,

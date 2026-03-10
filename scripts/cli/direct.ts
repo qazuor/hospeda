@@ -1,3 +1,4 @@
+import { confirm, input } from '@inquirer/prompts';
 import type Fuse from 'fuse.js';
 import {
     formatDangerWarning,
@@ -56,8 +57,13 @@ export function parseCliArgs({ argv }: { argv: readonly string[] }): ParsedArgs 
             case '-y':
                 yes = true;
                 break;
+            case '--all':
+                listAll = true;
+                break;
             default:
-                if (!arg.startsWith('-') && commandId === undefined) {
+                if (arg.startsWith('-')) {
+                    console.warn(`Warning: unknown flag '${arg}' ignored.`);
+                } else if (commandId === undefined) {
                     commandId = arg;
                 }
                 break;
@@ -127,7 +133,6 @@ export async function handleDirect({
     }
 
     try {
-        const { input } = await import('@inquirer/prompts');
         const answer = await input({ message: 'Enter number to run (or press Enter to cancel):' });
         const choice = Number.parseInt(answer, 10);
         if (Number.isNaN(choice) || choice < 1 || choice > top5.length) {
@@ -160,7 +165,6 @@ async function executeCommand({
     if (cmd.dangerous && !skipConfirm) {
         console.log(formatDangerWarning({ cmd }));
         try {
-            const { confirm } = await import('@inquirer/prompts');
             const confirmed = await confirm({ message: 'Are you sure?', default: false });
             if (!confirmed) {
                 console.log('Cancelled.');
