@@ -147,7 +147,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                                     <FeedbackErrorBoundary
                                         appSource="admin"
                                         apiUrl={env.VITE_API_URL}
-                                        feedbackPageUrl={`${env.VITE_SITE_URL}/es/feedback`}
+                                        feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
+                                        deployVersion={env.VITE_APP_VERSION}
                                         userId={session?.user.id}
                                         userEmail={session?.user.email}
                                         userName={session?.user.name}
@@ -162,11 +163,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                 <FeedbackErrorBoundary
                     appSource="admin"
                     apiUrl={env.VITE_API_URL}
-                    feedbackPageUrl={`${env.VITE_SITE_URL}/es/feedback`}
+                    feedbackPageUrl={`${env.VITE_SITE_URL}/${env.VITE_DEFAULT_LOCALE}/feedback`}
+                    deployVersion={env.VITE_APP_VERSION}
                 >
                     <FeedbackFAB
                         apiUrl={env.VITE_API_URL}
                         appSource="admin"
+                        deployVersion={env.VITE_APP_VERSION}
                         userId={session?.user.id}
                         userEmail={session?.user.email}
                         userName={session?.user.name}
