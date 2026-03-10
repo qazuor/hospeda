@@ -22,8 +22,8 @@ export type CommandExecution =
     | { readonly type: 'pnpm-filter'; readonly filter: string; readonly script: string }
     | { readonly type: 'shell'; readonly command: string };
 
-/** A CLI command entry in the registry or auto-discovered */
-export interface CliCommand {
+/** Base fields shared by all CLI commands */
+interface CliCommandBase {
     /** Unique identifier shown in the menu (e.g., "db:start", "api:test:e2e") */
     readonly id: string;
     /** Human-readable description (max 60 chars for alignment) */
@@ -32,10 +32,6 @@ export interface CliCommand {
     readonly category: CommandCategory;
     /** How to execute this command */
     readonly execution: CommandExecution;
-    /** Whether to show confirmation prompt before running */
-    readonly dangerous?: boolean;
-    /** Danger message shown in confirmation (required if dangerous=true) */
-    readonly dangerMessage?: string;
     /** Source package name (e.g., "root", "@repo/db", "hospeda-api") */
     readonly source: string;
     /** How the command behaves when running */
@@ -45,6 +41,13 @@ export interface CliCommand {
     /** Optional hint about accepted arguments */
     readonly argHint?: string;
 }
+
+/** A CLI command entry in the registry or auto-discovered */
+export type CliCommand = CliCommandBase &
+    (
+        | { readonly dangerous?: false; readonly dangerMessage?: never }
+        | { readonly dangerous: true; readonly dangerMessage: string }
+    );
 
 /** Schema version for CLI history */
 export interface CliHistory {

@@ -42,6 +42,9 @@ export const CATEGORY_LABELS: Record<CommandCategory, string> = {
  * - `lint*|format*|check*|typecheck*` → `code-quality`
  * - `db:*|seed*|migrate*`     → `database`
  * - `clean*`                  → `build`
+ * - `env:*|env*`              → `environment`
+ * - `docs:*|doc:*`            → `documentation`
+ * - `setup*`                  → `infrastructure`
  * - _(default)_               → `package-tools`
  *
  * @param input - Object containing the script name to classify
@@ -77,6 +80,9 @@ export function inferCategory({ scriptName }: { scriptName: string }): CommandCa
         return 'database';
     }
     if (scriptName.startsWith('clean')) return 'build';
+    if (scriptName.startsWith('env:') || scriptName.startsWith('env')) return 'environment';
+    if (scriptName.startsWith('docs:') || scriptName.startsWith('doc:')) return 'documentation';
+    if (scriptName.startsWith('setup')) return 'infrastructure';
     return 'package-tools';
 }
 
