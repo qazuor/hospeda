@@ -28,6 +28,20 @@
             "status": "pending",
             "progress": "0/47",
             "path": "SPEC-029-web-homepage-redesign"
+        },
+        {
+            "specId": "SPEC-032",
+            "title": "Interactive CLI Tool for Development Workflows",
+            "status": "completed",
+            "progress": "29/29",
+            "path": "SPEC-032-interactive-cli-tool"
+        },
+        {
+            "specId": "SPEC-036",
+            "title": "Unified Zod Validation Error i18n System",
+            "status": "completed",
+            "progress": "24/24",
+            "path": "SPEC-036-zod-validation-i18n"
         }
     ],
     "standalone": {

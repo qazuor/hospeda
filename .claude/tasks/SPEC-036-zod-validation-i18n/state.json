@@ -1,0 +1,1032 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-036",
+    "title": "Unified Zod Validation Error i18n System",
+    "created": "2026-03-09T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add defaultHook to createRouter() in create-app.ts",
+            "description": "Fix the API validation response format bug. In `apps/api/src/utils/create-app.ts`, add a `defaultHook` to the `OpenAPIHono` constructor in `createRouter()`. The hook calls `transformZodError(result.error)` when validation fails and returns the standard API envelope `{ success, error: { code, message, details }, metadata }`. Import `transformZodError` from `./zod-error-transformer`. Also check if `createApp()` creates a separate `OpenAPIHono` instance that needs the same hook.\n\nFiles: `apps/api/src/utils/create-app.ts`\nTests: Task T-002 covers this.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Add import for transformZodError",
+                    "completed": true
+                },
+                {
+                    "title": "Add defaultHook to createRouter() OpenAPIHono constructor",
+                    "completed": true
+                },
+                {
+                    "title": "Check if createApp() also needs the hook",
+                    "completed": true
+                },
+                {
+                    "title": "Verify hook returns undefined on success",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "bugfix"],
+            "phase": "phase-0",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Write tests for defaultHook validation behavior",
+            "description": "Create test file `apps/api/test/utils/create-app.test.ts`. Test cases:\n1. Route with invalid request body returns HTTP 400 with standard envelope\n2. Response has `success: false`\n3. Response has `error.code === 'VALIDATION_ERROR'`\n4. Response has `error.details.details[]` array with field-level info\n5. Response has `error.details.summary` with error counts\n6. Valid request still returns expected success response\n7. Route with per-route hook uses that hook instead of defaultHook\n\nFiles: `apps/api/test/utils/create-app.test.ts` (new)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Create test file with test setup (OpenAPIHono route)",
+                    "completed": true
+                },
+                {
+                    "title": "Test invalid body returns 400 with standard envelope",
+                    "completed": true
+                },
+                {
+                    "title": "Test response structure (success, error.code, details, summary)",
+                    "completed": true
+                },
+                {
+                    "title": "Test valid request passes through normally",
+                    "completed": true
+                },
+                {
+                    "title": "Test per-route hook overrides defaultHook",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "phase-0",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Verify defaultHook with existing admin route (manual/integration)",
+            "description": "Send invalid request to an existing admin route (e.g., POST `/api/v1/admin/amenities` with empty body). Confirm HTTP 400 with standard envelope format. Confirm existing passing requests still work. This can be a manual test or a lightweight integration test.\n\nFiles: N/A (manual verification or add to T-002 test file)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test invalid POST to admin route returns envelope format",
+                    "completed": true
+                },
+                {
+                    "title": "Test valid POST still works",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "verification"],
+            "phase": "phase-0",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create zodError key extraction script",
+            "description": "Create `scripts/extract-zod-keys.ts` that scans:\n- `packages/schemas/src/**/*.ts`\n- `apps/api/src/types/validation-messages.ts`\n- `apps/api/src/schemas/base-schemas.ts`\n- `apps/api/src/routes/exchange-rates/admin/index.ts`\n\nExtraction logic:\n1. Regex to find all `zodError.{...}` string literals\n2. For template literals in `http-field.factory.ts`: resolve field names (minPrice, maxPrice, minGuests, maxGuests, latitude, longitude, checkIn, checkOut, isActive, isFeatured, distance)\n3. Output `scripts/zod-keys-inventory.json` with keys array, total count, byNamespace breakdown, dynamicKeys, and warnings\n\nFiles: `scripts/extract-zod-keys.ts` (new), `scripts/zod-keys-inventory.json` (output)\nTests: Run script and verify output has ~1,037 keys.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Create script with regex-based key extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Handle template literal resolution for http-field.factory.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Generate JSON output with keys, counts, namespaces, warnings",
+                    "completed": true
+                },
+                {
+                    "title": "Run script and verify ~1,037 keys extracted",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "tooling"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Generate Spanish validation.json translations",
+            "description": "Create `packages/i18n/src/locales/es/validation.json` using the inventory from T-004. For each key:\n1. Strip `zodError.` prefix to get JSON path\n2. Apply translation pattern from spec section 4.3 based on validation type\n3. Use Spanish field names (name->nombre, email->email, slug->slug, displayWeight->peso de visualizacion)\n4. Use {{min}}, {{max}} interpolation placeholders\n5. Include BOTH camelCase and underscore variants for base-schemas.ts keys\n6. Use accented characters (obligatorio, invalido)\n7. Include 23 generic `field.*` keys (tooSmall, tooLarge, invalidType, etc.)\n\nExpected size: ~1,500-2,000 lines.\n\nFiles: `packages/i18n/src/locales/es/validation.json` (new)\nTests: Verify every key from inventory has a translation entry.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-008", "T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Generate nested JSON structure from key inventory",
+                    "completed": true
+                },
+                {
+                    "title": "Write entity-specific translations (~1,037 keys)",
+                    "completed": true
+                },
+                {
+                    "title": "Add 23 generic field.* translations",
+                    "completed": true
+                },
+                {
+                    "title": "Include underscore-named key variants",
+                    "completed": true
+                },
+                {
+                    "title": "Include double validation.validation.* structure (section 4.9)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify all inventory keys have translations",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "translations"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create EN/PT placeholder validation.json files",
+            "description": "Create placeholder files:\n- `packages/i18n/src/locales/en/validation.json`\n- `packages/i18n/src/locales/pt/validation.json`\n\nSame nested structure as ES file. Values prefixed with `[EN]` or `[PT]` respectively (e.g., `\"[EN] Name is required\"`, `\"[PT] O nome e obrigatorio\"`). Purpose: prevent `[MISSING: ...]` errors for non-ES locales.\n\nFiles: `packages/i18n/src/locales/en/validation.json` (new), `packages/i18n/src/locales/pt/validation.json` (new)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Create EN placeholder file with [EN] prefixed values",
+                    "completed": true
+                },
+                {
+                    "title": "Create PT placeholder file with [PT] prefixed values",
+                    "completed": true
+                },
+                {
+                    "title": "Verify same structure as ES file",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "translations"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create resolveValidationMessage helper",
+            "description": "Create `packages/i18n/src/utils/resolve-validation-message.ts`. Create the `src/utils/` directory if it doesn't exist.\n\nFunction maps zodError/validationError keys to i18n keys:\n- `zodError.amenity.name.min` -> `t('validation.amenity.name.min', params)`\n- `validationError.field.tooSmall` -> `t('validation.field.tooSmall', params)`\n- Other keys -> `t(key, params)` as-is\n- Fallback: if translation returns `[MISSING: ...]`, return original key\n\nAccepts generic `t: (key: string, params?) => string` (not TranslationKey typed).\n\nExport from `packages/i18n/src/index.ts`.\n\nFiles: `packages/i18n/src/utils/resolve-validation-message.ts` (new), `packages/i18n/src/index.ts` (modify)\nTests: T-011 covers this.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-011", "T-014", "T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Create utils/ directory",
+                    "completed": true
+                },
+                {
+                    "title": "Implement resolveValidationMessage function with JSDoc",
+                    "completed": true
+                },
+                {
+                    "title": "Export from index.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "core"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Register validation namespace in i18n config",
+            "description": "In `packages/i18n/src/config.ts`:\n1. Add `'validation'` to `namespaces` array\n2. Add 3 static imports: `validationEs`, `validationEn`, `validationPt` from locale files\n3. Add to `rawTranslations` object under each locale: `validation: validationEs/En/Pt`\n\nFiles: `packages/i18n/src/config.ts` (modify)\nTests: T-009 verifies types are generated correctly.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Add 'validation' to namespaces array",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 import statements",
+                    "completed": true
+                },
+                {
+                    "title": "Add to rawTranslations for es, en, pt",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "config"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.288Z",
+                "completed": "2026-03-10T03:02:15.288Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Regenerate i18n types and verify",
+            "description": "Run `cd packages/i18n && pnpm generate-types` to regenerate the `TranslationKey` union type. Verify that `packages/i18n/src/types.ts` now includes `validation.*` keys. File will grow significantly (~1,037 new keys). Run `pnpm typecheck` in packages/i18n to confirm compilation.\n\nFiles: `packages/i18n/src/types.ts` (auto-generated)\nTests: typecheck pass is the verification.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Run generate-types script",
+                    "completed": true
+                },
+                {
+                    "title": "Verify validation.* keys in types.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck to confirm",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "types"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Validate i18n integration end-to-end (Phase 1 smoke test)",
+            "description": "Write a quick smoke test or manual verification that:\n1. `useTranslations('es')` can resolve `validation.amenity.name.required` to a Spanish string\n2. `resolveValidationMessage({ key: 'zodError.amenity.name.min', t, params: { min: 2 } })` returns interpolated Spanish string\n3. Missing key fallback works\n\nThis validates the entire Phase 1 pipeline: JSON -> config -> namespace -> helper -> translated string.\n\nFiles: Can be part of T-011 test file or a standalone verification.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Verify key resolution through full pipeline",
+                    "completed": true
+                },
+                {
+                    "title": "Verify interpolation works with params",
+                    "completed": true
+                },
+                {
+                    "title": "Verify missing key fallback",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "verification"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write tests for resolveValidationMessage",
+            "description": "Create `packages/i18n/test/utils/resolve-validation-message.test.ts`. Test cases:\n1. `zodError.amenity.name.min` -> calls `t('validation.amenity.name.min')`\n2. `validationError.field.tooSmall` -> calls `t('validation.field.tooSmall')`\n3. Arbitrary key without prefix -> calls `t(key)` as-is\n4. Params interpolation -> passes params to `t()`\n5. Missing translation fallback -> returns original key when `t()` returns `[MISSING: ...]`\n6. Empty string key -> returns empty string\n7. Key with underscore naming -> `zodError.common.id.invalid_uuid` -> calls `t('validation.common.id.invalid_uuid')`\n\nUse mock `t` function.\n\nFiles: `packages/i18n/test/utils/resolve-validation-message.test.ts` (new)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create test file with mock t function",
+                    "completed": true
+                },
+                {
+                    "title": "Test zodError.* prefix mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Test validationError.* prefix mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Test passthrough for other keys",
+                    "completed": true
+                },
+                {
+                    "title": "Test params interpolation",
+                    "completed": true
+                },
+                {
+                    "title": "Test missing translation fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Test underscore-named keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "testing"],
+            "phase": "phase-1",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update transformZodError to prefer schema message keys",
+            "description": "In `apps/api/src/utils/zod-error-transformer.ts`, modify the error transformation logic. When building `TransformedValidationError`, check if `err.message` starts with `zodError.`:\n- If yes: use `err.message` as the `message` field (primary translation key)\n- If no: fall back to generic key from `ZOD_ERROR_MESSAGE_MAP`\n\nCurrent behavior: `message` always comes from `ZOD_ERROR_MESSAGE_MAP`, `translatedMessage` has the schema key.\nNew behavior: if schema provides a `zodError.*` key, use it as `message`.\n\nBackward compatible: routes not using `zodError.*` messages still get generic keys.\n\nFiles: `apps/api/src/utils/zod-error-transformer.ts` (modify)\nTests: T-013 covers this.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Find where TransformedValidationError.message is assigned",
+                    "completed": true
+                },
+                {
+                    "title": "Add zodError.* prefix check on err.message",
+                    "completed": true
+                },
+                {
+                    "title": "Use schema key as message when present",
+                    "completed": true
+                },
+                {
+                    "title": "Keep generic fallback for non-zodError messages",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "refactor"],
+            "phase": "phase-2",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write tests for transformer schema key preference",
+            "description": "In `apps/api/test/utils/zod-error-transformer.test.ts`, add test cases:\n1. When Zod error has `zodError.*` message, it appears as `message` field\n2. When Zod error has no `zodError.*` message, falls back to `ZOD_ERROR_MESSAGE_MAP` generic key\n3. Existing tests continue passing unchanged\n\nFiles: `apps/api/test/utils/zod-error-transformer.test.ts` (modify or create)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test zodError.* message used as primary message field",
+                    "completed": true
+                },
+                {
+                    "title": "Test fallback to ZOD_ERROR_MESSAGE_MAP when no zodError.* prefix",
+                    "completed": true
+                },
+                {
+                    "title": "Verify existing tests still pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "phase-2",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create schema registry (entity type to Zod schema mapping)",
+            "description": "Create `apps/admin/src/lib/validation/schema-registry.ts`. Import all 24 schemas (12 create + 12 update) from `@repo/schemas`. Implement `getEntitySchema({ entityType, mode })` that returns the appropriate ZodSchema or undefined for unknown types.\n\nEntity types: accommodation, amenity, feature, attraction, destination, event, eventLocation, eventOrganizer, post, sponsor, tag, user.\nModes: 'create' returns CreateInputSchema, 'edit' returns UpdateInputSchema.\n\nFiles: `apps/admin/src/lib/validation/schema-registry.ts` (new)\nTests: T-020 covers this.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Import all 24 schemas from @repo/schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Define EntityType and FormMode types",
+                    "completed": true
+                },
+                {
+                    "title": "Create registry mapping object",
+                    "completed": true
+                },
+                {
+                    "title": "Implement getEntitySchema function with JSDoc",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "validation"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create Zod validation helpers (validateFormWithZod, validateFieldWithZod, extractZodIssueParams)",
+            "description": "Create `apps/admin/src/lib/validation/validate-form.ts` with three functions:\n\n1. `extractZodIssueParams(issue: ZodIssue)`: Extract min, max, expected, received, multipleOf from Zod issues for interpolation.\n\n2. `validateFormWithZod({ schema, data, t })`: Unflatten dot-notation form data, run safeParse, return Record<fieldId, translatedError>. Uses resolveValidationMessage for each issue.\n\n3. `validateFieldWithZod({ schema, data, fieldId, t })`: Same as above but returns error only for target field.\n\nImport `unflattenValues` from entity-form utils, `resolveValidationMessage` from `@repo/i18n`.\n\nFiles: `apps/admin/src/lib/validation/validate-form.ts` (new)\nTests: T-019 covers this.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement extractZodIssueParams with all Zod issue subtypes",
+                    "completed": true
+                },
+                {
+                    "title": "Implement validateFormWithZod with unflattenValues + safeParse",
+                    "completed": true
+                },
+                {
+                    "title": "Implement validateFieldWithZod with path matching",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc to all three functions",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "validation"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Integrate Zod validation into EntityFormProvider",
+            "description": "Modify `apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx`:\n1. Accept optional `zodSchema?: ZodSchema` prop\n2. Get `t` from `useTranslations()` hook, cast to `(key: string, params?) => string`\n3. In `validateForm()` (~line 142): if zodSchema provided, call `validateFormWithZod({ schema, data, t })`; else fall back to existing required-field check\n4. In `validateField()` (~line 221): if zodSchema provided, call `validateFieldWithZod({ schema, data, fieldId, t })`; else return undefined\n5. Wire validation into submit: `handleSave()` (~line 174) MUST call `validateForm()` BEFORE save handler. If errors: setErrors, show toast, scroll to first error, return early. Same for `handleSaveAndPublish()`.\n6. Remove all 4 TODO comments (lines 60, 151, 199, 221)\n\nFiles: `apps/admin/src/components/entity-form/providers/EntityFormProvider.tsx` (modify)\nTests: T-021 covers integration tests.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-017", "T-018", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Add zodSchema optional prop",
+                    "completed": true
+                },
+                {
+                    "title": "Add useTranslations hook and cast t",
+                    "completed": true
+                },
+                {
+                    "title": "Implement validateForm() with Zod path",
+                    "completed": true
+                },
+                {
+                    "title": "Implement validateField() with Zod path",
+                    "completed": true
+                },
+                {
+                    "title": "Wire validateForm into handleSave before API call",
+                    "completed": true
+                },
+                {
+                    "title": "Wire validateForm into handleSaveAndPublish",
+                    "completed": true
+                },
+                {
+                    "title": "Remove 4 TODO comments",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "validation", "core"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Update EntityCreateContent to use resolveValidationMessage and pass zodSchema",
+            "description": "Modify `apps/admin/src/components/entity-pages/EntityCreateContent.tsx`:\n1. Remove `formatZodErrorMessage()` function entirely (lines 25-45)\n2. Import `resolveValidationMessage` and `useTranslations` from `@repo/i18n`\n3. Cast `t` for validation: `const tAny = t as (key: string, params?) => string`\n4. In the catch block (lines 217-237): replace `formatZodErrorMessage(message)` with `resolveValidationMessage({ key: message, t: tAny })`\n5. Accept optional `zodSchema` prop and pass through to `EntityFormProvider`\n\nFiles: `apps/admin/src/components/entity-pages/EntityCreateContent.tsx` (modify)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-016"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Remove formatZodErrorMessage function",
+                    "completed": true
+                },
+                {
+                    "title": "Add imports for resolveValidationMessage and useTranslations",
+                    "completed": true
+                },
+                {
+                    "title": "Replace error formatting in catch block",
+                    "completed": true
+                },
+                {
+                    "title": "Add zodSchema prop and pass to EntityFormProvider",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "validation"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Update EntityEditContent to use resolveValidationMessage and pass zodSchema",
+            "description": "Modify `apps/admin/src/components/entity-pages/EntityEditContent.tsx`:\n1. Import `resolveValidationMessage` and `useTranslations` from `@repo/i18n`\n2. Cast `t` for validation: `const tAny = t as (key: string, params?) => string`\n3. In server error parsing (lines 89-134): use `resolveValidationMessage({ key: errorMessage, t: tAny })` for error display\n4. Accept optional `zodSchema` prop and pass through to `EntityFormProvider`\n\nFiles: `apps/admin/src/components/entity-pages/EntityEditContent.tsx` (modify)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-016"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Add imports for resolveValidationMessage and useTranslations",
+                    "completed": true
+                },
+                {
+                    "title": "Update server error parsing to use resolveValidationMessage",
+                    "completed": true
+                },
+                {
+                    "title": "Add zodSchema prop and pass to EntityFormProvider",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "validation"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Write unit tests for validateFormWithZod and extractZodIssueParams",
+            "description": "Create `apps/admin/test/lib/validation/validate-form.test.ts`. Test cases:\n\nvalidateFormWithZod:\n1. Valid data returns empty error map\n2. Missing required field returns translated error\n3. Multiple validation errors return multiple entries\n4. Nested field paths produce dot-notation IDs (price.basePrice)\n5. Extra keys in data are ignored\n6. Update schema (.partial()) allows missing fields\n\nvalidateFieldWithZod:\n7. Returns error only for target field\n8. Returns undefined when target field is valid\n\nextractZodIssueParams:\n9. too_small issue extracts { min }\n10. too_big issue extracts { max }\n11. invalid_type issue extracts { expected, received }\n12. Issue with no extras returns {}\n13. End-to-end: schema -> issue -> params -> translation with {{min}}\n\nFiles: `apps/admin/test/lib/validation/validate-form.test.ts` (new)",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create test file with test schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Test validateFormWithZod valid/invalid cases",
+                    "completed": true
+                },
+                {
+                    "title": "Test nested path handling",
+                    "completed": true
+                },
+                {
+                    "title": "Test validateFieldWithZod targeting",
+                    "completed": true
+                },
+                {
+                    "title": "Test extractZodIssueParams for each issue type",
+                    "completed": true
+                },
+                {
+                    "title": "Test end-to-end params interpolation",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "testing"],
+            "phase": "phase-4",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write unit tests for schema registry",
+            "description": "Create `apps/admin/test/lib/validation/schema-registry.test.ts`. Test cases:\n1. Each of 12 entity types returns a schema for 'create' mode\n2. Each of 12 entity types returns a schema for 'edit' mode\n3. Unknown entity type returns undefined\n4. Create schema requires mandatory fields (safeParse({}) fails)\n5. Edit schema allows empty object (safeParse({}) passes due to .partial())\n\nFiles: `apps/admin/test/lib/validation/schema-registry.test.ts` (new)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test all 12 entity types for create mode",
+                    "completed": true
+                },
+                {
+                    "title": "Test all 12 entity types for edit mode",
+                    "completed": true
+                },
+                {
+                    "title": "Test unknown entity type returns undefined",
+                    "completed": true
+                },
+                {
+                    "title": "Test create vs edit schema behavior",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "testing"],
+            "phase": "phase-4",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write integration tests for admin form Zod validation",
+            "description": "Create `apps/admin/test/components/entity-form/zod-validation.test.ts`. Test cases:\n1. Form with zodSchema validates on submit\n2. Form without zodSchema falls back to required-field check\n3. Blur validation triggers validateFieldWithZod\n4. Error messages are translated strings (not raw keys)\n5. Server errors are resolved through resolveValidationMessage\n\nFiles: `apps/admin/test/components/entity-form/zod-validation.test.ts` (new)",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create test setup with mock EntityFormProvider",
+                    "completed": true
+                },
+                {
+                    "title": "Test form submit validation with zodSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Test fallback without zodSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Test blur validation",
+                    "completed": true
+                },
+                {
+                    "title": "Test translated error messages",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "testing", "integration"],
+            "phase": "phase-4",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Pass zodSchema to all 12 create pages",
+            "description": "Update each of the 12 create pages to import the entity's CreateInputSchema from @repo/schemas and pass it as zodSchema prop to EntityCreateContent.\n\nFiles to update:\n1. apps/admin/src/routes/_authed/accommodations/new.tsx -> AccommodationCreateInputSchema\n2. apps/admin/src/routes/_authed/content/accommodation-amenities/new.tsx -> AmenityCreateInputSchema\n3. apps/admin/src/routes/_authed/content/accommodation-features/new.tsx -> FeatureCreateInputSchema\n4. apps/admin/src/routes/_authed/destinations/new.tsx -> DestinationCreateInputSchema\n5. apps/admin/src/routes/_authed/content/destination-attractions/new.tsx -> AttractionCreateInputSchema\n6. apps/admin/src/routes/_authed/events/new.tsx -> EventCreateInputSchema\n7. apps/admin/src/routes/_authed/events/locations/new.tsx -> EventLocationCreateInputSchema\n8. apps/admin/src/routes/_authed/events/organizers/new.tsx -> EventOrganizerCreateInputSchema\n9. apps/admin/src/routes/_authed/posts/new.tsx -> PostCreateInputSchema\n10. apps/admin/src/routes/_authed/sponsors/new.tsx -> PostSponsorCreateInputSchema\n11. apps/admin/src/routes/_authed/settings/tags/new.tsx -> TagCreateInputSchema\n12. apps/admin/src/routes/_authed/access/users/new.tsx -> UserCreateInputSchema",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Update accommodations/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update accommodation-amenities/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update accommodation-features/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update destinations/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update destination-attractions/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/locations/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/organizers/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update posts/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update sponsors/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update settings/tags/new.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update access/users/new.tsx",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "wiring"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Pass zodSchema to all 12 edit pages",
+            "description": "Update each of the 12 edit pages to import the entity's UpdateInputSchema from @repo/schemas and pass it as zodSchema prop to EntityEditContent.\n\nFiles to update:\n1. apps/admin/src/routes/_authed/accommodations/$id_.edit.tsx -> AccommodationUpdateInputSchema\n2. apps/admin/src/routes/_authed/content/accommodation-amenities/$id_.edit.tsx -> AmenityUpdateInputSchema\n3. apps/admin/src/routes/_authed/content/accommodation-features/$id_.edit.tsx -> FeatureUpdateInputSchema\n4. apps/admin/src/routes/_authed/destinations/$id_.edit.tsx -> DestinationUpdateInputSchema\n5. apps/admin/src/routes/_authed/content/destination-attractions/$id_.edit.tsx -> AttractionUpdateInputSchema\n6. apps/admin/src/routes/_authed/events/$id_.edit.tsx -> EventUpdateInputSchema\n7. apps/admin/src/routes/_authed/events/locations/$id_.edit.tsx -> EventLocationUpdateInputSchema\n8. apps/admin/src/routes/_authed/events/organizers/$id_.edit.tsx -> EventOrganizerUpdateInputSchema\n9. apps/admin/src/routes/_authed/posts/$id_.edit.tsx -> PostUpdateInputSchema\n10. apps/admin/src/routes/_authed/sponsors/$id_.edit.tsx -> PostSponsorUpdateInputSchema\n11. apps/admin/src/routes/_authed/settings/tags/$id_.edit.tsx -> TagUpdateInputSchema\n12. apps/admin/src/routes/_authed/access/users/$id_.edit.tsx -> UserUpdateInputSchema",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Update accommodations/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update accommodation-amenities/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update accommodation-features/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update destinations/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update destination-attractions/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/locations/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update events/organizers/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update posts/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update sponsors/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update settings/tags/$id_.edit.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Update access/users/$id_.edit.tsx",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "wiring"],
+            "phase": "phase-3",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Full regression verification (typecheck, lint, test, build)",
+            "description": "Run the full quality suite to verify no regressions:\n1. `pnpm typecheck` (all packages)\n2. `pnpm lint` (Biome)\n3. `pnpm test` (all tests)\n4. `pnpm build` (all apps)\n\nFix any issues found.\n\nFiles: N/A (verification only)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm lint",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm build",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any issues found",
+                    "completed": true
+                }
+            ],
+            "tags": ["verification", "quality"],
+            "phase": "phase-4",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-09T12:00:00.000Z",
+                "started": "2026-03-10T03:02:15.289Z",
+                "completed": "2026-03-10T03:02:15.289Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 24,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 24,
+        "blocked": 0,
+        "averageComplexity": 2.7
+    }
+}
