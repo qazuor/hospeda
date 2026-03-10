@@ -3,7 +3,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, PostUpdateInputSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -32,6 +32,7 @@ function PostEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
+                    zodSchema={PostUpdateInputSchema}
                 >
                     <EntityEditContent entityType="post" />
                 </EntityPageBase>

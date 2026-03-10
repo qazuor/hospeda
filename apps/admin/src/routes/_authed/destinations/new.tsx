@@ -5,7 +5,7 @@ import { createDestinationConsolidatedConfig } from '@/features/destinations/con
 import { useCreateDestinationMutation } from '@/features/destinations/hooks/useDestinationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/destinations/new')({
@@ -41,6 +41,7 @@ function DestinationCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.DESTINATION_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={DestinationCreateInputSchema}
                 createConsolidatedConfig={createDestinationConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

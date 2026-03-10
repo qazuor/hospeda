@@ -3,7 +3,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useTagPage } from '@/features/tags/hooks/useTagPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, TagUpdateInputSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -31,6 +31,7 @@ function TagEditPage() {
                 entityId={id}
                 initialMode="edit"
                 entityData={entityData}
+                zodSchema={TagUpdateInputSchema}
             >
                 <EntityEditContent entityType="tag" />
             </EntityPageBase>

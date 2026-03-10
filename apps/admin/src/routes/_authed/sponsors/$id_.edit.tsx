@@ -3,7 +3,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useSponsorPage } from '@/features/sponsors/hooks/useSponsorPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, PostSponsorUpdateInputSchema } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -31,6 +31,7 @@ function SponsorEditPage() {
                 entityId={id}
                 initialMode="edit"
                 entityData={entityData}
+                zodSchema={PostSponsorUpdateInputSchema}
             >
                 <EntityEditContent entityType="sponsor" />
             </EntityPageBase>

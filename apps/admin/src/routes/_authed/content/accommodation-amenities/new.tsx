@@ -5,7 +5,7 @@ import { createAmenityConsolidatedConfig } from '@/features/amenities/config';
 import { useCreateAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { AmenityCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/accommodation-amenities/new')({
@@ -41,6 +41,7 @@ function AmenityCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.AMENITY_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={AmenityCreateInputSchema}
                 createConsolidatedConfig={createAmenityConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

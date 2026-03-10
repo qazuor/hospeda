@@ -5,7 +5,7 @@ import { createSponsorConsolidatedConfig } from '@/features/sponsors/config';
 import { useCreateSponsorMutation } from '@/features/sponsors/hooks/useSponsorQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, PostSponsorCreateInputSchema } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/sponsors/new')({
@@ -41,6 +41,7 @@ function SponsorCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.POST_SPONSOR_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={PostSponsorCreateInputSchema}
                 createConsolidatedConfig={createSponsorConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

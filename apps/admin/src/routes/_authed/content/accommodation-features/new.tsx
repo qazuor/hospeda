@@ -5,7 +5,7 @@ import { createFeatureConsolidatedConfig } from '@/features/features/config';
 import { useCreateFeatureMutation } from '@/features/features/hooks/useFeatureQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { FeatureCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/accommodation-features/new')({
@@ -41,6 +41,7 @@ function FeatureCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.FEATURE_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={FeatureCreateInputSchema}
                 createConsolidatedConfig={createFeatureConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

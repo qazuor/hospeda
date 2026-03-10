@@ -4,7 +4,7 @@ import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { AccommodationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -44,6 +44,7 @@ function AccommodationEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
+                    zodSchema={AccommodationUpdateInputSchema}
                 >
                     <EntityEditContent entityType="accommodation" />
                 </EntityPageBase>

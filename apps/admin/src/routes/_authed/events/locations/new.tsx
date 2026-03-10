@@ -5,7 +5,7 @@ import { createEventLocationConsolidatedConfig } from '@/features/event-location
 import { useCreateEventLocationMutation } from '@/features/event-locations/hooks/useEventLocationQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { EventLocationCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/events/locations/new')({
@@ -41,6 +41,7 @@ function EventLocationCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.EVENT_LOCATION_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={EventLocationCreateInputSchema}
                 createConsolidatedConfig={createEventLocationConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

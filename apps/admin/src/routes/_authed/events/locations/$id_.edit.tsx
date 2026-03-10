@@ -3,7 +3,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventLocationPage } from '@/features/event-locations/hooks/useEventLocationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { EventLocationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -32,6 +32,7 @@ function EventLocationEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
+                    zodSchema={EventLocationUpdateInputSchema}
                 >
                     <EntityEditContent entityType="event-location" />
                 </EntityPageBase>

@@ -5,7 +5,7 @@ import { createTagConsolidatedConfig } from '@/features/tags/config';
 import { useCreateTagMutation } from '@/features/tags/hooks/useTagQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { PermissionEnum, TagCreateInputSchema } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/settings/tags/new')({
@@ -41,6 +41,7 @@ function TagCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.TAG_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={TagCreateInputSchema}
                 createConsolidatedConfig={createTagConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

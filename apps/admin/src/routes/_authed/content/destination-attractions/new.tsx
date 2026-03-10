@@ -5,7 +5,7 @@ import { createAttractionConsolidatedConfig } from '@/features/attractions/confi
 import { useCreateAttractionMutation } from '@/features/attractions/hooks/useAttractionQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { AttractionCreateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/content/destination-attractions/new')({
@@ -41,6 +41,7 @@ function AttractionCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.ATTRACTION_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={AttractionCreateInputSchema}
                 createConsolidatedConfig={createAttractionConsolidatedConfig}
                 createMutation={createMutation}
                 onNavigate={(path) => navigate({ to: path })}

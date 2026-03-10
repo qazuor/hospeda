@@ -3,7 +3,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { useEventOrganizerPage } from '@/features/event-organizers/hooks/useEventOrganizerPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { EventOrganizerUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -32,6 +32,7 @@ function EventOrganizerEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
+                    zodSchema={EventOrganizerUpdateInputSchema}
                 >
                     <EntityEditContent entityType="event-organizer" />
                 </EntityPageBase>

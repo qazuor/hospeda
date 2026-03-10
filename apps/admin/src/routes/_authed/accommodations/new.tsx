@@ -10,7 +10,11 @@ import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import { useAccommodationTypeOptions } from '@/lib/utils/enum-to-options.utils';
 import { LimitGate } from '@qazuor/qzpay-react';
-import { AccommodationTypeEnum, PermissionEnum } from '@repo/schemas';
+import {
+    AccommodationCreateInputSchema,
+    AccommodationTypeEnum,
+    PermissionEnum
+} from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/accommodations/new')({
@@ -47,6 +51,7 @@ function AccommodationCreatePage() {
         <RoutePermissionGuard permissions={[PermissionEnum.ACCOMMODATION_CREATE]}>
             <EntityCreateContent
                 config={createConfig}
+                zodSchema={AccommodationCreateInputSchema}
                 createConsolidatedConfig={() =>
                     createAccommodationConsolidatedConfig(t, accommodationTypeOptions)
                 }

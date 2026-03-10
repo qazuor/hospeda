@@ -4,7 +4,7 @@ import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
 import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import { PermissionEnum } from '@repo/schemas';
+import { DestinationUpdateInputSchema, PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 /**
@@ -39,6 +39,7 @@ function DestinationEditPage() {
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
+                    zodSchema={DestinationUpdateInputSchema}
                 >
                     <EntityEditContent entityType="destination" />
                 </EntityPageBase>
