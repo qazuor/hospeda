@@ -5,6 +5,10 @@ export default defineConfig({
         root: import.meta.dirname,
         include: ['__tests__/**/*.test.ts'],
         environment: 'node',
-        testTimeout: 10_000
+        testTimeout: 10_000,
+        coverage: {
+            include: ['*.ts'],
+            exclude: ['__tests__/**', 'vitest.config.ts']
+        }
     }
 });

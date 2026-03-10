@@ -27,6 +27,7 @@
         "test:coverage": "turbo run test:coverage --concurrency=4",
         "check": "biome check --write .",
         "typecheck": "turbo run typecheck",
+        "typecheck:cli": "tsc --noEmit --project scripts/cli/tsconfig.json",
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",
