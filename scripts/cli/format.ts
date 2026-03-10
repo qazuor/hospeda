@@ -1,7 +1,17 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { CATEGORY_DISPLAY_ORDER, CATEGORY_LABELS } from './categories.js';
 import type { CliCommand, CommandCategory } from './types.js';
+import { findMonorepoRoot } from './utils.js';
 
-const CLI_VERSION = '1.0.0';
+let cliVersion = '1.0.0';
+try {
+    const pkgPath = join(findMonorepoRoot(), 'package.json');
+    const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8')) as { version?: string };
+    cliVersion = pkg.version ?? '1.0.0';
+} catch {
+    // fallback to hardcoded version
+}
 
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';
@@ -11,14 +21,39 @@ const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';
 const CYAN = '\x1b[36m';
 
-const ID_PAD = 22;
-const DESC_PAD = 50;
+/** Minimum ID padding width */
+const MIN_ID_PAD = 22;
+
+/** Description column padding width */
+export const DESC_PAD = 50;
+
+/**
+ * Calculates the ID padding width based on the longest command ID.
+ * Uses a minimum of MIN_ID_PAD to prevent too-narrow columns.
+ *
+ * @param commands - Array of CLI commands to measure
+ * @returns Computed padding width (at least MIN_ID_PAD)
+ *
+ * @example
+ * ```ts
+ * const pad = calculateIdPad({ commands });
+ * // 22 (if all IDs are short)
+ * // 30 (if longest ID is 28 chars)
+ * ```
+ */
+export function calculateIdPad({ commands }: { commands: readonly CliCommand[] }): number {
+    if (commands.length === 0) return MIN_ID_PAD;
+    const maxLen = Math.max(...commands.map((c) => c.id.length));
+    return Math.max(MIN_ID_PAD, maxLen + 2);
+}
+
+export { MIN_ID_PAD };
 
 /**
  * Formats the CLI banner with version string.
  */
 export function formatBanner(): string {
-    const title = `Hospeda CLI v${CLI_VERSION}`;
+    const title = `Hospeda CLI v${cliVersion}`;
     const line = '─'.repeat(title.length + 4);
     return [
         `  ${CYAN}╭${line}╮${RESET}`,
@@ -30,10 +65,19 @@ export function formatBanner(): string {
 /**
  * Formats a single command line with aligned columns.
  * Dangerous commands get a warning prefix.
+ *
+ * @param cmd - The CLI command to format
+ * @param idPad - Column width for the ID field (defaults to MIN_ID_PAD)
  */
-export function formatCommandLine({ cmd }: { cmd: CliCommand }): string {
+export function formatCommandLine({
+    cmd,
+    idPad = MIN_ID_PAD
+}: {
+    cmd: CliCommand;
+    idPad?: number;
+}): string {
     const prefix = cmd.dangerous ? `${YELLOW}⚠${RESET} ` : '  ';
-    const id = cmd.id.padEnd(ID_PAD);
+    const id = cmd.id.padEnd(idPad);
     const desc = cmd.description.padEnd(DESC_PAD);
     const source = `${DIM}[${cmd.source}]${RESET}`;
     return `${prefix}${id}${desc}${source}`;
@@ -41,8 +85,11 @@ export function formatCommandLine({ cmd }: { cmd: CliCommand }): string {
 
 /**
  * Formats the full help output grouped by category.
+ *
+ * @param commands - All CLI commands to include in help output
  */
 export function formatHelp({ commands }: { commands: readonly CliCommand[] }): string {
+    const idPad = calculateIdPad({ commands });
     const lines: string[] = [
         formatBanner(),
         '',
@@ -64,7 +111,7 @@ export function formatHelp({ commands }: { commands: readonly CliCommand[] }): s
 
         lines.push(`  ${BOLD}${CATEGORY_LABELS[category]}:${RESET}`);
         for (const cmd of cmds) {
-            lines.push(`  ${formatCommandLine({ cmd })}`);
+            lines.push(`  ${formatCommandLine({ cmd, idPad })}`);
         }
         lines.push('');
     }
@@ -78,6 +125,9 @@ export function formatHelp({ commands }: { commands: readonly CliCommand[] }): s
 /**
  * Formats commands as a plain-text list (for piping).
  * When showAll is true, includes the source tag.
+ *
+ * @param commands - Commands to list
+ * @param showAll - Whether to include the source tag (default: false)
  */
 export function formatList({
     commands,
@@ -86,10 +136,11 @@ export function formatList({
     commands: readonly CliCommand[];
     showAll?: boolean;
 }): string {
+    const idPad = calculateIdPad({ commands });
     const lines: string[] = [];
 
     for (const cmd of commands) {
-        const id = cmd.id.padEnd(ID_PAD);
+        const id = cmd.id.padEnd(idPad);
         const desc = cmd.description;
         if (showAll) {
             lines.push(`${id}${desc.padEnd(DESC_PAD)}[${cmd.source}]`);
@@ -103,6 +154,8 @@ export function formatList({
 
 /**
  * Formats the execution info shown before a command runs.
+ *
+ * @param cmd - The CLI command about to be executed
  */
 export function formatExecutionInfo({ cmd }: { cmd: CliCommand }): string {
     const lines: string[] = [`  ${CYAN}▶${RESET} Running: ${BOLD}${cmd.id}${RESET}`];
@@ -120,6 +173,9 @@ export function formatExecutionInfo({ cmd }: { cmd: CliCommand }): string {
 
 /**
  * Formats the result line shown after a command completes.
+ *
+ * @param exitCode - The process exit code (0 = success)
+ * @param durationMs - Elapsed time in milliseconds
  */
 export function formatResult({
     exitCode,
@@ -137,11 +193,15 @@ export function formatResult({
 
 /**
  * Formats the danger confirmation message for dangerous commands.
+ * Includes a fallback message for commands discovered at runtime that may
+ * bypass the discriminated-union type guarantee.
+ *
+ * @param cmd - The CLI command marked as dangerous
  */
 export function formatDangerWarning({ cmd }: { cmd: CliCommand }): string {
-    return [`  ${YELLOW}⚠ Dangerous command: ${cmd.id}${RESET}`, `  ${cmd.dangerMessage}`, ''].join(
-        '\n'
-    );
+    const message =
+        (cmd as { dangerMessage?: string }).dangerMessage ?? 'This operation may be irreversible.';
+    return [`  ${YELLOW}⚠ Dangerous command: ${cmd.id}${RESET}`, `  ${message}`, ''].join('\n');
 }
 
 /** Groups commands by their category */
