@@ -44,8 +44,8 @@ function redactSensitive(input: string): string {
 // Module-level singleton state
 // ---------------------------------------------------------------------------
 
-/** Shared circular buffer across all hook instances (treated as immutable externally) */
-const sharedBuffer: string[] = [];
+/** Shared circular buffer across all hook instances (immutable reassignment) */
+let sharedBuffer: string[] = [];
 
 /** Number of active hook instances using the capture */
 let mountCount = 0;
@@ -88,10 +88,10 @@ function installInterceptor(): void {
             `${new Date().toISOString()} ${serialized}`.slice(0, MAX_ENTRY_LENGTH)
         );
 
-        if (sharedBuffer.length >= MAX_BUFFER_SIZE) {
-            sharedBuffer.shift();
-        }
-        sharedBuffer.push(entry);
+        sharedBuffer =
+            sharedBuffer.length >= MAX_BUFFER_SIZE
+                ? [...sharedBuffer.slice(1), entry]
+                : [...sharedBuffer, entry];
     };
 }
 
