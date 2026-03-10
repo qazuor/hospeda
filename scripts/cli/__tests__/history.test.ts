@@ -188,7 +188,7 @@ describe('recordInDir (recordCommand equivalent)', () => {
         // Assert
         const entry = history.entries.find((e) => e.id === 'lint');
         expect(entry).toBeDefined();
-        expect(entry?.lastRun > firstTime).toBe(true);
+        expect((entry?.lastRun ?? '') > firstTime).toBe(true);
         expect(entry?.runCount).toBe(2);
     });
 

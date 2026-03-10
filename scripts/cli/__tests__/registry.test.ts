@@ -3,16 +3,24 @@ import { CATEGORY_DISPLAY_ORDER } from '../categories.js';
 import { getCuratedCommands } from '../registry.js';
 import type { CommandCategory } from '../types.js';
 
-const DANGEROUS_IDS = new Set(['db:reset', 'db:fresh', 'db:fresh-dev', 'db:migrate:prod', 'clean']);
+const DANGEROUS_IDS = new Set([
+    'db:reset',
+    'db:fresh',
+    'db:fresh-dev',
+    'db:migrate:prod',
+    'db:push',
+    'env:push',
+    'clean'
+]);
 
 const REQUIRED_IDS = ['db:start', 'dev:all', 'test', 'lint', 'build', 'env:check'];
 
 const VALID_CATEGORIES = new Set<CommandCategory>(CATEGORY_DISPLAY_ORDER);
 
 describe('getCuratedCommands', () => {
-    it('should return exactly 45 commands', () => {
+    it('should return exactly 46 commands', () => {
         const commands = getCuratedCommands();
-        expect(commands).toHaveLength(45);
+        expect(commands).toHaveLength(46);
     });
 
     it('should have no duplicate IDs', () => {
@@ -22,11 +30,11 @@ describe('getCuratedCommands', () => {
         expect(uniqueIds.size).toBe(ids.length);
     });
 
-    it('should have dangerMessage set on all 5 dangerous commands', () => {
+    it('should have dangerMessage set on all 7 dangerous commands', () => {
         const commands = getCuratedCommands();
         const dangerousCommands = commands.filter((c) => DANGEROUS_IDS.has(c.id));
 
-        expect(dangerousCommands).toHaveLength(5);
+        expect(dangerousCommands).toHaveLength(7);
 
         for (const cmd of dangerousCommands) {
             expect(cmd.dangerous).toBe(true);
