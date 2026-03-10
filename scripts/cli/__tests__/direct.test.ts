@@ -156,6 +156,23 @@ describe('parseCliArgs', () => {
         // Assert
         expect(result.commandId).toBeUndefined();
     });
+
+    it('should support --all as alias for --list-all', () => {
+        // Arrange & Act
+        const result = parseCliArgs({ argv: ['--all'] });
+
+        // Assert
+        expect(result.listAll).toBe(true);
+        expect(result.list).toBe(true);
+    });
+
+    it('should handle empty string as first argument', () => {
+        // Arrange & Act - empty string is falsy but is a valid positional
+        const result = parseCliArgs({ argv: [''] });
+
+        // Assert
+        expect(result.commandId).toBe('');
+    });
 });
 
 describe('handleDirect', () => {

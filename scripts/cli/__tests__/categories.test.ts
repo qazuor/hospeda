@@ -108,6 +108,36 @@ describe('inferCategory', () => {
         expect(inferCategory({ scriptName: 'i18n:generate-types' })).toBe('package-tools');
         expect(inferCategory({ scriptName: 'unknown-command' })).toBe('package-tools');
     });
+
+    it('should return environment for env* scripts', () => {
+        expect(inferCategory({ scriptName: 'env:check' })).toBe('environment');
+        expect(inferCategory({ scriptName: 'env:pull' })).toBe('environment');
+    });
+
+    it('should return documentation for docs:* and doc:* scripts', () => {
+        expect(inferCategory({ scriptName: 'docs:build' })).toBe('documentation');
+        expect(inferCategory({ scriptName: 'doc:generate' })).toBe('documentation');
+    });
+
+    it('should return infrastructure for setup* scripts', () => {
+        expect(inferCategory({ scriptName: 'setup' })).toBe('infrastructure');
+        expect(inferCategory({ scriptName: 'setup:db' })).toBe('infrastructure');
+    });
+
+    it('should handle empty string gracefully', () => {
+        // Empty string doesn't match any prefix, falls through to package-tools
+        expect(inferCategory({ scriptName: '' })).toBe('package-tools');
+    });
+
+    it('should be case-sensitive (uppercase BUILD is not build)', () => {
+        // Uppercase doesn't match lowercase-only startsWith checks
+        expect(inferCategory({ scriptName: 'BUILD' })).toBe('package-tools');
+    });
+
+    it('should match first matching rule (priority order)', () => {
+        // "dev:test" starts with "dev" so it should be development, not testing
+        expect(inferCategory({ scriptName: 'dev:test' })).toBe('development');
+    });
 });
 
 describe('inferMode', () => {

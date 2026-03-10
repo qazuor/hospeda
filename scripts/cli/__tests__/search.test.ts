@@ -128,4 +128,42 @@ describe('searchCommands', () => {
         // Assert
         expect(results).toEqual([]);
     });
+
+    it('should return empty array for query exceeding 200 characters', () => {
+        // Arrange
+        const longQuery = 'a'.repeat(201);
+
+        // Act
+        const results = searchCommands({ fuse, query: longQuery });
+
+        // Assert
+        expect(results).toEqual([]);
+    });
+
+    it('should return results for query at exactly 200 characters', () => {
+        // Arrange - 200 chars is within limit, but unlikely to match anything
+        const query200 = 'a'.repeat(200);
+
+        // Act
+        const results = searchCommands({ fuse, query: query200 });
+
+        // Assert - may or may not have results, but should not throw
+        expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should handle special regex characters in query without error', () => {
+        // Arrange & Act - characters that could break regex
+        const results = searchCommands({ fuse, query: 'db.*+?()[]{}|\\^$' });
+
+        // Assert
+        expect(Array.isArray(results)).toBe(true);
+    });
+
+    it('should handle queries with unicode/diacritics gracefully', () => {
+        // Arrange & Act
+        const results = searchCommands({ fuse, query: 'búsqueda' });
+
+        // Assert
+        expect(Array.isArray(results)).toBe(true);
+    });
 });
