@@ -168,12 +168,13 @@ async function readPackageJson({
         const raw = await readFile(pkgPath, 'utf-8');
         const parsed = PackageJsonSchema.safeParse(JSON.parse(raw));
         if (!parsed.success) {
-            console.warn(`Warning: Invalid package.json at ${pkgPath}`);
+            const name = parsed.error?.issues?.[0]?.path?.join('.') ?? 'unknown field';
+            console.warn(`Warning: Invalid package.json (${name}) in workspace`);
             return null;
         }
         return { pkgPath, pkg: parsed.data };
     } catch {
-        console.warn(`Warning: Could not read ${pkgPath}`);
+        console.warn('Warning: Could not read a workspace package.json');
         return null;
     }
 }
