@@ -34,8 +34,8 @@ export const FeedbackSchema = z.object({
      */
     HOSPEDA_FEEDBACK_ENABLED: z
         .string()
-        .transform((val) => val.toLowerCase() !== 'false')
         .default('true')
+        .transform((val) => val.toLowerCase() !== 'false')
 });
 
 /**

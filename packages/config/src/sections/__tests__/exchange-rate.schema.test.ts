@@ -88,7 +88,7 @@ describe('ExchangeRateSchema', () => {
                 expect(result.error.issues).toContainEqual(
                     expect.objectContaining({
                         path: ['HOSPEDA_DOLAR_API_BASE_URL'],
-                        code: z.ZodIssueCode.invalid_string
+                        code: z.ZodIssueCode.invalid_format
                     })
                 );
             }
@@ -106,7 +106,7 @@ describe('ExchangeRateSchema', () => {
                 expect(result.error.issues).toContainEqual(
                     expect.objectContaining({
                         path: ['HOSPEDA_EXCHANGE_RATE_API_BASE_URL'],
-                        code: z.ZodIssueCode.invalid_string
+                        code: z.ZodIssueCode.invalid_format
                     })
                 );
             }

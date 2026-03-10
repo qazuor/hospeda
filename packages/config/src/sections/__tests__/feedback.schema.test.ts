@@ -109,7 +109,7 @@ describe('FeedbackSchema', () => {
                 expect(result.error.issues).toContainEqual(
                     expect.objectContaining({
                         path: ['HOSPEDA_FEEDBACK_FALLBACK_EMAIL'],
-                        code: z.ZodIssueCode.invalid_string
+                        code: z.ZodIssueCode.invalid_format
                     })
                 );
             }

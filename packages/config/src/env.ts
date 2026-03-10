@@ -22,7 +22,7 @@ export class EnvValidationError extends Error {
         public readonly errors: z.ZodError,
         public readonly context: string
     ) {
-        const errorMessages = errors.errors
+        const errorMessages = errors.issues
             .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
             .join('\n');
 
