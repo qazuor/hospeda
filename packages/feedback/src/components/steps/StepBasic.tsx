@@ -30,22 +30,22 @@ export interface StepBasicData {
 /** Props for the StepBasic component */
 export interface StepBasicProps {
     /** Current form values */
-    data: StepBasicData;
+    readonly data: StepBasicData;
     /**
      * Callback to update a single field value.
      * Uses a generic key constraint to keep type safety.
      */
-    onChange: <K extends keyof StepBasicData>(field: K, value: StepBasicData[K]) => void;
+    readonly onChange: <K extends keyof StepBasicData>(field: K, value: StepBasicData[K]) => void;
     /** Validation errors keyed by field name */
-    errors: Partial<Record<keyof StepBasicData, string>>;
+    readonly errors: Partial<Record<keyof StepBasicData, string>>;
     /** When true, renders email and name inputs (user not authenticated) */
-    showContactFields: boolean;
+    readonly showContactFields: boolean;
     /** Called when user clicks "Agregar mas detalles" */
-    onGoToStep2: () => void;
+    readonly onGoToStep2: () => void;
     /** Called when user clicks "Enviar" */
-    onSubmit: () => void;
+    readonly onSubmit: () => void;
     /** Whether form is currently submitting */
-    isSubmitting: boolean;
+    readonly isSubmitting: boolean;
 }
 
 /**

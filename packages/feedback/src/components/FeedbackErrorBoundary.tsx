@@ -38,19 +38,19 @@ const ERROR_REPORT_TYPE: ReportTypeId = 'bug-js';
  */
 export interface FeedbackErrorBoundaryProps {
     /** Child components to wrap and protect from unhandled errors. */
-    children: ReactNode;
+    readonly children: ReactNode;
     /** Application source identifier (e.g. 'web', 'admin'). */
-    appSource: AppSourceId;
+    readonly appSource: AppSourceId;
     /** Base API URL passed through to the inline FeedbackModal form. */
-    apiUrl: string;
+    readonly apiUrl: string;
     /** Git commit hash or release tag for the current deploy. */
-    deployVersion?: string;
+    readonly deployVersion?: string;
     /** Authenticated user's internal ID (pre-fills the form). */
-    userId?: string;
+    readonly userId?: string;
     /** Authenticated user's email address (pre-fills the form). */
-    userEmail?: string;
+    readonly userEmail?: string;
     /** Authenticated user's display name (pre-fills the form). */
-    userName?: string;
+    readonly userName?: string;
     /**
      * URL of the standalone feedback page.
      *
@@ -58,14 +58,14 @@ export interface FeedbackErrorBoundaryProps {
      * this URL in a new tab with error details appended as query params.
      * If omitted the new-tab fallback is silently skipped.
      */
-    feedbackPageUrl?: string;
+    readonly feedbackPageUrl?: string;
     /**
      * Optional render-prop for a fully custom fallback UI.
      *
      * When provided this completely replaces the default error card.
      * Receives the caught error, a reset callback, and a report callback.
      */
-    fallbackComponent?: (props: {
+    readonly fallbackComponent?: (props: {
         error: Error;
         resetError: () => void;
         reportError: () => void;

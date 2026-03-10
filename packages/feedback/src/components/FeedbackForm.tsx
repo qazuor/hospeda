@@ -39,30 +39,30 @@ type Step = 'basic' | 'details' | 'success';
  */
 export interface FeedbackFormProps {
     /** API base URL for submitting feedback (e.g. 'http://localhost:3001') */
-    apiUrl: string;
+    readonly apiUrl: string;
     /** Application source identifier */
-    appSource: AppSourceId;
+    readonly appSource: AppSourceId;
     /** Git commit hash or release tag for environment context */
-    deployVersion?: string;
+    readonly deployVersion?: string;
     /** Authenticated user ID — populates environment.userId */
-    userId?: string;
+    readonly userId?: string;
     /** Authenticated user email — pre-fills the email field */
-    userEmail?: string;
+    readonly userEmail?: string;
     /** Authenticated user name — pre-fills the name field */
-    userName?: string;
+    readonly userName?: string;
     /** Pre-fill data from an error boundary or query params */
-    prefillData?: {
+    readonly prefillData?: {
         /** Initial report type */
-        type?: ReportTypeId;
+        readonly type?: ReportTypeId;
         /** Initial title text */
-        title?: string;
+        readonly title?: string;
         /** Initial description text */
-        description?: string;
+        readonly description?: string;
         /** Error info from an ErrorBoundary */
-        errorInfo?: { message: string; stack?: string };
+        readonly errorInfo?: { readonly message: string; readonly stack?: string };
     };
     /** Called when the user clicks "Cerrar" on the success screen */
-    onClose?: () => void;
+    readonly onClose?: () => void;
 }
 
 /**

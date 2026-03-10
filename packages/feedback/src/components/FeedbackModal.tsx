@@ -38,11 +38,11 @@ const MOBILE_BREAKPOINT = 640;
  */
 export interface FeedbackModalProps {
     /** Whether the modal is open */
-    isOpen: boolean;
+    readonly isOpen: boolean;
     /** Called when the modal should close (backdrop click, Escape key, close button) */
-    onClose: () => void;
+    readonly onClose: () => void;
     /** All props passed through to FeedbackForm (onClose is injected automatically) */
-    formProps: Omit<FeedbackFormProps, 'onClose'>;
+    readonly formProps: Omit<FeedbackFormProps, 'onClose'>;
 }
 
 const TITLE_ID = 'feedback-modal-title';

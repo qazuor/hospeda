@@ -117,30 +117,30 @@ function injectPulseStyles(): void {
  */
 export interface FeedbackFABProps {
     /** Base URL of the feedback API endpoint */
-    apiUrl: string;
+    readonly apiUrl: string;
     /** Identifier for the application this FAB is rendered in */
-    appSource: AppSourceId;
+    readonly appSource: AppSourceId;
     /** Git commit hash or release tag for the current deploy */
-    deployVersion?: string;
+    readonly deployVersion?: string;
     /** Authenticated user ID (pre-fills the form when provided) */
-    userId?: string;
+    readonly userId?: string;
     /** Authenticated user email (pre-fills the form when provided) */
-    userEmail?: string;
+    readonly userEmail?: string;
     /** Authenticated user display name (pre-fills the form when provided) */
-    userName?: string;
+    readonly userName?: string;
     /**
      * Optional pre-fill data, typically supplied by an error boundary.
      * When present the form opens pre-filled with the error details.
      */
-    prefillData?: {
+    readonly prefillData?: {
         /** Pre-selected report type */
-        type?: ReportTypeId;
+        readonly type?: ReportTypeId;
         /** Pre-filled issue title */
-        title?: string;
+        readonly title?: string;
         /** Pre-filled issue description */
-        description?: string;
+        readonly description?: string;
         /** JavaScript error info captured by an error boundary */
-        errorInfo?: { message: string; stack?: string };
+        readonly errorInfo?: { readonly message: string; readonly stack?: string };
     };
 }
 

@@ -30,34 +30,37 @@ export interface StepDetailsData {
 /** Props for the StepDetails component */
 export interface StepDetailsProps {
     /** Current form values for step 2 fields */
-    data: StepDetailsData;
+    readonly data: StepDetailsData;
     /**
      * Callback to update a single step 2 field.
      * Uses a generic key constraint to keep type safety.
      */
-    onChange: <K extends keyof StepDetailsData>(field: K, value: StepDetailsData[K]) => void;
+    readonly onChange: <K extends keyof StepDetailsData>(
+        field: K,
+        value: StepDetailsData[K]
+    ) => void;
     /** Currently attached screenshot files */
-    attachments: File[];
+    readonly attachments: File[];
     /** Callback to add one or more files to the attachment list */
-    onAddAttachments: (files: File[]) => void;
+    readonly onAddAttachments: (files: File[]) => void;
     /** Callback to remove a single attachment by its list index */
-    onRemoveAttachment: (index: number) => void;
+    readonly onRemoveAttachment: (index: number) => void;
     /** Auto-collected browser/OS/viewport data (editable by user) */
-    environment: FeedbackEnvironment;
+    readonly environment: FeedbackEnvironment;
     /**
      * Callback to update a single environment field.
      * Uses a generic key constraint to keep type safety.
      */
-    onEnvironmentChange: <K extends keyof FeedbackEnvironment>(
+    readonly onEnvironmentChange: <K extends keyof FeedbackEnvironment>(
         key: K,
         value: FeedbackEnvironment[K]
     ) => void;
     /** Called when user clicks "Volver" */
-    onBack: () => void;
+    readonly onBack: () => void;
     /** Called when user clicks "Enviar" */
-    onSubmit: () => void;
+    readonly onSubmit: () => void;
     /** Whether form is currently submitting */
-    isSubmitting: boolean;
+    readonly isSubmitting: boolean;
 }
 
 /** Format bytes into a human-readable string (e.g. "1.2 MB") */
