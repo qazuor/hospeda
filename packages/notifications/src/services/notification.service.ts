@@ -175,7 +175,8 @@ export class NotificationService {
                 tags: [
                     { name: 'notification_type', value: type },
                     { name: 'category', value: NOTIFICATION_CATEGORY_MAP[type] }
-                ]
+                ],
+                attachments: options?.emailAttachments
             });
 
             if (!options?.skipLogging) {

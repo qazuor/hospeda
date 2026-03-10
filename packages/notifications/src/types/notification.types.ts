@@ -188,6 +188,15 @@ export interface SendNotificationOptions {
     skipDb?: boolean;
     /** Skip structured logging via @repo/logger */
     skipLogging?: boolean;
+    /** File attachments to include in the email (e.g., feedback screenshots) */
+    emailAttachments?: Array<{
+        /** Filename shown to the recipient */
+        filename: string;
+        /** File content as Buffer or base64 string */
+        content: Buffer | string;
+        /** MIME type (e.g., "image/png") */
+        contentType?: string;
+    }>;
 }
 
 /** Union of all notification payloads */

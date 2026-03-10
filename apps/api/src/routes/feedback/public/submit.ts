@@ -475,7 +475,18 @@ export const submitFeedbackRoute = createSimpleRoute({
         };
 
         try {
-            await sendNotification(fallbackPayload, { skipDb: true, skipLogging: true });
+            await sendNotification(fallbackPayload, {
+                skipDb: true,
+                skipLogging: true,
+                emailAttachments:
+                    feedbackAttachments.length > 0
+                        ? feedbackAttachments.map((att) => ({
+                              filename: att.filename,
+                              content: att.buffer,
+                              contentType: att.contentType
+                          }))
+                        : undefined
+            });
         } catch (emailError: unknown) {
             apiLogger.error(
                 { error: emailError instanceof Error ? emailError.message : String(emailError) },

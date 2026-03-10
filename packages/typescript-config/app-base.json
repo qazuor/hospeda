@@ -21,7 +21,9 @@
             "@repo/service-core": ["../../packages/service-core/src/index.ts"],
             "@repo/service-core/*": ["../../packages/service-core/src/*"],
             "@repo/seed": ["../../packages/seed/src/index.ts"],
-            "@repo/seed/*": ["../../packages/seed/src/*"]
+            "@repo/seed/*": ["../../packages/seed/src/*"],
+            "@repo/notifications": ["../../packages/notifications/src/index.ts"],
+            "@repo/notifications/*": ["../../packages/notifications/src/*"]
         }
     },
     "include": ["src/**/*"],
