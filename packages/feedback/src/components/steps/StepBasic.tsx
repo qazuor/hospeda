@@ -7,20 +7,11 @@
 import { REPORT_TYPES } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
 import type { ReportTypeId } from '../../schemas/feedback.schema.js';
-import {
-    buttonPrimaryDisabledStyle,
-    buttonPrimaryStyle,
-    buttonRowStyle,
-    buttonSecondaryDisabledStyle,
-    buttonSecondaryStyle,
-    errorTextStyle,
-    fieldGroupStyle,
-    inputErrorStyle,
-    inputStyle,
-    labelStyle,
-    selectStyle,
-    textareaBaseStyle
-} from '../../styles/shared.js';
+import { Button } from '../../ui/Button.js';
+import { Input } from '../../ui/Input.js';
+import { Label } from '../../ui/Label.js';
+import { Select } from '../../ui/Select.js';
+import { Textarea } from '../../ui/Textarea.js';
 
 /** Data managed by step 1 of the feedback form */
 export interface StepBasicData {
@@ -57,21 +48,6 @@ export interface StepBasicProps {
     isSubmitting: boolean;
 }
 
-const styles = {
-    label: labelStyle,
-    input: inputStyle,
-    inputError: inputErrorStyle,
-    errorText: errorTextStyle,
-    textarea: { ...textareaBaseStyle, minHeight: '100px' },
-    select: selectStyle,
-    fieldGroup: fieldGroupStyle,
-    buttonRow: buttonRowStyle,
-    buttonPrimary: buttonPrimaryStyle,
-    buttonPrimaryDisabled: buttonPrimaryDisabledStyle,
-    buttonSecondary: buttonSecondaryStyle,
-    buttonSecondaryDisabled: buttonSecondaryDisabledStyle
-} as const;
-
 /**
  * Step 1 of the feedback form.
  *
@@ -102,27 +78,13 @@ export function StepBasic({
     onSubmit,
     isSubmitting
 }: StepBasicProps) {
-    const getInputStyle = (field: keyof StepBasicData) => ({
-        ...styles.input,
-        ...(errors[field] ? styles.inputError : {})
-    });
-
     return (
-        <div>
+        <div className="space-y-4">
             {/* Report type */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-type"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.type}
-                </label>
-                <select
+            <div>
+                <Label htmlFor="feedback-type">{FEEDBACK_STRINGS.fields.type}</Label>
+                <Select
                     id="feedback-type"
-                    style={{
-                        ...styles.select,
-                        ...(errors.type ? styles.inputError : {})
-                    }}
                     value={data.type}
                     onChange={(e) => onChange('type', e.target.value as ReportTypeId)}
                     aria-invalid={!!errors.type}
@@ -136,11 +98,11 @@ export function StepBasic({
                             {reportType.label}
                         </option>
                     ))}
-                </select>
+                </Select>
                 {errors.type && (
                     <p
                         id="feedback-type-error"
-                        style={styles.errorText}
+                        className="mt-1 text-destructive text-xs"
                         role="alert"
                     >
                         {errors.type}
@@ -149,17 +111,11 @@ export function StepBasic({
             </div>
 
             {/* Title */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-title"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.title}
-                </label>
-                <input
+            <div>
+                <Label htmlFor="feedback-title">{FEEDBACK_STRINGS.fields.title}</Label>
+                <Input
                     id="feedback-title"
                     type="text"
-                    style={getInputStyle('title')}
                     value={data.title}
                     onChange={(e) => onChange('title', e.target.value)}
                     placeholder={FEEDBACK_STRINGS.fields.titlePlaceholder}
@@ -169,7 +125,7 @@ export function StepBasic({
                 {errors.title && (
                     <p
                         id="feedback-title-error"
-                        style={styles.errorText}
+                        className="mt-1 text-destructive text-xs"
                         role="alert"
                     >
                         {errors.title}
@@ -178,19 +134,11 @@ export function StepBasic({
             </div>
 
             {/* Description */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-description"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.description}
-                </label>
-                <textarea
+            <div>
+                <Label htmlFor="feedback-description">{FEEDBACK_STRINGS.fields.description}</Label>
+                <Textarea
                     id="feedback-description"
-                    style={{
-                        ...styles.textarea,
-                        ...(errors.description ? styles.inputError : {})
-                    }}
+                    className="min-h-[100px]"
                     value={data.description}
                     onChange={(e) => onChange('description', e.target.value)}
                     placeholder={FEEDBACK_STRINGS.fields.descriptionPlaceholder}
@@ -200,7 +148,7 @@ export function StepBasic({
                 {errors.description && (
                     <p
                         id="feedback-description-error"
-                        style={styles.errorText}
+                        className="mt-1 text-destructive text-xs"
                         role="alert"
                     >
                         {errors.description}
@@ -211,17 +159,11 @@ export function StepBasic({
             {/* Contact fields (hidden when authenticated) */}
             {showContactFields && (
                 <>
-                    <div style={styles.fieldGroup}>
-                        <label
-                            htmlFor="feedback-email"
-                            style={styles.label}
-                        >
-                            {FEEDBACK_STRINGS.fields.email}
-                        </label>
-                        <input
+                    <div>
+                        <Label htmlFor="feedback-email">{FEEDBACK_STRINGS.fields.email}</Label>
+                        <Input
                             id="feedback-email"
                             type="email"
-                            style={getInputStyle('reporterEmail')}
                             value={data.reporterEmail}
                             onChange={(e) => onChange('reporterEmail', e.target.value)}
                             placeholder={FEEDBACK_STRINGS.fields.emailPlaceholder}
@@ -233,7 +175,7 @@ export function StepBasic({
                         {errors.reporterEmail && (
                             <p
                                 id="feedback-email-error"
-                                style={styles.errorText}
+                                className="mt-1 text-destructive text-xs"
                                 role="alert"
                             >
                                 {errors.reporterEmail}
@@ -241,17 +183,11 @@ export function StepBasic({
                         )}
                     </div>
 
-                    <div style={styles.fieldGroup}>
-                        <label
-                            htmlFor="feedback-name"
-                            style={styles.label}
-                        >
-                            {FEEDBACK_STRINGS.fields.name}
-                        </label>
-                        <input
+                    <div>
+                        <Label htmlFor="feedback-name">{FEEDBACK_STRINGS.fields.name}</Label>
+                        <Input
                             id="feedback-name"
                             type="text"
-                            style={getInputStyle('reporterName')}
                             value={data.reporterName}
                             onChange={(e) => onChange('reporterName', e.target.value)}
                             placeholder={FEEDBACK_STRINGS.fields.namePlaceholder}
@@ -263,7 +199,7 @@ export function StepBasic({
                         {errors.reporterName && (
                             <p
                                 id="feedback-name-error"
-                                style={styles.errorText}
+                                className="mt-1 text-destructive text-xs"
                                 role="alert"
                             >
                                 {errors.reporterName}
@@ -274,23 +210,22 @@ export function StepBasic({
             )}
 
             {/* Action buttons */}
-            <div style={styles.buttonRow}>
-                <button
+            <div className="flex justify-between gap-3 pt-2">
+                <Button
                     type="button"
-                    style={isSubmitting ? styles.buttonSecondaryDisabled : styles.buttonSecondary}
+                    variant="secondary"
                     onClick={onGoToStep2}
                     disabled={isSubmitting}
                 >
                     {FEEDBACK_STRINGS.buttons.addDetails}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    style={isSubmitting ? styles.buttonPrimaryDisabled : styles.buttonPrimary}
                     onClick={onSubmit}
                     disabled={isSubmitting}
                 >
                     {FEEDBACK_STRINGS.buttons.submit}
-                </button>
+                </Button>
             </div>
         </div>
     );

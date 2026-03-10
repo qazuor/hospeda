@@ -13,6 +13,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
+import { cn } from '../ui/cn.js';
 import { FeedbackForm } from './FeedbackForm.js';
 import type { FeedbackFormProps } from './FeedbackForm.js';
 
@@ -46,7 +47,7 @@ export interface FeedbackModalProps {
 
 const TITLE_ID = 'feedback-modal-title';
 
-/** CSS for the native `::backdrop` pseudo-element (cannot be set inline). */
+/** CSS for the native `::backdrop` pseudo-element (cannot be set via Tailwind). */
 const BACKDROP_CSS = 'dialog[data-feedback-modal]::backdrop{background:rgba(0,0,0,0.5)}';
 
 /**
@@ -67,101 +68,6 @@ function getFocusableElements(container: HTMLElement): HTMLElement[] {
 
     return Array.from(container.querySelectorAll<HTMLElement>(selector));
 }
-
-const styles = {
-    /** Desktop dialog: full-viewport flex container, centered content */
-    dialogDesktop: {
-        position: 'fixed' as const,
-        inset: 0,
-        width: '100vw',
-        height: '100vh',
-        maxWidth: 'none',
-        maxHeight: 'none',
-        margin: 0,
-        padding: '24px',
-        border: 'none',
-        background: 'transparent',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        boxSizing: 'border-box' as const
-    },
-    /** Mobile dialog: full-viewport flex container, bottom-aligned content */
-    dialogMobile: {
-        position: 'fixed' as const,
-        inset: 0,
-        width: '100vw',
-        height: '100vh',
-        maxWidth: 'none',
-        maxHeight: 'none',
-        margin: 0,
-        padding: 0,
-        border: 'none',
-        background: 'transparent',
-        display: 'flex',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-        boxSizing: 'border-box' as const
-    },
-    modal: {
-        position: 'relative' as const,
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-        width: '100%',
-        maxWidth: '640px',
-        maxHeight: '90vh',
-        overflowY: 'auto' as const,
-        padding: '24px',
-        boxSizing: 'border-box' as const
-    },
-    drawer: {
-        position: 'relative' as const,
-        backgroundColor: '#ffffff',
-        borderRadius: '16px 16px 0 0',
-        boxShadow: '0 -8px 40px rgba(0, 0, 0, 0.25)',
-        width: '100%',
-        maxHeight: '85vh',
-        overflowY: 'auto' as const,
-        padding: '20px 20px 28px',
-        boxSizing: 'border-box' as const
-    },
-    dragHandle: {
-        width: '40px',
-        height: '4px',
-        backgroundColor: '#d1d5db',
-        borderRadius: '2px',
-        margin: '0 auto 16px'
-    },
-    closeButton: {
-        position: 'absolute' as const,
-        top: '16px',
-        right: '16px',
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        padding: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '4px',
-        color: '#6b7280',
-        fontSize: '20px',
-        lineHeight: 1,
-        zIndex: 1
-    },
-    titleHidden: {
-        position: 'absolute' as const,
-        width: '1px',
-        height: '1px',
-        padding: 0,
-        margin: '-1px',
-        overflow: 'hidden' as const,
-        clip: 'rect(0,0,0,0)',
-        whiteSpace: 'nowrap' as const,
-        border: 0
-    }
-} as const;
 
 /**
  * FeedbackModal component.
@@ -325,33 +231,38 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
     // Render
     // ------------------------------------------------------------------ //
 
-    const dialogStyle = isMobile ? styles.dialogMobile : styles.dialogDesktop;
-    const contentStyle = isMobile ? styles.drawer : styles.modal;
-
     return (
         <>
-            {/* ::backdrop cannot be styled inline; inject minimal CSS */}
+            {/* ::backdrop cannot be styled with Tailwind; inject minimal CSS */}
             <style>{BACKDROP_CSS}</style>
             <dialog
                 ref={dialogRef}
                 aria-labelledby={TITLE_ID}
                 onClick={handleDialogClick}
                 onKeyDown={handleKeyDown}
-                style={dialogStyle}
+                className={cn(
+                    'fixed inset-0 m-0 flex h-dvh max-h-none w-dvw max-w-none border-none bg-transparent',
+                    isMobile ? 'items-end justify-center p-0' : 'items-center justify-center p-6'
+                )}
                 data-feedback-modal=""
                 data-testid="feedback-modal-dialog"
             >
                 {/* Inner container: visual styles and focus trap boundary */}
                 <div
                     ref={containerRef}
-                    style={contentStyle}
+                    className={cn(
+                        'relative w-full overflow-y-auto bg-card shadow-xl',
+                        isMobile
+                            ? 'max-h-[85dvh] rounded-t-2xl px-5 pt-5 pb-7'
+                            : 'max-h-[90vh] max-w-[640px] rounded-xl p-6'
+                    )}
                     tabIndex={-1}
                     data-testid="feedback-modal-content"
                 >
                     {/* Visually hidden title for screen readers */}
                     <span
                         id={TITLE_ID}
-                        style={styles.titleHidden}
+                        className="sr-only"
                     >
                         {FEEDBACK_STRINGS.form.title}
                     </span>
@@ -359,7 +270,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                     {/* Drag handle for mobile drawer */}
                     {isMobile && (
                         <div
-                            style={styles.dragHandle}
+                            className="mx-auto mb-4 h-1 w-10 rounded-full bg-border"
                             aria-hidden="true"
                         />
                     )}
@@ -367,7 +278,7 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
                     {/* Close button (visible on both mobile and desktop) */}
                     <button
                         type="button"
-                        style={styles.closeButton}
+                        className="absolute top-4 right-4 z-10 flex items-center justify-center rounded p-1 text-muted-foreground text-xl leading-none transition-colors hover:text-foreground"
                         onClick={onClose}
                         aria-label={FEEDBACK_STRINGS.buttons.close}
                         data-testid="feedback-modal-close"

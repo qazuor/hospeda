@@ -65,31 +65,6 @@ export interface FeedbackFormProps {
     onClose?: () => void;
 }
 
-const styles = {
-    container: {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        maxWidth: '520px',
-        width: '100%'
-    },
-    stepTitle: {
-        fontSize: '16px',
-        fontWeight: '700',
-        color: '#111827',
-        marginBottom: '16px',
-        paddingBottom: '12px',
-        borderBottom: '1px solid #e5e7eb'
-    },
-    errorBanner: {
-        backgroundColor: '#fef2f2',
-        border: '1px solid #fecaca',
-        borderRadius: '6px',
-        padding: '10px 14px',
-        marginBottom: '16px',
-        fontSize: '14px',
-        color: '#b91c1c'
-    }
-} as const;
-
 /**
  * Builds the initial StepBasicData from props and prefill data.
  *
@@ -387,12 +362,14 @@ export function FeedbackForm({
 
     if (step === 'details') {
         return (
-            <div style={styles.container}>
-                <p style={styles.stepTitle}>{FEEDBACK_STRINGS.form.step2Title}</p>
+            <div className="w-full max-w-[520px] font-sans">
+                <p className="mb-4 border-border border-b pb-3 font-bold text-base text-foreground">
+                    {FEEDBACK_STRINGS.form.step2Title}
+                </p>
 
                 {submitState.error && (
                     <div
-                        style={styles.errorBanner}
+                        className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-destructive text-sm"
                         role="alert"
                     >
                         {submitState.error}
@@ -420,12 +397,14 @@ export function FeedbackForm({
     // ------------------------------------------------------------------ //
 
     return (
-        <div style={styles.container}>
-            <p style={styles.stepTitle}>{FEEDBACK_STRINGS.form.title}</p>
+        <div className="w-full max-w-[520px] font-sans">
+            <p className="mb-4 border-border border-b pb-3 font-bold text-base text-foreground">
+                {FEEDBACK_STRINGS.form.title}
+            </p>
 
             {submitState.error && (
                 <div
-                    style={styles.errorBanner}
+                    className="mb-4 rounded-md border border-destructive/30 bg-destructive/5 px-3.5 py-2.5 text-destructive text-sm"
                     role="alert"
                 >
                     {submitState.error}
@@ -435,13 +414,7 @@ export function FeedbackForm({
             {/* Honeypot field: hidden from real users, filled by bots */}
             <div
                 aria-hidden="true"
-                style={{
-                    position: 'absolute',
-                    left: '-9999px',
-                    opacity: 0,
-                    height: 0,
-                    overflow: 'hidden'
-                }}
+                className="-left-[9999px] absolute h-0 overflow-hidden opacity-0"
             >
                 <label htmlFor="feedback-website">Website</label>
                 <input

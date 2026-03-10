@@ -22,13 +22,7 @@ import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
-import {
-    FAB_FULL,
-    FAB_MINIMIZED,
-    FAB_MINIMIZED_HOVERED,
-    MINIMIZE_BTN,
-    TOOLTIP
-} from '../styles/fab.js';
+import { cn } from '../ui/cn.js';
 import { FeedbackModal } from './FeedbackModal.js';
 
 // ---------------------------------------------------------------------------
@@ -292,25 +286,6 @@ export function FeedbackFAB({
     if (!FEEDBACK_CONFIG.enabled) return null;
 
     // ------------------------------------------------------------------
-    // Derived styles
-    // ------------------------------------------------------------------
-
-    const fabSize = isDesktop ? '56px' : '48px';
-
-    const fullFabStyle: React.CSSProperties = {
-        ...FAB_FULL,
-        width: fabSize,
-        height: fabSize,
-        ...(isPulsing
-            ? {
-                  animation: 'feedbackFabPulse 0.6s ease-in-out'
-              }
-            : {})
-    };
-
-    const minimizedStyle: React.CSSProperties = isHovered ? FAB_MINIMIZED_HOVERED : FAB_MINIMIZED;
-
-    // ------------------------------------------------------------------
     // Tooltip: derive shortcut label from config instead of hardcoding
     // ------------------------------------------------------------------
 
@@ -337,6 +312,10 @@ export function FeedbackFAB({
         />
     );
 
+    // Base classes for the FAB button
+    const fabBase =
+        'fixed bottom-6 right-6 z-[9998] flex cursor-pointer items-center justify-center rounded-full border-none transition-all duration-200';
+
     // ------------------------------------------------------------------
     // Render: minimized state
     // ------------------------------------------------------------------
@@ -344,10 +323,15 @@ export function FeedbackFAB({
     if (isMinimized) {
         return (
             <>
-                <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div className="relative inline-block">
                     <button
                         type="button"
-                        style={minimizedStyle}
+                        className={cn(
+                            fabBase,
+                            isHovered
+                                ? 'size-12 bg-primary text-primary-foreground shadow-lg'
+                                : 'size-6 bg-primary/40 shadow-md'
+                        )}
                         onClick={handleMinimizedClick}
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
@@ -367,7 +351,7 @@ export function FeedbackFAB({
                     {isHovered && (
                         <span
                             id={tooltipId}
-                            style={TOOLTIP}
+                            className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-14 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-background text-xs leading-snug shadow-lg"
                             role="tooltip"
                         >
                             {FEEDBACK_STRINGS.fab.tooltip}
@@ -384,13 +368,22 @@ export function FeedbackFAB({
     // Render: full FAB
     // ------------------------------------------------------------------
 
+    const fabSize = isDesktop ? 'size-14' : 'size-12';
+
     return (
         <>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
+            <div className="relative inline-block">
                 <button
                     type="button"
-                    style={fullFabStyle}
-                    className={isPulsing ? 'feedback-fab-pulse' : undefined}
+                    className={cn(
+                        fabBase,
+                        fabSize,
+                        'bg-primary text-primary-foreground shadow-lg shadow-primary/40',
+                        isPulsing && 'feedback-fab-pulse'
+                    )}
+                    style={
+                        isPulsing ? { animation: 'feedbackFabPulse 0.6s ease-in-out' } : undefined
+                    }
                     onClick={handleFabClick}
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
@@ -410,7 +403,7 @@ export function FeedbackFAB({
                 {isHovered && (
                     <span
                         id={tooltipId}
-                        style={TOOLTIP}
+                        className="-translate-y-1/2 pointer-events-none absolute top-1/2 right-14 whitespace-nowrap rounded-md bg-foreground px-2.5 py-1.5 text-background text-xs leading-snug shadow-lg"
                         role="tooltip"
                     >
                         {tooltipText}
@@ -420,7 +413,7 @@ export function FeedbackFAB({
                 {/* Minimize button: small circle in top-right corner of the FAB */}
                 <button
                     type="button"
-                    style={MINIMIZE_BTN}
+                    className="-right-1.5 -top-1.5 absolute z-10 flex size-6 items-center justify-center rounded-full border-none bg-primary-foreground/20 text-primary-foreground shadow-md backdrop-blur-sm hover:bg-primary-foreground/30"
                     onClick={handleMinimize}
                     aria-label={FEEDBACK_STRINGS.fab.minimizeTooltip}
                     data-testid="feedback-fab-minimize"

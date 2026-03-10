@@ -6,7 +6,7 @@
  * another report or close the form.
  */
 import { FEEDBACK_STRINGS } from '../config/strings.js';
-import { buttonPrimaryStyle, buttonSecondaryStyle } from '../styles/shared.js';
+import { Button } from '../ui/Button.js';
 
 /** Props for the SuccessScreen component */
 export interface SuccessScreenProps {
@@ -19,60 +19,6 @@ export interface SuccessScreenProps {
     /** Called when user clicks "Cerrar" (only shown when provided) */
     readonly onClose?: () => void;
 }
-
-const styles = {
-    container: {
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        maxWidth: '520px',
-        width: '100%'
-    },
-    successContainer: {
-        textAlign: 'center' as const,
-        padding: '24px 16px'
-    },
-    icon: {
-        fontSize: '48px',
-        color: '#16a34a',
-        marginBottom: '12px',
-        lineHeight: 1
-    },
-    title: {
-        fontSize: '18px',
-        fontWeight: '700',
-        color: '#111827',
-        marginBottom: '8px'
-    },
-    message: {
-        fontSize: '14px',
-        color: '#374151',
-        marginBottom: '6px'
-    },
-    issue: {
-        fontSize: '13px',
-        color: '#6b7280',
-        marginBottom: '4px'
-    },
-    issueId: {
-        fontWeight: '600',
-        color: '#2563eb'
-    },
-    issueLink: {
-        color: '#2563eb',
-        textDecoration: 'none',
-        fontSize: '12px'
-    },
-    thanks: {
-        fontSize: '13px',
-        color: '#6b7280',
-        marginTop: '12px',
-        marginBottom: '24px'
-    },
-    buttonRow: {
-        display: 'flex',
-        justifyContent: 'center',
-        gap: '12px'
-    }
-} as const;
 
 /**
  * Renders the post-submission success screen.
@@ -89,51 +35,58 @@ export function SuccessScreen({
     onClose
 }: SuccessScreenProps) {
     return (
-        <div style={styles.container}>
-            <div style={styles.successContainer}>
-                <div style={styles.icon}>&#10003;</div>
+        <div className="w-full max-w-[520px] font-sans">
+            <div className="px-4 py-6 text-center">
+                <div className="mb-3 text-5xl text-green-600 leading-none">&#10003;</div>
 
-                <p style={styles.title}>{FEEDBACK_STRINGS.success.title}</p>
-                <p style={styles.message}>{FEEDBACK_STRINGS.success.message}</p>
+                <p className="mb-2 font-bold text-foreground text-lg">
+                    {FEEDBACK_STRINGS.success.title}
+                </p>
+                <p className="mb-1.5 text-foreground/80 text-sm">
+                    {FEEDBACK_STRINGS.success.message}
+                </p>
 
                 {linearIssueId ? (
-                    <p style={styles.issue}>
+                    <p className="mb-1 text-muted-foreground text-xs">
                         {FEEDBACK_STRINGS.success.issueLabel}:{' '}
                         {linearIssueUrl ? (
                             <a
                                 href={linearIssueUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                style={styles.issueLink}
+                                className="text-primary no-underline hover:underline"
                             >
-                                <span style={styles.issueId}>{linearIssueId}</span>
+                                <span className="font-semibold">{linearIssueId}</span>
                             </a>
                         ) : (
-                            <span style={styles.issueId}>{linearIssueId}</span>
+                            <span className="font-semibold text-primary">{linearIssueId}</span>
                         )}
                     </p>
                 ) : (
-                    <p style={styles.issue}>{FEEDBACK_STRINGS.success.fallbackMessage}</p>
+                    <p className="mb-1 text-muted-foreground text-xs">
+                        {FEEDBACK_STRINGS.success.fallbackMessage}
+                    </p>
                 )}
 
-                <p style={styles.thanks}>{FEEDBACK_STRINGS.success.thanks}</p>
+                <p className="mt-3 mb-6 text-muted-foreground text-xs">
+                    {FEEDBACK_STRINGS.success.thanks}
+                </p>
 
-                <div style={styles.buttonRow}>
-                    <button
+                <div className="flex justify-center gap-3">
+                    <Button
                         type="button"
-                        style={buttonSecondaryStyle}
+                        variant="secondary"
                         onClick={onReset}
                     >
                         {FEEDBACK_STRINGS.buttons.submitAnother}
-                    </button>
+                    </Button>
                     {onClose && (
-                        <button
+                        <Button
                             type="button"
-                            style={buttonPrimaryStyle}
                             onClick={onClose}
                         >
                             {FEEDBACK_STRINGS.buttons.close}
-                        </button>
+                        </Button>
                     )}
                 </div>
             </div>

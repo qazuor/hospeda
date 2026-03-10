@@ -9,17 +9,11 @@ import { useState } from 'react';
 import { FEEDBACK_CONFIG, SEVERITY_LEVELS } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
 import type { FeedbackEnvironment, SeverityId } from '../../schemas/feedback.schema.js';
-import {
-    buttonPrimaryDisabledStyle,
-    buttonPrimaryStyle,
-    buttonRowStyle,
-    buttonSecondaryStyle,
-    fieldGroupStyle,
-    inputStyle,
-    labelStyle,
-    selectStyle,
-    textareaBaseStyle
-} from '../../styles/shared.js';
+import { Button } from '../../ui/Button.js';
+import { Input } from '../../ui/Input.js';
+import { Label } from '../../ui/Label.js';
+import { Select } from '../../ui/Select.js';
+import { Textarea } from '../../ui/Textarea.js';
 
 /** Data managed by step 2 of the feedback form (all optional) */
 export interface StepDetailsData {
@@ -65,108 +59,6 @@ export interface StepDetailsProps {
     /** Whether form is currently submitting */
     isSubmitting: boolean;
 }
-
-const styles = {
-    label: labelStyle,
-    input: inputStyle,
-    textarea: { ...textareaBaseStyle, minHeight: '80px' },
-    select: selectStyle,
-    fieldGroup: fieldGroupStyle,
-    buttonRow: buttonRowStyle,
-    buttonPrimary: buttonPrimaryStyle,
-    buttonPrimaryDisabled: buttonPrimaryDisabledStyle,
-    buttonSecondary: buttonSecondaryStyle,
-    uploadArea: {
-        border: '2px dashed #d1d5db',
-        borderRadius: '6px',
-        padding: '16px',
-        textAlign: 'center' as const,
-        backgroundColor: '#f9fafb',
-        cursor: 'pointer'
-    },
-    uploadHint: {
-        fontSize: '12px',
-        color: '#6b7280',
-        marginTop: '4px'
-    },
-    fileList: {
-        listStyle: 'none',
-        padding: 0,
-        margin: '8px 0 0 0'
-    },
-    fileItem: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '6px 10px',
-        backgroundColor: '#f3f4f6',
-        borderRadius: '4px',
-        marginBottom: '4px',
-        fontSize: '13px',
-        color: '#374151'
-    },
-    fileSize: {
-        color: '#6b7280',
-        fontSize: '12px',
-        marginLeft: '6px'
-    },
-    removeButton: {
-        background: 'none',
-        border: 'none',
-        color: '#ef4444',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: '700',
-        padding: '0 4px',
-        lineHeight: 1
-    },
-    techSection: {
-        border: '1px solid #e5e7eb',
-        borderRadius: '6px',
-        overflow: 'hidden'
-    },
-    techHeader: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '10px 14px',
-        backgroundColor: '#f3f4f6',
-        cursor: 'pointer',
-        border: 'none',
-        width: '100%',
-        textAlign: 'left' as const,
-        fontSize: '13px',
-        fontWeight: '600',
-        color: '#374151'
-    },
-    techBody: {
-        padding: '12px 14px'
-    },
-    techFieldGroup: {
-        marginBottom: '10px'
-    },
-    techLabel: {
-        display: 'block',
-        fontSize: '12px',
-        fontWeight: '500',
-        color: '#6b7280',
-        marginBottom: '2px'
-    },
-    techInput: {
-        width: '100%',
-        padding: '6px 10px',
-        border: '1px solid #e5e7eb',
-        borderRadius: '4px',
-        fontSize: '12px',
-        backgroundColor: '#fff',
-        boxSizing: 'border-box' as const
-    },
-    errorHint: {
-        fontSize: '12px',
-        color: '#6b7280',
-        fontStyle: 'italic'
-    }
-} as const;
 
 /** Format bytes into a human-readable string (e.g. "1.2 MB") */
 function formatFileSize(bytes: number): string {
@@ -245,18 +137,12 @@ export function StepDetails({
     };
 
     return (
-        <div>
+        <div className="space-y-4">
             {/* Severity */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-severity"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.severity}
-                </label>
-                <select
+            <div>
+                <Label htmlFor="feedback-severity">{FEEDBACK_STRINGS.fields.severity}</Label>
+                <Select
                     id="feedback-severity"
-                    style={styles.select}
                     value={data.severity ?? ''}
                     onChange={(e) => {
                         const val = e.target.value;
@@ -272,20 +158,14 @@ export function StepDetails({
                             {level.label} — {level.description}
                         </option>
                     ))}
-                </select>
+                </Select>
             </div>
 
             {/* Steps to reproduce */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-steps"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.stepsToReproduce}
-                </label>
-                <textarea
+            <div>
+                <Label htmlFor="feedback-steps">{FEEDBACK_STRINGS.fields.stepsToReproduce}</Label>
+                <Textarea
                     id="feedback-steps"
-                    style={styles.textarea}
                     value={data.stepsToReproduce ?? ''}
                     onChange={(e) =>
                         onChange(
@@ -298,16 +178,10 @@ export function StepDetails({
             </div>
 
             {/* Expected result */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-expected"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.expectedResult}
-                </label>
-                <textarea
+            <div>
+                <Label htmlFor="feedback-expected">{FEEDBACK_STRINGS.fields.expectedResult}</Label>
+                <Textarea
                     id="feedback-expected"
-                    style={styles.textarea}
                     value={data.expectedResult ?? ''}
                     onChange={(e) =>
                         onChange(
@@ -320,16 +194,10 @@ export function StepDetails({
             </div>
 
             {/* Actual result */}
-            <div style={styles.fieldGroup}>
-                <label
-                    htmlFor="feedback-actual"
-                    style={styles.label}
-                >
-                    {FEEDBACK_STRINGS.fields.actualResult}
-                </label>
-                <textarea
+            <div>
+                <Label htmlFor="feedback-actual">{FEEDBACK_STRINGS.fields.actualResult}</Label>
+                <Textarea
                     id="feedback-actual"
-                    style={styles.textarea}
                     value={data.actualResult ?? ''}
                     onChange={(e) =>
                         onChange('actualResult', e.target.value === '' ? undefined : e.target.value)
@@ -339,17 +207,19 @@ export function StepDetails({
             </div>
 
             {/* File attachments */}
-            <div style={styles.fieldGroup}>
-                <p style={{ ...styles.label, margin: '0 0 4px 0' }}>
+            <div>
+                <p className="mb-1 font-semibold text-foreground text-sm">
                     {FEEDBACK_STRINGS.fields.attachments}
                 </p>
                 {attachments.length < FEEDBACK_CONFIG.maxAttachments && (
                     <label
                         htmlFor="feedback-files"
-                        style={styles.uploadArea}
+                        className="block cursor-pointer rounded-md border-2 border-border border-dashed bg-muted/50 p-4 text-center transition-colors hover:bg-muted"
                     >
-                        <span>{FEEDBACK_STRINGS.fields.uploadButton}</span>
-                        <p style={styles.uploadHint}>
+                        <span className="font-medium text-sm">
+                            {FEEDBACK_STRINGS.fields.uploadButton}
+                        </span>
+                        <p className="mt-1 text-muted-foreground text-xs">
                             {FEEDBACK_STRINGS.fields.fileHintFormat} &mdash;{' '}
                             {FEEDBACK_STRINGS.fields.fileHintMaxSize.replace(
                                 '{size}',
@@ -363,20 +233,20 @@ export function StepDetails({
                                 ','
                             )}
                             multiple
-                            style={{ display: 'none' }}
+                            className="hidden"
                             onChange={handleFileChange}
                         />
                     </label>
                 )}
                 {fileRejections.length > 0 && (
                     <ul
-                        style={{ margin: '4px 0 0 0', padding: 0, listStyle: 'none' }}
+                        className="mt-1 list-none p-0"
                         role="alert"
                     >
                         {fileRejections.map((msg) => (
                             <li
                                 key={msg}
-                                style={{ color: '#dc2626', fontSize: '0.8rem', marginTop: '2px' }}
+                                className="mt-0.5 text-destructive text-xs"
                             >
                                 {msg}
                             </li>
@@ -384,22 +254,22 @@ export function StepDetails({
                     </ul>
                 )}
                 {attachments.length > 0 && (
-                    <ul style={styles.fileList}>
+                    <ul className="mt-2 list-none space-y-1 p-0">
                         {attachments.map((file, index) => (
                             <li
                                 // biome-ignore lint/suspicious/noArrayIndexKey: index is stable for attachment list
                                 key={index}
-                                style={styles.fileItem}
+                                className="flex items-center justify-between rounded bg-muted px-3 py-1.5 text-foreground text-sm"
                             >
                                 <span>
                                     {file.name}
-                                    <span style={styles.fileSize}>
+                                    <span className="ml-1.5 text-muted-foreground text-xs">
                                         ({formatFileSize(file.size)})
                                     </span>
                                 </span>
                                 <button
                                     type="button"
-                                    style={styles.removeButton}
+                                    className="p-0.5 font-bold text-destructive text-sm hover:text-destructive/80"
                                     onClick={() => onRemoveAttachment(index)}
                                     aria-label={FEEDBACK_STRINGS.fields.removeFileLabel.replace(
                                         '{name}',
@@ -415,10 +285,10 @@ export function StepDetails({
             </div>
 
             {/* Collapsible tech details */}
-            <div style={{ ...styles.fieldGroup, ...styles.techSection }}>
+            <div className="overflow-hidden rounded-md border border-border">
                 <button
                     type="button"
-                    style={styles.techHeader}
+                    className="flex w-full items-center justify-between bg-muted px-3.5 py-2.5 text-left font-semibold text-foreground text-xs"
                     onClick={() => setTechOpen((prev) => !prev)}
                     aria-expanded={techOpen}
                 >
@@ -427,18 +297,17 @@ export function StepDetails({
                 </button>
 
                 {techOpen && (
-                    <div style={styles.techBody}>
-                        <div style={styles.techFieldGroup}>
+                    <div className="space-y-2.5 p-3.5">
+                        <div>
                             <label
                                 htmlFor="tech-url"
-                                style={styles.techLabel}
+                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
                             >
                                 {FEEDBACK_STRINGS.techDetails.url}
                             </label>
-                            <input
+                            <Input
                                 id="tech-url"
-                                type="text"
-                                style={styles.techInput}
+                                className="h-7 text-xs"
                                 value={environment.currentUrl ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -449,17 +318,16 @@ export function StepDetails({
                             />
                         </div>
 
-                        <div style={styles.techFieldGroup}>
+                        <div>
                             <label
                                 htmlFor="tech-browser"
-                                style={styles.techLabel}
+                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
                             >
                                 {FEEDBACK_STRINGS.techDetails.browser}
                             </label>
-                            <input
+                            <Input
                                 id="tech-browser"
-                                type="text"
-                                style={styles.techInput}
+                                className="h-7 text-xs"
                                 value={environment.browser ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -470,17 +338,16 @@ export function StepDetails({
                             />
                         </div>
 
-                        <div style={styles.techFieldGroup}>
+                        <div>
                             <label
                                 htmlFor="tech-os"
-                                style={styles.techLabel}
+                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
                             >
                                 {FEEDBACK_STRINGS.techDetails.os}
                             </label>
-                            <input
+                            <Input
                                 id="tech-os"
-                                type="text"
-                                style={styles.techInput}
+                                className="h-7 text-xs"
                                 value={environment.os ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -491,17 +358,16 @@ export function StepDetails({
                             />
                         </div>
 
-                        <div style={styles.techFieldGroup}>
+                        <div>
                             <label
                                 htmlFor="tech-viewport"
-                                style={styles.techLabel}
+                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
                             >
                                 {FEEDBACK_STRINGS.techDetails.viewport}
                             </label>
-                            <input
+                            <Input
                                 id="tech-viewport"
-                                type="text"
-                                style={styles.techInput}
+                                className="h-7 text-xs"
                                 value={environment.viewport ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -512,17 +378,16 @@ export function StepDetails({
                             />
                         </div>
 
-                        <div style={styles.techFieldGroup}>
+                        <div>
                             <label
                                 htmlFor="tech-version"
-                                style={styles.techLabel}
+                                className="mb-0.5 block font-medium text-muted-foreground text-xs"
                             >
                                 {FEEDBACK_STRINGS.techDetails.version}
                             </label>
-                            <input
+                            <Input
                                 id="tech-version"
-                                type="text"
-                                style={styles.techInput}
+                                className="h-7 text-xs"
                                 value={environment.deployVersion ?? ''}
                                 onChange={(e) =>
                                     onEnvironmentChange(
@@ -534,11 +399,11 @@ export function StepDetails({
                         </div>
 
                         {environment.consoleErrors && environment.consoleErrors.length > 0 && (
-                            <div style={styles.techFieldGroup}>
-                                <span style={styles.techLabel}>
+                            <div>
+                                <span className="mb-0.5 block font-medium text-muted-foreground text-xs">
                                     {FEEDBACK_STRINGS.techDetails.consoleErrors}
                                 </span>
-                                <p style={styles.errorHint}>
+                                <p className="text-muted-foreground text-xs italic">
                                     {FEEDBACK_STRINGS.fields.consoleErrorsCount.replace(
                                         '{count}',
                                         String(environment.consoleErrors.length)
@@ -551,23 +416,22 @@ export function StepDetails({
             </div>
 
             {/* Action buttons */}
-            <div style={styles.buttonRow}>
-                <button
+            <div className="flex justify-between gap-3 pt-2">
+                <Button
                     type="button"
-                    style={styles.buttonSecondary}
+                    variant="secondary"
                     onClick={onBack}
                     disabled={isSubmitting}
                 >
                     {FEEDBACK_STRINGS.buttons.back}
-                </button>
-                <button
+                </Button>
+                <Button
                     type="button"
-                    style={isSubmitting ? styles.buttonPrimaryDisabled : styles.buttonPrimary}
                     onClick={onSubmit}
                     disabled={isSubmitting}
                 >
                     {FEEDBACK_STRINGS.buttons.submit}
-                </button>
+                </Button>
             </div>
         </div>
     );

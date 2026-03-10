@@ -16,6 +16,7 @@ import type { ErrorInfo, ReactNode } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { serializeFeedbackParams } from '../lib/query-params.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
+import { Button } from '../ui/Button.js';
 import { FeedbackModal } from './FeedbackModal.js';
 
 // ---------------------------------------------------------------------------
@@ -84,79 +85,6 @@ interface ErrorBoundaryState {
     /** Whether to show the inline FeedbackModal overlay. */
     showInlineForm: boolean;
 }
-
-// ---------------------------------------------------------------------------
-// Inline styles
-// ---------------------------------------------------------------------------
-
-const styles = {
-    container: {
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '200px',
-        padding: '24px'
-    },
-    card: {
-        backgroundColor: '#ffffff',
-        border: '1px solid #fca5a5',
-        borderRadius: '12px',
-        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08)',
-        maxWidth: '560px',
-        width: '100%',
-        padding: '32px'
-    },
-    header: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        marginBottom: '12px'
-    },
-    icon: {
-        fontSize: '22px',
-        lineHeight: 1,
-        flexShrink: 0
-    },
-    title: {
-        margin: 0,
-        fontSize: '18px',
-        fontWeight: 700,
-        color: '#b91c1c'
-    },
-    message: {
-        margin: '0 0 24px',
-        fontSize: '14px',
-        color: '#4b5563',
-        lineHeight: 1.6
-    },
-    actions: {
-        display: 'flex',
-        gap: '12px',
-        flexWrap: 'wrap' as const
-    },
-    reportButton: {
-        padding: '10px 20px',
-        backgroundColor: '#b91c1c',
-        color: '#ffffff',
-        border: 'none',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        lineHeight: 1.2
-    },
-    reloadButton: {
-        padding: '10px 20px',
-        backgroundColor: '#f3f4f6',
-        color: '#374151',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        fontSize: '14px',
-        fontWeight: 600,
-        cursor: 'pointer',
-        lineHeight: 1.2
-    }
-} as const;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -387,42 +315,46 @@ export class FeedbackErrorBoundary extends Component<
      */
     private renderDefaultFallback(): ReactNode {
         return (
-            <div style={styles.container}>
+            <div className="flex min-h-[200px] items-center justify-center p-6">
                 <div
-                    style={styles.card}
+                    className="w-full max-w-[560px] rounded-xl border border-destructive/40 bg-card p-8 shadow-lg"
                     role="alert"
                     aria-live="assertive"
                 >
-                    <div style={styles.header}>
+                    <div className="mb-3 flex items-center gap-2.5">
                         <span
-                            style={styles.icon}
+                            className="shrink-0 text-xl leading-none"
                             aria-hidden="true"
                         >
                             ⚠️
                         </span>
-                        <h2 style={styles.title}>{FEEDBACK_STRINGS.errorBoundary.title}</h2>
+                        <h2 className="m-0 font-bold text-destructive text-lg">
+                            {FEEDBACK_STRINGS.errorBoundary.title}
+                        </h2>
                     </div>
 
-                    <p style={styles.message}>{FEEDBACK_STRINGS.errorBoundary.message}</p>
+                    <p className="mb-6 text-muted-foreground text-sm leading-relaxed">
+                        {FEEDBACK_STRINGS.errorBoundary.message}
+                    </p>
 
-                    <div style={styles.actions}>
-                        <button
+                    <div className="flex flex-wrap gap-3">
+                        <Button
                             type="button"
-                            style={styles.reportButton}
+                            variant="destructive"
                             onClick={this.handleReportClick}
                             data-testid="error-boundary-report-button"
                         >
                             {FEEDBACK_STRINGS.buttons.reportError}
-                        </button>
+                        </Button>
 
-                        <button
+                        <Button
                             type="button"
-                            style={styles.reloadButton}
+                            variant="outline"
                             onClick={this.handleReloadClick}
                             data-testid="error-boundary-reload-button"
                         >
                             {FEEDBACK_STRINGS.buttons.reloadPage}
-                        </button>
+                        </Button>
                     </div>
                 </div>
             </div>
