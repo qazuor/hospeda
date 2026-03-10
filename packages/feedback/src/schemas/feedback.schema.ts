@@ -70,7 +70,7 @@ export const feedbackEnvironmentSchema = z.object({
     /** Internal user ID if the user is authenticated */
     userId: z.string().optional(),
     /** Last N console.error() calls captured before the report */
-    consoleErrors: z.array(z.string()).optional(),
+    consoleErrors: z.array(z.string().max(500)).max(20).optional(),
     /** Error message and stack trace when submitted from an error boundary */
     errorInfo: feedbackErrorInfoSchema.optional()
 });
