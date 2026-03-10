@@ -3,15 +3,12 @@ import { CATEGORY_DISPLAY_ORDER } from '../categories.js';
 import { getCuratedCommands } from '../registry.js';
 import type { CommandCategory } from '../types.js';
 
-const DANGEROUS_IDS = new Set([
-    'db:reset',
-    'db:fresh',
-    'db:fresh-dev',
-    'db:migrate:prod',
-    'db:push',
-    'env:push',
-    'clean'
-]);
+/** Derive dangerous IDs from actual registry data to avoid hardcoded desync */
+const DANGEROUS_IDS = new Set(
+    getCuratedCommands()
+        .filter((c) => c.dangerous)
+        .map((c) => c.id)
+);
 
 const REQUIRED_IDS = ['db:start', 'dev:all', 'test', 'lint', 'build', 'env:check'];
 
@@ -32,7 +29,7 @@ describe('getCuratedCommands', () => {
 
     it('should have dangerMessage set on all 7 dangerous commands', () => {
         const commands = getCuratedCommands();
-        const dangerousCommands = commands.filter((c) => DANGEROUS_IDS.has(c.id));
+        const dangerousCommands = commands.filter((c) => c.dangerous);
 
         expect(dangerousCommands).toHaveLength(7);
 
@@ -40,6 +37,21 @@ describe('getCuratedCommands', () => {
             expect(cmd.dangerous).toBe(true);
             expect(typeof cmd.dangerMessage).toBe('string');
             expect((cmd.dangerMessage ?? '').length).toBeGreaterThan(0);
+        }
+    });
+
+    it('should include known dangerous commands', () => {
+        const expectedDangerous = [
+            'db:reset',
+            'db:fresh',
+            'db:fresh-dev',
+            'db:migrate:prod',
+            'db:push',
+            'env:push',
+            'clean'
+        ];
+        for (const id of expectedDangerous) {
+            expect(DANGEROUS_IDS.has(id)).toBe(true);
         }
     });
 
