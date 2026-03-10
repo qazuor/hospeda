@@ -139,15 +139,23 @@ export function FeedbackModal({ isOpen, onClose, formProps }: FeedbackModalProps
             if (!dialog.open) {
                 dialog.showModal();
             }
+            // Fallback scroll lock for browsers where showModal() does not
+            // fully prevent body scrolling (e.g. some mobile WebKit builds).
+            document.body.style.overflow = 'hidden';
         } else {
             if (dialog.open) {
                 dialog.close();
             }
+            document.body.style.overflow = '';
             // Restore focus to the element that was active before opening
             if (previousFocusRef.current instanceof HTMLElement) {
                 previousFocusRef.current.focus();
             }
         }
+
+        return () => {
+            document.body.style.overflow = '';
+        };
     }, [isOpen]);
 
     // ------------------------------------------------------------------ //
