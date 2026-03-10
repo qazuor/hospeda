@@ -26,6 +26,7 @@ import {
     ValidationResultSchema
 } from '../../schemas/promo-code.schema';
 import { PromoCodeService } from '../../services/promo-code.service';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import {
@@ -95,7 +96,8 @@ export const createPromoCodeRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestBody: CreatePromoCodeSchema,
     responseSchema: PromoCodeResponseSchema,
-    handler: async (_c, _params, body) => {
+    handler: async (c, _params, body) => {
+        const actor = getActorFromContext(c);
         const service = new PromoCodeService();
 
         apiLogger.info('Creating promo code');
@@ -125,6 +127,14 @@ export const createPromoCodeRoute = createAdminRoute({
                 message: result.error?.message ?? 'Unknown error'
             });
         }
+
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'create',
+            resourceType: 'promo_code',
+            resourceId: result.data.id as string
+        });
 
         return result.data;
     }
@@ -188,7 +198,8 @@ export const updatePromoCodeRoute = createAdminRoute({
     },
     requestBody: UpdatePromoCodeSchema,
     responseSchema: PromoCodeResponseSchema,
-    handler: async (_c, params, body) => {
+    handler: async (c, params, body) => {
+        const actor = getActorFromContext(c);
         const service = new PromoCodeService();
 
         apiLogger.info('Updating promo code');
@@ -213,6 +224,14 @@ export const updatePromoCodeRoute = createAdminRoute({
             });
         }
 
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'update',
+            resourceType: 'promo_code',
+            resourceId: params.id as string
+        });
+
         return result.data;
     }
 });
@@ -233,7 +252,8 @@ export const deletePromoCodeRoute = createAdminRoute({
         id: z.string().uuid('Invalid promo code ID')
     },
     responseSchema: z.null(),
-    handler: async (_c, params) => {
+    handler: async (c, params) => {
+        const actor = getActorFromContext(c);
         const service = new PromoCodeService();
 
         apiLogger.info('Deleting promo code');
@@ -252,6 +272,14 @@ export const deletePromoCodeRoute = createAdminRoute({
                 message: result.error?.message ?? 'Unknown error'
             });
         }
+
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'delete',
+            resourceType: 'promo_code',
+            resourceId: params.id as string
+        });
 
         return null;
     }

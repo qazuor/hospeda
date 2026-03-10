@@ -12,6 +12,7 @@ import type { MiddlewareHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { AuthorizationConfig } from '../types/authorization';
 import { getActorFromContext, isGuestActor } from '../utils/actor';
+import { AuditEventType, auditLog } from '../utils/audit-logger';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -87,6 +88,15 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
         // Reject system actors early: they must never reach HTTP endpoints
         if (actor._isSystemActor) {
             apiLogger.warn(`System actor rejected from HTTP context: actorId=${actor.id}`);
+            auditLog({
+                auditEvent: AuditEventType.ACCESS_DENIED,
+                actorId: actor.id,
+                actorRole: actor.role,
+                resource: c.req.path,
+                method: c.req.method,
+                statusCode: 403,
+                reason: 'system_actor_rejected'
+            });
             throw new HTTPException(403, { message: 'System actors cannot access HTTP endpoints' });
         }
 
@@ -104,6 +114,15 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
         if (level === 'protected') {
             if (isGuestActor(actor)) {
                 apiLogger.warn('Unauthorized access attempt to protected route by guest actor');
+                auditLog({
+                    auditEvent: AuditEventType.ACCESS_DENIED,
+                    actorId: 'anonymous',
+                    actorRole: 'guest',
+                    resource: c.req.path,
+                    method: c.req.method,
+                    statusCode: 401,
+                    reason: 'authentication_required'
+                });
                 throw new HTTPException(401, {
                     message: unauthorizedMessage || 'Authentication required'
                 });
@@ -115,6 +134,16 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
                     apiLogger.warn(
                         `Forbidden: Actor ${actor.id} lacks required permissions for protected route`
                     );
+                    auditLog({
+                        auditEvent: AuditEventType.ACCESS_DENIED,
+                        actorId: actor.id,
+                        actorRole: actor.role,
+                        resource: c.req.path,
+                        method: c.req.method,
+                        statusCode: 403,
+                        reason: 'insufficient_permissions',
+                        requiredPermissions: requiredPermissions.map(String)
+                    });
                     throw new HTTPException(403, {
                         message: forbiddenMessage || 'Insufficient permissions'
                     });
@@ -130,6 +159,15 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             // First check authentication
             if (isGuestActor(actor)) {
                 apiLogger.warn('Unauthorized access attempt to admin route by guest actor');
+                auditLog({
+                    auditEvent: AuditEventType.ACCESS_DENIED,
+                    actorId: 'anonymous',
+                    actorRole: 'guest',
+                    resource: c.req.path,
+                    method: c.req.method,
+                    statusCode: 401,
+                    reason: 'authentication_required'
+                });
                 throw new HTTPException(401, {
                     message: unauthorizedMessage || 'Authentication required'
                 });
@@ -138,6 +176,16 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             // Then check admin access
             if (!hasAdminAccess(actor)) {
                 apiLogger.warn(`Forbidden: Actor ${actor.id} lacks admin access`);
+                auditLog({
+                    auditEvent: AuditEventType.ACCESS_DENIED,
+                    actorId: actor.id,
+                    actorRole: actor.role,
+                    resource: c.req.path,
+                    method: c.req.method,
+                    statusCode: 403,
+                    reason: 'admin_access_required',
+                    requiredPermissions: ADMIN_ACCESS_PERMISSIONS.map(String)
+                });
                 throw new HTTPException(403, {
                     message: forbiddenMessage || 'Admin access required'
                 });
@@ -147,6 +195,16 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             if (requiredPermissions && requiredPermissions.length > 0) {
                 if (!hasAllPermissions(actor, requiredPermissions)) {
                     apiLogger.warn(`Forbidden: Actor ${actor.id} lacks required admin permissions`);
+                    auditLog({
+                        auditEvent: AuditEventType.ACCESS_DENIED,
+                        actorId: actor.id,
+                        actorRole: actor.role,
+                        resource: c.req.path,
+                        method: c.req.method,
+                        statusCode: 403,
+                        reason: 'insufficient_permissions',
+                        requiredPermissions: requiredPermissions.map(String)
+                    });
                     throw new HTTPException(403, {
                         message: forbiddenMessage || 'Insufficient admin permissions'
                     });

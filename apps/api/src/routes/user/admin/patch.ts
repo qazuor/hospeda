@@ -6,6 +6,7 @@ import { PermissionEnum, UserAdminSchema, UserIdSchema, UserPatchInputSchema } f
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { transformApiInputToDomain } from '../../../utils/openapi-schema';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -38,10 +39,44 @@ export const adminPatchUserRoute = createAdminRoute({
         // Transform API input (string dates) to domain format (Date objects)
         const domainInput = transformApiInputToDomain(body);
 
+        // Fetch previous user state for permission change audit
+        const prevResult = await userService.getById(actor, id);
+        const previousUser = prevResult.data;
+
         const result = await userService.update(actor, id, domainInput as never);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // Audit permission/role changes
+        if (result.data && previousUser) {
+            const patchRole = domainInput.role as string | undefined;
+            if (patchRole !== undefined && patchRole !== previousUser.role) {
+                auditLog({
+                    auditEvent: AuditEventType.PERMISSION_CHANGE,
+                    actorId: actor.id,
+                    targetUserId: id,
+                    changeType: 'role_assignment',
+                    oldValue: previousUser.role,
+                    newValue: patchRole
+                });
+            }
+            const patchPermissions = domainInput.permissions as string[] | undefined;
+            if (patchPermissions !== undefined) {
+                const oldPerms = (previousUser.permissions ?? []).sort().join(',');
+                const newPerms = [...patchPermissions].sort().join(',');
+                if (oldPerms !== newPerms) {
+                    auditLog({
+                        auditEvent: AuditEventType.PERMISSION_CHANGE,
+                        actorId: actor.id,
+                        targetUserId: id,
+                        changeType: 'permission_grant',
+                        oldValue: oldPerms,
+                        newValue: newPerms
+                    });
+                }
+            }
         }
 
         // Invalidate cache for the updated user

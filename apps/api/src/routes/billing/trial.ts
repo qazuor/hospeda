@@ -17,8 +17,10 @@
 import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { TrialService } from '../../services/trial.service';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
@@ -233,6 +235,7 @@ export const extendTrialRoute = createAdminRoute({
             });
         }
 
+        const actor = getActorFromContext(c);
         const { subscriptionId, additionalDays } = body as {
             subscriptionId: string;
             additionalDays: number;
@@ -245,6 +248,14 @@ export const extendTrialRoute = createAdminRoute({
             const result = await trialService.extendTrial({
                 subscriptionId,
                 additionalDays
+            });
+
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actor.id,
+                action: 'update',
+                resourceType: 'trial',
+                resourceId: subscriptionId
             });
 
             return {
@@ -377,11 +388,20 @@ export const handleCheckExpiry = async (
         });
     }
 
+    const actor = getActorFromContext(c);
     const billing = getQZPayBilling();
     const trialService = new TrialService(billing);
 
     try {
         const blockedCount = await trialService.blockExpiredTrials();
+
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'update',
+            resourceType: 'trial_expiry_check',
+            resourceId: 'batch'
+        });
 
         return {
             success: true,

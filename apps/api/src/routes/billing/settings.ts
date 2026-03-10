@@ -16,6 +16,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getBillingSettingsService } from '../../services/billing-settings.service';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
@@ -117,6 +118,14 @@ export const updateBillingSettingsRoute = createAdminRoute({
                 'Billing settings updated via API'
             );
 
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actorId ?? 'unknown',
+                action: 'update',
+                resourceType: 'billing_settings',
+                resourceId: 'global'
+            });
+
             return updatedSettings;
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -172,6 +181,14 @@ export const resetBillingSettingsRoute = createAdminRoute({
                 },
                 'Billing settings reset to defaults via API'
             );
+
+            auditLog({
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: actorId ?? 'unknown',
+                action: 'update',
+                resourceType: 'billing_settings',
+                resourceId: 'default'
+            });
 
             return {
                 success: true,

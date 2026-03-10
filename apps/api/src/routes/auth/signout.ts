@@ -1,5 +1,6 @@
 import { AuthSignOutResponseSchema } from '@repo/schemas';
 import { clearRateLimitForIp, getClientIp } from '../../middlewares/rate-limit';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 import { userCache } from '../../utils/user-cache';
@@ -36,6 +37,12 @@ export const authSignOutRoute = createSimpleRoute({
                 const ip = getClientIp({ c });
                 await clearRateLimitForIp({ ip });
                 apiLogger.debug(`Rate limit entries cleared for IP ${ip} during sign out`);
+
+                auditLog({
+                    auditEvent: AuditEventType.SESSION_SIGNOUT,
+                    actorId: userId,
+                    ip
+                });
             }
 
             return {
