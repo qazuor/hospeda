@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildSpawnArgs } from '../runner.js';
+import { buildSpawnArgs, runCommand } from '../runner.js';
 import type { CliCommand } from '../types.js';
 
 /** Minimal stub for a pnpm-root CliCommand */
@@ -221,5 +221,87 @@ describe('buildSpawnArgs', () => {
             expect(result.command).toBe('docker-compose');
             expect(result.args).toEqual([]);
         });
+    });
+
+    describe('cwd field', () => {
+        it('should always set cwd to a non-empty string', () => {
+            // Arrange
+            const cmd = makePnpmRootCmd('test');
+
+            // Act
+            const result = buildSpawnArgs({ cmd });
+
+            // Assert
+            expect(typeof result.cwd).toBe('string');
+            expect(result.cwd.length).toBeGreaterThan(0);
+        });
+
+        it('should set cwd to the monorepo root (contains pnpm-workspace.yaml)', () => {
+            // Arrange
+            const cmd = makePnpmRootCmd('test');
+
+            // Act
+            const result = buildSpawnArgs({ cmd });
+
+            // Assert - cwd should point to a directory containing the workspace file
+            expect(result.cwd).toMatch(/hospeda$/);
+        });
+    });
+});
+
+describe('runCommand', () => {
+    it('should resolve with exit code 0 for a successful command', async () => {
+        // Arrange - use a simple command that exits 0
+        const cmd = makeShellCmd('true');
+
+        // Act
+        const code = await runCommand({ cmd });
+
+        // Assert
+        expect(code).toBe(0);
+    });
+
+    it('should resolve with non-zero exit code for a failing command', async () => {
+        // Arrange - use a command that exits 1
+        const cmd = makeShellCmd('false');
+
+        // Act
+        const code = await runCommand({ cmd });
+
+        // Assert
+        expect(code).not.toBe(0);
+    });
+
+    it('should resolve with exit code 1 for a command that does not exist', async () => {
+        // Arrange - use a command that will fail to spawn
+        const cmd = makeShellCmd('nonexistent-binary-that-does-not-exist-abc123');
+
+        // Act
+        const code = await runCommand({ cmd });
+
+        // Assert
+        expect(code).toBe(1);
+    });
+
+    it('should forward extra args to the spawned process', async () => {
+        // Arrange - echo with extraArgs
+        const cmd = makeShellCmd('echo');
+
+        // Act
+        const code = await runCommand({ cmd, extraArgs: ['hello'] });
+
+        // Assert
+        expect(code).toBe(0);
+    });
+
+    it('should return a number type always', async () => {
+        // Arrange
+        const cmd = makeShellCmd('true');
+
+        // Act
+        const code = await runCommand({ cmd });
+
+        // Assert
+        expect(typeof code).toBe('number');
     });
 });

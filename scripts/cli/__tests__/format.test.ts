@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+    calculateIdPad,
     formatBanner,
     formatCommandLine,
+    formatDangerWarning,
+    formatExecutionInfo,
     formatHelp,
     formatList,
     formatResult
@@ -15,27 +18,39 @@ function stripAnsi(str: string): string {
     return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
+/** Base defaults for a safe (non-dangerous) test command */
+const CMD_DEFAULTS = {
+    id: 'test-cmd',
+    description: 'A test command for unit tests',
+    category: 'testing' as const,
+    execution: { type: 'pnpm-root' as const, script: 'test' },
+    source: 'root',
+    mode: 'one-shot' as const,
+    curated: true
+} satisfies CliCommand;
+
 function makeCmd(overrides: Partial<CliCommand> = {}): CliCommand {
-    return {
-        id: 'test-cmd',
-        description: 'A test command for unit tests',
-        category: 'testing',
-        execution: { type: 'pnpm-root', script: 'test' },
-        source: 'root',
-        mode: 'one-shot',
-        curated: true,
-        ...overrides
-    };
+    if (overrides.dangerous === true) {
+        return {
+            ...CMD_DEFAULTS,
+            ...overrides,
+            dangerous: true,
+            dangerMessage:
+                (overrides as { dangerMessage?: string }).dangerMessage ??
+                'This is a dangerous operation'
+        };
+    }
+    return { ...CMD_DEFAULTS, ...overrides } as CliCommand;
 }
 
 describe('formatBanner', () => {
-    it('should include version string v1.0.0', () => {
+    it('should include version string from package.json', () => {
         // Arrange & Act
         const banner = formatBanner();
         const plain = stripAnsi(banner);
 
-        // Assert
-        expect(plain).toContain('v1.0.0');
+        // Assert - version is read from root package.json (currently 0.0.1)
+        expect(plain).toMatch(/v\d+\.\d+\.\d+/);
     });
 
     it('should include the Hospeda CLI title', () => {
@@ -155,7 +170,7 @@ describe('formatHelp', () => {
         const help = stripAnsi(formatHelp({ commands }));
 
         // Assert
-        expect(help).toContain('v1.0.0');
+        expect(help).toMatch(/v\d+\.\d+\.\d+/);
     });
 
     it('should include usage instructions', () => {
@@ -316,5 +331,210 @@ describe('formatResult', () => {
 
         // Assert
         expect(result).toContain('2.5s');
+    });
+});
+
+describe('formatExecutionInfo', () => {
+    it('should include the command ID', () => {
+        // Arrange
+        const cmd = makeCmd({ id: 'db:start' });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('db:start');
+    });
+
+    it('should show "Running:" label', () => {
+        // Arrange
+        const cmd = makeCmd({ id: 'test' });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('Running:');
+    });
+
+    it('should show the pnpm command for pnpm-root execution', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'build',
+            execution: { type: 'pnpm-root', script: 'build' }
+        });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('pnpm run build');
+    });
+
+    it('should show the pnpm --filter command for pnpm-filter execution', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'db:seed',
+            execution: { type: 'pnpm-filter', filter: '@repo/seed', script: 'seed' }
+        });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('pnpm --filter @repo/seed seed');
+    });
+
+    it('should show the raw command for shell execution', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'dev:all',
+            execution: { type: 'shell', command: './scripts/dev-all.sh' }
+        });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('./scripts/dev-all.sh');
+    });
+
+    it('should show argHint tip when present', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'test',
+            argHint: '--watch, --coverage'
+        });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).toContain('--watch, --coverage');
+        expect(info).toContain('Tip:');
+    });
+
+    it('should not show Tip when no argHint', () => {
+        // Arrange
+        const cmd = makeCmd({ id: 'test' });
+
+        // Act
+        const info = stripAnsi(formatExecutionInfo({ cmd }));
+
+        // Assert
+        expect(info).not.toContain('Tip:');
+    });
+});
+
+describe('formatDangerWarning', () => {
+    it('should include the command ID', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'db:reset',
+            dangerous: true,
+            dangerMessage: 'Drops all data'
+        });
+
+        // Act
+        const warning = stripAnsi(formatDangerWarning({ cmd }));
+
+        // Assert
+        expect(warning).toContain('db:reset');
+    });
+
+    it('should include the danger message', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'db:reset',
+            dangerous: true,
+            dangerMessage: 'This will destroy everything'
+        });
+
+        // Act
+        const warning = stripAnsi(formatDangerWarning({ cmd }));
+
+        // Assert
+        expect(warning).toContain('This will destroy everything');
+    });
+
+    it('should show fallback message when dangerMessage is missing', () => {
+        // Arrange - simulate a discovered command with no dangerMessage
+        const cmd = {
+            id: 'unknown-danger',
+            description: 'Some command',
+            category: 'testing' as const,
+            execution: { type: 'pnpm-root' as const, script: 'test' },
+            source: 'root',
+            mode: 'one-shot' as const,
+            curated: false
+        } as CliCommand;
+
+        // Act
+        const warning = stripAnsi(formatDangerWarning({ cmd }));
+
+        // Assert
+        expect(warning).toContain('This operation may be irreversible.');
+    });
+
+    it('should contain the ⚠ warning symbol', () => {
+        // Arrange
+        const cmd = makeCmd({
+            id: 'db:fresh',
+            dangerous: true,
+            dangerMessage: 'Resets DB'
+        });
+
+        // Act
+        const warning = formatDangerWarning({ cmd });
+
+        // Assert
+        expect(warning).toContain('⚠');
+    });
+});
+
+describe('calculateIdPad', () => {
+    it('should return MIN_ID_PAD for empty commands', () => {
+        // Arrange & Act
+        const pad = calculateIdPad({ commands: [] });
+
+        // Assert
+        expect(pad).toBe(22);
+    });
+
+    it('should return MIN_ID_PAD when all IDs are short', () => {
+        // Arrange
+        const commands = [makeCmd({ id: 'dev' }), makeCmd({ id: 'test' })];
+
+        // Act
+        const pad = calculateIdPad({ commands });
+
+        // Assert
+        expect(pad).toBe(22);
+    });
+
+    it('should increase padding for long IDs', () => {
+        // Arrange
+        const commands = [makeCmd({ id: 'a-very-long-command-id-that-exceeds-min-pad' })];
+
+        // Act
+        const pad = calculateIdPad({ commands });
+
+        // Assert
+        expect(pad).toBeGreaterThan(22);
+        expect(pad).toBe('a-very-long-command-id-that-exceeds-min-pad'.length + 2);
+    });
+
+    it('should use the longest ID to calculate padding', () => {
+        // Arrange
+        const commands = [
+            makeCmd({ id: 'short' }),
+            makeCmd({ id: 'this-is-a-much-longer-id-for-testing' })
+        ];
+
+        // Act
+        const pad = calculateIdPad({ commands });
+
+        // Assert
+        expect(pad).toBe('this-is-a-much-longer-id-for-testing'.length + 2);
     });
 });
