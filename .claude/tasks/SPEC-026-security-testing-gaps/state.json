@@ -1,0 +1,172 @@
+{
+    "specId": "SPEC-026",
+    "title": "Security Testing Gaps",
+    "status": "completed",
+    "createdAt": "2026-03-03T00:00:00.000Z",
+    "revisedAt": "2026-03-10T00:00:00.000Z",
+    "specVersion": "v9",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Analyze webhook route and QZPay integration",
+            "phase": "webhook-testing",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"]
+        },
+        {
+            "id": "T-002",
+            "title": "Write integration tests for webhook signature handling",
+            "phase": "webhook-testing",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"]
+        },
+        {
+            "id": "T-003",
+            "title": "Write integration tests for webhook idempotency with DB verification",
+            "phase": "webhook-testing",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"]
+        },
+        {
+            "id": "T-004",
+            "title": "Add lockout env vars to ApiEnvSchema",
+            "phase": "brute-force-protection",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-005"]
+        },
+        {
+            "id": "T-005",
+            "title": "Create auth-lockout store",
+            "phase": "brute-force-protection",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007"]
+        },
+        {
+            "id": "T-006",
+            "title": "Integrate lockout handler into auth handler",
+            "phase": "brute-force-protection",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"]
+        },
+        {
+            "id": "T-007",
+            "title": "Write unit tests for auth-lockout store",
+            "phase": "brute-force-protection",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008"]
+        },
+        {
+            "id": "T-008",
+            "title": "Write integration test for login lockout flow",
+            "phase": "brute-force-protection",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-015"]
+        },
+        {
+            "id": "T-009",
+            "title": "Create audit-logger utility",
+            "phase": "audit-logging",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-010a", "T-010b", "T-010c", "T-011"]
+        },
+        {
+            "id": "T-010a",
+            "title": "Add audit log calls to authorization middleware",
+            "phase": "audit-logging",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"]
+        },
+        {
+            "id": "T-010b",
+            "title": "Add audit log calls to billing admin routes",
+            "phase": "audit-logging",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"]
+        },
+        {
+            "id": "T-010c",
+            "title": "Add audit log calls to user admin routes and signout",
+            "phase": "audit-logging",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"]
+        },
+        {
+            "id": "T-011",
+            "title": "Write unit tests for audit logger",
+            "phase": "audit-logging",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"]
+        },
+        {
+            "id": "T-012",
+            "title": "Write integration test for audit log production",
+            "phase": "audit-logging",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-010a", "T-010b", "T-010c", "T-011"],
+            "blocks": ["T-015"]
+        },
+        {
+            "id": "T-013",
+            "title": "Write integration tests for session invalidation on signout",
+            "phase": "session-testing",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-014"]
+        },
+        {
+            "id": "T-014",
+            "title": "Verify signout flow with multiple sessions",
+            "phase": "session-testing",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"]
+        },
+        {
+            "id": "T-015",
+            "title": "Run full test suite and verify zero regressions",
+            "phase": "verification",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-002", "T-003", "T-008", "T-012", "T-014"],
+            "blocks": ["T-016"]
+        },
+        {
+            "id": "T-016",
+            "title": "Update SPEC-019 notes and close SPEC-026",
+            "phase": "verification",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": ["T-015"],
+            "blocks": []
+        }
+    ]
+}
