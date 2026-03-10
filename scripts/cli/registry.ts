@@ -1,6 +1,6 @@
 import type { CliCommand } from './types.js';
 
-/** All 45 curated commands for the Hospeda CLI */
+/** All 46 curated commands for the Hospeda CLI */
 const CURATED_COMMANDS: readonly CliCommand[] = [
     // ── Development (5) ──────────────────────────────────────
     {
@@ -178,7 +178,10 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         execution: { type: 'pnpm-filter', filter: '@repo/db', script: 'db:push' },
         source: '@repo/db',
         mode: 'one-shot',
-        curated: true
+        curated: true,
+        dangerous: true,
+        dangerMessage:
+            'Pushes schema directly to the database without a migration. May cause data loss.'
     },
 
     // ── Testing (5) ──────────────────────────────────────────
@@ -292,6 +295,15 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         mode: 'one-shot',
         curated: true
     },
+    {
+        id: 'format:md:claude',
+        description: 'Format markdown in Claude config files',
+        category: 'code-quality',
+        execution: { type: 'pnpm-root', script: 'format:md:claude' },
+        source: 'root',
+        mode: 'one-shot',
+        curated: true
+    },
 
     // ── Build (3) ────────────────────────────────────────────
     {
@@ -342,7 +354,9 @@ const CURATED_COMMANDS: readonly CliCommand[] = [
         execution: { type: 'pnpm-root', script: 'env:push' },
         source: 'root',
         mode: 'interactive',
-        curated: true
+        curated: true,
+        dangerous: true,
+        dangerMessage: 'Overwrites remote environment variables. This affects production.'
     },
     {
         id: 'env:check',

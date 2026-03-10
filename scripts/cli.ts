@@ -4,4 +4,4 @@
  */
 import { main } from './cli/main.js';
 
-main();
+main().then((code) => process.exit(code));
