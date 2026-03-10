@@ -49,8 +49,10 @@ export function createSearchIndex({
  * Searches the command index with a fuzzy query and returns matching commands.
  *
  * Results are returned in ascending score order (lower score = better match).
- * An empty query returns an empty array so callers can distinguish "no input"
- * from "no matches".
+ * An empty query (or one consisting only of whitespace) returns an empty array
+ * so callers can distinguish "no input" from "no matches". Queries exceeding
+ * 200 characters are also rejected and return an empty array to guard against
+ * excessively long inputs.
  *
  * @param input - Object containing the Fuse index and the search query
  * @returns Matching {@link CliCommand} objects sorted by relevance
@@ -68,7 +70,7 @@ export function searchCommands({
     fuse: Fuse<CliCommand>;
     query: string;
 }): CliCommand[] {
-    if (query.trim().length === 0) {
+    if (query.trim().length === 0 || query.length > 200) {
         return [];
     }
 
