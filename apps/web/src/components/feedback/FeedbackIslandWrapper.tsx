@@ -35,6 +35,8 @@ export interface FeedbackIslandWrapperProps {
     userName?: string;
     /** Authenticated user's ID (optional, attached to error reports) */
     userId?: string;
+    /** Locale for the feedback page URL (defaults to 'es') */
+    locale?: string;
 }
 
 /**
@@ -50,13 +52,14 @@ export function FeedbackIslandWrapper({
     apiUrl,
     userEmail,
     userName,
-    userId
+    userId,
+    locale = 'es'
 }: FeedbackIslandWrapperProps): React.JSX.Element {
     return (
         <FeedbackErrorBoundary
             appSource="web"
             apiUrl={apiUrl}
-            feedbackPageUrl="/es/feedback/"
+            feedbackPageUrl={`/${locale}/feedback/`}
             userEmail={userEmail}
             userName={userName}
             userId={userId}
