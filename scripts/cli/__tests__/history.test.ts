@@ -1,73 +1,17 @@
-import { mkdtemp, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_ENTRIES, getRecentCommands } from '../history.js';
+import {
+    HISTORY_FILE,
+    MAX_ENTRIES,
+    getRecentCommands,
+    readHistory,
+    recordCommand
+} from '../history.js';
 import type { CliHistory } from '../types.js';
 
-/**
- * The history file name used by the module.
- * Defined here to avoid importing it through the mocked module.
- */
-const HISTORY_FILE = '.cli-history.json';
-
 let tempDir = '';
-
-/** Helper: read raw CliHistory from tempDir */
-async function readFromDir(dir: string): Promise<CliHistory> {
-    const historyPath = join(dir, HISTORY_FILE);
-    try {
-        const raw = await readFile(historyPath, 'utf-8');
-        const parsed: unknown = JSON.parse(raw);
-        if (
-            typeof parsed === 'object' &&
-            parsed !== null &&
-            'version' in parsed &&
-            'entries' in parsed &&
-            (parsed as { version: unknown }).version === 1 &&
-            Array.isArray((parsed as { entries: unknown }).entries)
-        ) {
-            return parsed as CliHistory;
-        }
-        return { version: 1, entries: [] };
-    } catch {
-        return { version: 1, entries: [] };
-    }
-}
-
-/** Helper: record a command directly in a given dir (bypassing module's findMonorepoRoot) */
-async function recordInDir(dir: string, id: string): Promise<void> {
-    const historyPath = join(dir, HISTORY_FILE);
-    const tmpPath = join(dir, `${HISTORY_FILE}.tmp`);
-
-    const current = await readFromDir(dir);
-    const now = new Date().toISOString();
-
-    const existing = current.entries.find((e) => e.id === id);
-
-    let updatedEntries: Array<{ id: string; lastRun: string; runCount: number }>;
-    if (existing !== undefined) {
-        updatedEntries = current.entries.map((e) =>
-            e.id === id ? { id: e.id, lastRun: now, runCount: e.runCount + 1 } : e
-        ) as Array<{ id: string; lastRun: string; runCount: number }>;
-    } else {
-        updatedEntries = [
-            ...current.entries.map((e) => ({ ...e })),
-            { id, lastRun: now, runCount: 1 }
-        ];
-    }
-
-    if (updatedEntries.length > MAX_ENTRIES) {
-        updatedEntries = updatedEntries
-            .slice()
-            .sort((a, b) => a.lastRun.localeCompare(b.lastRun))
-            .slice(updatedEntries.length - MAX_ENTRIES);
-    }
-
-    const updated: CliHistory = { version: 1, entries: updatedEntries };
-    await writeFile(tmpPath, JSON.stringify(updated, null, 2), 'utf-8');
-    await rename(tmpPath, historyPath);
-}
 
 beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'hospeda-cli-test-'));
@@ -78,12 +22,12 @@ afterEach(async () => {
     tempDir = '';
 });
 
-describe('readFromDir (readHistory equivalent)', () => {
+describe('readHistory', () => {
     it('should return empty history when file does not exist', async () => {
         // Arrange - no file written
 
         // Act
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history).toEqual({ version: 1, entries: [] });
@@ -94,7 +38,7 @@ describe('readFromDir (readHistory equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), 'not valid json!!!', 'utf-8');
 
         // Act
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history).toEqual({ version: 1, entries: [] });
@@ -106,7 +50,7 @@ describe('readFromDir (readHistory equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(badData), 'utf-8');
 
         // Act
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history).toEqual({ version: 1, entries: [] });
@@ -118,7 +62,7 @@ describe('readFromDir (readHistory equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(badData), 'utf-8');
 
         // Act
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history).toEqual({ version: 1, entries: [] });
@@ -133,7 +77,7 @@ describe('readFromDir (readHistory equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(validHistory), 'utf-8');
 
         // Act
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history.version).toBe(1);
@@ -141,13 +85,36 @@ describe('readFromDir (readHistory equivalent)', () => {
         expect(history.entries[0]?.id).toBe('test');
         expect(history.entries[0]?.runCount).toBe(3);
     });
+
+    it('should filter out malformed entries via isValidEntry', async () => {
+        // Arrange - entries with missing/wrong-typed fields
+        const malformed = {
+            version: 1,
+            entries: [
+                { id: 'good', lastRun: '2024-01-01T00:00:00.000Z', runCount: 1 },
+                { id: 123, lastRun: '2024-01-01T00:00:00.000Z', runCount: 1 },
+                { id: 'no-runCount', lastRun: '2024-01-01T00:00:00.000Z' },
+                { id: 'bad-runCount', lastRun: '2024-01-01T00:00:00.000Z', runCount: 'two' },
+                null,
+                'string-entry'
+            ]
+        };
+        await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(malformed), 'utf-8');
+
+        // Act
+        const history = await readHistory({ rootDir: tempDir });
+
+        // Assert - only the valid entry survives
+        expect(history.entries).toHaveLength(1);
+        expect(history.entries[0]?.id).toBe('good');
+    });
 });
 
-describe('recordInDir (recordCommand equivalent)', () => {
+describe('recordCommand', () => {
     it('should create a new entry when command has not been run before', async () => {
         // Arrange & Act
-        await recordInDir(tempDir, 'db:start');
-        const history = await readFromDir(tempDir);
+        await recordCommand({ id: 'db:start', rootDir: tempDir });
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history.entries).toHaveLength(1);
@@ -159,12 +126,12 @@ describe('recordInDir (recordCommand equivalent)', () => {
 
     it('should increment runCount when command already exists', async () => {
         // Arrange
-        await recordInDir(tempDir, 'test');
-        await recordInDir(tempDir, 'test');
+        await recordCommand({ id: 'test', rootDir: tempDir });
+        await recordCommand({ id: 'test', rootDir: tempDir });
 
         // Act
-        await recordInDir(tempDir, 'test');
-        const history = await readFromDir(tempDir);
+        await recordCommand({ id: 'test', rootDir: tempDir });
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         const entry = history.entries.find((e) => e.id === 'test');
@@ -182,8 +149,8 @@ describe('recordInDir (recordCommand equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(initial), 'utf-8');
 
         // Act - record again; the new timestamp will be current time (after 2020)
-        await recordInDir(tempDir, 'lint');
-        const history = await readFromDir(tempDir);
+        await recordCommand({ id: 'lint', rootDir: tempDir });
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         const entry = history.entries.find((e) => e.id === 'lint');
@@ -205,8 +172,8 @@ describe('recordInDir (recordCommand equivalent)', () => {
         await writeFile(join(tempDir, HISTORY_FILE), JSON.stringify(seeded), 'utf-8');
 
         // Act - add one more to trigger pruning
-        await recordInDir(tempDir, 'overflow-cmd');
-        const history = await readFromDir(tempDir);
+        await recordCommand({ id: 'overflow-cmd', rootDir: tempDir });
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history.entries).toHaveLength(MAX_ENTRIES);
@@ -216,9 +183,9 @@ describe('recordInDir (recordCommand equivalent)', () => {
     it('should keep exactly MAX_ENTRIES after adding many commands', async () => {
         // Arrange & Act - add MAX_ENTRIES + 5 distinct commands sequentially
         for (let i = 0; i < MAX_ENTRIES + 5; i++) {
-            await recordInDir(tempDir, `cmd-${i}`);
+            await recordCommand({ id: `cmd-${i}`, rootDir: tempDir });
         }
-        const history = await readFromDir(tempDir);
+        const history = await readHistory({ rootDir: tempDir });
 
         // Assert
         expect(history.entries).toHaveLength(MAX_ENTRIES);
@@ -226,7 +193,7 @@ describe('recordInDir (recordCommand equivalent)', () => {
 
     it('should write history atomically (no tmp file left behind)', async () => {
         // Arrange & Act
-        await recordInDir(tempDir, 'build');
+        await recordCommand({ id: 'build', rootDir: tempDir });
 
         // Assert - tmp file should not exist, history file should
         const files = await readdir(tempDir);
@@ -320,5 +287,33 @@ describe('getRecentCommands', () => {
 
         // Assert - original order unchanged
         expect(history.entries[0]?.id).toBe(originalFirstId);
+    });
+
+    it('should return empty array for negative maxCount', () => {
+        // Arrange
+        const history: CliHistory = {
+            version: 1,
+            entries: [{ id: 'a', lastRun: '2024-01-01T00:00:00.000Z', runCount: 1 }]
+        };
+
+        // Act
+        const recent = getRecentCommands({ history, maxCount: -1 });
+
+        // Assert
+        expect(recent).toEqual([]);
+    });
+
+    it('should return empty array for maxCount of 0', () => {
+        // Arrange
+        const history: CliHistory = {
+            version: 1,
+            entries: [{ id: 'a', lastRun: '2024-01-01T00:00:00.000Z', runCount: 1 }]
+        };
+
+        // Act
+        const recent = getRecentCommands({ history, maxCount: 0 });
+
+        // Assert
+        expect(recent).toEqual([]);
     });
 });
