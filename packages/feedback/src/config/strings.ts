@@ -67,7 +67,11 @@ export const FEEDBACK_STRINGS = {
         attachments: 'Capturas de pantalla',
         uploadButton: 'Subir',
         fileTooBig: 'El archivo supera el tamaño maximo permitido',
-        fileTypeInvalid: 'Tipo de archivo no permitido'
+        fileTypeInvalid: 'Tipo de archivo no permitido',
+        fileHintFormat: 'PNG, JPG, WebP, GIF',
+        fileHintMaxSize: 'max {size} por archivo',
+        removeFileLabel: 'Eliminar {name}',
+        consoleErrorsCount: '{count} error(es) capturado(s)'
     },
 
     /** Action button labels */

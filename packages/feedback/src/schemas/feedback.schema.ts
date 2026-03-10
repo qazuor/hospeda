@@ -39,6 +39,14 @@ export const SEVERITY_IDS = ['critical', 'high', 'medium', 'low'] as const;
 export const APP_SOURCE_IDS = ['web', 'admin', 'standalone'] as const;
 
 /**
+ * Schema for the error boundary error info sub-object.
+ */
+export const feedbackErrorInfoSchema = z.object({
+    message: z.string(),
+    stack: z.string().optional()
+});
+
+/**
  * Schema for the auto-collected environment data.
  *
  * All fields except `timestamp` and `appSource` are editable by the user
@@ -64,20 +72,7 @@ export const feedbackEnvironmentSchema = z.object({
     /** Last N console.error() calls captured before the report */
     consoleErrors: z.array(z.string()).optional(),
     /** Error message and stack trace when submitted from an error boundary */
-    errorInfo: z
-        .object({
-            message: z.string(),
-            stack: z.string().optional()
-        })
-        .optional()
-});
-
-/**
- * Schema for the error boundary error info sub-object.
- */
-export const feedbackErrorInfoSchema = z.object({
-    message: z.string(),
-    stack: z.string().optional()
+    errorInfo: feedbackErrorInfoSchema.optional()
 });
 
 /**

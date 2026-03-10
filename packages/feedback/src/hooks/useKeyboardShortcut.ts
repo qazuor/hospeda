@@ -9,7 +9,7 @@ import { FEEDBACK_CONFIG } from '../config/feedback.config.js';
 /**
  * Input for `useKeyboardShortcut`.
  */
-interface UseKeyboardShortcutInput {
+export interface UseKeyboardShortcutInput {
     /** Callback to invoke when the shortcut is detected */
     onToggle: () => void;
 }

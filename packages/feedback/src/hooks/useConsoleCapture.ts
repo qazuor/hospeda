@@ -74,6 +74,9 @@ function installInterceptor(): void {
         const serialized = args
             .map((arg) => {
                 try {
+                    if (arg instanceof Error) {
+                        return `${arg.name}: ${arg.message}${arg.stack ? `\n${arg.stack}` : ''}`;
+                    }
                     return typeof arg === 'string' ? arg : JSON.stringify(arg);
                 } catch {
                     return String(arg);

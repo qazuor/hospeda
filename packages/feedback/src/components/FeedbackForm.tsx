@@ -119,23 +119,27 @@ function buildInitialBasicData(
  * @param message - The Zod default message
  * @returns A user-facing error string
  */
-function mapZodMessage(path: (string | number)[], message: string): string {
+/**
+ * Checks if a Zod validation message indicates a "too big" constraint
+ * (maximum length exceeded). Matches both Zod v3 ("at most") and v4
+ * ("too_big" code or "maximum" keyword) error messages.
+ */
+function isTooBig(message: string): boolean {
+    return /\b(most|too.?big|maximum|exceed|long)\b/i.test(message);
+}
+
+function mapZodMessage(path: PropertyKey[], message: string): string {
     const field = path[0];
     if (field === 'title') {
-        if (message.includes('least')) return FEEDBACK_STRINGS.validation.titleMin;
-        if (message.includes('most')) return FEEDBACK_STRINGS.validation.titleMax;
+        if (isTooBig(message)) return FEEDBACK_STRINGS.validation.titleMax;
         return FEEDBACK_STRINGS.validation.titleMin;
     }
     if (field === 'description') {
-        if (message.includes('least')) return FEEDBACK_STRINGS.validation.descriptionMin;
-        if (message.includes('most')) return FEEDBACK_STRINGS.validation.descriptionMax;
+        if (isTooBig(message)) return FEEDBACK_STRINGS.validation.descriptionMax;
         return FEEDBACK_STRINGS.validation.descriptionMin;
     }
     if (field === 'reporterEmail') {
-        if (message.includes('Invalid email') || message.includes('invalid')) {
-            return FEEDBACK_STRINGS.validation.emailInvalid;
-        }
-        return FEEDBACK_STRINGS.validation.emailRequired;
+        return FEEDBACK_STRINGS.validation.emailInvalid;
     }
     if (field === 'reporterName') {
         return FEEDBACK_STRINGS.validation.nameRequired;
@@ -241,48 +245,36 @@ export function FeedbackForm({
 
     /**
      * Validates only step 1 fields (type, title, description, email, name).
-     * Only parses the combined data to check step 1 fields, ignoring
-     * environment/details errors that belong to step 2.
+     * Uses a lightweight pick of the full schema to avoid validating
+     * environment and step 2 fields unnecessarily.
      */
     const validateStep1 = useCallback((): boolean => {
-        const combined = {
-            ...basicData,
-            ...detailsData,
-            attachments: attachments.length > 0 ? attachments : undefined,
-            environment
-        };
+        const step1Schema = feedbackFormSchema.pick({
+            type: true,
+            title: true,
+            description: true,
+            reporterEmail: true,
+            reporterName: true
+        });
 
-        const result = feedbackFormSchema.safeParse(combined);
+        const result = step1Schema.safeParse(basicData);
 
         if (result.success) {
             setErrors({});
             return true;
         }
 
-        const step1Fields = new Set([
-            'type',
-            'title',
-            'description',
-            'reporterEmail',
-            'reporterName'
-        ]);
-
         const fieldErrors: Record<string, string> = {};
         for (const issue of result.error.issues) {
             const key = String(issue.path[0] ?? 'form');
-            if (step1Fields.has(key) && !fieldErrors[key]) {
+            if (!fieldErrors[key]) {
                 fieldErrors[key] = mapZodMessage(issue.path, issue.message);
             }
         }
 
-        if (Object.keys(fieldErrors).length === 0) {
-            setErrors({});
-            return true;
-        }
-
         setErrors(fieldErrors);
         return false;
-    }, [basicData, detailsData, attachments, environment]);
+    }, [basicData]);
 
     /**
      * Validates the combined form data using feedbackFormSchema.
@@ -381,8 +373,8 @@ export function FeedbackForm({
     if (step === 'success' && submitState.result) {
         return (
             <SuccessScreen
-                linearIssueId={submitState.result.linearIssueId}
-                linearIssueUrl={submitState.result.linearIssueUrl}
+                linearIssueId={submitState.result.linearIssueId ?? undefined}
+                linearIssueUrl={submitState.result.linearIssueUrl ?? undefined}
                 onReset={handleReset}
                 onClose={onClose}
             />

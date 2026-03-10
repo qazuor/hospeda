@@ -350,8 +350,11 @@ export function StepDetails({
                     >
                         <span>{FEEDBACK_STRINGS.fields.uploadButton}</span>
                         <p style={styles.uploadHint}>
-                            PNG, JPG, WebP, GIF &mdash; max{' '}
-                            {formatFileSize(FEEDBACK_CONFIG.maxFileSize)} por archivo
+                            {FEEDBACK_STRINGS.fields.fileHintFormat} &mdash;{' '}
+                            {FEEDBACK_STRINGS.fields.fileHintMaxSize.replace(
+                                '{size}',
+                                formatFileSize(FEEDBACK_CONFIG.maxFileSize)
+                            )}
                         </p>
                         <input
                             id="feedback-files"
@@ -398,7 +401,10 @@ export function StepDetails({
                                     type="button"
                                     style={styles.removeButton}
                                     onClick={() => onRemoveAttachment(index)}
-                                    aria-label={`Eliminar ${file.name}`}
+                                    aria-label={FEEDBACK_STRINGS.fields.removeFileLabel.replace(
+                                        '{name}',
+                                        file.name
+                                    )}
                                 >
                                     &times;
                                 </button>
@@ -533,7 +539,10 @@ export function StepDetails({
                                     {FEEDBACK_STRINGS.techDetails.consoleErrors}
                                 </span>
                                 <p style={styles.errorHint}>
-                                    {environment.consoleErrors.length} error(s) capturado(s)
+                                    {FEEDBACK_STRINGS.fields.consoleErrorsCount.replace(
+                                        '{count}',
+                                        String(environment.consoleErrors.length)
+                                    )}
                                 </p>
                             </div>
                         )}
