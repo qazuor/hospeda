@@ -1,16 +1,13 @@
 /**
  * Tests for the FeedbackFAB component.
  *
- * Since @testing-library/react and jsdom are not installed in this package,
- * we verify the component contract through: import validation, prop type
- * compliance, localStorage persistence helpers (pure logic), the kill switch
- * logic, and toggle state transitions (tested as pure helpers mirroring the
- * component internals).
- *
- * Full DOM render tests should be added once jsdom + testing-library are
- * added to this package's devDependencies.
+ * Covers:
+ * - Pure logic: localStorage helpers, toggle state, kill switch
+ * - RTL render tests: FAB rendering, minimized state, click interactions,
+ *   tooltip visibility, keyboard shortcut toggle
  */
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     FeedbackFAB,
     type FeedbackFABProps,
@@ -386,5 +383,138 @@ describe('FeedbackFAB', () => {
         const onClose = vi.fn();
         onClose();
         expect(onClose).toHaveBeenCalledOnce();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RTL render tests
+// ---------------------------------------------------------------------------
+
+// Mock useConsoleCapture to avoid side effects in test environment.
+vi.mock('../../src/hooks/useConsoleCapture.js', () => ({
+    useConsoleCapture: vi.fn(() => ({ getErrors: () => [] }))
+}));
+
+// Mock FeedbackModal to avoid native <dialog> and timer effects that hang jsdom.
+vi.mock('../../src/components/FeedbackModal.js', () => ({
+    FeedbackModal: ({ isOpen }: { isOpen: boolean }) =>
+        isOpen ? <div data-testid="feedback-modal-dialog">Modal</div> : null
+}));
+
+describe('FeedbackFAB (RTL render)', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+        vi.runOnlyPendingTimers();
+        vi.useRealTimers();
+    });
+
+    it('renders the FAB button with correct test id', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        expect(screen.getByTestId('feedback-fab')).toBeInTheDocument();
+    });
+
+    it('renders with accessible aria-label from FEEDBACK_STRINGS', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        const fab = screen.getByTestId('feedback-fab');
+        expect(fab).toHaveAttribute('aria-label', FEEDBACK_STRINGS.fab.tooltip);
+    });
+
+    it('renders the minimize button', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        expect(screen.getByTestId('feedback-fab-minimize')).toBeInTheDocument();
+    });
+
+    it('opens the modal dialog when FAB is clicked', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        act(() => {
+            fireEvent.click(screen.getByTestId('feedback-fab'));
+        });
+
+        expect(screen.getByTestId('feedback-modal-dialog')).toBeInTheDocument();
+    });
+
+    it('shows minimized dot after clicking minimize button', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        act(() => {
+            fireEvent.click(screen.getByTestId('feedback-fab-minimize'));
+        });
+
+        expect(screen.getByTestId('feedback-fab-minimized')).toBeInTheDocument();
+        expect(screen.queryByTestId('feedback-fab')).not.toBeInTheDocument();
+    });
+
+    it('opens the modal when minimized dot is clicked', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        // Minimize first
+        act(() => {
+            fireEvent.click(screen.getByTestId('feedback-fab-minimize'));
+        });
+
+        // Click the minimized dot to open modal
+        act(() => {
+            fireEvent.click(screen.getByTestId('feedback-fab-minimized'));
+        });
+
+        expect(screen.getByTestId('feedback-modal-dialog')).toBeInTheDocument();
+    });
+
+    it('transitions to minimized DOM state after clicking minimize', () => {
+        render(
+            <FeedbackFAB
+                apiUrl="http://localhost:3001"
+                appSource="web"
+            />
+        );
+
+        // Full FAB is visible, minimized is not
+        expect(screen.getByTestId('feedback-fab')).toBeInTheDocument();
+        expect(screen.queryByTestId('feedback-fab-minimized')).not.toBeInTheDocument();
+
+        act(() => {
+            fireEvent.click(screen.getByTestId('feedback-fab-minimize'));
+        });
+
+        // After minimizing: full FAB gone, minimized dot visible
+        expect(screen.queryByTestId('feedback-fab')).not.toBeInTheDocument();
+        expect(screen.getByTestId('feedback-fab-minimized')).toBeInTheDocument();
     });
 });

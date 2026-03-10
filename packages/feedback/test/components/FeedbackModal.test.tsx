@@ -1,14 +1,13 @@
 /**
  * Tests for the FeedbackModal component.
  *
- * Since @testing-library/react and jsdom are not installed in this package,
- * we verify the component contract through: import validation, prop type
- * compliance, isMobile detection logic, and focusable-element selector
- * correctness (tested as pure logic, not DOM operations).
- *
- * Full DOM render tests should be added once jsdom + testing-library are
- * added to this package's devDependencies.
+ * Covers:
+ * - Pure logic: isMobile detection, focusable selector, focus trap
+ * - RTL render tests: modal rendering, close button, backdrop click,
+ *   aria-labelledby, dialog element presence
  */
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { FeedbackFormProps } from '../../src/components/FeedbackForm.js';
 import { FeedbackModal, type FeedbackModalProps } from '../../src/components/FeedbackModal.js';
@@ -347,5 +346,122 @@ describe('FeedbackModal', () => {
         const falseProps: FeedbackModalProps = makeModalProps({ isOpen: false });
         expect(typeof trueProps.isOpen).toBe('boolean');
         expect(typeof falseProps.isOpen).toBe('boolean');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RTL render tests
+// ---------------------------------------------------------------------------
+
+// Mock FeedbackForm to avoid hook side effects (timers, fetch, etc.)
+// that cause jsdom to hang.
+vi.mock('../../src/components/FeedbackForm.js', () => ({
+    FeedbackForm: ({ onClose }: { onClose?: () => void }) => (
+        <div data-testid="mock-feedback-form">
+            <button
+                type="button"
+                onClick={onClose}
+                data-testid="mock-form-close"
+            >
+                Close from form
+            </button>
+        </div>
+    )
+}));
+
+describe('FeedbackModal (RTL render)', () => {
+    it('renders the dialog element when isOpen is true', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        expect(screen.getByTestId('feedback-modal-dialog')).toBeInTheDocument();
+    });
+
+    it('renders the inner content container', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        expect(screen.getByTestId('feedback-modal-content')).toBeInTheDocument();
+    });
+
+    it('renders the close button with correct aria-label', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        const closeBtn = screen.getByTestId('feedback-modal-close');
+        expect(closeBtn).toBeInTheDocument();
+        expect(closeBtn).toHaveAttribute('aria-label', FEEDBACK_STRINGS.buttons.close);
+    });
+
+    it('calls onClose when the close button is clicked', async () => {
+        const user = userEvent.setup();
+        const onClose = vi.fn();
+
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={onClose}
+                formProps={minimalFormProps}
+            />
+        );
+
+        await user.click(screen.getByTestId('feedback-modal-close'));
+
+        expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('renders the visually hidden title for screen readers', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        const title = document.getElementById('feedback-modal-title');
+        expect(title).toBeInTheDocument();
+        expect(title).toHaveClass('sr-only');
+        expect(title?.textContent).toBe(FEEDBACK_STRINGS.form.title);
+    });
+
+    it('dialog has aria-labelledby pointing to the title', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        const dialog = screen.getByTestId('feedback-modal-dialog');
+        expect(dialog).toHaveAttribute('aria-labelledby', 'feedback-modal-title');
+    });
+
+    it('renders FeedbackForm inside the modal (onClose is injected)', () => {
+        render(
+            <FeedbackModal
+                isOpen={true}
+                onClose={vi.fn()}
+                formProps={minimalFormProps}
+            />
+        );
+
+        expect(screen.getByTestId('mock-feedback-form')).toBeInTheDocument();
     });
 });

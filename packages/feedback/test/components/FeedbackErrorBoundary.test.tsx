@@ -1,18 +1,13 @@
 /**
  * Tests for the FeedbackErrorBoundary component.
  *
- * Because this package does not have @testing-library/react or jsdom installed,
- * all tests verify the component contract through pure-logic helpers that
- * mirror the internal behaviour of FeedbackErrorBoundary without DOM rendering.
- *
- * Covered areas:
- * - Component class structure (named export, class shape, getDerivedStateFromError)
- * - Error state management transitions
- * - Pre-fill data construction from a caught Error
- * - New-tab URL construction via serializeFeedbackParams
- * - truncate helper logic
- * - FeedbackErrorBoundaryProps type contract (compile-time checks via usage)
+ * Covers:
+ * - Pure logic: truncate, prefill data, URL construction, state transitions
+ * - RTL render tests: children rendering, error fallback UI, report/reload
+ *   buttons, custom fallback component, reset behavior
  */
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
     FeedbackErrorBoundary,
@@ -559,5 +554,162 @@ describe('FEEDBACK_STRINGS errorBoundary keys', () => {
 
     it('buttons.reloadPage should match the expected Spanish text', () => {
         expect(FEEDBACK_STRINGS.buttons.reloadPage).toBe('Recargar');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// RTL render tests
+// ---------------------------------------------------------------------------
+
+// Mock FeedbackModal to avoid hook side effects (timers, dialog API)
+// that cause jsdom to hang.
+vi.mock('../../src/components/FeedbackModal.js', () => ({
+    FeedbackModal: ({ isOpen }: { isOpen: boolean }) =>
+        isOpen ? <div data-testid="feedback-modal-dialog">Mock Modal</div> : null
+}));
+
+/** Component that throws on render to trigger the error boundary */
+function ThrowingComponent({ message }: { readonly message: string }): never {
+    throw new Error(message);
+}
+
+/** Wrapper to suppress React error boundary console.error noise in tests */
+function renderWithErrorBoundary(
+    children: React.ReactNode,
+    props: Partial<FeedbackErrorBoundaryProps> = {}
+) {
+    // Suppress React's "The above error occurred..." console output
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const result = render(
+        <FeedbackErrorBoundary
+            appSource="web"
+            apiUrl="http://localhost:3001"
+            {...props}
+        >
+            {children}
+        </FeedbackErrorBoundary>
+    );
+
+    spy.mockRestore();
+    return result;
+}
+
+describe('FeedbackErrorBoundary (RTL render)', () => {
+    it('renders children when no error occurs', () => {
+        render(
+            <FeedbackErrorBoundary
+                appSource="web"
+                apiUrl="http://localhost:3001"
+            >
+                <div data-testid="child-content">Hello</div>
+            </FeedbackErrorBoundary>
+        );
+
+        expect(screen.getByTestId('child-content')).toBeInTheDocument();
+        expect(screen.getByText('Hello')).toBeInTheDocument();
+    });
+
+    it('renders the error fallback when a child throws', () => {
+        renderWithErrorBoundary(<ThrowingComponent message="Render crash" />);
+
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText(FEEDBACK_STRINGS.errorBoundary.title)).toBeInTheDocument();
+        expect(screen.getByText(FEEDBACK_STRINGS.errorBoundary.message)).toBeInTheDocument();
+    });
+
+    it('renders "Report" and "Reload" buttons in error fallback', () => {
+        renderWithErrorBoundary(<ThrowingComponent message="Button test" />);
+
+        expect(screen.getByTestId('error-boundary-report-button')).toBeInTheDocument();
+        expect(screen.getByTestId('error-boundary-reload-button')).toBeInTheDocument();
+
+        expect(screen.getByText(FEEDBACK_STRINGS.buttons.reportError)).toBeInTheDocument();
+        expect(screen.getByText(FEEDBACK_STRINGS.buttons.reloadPage)).toBeInTheDocument();
+    });
+
+    it('shows the feedback modal when "Report" button is clicked', async () => {
+        const user = userEvent.setup();
+
+        renderWithErrorBoundary(<ThrowingComponent message="Report click test" />);
+
+        await user.click(screen.getByTestId('error-boundary-report-button'));
+
+        expect(screen.getByTestId('feedback-modal-dialog')).toBeInTheDocument();
+    });
+
+    it('renders custom fallback when fallbackComponent is provided', () => {
+        renderWithErrorBoundary(<ThrowingComponent message="Custom fallback" />, {
+            fallbackComponent: ({ error, resetError, reportError }) => (
+                <div data-testid="custom-fallback">
+                    <p>Custom: {error.message}</p>
+                    <button
+                        type="button"
+                        onClick={resetError}
+                    >
+                        Reset
+                    </button>
+                    <button
+                        type="button"
+                        onClick={reportError}
+                    >
+                        Report
+                    </button>
+                </div>
+            )
+        });
+
+        expect(screen.getByTestId('custom-fallback')).toBeInTheDocument();
+        expect(screen.getByText('Custom: Custom fallback')).toBeInTheDocument();
+    });
+
+    it('resets to children when custom fallback reset is called', async () => {
+        const user = userEvent.setup();
+        let shouldThrow = true;
+
+        function ConditionalThrower() {
+            if (shouldThrow) throw new Error('Conditional');
+            return <div data-testid="recovered">Recovered!</div>;
+        }
+
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        render(
+            <FeedbackErrorBoundary
+                appSource="web"
+                apiUrl="http://localhost:3001"
+                fallbackComponent={({ resetError }) => (
+                    <div>
+                        <button
+                            type="button"
+                            data-testid="reset-btn"
+                            onClick={resetError}
+                        >
+                            Reset
+                        </button>
+                    </div>
+                )}
+            >
+                <ConditionalThrower />
+            </FeedbackErrorBoundary>
+        );
+
+        spy.mockRestore();
+
+        // Error state: custom fallback visible
+        expect(screen.getByTestId('reset-btn')).toBeInTheDocument();
+
+        // Fix the thrower and reset
+        shouldThrow = false;
+        await user.click(screen.getByTestId('reset-btn'));
+
+        expect(screen.getByTestId('recovered')).toBeInTheDocument();
+    });
+
+    it('error fallback has role=alert and aria-live=assertive', () => {
+        renderWithErrorBoundary(<ThrowingComponent message="Accessibility test" />);
+
+        const alert = screen.getByRole('alert');
+        expect(alert).toHaveAttribute('aria-live', 'assertive');
     });
 });
