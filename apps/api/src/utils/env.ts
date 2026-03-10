@@ -287,6 +287,12 @@ const ApiEnvSchema = z
         HOSPEDA_SENTRY_RELEASE: z.string().optional(),
         HOSPEDA_SENTRY_PROJECT: z.string().optional(),
 
+        // Account lockout (brute-force protection)
+        /** Max failed login attempts before temporary lockout (default: 5) */
+        HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+        /** Lockout window in milliseconds (default: 900000 = 15 min) */
+        HOSPEDA_AUTH_LOCKOUT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
+
         // Infrastructure
         HOSPEDA_REDIS_URL: z.string().optional()
     })
