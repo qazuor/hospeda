@@ -7,7 +7,8 @@ import { useToast } from '@/components/ui/ToastProvider';
 import { env } from '@/env';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { adminLogger } from '@/utils/logger';
-import { useTranslations } from '@repo/i18n';
+import { resolveValidationMessage, useTranslations } from '@repo/i18n';
+import type { ZodSchema } from 'zod';
 
 /**
  * Props for EntityEditContent component
@@ -19,13 +20,19 @@ export interface EntityEditContentProps {
     renderSection?: (section: SectionConfig, index: number) => React.ReactNode;
     /** Additional CSS classes */
     className?: string;
+    /** Optional Zod schema for form validation */
+    zodSchema?: ZodSchema;
 }
 
 /**
  * Component for rendering entity content in edit mode
  * Renders sections using EntityFormSection components with form handling
  */
-export const EntityEditContent = ({ renderSection, className }: EntityEditContentProps) => {
+export const EntityEditContent = ({
+    renderSection,
+    className,
+    zodSchema: _zodSchema
+}: EntityEditContentProps) => {
     const {
         values,
         errors,
@@ -86,8 +93,10 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
             let errorMessage = t('error.form.unexpected-error');
             const fieldErrors: Record<string, string> = {};
 
+            const tAny = t as (key: string, params?: Record<string, unknown>) => string;
+
             if (error instanceof Error) {
-                errorMessage = error.message;
+                errorMessage = resolveValidationMessage({ key: error.message, t: tAny });
 
                 // If it's an API error with Zod validation errors
                 const apiError = error as Error & {
@@ -110,7 +119,10 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                             for (const zodError of zodErrors) {
                                 if (zodError.path && zodError.path.length > 0) {
                                     const fieldName = zodError.path[0];
-                                    fieldErrors[fieldName] = zodError.message;
+                                    fieldErrors[fieldName] = resolveValidationMessage({
+                                        key: zodError.message as string,
+                                        t: tAny
+                                    });
                                 }
                             }
 
@@ -128,7 +140,10 @@ export const EntityEditContent = ({ renderSection, className }: EntityEditConten
                         }
                     } catch {
                         // If parsing fails, use the raw message
-                        errorMessage = apiError.body.error.message;
+                        errorMessage = resolveValidationMessage({
+                            key: apiError.body.error.message,
+                            t: tAny
+                        });
                     }
                 }
             }

@@ -14,35 +14,11 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { adminLogger } from '@/utils/logger';
+import { resolveValidationMessage, useTranslations } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Suspense, useMemo, useState } from 'react';
-
-/**
- * Formats a Zod error message key into a human-readable message.
- * Converts keys like "zodError.user.slug.required" into "Campo requerido"
- */
-function formatZodErrorMessage(message: string): string {
-    if (!message.startsWith('zodError.')) {
-        return message;
-    }
-
-    // Extract the error type from the key (last segment)
-    const parts = message.split('.');
-    const errorType = parts[parts.length - 1];
-
-    const errorTypeMap: Record<string, string> = {
-        required: 'Este campo es requerido',
-        invalid: 'Valor inválido',
-        invalidType: 'Tipo de dato inválido',
-        min: 'El valor es demasiado corto',
-        max: 'El valor es demasiado largo',
-        pattern: 'El formato no es válido',
-        email: 'Debe ser un email válido'
-    };
-
-    return errorTypeMap[errorType] || 'Campo inválido';
-}
+import type { ZodSchema } from 'zod';
 
 /**
  * Configuration for an entity create page
@@ -96,6 +72,8 @@ export interface EntityCreateContentProps {
     readonly configDeps?: readonly unknown[];
     /** Optional wrapper around the form content (e.g., LimitGate) */
     readonly formWrapper?: (children: React.ReactNode) => React.ReactNode;
+    /** Optional Zod schema for client-side validation before submission */
+    readonly zodSchema?: ZodSchema;
 }
 
 /**
@@ -109,9 +87,12 @@ export function EntityCreateContent({
     createMutation,
     onNavigate,
     configDeps = [],
-    formWrapper
+    formWrapper,
+    zodSchema
 }: EntityCreateContentProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
+    const tAny = t as (key: string, params?: Record<string, unknown>) => string;
 
     // Form state
     const [values, setValues] = useState<Record<string, unknown>>({});
@@ -221,9 +202,10 @@ export function EntityCreateContent({
                         for (const zodError of zodErrors) {
                             if (zodError.path?.length > 0) {
                                 const fieldId = zodError.path[0] as string;
-                                fieldErrors[fieldId] = formatZodErrorMessage(
-                                    zodError.message as string
-                                );
+                                fieldErrors[fieldId] = resolveValidationMessage({
+                                    key: zodError.message as string,
+                                    t: tAny
+                                });
                                 fieldNames.push(fieldId);
                             }
                         }
@@ -333,6 +315,7 @@ export function EntityCreateContent({
                                 initialValues={{}}
                                 userPermissions={userPermissions as PermissionEnum[]}
                                 onSave={handleSave}
+                                zodSchema={zodSchema}
                             >
                                 <div className="space-y-6">
                                     {/* Smart Breadcrumbs */}

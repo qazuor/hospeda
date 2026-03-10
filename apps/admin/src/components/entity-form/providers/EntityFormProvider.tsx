@@ -2,6 +2,7 @@ import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
+import { validateFieldWithZod, validateFormWithZod } from '../../../lib/validation/validate-form';
 import {
     EntityFormContext,
     type EntityFormContextValue,
@@ -28,9 +29,11 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     onFieldChange,
     onFieldBlur,
     onFieldFocus,
+    zodSchema,
     children
 }) => {
     const { t } = useTranslations();
+    const tAny = t as (key: string, params?: Record<string, unknown>) => string;
     // Form state
     const [formMode, setFormMode] = React.useState<FormModeEnum>(mode);
     const [isLoading] = React.useState(false);
@@ -57,7 +60,6 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                 setDirtyFields({});
             } catch (error) {
                 adminLogger.error('Form save error', error);
-                // TODO: Handle save errors properly
             } finally {
                 setIsSaving(false);
             }
@@ -130,15 +132,17 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         Record<string, string | undefined>
     > => {
         try {
-            const formErrors: Record<string, string | undefined> = {};
             const values = form.state.values as Record<string, unknown>;
 
-            // Validate all fields in all sections
+            if (zodSchema) {
+                return validateFormWithZod({ schema: zodSchema, data: values, t: tAny });
+            }
+
+            // Fallback: required-field check when no Zod schema is provided
+            const formErrors: Record<string, string | undefined> = {};
             for (const section of config.sections) {
                 for (const field of section.fields) {
                     const value = values[field.id];
-
-                    // Check required fields
                     if (field.required) {
                         if (value === undefined || value === null || value === '') {
                             formErrors[field.id] = t('error.field.required', {
@@ -146,18 +150,14 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                             });
                         }
                     }
-
-                    // Additional field-specific validations can be added here
-                    // TODO: Implement Zod schema validation for more complex rules
                 }
             }
-
             return formErrors;
         } catch (error) {
             adminLogger.error('Form validation error', error);
             return {};
         }
-    }, [form.state.values, config.sections, t]);
+    }, [form.state.values, config.sections, t, tAny, zodSchema]);
 
     const handleSave = React.useCallback(async () => {
         setIsSaving(true);
@@ -189,6 +189,15 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     const handleSaveAndPublish = React.useCallback(async () => {
         setIsSaving(true);
         try {
+            // Validate form before saving and publishing
+            const formErrors = await validateForm();
+            const hasErrors = Object.values(formErrors).some((error) => Boolean(error));
+
+            if (hasErrors) {
+                setErrors(formErrors);
+                throw new Error(t('error.form.validation-failed'));
+            }
+
             const values = form.state.values as Record<string, unknown>;
             await onSaveAndPublish?.(values);
             // Reset dirty state after successful save
@@ -196,11 +205,12 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             setErrors({});
         } catch (error) {
             adminLogger.error('Form save and publish error', error);
-            // TODO: Handle save errors properly
+            // Re-throw error so it can be handled by the calling component
+            throw error;
         } finally {
             setIsSaving(false);
         }
-    }, [form, onSaveAndPublish]);
+    }, [form, onSaveAndPublish, validateForm, t]);
 
     const handleDiscard = React.useCallback(() => {
         form.reset();
@@ -218,12 +228,10 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
     const validateField = React.useCallback(
         async (fieldId: string): Promise<string | undefined> => {
             try {
-                // TODO: Implement field validation using Zod schemas
-                // This would extract the field schema from the main entity schema
-                // and validate the current field value
-
-                // For now, return undefined (no error)
-                const error = undefined;
+                const values = form.state.values as Record<string, unknown>;
+                const error = zodSchema
+                    ? validateFieldWithZod({ schema: zodSchema, data: values, fieldId, t: tAny })
+                    : undefined;
                 setErrors((prev) => ({ ...prev, [fieldId]: error }));
                 return error;
             } catch (error) {
@@ -232,7 +240,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
                 return errorMessage;
             }
         },
-        []
+        [form.state.values, zodSchema, tAny]
     );
 
     const isFieldDirty = React.useCallback(

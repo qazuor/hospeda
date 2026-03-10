@@ -14,6 +14,7 @@ import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 
 import React, { Suspense, type ReactNode } from 'react';
+import type { ZodSchema } from 'zod';
 
 /**
  * Props for EntityPageBase component
@@ -29,6 +30,8 @@ export interface EntityPageBaseProps<T = Record<string, unknown>> {
     children: ReactNode;
     /** Additional CSS classes */
     className?: string;
+    /** Optional Zod schema for form validation */
+    zodSchema?: ZodSchema;
     /** Entity data and configuration from the hook */
     entityData: {
         mode: 'view' | 'edit';
@@ -67,6 +70,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
     initialMode = 'view',
     children,
     className,
+    zodSchema,
     entityData
 }: EntityPageBaseProps<T>) => {
     const { t } = useTranslations();
@@ -310,6 +314,7 @@ export const EntityPageBase = <T = Record<string, unknown>>({
                                 initialValues={preparedValues}
                                 userPermissions={userPermissions}
                                 onSave={handleSave}
+                                zodSchema={zodSchema}
                             >
                                 {children}
                             </EntityFormProvider>

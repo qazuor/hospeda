@@ -1,6 +1,7 @@
 import type { PermissionEnum } from '@repo/schemas';
 import type { ReactFormApi } from '@tanstack/react-form';
 import * as React from 'react';
+import type { ZodSchema } from 'zod';
 import type { AutosaveStrategyEnum, FormModeEnum } from '../enums/form-config.enums';
 import type { EntityConfig } from '../types/entity-config.types';
 
@@ -123,6 +124,8 @@ export interface EntityFormProviderProps {
     onFieldBlur?: (fieldId: string) => void;
     /** Callback when field is focused */
     onFieldFocus?: (fieldId: string) => void;
+    /** Optional Zod schema for form validation */
+    zodSchema?: ZodSchema;
     /** Children components */
     children: React.ReactNode;
 }
