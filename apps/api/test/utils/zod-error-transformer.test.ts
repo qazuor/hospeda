@@ -210,4 +210,54 @@ describe('Zod Error Transformer', () => {
             }
         });
     });
+
+    describe('transformZodError schema key preference', () => {
+        it('uses zodError.* message as primary message field when present', () => {
+            // Arrange
+            const schema = z.object({
+                name: z.string().min(2, 'zodError.amenity.name.min')
+            });
+            const result = schema.safeParse({ name: 'a' });
+            if (result.success) throw new Error('Expected failure');
+
+            // Act
+            const transformed = transformZodError(result.error);
+            const detail = transformed.details[0];
+
+            // Assert - the message should be the schema's zodError.* key, not the generic map key
+            expect(detail?.message).toBe('zodError.amenity.name.min');
+        });
+
+        it('falls back to ZOD_ERROR_MESSAGE_MAP generic key when no zodError.* prefix', () => {
+            // Arrange
+            const schema = z.object({
+                name: z.string().min(2, 'Name must be at least 2 chars')
+            });
+            const result = schema.safeParse({ name: 'a' });
+            if (result.success) throw new Error('Expected failure');
+
+            // Act
+            const transformed = transformZodError(result.error);
+            const detail = transformed.details[0];
+
+            // Assert - non-zodError.* custom messages fall back to the generic translation key
+            expect(detail?.message).toBe('validationError.field.tooSmall');
+        });
+
+        it('falls back to generic key when no custom message at all', () => {
+            // Arrange
+            const schema = z.object({
+                name: z.string().min(2)
+            });
+            const result = schema.safeParse({ name: 'a' });
+            if (result.success) throw new Error('Expected failure');
+
+            // Act
+            const transformed = transformZodError(result.error);
+            const detail = transformed.details[0];
+
+            // Assert - absence of custom message yields the generic translation key
+            expect(detail?.message).toBe('validationError.field.tooSmall');
+        });
+    });
 });

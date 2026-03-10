@@ -585,7 +585,7 @@ export const transformZodError = (error: ZodError): ValidationErrorResponse => {
 
             return {
                 field: fieldPath,
-                message: translationKey,
+                message: err.message.startsWith('zodError.') ? err.message : translationKey,
                 translatedMessage: err.message,
                 userFriendlyMessage,
                 code: standardizedCode,
