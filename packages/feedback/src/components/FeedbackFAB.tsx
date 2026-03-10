@@ -17,6 +17,7 @@
  */
 import { CloseIcon, DebugIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
@@ -296,7 +297,7 @@ export function FeedbackFAB({
     // Shared modal props
     // ------------------------------------------------------------------
 
-    const modalElement = (
+    const modalContent = (
         <FeedbackModal
             isOpen={isOpen}
             onClose={handleClose}
@@ -311,6 +312,11 @@ export function FeedbackFAB({
             }}
         />
     );
+
+    // Render the modal via portal to document.body so it escapes any
+    // ancestor `overflow: hidden` or `transform` that would clip it.
+    const modalElement =
+        typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 
     // Base classes for the FAB button
     const fabBase =
