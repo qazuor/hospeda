@@ -23,6 +23,9 @@ export type { TranslationKey, TranslationKeys } from './types';
 // React hooks for translations
 export { useTranslations } from './hooks/use-translations';
 
+// Validation utilities
+export { resolveValidationMessage } from './utils/resolve-validation-message';
+
 // Pluralization utilities
 export { pluralize } from './pluralization';
 

@@ -51,7 +51,8 @@ export const namespaces = [
     'admin-tables',
     'admin-common',
     'admin-entities',
-    'admin-tabs'
+    'admin-tabs',
+    'validation'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -130,6 +131,7 @@ import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
 import termsEs from './locales/es/terms.json';
 import uiEs from './locales/es/ui.json';
+import validationEs from './locales/es/validation.json';
 
 // English translations
 import aboutEn from './locales/en/about.json';
@@ -166,6 +168,7 @@ import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
+import validationEn from './locales/en/validation.json';
 
 // Portuguese translations
 import aboutPt from './locales/pt/about.json';
@@ -202,6 +205,7 @@ import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
 import termsPt from './locales/pt/terms.json';
 import uiPt from './locales/pt/ui.json';
+import validationPt from './locales/pt/validation.json';
 
 /**
  * Processed translations object
@@ -242,7 +246,8 @@ const rawTranslations = {
         'admin-tables': adminTablesEs,
         'admin-common': adminCommonEs,
         'admin-entities': adminEntitiesEs,
-        'admin-tabs': adminTabsEs
+        'admin-tabs': adminTabsEs,
+        validation: validationEs
     },
     en: {
         about: aboutEn,
@@ -278,7 +283,8 @@ const rawTranslations = {
         'admin-tables': adminTablesEn,
         'admin-common': adminCommonEn,
         'admin-entities': adminEntitiesEn,
-        'admin-tabs': adminTabsEn
+        'admin-tabs': adminTabsEn,
+        validation: validationEn
     },
     pt: {
         about: aboutPt,
@@ -314,7 +320,8 @@ const rawTranslations = {
         'admin-tables': adminTablesPt,
         'admin-common': adminCommonPt,
         'admin-entities': adminEntitiesPt,
-        'admin-tabs': adminTabsPt
+        'admin-tabs': adminTabsPt,
+        validation: validationPt
     }
 };
 
