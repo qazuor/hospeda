@@ -15,9 +15,11 @@
  * Rendering is skipped entirely when `FEEDBACK_CONFIG.enabled` is false,
  * acting as a kill switch for the entire feedback system.
  */
+import { CloseIcon, DebugIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
 import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
+import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import {
@@ -50,66 +52,6 @@ const PULSE_CSS = `
   }
 }
 `;
-
-// ---------------------------------------------------------------------------
-// Inline SVG icon
-// ---------------------------------------------------------------------------
-
-/**
- * Simple bug SVG icon rendered inline to keep the feedback package
- * self-contained with no dependency on @repo/icons.
- */
-function BugIcon(): React.JSX.Element {
-    return (
-        <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-        >
-            <path d="M8 2l1.88 1.88M14.12 3.88L16 2M9 7.13v-1a3.003 3.003 0 116 0v1" />
-            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a4 4 0 014-4h4a4 4 0 014 4v3c0 3.3-2.7 6-6 6" />
-            <path d="M12 20v-9M6.53 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M20.97 5c0 2.1-1.6 3.8-3.5 4M22 13h-4M17.2 17c2.1.1 3.8 1.9 3.8 4" />
-        </svg>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Minimize icon (small X)
-// ---------------------------------------------------------------------------
-
-function MinimizeIcon(): React.JSX.Element {
-    return (
-        <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            aria-hidden="true"
-        >
-            <line
-                x1="2"
-                y1="2"
-                x2="10"
-                y2="10"
-            />
-            <line
-                x1="10"
-                y1="2"
-                x2="2"
-                y2="10"
-            />
-        </svg>
-    );
-}
 
 // ---------------------------------------------------------------------------
 // localStorage helpers (exported for testability)
@@ -239,6 +181,10 @@ export function FeedbackFAB({
     // ------------------------------------------------------------------
     // State (all hooks MUST be before any conditional return)
     // ------------------------------------------------------------------
+
+    // Install console.error interceptor at FAB mount time (app startup)
+    // so errors are captured before the form is opened (GAP-031-04).
+    useConsoleCapture();
 
     const [isOpen, setIsOpen] = useState<boolean>(false);
     const [isMinimized, setIsMinimized] = useState<boolean>(false);
@@ -411,7 +357,12 @@ export function FeedbackFAB({
                         aria-describedby={isHovered ? tooltipId : undefined}
                         data-testid="feedback-fab-minimized"
                     >
-                        {isHovered && <BugIcon />}
+                        {isHovered && (
+                            <DebugIcon
+                                size={24}
+                                aria-hidden="true"
+                            />
+                        )}
                     </button>
                     {isHovered && (
                         <span
@@ -449,7 +400,10 @@ export function FeedbackFAB({
                     aria-describedby={isHovered ? tooltipId : undefined}
                     data-testid="feedback-fab"
                 >
-                    <BugIcon />
+                    <DebugIcon
+                        size={24}
+                        aria-hidden="true"
+                    />
                 </button>
 
                 {/* Tooltip rendered outside button to avoid duplicate screen reader announcement */}
@@ -471,7 +425,10 @@ export function FeedbackFAB({
                     aria-label={FEEDBACK_STRINGS.fab.minimizeTooltip}
                     data-testid="feedback-fab-minimize"
                 >
-                    <MinimizeIcon />
+                    <CloseIcon
+                        size={12}
+                        aria-hidden="true"
+                    />
                 </button>
             </div>
 

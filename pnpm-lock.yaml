@@ -814,6 +814,9 @@ importers:
 
   packages/feedback:
     dependencies:
+      '@repo/icons':
+        specifier: workspace:*
+        version: link:../icons
       react:
         specifier: 19.1.1
         version: 19.1.1
