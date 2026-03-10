@@ -21,6 +21,7 @@ import { sentryMiddleware } from '../middlewares/sentry';
 import { trialMiddleware } from '../middlewares/trial';
 import { validationMiddleware } from '../middlewares/validation';
 import type { AppBindings, AppMiddleware, AppOpenAPI } from '../types';
+import { transformZodError } from './zod-error-transformer';
 
 // Lazy-loaded mock auth middleware for testing (avoids top-level await for CJS compat)
 let mockAuthMiddlewareCache: MiddlewareHandler<AppBindings> | null = null;
@@ -74,7 +75,30 @@ const wrapMiddleware = (middleware: MiddlewareHandler): AppMiddleware => {
 
 export function createRouter() {
     return new OpenAPIHono<AppBindings>({
-        strict: false
+        strict: false,
+        defaultHook: (result, c) => {
+            if (result.success) {
+                return;
+            }
+
+            const transformedError = transformZodError(result.error);
+
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: transformedError.code,
+                        message: transformedError.message,
+                        details: transformedError
+                    },
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        requestId: c.get('requestId') || 'unknown'
+                    }
+                },
+                400
+            );
+        }
     });
 }
 
