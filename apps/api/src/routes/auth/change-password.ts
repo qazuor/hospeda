@@ -9,6 +9,7 @@ import { compare, hash } from 'bcryptjs';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 
@@ -75,6 +76,12 @@ export const changePasswordRoute = createSimpleRoute({
         }
 
         apiLogger.info({ message: `Password changed for user ${user.id}` });
+
+        auditLog({
+            auditEvent: AuditEventType.AUTH_PASSWORD_CHANGED,
+            actorId: user.id,
+            ip: c.req.header('x-forwarded-for') ?? c.req.header('cf-connecting-ip') ?? 'unknown'
+        });
 
         return { success: true, message: 'Password changed successfully' };
     }
