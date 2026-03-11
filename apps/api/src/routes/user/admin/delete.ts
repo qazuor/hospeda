@@ -6,6 +6,7 @@ import { DeleteResultSchema, PermissionEnum, UserIdSchema } from '@repo/schemas'
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -35,6 +36,14 @@ export const adminDeleteUserRoute = createAdminRoute({
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
+
+        // Audit log: PII-critical operation - soft delete of a user
+        auditLog({
+            auditEvent: AuditEventType.USER_ADMIN_MUTATION,
+            actorId: actor.id,
+            targetUserId: id as string,
+            operation: 'soft_delete'
+        });
 
         return {
             deleted: result.data?.count > 0,

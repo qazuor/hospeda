@@ -6,6 +6,7 @@ import { PermissionEnum, UserAdminSchema, UserIdSchema } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -29,6 +30,15 @@ export const adminRestoreUserRoute = createAdminRoute({
         const id = params.id as string;
         const result = await userService.restore(actor, id);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
+
+        // Audit log: admin restored a soft-deleted user account
+        auditLog({
+            auditEvent: AuditEventType.USER_ADMIN_MUTATION,
+            actorId: actor.id,
+            targetUserId: id,
+            operation: 'restore'
+        });
+
         return result.data;
     }
 });

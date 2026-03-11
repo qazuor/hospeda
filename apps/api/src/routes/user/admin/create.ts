@@ -13,6 +13,7 @@ import {
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -55,6 +56,14 @@ export const adminCreateUserRoute = createAdminRoute({
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
         }
+
+        // Audit log: admin created a new user account (PII-sensitive operation)
+        auditLog({
+            auditEvent: AuditEventType.USER_ADMIN_MUTATION,
+            actorId: actor.id,
+            targetUserId: result.data?.id ?? '',
+            operation: 'create'
+        });
 
         return result.data;
     }
