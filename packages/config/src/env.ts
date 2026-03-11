@@ -204,8 +204,8 @@ export function exposeSharedEnv(
                     console.log(`✅ ${context} environment validation passed`);
                 } catch (error) {
                     if (error instanceof z.ZodError) {
-                        const errorMessages = error.errors
-                            .map((err) => `  - ${err.path.join('.')}: ${err.message}`)
+                        const errorMessages = error.issues
+                            .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
                             .join('\n');
                         console.error(
                             `❌ Environment validation failed for ${context}:\n${errorMessages}`
