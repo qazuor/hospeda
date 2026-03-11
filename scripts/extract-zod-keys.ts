@@ -11,7 +11,8 @@
  *   - apps/api/src/routes/exchange-rates/admin/index.ts
  *
  * Usage:
- *   npx tsx scripts/extract-zod-keys.ts
+ *   npx tsx scripts/extract-zod-keys.ts            # extract and write inventory
+ *   npx tsx scripts/extract-zod-keys.ts --verify   # verify all keys have translations
  */
 
 import * as fs from 'node:fs';
@@ -311,13 +312,181 @@ function countByNamespace(keys: readonly string[]): Record<string, number> {
 }
 
 // ---------------------------------------------------------------------------
+// Locale verification
+// ---------------------------------------------------------------------------
+
+/** Paths to locale validation JSON files, relative to REPO_ROOT. */
+const LOCALE_VALIDATION_FILES: Record<string, string> = {
+    es: 'packages/i18n/src/locales/es/validation.json',
+    en: 'packages/i18n/src/locales/en/validation.json',
+    pt: 'packages/i18n/src/locales/pt/validation.json'
+};
+
+/**
+ * Recursively flattens a nested JSON object into dot-notation keys.
+ *
+ * For example, `{ foo: { bar: { baz: "x" } } }` becomes `["foo.bar.baz"]`.
+ *
+ * @param obj - The object to flatten.
+ * @param prefix - The current key prefix (used in recursion).
+ * @returns Sorted array of all leaf key paths.
+ */
+function flattenJsonKeys(obj: Record<string, unknown>, prefix = ''): string[] {
+    const keys: string[] = [];
+
+    for (const [k, v] of Object.entries(obj)) {
+        const fullKey = prefix ? `${prefix}.${k}` : k;
+
+        if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+            keys.push(...flattenJsonKeys(v as Record<string, unknown>, fullKey));
+        } else {
+            keys.push(fullKey);
+        }
+    }
+
+    return keys;
+}
+
+/**
+ * Loads and flattens the validation.json for a single locale.
+ *
+ * The extracted zodError keys use a `zodError.<namespace>.<field>.<rule>` format
+ * which maps to `zodError > namespace > field > rule` nesting in the JSON file.
+ * After flattening, each key path is prefixed with `zodError.`.
+ *
+ * @param locale - Locale code (e.g. `"es"`).
+ * @returns Set of dot-notation keys present in that locale's validation file.
+ * @throws If the file cannot be read or parsed.
+ */
+function loadLocaleKeys(locale: string): Set<string> {
+    const filePath = path.join(REPO_ROOT, LOCALE_VALIDATION_FILES[locale] ?? '');
+
+    let raw: string;
+    try {
+        raw = fs.readFileSync(filePath, 'utf8');
+    } catch (err) {
+        throw new Error(`Cannot read locale file for "${locale}" at ${filePath}: ${String(err)}`);
+    }
+
+    let parsed: Record<string, unknown>;
+    try {
+        parsed = JSON.parse(raw) as Record<string, unknown>;
+    } catch (err) {
+        throw new Error(`Cannot parse locale file for "${locale}" at ${filePath}: ${String(err)}`);
+    }
+
+    // The JSON file does not have a top-level "zodError" key — the schemas
+    // use keys like "zodError.accommodation.address.required" but the locale
+    // file stores them as "accommodation > address > required".
+    // Prefix every flattened key with "zodError." to match schema key format.
+    const flatKeys = flattenJsonKeys(parsed).map((k) => `zodError.${k}`);
+    return new Set(flatKeys);
+}
+
+/** Per-locale verification result. */
+interface LocaleVerificationResult {
+    locale: string;
+    missingKeys: string[];
+    totalExtracted: number;
+    totalPresent: number;
+}
+
+/**
+ * Verifies that every extracted zodError key has a translation in all 3 locale files.
+ *
+ * Keys with fewer than 3 segments (e.g. `zodError.validation`) are skipped — they
+ * are already flagged as warnings during extraction and may be false positives
+ * from template literals or comments.
+ *
+ * @param extractedKeys - Deduplicated, sorted array of all discovered zodError keys.
+ * @returns Array of per-locale results, one entry per locale.
+ */
+function verifyKeysAgainstLocales(extractedKeys: readonly string[]): LocaleVerificationResult[] {
+    // Filter out suspicious short keys — already warned about during extraction.
+    const keysToVerify = extractedKeys.filter((k) => k.split('.').length >= 3);
+    const results: LocaleVerificationResult[] = [];
+
+    for (const locale of Object.keys(LOCALE_VALIDATION_FILES)) {
+        let localeKeys: Set<string>;
+        try {
+            localeKeys = loadLocaleKeys(locale);
+        } catch (err) {
+            console.error(`  [ERROR] ${String(err)}`);
+            results.push({
+                locale,
+                missingKeys: keysToVerify.slice(),
+                totalExtracted: keysToVerify.length,
+                totalPresent: 0
+            });
+            continue;
+        }
+
+        const missingKeys = keysToVerify.filter((key) => !localeKeys.has(key));
+
+        results.push({
+            locale,
+            missingKeys,
+            totalExtracted: keysToVerify.length,
+            totalPresent: keysToVerify.length - missingKeys.length
+        });
+    }
+
+    return results;
+}
+
+/**
+ * Formats and prints the verification report to stdout/stderr.
+ *
+ * @param results - Per-locale results from `verifyKeysAgainstLocales`.
+ * @returns `true` if all keys are covered in all locales, `false` otherwise.
+ */
+function printVerificationReport(results: readonly LocaleVerificationResult[]): boolean {
+    let allPassed = true;
+
+    console.info('\nZod Translation Key Verification');
+    console.info('=================================\n');
+
+    for (const result of results) {
+        const { locale, missingKeys, totalExtracted, totalPresent } = result;
+        const passed = missingKeys.length === 0;
+
+        if (passed) {
+            console.info(`  [OK]  ${locale}  — ${totalPresent}/${totalExtracted} keys covered`);
+        } else {
+            allPassed = false;
+            console.error(
+                `  [FAIL] ${locale}  — ${totalPresent}/${totalExtracted} keys covered, ${missingKeys.length} missing:`
+            );
+            for (const key of missingKeys) {
+                console.error(`           - ${key}`);
+            }
+        }
+    }
+
+    console.info('');
+
+    if (allPassed) {
+        console.info('All keys are covered in all locales.');
+    } else {
+        console.error(
+            'Missing translations found. Add them to packages/i18n/src/locales/{es,en,pt}/validation.json'
+        );
+    }
+
+    return allPassed;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
 /**
  * Entry point. Runs the full extraction pipeline and writes the output JSON.
+ * When `--verify` flag is passed, also verifies translations and exits with
+ * code 1 if any keys are missing from any locale.
  */
 async function main(): Promise<void> {
+    const verifyMode = process.argv.includes('--verify');
     const warnings: string[] = [];
     const staticFiles = await resolveStaticFiles();
     const rawStaticKeys = extractStaticKeys(staticFiles, warnings);
@@ -344,6 +513,17 @@ async function main(): Promise<void> {
     };
 
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(inventory, null, 4), 'utf8');
+
+    if (verifyMode) {
+        const results = verifyKeysAgainstLocales(allKeys);
+        const passed = printVerificationReport(results);
+        if (!passed) {
+            process.exit(1);
+        }
+    } else {
+        console.info(`\nInventory written to ${path.relative(REPO_ROOT, OUTPUT_FILE)}`);
+        console.info(`Total unique keys: ${allKeys.length}`);
+    }
 }
 
 main().catch((err: unknown) => {
