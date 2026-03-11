@@ -13,8 +13,9 @@ import { env } from '@/env';
 import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/consolidated-config.types';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
+import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import { resolveValidationMessage, useTranslations } from '@repo/i18n';
+import { useTranslations } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import type { PermissionEnum } from '@repo/schemas';
 import { Suspense, useMemo, useState } from 'react';
@@ -191,32 +192,14 @@ export function EntityCreateContent({
         } catch (error) {
             adminLogger.error(`Failed to create ${config.entityType}`, error);
 
-            const fieldErrors: Record<string, string> = {};
             let toastMessage = config.errorMessage;
 
-            if (error instanceof Error) {
-                try {
-                    const zodErrors = JSON.parse(error.message);
-                    if (Array.isArray(zodErrors)) {
-                        const fieldNames: string[] = [];
-                        for (const zodError of zodErrors) {
-                            if (zodError.path?.length > 0) {
-                                const fieldId = zodError.path[0] as string;
-                                fieldErrors[fieldId] = resolveValidationMessage({
-                                    key: zodError.message as string,
-                                    t: tAny
-                                });
-                                fieldNames.push(fieldId);
-                            }
-                        }
-                        if (fieldNames.length > 0) {
-                            toastMessage = `Hay ${fieldNames.length} campo(s) con errores de validación: ${fieldNames.join(', ')}`;
-                        }
-                    }
-                } catch {
-                    // Not a JSON error, use the raw message
-                    toastMessage = error.message;
-                }
+            // Parse the standardized API validation error envelope (GAP-040)
+            const apiBody = (error as { body?: unknown }).body;
+            const fieldErrors = parseApiValidationErrors({ error: apiBody, t: tAny });
+
+            if (Object.keys(fieldErrors).length === 0 && error instanceof Error) {
+                toastMessage = error.message;
             }
 
             if (Object.keys(fieldErrors).length > 0) {

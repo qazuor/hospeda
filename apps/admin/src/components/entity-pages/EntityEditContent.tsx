@@ -6,9 +6,9 @@ import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import { env } from '@/env';
 import { useIntelligentNavigation, useLazySections } from '@/hooks';
+import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
-import { resolveValidationMessage, useTranslations } from '@repo/i18n';
-import type { ZodSchema } from 'zod';
+import { useTranslations } from '@repo/i18n';
 
 /**
  * Props for EntityEditContent component
@@ -20,19 +20,13 @@ export interface EntityEditContentProps {
     renderSection?: (section: SectionConfig, index: number) => React.ReactNode;
     /** Additional CSS classes */
     className?: string;
-    /** Optional Zod schema for form validation */
-    zodSchema?: ZodSchema;
 }
 
 /**
  * Component for rendering entity content in edit mode
  * Renders sections using EntityFormSection components with form handling
  */
-export const EntityEditContent = ({
-    renderSection,
-    className,
-    zodSchema: _zodSchema
-}: EntityEditContentProps) => {
+export const EntityEditContent = ({ renderSection, className }: EntityEditContentProps) => {
     const {
         values,
         errors,
@@ -89,70 +83,24 @@ export const EntityEditContent = ({
         } catch (error) {
             adminLogger.error('Failed to save entity', error);
 
-            // Extract more detailed error message and field-specific errors
-            let errorMessage = t('error.form.unexpected-error');
-            const fieldErrors: Record<string, string> = {};
-
             const tAny = t as (key: string, params?: Record<string, unknown>) => string;
 
-            if (error instanceof Error) {
-                errorMessage = resolveValidationMessage({ key: error.message, t: tAny });
+            // Parse the standardized API validation error envelope (GAP-040)
+            const apiBody = (error as { body?: unknown }).body;
+            const fieldErrors = parseApiValidationErrors({ error: apiBody, t: tAny });
 
-                // If it's an API error with Zod validation errors
-                const apiError = error as Error & {
-                    body?: {
-                        success?: boolean;
-                        error?: {
-                            name?: string;
-                            message?: string;
-                        };
-                    };
-                };
+            let errorMessage = t('error.form.unexpected-error');
 
-                if (apiError.body?.error?.message) {
-                    try {
-                        // Try to parse Zod error message (it's a JSON string)
-                        const zodErrors = JSON.parse(apiError.body.error.message);
-
-                        if (Array.isArray(zodErrors)) {
-                            // Extract field-specific errors
-                            for (const zodError of zodErrors) {
-                                if (zodError.path && zodError.path.length > 0) {
-                                    const fieldName = zodError.path[0];
-                                    fieldErrors[fieldName] = resolveValidationMessage({
-                                        key: zodError.message as string,
-                                        t: tAny
-                                    });
-                                }
-                            }
-
-                            // Create a more user-friendly toast message
-                            const fieldCount = Object.keys(fieldErrors).length;
-                            if (fieldCount > 0) {
-                                if (fieldCount === 1) {
-                                    errorMessage = t('error.form.validation-failed-field');
-                                } else {
-                                    errorMessage = t('error.form.validation-failed-fields-plural', {
-                                        count: fieldCount
-                                    });
-                                }
-                            }
-                        }
-                    } catch {
-                        // If parsing fails, use the raw message
-                        errorMessage = resolveValidationMessage({
-                            key: apiError.body.error.message,
-                            t: tAny
-                        });
-                    }
-                }
-            }
-
-            // Set field-specific errors in the form context
             if (Object.keys(fieldErrors).length > 0) {
+                const fieldCount = Object.keys(fieldErrors).length;
+                errorMessage =
+                    fieldCount === 1
+                        ? t('error.form.validation-failed-field')
+                        : t('error.form.validation-failed-fields-plural', { count: fieldCount });
                 setErrors(fieldErrors);
-                // Auto-scroll to first error after setting errors
                 setTimeout(() => scrollToFirstError(), 100);
+            } else if (error instanceof Error) {
+                errorMessage = error.message;
             }
 
             addToast({

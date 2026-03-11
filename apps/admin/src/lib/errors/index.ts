@@ -65,3 +65,15 @@ export {
     showSuccessToast,
     showInfoToast
 } from './toast-error';
+
+// API validation error parser (GAP-032)
+export {
+    ApiValidationDetailSchema,
+    ApiValidationSummarySchema,
+    ApiValidationErrorBodySchema,
+    ApiValidationErrorSchema,
+    type ApiValidationDetail,
+    type ApiValidationError,
+    type ParseApiValidationErrorsInput,
+    parseApiValidationErrors
+} from './parse-api-validation-errors';

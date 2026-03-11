@@ -116,7 +116,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
 
         const canAddMore = value.length < maxImages;
 
-        const generateId = () => `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const generateId = () => `img-${crypto.randomUUID()}`;
 
         const handleFilesSelect = async (files: FileList) => {
             if (!files.length) return;
