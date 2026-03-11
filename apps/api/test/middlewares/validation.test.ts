@@ -33,10 +33,20 @@ vi.mock('../../src/middlewares/sanitization', () => ({
 
 // Mock zod error transformer
 vi.mock('../../src/utils/zod-error-transformer', () => ({
-    transformZodError: vi.fn((error) => ({
+    transformZodError: vi.fn((_error) => ({
         code: 'ZOD_VALIDATION_FAILED',
-        message: 'Validation failed',
-        details: error.errors
+        messageKey: 'validationError.validation.failed',
+        zodMessage: 'Validation failed',
+        userFriendlyMessage: 'Please fix the validation errors',
+        details: [
+            { field: 'name', messageKey: 'validationError.field.tooSmall', code: 'TOO_SMALL' }
+        ],
+        summary: {
+            totalErrors: 1,
+            fieldCount: 1,
+            errorsByField: { name: 1 },
+            mostCommonError: 'TOO_SMALL'
+        }
     }))
 }));
 
@@ -341,6 +351,33 @@ describe('Validation Middleware', () => {
             expect(data.error.code).toBe('ZOD_VALIDATION_FAILED');
         });
 
+        it('should return standardized error envelope for ZodError path (GAP-030)', async () => {
+            const appWithSchema = new Hono();
+            appWithSchema.use(
+                createValidationMiddleware({
+                    manualZodSchema: testSchema
+                })
+            );
+            appWithSchema.post('/test', (c) => c.json({ message: 'success' }));
+
+            const res = await appWithSchema.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'User-Agent': 'test-agent' },
+                body: JSON.stringify({ name: '', email: 'invalid', age: 15 })
+            });
+
+            expect(res.status).toBe(400);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            // Verify flattened envelope (same as defaultHook format)
+            expect(data.error).toHaveProperty('code');
+            expect(data.error).toHaveProperty('messageKey');
+            expect(data.error).toHaveProperty('details');
+            expect(data.error).toHaveProperty('summary');
+            expect(data.error).toHaveProperty('userFriendlyMessage');
+            expect(Array.isArray(data.error.details)).toBe(true);
+        });
+
         it('should handle malformed JSON with Zod schema', async () => {
             const appWithSchema = new Hono();
             // Add global error handler to catch JSON parsing errors
@@ -519,7 +556,7 @@ describe('Validation Middleware', () => {
             const data = await res.json();
             expect(data.success).toBe(false);
             expect(data.error).toHaveProperty('code');
-            expect(data.error).toHaveProperty('message');
+            expect(data.error).toHaveProperty('messageKey');
             expect(data.metadata).toHaveProperty('timestamp');
             expect(data.metadata).toHaveProperty('requestId');
         });

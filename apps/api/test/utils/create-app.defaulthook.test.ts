@@ -217,7 +217,7 @@ describe('createRouter defaultHook', () => {
             expect(error.code).toBe('VALIDATION_ERROR');
         });
 
-        it('should include error.details.details as a non-empty array', async () => {
+        it('should include error.details as a non-empty array', async () => {
             // Arrange
             const router = buildRouter();
 
@@ -226,9 +226,8 @@ describe('createRouter defaultHook', () => {
 
             // Assert
             const error = body.error as Record<string, unknown>;
-            const details = error.details as Record<string, unknown>;
-            expect(Array.isArray(details.details)).toBe(true);
-            expect((details.details as unknown[]).length).toBeGreaterThan(0);
+            expect(Array.isArray(error.details)).toBe(true);
+            expect((error.details as unknown[]).length).toBeGreaterThan(0);
         });
 
         it('should include field-level info in each details entry', async () => {
@@ -240,15 +239,14 @@ describe('createRouter defaultHook', () => {
 
             // Assert
             const error = body.error as Record<string, unknown>;
-            const details = error.details as Record<string, unknown>;
-            const firstEntry = (details.details as Record<string, unknown>[])[0];
+            const firstEntry = (error.details as Record<string, unknown>[])[0];
             expect(firstEntry).toBeDefined();
             expect(typeof firstEntry?.field).toBe('string');
-            expect(typeof firstEntry?.message).toBe('string');
+            expect(typeof firstEntry?.messageKey).toBe('string');
             expect(typeof firstEntry?.code).toBe('string');
         });
 
-        it('should include error.details.summary with totalErrors and fieldCount', async () => {
+        it('should include error.summary with totalErrors and fieldCount', async () => {
             // Arrange
             const router = buildRouter();
 
@@ -257,8 +255,7 @@ describe('createRouter defaultHook', () => {
 
             // Assert
             const error = body.error as Record<string, unknown>;
-            const details = error.details as Record<string, unknown>;
-            const summary = details.summary as Record<string, unknown>;
+            const summary = error.summary as Record<string, unknown>;
             expect(summary).toBeDefined();
             expect(typeof summary.totalErrors).toBe('number');
             expect(typeof summary.fieldCount).toBe('number');
@@ -275,8 +272,7 @@ describe('createRouter defaultHook', () => {
 
             // Assert
             const error = body.error as Record<string, unknown>;
-            const details = error.details as Record<string, unknown>;
-            const summary = details.summary as Record<string, unknown>;
+            const summary = error.summary as Record<string, unknown>;
             expect(typeof summary.errorsByField).toBe('object');
             expect(summary.errorsByField).not.toBeNull();
         });
@@ -429,6 +425,83 @@ describe('createRouter defaultHook', () => {
 
             // Assert - defaultHook still fires for the /test route and returns 400
             expect(status).toBe(400);
+            const error = body.error as Record<string, unknown>;
+            expect(error.code).toBe('VALIDATION_ERROR');
+        });
+    });
+
+    describe('query param validation (GAP-023)', () => {
+        const queryRoute = createRoute({
+            method: 'get',
+            path: '/search',
+            request: {
+                query: z.object({
+                    q: z.string().min(2, 'zodError.test.q.min'),
+                    page: z.coerce.number().min(1).optional()
+                })
+            },
+            responses: {
+                200: { description: 'OK' }
+            }
+        });
+
+        it('should return HTTP 200 when query params are valid', async () => {
+            // Arrange
+            const router = createRouter();
+            router.openapi(queryRoute, (c) => c.json({ success: true, data: 'ok' }, 200));
+
+            // Act
+            const res = await router.request('/search?q=ab&page=1');
+
+            // Assert
+            expect(res.status).toBe(200);
+        });
+
+        it('should return HTTP 400 with field errors when query params are invalid', async () => {
+            // Arrange
+            const router = createRouter();
+            router.openapi(queryRoute, (c) => c.json({ success: true, data: 'ok' }, 200));
+
+            // Act - 'q' is too short (1 char < min 2)
+            const res = await router.request('/search?q=x');
+            const body = (await res.json()) as Record<string, unknown>;
+
+            // Assert
+            expect(res.status).toBe(400);
+            expect(body.success).toBe(false);
+            const error = body.error as Record<string, unknown>;
+            expect(error.code).toBe('VALIDATION_ERROR');
+            expect(Array.isArray(error.details)).toBe(true);
+            expect((error.details as unknown[]).length).toBeGreaterThan(0);
+        });
+    });
+
+    describe('path param validation (GAP-023)', () => {
+        const paramRoute = createRoute({
+            method: 'get',
+            path: '/items/{id}',
+            request: {
+                params: z.object({
+                    id: z.string().uuid('zodError.test.id.uuid')
+                })
+            },
+            responses: {
+                200: { description: 'OK' }
+            }
+        });
+
+        it('should return HTTP 400 when path param fails validation', async () => {
+            // Arrange
+            const router = createRouter();
+            router.openapi(paramRoute, (c) => c.json({ success: true, data: 'ok' }, 200));
+
+            // Act - 'not-a-uuid' is not a valid UUID
+            const res = await router.request('/items/not-a-uuid');
+            const body = (await res.json()) as Record<string, unknown>;
+
+            // Assert
+            expect(res.status).toBe(400);
+            expect(body.success).toBe(false);
             const error = body.error as Record<string, unknown>;
             expect(error.code).toBe('VALIDATION_ERROR');
         });
