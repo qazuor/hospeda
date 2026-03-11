@@ -16,6 +16,8 @@
         "tooSmallArray": "Se requieren más elementos",
         "tooLargeArray": "Demasiados elementos",
         "invalidUnion": "El valor no coincide con ninguno de los formatos permitidos",
+        "invalidKey": "La clave '{{key}}' no es válida en este contexto",
+        "invalidElement": "El elemento en la posición {{index}} no es válido",
         "unrecognizedKeys": "Se encontraron campos no reconocidos",
         "custom": "Error de validación personalizado",
         "invalidFormat": "Formato inválido",
@@ -704,22 +706,22 @@
         },
         "contact": {
             "homePhone": {
-                "international": "El home phone no es válido"
+                "international": "El teléfono particular no es válido"
             },
             "mobilePhone": {
-                "international": "El mobile phone no es válido"
+                "international": "El teléfono celular no es válido"
             },
             "personalEmail": {
-                "invalid": "El personal email no es válido"
+                "invalid": "El email personal no es válido"
             },
             "website": {
                 "invalid": "El sitio web no es válido"
             },
             "workEmail": {
-                "invalid": "El work email no es válido"
+                "invalid": "El email laboral no es válido"
             },
             "workPhone": {
-                "international": "El work phone no es válido"
+                "international": "El teléfono laboral no es válido"
             }
         },
         "createdAfter": {
@@ -820,7 +822,7 @@
             "invalidBoolean": "El is available debe ser verdadero o falso"
         },
         "isEmailVerified": {
-            "invalidBoolean": "El is email verified debe ser verdadero o falso"
+            "invalidBoolean": "La verificación de email debe ser verdadero o falso"
         },
         "isFeatured": {
             "invalidBoolean": "El destacado debe ser verdadero o falso"
@@ -999,6 +1001,12 @@
                 "max_value": "El tamaño de página no puede ser mayor a {{max}}",
                 "min_value": "El tamaño de página debe ser al menos {{min}}"
             }
+        },
+        "password": {
+            "max": "La contraseña no puede superar los {{max}} caracteres",
+            "min": "La contraseña debe tener al menos {{min}} caracteres",
+            "pattern": "La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial",
+            "required": "La contraseña es obligatoria"
         },
         "phone": {
             "invalid": "El teléfono no es válido"
@@ -1881,6 +1889,17 @@
             "min": "El título debe tener al menos {{min}} caracteres",
             "required": "El título es obligatorio"
         },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "La fecha de eliminación tiene un tipo de dato inválido"
+            },
+            "force": {
+                "invalidType": "El parámetro force tiene un tipo de dato inválido"
+            },
+            "success": {
+                "required": "El resultado de la eliminación es obligatorio"
+            }
+        },
         "validFrom": {
             "required": "El valid from es obligatorio"
         },
@@ -2263,7 +2282,7 @@
             "invalid": "El ends at no es válido"
         },
         "linkUrl": {
-            "url": "El link url no es válido"
+            "url": "La URL del enlace no es válida"
         },
         "logoUrl": {
             "url": "La URL del logo no es válida"
@@ -2274,6 +2293,17 @@
         },
         "startsAt": {
             "required": "El starts at es obligatorio"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "La fecha de eliminación tiene un tipo de dato inválido"
+            },
+            "force": {
+                "invalidType": "El parámetro force tiene un tipo de dato inválido"
+            },
+            "success": {
+                "required": "El resultado de la eliminación es obligatorio"
+            }
         },
         "targetId": {
             "required": "El target id es obligatorio",
@@ -2627,13 +2657,13 @@
             },
             "notifications": {
                 "allowEmails": {
-                    "required": "El allow emails es obligatorio"
+                    "required": "Permitir emails es obligatorio"
                 },
                 "allowPush": {
-                    "required": "El allow push es obligatorio"
+                    "required": "Permitir notificaciones push es obligatorio"
                 },
                 "allowSms": {
-                    "required": "El allow sms es obligatorio"
+                    "required": "Permitir SMS es obligatorio"
                 },
                 "enabled": {
                     "required": "El habilitado es obligatorio"

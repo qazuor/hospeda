@@ -16,6 +16,8 @@
         "tooSmallArray": "[PT] Se requieren más elementos",
         "tooLargeArray": "[PT] Demasiados elementos",
         "invalidUnion": "[PT] El valor no coincide con ninguno de los formatos permitidos",
+        "invalidKey": "A chave '{{key}}' não é válida neste contexto",
+        "invalidElement": "O elemento na posição {{index}} não é válido",
         "unrecognizedKeys": "[PT] Se encontraron campos no reconocidos",
         "custom": "[PT] Error de validación personalizado",
         "invalidFormat": "[PT] Formato inválido",
@@ -1000,6 +1002,12 @@
                 "min_value": "[PT] El tamaño de página debe ser al menos {{min}}"
             }
         },
+        "password": {
+            "max": "A senha não pode ter mais de {{max}} caracteres",
+            "min": "A senha deve ter pelo menos {{min}} caracteres",
+            "pattern": "A senha deve ter maiúsculas, minúsculas, um número e um caractere especial",
+            "required": "A senha é obrigatória"
+        },
         "phone": {
             "invalid": "[PT] El teléfono no es válido"
         },
@@ -1881,6 +1889,17 @@
             "min": "[PT] El título debe tener al menos {{min}} caracteres",
             "required": "[PT] El título es obligatorio"
         },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "A data de exclusão tem um tipo inválido"
+            },
+            "force": {
+                "invalidType": "O parâmetro force tem um tipo inválido"
+            },
+            "success": {
+                "required": "O resultado da exclusão é obrigatório"
+            }
+        },
         "validFrom": {
             "required": "[PT] El valid from es obligatorio"
         },
@@ -2274,6 +2293,17 @@
         },
         "startsAt": {
             "required": "[PT] El starts at es obligatorio"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "A data de exclusão tem um tipo inválido"
+            },
+            "force": {
+                "invalidType": "O parâmetro force tem um tipo inválido"
+            },
+            "success": {
+                "required": "O resultado da exclusão é obrigatório"
+            }
         },
         "targetId": {
             "required": "[PT] El target id es obligatorio",

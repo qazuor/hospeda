@@ -16,6 +16,8 @@
         "tooSmallArray": "[EN] Se requieren más elementos",
         "tooLargeArray": "[EN] Demasiados elementos",
         "invalidUnion": "[EN] El valor no coincide con ninguno de los formatos permitidos",
+        "invalidKey": "The key '{{key}}' is not valid in this context",
+        "invalidElement": "The element at position {{index}} is not valid",
         "unrecognizedKeys": "[EN] Se encontraron campos no reconocidos",
         "custom": "[EN] Error de validación personalizado",
         "invalidFormat": "[EN] Formato inválido",
@@ -1000,6 +1002,12 @@
                 "min_value": "[EN] El tamaño de página debe ser al menos {{min}}"
             }
         },
+        "password": {
+            "max": "Password must not exceed {{max}} characters",
+            "min": "Password must be at least {{min}} characters",
+            "pattern": "Password must contain uppercase, lowercase, a number and a special character",
+            "required": "Password is required"
+        },
         "phone": {
             "invalid": "[EN] El teléfono no es válido"
         },
@@ -1881,6 +1889,17 @@
             "min": "[EN] El título debe tener al menos {{min}} caracteres",
             "required": "[EN] El título es obligatorio"
         },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "The deletion date has an invalid type"
+            },
+            "force": {
+                "invalidType": "The force parameter has an invalid type"
+            },
+            "success": {
+                "required": "The deletion result is required"
+            }
+        },
         "validFrom": {
             "required": "[EN] El valid from es obligatorio"
         },
@@ -2274,6 +2293,17 @@
         },
         "startsAt": {
             "required": "[EN] El starts at es obligatorio"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "The deletion date has an invalid type"
+            },
+            "force": {
+                "invalidType": "The force parameter has an invalid type"
+            },
+            "success": {
+                "required": "The deletion result is required"
+            }
         },
         "targetId": {
             "required": "[EN] El target id es obligatorio",
