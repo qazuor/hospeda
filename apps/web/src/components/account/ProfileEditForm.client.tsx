@@ -1,11 +1,14 @@
 import * as Sentry from '@sentry/astro';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useMemo, useState } from 'react';
 import type { JSX } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { userApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { createTranslations } from '../../lib/i18n';
 import { webLogger } from '../../lib/logger';
+import { validateField } from '../../lib/validation/validate-field';
 import { addToast } from '../../store/toast-store';
+import { FormError } from '../ui/FormError';
 
 /**
  * Props for the ProfileEditForm component
@@ -74,24 +77,29 @@ export function ProfileEditForm({
 
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'account' });
 
+    // Base translation function (no namespace) for resolving validateField keys.
+    const { t: tBase } = useMemo(() => createTranslations(locale as SupportedLocale), [locale]);
+
     /**
-     * Validate form fields
+     * Translates a `validationError.field.*` key from validateField into a
+     * human-readable string via the standard `validation.*` namespace.
+     */
+    const resolveValidationKey = (key: string): string =>
+        tBase(key.replace('validationError.', 'validation.'));
+
+    /**
+     * Validate form fields using validateField helper.
      *
      * @returns Validation errors object or undefined if valid
      */
     const validateForm = (): ValidationErrors | undefined => {
         const newErrors: ValidationErrors = {};
 
-        const trimmedName = name.trim();
-        if (!trimmedName) {
-            newErrors.name = t('profileEdit.validationNameRequired');
-        } else if (trimmedName.length < 2) {
-            newErrors.name = t('profileEdit.validationNameMinLength');
-        }
+        const nameKey = validateField(name, { required: true, minLength: 2 });
+        if (nameKey) newErrors.name = resolveValidationKey(nameKey);
 
-        if (bio.length > 500) {
-            newErrors.bio = t('profileEdit.validationBioMaxLength');
-        }
+        const bioKey = validateField(bio, { maxLength: 500 });
+        if (bioKey) newErrors.bio = resolveValidationKey(bioKey);
 
         return Object.keys(newErrors).length > 0 ? newErrors : undefined;
     };
@@ -198,21 +206,15 @@ export function ProfileEditForm({
                         type="text"
                         value={name}
                         onChange={handleNameChange}
-                        required
                         aria-required="true"
                         aria-invalid={!!errors.name}
                         aria-describedby={errors.name ? 'name-error' : undefined}
                         className="w-full rounded-md border border-border bg-card px-4 py-2 text-foreground transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 disabled:cursor-not-allowed disabled:opacity-50"
                     />
-                    {errors.name && (
-                        <p
-                            id="name-error"
-                            className="mt-1 text-destructive text-sm"
-                            role="alert"
-                        >
-                            {errors.name}
-                        </p>
-                    )}
+                    <FormError
+                        fieldName="name"
+                        error={errors.name}
+                    />
                 </div>
 
                 {/* Email Field (Read-only) */}
@@ -274,15 +276,10 @@ export function ProfileEditForm({
                             {bioCharCount}/500
                         </p>
                     </div>
-                    {errors.bio && (
-                        <p
-                            id="bio-error"
-                            className="mt-1 text-destructive text-sm"
-                            role="alert"
-                        >
-                            {errors.bio}
-                        </p>
-                    )}
+                    <FormError
+                        fieldName="bio"
+                        error={errors.bio}
+                    />
                 </div>
             </section>
 

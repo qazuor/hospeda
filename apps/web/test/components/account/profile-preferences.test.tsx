@@ -30,6 +30,15 @@ vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
 
+// Mock createTranslations (used by resolveValidationKey) so keys are returned as-is.
+vi.mock('../../../src/lib/i18n', () => ({
+    createTranslations: () => ({
+        t: (key: string) => key,
+        tPlural: (key: string) => key
+    }),
+    isValidLocale: (l: string) => ['es', 'en', 'pt'].includes(l)
+}));
+
 import { PreferenceToggles } from '../../../src/components/account/PreferenceToggles.client';
 import { ProfileEditForm } from '../../../src/components/account/ProfileEditForm.client';
 import { addToast } from '../../../src/store/toast-store';
@@ -122,7 +131,13 @@ describe('ProfileEditForm.client.tsx', () => {
             });
 
             await waitFor(() => {
-                expect(screen.getByText('profileEdit.validationNameRequired')).toBeInTheDocument();
+                // validateField returns 'validationError.field.required' →
+                // resolveValidationKey maps to 'validation.field.required'
+                // (mocked createTranslations returns key as-is)
+                expect(document.getElementById('name-error')).toBeInTheDocument();
+                expect(document.getElementById('name-error')?.textContent).toBe(
+                    'validation.field.required'
+                );
             });
         });
 
@@ -136,7 +151,12 @@ describe('ProfileEditForm.client.tsx', () => {
             });
 
             await waitFor(() => {
-                expect(screen.getByText('profileEdit.validationNameMinLength')).toBeInTheDocument();
+                // validateField returns 'validationError.field.tooSmall' →
+                // resolveValidationKey maps to 'validation.field.tooSmall'
+                expect(document.getElementById('name-error')).toBeInTheDocument();
+                expect(document.getElementById('name-error')?.textContent).toBe(
+                    'validation.field.tooSmall'
+                );
             });
         });
 
@@ -153,7 +173,12 @@ describe('ProfileEditForm.client.tsx', () => {
             });
 
             await waitFor(() => {
-                expect(screen.getByText('profileEdit.validationBioMaxLength')).toBeInTheDocument();
+                // validateField returns 'validationError.field.tooBig' →
+                // resolveValidationKey maps to 'validation.field.tooBig'
+                expect(document.getElementById('bio-error')).toBeInTheDocument();
+                expect(document.getElementById('bio-error')?.textContent).toBe(
+                    'validation.field.tooBig'
+                );
             });
         });
 
@@ -177,7 +202,7 @@ describe('ProfileEditForm.client.tsx', () => {
             });
 
             await waitFor(() => {
-                expect(screen.getByText('profileEdit.validationNameRequired')).toBeInTheDocument();
+                expect(document.getElementById('name-error')).toBeInTheDocument();
             });
 
             fireEvent.change(screen.getByRole('textbox', { name: /profileEdit.name/i }), {
@@ -185,9 +210,7 @@ describe('ProfileEditForm.client.tsx', () => {
             });
 
             await waitFor(() => {
-                expect(
-                    screen.queryByText('profileEdit.validationNameRequired')
-                ).not.toBeInTheDocument();
+                expect(document.getElementById('name-error')).not.toBeInTheDocument();
             });
         });
     });

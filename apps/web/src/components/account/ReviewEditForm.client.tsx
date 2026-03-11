@@ -3,9 +3,12 @@ import { CancelIcon, SaveIcon } from '@repo/icons';
  * Inline edit form for a single review card.
  * Rendered inside the review card when editing is active.
  */
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useMemo, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import type { SupportedLocale } from '../../lib/i18n';
+import { createTranslations } from '../../lib/i18n';
+import { validateField } from '../../lib/validation/validate-field';
+import { FormError } from '../ui/FormError';
 
 /** State managed by the inline edit form */
 export interface EditFormState {
@@ -41,14 +44,20 @@ interface ReviewEditFormProps {
     readonly locale?: SupportedLocale;
 }
 
+/** Per-field validation errors */
+interface EditFormErrors {
+    title?: string;
+    content?: string;
+}
+
 /**
  * Inline edit form for a review.
  * Renders a star selector, title input, and content textarea.
- * Calls onSave with the updated data on submit.
+ * Performs client-side validation via `validateField` before calling onSave.
  *
  * @param review - The review data used to pre-fill the form
  * @param messages - Localized string labels
- * @param onSave - Async callback invoked with the updated data
+ * @param onSave - Async callback invoked with the updated data on success
  * @param onCancel - Callback invoked when the user cancels editing
  * @param isSaving - When true, disables controls and shows saving indicator
  * @param locale - Locale for UI translations (defaults to 'es')
@@ -67,6 +76,17 @@ export function ReviewEditForm({
         title: review.title,
         content: review.content
     });
+    const [errors, setErrors] = useState<EditFormErrors>({});
+
+    // Base translation function (no namespace) for resolving validateField keys.
+    const { t: tBase } = useMemo(() => createTranslations(locale), [locale]);
+
+    /**
+     * Translates a `validationError.field.*` key from validateField into a
+     * human-readable string via the standard `validation.*` namespace.
+     */
+    const resolveValidationKey = (key: string): string =>
+        tBase(key.replace('validationError.', 'validation.'));
 
     const handleRatingChange = (value: number) => {
         setForm((prev) => ({ ...prev, rating: value }));
@@ -75,12 +95,34 @@ export function ReviewEditForm({
     const handleFieldChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setForm((prev) => ({ ...prev, [name]: value }));
+        // Clear error for the changed field
+        if (name === 'title' || name === 'content') {
+            setErrors((prev) => ({ ...prev, [name]: undefined }));
+        }
     };
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+
+        const validationErrors: EditFormErrors = {};
+
+        const titleKey = validateField(form.title, { required: true, minLength: 3 });
+        if (titleKey) validationErrors.title = resolveValidationKey(titleKey);
+
+        const contentKey = validateField(form.content, { required: true, minLength: 10 });
+        if (contentKey) validationErrors.content = resolveValidationKey(contentKey);
+
+        setErrors(validationErrors);
+
+        if (Object.keys(validationErrors).length > 0) {
+            return;
+        }
+
         await onSave(review.id, form);
     };
+
+    const titleErrorId = `edit-title-${review.id}-error`;
+    const contentErrorId = `edit-content-${review.id}-error`;
 
     return (
         <form
@@ -135,9 +177,19 @@ export function ReviewEditForm({
                     name="title"
                     value={form.title}
                     onChange={handleFieldChange}
-                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.title}
+                    aria-describedby={errors.title ? titleErrorId : undefined}
                     maxLength={200}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`w-full rounded-md border bg-surface px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 ${
+                        errors.title
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
+                            : 'border-border focus:border-primary focus:ring-primary'
+                    }`}
+                />
+                <FormError
+                    fieldName={`edit-title-${review.id}`}
+                    error={errors.title}
                 />
             </div>
 
@@ -154,10 +206,20 @@ export function ReviewEditForm({
                     name="content"
                     value={form.content}
                     onChange={handleFieldChange}
-                    required
+                    aria-required="true"
+                    aria-invalid={!!errors.content}
+                    aria-describedby={errors.content ? contentErrorId : undefined}
                     rows={3}
                     maxLength={2000}
-                    className="w-full resize-none rounded-md border border-border bg-surface px-3 py-1.5 text-sm text-text focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                    className={`w-full resize-none rounded-md border bg-surface px-3 py-1.5 text-sm text-text focus:outline-none focus:ring-2 ${
+                        errors.content
+                            ? 'border-destructive focus:border-destructive focus:ring-destructive'
+                            : 'border-border focus:border-primary focus:ring-primary'
+                    }`}
+                />
+                <FormError
+                    fieldName={`edit-content-${review.id}`}
+                    error={errors.content}
                 />
             </div>
 

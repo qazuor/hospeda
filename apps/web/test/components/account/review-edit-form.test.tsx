@@ -33,6 +33,15 @@ vi.mock('@repo/icons', () => ({
     SaveIcon: () => <span data-testid="save-icon" />
 }));
 
+// Mock createTranslations (used by resolveValidationKey) so keys are returned as-is.
+vi.mock('../../../src/lib/i18n', () => ({
+    createTranslations: () => ({
+        t: (key: string) => key,
+        tPlural: (key: string) => key
+    }),
+    isValidLocale: (l: string) => ['es', 'en', 'pt'].includes(l)
+}));
+
 // ---------------------------------------------------------------------------
 // Component under test
 // ---------------------------------------------------------------------------
@@ -428,20 +437,26 @@ describe('ReviewEditForm', () => {
     // -----------------------------------------------------------------------
 
     describe('Field validation attributes', () => {
-        it('should mark the title input as required', () => {
+        it('should mark the title input as aria-required', () => {
             // Arrange & Act
             renderForm();
 
-            // Assert
-            expect(screen.getByRole('textbox', { name: /title/i })).toBeRequired();
+            // Assert — uses aria-required instead of native required for custom validation
+            expect(screen.getByRole('textbox', { name: /title/i })).toHaveAttribute(
+                'aria-required',
+                'true'
+            );
         });
 
-        it('should mark the content textarea as required', () => {
+        it('should mark the content textarea as aria-required', () => {
             // Arrange & Act
             renderForm();
 
             // Assert
-            expect(screen.getByRole('textbox', { name: /content/i })).toBeRequired();
+            expect(screen.getByRole('textbox', { name: /content/i })).toHaveAttribute(
+                'aria-required',
+                'true'
+            );
         });
 
         it('should enforce a maxLength of 200 on the title input', () => {
@@ -509,6 +524,84 @@ describe('ReviewEditForm', () => {
             // The component passes aria-hidden="true" to the CancelIcon component
             const cancelIcon = screen.getByTestId('cancel-icon');
             expect(cancelIcon).toBeInTheDocument();
+        });
+
+        it('should set aria-invalid on title input when validation fails', async () => {
+            // Arrange — pre-fill with empty title so validation fails on submit
+            renderForm({ review: { title: '' } });
+            const titleInput = screen.getByRole('textbox', { name: /title/i });
+
+            // Act — submit with empty title
+            const form = titleInput.closest('form') as HTMLFormElement;
+            await act(async () => {
+                fireEvent.submit(form);
+            });
+
+            // Assert
+            expect(titleInput).toHaveAttribute('aria-invalid', 'true');
+        });
+
+        it('should set aria-describedby on title input pointing to error element', async () => {
+            // Arrange
+            renderForm({ review: { id: 'aria-test', title: '' } });
+            const titleInput = screen.getByRole('textbox', { name: /title/i });
+
+            // Act
+            const form = titleInput.closest('form') as HTMLFormElement;
+            await act(async () => {
+                fireEvent.submit(form);
+            });
+
+            // Assert — aria-describedby references the error element id
+            expect(titleInput).toHaveAttribute('aria-describedby', 'edit-title-aria-test-error');
+            expect(document.getElementById('edit-title-aria-test-error')).toBeInTheDocument();
+        });
+
+        it('should set aria-invalid on content textarea when validation fails', async () => {
+            // Arrange — pre-fill with empty content
+            renderForm({ review: { content: '' } });
+            const contentArea = screen.getByRole('textbox', { name: /content/i });
+
+            // Act
+            const form = contentArea.closest('form') as HTMLFormElement;
+            await act(async () => {
+                fireEvent.submit(form);
+            });
+
+            // Assert
+            expect(contentArea).toHaveAttribute('aria-invalid', 'true');
+        });
+
+        it('should block onSave when title is empty', async () => {
+            // Arrange
+            const onSave = vi.fn();
+            renderForm({ review: { title: '' }, onSave });
+            const titleInput = screen.getByRole('textbox', { name: /title/i });
+
+            // Act
+            const form = titleInput.closest('form') as HTMLFormElement;
+            await act(async () => {
+                fireEvent.submit(form);
+            });
+
+            // Assert — validation blocked the save call
+            expect(onSave).not.toHaveBeenCalled();
+        });
+
+        it('should block onSave when content is shorter than 10 characters', async () => {
+            // Arrange
+            const onSave = vi.fn();
+            renderForm({ review: { content: 'Short' }, onSave });
+            const contentArea = screen.getByRole('textbox', { name: /content/i });
+
+            // Act
+            const form = contentArea.closest('form') as HTMLFormElement;
+            await act(async () => {
+                fireEvent.submit(form);
+            });
+
+            // Assert
+            expect(onSave).not.toHaveBeenCalled();
         });
     });
 

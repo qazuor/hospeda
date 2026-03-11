@@ -1,10 +1,13 @@
 import { StarIcon } from '@repo/icons';
 import type { JSX } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
 import { reviewsApi } from '../../lib/api/endpoints-protected';
 import type { SupportedLocale } from '../../lib/i18n';
+import { createTranslations } from '../../lib/i18n';
+import { validateField } from '../../lib/validation/validate-field';
 import { addToast } from '../../store/toast-store';
+import { FormError } from '../ui/FormError';
 
 /**
  * Rating aspect keys matching the AccommodationRatingSchema.
@@ -116,6 +119,20 @@ export function ReviewForm({
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'review' });
     const { t: tUi } = useTranslation({ locale: locale as SupportedLocale, namespace: 'ui' });
 
+    // Base translation function (no namespace) used to resolve generic
+    // validationError.field.* keys returned by validateField.
+    const { t: tBase } = useMemo(() => createTranslations(locale as SupportedLocale), [locale]);
+
+    /**
+     * Translates a `validationError.field.*` key returned by `validateField`
+     * into a human-readable string using the standard validation namespace.
+     *
+     * @param key - i18n key like `validationError.field.required`
+     * @returns Translated string or the raw key as fallback
+     */
+    const resolveValidationKey = (key: string): string =>
+        tBase(key.replace('validationError.', 'validation.'));
+
     /**
      * Validates the form fields and returns any per-field error messages.
      */
@@ -131,17 +148,11 @@ export function ReviewForm({
             validationErrors.ratings = t('form.errors.ratingRequired');
         }
 
-        if (!data.title.trim()) {
-            validationErrors.title = t('form.errors.titleRequired');
-        } else if (data.title.trim().length < 3) {
-            validationErrors.title = t('form.errors.titleMinLength');
-        }
+        const titleKey = validateField(data.title, { required: true, minLength: 3 });
+        if (titleKey) validationErrors.title = resolveValidationKey(titleKey);
 
-        if (!data.content.trim()) {
-            validationErrors.content = t('form.errors.contentRequired');
-        } else if (data.content.trim().length < 10) {
-            validationErrors.content = t('form.errors.contentMinLength');
-        }
+        const contentKey = validateField(data.content, { required: true, minLength: 10 });
+        if (contentKey) validationErrors.content = resolveValidationKey(contentKey);
 
         return validationErrors;
     };
@@ -292,6 +303,7 @@ export function ReviewForm({
             <fieldset
                 aria-required="true"
                 aria-invalid={!!errors.ratings}
+                aria-describedby={errors.ratings ? 'ratings-error' : undefined}
                 className="m-0 space-y-2 border-none p-0"
             >
                 <legend className="mb-3 block font-medium text-foreground text-sm">
@@ -299,15 +311,10 @@ export function ReviewForm({
                 </legend>
                 {RATING_ASPECTS.map((aspect) => renderAspectRating(aspect))}
             </fieldset>
-            {errors.ratings && (
-                <p
-                    className="mt-2 text-destructive text-sm"
-                    role="alert"
-                    aria-live="polite"
-                >
-                    {errors.ratings}
-                </p>
-            )}
+            <FormError
+                fieldName="ratings"
+                error={errors.ratings}
+            />
 
             {/* Title Field */}
             <div>
@@ -333,16 +340,10 @@ export function ReviewForm({
                             : 'border-border focus:border-transparent focus:ring-primary'
                     }`}
                 />
-                {errors.title && (
-                    <p
-                        id="title-error"
-                        className="mt-2 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.title}
-                    </p>
-                )}
+                <FormError
+                    fieldName="title"
+                    error={errors.title}
+                />
             </div>
 
             {/* Content Field */}
@@ -369,16 +370,10 @@ export function ReviewForm({
                             : 'border-border focus:border-transparent focus:ring-primary'
                     }`}
                 />
-                {errors.content && (
-                    <p
-                        id="content-error"
-                        className="mt-2 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.content}
-                    </p>
-                )}
+                <FormError
+                    fieldName="content"
+                    error={errors.content}
+                />
             </div>
 
             {/* Action Buttons */}

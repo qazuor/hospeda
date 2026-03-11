@@ -37,6 +37,16 @@ vi.mock('@repo/i18n', () => ({
     toBcp47Locale: (locale: string) => locale
 }));
 
+// Mock createTranslations (used by resolveValidationKey in ReviewForm) so that
+// validation keys are returned as-is, making test assertions locale-independent.
+vi.mock('../../../src/lib/i18n', () => ({
+    createTranslations: () => ({
+        t: (key: string) => key,
+        tPlural: (key: string) => key
+    }),
+    isValidLocale: (l: string) => ['es', 'en', 'pt'].includes(l)
+}));
+
 vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
@@ -495,7 +505,12 @@ describe('ReviewForm.client.tsx', () => {
                 fireEvent.submit(document.querySelector('form') as HTMLFormElement);
             });
             await waitFor(() => {
-                expect(screen.getByText('form.errors.titleRequired')).toBeInTheDocument();
+                // validateField returns 'validationError.field.required' which resolveValidationKey
+                // maps to 'validation.field.required' (mocked createTranslations returns key as-is)
+                expect(document.getElementById('title-error')).toBeInTheDocument();
+                expect(document.getElementById('title-error')?.textContent).toBe(
+                    'validation.field.required'
+                );
             });
         });
 
@@ -510,7 +525,10 @@ describe('ReviewForm.client.tsx', () => {
                 fireEvent.submit(document.querySelector('form') as HTMLFormElement);
             });
             await waitFor(() => {
-                expect(screen.getByText('form.errors.contentRequired')).toBeInTheDocument();
+                expect(document.getElementById('content-error')).toBeInTheDocument();
+                expect(document.getElementById('content-error')?.textContent).toBe(
+                    'validation.field.required'
+                );
             });
         });
 
@@ -528,7 +546,11 @@ describe('ReviewForm.client.tsx', () => {
                 fireEvent.submit(document.querySelector('form') as HTMLFormElement);
             });
             await waitFor(() => {
-                expect(screen.getByText('form.errors.titleMinLength')).toBeInTheDocument();
+                // validateField returns 'validationError.field.tooSmall' → 'validation.field.tooSmall'
+                expect(document.getElementById('title-error')).toBeInTheDocument();
+                expect(document.getElementById('title-error')?.textContent).toBe(
+                    'validation.field.tooSmall'
+                );
             });
         });
 
@@ -546,7 +568,10 @@ describe('ReviewForm.client.tsx', () => {
                 fireEvent.submit(document.querySelector('form') as HTMLFormElement);
             });
             await waitFor(() => {
-                expect(screen.getByText('form.errors.contentMinLength')).toBeInTheDocument();
+                expect(document.getElementById('content-error')).toBeInTheDocument();
+                expect(document.getElementById('content-error')?.textContent).toBe(
+                    'validation.field.tooSmall'
+                );
             });
         });
     });
@@ -720,6 +745,67 @@ describe('ReviewForm.client.tsx', () => {
             await waitFor(() => {
                 const group = screen.getByRole('group', { name: /form.ratingLabel/i });
                 expect(group).toHaveAttribute('aria-invalid', 'true');
+            });
+        });
+
+        it('should have aria-describedby pointing to ratings-error when rating error is shown', async () => {
+            render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+            await waitFor(() => {
+                const group = screen.getByRole('group', { name: /form.ratingLabel/i });
+                expect(group).toHaveAttribute('aria-describedby', 'ratings-error');
+            });
+        });
+
+        it('should render ratings error element with id=ratings-error', async () => {
+            render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+            await waitFor(() => {
+                expect(document.getElementById('ratings-error')).toBeInTheDocument();
+            });
+        });
+
+        it('should render title error element with id=title-error', async () => {
+            render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+            await waitFor(() => {
+                expect(document.getElementById('title-error')).toBeInTheDocument();
+            });
+        });
+
+        it('should render content error element with id=content-error', async () => {
+            render(
+                <ReviewForm
+                    entityId="acc-1"
+                    entityType="accommodation"
+                />
+            );
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+            });
+            await waitFor(() => {
+                expect(document.getElementById('content-error')).toBeInTheDocument();
             });
         });
 
