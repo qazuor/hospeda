@@ -1,0 +1,1338 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-026-GAPS",
+    "title": "Security Testing Gaps Remediation",
+    "created": "2026-03-10T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Fix build failure in @repo/config (GAP-016)",
+            "description": "Replace `error.errors` with `error.issues` in `packages/config/src/env.ts:207` and type the `err` parameter properly. Line 25 of same file uses `.issues` correctly - follow that pattern. This is a P0 blocker that breaks typecheck for the entire monorepo.\n\nFiles: `packages/config/src/env.ts`\nTest: Run `pnpm --filter @repo/config typecheck` to verify fix.\nUnit test: Update `packages/config/src/__tests__/validate-env.test.ts` if it references `.errors`.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Change error.errors to error.issues on line 207",
+                    "completed": true
+                },
+                {
+                    "title": "Type err parameter (ZodIssue instead of any)",
+                    "completed": true
+                },
+                {
+                    "title": "Update test file if it references .errors",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck to verify",
+                    "completed": true
+                }
+            ],
+            "tags": ["blocker", "config", "build"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add ANY/OWN permission enums for Sponsorship and OwnerPromotion (GAP-028/029)",
+            "description": "Add granular permission pairs to `packages/schemas/src/enums/permission.enum.ts`:\n- `SPONSORSHIP_UPDATE_ANY`, `SPONSORSHIP_UPDATE_OWN`\n- `SPONSORSHIP_DELETE_ANY`, `SPONSORSHIP_DELETE_OWN`\n- `SPONSORSHIP_RESTORE_ANY`, `SPONSORSHIP_RESTORE_OWN`\n- `SPONSORSHIP_VIEW_ANY`, `SPONSORSHIP_VIEW_OWN`\n- `OWNER_PROMOTION_UPDATE_ANY`, `OWNER_PROMOTION_UPDATE_OWN`\n- `OWNER_PROMOTION_DELETE_ANY`, `OWNER_PROMOTION_DELETE_OWN`\n- `OWNER_PROMOTION_RESTORE_ANY`, `OWNER_PROMOTION_RESTORE_OWN`\n- `OWNER_PROMOTION_VIEW_ANY`, `OWNER_PROMOTION_VIEW_OWN`\n\nFollow pattern from existing `ACCOMMODATION_UPDATE_ANY`/`ACCOMMODATION_UPDATE_OWN` pairs.\n\nFiles: `packages/schemas/src/enums/permission.enum.ts`\nTest: Existing enum tests should still pass. Add assertions for new values.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Add SPONSORSHIP_*_ANY/OWN permission pairs",
+                    "completed": true
+                },
+                {
+                    "title": "Add OWNER_PROMOTION_*_ANY/OWN permission pairs",
+                    "completed": true
+                },
+                {
+                    "title": "Verify enum exports and types",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "schemas"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add ownership checks to SponsorshipService _can* methods (GAP-028)",
+            "description": "Modify `packages/service-core/src/services/sponsorship/sponsorship.service.ts` to add ownership verification in _can* methods. Follow pattern from `accommodation.permissions.ts` using `checkGenericPermission(actor, ANY_PERM, OWN_PERM, isOwner(actor, entity), errorMsg)`.\n\nMethods to update: `_canUpdate`, `_canSoftDelete`, `_canHardDelete`, `_canRestore`, `_canView`, `_canUpdateVisibility`.\nOwnership field: `sponsorUserId` or `createdById`.\n\nFiles: `packages/service-core/src/services/sponsorship/sponsorship.service.ts`\nPattern: `packages/service-core/src/services/accommodation/accommodation.permissions.ts` lines 43-51\nTest: Add unit tests verifying ownership check rejects non-owner access.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add isOwner helper for Sponsorship",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canUpdate to use checkGenericPermission with ANY/OWN",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canSoftDelete, _canHardDelete, _canRestore",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canView, _canUpdateVisibility",
+                    "completed": true
+                },
+                {
+                    "title": "Ensure _canCreate and _canList/_canSearch/_canCount remain unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "service-core"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add ownership checks to OwnerPromotionService _can* methods (GAP-029)",
+            "description": "Modify `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts` to add ownership verification. Same pattern as T-003 but using `ownerId` as ownership field.\n\nMethods to update: `_canUpdate`, `_canSoftDelete`, `_canHardDelete`, `_canRestore`, `_canView`, `_canUpdateVisibility`.\n\nFiles: `packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts`\nPattern: Same as T-003 (accommodation.permissions.ts)\nTest: Add unit tests verifying ownership check rejects non-owner access.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add isOwner helper for OwnerPromotion using ownerId",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canUpdate to use checkGenericPermission with ANY/OWN",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canSoftDelete, _canHardDelete, _canRestore",
+                    "completed": true
+                },
+                {
+                    "title": "Update _canView, _canUpdateVisibility",
+                    "completed": true
+                },
+                {
+                    "title": "Ensure _canCreate and _canList/_canSearch/_canCount remain unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "service-core"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update seed data with new Sponsorship/OwnerPromotion permissions (GAP-028/029)",
+            "description": "Update role seeds so admin roles include the new ANY/OWN permissions. Without this, admins lose access after the permission change.\n\nFiles:\n- `packages/seed/src/required/roles.seed.ts` (or equivalent role permission mapping)\n- `packages/seed/src/required/users.seed.ts` (if permissions assigned here)\n\nAdmin roles must get the _ANY variants. Regular user roles must get the _OWN variants.\nTest: Run `pnpm db:seed` and verify admin can still access sponsorship/owner-promotion routes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Map new SPONSORSHIP_*_ANY permissions to admin roles",
+                    "completed": true
+                },
+                {
+                    "title": "Map new SPONSORSHIP_*_OWN permissions to regular user roles",
+                    "completed": true
+                },
+                {
+                    "title": "Map new OWNER_PROMOTION_*_ANY permissions to admin roles",
+                    "completed": true
+                },
+                {
+                    "title": "Map new OWNER_PROMOTION_*_OWN permissions to regular user roles",
+                    "completed": true
+                },
+                {
+                    "title": "Verify seed runs without errors",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "seed"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add tests for Sponsorship ownership checks (GAP-028)",
+            "description": "Write unit tests verifying SponsorshipService ownership enforcement:\n1. Non-owner with OWN permission is REJECTED for update/delete/restore\n2. Owner with OWN permission is ALLOWED\n3. Admin with ANY permission can access any entity\n4. _canList/_canSearch/_canCount do NOT require ownership\n\nFiles: `packages/service-core/test/services/sponsorship/sponsorship.service.test.ts` (create or extend)\nPattern: AAA (Arrange, Act, Assert)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test non-owner with OWN perm is rejected",
+                    "completed": true
+                },
+                {
+                    "title": "Test owner with OWN perm is allowed",
+                    "completed": true
+                },
+                {
+                    "title": "Test admin with ANY perm can access any entity",
+                    "completed": true
+                },
+                {
+                    "title": "Test list/search/count do not require ownership",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "testing"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add tests for OwnerPromotion ownership checks (GAP-029)",
+            "description": "Write unit tests verifying OwnerPromotionService ownership enforcement. Same test cases as T-006 but for OwnerPromotion using `ownerId` field.\n\nFiles: `packages/service-core/test/services/owner-promotion/ownerPromotion.service.test.ts` (create or extend)\nPattern: AAA (Arrange, Act, Assert)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test non-owner with OWN perm is rejected",
+                    "completed": true
+                },
+                {
+                    "title": "Test owner with OWN perm is allowed",
+                    "completed": true
+                },
+                {
+                    "title": "Test admin with ANY perm can access any entity",
+                    "completed": true
+                },
+                {
+                    "title": "Test list/search/count do not require ownership",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "idor", "testing"],
+            "phase": "blockers",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add try-catch to auditLog() function (GAP-018)",
+            "description": "Wrap auditLog() body in try-catch in `apps/api/src/utils/audit-logger.ts:126-133`. In catch block, use `console.error('AUDIT_LOG_FAILURE', error)` to avoid logger recursion. Audit logging must NEVER crash a request.\n\nFiles: `apps/api/src/utils/audit-logger.ts`\nTest: Add unit test that auditLog() does not throw when logger fails (mock logger to throw). File: `apps/api/test/utils/audit-logger.test.ts`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-014", "T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Add try-catch to auditLog()",
+                    "completed": true
+                },
+                {
+                    "title": "Use console.error as fallback in catch",
+                    "completed": true
+                },
+                {
+                    "title": "Add test: auditLog does not throw on logger failure",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "resilience"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add AUTH_PASSWORD_CHANGED audit event to change-password (GAP-033)",
+            "description": "Add audit logging to `apps/api/src/routes/auth/change-password.ts`:\n1. Add `AUTH_PASSWORD_CHANGED` to AuditEventType enum in audit-logger.ts\n2. Add `AuthPasswordChangedEntry` interface\n3. Call auditLog() after successful password change with actor, IP, timestamp\n4. NEVER include passwords in the log entry\n\nFiles: `apps/api/src/utils/audit-logger.ts`, `apps/api/src/routes/auth/change-password.ts`\nTest: Add test verifying auditLog is called on successful password change. File: `apps/api/test/routes/auth/change-password.test.ts`",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Add AUTH_PASSWORD_CHANGED to AuditEventType",
+                    "completed": true
+                },
+                {
+                    "title": "Add AuthPasswordChangedEntry interface",
+                    "completed": true
+                },
+                {
+                    "title": "Add auditLog() call in change-password route",
+                    "completed": true
+                },
+                {
+                    "title": "Add test for audit event emission",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "auth"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create StrongPasswordSchema base schema (GAP-014/019)",
+            "description": "Create a single source of truth for password validation:\n1. Create `packages/schemas/src/common/password.schema.ts`\n2. Define `StrongPasswordSchema` with: `.min(8).max(128).regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])/)`\n3. Export from `packages/schemas/src/common/index.ts`\n4. Export from main schemas package index\n\nFiles: `packages/schemas/src/common/password.schema.ts` (new), `packages/schemas/src/common/index.ts`, `packages/schemas/src/index.ts`\nTest: Add unit tests for StrongPasswordSchema: accepts strong passwords, rejects weak ones (no uppercase, no digit, no special char, too short, too long). File: `packages/schemas/test/common/password.schema.test.ts`",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Create password.schema.ts with StrongPasswordSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Export from common/index.ts and main index",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for valid and invalid passwords",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "schemas", "password"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Apply StrongPasswordSchema to all password consumers (GAP-014/019)",
+            "description": "Replace inline password validation with StrongPasswordSchema in all schemas:\n1. `packages/schemas/src/api/auth.schema.ts:49-52` - ChangePasswordInputSchema.newPassword\n2. `packages/schemas/src/entities/user/user.crud.schema.ts:165-181` - UserPasswordChangeInputSchema.newPassword\n3. `packages/schemas/src/entities/user/user.crud.schema.ts:187-198` - UserPasswordResetInputSchema.newPassword\n4. Search for any other password fields in schemas package\n\nFiles: `packages/schemas/src/api/auth.schema.ts`, `packages/schemas/src/entities/user/user.crud.schema.ts`\nTest: Update existing tests in `packages/schemas/test/` to use strong passwords. Verify weak passwords are now rejected by ChangePasswordInputSchema.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update ChangePasswordInputSchema to use StrongPasswordSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Update UserPasswordChangeInputSchema to use StrongPasswordSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Update UserPasswordResetInputSchema to use StrongPasswordSchema",
+                    "completed": true
+                },
+                {
+                    "title": "Search for any other password schemas and update",
+                    "completed": true
+                },
+                {
+                    "title": "Update existing tests with strong passwords",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "schemas", "password"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update SPEC-026 metadata.json and TODOs.md (GAP-012)",
+            "description": "Fix administrative inconsistency:\n1. Update `.claude/specs/SPEC-026-security-testing-gaps/metadata.json`: set `status: 'completed'`, `completed: '2026-03-10T00:00:00.000Z'`\n2. Update `.claude/tasks/SPEC-026-security-testing-gaps/TODOs.md`: update progress to 16/16 completed\n\nFiles: `.claude/specs/SPEC-026-security-testing-gaps/metadata.json`, `.claude/tasks/SPEC-026-security-testing-gaps/TODOs.md`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update metadata.json status and completed date",
+                    "completed": true
+                },
+                {
+                    "title": "Update TODOs.md progress",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "admin"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add SPEC-026 cross-reference to SPEC-019 TODOs (GAP-021)",
+            "description": "Add cross-reference to SPEC-026 in `.claude/tasks/SPEC-019-security-permissions-hardening/TODOs.md` for traceability. Currently only references SPEC-024 and SPEC-025.\n\nFiles: `.claude/tasks/SPEC-019-security-permissions-hardening/TODOs.md`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add SPEC-026 reference to SPEC-019 TODOs.md",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "admin"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add audit log to user admin delete and hardDelete routes (GAP-009)",
+            "description": "Add auditLog() calls to user admin delete operations (PII-critical):\n1. `apps/api/src/routes/user/admin/delete.ts` - Log USER_ADMIN_MUTATION with userId, action='soft_delete'\n2. `apps/api/src/routes/user/admin/hardDelete.ts` - Log USER_ADMIN_MUTATION with userId, action='hard_delete'\n\nAdd `USER_ADMIN_MUTATION` to AuditEventType if not already added.\nCall auditLog() AFTER successful operation. Include actorId, targetUserId, action, IP.\n\nFiles: `apps/api/src/routes/user/admin/delete.ts`, `apps/api/src/routes/user/admin/hardDelete.ts`, `apps/api/src/utils/audit-logger.ts`\nTest: Add integration tests verifying audit events are emitted on delete/hardDelete.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Add USER_ADMIN_MUTATION to AuditEventType",
+                    "completed": true
+                },
+                {
+                    "title": "Add auditLog to delete.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add auditLog to hardDelete.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests for audit emission on delete operations",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "user", "pii"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add audit log to user admin create, restore, batch routes (GAP-009)",
+            "description": "Add auditLog() calls to remaining user admin mutation routes:\n1. `apps/api/src/routes/user/admin/create.ts` - action='create'\n2. `apps/api/src/routes/user/admin/restore.ts` - action='restore'\n3. `apps/api/src/routes/user/admin/batch.ts` - action='batch_operation'\n\nReuse USER_ADMIN_MUTATION event type from T-014.\n\nFiles: `apps/api/src/routes/user/admin/create.ts`, `restore.ts`, `batch.ts`\nTest: Add integration tests for audit events on create/restore/batch.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add auditLog to create.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add auditLog to restore.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add auditLog to batch.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests for audit emission",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "user"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add lockout to forgot-password endpoint (GAP-002)",
+            "description": "Extend lockout protection to `/forgot-password` in `apps/api/src/routes/auth/handler.ts`:\n1. Add handler BEFORE Better Auth catch-all (like sign-in handler at line 32)\n2. Extract email from request body\n3. Use composite key `forgot-password:${email}:${ip}` for rate limiting\n4. Limit: 5 attempts per 15 minutes per email\n5. Return 429 with Retry-After on limit exceeded\n\nFiles: `apps/api/src/routes/auth/handler.ts`, `apps/api/src/middlewares/auth-lockout.ts` (may need new endpoint type)\nTest: Integration test verifying forgot-password returns 429 after limit exceeded.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Add forgot-password endpoint type to lockout config",
+                    "completed": true
+                },
+                {
+                    "title": "Add handler for POST /forgot-password before catch-all",
+                    "completed": true
+                },
+                {
+                    "title": "Extract email and apply composite key rate limit",
+                    "completed": true
+                },
+                {
+                    "title": "Return 429 with Retry-After on limit",
+                    "completed": true
+                },
+                {
+                    "title": "Add integration test",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "auth"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add lockout to signup and resend endpoints (GAP-002)",
+            "description": "Extend lockout protection to `/sign-up/email` and email verification resend:\n1. Add handler for POST /sign-up/email with composite key `signup:${email}:${ip}`\n2. Limit: 10 attempts per 15 minutes (more permissive than signin)\n3. Add handler for email verification resend with similar limits\n4. Both must be registered BEFORE Better Auth catch-all\n\nFiles: `apps/api/src/routes/auth/handler.ts`\nTest: Integration tests verifying 429 on signup/resend rate limit exceeded.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Add signup endpoint type to lockout config",
+                    "completed": true
+                },
+                {
+                    "title": "Add handler for POST /sign-up/email",
+                    "completed": true
+                },
+                {
+                    "title": "Add handler for email verification resend",
+                    "completed": true
+                },
+                {
+                    "title": "Add integration tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "auth"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add tests for new lockout endpoints (GAP-002)",
+            "description": "Comprehensive integration tests for the new lockout protections:\n1. Forgot-password: verify 429 after 5 attempts, verify Retry-After header\n2. Signup: verify 429 after 10 attempts, verify different limits than signin\n3. Cross-endpoint isolation: signin lockout does NOT affect forgot-password\n4. Email normalization: same email with different casing hits same counter\n\nFiles: `apps/api/test/integration/auth/` (new or extend existing)\nPattern: AAA (Arrange, Act, Assert)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test forgot-password 429 after limit",
+                    "completed": true
+                },
+                {
+                    "title": "Test signup 429 after limit",
+                    "completed": true
+                },
+                {
+                    "title": "Test cross-endpoint isolation",
+                    "completed": true
+                },
+                {
+                    "title": "Test email normalization consistency",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "testing"],
+            "phase": "critical-fixes",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T12:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement recursive scrubSensitiveData() (GAP-027)",
+            "description": "Make `scrubSensitiveData()` in `apps/api/src/utils/audit-logger.ts:111-119` recursive:\n1. Traverse nested objects up to depth limit (4 levels)\n2. Add cycle detection (WeakSet or seen set)\n3. Scrub sensitive field names at any depth (password, token, secret, authorization, cookie, etc.)\n4. Keep existing top-level behavior unchanged\n\nFiles: `apps/api/src/utils/audit-logger.ts`\nTest: Update `apps/api/test/utils/audit-logger.test.ts` with nested object tests:\n- `{ user: { password: 'secret' } }` -> password redacted\n- `{ config: { api: { token: 'abc' } } }` -> token redacted\n- Circular reference handled gracefully\n- Depth limit respected",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Add depth parameter and cycle detection",
+                    "completed": true
+                },
+                {
+                    "title": "Implement recursive traversal with scrubbing",
+                    "completed": true
+                },
+                {
+                    "title": "Add tests for nested objects",
+                    "completed": true
+                },
+                {
+                    "title": "Add test for circular references",
+                    "completed": true
+                },
+                {
+                    "title": "Verify existing tests still pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "scrubbing"],
+            "phase": "audit-infrastructure",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Move AuditEventType and interfaces to @repo/logger (GAP-007)",
+            "description": "Extract audit types from API to shared package:\n1. Create `packages/logger/src/audit-types.ts` with AuditEventType, AuditEventTypeValue, BaseAuditEntry, and ALL entry interfaces (including new ones from T-009, T-014)\n2. Update `packages/logger/src/index.ts` to re-export audit types\n3. Update `apps/api/src/utils/audit-logger.ts` to import from `@repo/logger`\n4. Update all consumers in apps/api that import audit types\n\nFiles: `packages/logger/src/audit-types.ts` (new), `packages/logger/src/index.ts`, `apps/api/src/utils/audit-logger.ts`, consumers\nTest: Typecheck passes. Existing audit tests still pass.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-014"],
+            "blocks": ["T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Create audit-types.ts in @repo/logger",
+                    "completed": true
+                },
+                {
+                    "title": "Move all AuditEventType values and interfaces",
+                    "completed": true
+                },
+                {
+                    "title": "Re-export from logger index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Update audit-logger.ts imports",
+                    "completed": true
+                },
+                {
+                    "title": "Update all consumer imports",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck and tests pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["refactor", "audit", "logger"],
+            "phase": "audit-infrastructure",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add Sentry breadcrumbs to auditLog() (GAP-008)",
+            "description": "Integrate audit events with Sentry for better error context:\n1. In `apps/api/src/utils/audit-logger.ts` auditLog() function\n2. Add `Sentry.addBreadcrumb({ category: 'audit', message: \\`AUDIT:\\${entry.auditEvent}\\`, data: scrubbed, level: 'info' })`\n3. For critical events (AUTH_LOCKOUT, ACCESS_DENIED), use level: 'warning'\n4. Import Sentry from existing `apps/api/src/lib/sentry.ts`\n\nFiles: `apps/api/src/utils/audit-logger.ts`\nTest: Add test with Sentry mock verifying breadcrumb is added on auditLog() call.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Import Sentry in audit-logger.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add addBreadcrumb call in auditLog()",
+                    "completed": true
+                },
+                {
+                    "title": "Use warning level for critical events",
+                    "completed": true
+                },
+                {
+                    "title": "Add test with Sentry mock",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "sentry"],
+            "phase": "audit-infrastructure",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create generic audit middleware for mutations (GAP-017)",
+            "description": "Create Hono middleware that automatically audit-logs ALL mutation requests:\n1. Create `apps/api/src/middlewares/audit.ts`\n2. Check `c.req.method` - skip GET/HEAD/OPTIONS\n3. For mutations: call `await next()`, then if `c.res.status < 400`, log RESOURCE_MUTATION\n4. Extract: actorId from `c.get('user')`, resource from path, method from HTTP method\n5. Add `RESOURCE_MUTATION` to AuditEventType\n6. MUST be 100% fail-safe: entire middleware wrapped in try-catch\n7. Register in `apps/api/src/utils/create-app.ts` AFTER actorMiddleware()\n\nFiles: `apps/api/src/middlewares/audit.ts` (new), `apps/api/src/utils/create-app.ts`\nTest: Unit tests for middleware: logs on POST 200, skips GET, skips on 4xx, does not throw on logger failure.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-020", "T-019"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Create audit.ts middleware file",
+                    "completed": true
+                },
+                {
+                    "title": "Implement method check (skip GET/HEAD/OPTIONS)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement afterResponse logging for successful mutations",
+                    "completed": true
+                },
+                {
+                    "title": "Add RESOURCE_MUTATION event type",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap in try-catch (fail-safe)",
+                    "completed": true
+                },
+                {
+                    "title": "Register in create-app.ts after actorMiddleware",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "middleware"],
+            "phase": "audit-infrastructure",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add integration tests for audit middleware (GAP-017)",
+            "description": "Comprehensive tests for the generic audit middleware:\n1. POST request returns 200 -> audit log emitted with correct resource/actor/method\n2. GET request -> no audit log\n3. POST request returns 400 -> no audit log (failed mutation)\n4. Middleware failure -> request still succeeds (fail-safe)\n5. Admin tier mutations are logged\n6. Protected tier mutations are logged\n7. Billing mutations are logged\n\nFiles: `apps/api/test/middlewares/audit.test.ts` (new)\nPattern: AAA with Hono test helpers",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test POST 200 emits audit log",
+                    "completed": true
+                },
+                {
+                    "title": "Test GET skips audit",
+                    "completed": true
+                },
+                {
+                    "title": "Test POST 400 skips audit",
+                    "completed": true
+                },
+                {
+                    "title": "Test fail-safe: middleware error does not break request",
+                    "completed": true
+                },
+                {
+                    "title": "Test admin/protected/billing tier coverage",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "testing"],
+            "phase": "audit-infrastructure",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Add .trim() to lockout store functions (GAP-031)",
+            "description": "Fix email normalization inconsistency in `apps/api/src/middlewares/auth-lockout.ts`:\n1. Line ~196 (checkLockout): change `.toLowerCase()` to `.toLowerCase().trim()`\n2. Line ~233 (recordFailedAttempt): change `.toLowerCase()` to `.toLowerCase().trim()`\n3. Verify any other email normalization points in the file\n\nFiles: `apps/api/src/middlewares/auth-lockout.ts`\nTest: Add unit test: email with trailing spaces matches normalized email in lockout store.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add .trim() to checkLockout email normalization",
+                    "completed": true
+                },
+                {
+                    "title": "Add .trim() to recordFailedAttempt email normalization",
+                    "completed": true
+                },
+                {
+                    "title": "Add test for trimmed email matching",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "bugfix"],
+            "phase": "lockout-hardening",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Replace read-then-write with Redis INCR in lockout store (GAP-003)",
+            "description": "Make lockout counter atomic in `apps/api/src/middlewares/auth-lockout.ts:237-255`:\n1. For Redis store: replace GET+increment+SET with Redis INCR (atomic)\n2. Handle firstAttempt timestamp: use separate Redis key or MULTI/EXEC\n3. Set TTL on INCR key to match windowMs\n4. For in-memory store: keep as-is (single-thread, no race condition)\n5. Update resetAttempts to use DEL instead of SET\n\nFiles: `apps/api/src/middlewares/auth-lockout.ts`\nTest: Verify counter increments correctly under concurrent calls (see T-027).",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Implement Redis INCR for counter increment",
+                    "completed": true
+                },
+                {
+                    "title": "Handle firstAttempt timestamp separately",
+                    "completed": true
+                },
+                {
+                    "title": "Set TTL on counter key",
+                    "completed": true
+                },
+                {
+                    "title": "Update resetAttempts to use DEL",
+                    "completed": true
+                },
+                {
+                    "title": "Keep in-memory store unchanged",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "redis"],
+            "phase": "lockout-hardening",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add 3 missing lockout integration tests (GAP-015)",
+            "description": "Add missing test cases to `apps/api/test/integration/auth/login-lockout.test.ts`:\n1. `should unlock after window expires` - Wait for windowMs, then verify login succeeds\n2. `should not count Better Auth rate limit 429 as failed attempt` - Trigger BA's own 429, verify lockout counter unchanged\n3. `should not affect other auth routes` - Lock out signin, verify signup/forgot-password still work\n\nFiles: `apps/api/test/integration/auth/login-lockout.test.ts`\nPattern: AAA (Arrange, Act, Assert)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test unlock after window expires",
+                    "completed": true
+                },
+                {
+                    "title": "Test BA 429 not counted as failed attempt",
+                    "completed": true
+                },
+                {
+                    "title": "Test route isolation (signin lockout vs other routes)",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "testing"],
+            "phase": "lockout-hardening",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Add lockout concurrency test with Promise.all (GAP-011)",
+            "description": "Add concurrency test to verify atomic lockout counting:\n1. Send N simultaneous failed login attempts using Promise.all()\n2. Verify final counter is exactly N (not less due to race condition)\n3. Verify lockout triggers at correct threshold even under concurrent load\n\nFiles: `apps/api/test/middlewares/auth-lockout-concurrency.test.ts` (new) or extend existing\nPattern: AAA with Promise.all for concurrent requests",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create concurrent failed login test with Promise.all",
+                    "completed": true
+                },
+                {
+                    "title": "Verify counter accuracy under concurrency",
+                    "completed": true
+                },
+                {
+                    "title": "Verify lockout threshold under concurrent load",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "lockout", "testing", "concurrency"],
+            "phase": "lockout-hardening",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Research and implement Better Auth maxSessions (GAP-024)",
+            "description": "Limit concurrent sessions per user:\n1. Research Better Auth API for maxSessions support\n2. If native: configure limit (5-10) in `apps/api/src/lib/auth.ts`\n3. If not native: implement middleware that counts active sessions in PostgreSQL session table and rejects new sessions beyond limit\n4. Choose strategy for exceeded limit: reject newest (recommended) or revoke oldest\n\nFiles: `apps/api/src/lib/auth.ts`, possibly new middleware\nTest: Integration test verifying session creation fails after limit reached.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Research Better Auth maxSessions API",
+                    "completed": true
+                },
+                {
+                    "title": "Implement session limit (native or custom middleware)",
+                    "completed": true
+                },
+                {
+                    "title": "Choose and implement exceeded-limit strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Add integration test",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "session", "auth"],
+            "phase": "session-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add tests for maxSessions limit (GAP-024)",
+            "description": "Comprehensive tests for session limiting:\n1. User can create up to N sessions\n2. Session N+1 is rejected (or oldest is revoked, depending on strategy)\n3. After signout, a new session can be created\n4. Different users have independent limits\n\nFiles: `apps/api/test/integration/auth/session-limit.test.ts` (new)\nPattern: AAA (Arrange, Act, Assert)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test session creation up to limit",
+                    "completed": true
+                },
+                {
+                    "title": "Test rejection/revocation at limit+1",
+                    "completed": true
+                },
+                {
+                    "title": "Test new session after signout",
+                    "completed": true
+                },
+                {
+                    "title": "Test user isolation",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "session", "testing"],
+            "phase": "session-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Add concurrent signout test with Promise.all (GAP-022)",
+            "description": "Add concurrency test for session signout:\n1. Create multiple sessions for same user\n2. Sign out all sessions simultaneously with Promise.all()\n3. Verify all sessions are invalidated correctly\n4. Verify no race condition in session cleanup\n\nFiles: `apps/api/test/integration/auth/multi-session-signout.test.ts` (extend)\nPattern: AAA with Promise.all",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create multiple sessions for test user",
+                    "completed": true
+                },
+                {
+                    "title": "Sign out all concurrently with Promise.all",
+                    "completed": true
+                },
+                {
+                    "title": "Verify all sessions invalidated",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "session", "testing", "concurrency"],
+            "phase": "session-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Add audit verification spy to session tests (GAP-020)",
+            "description": "Add auditLog verification to existing session signout tests:\n1. In `apps/api/test/integration/auth/signout-session.test.ts`\n2. Use `vi.spyOn` on auditLog to verify SESSION_SIGNOUT events\n3. Verify auditLog is called with correct actorId, event type, and session info\n4. Ensure spy is cleaned up after each test\n\nFiles: `apps/api/test/integration/auth/signout-session.test.ts`\nPattern: vi.spyOn with expect.toHaveBeenCalledWith",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add vi.spyOn for auditLog in test setup",
+                    "completed": true
+                },
+                {
+                    "title": "Assert SESSION_SIGNOUT event emitted on signout",
+                    "completed": true
+                },
+                {
+                    "title": "Verify correct actor and session data in audit entry",
+                    "completed": true
+                },
+                {
+                    "title": "Clean up spy in afterEach",
+                    "completed": true
+                }
+            ],
+            "tags": ["security", "audit", "session", "testing"],
+            "phase": "session-tests",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Add DLQ test with real DB (GAP-006)",
+            "description": "Add Dead Letter Queue integration test with real database:\n1. Create test that sends a webhook that fails processing\n2. Verify it gets moved to DLQ after max retries\n3. Verify DLQ entry contains original payload, error info, retry count\n4. Verify DLQ entry can be reprocessed\n\nFiles: `apps/api/test/integration/webhooks/webhook-dlq.test.ts` (new)\nPattern: AAA with real DB assertions (like webhook-idempotency-full.test.ts)",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-033"],
+            "subtasks": [
+                {
+                    "title": "Create test for webhook failure -> DLQ",
+                    "completed": true
+                },
+                {
+                    "title": "Assert DLQ entry has correct payload and error info",
+                    "completed": true
+                },
+                {
+                    "title": "Test DLQ reprocessing",
+                    "completed": true
+                },
+                {
+                    "title": "Use real DB (not mocks)",
+                    "completed": true
+                }
+            ],
+            "tags": ["webhook", "dlq", "testing"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Delete legacy webhook test files (GAP-005/026)",
+            "description": "Remove legacy mock-based webhook test files now that real DB tests exist:\n1. Delete `apps/api/test/integration/webhooks/webhook-idempotency.test.ts` (513 lines, mock-based)\n2. Delete `apps/api/test/integration/webhooks/webhook-persistence.test.ts` (444 lines, mock-based)\n3. Evaluate `mercadopago.test.ts` and `subscription-webhook.test.ts` - delete if also legacy\n4. Verify remaining tests still pass\n\nFiles: `apps/api/test/integration/webhooks/` (deletions)\nTest: Run `pnpm test` to verify no test regressions.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-032"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Delete webhook-idempotency.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Delete webhook-persistence.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate and delete other legacy test files",
+                    "completed": true
+                },
+                {
+                    "title": "Run tests to verify no regressions",
+                    "completed": true
+                }
+            ],
+            "tags": ["cleanup", "testing"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Update spec docs: COOLDOWN_MS and SESSION_SIGNOUT (GAP-004/010)",
+            "description": "Update SPEC-026 spec.md to reflect implementation decisions:\n1. Document that HOSPEDA_AUTH_LOCKOUT_COOLDOWN_MS was intentionally discarded - WINDOW_MS serves both purposes\n2. Document that SESSION_SIGNOUT is the correct event name (not AUTH_LOGOUT_SUCCESS)\n\nFiles: `.claude/specs/SPEC-026-security-testing-gaps/spec.md`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document COOLDOWN_MS design decision",
+                    "completed": true
+                },
+                {
+                    "title": "Document SESSION_SIGNOUT naming decision",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "spec"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T18:00:00.000Z",
+                "completed": "2026-03-10T18:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 34,
+        "pending": 34,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}
