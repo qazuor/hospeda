@@ -31,6 +31,7 @@ export * from './lifecycle.schema.js';
 export * from './location.schema.js';
 export * from './media.schema.js';
 export * from './moderation.schema.js';
+export * from './password.schema.js';
 // Skip pagination.schema.js to avoid conflicts with base.schema.js
 export * from './params.schema.js';
 export * from './price.schema.js';

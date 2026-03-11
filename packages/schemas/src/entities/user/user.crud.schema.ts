@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { UserSchema } from './user.schema.js';
 
@@ -160,7 +161,10 @@ export const UserActivationOutputSchema = UserSchema;
 
 /**
  * Schema for password change input
- * Requires current and new password
+ * Requires current and new password.
+ *
+ * Uses `StrongPasswordSchema` as the single source of truth for password
+ * complexity rules (min 8, max 128, uppercase, lowercase, digit, special char).
  */
 export const UserPasswordChangeInputSchema = z.object({
     id: UserIdSchema,
@@ -169,32 +173,19 @@ export const UserPasswordChangeInputSchema = z.object({
             message: 'zodError.user.passwordChange.currentPassword.required'
         })
         .min(1, { message: 'zodError.user.passwordChange.currentPassword.min' }),
-    newPassword: z
-        .string({
-            message: 'zodError.user.passwordChange.newPassword.required'
-        })
-        .min(8, { message: 'zodError.user.passwordChange.newPassword.min' })
-        .max(128, { message: 'zodError.user.passwordChange.newPassword.max' })
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-            message: 'zodError.user.passwordChange.newPassword.pattern'
-        })
+    newPassword: StrongPasswordSchema
 });
 
 /**
  * Schema for password reset input
- * Requires only user ID (admin operation)
+ * Requires only user ID (admin operation).
+ *
+ * Uses `StrongPasswordSchema` as the single source of truth for password
+ * complexity rules (min 8, max 128, uppercase, lowercase, digit, special char).
  */
 export const UserPasswordResetInputSchema = z.object({
     id: UserIdSchema,
-    newPassword: z
-        .string({
-            message: 'zodError.user.passwordReset.newPassword.required'
-        })
-        .min(8, { message: 'zodError.user.passwordReset.newPassword.min' })
-        .max(128, { message: 'zodError.user.passwordReset.newPassword.max' })
-        .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/, {
-            message: 'zodError.user.passwordReset.newPassword.pattern'
-        })
+    newPassword: StrongPasswordSchema
 });
 
 /**

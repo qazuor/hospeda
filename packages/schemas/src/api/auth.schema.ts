@@ -5,6 +5,7 @@
  * cache statistics, and authentication status responses.
  */
 import { z } from 'zod';
+import { StrongPasswordSchema } from '../common/password.schema.js';
 
 /**
  * Actor schema representing authenticated users and guests
@@ -45,10 +46,13 @@ export type AuthMeResponse = z.infer<typeof AuthMeResponseSchema>;
 
 /**
  * Change password input schema for POST /auth/change-password
+ *
+ * Uses `StrongPasswordSchema` as the single source of truth for password
+ * complexity rules (min 8, max 128, uppercase, lowercase, digit, special char).
  */
 export const ChangePasswordInputSchema = z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
-    newPassword: z.string().min(8, 'Password must be at least 8 characters').max(128)
+    newPassword: StrongPasswordSchema
 });
 
 export type ChangePasswordInput = z.infer<typeof ChangePasswordInputSchema>;
