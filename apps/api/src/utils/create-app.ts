@@ -88,8 +88,10 @@ export function createRouter() {
                     success: false,
                     error: {
                         code: transformedError.code,
-                        message: transformedError.message,
-                        details: transformedError
+                        messageKey: transformedError.messageKey,
+                        details: transformedError.details,
+                        summary: transformedError.summary,
+                        userFriendlyMessage: transformedError.userFriendlyMessage
                     },
                     metadata: {
                         timestamp: new Date().toISOString(),

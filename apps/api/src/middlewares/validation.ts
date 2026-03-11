@@ -121,7 +121,13 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                         return c.json(
                             {
                                 success: false,
-                                error: transformedError,
+                                error: {
+                                    code: transformedError.code,
+                                    messageKey: transformedError.messageKey,
+                                    details: transformedError.details,
+                                    summary: transformedError.summary,
+                                    userFriendlyMessage: transformedError.userFriendlyMessage
+                                },
                                 metadata: {
                                     timestamp: new Date().toISOString(),
                                     requestId: c.get('requestId') || 'unknown'
@@ -163,8 +169,10 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
                         success: false,
                         error: {
                             code: error.code,
-                            message: error.message,
-                            details: error.details
+                            // error.message stores the zodError.* translation key
+                            messageKey: error.message,
+                            details: error.details ? [error.details] : [],
+                            summary: null
                         },
                         metadata: {
                             timestamp: new Date().toISOString(),
