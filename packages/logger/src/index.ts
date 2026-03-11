@@ -18,6 +18,8 @@ export {
     warn
 } from './logger.js';
 export * from './types.js';
+export { AuditEventType } from './audit-types.js';
+export type { AuditEventTypeValue } from './audit-types.js';
 
 // Export default logger instance
 import { logger } from './logger.js';

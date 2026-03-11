@@ -109,12 +109,26 @@ vi.mock('@repo/logger', () => {
         DEBUG: 'DEBUG'
     };
 
+    const AuditEventType = {
+        AUTH_LOGIN_FAILED: 'auth.login.failed',
+        AUTH_LOGIN_SUCCESS: 'auth.login.success',
+        AUTH_LOCKOUT: 'auth.lockout',
+        AUTH_PASSWORD_CHANGED: 'auth.password.changed',
+        ACCESS_DENIED: 'access.denied',
+        BILLING_MUTATION: 'billing.mutation',
+        PERMISSION_CHANGE: 'permission.change',
+        SESSION_SIGNOUT: 'session.signout',
+        USER_ADMIN_MUTATION: 'user.admin.mutation',
+        ROUTE_MUTATION: 'route.mutation'
+    };
+
     return {
         default: mockedLogger,
         logger: mockedLogger,
         createLogger: mockedLogger.createLogger,
         LoggerColors,
-        LogLevel
+        LogLevel,
+        AuditEventType
     };
 });
 
