@@ -83,51 +83,171 @@ const inMemoryStore: LockoutStore = {
 
 // ─── Redis Store ─────────────────────────────────────────────────────────────
 
+/**
+ * Key prefix for lockout counters stored in Redis.
+ * Each key holds an integer counter (incremented atomically via INCR).
+ * The TTL of the key encodes the remaining window duration.
+ */
 const REDIS_KEY_PREFIX = 'lockout:';
 
-const createRedisStore = (): LockoutStore => ({
-    async get(email: string): Promise<LockoutEntry | undefined> {
+/**
+ * Builds the Redis key for a given lockout subject key.
+ */
+function redisKey(key: string): string {
+    return `${REDIS_KEY_PREFIX}${key}`;
+}
+
+/**
+ * Redis-backed lockout store.
+ *
+ * Uses INCR + EXPIRE for atomic counter increments, eliminating the
+ * read-modify-write race condition present in a naive GET → JS increment → SET
+ * pattern. The get/set interface methods are retained for compatibility with the
+ * LockoutStore interface used by the in-memory fallback path, but they are not
+ * called for the core increment/check operations when Redis is reachable.
+ *
+ * TTL encodes the remaining window: when INCR returns 1 (first attempt in the
+ * window), EXPIRE is set to windowMs / 1000 seconds. Subsequent INCRs leave the
+ * TTL untouched. checkLockout reads the counter with GET and derives retryAfter
+ * from the key's remaining TTL via the TTL command.
+ */
+const createRedisStore = (): LockoutStore & {
+    incr(key: string, windowMs: number): Promise<number | undefined>;
+    count(key: string): Promise<number | undefined>;
+    ttl(key: string): Promise<number>;
+} => ({
+    /**
+     * Atomically increments the attempt counter for a key.
+     * Sets the TTL on the first increment so the window is enforced by Redis.
+     *
+     * @param key - Lockout subject key
+     * @param windowMs - Window duration in milliseconds (used to set TTL on first INCR)
+     * @returns New counter value, or undefined if Redis is unavailable
+     */
+    async incr(key: string, windowMs: number): Promise<number | undefined> {
         try {
             const redis = await getRedisClient();
-            if (!redis) return inMemoryStore.get(email);
+            if (!redis) return undefined;
 
-            const data = await redis.get(`${REDIS_KEY_PREFIX}${email}`);
-            if (!data) return undefined;
-            return JSON.parse(data) as LockoutEntry;
+            const rKey = redisKey(key);
+            const newCount = await redis.incr(rKey);
+
+            // Only set expiry on the first increment — subsequent INCRs must
+            // not reset the window, which would allow an attacker to keep the
+            // window sliding indefinitely.
+            if (newCount === 1) {
+                const ttlSeconds = Math.ceil(windowMs / 1000);
+                await redis.expire(rKey, ttlSeconds);
+            }
+
+            return newCount;
         } catch (error) {
-            apiLogger.warn({ error }, 'Redis unavailable for lockout, falling back to in-memory');
-            return inMemoryStore.get(email);
+            apiLogger.warn(
+                { error },
+                'Redis unavailable for lockout INCR, falling back to in-memory'
+            );
+            return undefined;
         }
     },
-    async set(email: string, entry: LockoutEntry, windowMs: number): Promise<void> {
+
+    /**
+     * Reads the current attempt counter for a key without modifying it.
+     *
+     * @param key - Lockout subject key
+     * @returns Current counter value (0 if key does not exist), or undefined if Redis is unavailable
+     */
+    async count(key: string): Promise<number | undefined> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return undefined;
+
+            const value = await redis.get(redisKey(key));
+            return value === null ? 0 : Number(value);
+        } catch (error) {
+            apiLogger.warn(
+                { error },
+                'Redis unavailable for lockout GET, falling back to in-memory'
+            );
+            return undefined;
+        }
+    },
+
+    /**
+     * Returns the remaining TTL in seconds for a lockout key.
+     * Returns -2 if the key does not exist, -1 if it has no TTL.
+     *
+     * @param key - Lockout subject key
+     */
+    async ttl(key: string): Promise<number> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return -2;
+            return redis.ttl(redisKey(key));
+        } catch (error) {
+            apiLogger.warn(
+                { error },
+                'Redis unavailable for lockout TTL, falling back to in-memory'
+            );
+            return -2;
+        }
+    },
+
+    // ── LockoutStore interface methods (used by fallback paths only) ──────
+
+    async get(key: string): Promise<LockoutEntry | undefined> {
+        try {
+            const redis = await getRedisClient();
+            if (!redis) return inMemoryStore.get(key);
+
+            const value = await redis.get(redisKey(key));
+            if (value === null) return undefined;
+
+            const count = Number(value);
+            const remainingTtl = await redis.ttl(redisKey(key));
+            // Reconstruct a synthetic LockoutEntry from count and remaining TTL.
+            // firstAttempt is approximated from the TTL and the current time.
+            // This is only used by the generic checkLockoutByKey path which the
+            // optimised Redis path bypasses, so approximate values are acceptable.
+            const { windowMs } = getConfig();
+            const firstAttempt = Date.now() - (windowMs - remainingTtl * 1000);
+            return { count, firstAttempt };
+        } catch (error) {
+            apiLogger.warn({ error }, 'Redis unavailable for lockout, falling back to in-memory');
+            return inMemoryStore.get(key);
+        }
+    },
+
+    async set(key: string, entry: LockoutEntry, windowMs: number): Promise<void> {
         try {
             const redis = await getRedisClient();
             if (!redis) {
-                await inMemoryStore.set(email, entry, windowMs);
+                await inMemoryStore.set(key, entry, windowMs);
                 return;
             }
 
             const ttlSeconds = Math.ceil(windowMs / 1000);
-            await redis.set(`${REDIS_KEY_PREFIX}${email}`, JSON.stringify(entry), 'EX', ttlSeconds);
+            await redis.set(redisKey(key), String(entry.count), 'EX', ttlSeconds);
         } catch (error) {
             apiLogger.warn({ error }, 'Redis unavailable for lockout, falling back to in-memory');
-            await inMemoryStore.set(email, entry, windowMs);
+            await inMemoryStore.set(key, entry, windowMs);
         }
     },
-    async delete(email: string): Promise<void> {
+
+    async delete(key: string): Promise<void> {
         try {
             const redis = await getRedisClient();
             if (!redis) {
-                await inMemoryStore.delete(email);
+                await inMemoryStore.delete(key);
                 return;
             }
 
-            await redis.del(`${REDIS_KEY_PREFIX}${email}`);
+            await redis.del(redisKey(key));
         } catch (error) {
             apiLogger.warn({ error }, 'Redis unavailable for lockout, falling back to in-memory');
-            await inMemoryStore.delete(email);
+            await inMemoryStore.delete(key);
         }
     },
+
     async clear(): Promise<void> {
         try {
             const redis = await getRedisClient();
@@ -159,9 +279,24 @@ const createRedisStore = (): LockoutStore => ({
 
 // ─── Store Selection ─────────────────────────────────────────────────────────
 
+/**
+ * Extended Redis store type that exposes atomic INCR/TTL operations
+ * in addition to the generic LockoutStore interface.
+ */
+type RedisLockoutStore = LockoutStore & {
+    incr(key: string, windowMs: number): Promise<number | undefined>;
+    count(key: string): Promise<number | undefined>;
+    ttl(key: string): Promise<number>;
+};
+
 /** Active store (lazy-initialized singleton) */
 let activeStore: LockoutStore | undefined;
 
+/**
+ * Returns the active lockout store, creating it on first call.
+ * When HOSPEDA_REDIS_URL is set the Redis store (with atomic INCR) is used;
+ * otherwise the in-memory store is used as fallback.
+ */
 function getStore(): LockoutStore {
     if (!activeStore) {
         const redisUrl = process.env.HOSPEDA_REDIS_URL;
@@ -180,35 +315,103 @@ function getStore(): LockoutStore {
     return activeStore;
 }
 
-// ─── Public API ──────────────────────────────────────────────────────────────
+/**
+ * Narrows the active store to the Redis store type with atomic operations.
+ * Returns undefined when the active store is the in-memory fallback.
+ */
+function getRedisStore(): RedisLockoutStore | undefined {
+    const store = getStore();
+    if ('incr' in store && 'count' in store && 'ttl' in store) {
+        return store as RedisLockoutStore;
+    }
+    return undefined;
+}
+
+// ─── Core lockout logic (key-based) ──────────────────────────────────────────
 
 /**
- * Check if an email is currently locked out.
- *
- * @returns locked=true and retryAfter (remaining seconds) if locked, otherwise locked=false
+ * Custom lockout configuration to override env-derived defaults.
+ * Used by endpoints that require different thresholds than sign-in.
  */
-export async function checkLockout({
-    email
+export interface LockoutConfig {
+    /** Maximum failed attempts before locking out. */
+    readonly maxAttempts: number;
+    /** Time window in milliseconds during which attempts are counted. */
+    readonly windowMs: number;
+}
+
+/**
+ * Check if an arbitrary lockout key is currently locked out.
+ *
+ * When Redis is available, uses an atomic GET + TTL read so the check itself
+ * never modifies state. Falls back to the in-memory store path otherwise.
+ *
+ * This is the low-level primitive shared by all lockout-protected endpoints.
+ * Callers are responsible for constructing the key and providing the config.
+ *
+ * @param key - Unique string key identifying the subject (e.g. email, "email:ip")
+ * @param config - Lockout thresholds to use for this check
+ * @returns locked=true and retryAfter (remaining seconds) if locked, otherwise locked=false
+ *
+ * @example
+ * ```ts
+ * const key = `${email}:${ip}`;
+ * const { locked, retryAfter } = await checkLockoutByKey({
+ *     key,
+ *     config: { maxAttempts: 5, windowMs: 900_000 }
+ * });
+ * ```
+ */
+export async function checkLockoutByKey({
+    key,
+    config
 }: {
-    email: string;
+    key: string;
+    config: LockoutConfig;
 }): Promise<{ locked: boolean; retryAfter: number }> {
-    const { maxAttempts, windowMs } = getConfig();
-    const normalizedEmail = email.toLowerCase();
+    const { maxAttempts } = config;
+
+    // ── Redis path: use atomic count + TTL reads ──────────────────────────
+    const redisStore = getRedisStore();
+    if (redisStore) {
+        const currentCount = await redisStore.count(key);
+
+        // count() returns undefined only when Redis is unavailable; fall through
+        // to the in-memory path in that case.
+        if (currentCount !== undefined) {
+            if (currentCount < maxAttempts) {
+                return { locked: false, retryAfter: 0 };
+            }
+
+            // Locked — retrieve remaining TTL directly from Redis.
+            // TTL returns -2 when the key is gone (race: expired between count and ttl).
+            const remainingTtl = await redisStore.ttl(key);
+            if (remainingTtl <= 0) {
+                // Key expired or missing — treat as unlocked
+                return { locked: false, retryAfter: 0 };
+            }
+
+            return { locked: true, retryAfter: remainingTtl };
+        }
+    }
+
+    // ── In-memory fallback path ───────────────────────────────────────────
+    const { windowMs } = config;
     const store = getStore();
     const now = Date.now();
 
-    const entry = await store.get(normalizedEmail);
+    const entry = await store.get(key);
     if (!entry) {
         return { locked: false, retryAfter: 0 };
     }
 
-    // Check if window has expired
+    // Window expired — clean up and allow
     if (now - entry.firstAttempt >= windowMs) {
-        await store.delete(normalizedEmail);
+        await store.delete(key);
         return { locked: false, retryAfter: 0 };
     }
 
-    // Within window, check count
+    // Within window — check threshold
     if (entry.count >= maxAttempts) {
         const elapsed = now - entry.firstAttempt;
         const remainingMs = windowMs - elapsed;
@@ -220,39 +423,79 @@ export async function checkLockout({
 }
 
 /**
- * Record a failed login attempt for an email.
+ * Record a failed attempt for an arbitrary lockout key.
  *
- * @returns Whether the account is now locked, the attempt number, and retryAfter seconds
+ * When Redis is available, uses an atomic INCR + conditional EXPIRE so no
+ * read-modify-write race condition can occur under concurrent requests.
+ * Falls back to the in-memory store path otherwise (single-threaded Node.js
+ * makes the in-memory path inherently race-free).
+ *
+ * @param key - Unique string key identifying the subject (e.g. email, "email:ip")
+ * @param config - Lockout thresholds to use for this record
+ * @returns Whether the key is now locked, the attempt number, and retryAfter seconds
+ *
+ * @example
+ * ```ts
+ * const key = `${email}:${ip}`;
+ * const result = await recordFailedAttemptByKey({
+ *     key,
+ *     config: { maxAttempts: 5, windowMs: 900_000 }
+ * });
+ * ```
  */
-export async function recordFailedAttempt({
-    email
+export async function recordFailedAttemptByKey({
+    key,
+    config
 }: {
-    email: string;
+    key: string;
+    config: LockoutConfig;
 }): Promise<{ locked: boolean; attemptNumber: number; retryAfter: number }> {
-    const { maxAttempts, windowMs } = getConfig();
-    const normalizedEmail = email.toLowerCase();
+    const { maxAttempts, windowMs } = config;
+
+    // ── Redis path: INCR (atomic) + EXPIRE on first increment ────────────
+    const redisStore = getRedisStore();
+    if (redisStore) {
+        const newCount = await redisStore.incr(key, windowMs);
+
+        // newCount is undefined only when Redis is unavailable; fall through
+        // to the in-memory path in that case.
+        if (newCount !== undefined) {
+            const locked = newCount >= maxAttempts;
+            let retryAfter = 0;
+
+            if (locked) {
+                // TTL was set on the first INCR; read the remaining seconds.
+                const remainingTtl = await redisStore.ttl(key);
+                retryAfter = remainingTtl > 0 ? remainingTtl : 0;
+            }
+
+            return { locked, attemptNumber: newCount, retryAfter };
+        }
+    }
+
+    // ── In-memory fallback path (single-threaded, no race condition) ──────
     const store = getStore();
     const now = Date.now();
 
-    const existing = await store.get(normalizedEmail);
+    const existing = await store.get(key);
 
     let newEntry: LockoutEntry;
 
     if (existing && now - existing.firstAttempt < windowMs) {
-        // Within window.. increment
+        // Within window — increment
         newEntry = {
             count: existing.count + 1,
             firstAttempt: existing.firstAttempt
         };
     } else {
-        // Window expired or no entry.. start fresh
+        // Window expired or no entry — start fresh
         newEntry = {
             count: 1,
             firstAttempt: now
         };
     }
 
-    await store.set(normalizedEmail, newEntry, windowMs);
+    await store.set(key, newEntry, windowMs);
 
     const locked = newEntry.count >= maxAttempts;
     let retryAfter = 0;
@@ -270,12 +513,53 @@ export async function recordFailedAttempt({
 }
 
 /**
+ * Reset the lockout counter for an arbitrary key.
+ *
+ * @param key - Unique string key identifying the subject
+ */
+export async function resetLockoutByKey({ key }: { key: string }): Promise<void> {
+    const store = getStore();
+    await store.delete(key);
+}
+
+// ─── Public API ──────────────────────────────────────────────────────────────
+
+/**
+ * Check if an email is currently locked out.
+ *
+ * @returns locked=true and retryAfter (remaining seconds) if locked, otherwise locked=false
+ */
+export async function checkLockout({
+    email
+}: {
+    email: string;
+}): Promise<{ locked: boolean; retryAfter: number }> {
+    const config = getConfig();
+    const normalizedEmail = email.trim().toLowerCase();
+    return checkLockoutByKey({ key: normalizedEmail, config });
+}
+
+/**
+ * Record a failed login attempt for an email.
+ *
+ * @returns Whether the account is now locked, the attempt number, and retryAfter seconds
+ */
+export async function recordFailedAttempt({
+    email
+}: {
+    email: string;
+}): Promise<{ locked: boolean; attemptNumber: number; retryAfter: number }> {
+    const config = getConfig();
+    const normalizedEmail = email.trim().toLowerCase();
+    return recordFailedAttemptByKey({ key: normalizedEmail, config });
+}
+
+/**
  * Reset the lockout counter for an email (call on successful login).
  */
 export async function resetLockout({ email }: { email: string }): Promise<void> {
-    const normalizedEmail = email.toLowerCase();
-    const store = getStore();
-    await store.delete(normalizedEmail);
+    const normalizedEmail = email.trim().toLowerCase();
+    return resetLockoutByKey({ key: normalizedEmail });
 }
 
 /**
