@@ -187,6 +187,34 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // POST Sponsorship management
         PermissionEnum.POST_SPONSORSHIP_MANAGE,
 
+        // SPONSORSHIP: All granular ownership-scoped permissions
+        PermissionEnum.SPONSORSHIP_VIEW_ANY,
+        PermissionEnum.SPONSORSHIP_VIEW_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_ANY,
+        PermissionEnum.SPONSORSHIP_UPDATE_OWN,
+        PermissionEnum.SPONSORSHIP_SOFT_DELETE_ANY,
+        PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN,
+        PermissionEnum.SPONSORSHIP_HARD_DELETE_ANY,
+        PermissionEnum.SPONSORSHIP_HARD_DELETE_OWN,
+        PermissionEnum.SPONSORSHIP_RESTORE_ANY,
+        PermissionEnum.SPONSORSHIP_RESTORE_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_ANY,
+        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_OWN,
+
+        // OWNER_PROMOTION: All granular ownership-scoped permissions
+        PermissionEnum.OWNER_PROMOTION_VIEW_ANY,
+        PermissionEnum.OWNER_PROMOTION_VIEW_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_ANY,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_OWN,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_ANY,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN,
+        PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY,
+        PermissionEnum.OWNER_PROMOTION_HARD_DELETE_OWN,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
+
         // BILLING: All billing admin permissions
         PermissionEnum.BILLING_READ_ALL,
         PermissionEnum.BILLING_PROMO_CODE_READ,
@@ -360,6 +388,22 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // POST Sponsorship management
         PermissionEnum.POST_SPONSORSHIP_MANAGE,
 
+        // SPONSORSHIP: All _ANY granular ownership-scoped permissions (admin manages any)
+        PermissionEnum.SPONSORSHIP_VIEW_ANY,
+        PermissionEnum.SPONSORSHIP_UPDATE_ANY,
+        PermissionEnum.SPONSORSHIP_SOFT_DELETE_ANY,
+        PermissionEnum.SPONSORSHIP_HARD_DELETE_ANY,
+        PermissionEnum.SPONSORSHIP_RESTORE_ANY,
+        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_ANY,
+
+        // OWNER_PROMOTION: All _ANY granular ownership-scoped permissions (admin manages any)
+        PermissionEnum.OWNER_PROMOTION_VIEW_ANY,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_ANY,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_ANY,
+        PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_ANY,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_ANY,
+
         // BILLING: All billing admin permissions
         PermissionEnum.BILLING_READ_ALL,
         PermissionEnum.BILLING_PROMO_CODE_READ,
@@ -498,6 +542,20 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
+        // SPONSORSHIP: Own sponsorships only (_OWN variants)
+        PermissionEnum.SPONSORSHIP_VIEW_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_OWN,
+        PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN,
+        PermissionEnum.SPONSORSHIP_RESTORE_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_OWN,
+
+        // OWNER_PROMOTION: Own promotions only (_OWN variants)
+        PermissionEnum.OWNER_PROMOTION_VIEW_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_OWN,
+        PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN,
+        PermissionEnum.OWNER_PROMOTION_RESTORE_OWN,
+        PermissionEnum.OWNER_PROMOTION_UPDATE_VISIBILITY_OWN,
+
         // ACCESS: Basic access
         PermissionEnum.DASHBOARD_BASE_VIEW,
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -528,6 +586,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.POST_SPONSORSHIP_VIEW,
         PermissionEnum.POST_SPONSORSHIP_CREATE,
         PermissionEnum.POST_SPONSORSHIP_MANAGE,
+
+        // SPONSORSHIP: Own granular permissions (_OWN variants only)
+        PermissionEnum.SPONSORSHIP_VIEW_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_OWN,
+        PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN,
+        PermissionEnum.SPONSORSHIP_RESTORE_OWN,
+        PermissionEnum.SPONSORSHIP_UPDATE_VISIBILITY_OWN,
 
         // ACCESS: Public API only
         PermissionEnum.ACCESS_API_PUBLIC
