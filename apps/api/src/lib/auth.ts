@@ -11,7 +11,7 @@
  * @module auth
  */
 
-import { getDb } from '@repo/db';
+import { asc, eq, getDb } from '@repo/db';
 import { accounts, sessions, users, verifications } from '@repo/db';
 import { sendEmail } from '@repo/email';
 import { ResetPasswordTemplate } from '@repo/email';
@@ -85,6 +85,19 @@ const SESSION_UPDATE_AGE = 60 * 60 * 24;
 
 /** Cookie cache duration: 5 minutes in seconds */
 const COOKIE_CACHE_MAX_AGE = 5 * 60;
+
+/**
+ * Maximum number of concurrent active sessions per user.
+ *
+ * When a new session is created and the user already has this many active
+ * sessions, the oldest session (by `createdAt`) is deleted automatically
+ * (FIFO eviction). This prevents unbounded session accumulation from
+ * forgotten log-ins on multiple devices.
+ *
+ * Value chosen to accommodate legitimate multi-device usage (phone, tablet,
+ * desktop, work computer) while bounding the attack surface.
+ */
+const MAX_SESSIONS_PER_USER = 10;
 
 /** Default user settings for new signups */
 const DEFAULT_USER_SETTINGS = {
@@ -314,6 +327,56 @@ export function getAuth(): ReturnType<typeof betterAuth> {
         },
 
         databaseHooks: {
+            session: {
+                create: {
+                    /**
+                     * Enforces the per-user concurrent session limit (FIFO eviction).
+                     *
+                     * Before a new session row is written to the database, counts how
+                     * many active sessions the user already has. If the count is at or
+                     * above `MAX_SESSIONS_PER_USER`, the oldest session (by `createdAt`
+                     * ascending) is deleted so the new one can take its place.
+                     *
+                     * This hook never blocks session creation. It only evicts the
+                     * oldest session when the limit is exceeded, providing a seamless
+                     * experience across multiple devices while bounding session growth.
+                     *
+                     * @param session - The session about to be created
+                     */
+                    before: async (session) => {
+                        const db = getDb();
+                        const userId = session.userId;
+
+                        // Fetch all existing sessions for this user, oldest first
+                        const existingSessions = await db
+                            .select({ id: sessions.id, createdAt: sessions.createdAt })
+                            .from(sessions)
+                            .where(eq(sessions.userId, userId))
+                            .orderBy(asc(sessions.createdAt));
+
+                        if (existingSessions.length >= MAX_SESSIONS_PER_USER) {
+                            // Delete the oldest session to make room (FIFO)
+                            const oldest = existingSessions[0];
+                            if (oldest) {
+                                await db.delete(sessions).where(eq(sessions.id, oldest.id));
+
+                                logger.info(
+                                    {
+                                        userId,
+                                        evictedSessionId: oldest.id,
+                                        sessionCount: existingSessions.length,
+                                        limit: MAX_SESSIONS_PER_USER
+                                    },
+                                    'Oldest session evicted to enforce per-user session limit'
+                                );
+                            }
+                        }
+
+                        // Allow session creation to proceed
+                        return true;
+                    }
+                }
+            },
             user: {
                 create: {
                     before: async (user) => {
