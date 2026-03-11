@@ -12,7 +12,6 @@ describe('SponsorshipService.getById', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
     const id = getMockSponsorshipId('mock-id');
-    const existing = { ...createMockSponsorship({ id }) };
 
     beforeEach(() => {
         modelMock = createModelMock(['findOne']);
@@ -21,11 +20,13 @@ describe('SponsorshipService.getById', () => {
             logger: loggerMock,
             model: modelMock as unknown as SponsorshipModel
         });
-        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW] });
+        // Actor with SPONSORSHIP_VIEW_ANY can view any sponsorship
+        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_ANY] });
         vi.clearAllMocks();
     });
 
-    it('should get a sponsorship by id when permissions are valid', async () => {
+    it('should get a sponsorship by id when actor has VIEW_ANY permission', async () => {
+        const existing = createMockSponsorship({ id });
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );
@@ -36,8 +37,34 @@ describe('SponsorshipService.getById', () => {
         expect(modelMock.findOne).toHaveBeenCalledWith({ id });
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should get a sponsorship by id when actor has VIEW_OWN and is the sponsor', async () => {
+        // Actor is the sponsor of this sponsorship
+        const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
+        const existing = createMockSponsorship({ id, sponsorUserId: ownActor.id });
+        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
+        const result = await service.getById(ownActor, id);
+        expect(result.data).toBeDefined();
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should return FORBIDDEN when actor has VIEW_OWN but is not the sponsor', async () => {
+        // Actor has OWN permission but the sponsorship belongs to a different user
+        const otherActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
+        const existing = createMockSponsorship({ id, sponsorUserId: 'different-user-id' });
+        modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
+            where && where.id === id ? existing : null
+        );
+        const result = await service.getById(otherActor, id);
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.data).toBeUndefined();
+    });
+
+    it('should return FORBIDDEN if actor lacks all view permissions', async () => {
         actor = createActor({ permissions: [] });
+        const existing = createMockSponsorship({ id });
         modelMock.findOne.mockImplementation((where: Record<string, unknown>) =>
             where && where.id === id ? existing : null
         );

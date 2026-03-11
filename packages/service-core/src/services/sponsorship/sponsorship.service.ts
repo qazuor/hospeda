@@ -1,19 +1,29 @@
 import { SponsorshipModel } from '@repo/db';
 import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
 import {
-    PermissionEnum,
-    ServiceErrorCode,
     SponsorshipCreateInputSchema,
     SponsorshipSearchSchema,
     SponsorshipUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext } from '../../types';
-import { ServiceError } from '../../types';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './sponsorship.permissions';
 
 /**
  * Service for managing sponsorships.
  * Provides CRUD operations and permission/lifecycle hooks for Sponsorship entities.
+ * Ownership-scoped access control is enforced via `sponsorUserId` comparisons.
  */
 export class SponsorshipService extends BaseCrudService<
     Sponsorship,
@@ -41,134 +51,92 @@ export class SponsorshipService extends BaseCrudService<
 
     /**
      * Permission hook: checks if the actor can create a sponsorship.
+     * Requires `SPONSORSHIP_CREATE`.
      */
-    protected _canCreate(actor: Actor, _data: SponsorshipCreateInput): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_CREATE)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to create sponsorship'
-            );
-        }
+    protected _canCreate(actor: Actor, data: SponsorshipCreateInput): void {
+        checkCanCreate(actor, data);
     }
 
     /**
      * Permission hook: checks if the actor can update a sponsorship.
+     * Requires `SPONSORSHIP_UPDATE_ANY` for any sponsorship, or
+     * `SPONSORSHIP_UPDATE_OWN` if the actor is the sponsor.
      */
-    protected _canUpdate(actor: Actor, _entity: Sponsorship): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_UPDATE)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update sponsorship'
-            );
-        }
+    protected _canUpdate(actor: Actor, entity: Sponsorship): void {
+        checkCanUpdate(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can soft-delete a sponsorship.
+     * Requires `SPONSORSHIP_SOFT_DELETE_ANY` for any sponsorship, or
+     * `SPONSORSHIP_SOFT_DELETE_OWN` if the actor is the sponsor.
      */
-    protected _canSoftDelete(actor: Actor, _entity: Sponsorship): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_DELETE)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to delete sponsorship'
-            );
-        }
+    protected _canSoftDelete(actor: Actor, entity: Sponsorship): void {
+        checkCanSoftDelete(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can hard-delete a sponsorship.
+     * Requires `SPONSORSHIP_HARD_DELETE_ANY` for any sponsorship, or
+     * `SPONSORSHIP_HARD_DELETE_OWN` if the actor is the sponsor.
      */
-    protected _canHardDelete(actor: Actor, _entity: Sponsorship): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.SPONSORSHIP_HARD_DELETE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to permanently delete sponsorship'
-            );
-        }
+    protected _canHardDelete(actor: Actor, entity: Sponsorship): void {
+        checkCanHardDelete(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can restore a sponsorship.
+     * Requires `SPONSORSHIP_RESTORE_ANY` for any sponsorship, or
+     * `SPONSORSHIP_RESTORE_OWN` if the actor is the sponsor.
      */
-    protected _canRestore(actor: Actor, _entity: Sponsorship): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.SPONSORSHIP_RESTORE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to restore sponsorship'
-            );
-        }
+    protected _canRestore(actor: Actor, entity: Sponsorship): void {
+        checkCanRestore(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can view a sponsorship.
+     * Requires `SPONSORSHIP_VIEW_ANY` for any sponsorship, or
+     * `SPONSORSHIP_VIEW_OWN` if the actor is the sponsor.
      */
-    protected _canView(actor: Actor, _entity: Sponsorship): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_VIEW)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to view sponsorship'
-            );
-        }
+    protected _canView(actor: Actor, entity: Sponsorship): void {
+        checkCanView(actor, entity);
     }
 
     /**
      * Permission hook: checks if the actor can list sponsorships.
+     * Requires `SPONSORSHIP_VIEW_ANY` or `SPONSORSHIP_VIEW_OWN`.
      */
     protected _canList(actor: Actor): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_VIEW)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to list sponsorships'
-            );
-        }
+        checkCanList(actor);
     }
 
     /**
      * Permission hook: checks if the actor can search sponsorships.
+     * Requires `SPONSORSHIP_VIEW_ANY` or `SPONSORSHIP_VIEW_OWN`.
      */
     protected _canSearch(actor: Actor): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_VIEW)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to search sponsorships'
-            );
-        }
+        checkCanSearch(actor);
     }
 
     /**
      * Permission hook: checks if the actor can count sponsorships.
+     * Requires `SPONSORSHIP_VIEW_ANY` or `SPONSORSHIP_VIEW_OWN`.
      */
     protected _canCount(actor: Actor): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_VIEW)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to count sponsorships'
-            );
-        }
+        checkCanCount(actor);
     }
 
     /**
      * Permission hook: checks if the actor can update the visibility of a sponsorship.
+     * Requires `SPONSORSHIP_UPDATE_VISIBILITY_ANY` for any sponsorship, or
+     * `SPONSORSHIP_UPDATE_VISIBILITY_OWN` if the actor is the sponsor.
      */
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: Sponsorship,
+        entity: Sponsorship,
         _newVisibility: unknown
     ): void {
-        if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.SPONSORSHIP_UPDATE)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update sponsorship visibility'
-            );
-        }
+        checkCanUpdateVisibility(actor, entity);
     }
 
     /**

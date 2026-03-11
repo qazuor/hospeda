@@ -26,11 +26,12 @@ describe('SponsorshipService.list', () => {
             logger: loggerMock,
             model: modelMock as unknown as SponsorshipModel
         });
-        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW] });
+        // Actor with VIEW_ANY can list all sponsorships
+        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_ANY] });
         vi.clearAllMocks();
     });
 
-    it('should list sponsorships when permissions are valid', async () => {
+    it('should list sponsorships when actor has VIEW_ANY permission', async () => {
         const items = [createMockSponsorship({ id: getMockSponsorshipId('mock-id-1') })];
         modelMock.findAllWithRelations.mockResolvedValue({
             items,
@@ -45,7 +46,22 @@ describe('SponsorshipService.list', () => {
         expect(modelMock.findAllWithRelations).toHaveBeenCalled();
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should list sponsorships when actor has VIEW_OWN permission', async () => {
+        const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_VIEW_OWN] });
+        const items = [createMockSponsorship({ id: getMockSponsorshipId('mock-id-1') })];
+        modelMock.findAllWithRelations.mockResolvedValue({
+            items,
+            total: 1,
+            page: 1,
+            pageSize: 10
+        });
+        const result = await service.list(ownActor, {});
+        expect(result.data).toBeDefined();
+        expect(result.data?.items).toBeDefined();
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should return FORBIDDEN if actor lacks all view permissions', async () => {
         actor = createActor({ permissions: [] });
         modelMock.findAllWithRelations.mockResolvedValue({
             items: [],
@@ -99,7 +115,7 @@ describe('SponsorshipService.list', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should list sponsorships as super admin', async () => {
+    it('should list sponsorships as super admin with all permissions', async () => {
         actor = createActor({
             role: RoleEnum.SUPER_ADMIN,
             permissions: Object.values(PermissionEnum)

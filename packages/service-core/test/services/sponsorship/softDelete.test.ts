@@ -12,7 +12,6 @@ describe('SponsorshipService.softDelete', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: ReturnType<typeof createActor>;
     const id = getMockSponsorshipId('mock-id');
-    const existing = createMockSponsorship({ id });
 
     beforeEach(() => {
         modelMock = createModelMock(['findById', 'softDelete']);
@@ -21,11 +20,13 @@ describe('SponsorshipService.softDelete', () => {
             logger: loggerMock,
             model: modelMock as unknown as SponsorshipModel
         });
-        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_DELETE] });
+        // Actor with SOFT_DELETE_ANY can delete any sponsorship
+        actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_SOFT_DELETE_ANY] });
         vi.clearAllMocks();
     });
 
-    it('should soft delete a sponsorship when permissions are valid', async () => {
+    it('should soft delete a sponsorship when actor has SOFT_DELETE_ANY permission', async () => {
+        const existing = createMockSponsorship({ id });
         modelMock.findById.mockResolvedValue(existing);
         modelMock.softDelete.mockResolvedValue(1);
         const result = await service.softDelete(actor, id);
@@ -33,8 +34,31 @@ describe('SponsorshipService.softDelete', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should soft delete a sponsorship when actor has SOFT_DELETE_OWN and is the sponsor', async () => {
+        const ownActor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN] });
+        const existing = createMockSponsorship({ id, sponsorUserId: ownActor.id });
+        modelMock.findById.mockResolvedValue(existing);
+        modelMock.softDelete.mockResolvedValue(1);
+        const result = await service.softDelete(ownActor, id);
+        expect(result.data).toBeDefined();
+        expect(result.error).toBeUndefined();
+    });
+
+    it('should return FORBIDDEN when actor has SOFT_DELETE_OWN but is not the sponsor', async () => {
+        const otherActor = createActor({
+            permissions: [PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN]
+        });
+        const existing = createMockSponsorship({ id, sponsorUserId: 'different-user-id' });
+        modelMock.findById.mockResolvedValue(existing);
+        const result = await service.softDelete(otherActor, id);
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.data).toBeUndefined();
+    });
+
+    it('should return FORBIDDEN if actor lacks all soft-delete permissions', async () => {
         actor = createActor({ permissions: [] });
+        const existing = createMockSponsorship({ id });
         modelMock.findById.mockResolvedValue(existing);
         const result = await service.softDelete(actor, id);
         expect(result.error).toBeDefined();

@@ -23,11 +23,12 @@ describe('SponsorshipService.create', () => {
             logger: loggerMock,
             model: modelMock as unknown as SponsorshipModel
         });
+        // Create uses a flat SPONSORSHIP_CREATE permission (no _ANY/_OWN split)
         actor = createActor({ permissions: [PermissionEnum.SPONSORSHIP_CREATE] });
         vi.clearAllMocks();
     });
 
-    it('should create a sponsorship when permissions are valid', async () => {
+    it('should create a sponsorship when actor has SPONSORSHIP_CREATE permission', async () => {
         const input = createMockSponsorshipCreateInput();
         const created = createMockSponsorship({ id: getMockSponsorshipId('new-id') });
         modelMock.create.mockResolvedValue(created);
@@ -37,7 +38,7 @@ describe('SponsorshipService.create', () => {
         expect(modelMock.create).toHaveBeenCalled();
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    it('should return FORBIDDEN if actor lacks SPONSORSHIP_CREATE permission', async () => {
         actor = createActor({ permissions: [] });
         const input = createMockSponsorshipCreateInput();
         const result = await service.create(actor, input);
