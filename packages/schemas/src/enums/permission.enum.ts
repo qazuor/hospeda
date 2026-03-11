@@ -387,6 +387,19 @@ export enum PermissionEnum {
     SPONSORSHIP_RESTORE = 'sponsorship.restore', // Allows restoring a deleted sponsorship.
     SPONSORSHIP_HARD_DELETE = 'sponsorship.hardDelete', // Allows permanently deleting a sponsorship.
     SPONSORSHIP_STATUS_MANAGE = 'sponsorship.status.manage', // Allows managing sponsorship status (activate, pause, expire, cancel).
+    // SPONSORSHIP: Granular ownership-scoped permissions
+    SPONSORSHIP_VIEW_ANY = 'sponsorship.view.any', // Allows viewing any sponsorship regardless of ownership.
+    SPONSORSHIP_VIEW_OWN = 'sponsorship.view.own', // Allows viewing own sponsorships only.
+    SPONSORSHIP_UPDATE_ANY = 'sponsorship.update.any', // Allows updating any sponsorship regardless of ownership.
+    SPONSORSHIP_UPDATE_OWN = 'sponsorship.update.own', // Allows updating own sponsorships only.
+    SPONSORSHIP_SOFT_DELETE_ANY = 'sponsorship.softDelete.any', // Allows soft-deleting any sponsorship regardless of ownership.
+    SPONSORSHIP_SOFT_DELETE_OWN = 'sponsorship.softDelete.own', // Allows soft-deleting own sponsorships only.
+    SPONSORSHIP_HARD_DELETE_ANY = 'sponsorship.hardDelete.any', // Allows permanently deleting any sponsorship regardless of ownership.
+    SPONSORSHIP_HARD_DELETE_OWN = 'sponsorship.hardDelete.own', // Allows permanently deleting own sponsorships only.
+    SPONSORSHIP_RESTORE_ANY = 'sponsorship.restore.any', // Allows restoring any soft-deleted sponsorship regardless of ownership.
+    SPONSORSHIP_RESTORE_OWN = 'sponsorship.restore.own', // Allows restoring own soft-deleted sponsorships only.
+    SPONSORSHIP_UPDATE_VISIBILITY_ANY = 'sponsorship.updateVisibility.any', // Allows updating visibility of any sponsorship regardless of ownership.
+    SPONSORSHIP_UPDATE_VISIBILITY_OWN = 'sponsorship.updateVisibility.own', // Allows updating visibility of own sponsorships only.
 
     // OWNER_PROMOTION: Permissions related to owner promotion management
     OWNER_PROMOTION_CREATE = 'ownerPromotion.create', // Allows creating a new owner promotion.
@@ -396,6 +409,19 @@ export enum PermissionEnum {
     OWNER_PROMOTION_RESTORE = 'ownerPromotion.restore', // Allows restoring a deleted owner promotion.
     OWNER_PROMOTION_HARD_DELETE = 'ownerPromotion.hardDelete', // Allows permanently deleting an owner promotion.
     OWNER_PROMOTION_STATUS_MANAGE = 'ownerPromotion.status.manage', // Allows managing owner promotion status.
+    // OWNER_PROMOTION: Granular ownership-scoped permissions
+    OWNER_PROMOTION_VIEW_ANY = 'ownerPromotion.view.any', // Allows viewing any owner promotion regardless of ownership.
+    OWNER_PROMOTION_VIEW_OWN = 'ownerPromotion.view.own', // Allows viewing own owner promotions only.
+    OWNER_PROMOTION_UPDATE_ANY = 'ownerPromotion.update.any', // Allows updating any owner promotion regardless of ownership.
+    OWNER_PROMOTION_UPDATE_OWN = 'ownerPromotion.update.own', // Allows updating own owner promotions only.
+    OWNER_PROMOTION_SOFT_DELETE_ANY = 'ownerPromotion.softDelete.any', // Allows soft-deleting any owner promotion regardless of ownership.
+    OWNER_PROMOTION_SOFT_DELETE_OWN = 'ownerPromotion.softDelete.own', // Allows soft-deleting own owner promotions only.
+    OWNER_PROMOTION_HARD_DELETE_ANY = 'ownerPromotion.hardDelete.any', // Allows permanently deleting any owner promotion regardless of ownership.
+    OWNER_PROMOTION_HARD_DELETE_OWN = 'ownerPromotion.hardDelete.own', // Allows permanently deleting own owner promotions only.
+    OWNER_PROMOTION_RESTORE_ANY = 'ownerPromotion.restore.any', // Allows restoring any soft-deleted owner promotion regardless of ownership.
+    OWNER_PROMOTION_RESTORE_OWN = 'ownerPromotion.restore.own', // Allows restoring own soft-deleted owner promotions only.
+    OWNER_PROMOTION_UPDATE_VISIBILITY_ANY = 'ownerPromotion.updateVisibility.any', // Allows updating visibility of any owner promotion regardless of ownership.
+    OWNER_PROMOTION_UPDATE_VISIBILITY_OWN = 'ownerPromotion.updateVisibility.own', // Allows updating visibility of own owner promotions only.
 
     // FEATURED_ACCOMMODATION: Permissions related to featured accommodation management
     FEATURED_ACCOMMODATION_CREATE = 'featuredAccommodation.create', // Allows creating a new featured accommodation.
