@@ -24,7 +24,7 @@ describe('OwnerPromotionService.hardDelete', () => {
             logger: loggerMock,
             model: modelMock as unknown as OwnerPromotionModel
         });
-        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_HARD_DELETE] });
+        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_HARD_DELETE_ANY] });
         vi.clearAllMocks();
     });
 

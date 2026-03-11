@@ -24,7 +24,7 @@ describe('OwnerPromotionService.getById', () => {
             logger: loggerMock,
             model: modelMock as unknown as OwnerPromotionModel
         });
-        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_VIEW] });
+        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_VIEW_ANY] });
         vi.clearAllMocks();
     });
 

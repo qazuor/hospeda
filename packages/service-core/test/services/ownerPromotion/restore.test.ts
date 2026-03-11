@@ -24,7 +24,7 @@ describe('OwnerPromotionService.restore', () => {
             logger: loggerMock,
             model: modelMock as unknown as OwnerPromotionModel
         });
-        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_RESTORE] });
+        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_RESTORE_ANY] });
         vi.clearAllMocks();
     });
 

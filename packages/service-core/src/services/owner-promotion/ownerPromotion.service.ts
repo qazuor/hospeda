@@ -7,17 +7,30 @@ import type {
 import {
     OwnerPromotionCreateInputSchema,
     OwnerPromotionSearchSchema,
-    OwnerPromotionUpdateInputSchema,
-    PermissionEnum,
-    ServiceErrorCode
+    OwnerPromotionUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext } from '../../types';
-import { ServiceError } from '../../types';
+import {
+    checkCanCount,
+    checkCanCreate,
+    checkCanHardDelete,
+    checkCanList,
+    checkCanRestore,
+    checkCanSearch,
+    checkCanSoftDelete,
+    checkCanUpdate,
+    checkCanUpdateVisibility,
+    checkCanView
+} from './ownerPromotion.permissions';
 
 /**
  * Service for managing owner promotions (discounts for VIP tourists).
  * Only owners with Pro or Premium plans can create promotions.
+ *
+ * Permission model:
+ * - `_ANY` permissions allow operating on any promotion regardless of ownership.
+ * - `_OWN` permissions allow operating only on promotions owned by the actor.
  */
 export class OwnerPromotionService extends BaseCrudService<
     OwnerPromotion,
@@ -43,138 +56,48 @@ export class OwnerPromotionService extends BaseCrudService<
         this.model = ctx.model ?? new OwnerPromotionModel();
     }
 
-    protected _canCreate(actor: Actor, _data: OwnerPromotionCreateInput): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_CREATE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to create owner promotion'
-            );
-        }
+    protected _canCreate(actor: Actor, data: OwnerPromotionCreateInput): void {
+        checkCanCreate(actor, data);
     }
 
-    protected _canUpdate(actor: Actor, _entity: OwnerPromotion): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_UPDATE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update owner promotion'
-            );
-        }
+    protected _canUpdate(actor: Actor, entity: OwnerPromotion): void {
+        checkCanUpdate(actor, entity);
     }
 
-    protected _canSoftDelete(actor: Actor, _entity: OwnerPromotion): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_DELETE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to delete owner promotion'
-            );
-        }
+    protected _canSoftDelete(actor: Actor, entity: OwnerPromotion): void {
+        checkCanSoftDelete(actor, entity);
     }
 
-    protected _canHardDelete(actor: Actor, _entity: OwnerPromotion): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_HARD_DELETE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to permanently delete owner promotion'
-            );
-        }
+    protected _canHardDelete(actor: Actor, entity: OwnerPromotion): void {
+        checkCanHardDelete(actor, entity);
     }
 
-    protected _canRestore(actor: Actor, _entity: OwnerPromotion): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_RESTORE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to restore owner promotion'
-            );
-        }
+    protected _canRestore(actor: Actor, entity: OwnerPromotion): void {
+        checkCanRestore(actor, entity);
     }
 
-    protected _canView(actor: Actor, _entity: OwnerPromotion): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_VIEW)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to view owner promotion'
-            );
-        }
+    protected _canView(actor: Actor, entity: OwnerPromotion): void {
+        checkCanView(actor, entity);
     }
 
     protected _canList(actor: Actor): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_VIEW)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to list owner promotions'
-            );
-        }
+        checkCanList(actor);
     }
 
     protected _canSearch(actor: Actor): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_VIEW)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to search owner promotions'
-            );
-        }
+        checkCanSearch(actor);
     }
 
     protected _canCount(actor: Actor): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_VIEW)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to count owner promotions'
-            );
-        }
+        checkCanCount(actor);
     }
 
     protected _canUpdateVisibility(
         actor: Actor,
-        _entity: OwnerPromotion,
-        _newVisibility: unknown
+        entity: OwnerPromotion,
+        newVisibility: unknown
     ): void {
-        if (
-            !actor ||
-            !actor.id ||
-            !actor.permissions.includes(PermissionEnum.OWNER_PROMOTION_UPDATE)
-        ) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: Insufficient permissions to update owner promotion visibility'
-            );
-        }
+        checkCanUpdateVisibility(actor, entity, newVisibility);
     }
 
     protected async _executeSearch(params: OwnerPromotionSearchInput, _actor: Actor) {
