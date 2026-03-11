@@ -1,8 +1,8 @@
 /**
  * @file contact-form.test.tsx
- * @description Tests for ContactForm.client.tsx.
+ * @description Tests for ContactForm.client.tsx (post-T-022 migration).
  * Covers rendering, field validation (empty / min-length / email format),
- * form submission (loading state, API call, success/error toasts),
+ * form submission (loading state, API call via contactApi, success/error toasts),
  * inline error clearing on user input, and accessibility attributes.
  */
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -13,7 +13,12 @@ vi.mock('../../../src/store/toast-store', () => ({
     addToast: vi.fn()
 }));
 
-// Mock global fetch
+// Mock @sentry/astro to prevent real Sentry calls during tests.
+vi.mock('@sentry/astro', () => ({
+    captureException: vi.fn()
+}));
+
+// Mock global fetch — the apiClient internally uses fetch.
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
 
@@ -37,6 +42,26 @@ function submitForm(): void {
     const button = screen.getByRole('button', { name: 'Enviar mensaje' });
     const form = button.closest('form');
     if (form) fireEvent.submit(form);
+}
+
+/**
+ * Build a minimal fetch mock response that satisfies apiClient's expectations.
+ * apiClient calls response.json() and checks response.ok.
+ */
+function mockSuccessResponse(data: unknown = {}) {
+    return {
+        ok: true,
+        status: 200,
+        json: async () => ({ success: true, data })
+    };
+}
+
+function mockErrorResponse(status = 500) {
+    return {
+        ok: false,
+        status,
+        json: async () => ({ success: false, error: { code: 'ERROR', message: 'Server error' } })
+    };
 }
 
 // ── Setup / teardown ──────────────────────────────────────────────────────────
@@ -136,19 +161,20 @@ describe('ContactForm.client.tsx', () => {
     });
 
     describe('Validation — empty required fields', () => {
-        it('should display all four required-field errors on empty submit', async () => {
+        it('should display four required-field errors on empty submit', async () => {
             // Arrange
             render(<ContactForm />);
 
             // Act
             submitForm();
 
-            // Assert
+            // Assert — all four error containers show the generic "required" message
             await waitFor(() => {
-                expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El asunto es obligatorio')).toBeInTheDocument();
-                expect(screen.getByText('El mensaje es obligatorio')).toBeInTheDocument();
+                const alerts = screen.getAllByRole('alert');
+                expect(alerts).toHaveLength(4);
+                for (const alert of alerts) {
+                    expect(alert.textContent).toBe('Este campo es requerido');
+                }
             });
         });
 
@@ -164,6 +190,19 @@ describe('ContactForm.client.tsx', () => {
                 expect(mockFetch).not.toHaveBeenCalled();
             });
         });
+
+        it('should set id="name-error" on the name error element', async () => {
+            // Arrange
+            render(<ContactForm />);
+
+            // Act
+            submitForm();
+
+            // Assert
+            await waitFor(() => {
+                expect(document.getElementById('name-error')).toBeInTheDocument();
+            });
+        });
     });
 
     describe('Validation — minimum length rules', () => {
@@ -175,11 +214,10 @@ describe('ContactForm.client.tsx', () => {
             // Act
             submitForm();
 
-            // Assert
+            // Assert — generic tooSmall message from validation.json
             await waitFor(() => {
-                expect(
-                    screen.getByText('El nombre debe tener al menos 2 caracteres')
-                ).toBeInTheDocument();
+                const nameError = document.getElementById('name-error');
+                expect(nameError?.textContent).toBe('El valor es demasiado corto');
             });
         });
 
@@ -193,9 +231,8 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(
-                    screen.getByText('El asunto debe tener al menos 3 caracteres')
-                ).toBeInTheDocument();
+                const subjectError = document.getElementById('subject-error');
+                expect(subjectError?.textContent).toBe('El valor es demasiado corto');
             });
         });
 
@@ -211,14 +248,13 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(
-                    screen.getByText('El mensaje debe tener al menos 20 caracteres')
-                ).toBeInTheDocument();
+                const messageError = document.getElementById('message-error');
+                expect(messageError?.textContent).toBe('El valor es demasiado corto');
             });
         });
     });
 
-    describe('Validation — email format', () => {
+    describe('Validation — email format (GAP-011)', () => {
         it('should show an invalid-email error for a malformed email address', async () => {
             // Arrange
             render(<ContactForm />);
@@ -236,9 +272,10 @@ describe('ContactForm.client.tsx', () => {
             // Act
             submitForm();
 
-            // Assert
+            // Assert — generic invalidEmail message from validation.json
             await waitFor(() => {
-                expect(screen.getByText('El email no es válido')).toBeInTheDocument();
+                const emailError = document.getElementById('email-error');
+                expect(emailError?.textContent).toBe('Debe ser un email válido');
             });
         });
 
@@ -252,7 +289,8 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(screen.getByText('El email no es válido')).toBeInTheDocument();
+                const emailError = document.getElementById('email-error');
+                expect(emailError?.textContent).toBe('Debe ser un email válido');
             });
         });
 
@@ -267,7 +305,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert — email error specifically must be absent
             await waitFor(() => {
-                expect(screen.queryByText('El email no es válido')).not.toBeInTheDocument();
+                expect(document.getElementById('email-error')).not.toBeInTheDocument();
             });
         });
     });
@@ -298,7 +336,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Cleanup — resolve so React can unmount cleanly
             await act(async () => {
-                resolveFetch({ ok: true, json: async () => ({}) });
+                resolveFetch(mockSuccessResponse());
             });
         });
 
@@ -323,43 +361,43 @@ describe('ContactForm.client.tsx', () => {
             });
 
             await act(async () => {
-                resolveFetch({ ok: true, json: async () => ({}) });
+                resolveFetch(mockSuccessResponse());
             });
         });
     });
 
     describe('API integration', () => {
-        it('should POST to the contact endpoint with trimmed field values', async () => {
-            // Arrange
-            mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+        it('should POST to the contact endpoint with the mapped field values', async () => {
+            // Arrange — contactApi.sendContactMessage splits name into firstName/lastName
+            mockFetch.mockResolvedValue(mockSuccessResponse());
             render(<ContactForm />);
             fillValidForm();
 
             // Act
             submitForm();
 
-            // Assert
+            // Assert — apiClient uses fetch internally
             await waitFor(() => {
                 expect(mockFetch).toHaveBeenCalledTimes(1);
-                expect(mockFetch).toHaveBeenCalledWith(
-                    'http://localhost:3001/api/v1/public/contact',
-                    {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            name: 'John Doe',
-                            email: 'john@example.com',
-                            subject: 'Test subject',
-                            message: 'This is a test message with more than 20 characters'
-                        })
-                    }
-                );
+
+                const [url, opts] = mockFetch.mock.calls[0] as [string, RequestInit];
+                expect(url).toContain('/api/v1/public/contact');
+                expect(opts.method).toBe('POST');
+
+                const body = JSON.parse(opts.body as string) as Record<string, unknown>;
+                expect(body).toMatchObject({
+                    firstName: 'John',
+                    lastName: 'Doe',
+                    email: 'john@example.com',
+                    message: 'This is a test message with more than 20 characters',
+                    type: 'general'
+                });
             });
         });
 
         it('should show a success toast and reset the form on a successful response', async () => {
             // Arrange
-            mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+            mockFetch.mockResolvedValue(mockSuccessResponse());
             render(<ContactForm />);
             fillValidForm();
 
@@ -383,7 +421,7 @@ describe('ContactForm.client.tsx', () => {
 
         it('should show an error toast when the API returns a non-OK status', async () => {
             // Arrange
-            mockFetch.mockResolvedValue({ ok: false, status: 500 });
+            mockFetch.mockResolvedValue(mockErrorResponse(500));
             render(<ContactForm />);
             fillValidForm();
 
@@ -459,7 +497,7 @@ describe('ContactForm.client.tsx', () => {
             render(<ContactForm />);
             submitForm();
             await waitFor(() => {
-                expect(screen.getByText('El nombre es obligatorio')).toBeInTheDocument();
+                expect(document.getElementById('name-error')).toBeInTheDocument();
             });
 
             // Act
@@ -467,7 +505,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(screen.queryByText('El nombre es obligatorio')).not.toBeInTheDocument();
+                expect(document.getElementById('name-error')).not.toBeInTheDocument();
             });
         });
 
@@ -476,7 +514,7 @@ describe('ContactForm.client.tsx', () => {
             render(<ContactForm />);
             submitForm();
             await waitFor(() => {
-                expect(screen.getByText('El email es obligatorio')).toBeInTheDocument();
+                expect(document.getElementById('email-error')).toBeInTheDocument();
             });
 
             // Act
@@ -486,7 +524,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(screen.queryByText('El email es obligatorio')).not.toBeInTheDocument();
+                expect(document.getElementById('email-error')).not.toBeInTheDocument();
             });
         });
 
@@ -495,7 +533,7 @@ describe('ContactForm.client.tsx', () => {
             render(<ContactForm />);
             submitForm();
             await waitFor(() => {
-                expect(screen.getByText('El asunto es obligatorio')).toBeInTheDocument();
+                expect(document.getElementById('subject-error')).toBeInTheDocument();
             });
 
             // Act
@@ -503,7 +541,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(screen.queryByText('El asunto es obligatorio')).not.toBeInTheDocument();
+                expect(document.getElementById('subject-error')).not.toBeInTheDocument();
             });
         });
 
@@ -512,7 +550,7 @@ describe('ContactForm.client.tsx', () => {
             render(<ContactForm />);
             submitForm();
             await waitFor(() => {
-                expect(screen.getByText('El mensaje es obligatorio')).toBeInTheDocument();
+                expect(document.getElementById('message-error')).toBeInTheDocument();
             });
 
             // Act
@@ -522,7 +560,7 @@ describe('ContactForm.client.tsx', () => {
 
             // Assert
             await waitFor(() => {
-                expect(screen.queryByText('El mensaje es obligatorio')).not.toBeInTheDocument();
+                expect(document.getElementById('message-error')).not.toBeInTheDocument();
             });
         });
     });

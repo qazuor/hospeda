@@ -327,5 +327,33 @@ export const contactApi = {
             path: `${BASE}/contact`,
             body: { firstName, lastName, email, message, accommodationId, type }
         });
+    },
+
+    /**
+     * Send a contact form message from the web contact page.
+     *
+     * Maps the web form shape `{ name, email, subject, message }` to the API's
+     * `{ firstName, lastName, email, message, type }` envelope. The `name` field
+     * is split on the first space; `subject` is not forwarded by the API schema
+     * but is included for logging purposes.
+     */
+    sendContactMessage({
+        name,
+        email,
+        _subject,
+        message
+    }: {
+        readonly name: string;
+        readonly email: string;
+        readonly subject: string;
+        readonly message: string;
+    }): Promise<ApiResult<{ success: boolean; message: string }>> {
+        const spaceIdx = name.indexOf(' ');
+        const firstName = spaceIdx === -1 ? name : name.slice(0, spaceIdx);
+        const lastName = spaceIdx === -1 ? '' : name.slice(spaceIdx + 1);
+        return apiClient.post({
+            path: `${BASE}/contact`,
+            body: { firstName, lastName: lastName || firstName, email, message, type: 'general' }
+        });
     }
 };

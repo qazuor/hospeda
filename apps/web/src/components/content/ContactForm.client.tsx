@@ -1,11 +1,14 @@
 import * as Sentry from '@sentry/astro';
 import type { JSX } from 'react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from '../../hooks/useTranslation';
-import { getApiUrl } from '../../lib/env';
+import { contactApi } from '../../lib/api/endpoints';
 import type { SupportedLocale } from '../../lib/i18n';
+import { createTranslations } from '../../lib/i18n';
 import { webLogger } from '../../lib/logger';
+import { validateField } from '../../lib/validation/validate-field';
 import { addToast } from '../../store/toast-store';
+import { FormError } from '../ui/FormError';
 
 /**
  * Internal form state shape.
@@ -44,27 +47,13 @@ export interface ContactFormProps {
 }
 
 /**
- * Validates an email address with a simple regex pattern.
- *
- * @param email - The email string to test.
- * @returns `true` when the email is syntactically valid.
- */
-function isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-}
-
-/**
  * ContactForm component.
  *
  * Renders a contact form with name, email, subject, and message fields.
- * Performs client-side validation before submitting to the public contact API
- * endpoint. On success or failure it shows a toast notification and resets
- * or keeps the form state accordingly.
- *
- * Intentionally uses manual validation (no react-hook-form) because the form
- * is simple (4 fields, basic rules) and adding a heavy form library is not
- * justified (YAGNI).
+ * Performs client-side validation via `validateField` before submitting
+ * through the typed `contactApi.sendContactMessage()` wrapper. On success
+ * or failure it shows a toast notification and resets or keeps the form
+ * state accordingly.
  *
  * @param props - Component props.
  * @returns The rendered contact form.
@@ -86,8 +75,25 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
 
     const { t } = useTranslation({ locale: locale as SupportedLocale, namespace: 'contact' });
 
+    // Base translation function (no namespace) used to resolve generic
+    // validationError.field.* keys returned by validateField.
+    const { t: tBase } = useMemo(() => createTranslations(locale as SupportedLocale), [locale]);
+
+    /**
+     * Translates a `validationError.field.*` key returned by `validateField`
+     * into a human-readable string using the standard validation namespace.
+     *
+     * @param key - i18n key like `validationError.field.required`
+     * @returns Translated string or the raw key as fallback
+     */
+    const resolveValidationKey = (key: string): string =>
+        tBase(key.replace('validationError.', 'validation.'));
+
     /**
      * Validates the current form state and returns any validation errors.
+     *
+     * Uses `validateField` for consistent validation logic and email-regex
+     * parity with the rest of the application (GAP-011).
      *
      * @param data - Snapshot of the form fields to validate.
      * @returns An object with field-level error messages, or `{}` when valid.
@@ -95,55 +101,38 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
     const validateForm = (data: ContactFormState): ContactFormErrors => {
         const validationErrors: ContactFormErrors = {};
 
-        if (!data.name.trim()) {
-            validationErrors.name = t('form.validation.nameRequired');
-        } else if (data.name.trim().length < 2) {
-            validationErrors.name = t('form.validation.nameMinLength');
-        }
+        const nameKey = validateField(data.name, { required: true, minLength: 2 });
+        if (nameKey) validationErrors.name = resolveValidationKey(nameKey);
 
-        if (!data.email.trim()) {
-            validationErrors.email = t('form.validation.emailRequired');
-        } else if (!isValidEmail(data.email.trim())) {
-            validationErrors.email = t('form.validation.emailInvalid');
-        }
+        const emailKey = validateField(data.email, { required: true, email: true });
+        if (emailKey) validationErrors.email = resolveValidationKey(emailKey);
 
-        if (!data.subject.trim()) {
-            validationErrors.subject = t('form.validation.subjectRequired');
-        } else if (data.subject.trim().length < 3) {
-            validationErrors.subject = t('form.validation.subjectMinLength');
-        }
+        const subjectKey = validateField(data.subject, { required: true, minLength: 3 });
+        if (subjectKey) validationErrors.subject = resolveValidationKey(subjectKey);
 
-        if (!data.message.trim()) {
-            validationErrors.message = t('form.validation.messageRequired');
-        } else if (data.message.trim().length < 20) {
-            validationErrors.message = t('form.validation.messageMinLength');
-        }
+        const messageKey = validateField(data.message, { required: true, minLength: 20 });
+        if (messageKey) validationErrors.message = resolveValidationKey(messageKey);
 
         return validationErrors;
     };
 
     /**
-     * Sends the validated form payload to the contact API endpoint.
+     * Sends the validated form payload via the typed contactApi wrapper.
      * Shows a success or error toast and resets the form on success.
      */
     const submitForm = async (): Promise<void> => {
         setIsSubmitting(true);
 
         try {
-            const apiBaseUrl = getApiUrl();
-            const response = await fetch(`${apiBaseUrl}/api/v1/public/contact`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formState.name.trim(),
-                    email: formState.email.trim(),
-                    subject: formState.subject.trim(),
-                    message: formState.message.trim()
-                })
+            const result = await contactApi.sendContactMessage({
+                name: formState.name.trim(),
+                email: formState.email.trim(),
+                subject: formState.subject.trim(),
+                message: formState.message.trim()
             });
 
-            if (!response.ok) {
-                throw new Error('Failed to send message');
+            if (!result.ok) {
+                throw new Error(result.error.message);
             }
 
             addToast({ type: 'success', message: t('form.successMessage') });
@@ -221,16 +210,10 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
-                {errors.name && (
-                    <p
-                        id="name-error"
-                        className="mt-1 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.name}
-                    </p>
-                )}
+                <FormError
+                    fieldName="name"
+                    error={errors.name}
+                />
             </div>
 
             {/* Email */}
@@ -257,16 +240,10 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
-                {errors.email && (
-                    <p
-                        id="email-error"
-                        className="mt-1 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.email}
-                    </p>
-                )}
+                <FormError
+                    fieldName="email"
+                    error={errors.email}
+                />
             </div>
 
             {/* Subject */}
@@ -293,16 +270,10 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
-                {errors.subject && (
-                    <p
-                        id="subject-error"
-                        className="mt-1 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.subject}
-                    </p>
-                )}
+                <FormError
+                    fieldName="subject"
+                    error={errors.subject}
+                />
             </div>
 
             {/* Message */}
@@ -329,16 +300,10 @@ export function ContactForm({ locale = 'es', className = '' }: ContactFormProps)
                             : 'border-border focus:border-primary focus:ring-primary'
                     }`}
                 />
-                {errors.message && (
-                    <p
-                        id="message-error"
-                        className="mt-1 text-destructive text-sm"
-                        role="alert"
-                        aria-live="polite"
-                    >
-                        {errors.message}
-                    </p>
-                )}
+                <FormError
+                    fieldName="message"
+                    error={errors.message}
+                />
             </div>
 
             {/* Submit */}
