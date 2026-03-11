@@ -241,7 +241,8 @@ describe('propietarios/index.astro — owners landing page', () => {
 
     it('injects JSON-LD via script tag in head slot', () => {
         expect(propietariosSrc).toContain('type="application/ld+json"');
-        expect(propietariosSrc).toContain('set:html={JSON.stringify(faqJsonLd)}');
+        // .replace() sanitizes '<' chars for XSS protection
+        expect(propietariosSrc).toContain('set:html={JSON.stringify(faqJsonLd)');
         expect(propietariosSrc).toContain('slot="head"');
     });
 

@@ -117,7 +117,9 @@ describe('Breadcrumb.astro', () => {
         });
 
         it('should serialize JSON-LD with JSON.stringify and set:html', () => {
-            expect(content).toContain('set:html={JSON.stringify(jsonLd)}');
+            // .replace() sanitizes '<' chars for XSS protection (\\u003c)
+            expect(content).toContain('set:html={JSON.stringify(jsonLd)');
+            expect(content).toContain("replace(/</g, '\\\\u003c')");
         });
     });
 

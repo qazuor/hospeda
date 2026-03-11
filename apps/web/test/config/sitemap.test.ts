@@ -65,8 +65,9 @@ describe('astro.config.mjs - sitemap', () => {
             expect(astroConfigContent).toContain('HOSPEDA_SITE_URL');
         });
 
-        it('should fall back to a localhost URL when the env var is absent', () => {
-            expect(astroConfigContent).toContain('http://localhost:4321');
+        it('should also accept PUBLIC_SITE_URL as a fallback env var', () => {
+            // The config uses HOSPEDA_SITE_URL || PUBLIC_SITE_URL (no localhost hardcoded)
+            expect(astroConfigContent).toContain('PUBLIC_SITE_URL');
         });
     });
 

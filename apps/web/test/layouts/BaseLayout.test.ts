@@ -194,9 +194,10 @@ describe('BaseLayout.astro - Layout structure', () => {
         expect(src).toContain('<main');
     });
 
-    it('should mount FeedbackFAB with client:idle directive', () => {
+    it('should mount FeedbackFAB with client:only directive', () => {
         // Arrange / Act / Assert
-        expect(src).toContain('client:idle');
+        // FeedbackFAB uses client:only="react" (cannot be server-rendered)
+        expect(src).toContain('client:only="react"');
         expect(src).toContain('<FeedbackFAB');
     });
 });
