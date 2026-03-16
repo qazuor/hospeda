@@ -1,0 +1,58 @@
+[
+    {
+        "entityType": "accommodation",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 60,
+        "debounceSeconds": 5,
+        "enabled": true
+    },
+    {
+        "entityType": "destination",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 120,
+        "debounceSeconds": 10,
+        "enabled": true
+    },
+    {
+        "entityType": "event",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 60,
+        "debounceSeconds": 5,
+        "enabled": true
+    },
+    {
+        "entityType": "post",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 120,
+        "debounceSeconds": 10,
+        "enabled": true
+    },
+    {
+        "entityType": "accommodation_review",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 240,
+        "debounceSeconds": 30,
+        "enabled": true
+    },
+    {
+        "entityType": "destination_review",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 240,
+        "debounceSeconds": 30,
+        "enabled": true
+    },
+    {
+        "entityType": "tag",
+        "autoRevalidateOnChange": false,
+        "cronIntervalMinutes": 1440,
+        "debounceSeconds": 60,
+        "enabled": true
+    },
+    {
+        "entityType": "amenity",
+        "autoRevalidateOnChange": false,
+        "cronIntervalMinutes": 1440,
+        "debounceSeconds": 60,
+        "enabled": true
+    }
+]

@@ -13,6 +13,7 @@ import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
+import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
@@ -31,6 +32,7 @@ import { seedUsers } from './users.seed.js';
  * - Sponsorship levels and packages
  * - Billing entitlements, limits, plans, and add-ons
  * - Exchange rate configuration and initial rates
+ * - Revalidation configuration per entity type
  *
  * The seeds are executed in a specific order to ensure that:
  * - Dependencies are available before they're needed
@@ -59,6 +61,7 @@ import { seedUsers } from './users.seed.js';
  * // 13. Billing promo codes
  * // 14. Exchange rate config
  * // 15. Exchange rates
+ * // 16. Revalidation config
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -115,6 +118,9 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 15. Load exchange rates (initial reference rates)
         await seedExchangeRates(context);
+
+        // 16. Load revalidation config (per-entity-type ISR configuration)
+        await seedRevalidationConfig(context);
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output
