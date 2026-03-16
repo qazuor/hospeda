@@ -14,6 +14,7 @@ import {
     ListIcon,
     PermissionsIcon,
     PostSponsorIcon,
+    RefreshIcon,
     RolesIcon,
     SearchIcon,
     SettingsIcon,
@@ -35,7 +36,11 @@ export const administrationSection = createSection({
         PermissionEnum.FEATURE_CREATE,
         PermissionEnum.TAG_CREATE,
         PermissionEnum.SEO_MANAGE,
-        PermissionEnum.ACCESS_PANEL_ADMIN
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.REVALIDATION_CONFIG_VIEW,
+        PermissionEnum.REVALIDATION_CONFIG_EDIT,
+        PermissionEnum.REVALIDATION_TRIGGER,
+        PermissionEnum.REVALIDATION_LOG_VIEW
     ],
     routes: [
         '/access/**',
@@ -50,7 +55,9 @@ export const administrationSection = createSection({
         '/event-organizers',
         '/event-organizers/**',
         '/settings/**',
-        '/content/**'
+        '/content/**',
+        '/revalidation',
+        '/revalidation/**'
     ],
     defaultRoute: '/access/users',
     sidebar: {
@@ -168,6 +175,19 @@ export const administrationSection = createSection({
                         '/settings/critical',
                         <SettingsIcon className="h-4 w-4" />,
                         [PermissionEnum.ACCESS_PANEL_ADMIN]
+                    ),
+                    sidebar.link(
+                        'revalidation',
+                        'Revalidación ISR',
+                        '/revalidation',
+                        <RefreshIcon className="h-4 w-4" />,
+                        [
+                            PermissionEnum.REVALIDATION_CONFIG_VIEW,
+                            PermissionEnum.REVALIDATION_CONFIG_EDIT,
+                            PermissionEnum.REVALIDATION_TRIGGER,
+                            PermissionEnum.REVALIDATION_LOG_VIEW,
+                            PermissionEnum.ACCESS_PANEL_ADMIN
+                        ]
                     )
                 ],
                 <SettingsIcon className="h-4 w-4" />

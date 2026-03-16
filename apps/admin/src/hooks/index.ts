@@ -14,6 +14,17 @@ export { useSmartScroll } from './useSmartScroll';
 // Entity hooks
 export { useEntityPage } from './useEntityPage';
 
+// Revalidation hooks
+export {
+    REVALIDATION_QUERY_KEYS,
+    useManualRevalidate,
+    useRevalidateEntity,
+    useRevalidationConfigs,
+    useRevalidationLogs,
+    useRevalidationStats,
+    useUpdateRevalidationConfig,
+} from './useRevalidation';
+
 // Re-export types
 export type {
     EntityPageConfig,
