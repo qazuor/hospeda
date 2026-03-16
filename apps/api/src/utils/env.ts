@@ -270,6 +270,10 @@ const ApiEnvSchema = z
             .optional(),
         /** Cron adapter: manual (default), vercel, or node-cron */
         HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'vercel', 'node-cron']).default('manual'),
+        /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
+        HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
+        /** Cron schedule for automatic page revalidation (default: every hour) */
+        HOSPEDA_REVALIDATION_CRON_SCHEDULE: z.string().optional().default('0 * * * *'),
 
         // Billing
         /** MercadoPago access token for payment processing */

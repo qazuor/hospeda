@@ -4,6 +4,7 @@
  */
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
+import { initializeRevalidationService } from '@repo/service-core';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { closeSentry, initializeSentry } from './lib/sentry';
@@ -38,6 +39,17 @@ const startServer = async (): Promise<void> => {
 
         // Ensure default promo codes exist (HOSPEDA_FREE, etc.)
         await ensureDefaultPromoCodes();
+
+        // Initialize ISR revalidation service (optional — only if secret is configured)
+        if (env.HOSPEDA_REVALIDATION_SECRET) {
+            initializeRevalidationService({
+                nodeEnv: env.NODE_ENV,
+                revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
+                siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
+                debounceMs: 5000
+            });
+            apiLogger.info('ISR revalidation service initialized');
+        }
 
         const app = initApp();
 
@@ -151,11 +163,16 @@ process.on('uncaughtException', (error) => {
     );
 
     // Capture in Sentry if enabled
-    import('./lib/sentry').then(({ Sentry }) => {
-        if (Sentry.isEnabled()) {
-            Sentry.captureException(error);
+    void (async () => {
+        try {
+            const { Sentry } = await import('./lib/sentry');
+            if (Sentry.isEnabled()) {
+                Sentry.captureException(error);
+            }
+        } catch {
+            // Sentry not available, error already logged
         }
-    });
+    })();
 
     // Log but do NOT terminate - allow the server to continue
     // In production, monitor these closely via observability tools
@@ -173,11 +190,16 @@ process.on('unhandledRejection', (reason, promise) => {
     });
 
     // Capture in Sentry if enabled
-    import('./lib/sentry').then(({ Sentry }) => {
-        if (Sentry.isEnabled()) {
-            Sentry.captureException(reason instanceof Error ? reason : new Error(reasonStr));
+    void (async () => {
+        try {
+            const { Sentry } = await import('./lib/sentry');
+            if (Sentry.isEnabled()) {
+                Sentry.captureException(reason instanceof Error ? reason : new Error(reasonStr));
+            }
+        } catch {
+            // Sentry not available, error already logged
         }
-    });
+    })();
 
     // Log but do NOT terminate - allow the server to continue
     // In production, monitor these via observability tools
