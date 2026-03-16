@@ -29,6 +29,7 @@ import {
     VisibilityEnum
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { type Actor, ServiceError } from '../../types';
 import { generateEventSlug } from './event.helpers';
@@ -198,6 +199,71 @@ export class EventService extends BaseCrudService<
             return { ...normalized, slug };
         }
         return normalized;
+    }
+
+    protected async _afterCreate(entity: Event): Promise<Event> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'event',
+            slug: entity.slug,
+            category: entity.category?.toLowerCase()
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Event): Promise<Event> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'event',
+            slug: entity.slug,
+            category: entity.category?.toLowerCase()
+        });
+        return entity;
+    }
+
+    private _lastRestoredEvent: { slug: string; category?: string } | undefined;
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastRestoredEvent = {
+                slug: entity.slug,
+                category: entity.category
+            };
+        }
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        const restored = this._lastRestoredEvent;
+        this._lastRestoredEvent = undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'event',
+            slug: restored?.slug,
+            category: restored?.category?.toLowerCase()
+        });
+        return result;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'event'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'event'
+        });
+        return result;
     }
 
     /**

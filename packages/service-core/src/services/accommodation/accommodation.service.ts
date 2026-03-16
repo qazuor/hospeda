@@ -1,4 +1,9 @@
-import { AccommodationFaqModel, AccommodationIaDataModel, AccommodationModel } from '@repo/db';
+import {
+    AccommodationFaqModel,
+    AccommodationIaDataModel,
+    AccommodationModel,
+    DestinationModel
+} from '@repo/db';
 import {
     type Accommodation,
     type AccommodationByDestinationParams,
@@ -50,6 +55,7 @@ import {
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
@@ -132,6 +138,10 @@ export class AccommodationService extends BaseCrudService<
 
     private destinationService: DestinationService;
     private _lastDeletedDestinationId: string | undefined;
+    private readonly _destinationModel: DestinationModel;
+    private _lastRestoredAccommodation:
+        | { slug: string; destinationId?: string; type?: string }
+        | undefined;
 
     /**
      * Initializes a new instance of the AccommodationService.
@@ -141,6 +151,7 @@ export class AccommodationService extends BaseCrudService<
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
         this.destinationService = new DestinationService(ctx);
+        this._destinationModel = new DestinationModel();
     }
 
     // --- Permissions Hooks ---
@@ -234,11 +245,81 @@ export class AccommodationService extends BaseCrudService<
         return {};
     }
 
+    /**
+     * Resolves the destination slug for a given destinationId using the model directly
+     * to avoid service-layer permission checks in lifecycle hooks.
+     */
+    private async _resolveDestinationSlug(destinationId: string): Promise<string | undefined> {
+        try {
+            const destination = await this._destinationModel.findById(destinationId);
+            return destination?.slug;
+        } catch {
+            // Destination lookup is best-effort for revalidation context enrichment.
+            // Never let it break the main CRUD flow.
+            return undefined;
+        }
+    }
+
     protected async _afterCreate(entity: Accommodation): Promise<Accommodation> {
         if (entity.destinationId) {
             await this.destinationService.updateAccommodationsCount(entity.destinationId);
         }
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation',
+            slug: entity.slug,
+            destinationSlug,
+            accommodationType: entity.type?.toLowerCase()
+        });
         return entity;
+    }
+
+    protected async _afterUpdate(entity: Accommodation): Promise<Accommodation> {
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation',
+            slug: entity.slug,
+            destinationSlug,
+            accommodationType: entity.type?.toLowerCase()
+        });
+        return entity;
+    }
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastRestoredAccommodation = {
+                slug: entity.slug,
+                destinationId: entity.destinationId,
+                type: entity.type
+            };
+        }
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        const restored = this._lastRestoredAccommodation;
+        this._lastRestoredAccommodation = undefined;
+        if (restored?.destinationId) {
+            await this.destinationService.updateAccommodationsCount(restored.destinationId);
+        }
+        const destinationSlug = restored?.destinationId
+            ? await this._resolveDestinationSlug(restored.destinationId)
+            : undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation',
+            slug: restored?.slug,
+            destinationSlug,
+            accommodationType: restored?.type?.toLowerCase()
+        });
+        return result;
     }
 
     protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
@@ -256,6 +337,9 @@ export class AccommodationService extends BaseCrudService<
             await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
             this._lastDeletedDestinationId = undefined;
         }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation'
+        });
         return result;
     }
 
@@ -274,6 +358,9 @@ export class AccommodationService extends BaseCrudService<
             await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
             this._lastDeletedDestinationId = undefined;
         }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation'
+        });
         return result;
     }
 

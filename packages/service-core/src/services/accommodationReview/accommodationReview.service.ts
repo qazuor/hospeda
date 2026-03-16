@@ -18,6 +18,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import {
     type Actor,
     type PaginatedListOutput,
@@ -165,6 +166,16 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation_review'
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: AccommodationReview): Promise<AccommodationReview> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation_review'
+        });
         return entity;
     }
 
@@ -187,6 +198,41 @@ export class AccommodationReviewService extends BaseCrudService<
             await this.recalculateAndUpdateAccommodationStats(this._lastDeletedAccommodationId);
             this._lastDeletedAccommodationId = undefined;
         }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation_review'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<CountResponse> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation_review'
+        });
+        return result;
+    }
+
+    private _lastRestoredAccommodationId: string | undefined;
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const review = await this.model.findOne({ id });
+        this._lastRestoredAccommodationId = review?.accommodationId;
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        if (this._lastRestoredAccommodationId) {
+            await this.recalculateAndUpdateAccommodationStats(this._lastRestoredAccommodationId);
+            this._lastRestoredAccommodationId = undefined;
+        }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'accommodation_review'
+        });
         return result;
     }
 

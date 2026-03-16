@@ -26,6 +26,7 @@ import {
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
@@ -124,6 +125,50 @@ export class AmenityService extends BaseCrudRelatedService<
     }
     protected _canRemoveAmenityFromAccommodation(actor: Actor): void {
         checkCanRemoveAmenityFromAccommodation(actor);
+    }
+
+    protected async _afterCreate(entity: Amenity): Promise<Amenity> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'amenity'
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Amenity): Promise<Amenity> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'amenity'
+        });
+        return entity;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'amenity'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'amenity'
+        });
+        return result;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'amenity'
+        });
+        return result;
     }
 
     // Custom methods:

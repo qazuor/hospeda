@@ -35,6 +35,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
@@ -358,6 +359,73 @@ export class PostService extends BaseCrudService<
                 'Forbidden: not allowed to update visibility'
             );
         }
+    }
+
+    protected async _afterCreate(entity: Post): Promise<Post> {
+        const tagSlugs = entity.tags?.map((t) => t.slug);
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'post',
+            slug: entity.slug,
+            tagSlugs
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Post): Promise<Post> {
+        const tagSlugs = entity.tags?.map((t) => t.slug);
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'post',
+            slug: entity.slug,
+            tagSlugs
+        });
+        return entity;
+    }
+
+    private _lastRestoredPost: { slug: string; tagSlugs?: string[] } | undefined;
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastRestoredPost = {
+                slug: entity.slug,
+                tagSlugs: entity.tags?.map((t) => t.slug)
+            };
+        }
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        const restored = this._lastRestoredPost;
+        this._lastRestoredPost = undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'post',
+            slug: restored?.slug,
+            tagSlugs: restored?.tagSlugs
+        });
+        return result;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'post'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'post'
+        });
+        return result;
     }
 
     /**

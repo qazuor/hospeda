@@ -12,6 +12,7 @@ import {
     DestinationReviewsByUserSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews } from './destinationReview.helpers';
@@ -126,6 +127,16 @@ export class DestinationReviewService extends BaseCrudService<
 
     protected async _afterCreate(entity: DestinationReview): Promise<DestinationReview> {
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination_review'
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: DestinationReview): Promise<DestinationReview> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination_review'
+        });
         return entity;
     }
 
@@ -148,6 +159,43 @@ export class DestinationReviewService extends BaseCrudService<
             await this.recalculateAndUpdateDestinationStats(this._lastDeletedDestinationId);
             this._lastDeletedDestinationId = undefined;
         }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination_review'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination_review'
+        });
+        return result;
+    }
+
+    private _lastRestoredDestinationIdForReview: string | undefined;
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const review = await this.model.findOne({ id });
+        this._lastRestoredDestinationIdForReview = review?.destinationId;
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        if (this._lastRestoredDestinationIdForReview) {
+            await this.recalculateAndUpdateDestinationStats(
+                this._lastRestoredDestinationIdForReview
+            );
+            this._lastRestoredDestinationIdForReview = undefined;
+        }
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination_review'
+        });
         return result;
     }
 

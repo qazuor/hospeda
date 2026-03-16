@@ -34,6 +34,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
@@ -596,6 +597,63 @@ export class DestinationService extends BaseCrudService<
             }
         }
 
+        return result;
+    }
+
+    protected async _afterCreate(entity: Destination): Promise<Destination> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination',
+            slug: entity.slug
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Destination): Promise<Destination> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination',
+            slug: entity.slug
+        });
+        return entity;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination'
+        });
+        return result;
+    }
+
+    private _lastRestoredDestinationSlug: string | undefined;
+
+    protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        this._lastRestoredDestinationSlug = entity?.slug;
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        const slug = this._lastRestoredDestinationSlug;
+        this._lastRestoredDestinationSlug = undefined;
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'destination',
+            slug
+        });
         return result;
     }
 

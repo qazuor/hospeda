@@ -23,6 +23,7 @@ import {
 } from '@repo/schemas';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
+import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
@@ -149,6 +150,50 @@ export class TagService extends BaseCrudRelatedService<
      */
     protected _canUpdateVisibility(actor: Actor, entity: Tag, _newVisibility: unknown): void {
         checkCanUpdateVisibilityTag(actor, entity);
+    }
+
+    protected async _afterCreate(entity: Tag): Promise<Tag> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'tag'
+        });
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Tag): Promise<Tag> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'tag'
+        });
+        return entity;
+    }
+
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'tag'
+        });
+        return result;
+    }
+
+    protected async _afterHardDelete(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'tag'
+        });
+        return result;
+    }
+
+    protected async _afterRestore(
+        result: { count: number },
+        _actor: Actor
+    ): Promise<{ count: number }> {
+        getRevalidationService()?.scheduleRevalidation({
+            entityType: 'tag'
+        });
+        return result;
     }
 
     /**
