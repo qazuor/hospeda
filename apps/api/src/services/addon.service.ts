@@ -159,10 +159,11 @@ export class AddonService {
     /**
      * Cancel an active add-on for a customer.
      *
-     * Updates `billing_addon_purchases` to status='cancelled', then removes
-     * entitlements from JSON metadata for backward compatibility.
+     * Updates `billing_addon_purchases` to status='canceled' using the
+     * purchase primary key, then removes entitlements from JSON metadata
+     * for backward compatibility.
      *
-     * @param input - Cancellation details (customerId, addonId, optional reason)
+     * @param input - Cancellation details (customerId, purchaseId, optional reason)
      * @returns Success or error result
      */
     async cancelAddon(input: CancelAddonInput): Promise<ServiceResult<void>> {

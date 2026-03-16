@@ -15,21 +15,11 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { and, eq, gte, isNotNull, lte } from 'drizzle-orm';
+import { and, eq, gte, isNotNull, isNull, lte } from 'drizzle-orm';
+import { z } from 'zod';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
-
-/**
- * Result wrapper for service methods
- */
-interface ServiceResult<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+import type { ServiceResult } from './addon.types';
 
 /**
  * Expired add-on purchase
@@ -79,10 +69,20 @@ export interface ExpiringAddon {
 }
 
 /**
+ * Zod schema for validating the `daysAhead` parameter.
+ * Must be a positive integer no greater than 365.
+ */
+const daysAheadSchema = z
+    .number()
+    .int({ message: 'daysAhead must be an integer' })
+    .positive({ message: 'daysAhead must be a positive number' })
+    .max(365, { message: 'daysAhead must not exceed 365' });
+
+/**
  * Input for finding expiring add-ons
  */
 export interface FindExpiringAddonsInput {
-    /** Number of days ahead to check for expiration */
+    /** Number of days ahead to check for expiration (positive integer, max 365) */
     daysAhead: number;
 }
 
@@ -146,6 +146,9 @@ export class AddonExpirationService {
      */
     async findExpiredAddons(): Promise<ServiceResult<ExpiredAddon[]>> {
         try {
+            // getDb() throws if the database was not initialized before this call.
+            // Guard here so the error surfaces as a clear service result rather than
+            // an unhandled exception propagating up the cron/expiration stack.
             const db = getDb();
             const now = new Date();
 
@@ -157,7 +160,8 @@ export class AddonExpirationService {
                     and(
                         eq(billingAddonPurchases.status, 'active'),
                         isNotNull(billingAddonPurchases.expiresAt),
-                        lte(billingAddonPurchases.expiresAt, now)
+                        lte(billingAddonPurchases.expiresAt, now),
+                        isNull(billingAddonPurchases.deletedAt)
                     )
                 );
 
@@ -237,7 +241,27 @@ export class AddonExpirationService {
     async findExpiringAddons(
         input: FindExpiringAddonsInput
     ): Promise<ServiceResult<ExpiringAddon[]>> {
+        const validationResult = daysAheadSchema.safeParse(input.daysAhead);
+
+        if (!validationResult.success) {
+            const message = validationResult.error.issues[0]?.message ?? 'Invalid daysAhead value';
+
+            apiLogger.warn(
+                { daysAhead: input.daysAhead, reason: message },
+                'Invalid daysAhead parameter'
+            );
+
+            return {
+                success: false,
+                error: {
+                    code: 'INVALID_INPUT',
+                    message
+                }
+            };
+        }
+
         try {
+            // getDb() throws if the database was not initialized before this call.
             const db = getDb();
             const now = new Date();
             const futureDate = new Date(now.getTime() + input.daysAhead * 24 * 60 * 60 * 1000);
@@ -251,7 +275,8 @@ export class AddonExpirationService {
                         eq(billingAddonPurchases.status, 'active'),
                         isNotNull(billingAddonPurchases.expiresAt),
                         gte(billingAddonPurchases.expiresAt, now),
-                        lte(billingAddonPurchases.expiresAt, futureDate)
+                        lte(billingAddonPurchases.expiresAt, futureDate),
+                        isNull(billingAddonPurchases.deletedAt)
                     )
                 );
 
@@ -336,13 +361,19 @@ export class AddonExpirationService {
      */
     async expireAddon(input: ExpireAddonInput): Promise<ServiceResult<ExpireAddonResult>> {
         try {
+            // getDb() throws if the database was not initialized before this call.
             const db = getDb();
 
             // Find the add-on purchase
             const [purchase] = await db
                 .select()
                 .from(billingAddonPurchases)
-                .where(eq(billingAddonPurchases.id, input.purchaseId))
+                .where(
+                    and(
+                        eq(billingAddonPurchases.id, input.purchaseId),
+                        isNull(billingAddonPurchases.deletedAt)
+                    )
+                )
                 .limit(1);
 
             if (!purchase) {
@@ -373,7 +404,7 @@ export class AddonExpirationService {
                         purchaseId: purchase.id,
                         customerId: purchase.customerId,
                         addonSlug: purchase.addonSlug,
-                        expiredAt: new Date()
+                        expiredAt: purchase.expiresAt ?? purchase.updatedAt
                     }
                 };
             }
@@ -392,7 +423,8 @@ export class AddonExpirationService {
             // Remove entitlements via AddonEntitlementService
             const removeResult = await this.entitlementService.removeAddonEntitlements({
                 customerId: purchase.customerId,
-                addonSlug: purchase.addonSlug
+                addonSlug: purchase.addonSlug,
+                purchaseId: purchase.id
             });
 
             if (!removeResult.success) {

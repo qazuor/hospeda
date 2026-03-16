@@ -10,7 +10,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import type { CancelAddonInput, ServiceResult, UserAddon } from './addon.types';
@@ -58,7 +58,8 @@ export async function getUserAddons(
             .where(
                 and(
                     eq(billingAddonPurchases.customerId, customer.id),
-                    eq(billingAddonPurchases.status, 'active')
+                    eq(billingAddonPurchases.status, 'active'),
+                    isNull(billingAddonPurchases.deletedAt)
                 )
             );
 
@@ -81,7 +82,10 @@ export async function getUserAddons(
                     'increase' in firstLimit
                 ) {
                     affectsLimitKey = firstLimit.limitKey as string;
-                    limitIncrease = firstLimit.increase as number;
+                    const rawIncrease = firstLimit.increase;
+                    const parsedIncrease =
+                        typeof rawIncrease === 'number' ? rawIncrease : Number(rawIncrease);
+                    limitIncrease = Number.isNaN(parsedIncrease) ? null : parsedIncrease;
                 }
             }
 
@@ -103,7 +107,7 @@ export async function getUserAddons(
                 status: purchase.status as 'active' | 'expired' | 'canceled',
                 purchasedAt: purchase.purchasedAt.toISOString(),
                 expiresAt: purchase.expiresAt ? purchase.expiresAt.toISOString() : null,
-                canceledAt: purchase.cancelledAt ? purchase.cancelledAt.toISOString() : null,
+                canceledAt: purchase.canceledAt ? purchase.canceledAt.toISOString() : null,
                 priceArs: addonDef?.priceArs || 0,
                 affectsLimitKey,
                 limitIncrease,
@@ -206,111 +210,118 @@ export async function getUserAddons(
 /**
  * Cancel an active add-on for a customer.
  *
- * Updates `billing_addon_purchases` to set status='cancelled', then removes
- * entitlements from JSON metadata for backward compatibility. If the DB
- * update affects 0 rows (pre-migration data), the operation continues with
- * entitlement removal.
+ * Looks up the purchase record by `purchaseId` (primary key) to get the real
+ * `addonSlug`, updates its status to 'canceled', then removes entitlements
+ * from JSON metadata for backward compatibility.
  *
- * @param billing - QZPay billing instance
+ * The route handler is responsible for verifying ownership before calling this
+ * function. The `purchaseId` must belong to the given `customerId` and have
+ * status 'active' — the route already enforces this with an atomic DB query.
+ *
+ * @param _billing - QZPay billing instance (reserved for future use; cancellation uses DB directly)
  * @param entitlementService - AddonEntitlementService for removing entitlements
- * @param input - Cancellation details (customerId, addonId/slug, optional reason)
+ * @param input - Cancellation details (customerId, purchaseId, optional reason)
  * @returns Success or error result
  *
  * @example
  * ```ts
  * const result = await cancelUserAddon(billing, entitlementService, {
  *   customerId: 'cust_123',
- *   addonId: 'extra-photos',
+ *   purchaseId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
  *   userId: 'user_456',
  *   reason: 'No longer needed',
  * });
  * ```
  */
 export async function cancelUserAddon(
-    billing: QZPayBilling,
+    _billing: QZPayBilling,
     entitlementService: AddonEntitlementService,
     input: CancelAddonInput
 ): Promise<ServiceResult<void>> {
     try {
-        const addonSlug = input.addonId;
+        const { getDb } = await import('@repo/db/client');
+        const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
+        const db = getDb();
 
-        const customer = await billing.customers.get(input.customerId);
+        // Fetch the purchase record by primary key to get the real addonSlug.
+        // This avoids the UUID-as-slug bug: we never trust input to carry the slug.
+        const [purchase] = await db
+            .select({
+                id: billingAddonPurchases.id,
+                addonSlug: billingAddonPurchases.addonSlug,
+                status: billingAddonPurchases.status,
+                customerId: billingAddonPurchases.customerId
+            })
+            .from(billingAddonPurchases)
+            .where(
+                and(
+                    eq(billingAddonPurchases.id, input.purchaseId),
+                    isNull(billingAddonPurchases.deletedAt)
+                )
+            )
+            .limit(1);
 
-        if (!customer) {
+        if (!purchase) {
             return {
                 success: false,
-                error: { code: 'CUSTOMER_NOT_FOUND', message: 'Billing customer not found' }
+                error: { code: 'NOT_FOUND', message: 'Add-on purchase record not found' }
             };
         }
 
-        const userId = customer.externalId || customer.id;
-
-        const userAddonsResult = await getUserAddons(billing, userId);
-
-        if (!userAddonsResult.success) {
-            return {
-                success: false,
-                error: { code: 'INTERNAL_ERROR', message: 'Failed to retrieve user add-ons' }
-            };
-        }
-
-        const userAddons = userAddonsResult.data || [];
-        const hasAddon = userAddons.some(
-            (addon) => addon.addonSlug === addonSlug && addon.status === 'active'
-        );
-
-        if (!hasAddon) {
+        if (purchase.customerId !== input.customerId) {
             return {
                 success: false,
                 error: {
-                    code: 'NOT_FOUND',
-                    message: `Add-on '${addonSlug}' is not active for this customer`
+                    code: 'PERMISSION_DENIED',
+                    message: 'Add-on purchase does not belong to this customer'
                 }
             };
         }
 
-        // Update billing_addon_purchases table
-        try {
-            const { getDb } = await import('@repo/db/client');
-            const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-            const db = getDb();
+        if (purchase.status !== 'active') {
+            return {
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: `Add-on '${purchase.addonSlug}' is not active for this customer`
+                }
+            };
+        }
 
+        const addonSlug = purchase.addonSlug;
+
+        // Update the purchase record by primary key for a precise, atomic update.
+        try {
             const updateResult = await db
                 .update(billingAddonPurchases)
                 .set({
-                    status: 'cancelled',
-                    cancelledAt: new Date(),
+                    status: 'canceled',
+                    canceledAt: new Date(),
                     updatedAt: new Date()
                 })
-                .where(
-                    and(
-                        eq(billingAddonPurchases.customerId, input.customerId),
-                        eq(billingAddonPurchases.addonSlug, addonSlug),
-                        eq(billingAddonPurchases.status, 'active')
-                    )
-                );
+                .where(eq(billingAddonPurchases.id, input.purchaseId));
 
             const rowCount = (updateResult as { rowCount?: number }).rowCount || 0;
 
             if (rowCount === 0) {
                 apiLogger.warn(
-                    { customerId: input.customerId, addonSlug, reason: input.reason },
-                    'No active billing_addon_purchase record found to cancel (might be pre-migration data or already cancelled, continuing with entitlement removal)'
-                );
-            } else if (rowCount === 1) {
-                apiLogger.info(
-                    { customerId: input.customerId, addonSlug, reason: input.reason },
-                    'Cancelled billing_addon_purchase record'
-                );
-            } else {
-                apiLogger.error(
                     {
                         customerId: input.customerId,
                         addonSlug,
-                        reason: input.reason,
-                        rowsUpdated: rowCount
+                        purchaseId: input.purchaseId,
+                        reason: input.reason
                     },
-                    'WARNING: Multiple billing_addon_purchase records were cancelled - possible data integrity issue or race condition'
+                    'UPDATE affected 0 rows — record may have been concurrently cancelled; continuing with entitlement removal'
+                );
+            } else {
+                apiLogger.info(
+                    {
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId,
+                        reason: input.reason
+                    },
+                    'Cancelled billing_addon_purchase record'
                 );
             }
         } catch (dbError) {
@@ -318,16 +329,19 @@ export async function cancelUserAddon(
                 {
                     error: dbError instanceof Error ? dbError.message : String(dbError),
                     customerId: input.customerId,
-                    addonSlug
+                    addonSlug,
+                    purchaseId: input.purchaseId
                 },
                 'Failed to cancel billing_addon_purchase record (continuing with entitlement removal)'
             );
         }
 
-        // Remove entitlements from JSON metadata for backward compatibility
+        // Remove entitlements from JSON metadata for backward compatibility.
+        // Uses the real addonSlug obtained from the purchase record — never from input.
         const result = await entitlementService.removeAddonEntitlements({
             customerId: input.customerId,
-            addonSlug
+            addonSlug,
+            purchaseId: input.purchaseId
         });
 
         if (!result.success) {
@@ -335,6 +349,7 @@ export async function cancelUserAddon(
                 {
                     customerId: input.customerId,
                     addonSlug,
+                    purchaseId: input.purchaseId,
                     error: result.error
                 },
                 'Failed to remove add-on from JSON metadata (backward compat), but table update may have succeeded'
@@ -342,7 +357,12 @@ export async function cancelUserAddon(
         }
 
         apiLogger.info(
-            { customerId: input.customerId, addonSlug, reason: input.reason },
+            {
+                customerId: input.customerId,
+                addonSlug,
+                purchaseId: input.purchaseId,
+                reason: input.reason
+            },
             'Add-on cancelled and entitlements removed'
         );
 
@@ -351,7 +371,7 @@ export async function cancelUserAddon(
         const errorMessage = error instanceof Error ? error.message : String(error);
 
         apiLogger.error(
-            { error: errorMessage, customerId: input.customerId, addonId: input.addonId },
+            { error: errorMessage, customerId: input.customerId, purchaseId: input.purchaseId },
             'Failed to cancel add-on'
         );
 

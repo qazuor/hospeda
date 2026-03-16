@@ -14,24 +14,13 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
+import { ALL_PLANS, type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
-
-/**
- * Result wrapper for service methods
- */
-interface ServiceResult<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+import type { ServiceResult } from './addon.types';
 
 /**
  * Add-on entitlement adjustment tracking
@@ -57,17 +46,32 @@ export class AddonEntitlementService {
      * This method:
      * 1. Finds the add-on definition
      * 2. Gets the customer's active subscription
-     * 3. Adds the add-on's entitlements/limits to the subscription
-     * 4. Creates a row in billing_addon_purchases table
-     * 5. Clears the entitlement cache
+     * 3. For entitlement add-ons: calls `billing.entitlements.grant()` with source='addon' and
+     *    optional `expiresAt` derived from `addon.durationDays`
+     * 4. For limit add-ons: reads the base plan limit from canonical config (`ALL_PLANS`),
+     *    computes `newMaxValue = basePlanLimit + addon.limitIncrease`, then calls
+     *    `billing.limits.set()`. Skips the call if the base plan limit is -1 (unlimited).
+     * 5. Writes add-on adjustment to subscription metadata (backward compat, deprecated)
+     * 6. Clears the entitlement cache
      *
-     * @param input - Customer ID, add-on slug, and optional payment ID
+     * Note: The billing_addon_purchases INSERT is owned by the checkout flow (caller).
+     *
+     * **KNOWN LIMITATION — metadata race condition**: Step 5 performs a read-modify-write on
+     * `subscription.metadata.addonAdjustments` without any distributed lock. Concurrent addon
+     * purchases for the same customer can cause one write to silently overwrite the other,
+     * resulting in a lost entry in the JSON array. This is a known, accepted limitation because
+     * this metadata path is **deprecated** — the authoritative record of active add-ons is stored
+     * in the `billing_addon_purchases` table (one row per purchase, no race). The metadata is
+     * retained only for backward compatibility with legacy readers. No fix is required unless
+     * the metadata path is reinstated as a primary source of truth.
+     *
+     * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
      */
     async applyAddonEntitlements(input: {
         customerId: string;
         addonSlug: string;
-        paymentId?: string;
+        purchaseId: string;
     }): Promise<ServiceResult<void>> {
         if (!this.billing) {
             return {
@@ -122,131 +126,85 @@ export class AddonEntitlementService {
                 };
             }
 
-            // Get the current plan
-            const plan = await this.billing.plans.get(activeSubscription.planId);
-
-            if (!plan) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'PLAN_NOT_FOUND',
-                        message: 'Subscription plan not found'
-                    }
-                };
-            }
-
-            // Prepare updated entitlements and limits
-            const updatedEntitlements = new Set<EntitlementKey>(
-                (plan.entitlements || []) as EntitlementKey[]
-            );
-            const updatedLimits = { ...plan.limits };
-
-            // Prepare adjustment tracking
-            const limitAdjustments: Array<{
-                limitKey: string;
-                increase: number;
-                previousValue: number;
-                newValue: number;
-            }> = [];
-            const entitlementAdjustments: Array<{
-                entitlementKey: string;
-                granted: boolean;
-            }> = [];
-
-            // Apply add-on adjustments
-            if (addon.grantsEntitlement) {
-                updatedEntitlements.add(addon.grantsEntitlement);
-                entitlementAdjustments.push({
-                    entitlementKey: addon.grantsEntitlement,
-                    granted: true
-                });
-                apiLogger.debug(
-                    {
-                        customerId: input.customerId,
-                        addonSlug: input.addonSlug,
-                        entitlement: addon.grantsEntitlement
-                    },
-                    'Adding entitlement from add-on'
-                );
-            }
-
-            if (addon.affectsLimitKey && addon.limitIncrease) {
-                const currentLimit = updatedLimits[addon.affectsLimitKey] || 0;
-                const newLimit = currentLimit + addon.limitIncrease;
-                updatedLimits[addon.affectsLimitKey] = newLimit;
-
-                limitAdjustments.push({
-                    limitKey: addon.affectsLimitKey,
-                    increase: addon.limitIncrease,
-                    previousValue: currentLimit,
-                    newValue: newLimit
-                });
-
-                apiLogger.debug(
-                    {
-                        customerId: input.customerId,
-                        addonSlug: input.addonSlug,
-                        limitKey: addon.affectsLimitKey,
-                        currentLimit,
-                        increase: addon.limitIncrease,
-                        newLimit
-                    },
-                    'Increasing limit from add-on'
-                );
-            }
-
-            // Calculate expiration date (if applicable)
             const now = new Date();
-            const expiresAt = addon.durationDays
-                ? new Date(now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000)
-                : null;
 
-            // Create row in billing_addon_purchases table
-            try {
-                const db = getDb();
-                await db.insert(billingAddonPurchases).values({
+            // Grant entitlement or set limit via QZPay based on add-on type
+            if (addon.grantsEntitlement) {
+                // Compute optional expiry for one-time add-ons with a duration
+                let expiresAt: Date | undefined;
+
+                if (addon.durationDays !== null && addon.durationDays > 0) {
+                    expiresAt = new Date(now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000);
+                }
+
+                await this.billing.entitlements.grant({
                     customerId: input.customerId,
-                    subscriptionId: activeSubscription.id,
-                    addonSlug: input.addonSlug,
-                    status: 'active',
-                    purchasedAt: now,
-                    expiresAt,
-                    paymentId: input.paymentId || null,
-                    limitAdjustments,
-                    entitlementAdjustments,
-                    metadata: {}
+                    entitlementKey: addon.grantsEntitlement,
+                    source: 'addon',
+                    sourceId: input.purchaseId,
+                    expiresAt
                 });
 
-                apiLogger.info(
+                apiLogger.debug(
                     {
                         customerId: input.customerId,
                         addonSlug: input.addonSlug,
-                        subscriptionId: activeSubscription.id,
-                        expiresAt: expiresAt?.toISOString()
+                        entitlement: addon.grantsEntitlement,
+                        purchaseId: input.purchaseId,
+                        expiresAt
                     },
-                    'Created billing_addon_purchase record'
+                    'Granted add-on entitlement via QZPay'
                 );
-            } catch (dbError) {
-                // Log error but don't fail the entire operation (backward compatibility)
-                apiLogger.error(
-                    {
-                        error: dbError instanceof Error ? dbError.message : String(dbError),
+            } else if (addon.affectsLimitKey !== null && addon.limitIncrease !== null) {
+                // Resolve base plan limit from canonical config
+                const canonicalPlan = ALL_PLANS.find(
+                    (plan) => plan.slug === activeSubscription.planId
+                );
+
+                const baseLimitDef = canonicalPlan?.limits.find(
+                    (lim) => lim.key === addon.affectsLimitKey
+                );
+
+                const basePlanLimit = baseLimitDef?.value ?? 0;
+
+                if (basePlanLimit === -1) {
+                    // Base plan already has unlimited for this limit; adding more is a no-op
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            limitKey: addon.affectsLimitKey,
+                            planId: activeSubscription.planId
+                        },
+                        'Skipping limits.set() for add-on: base plan limit is already unlimited (-1)'
+                    );
+                } else {
+                    const newMaxValue = basePlanLimit + addon.limitIncrease;
+
+                    await this.billing.limits.set({
                         customerId: input.customerId,
-                        addonSlug: input.addonSlug
-                    },
-                    'Failed to create billing_addon_purchase record (continuing with metadata write)'
-                );
+                        limitKey: addon.affectsLimitKey,
+                        maxValue: newMaxValue,
+                        source: 'addon',
+                        sourceId: input.purchaseId
+                    });
+
+                    apiLogger.debug(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            limitKey: addon.affectsLimitKey,
+                            basePlanLimit,
+                            limitIncrease: addon.limitIncrease,
+                            newMaxValue,
+                            purchaseId: input.purchaseId
+                        },
+                        'Set add-on limit via QZPay'
+                    );
+                }
             }
 
-            // Update the plan with new entitlements/limits
-            // Note: This modifies the plan for the subscription, not globally
-            // @ts-expect-error - QZPay types don't include update method but it exists at runtime
-            await this.billing.plans.update(plan.id, {
-                entitlements: Array.from(updatedEntitlements),
-                limits: updatedLimits
-            });
-
-            // Track the adjustment in subscription metadata (backward compatibility)
+            // Track the adjustment in subscription metadata (backward compatibility, deprecated)
             const adjustments = this.getAddonAdjustments(activeSubscription);
             adjustments.push({
                 addonSlug: input.addonSlug,
@@ -306,16 +264,33 @@ export class AddonEntitlementService {
      * This method:
      * 1. Finds the add-on definition
      * 2. Gets the customer's active subscription
-     * 3. Updates billing_addon_purchases table (status='cancelled', cancelled_at=now)
-     * 4. Removes the add-on's entitlements/limits from the subscription
+     * 3. Revokes QZPay entitlement or limit for the add-on (with source-based fallback for backward compat)
+     * 4. Removes the add-on adjustment from subscription metadata (deprecated, kept for backward compat)
      * 5. Clears the entitlement cache
      *
-     * @param input - Customer ID and add-on slug
+     * For entitlement add-ons: tries `revokeBySource('addon', purchaseId)` first, falls back to
+     * `revoke(customerId, entitlementKey)` for pre-migration data without a sourceId.
+     * For limit add-ons: tries `removeBySource('addon', purchaseId)` first, falls back to
+     * `remove(customerId, limitKey)` for pre-migration data without a sourceId.
+     *
+     * QZPay revocation errors are logged as warnings but do not fail the operation, making
+     * add-on cancellation resilient to billing service transient failures.
+     *
+     * Note: The billing_addon_purchases status update is owned by the caller.
+     *
+     * **KNOWN LIMITATION — metadata race condition**: The metadata cleanup step performs a
+     * read-modify-write on `subscription.metadata.addonAdjustments` without any distributed lock.
+     * Concurrent cancellations for the same customer can cause one write to overwrite the other.
+     * This is accepted because this metadata path is **deprecated** — see `applyAddonEntitlements`
+     * for the full explanation.
+     *
+     * @param input - Customer ID, add-on slug, and purchase ID
      * @returns Success or error
      */
     async removeAddonEntitlements(input: {
         customerId: string;
         addonSlug: string;
+        purchaseId: string;
     }): Promise<ServiceResult<void>> {
         if (!this.billing) {
             return {
@@ -364,115 +339,89 @@ export class AddonEntitlementService {
                 };
             }
 
-            // Get the current plan
-            const plan = await this.billing.plans.get(activeSubscription.planId);
+            // Revoke QZPay entitlement or limit for the add-on (resilient: errors are warned, not fatal)
+            if (addon.grantsEntitlement) {
+                // Entitlement add-on: try source-based revocation first (post-migration data)
+                try {
+                    const revokedCount = await this.billing.entitlements.revokeBySource(
+                        'addon',
+                        input.purchaseId
+                    );
 
-            if (!plan) {
-                return {
-                    success: false,
-                    error: {
-                        code: 'PLAN_NOT_FOUND',
-                        message: 'Subscription plan not found'
+                    if (revokedCount === 0) {
+                        // Fallback for pre-migration data that doesn't have sourceId
+                        await this.billing.entitlements.revoke(
+                            input.customerId,
+                            addon.grantsEntitlement
+                        );
                     }
-                };
-            }
 
-            // Update billing_addon_purchases table: set status='cancelled' and cancelled_at=now
-            try {
-                const db = getDb();
-
-                const updateResult = await db
-                    .update(billingAddonPurchases)
-                    .set({
-                        status: 'cancelled',
-                        cancelledAt: new Date(),
-                        updatedAt: new Date()
-                    })
-                    .where(
-                        and(
-                            eq(billingAddonPurchases.customerId, input.customerId),
-                            eq(billingAddonPurchases.addonSlug, input.addonSlug),
-                            eq(billingAddonPurchases.status, 'active')
-                        )
-                    );
-
-                if (!updateResult || (updateResult as { rowCount?: number }).rowCount === 0) {
-                    // No active row found in table (might be pre-migration data)
-                    apiLogger.warn(
-                        {
-                            customerId: input.customerId,
-                            addonSlug: input.addonSlug
-                        },
-                        'No active billing_addon_purchase record found to cancel (might be pre-migration data, continuing with metadata cleanup)'
-                    );
-                } else {
-                    apiLogger.info(
+                    apiLogger.debug(
                         {
                             customerId: input.customerId,
                             addonSlug: input.addonSlug,
-                            subscriptionId: activeSubscription.id
+                            purchaseId: input.purchaseId,
+                            entitlement: addon.grantsEntitlement,
+                            revokedCount
                         },
-                        'Cancelled billing_addon_purchase record'
+                        'Revoked add-on entitlement'
+                    );
+                } catch (revokeError) {
+                    apiLogger.warn(
+                        {
+                            error:
+                                revokeError instanceof Error
+                                    ? revokeError.message
+                                    : String(revokeError),
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId: input.purchaseId,
+                            entitlement: addon.grantsEntitlement
+                        },
+                        'Failed to revoke add-on entitlement from QZPay (continuing with metadata cleanup)'
                     );
                 }
-            } catch (dbError) {
-                // Log error but don't fail the entire operation (backward compatibility)
-                apiLogger.error(
-                    {
-                        error: dbError instanceof Error ? dbError.message : String(dbError),
-                        customerId: input.customerId,
-                        addonSlug: input.addonSlug
-                    },
-                    'Failed to cancel billing_addon_purchase record (continuing with metadata cleanup)'
-                );
+            } else if (addon.affectsLimitKey) {
+                // Limit add-on: try source-based removal first (post-migration data)
+                try {
+                    const removedCount = await this.billing.limits.removeBySource(
+                        'addon',
+                        input.purchaseId
+                    );
+
+                    if (removedCount === 0) {
+                        // Fallback for pre-migration data that doesn't have sourceId
+                        await this.billing.limits.remove(input.customerId, addon.affectsLimitKey);
+                    }
+
+                    apiLogger.debug(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId: input.purchaseId,
+                            limitKey: addon.affectsLimitKey,
+                            removedCount
+                        },
+                        'Removed add-on limit from QZPay'
+                    );
+                } catch (removeError) {
+                    apiLogger.warn(
+                        {
+                            error:
+                                removeError instanceof Error
+                                    ? removeError.message
+                                    : String(removeError),
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            purchaseId: input.purchaseId,
+                            limitKey: addon.affectsLimitKey
+                        },
+                        'Failed to remove add-on limit from QZPay (continuing with metadata cleanup)'
+                    );
+                }
             }
 
-            // Prepare updated entitlements and limits
-            const updatedEntitlements = new Set<EntitlementKey>(
-                (plan.entitlements || []) as EntitlementKey[]
-            );
-            const updatedLimits = { ...plan.limits };
-
-            // Remove add-on adjustments
-            if (addon.grantsEntitlement) {
-                updatedEntitlements.delete(addon.grantsEntitlement);
-                apiLogger.debug(
-                    {
-                        customerId: input.customerId,
-                        addonSlug: input.addonSlug,
-                        entitlement: addon.grantsEntitlement
-                    },
-                    'Removing entitlement from add-on'
-                );
-            }
-
-            if (addon.affectsLimitKey && addon.limitIncrease) {
-                const currentLimit = updatedLimits[addon.affectsLimitKey] || 0;
-                updatedLimits[addon.affectsLimitKey] = Math.max(
-                    0,
-                    currentLimit - addon.limitIncrease
-                );
-                apiLogger.debug(
-                    {
-                        customerId: input.customerId,
-                        addonSlug: input.addonSlug,
-                        limitKey: addon.affectsLimitKey,
-                        currentLimit,
-                        decrease: addon.limitIncrease,
-                        newLimit: updatedLimits[addon.affectsLimitKey]
-                    },
-                    'Decreasing limit from add-on cancellation'
-                );
-            }
-
-            // Update the plan with new entitlements/limits
-            // @ts-expect-error - QZPay types don't include update method but it exists at runtime
-            await this.billing.plans.update(plan.id, {
-                entitlements: Array.from(updatedEntitlements),
-                limits: updatedLimits
-            });
-
-            // Remove the adjustment from subscription metadata (backward compatibility)
+            // Remove the adjustment from subscription metadata (backward compatibility, deprecated)
             const adjustments = this.getAddonAdjustments(activeSubscription).filter(
                 (adj) => adj.addonSlug !== input.addonSlug
             );
@@ -579,7 +528,8 @@ export class AddonEntitlementService {
                     .where(
                         and(
                             eq(billingAddonPurchases.customerId, customerId),
-                            eq(billingAddonPurchases.status, 'active')
+                            eq(billingAddonPurchases.status, 'active'),
+                            isNull(billingAddonPurchases.deletedAt)
                         )
                     );
 
