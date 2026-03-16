@@ -24,6 +24,12 @@ export * from './utils';
 export * from './services';
 
 /**
+ * --- REVALIDATION ---
+ * Exports ISR revalidation adapter interfaces and implementations.
+ */
+export * from './revalidation';
+
+/**
  * --- ENUMS (re-exported to prevent warnings and expose them to consumers) ---
  */
 export {
