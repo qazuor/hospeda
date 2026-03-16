@@ -66,10 +66,11 @@ export const listAddonsRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 500 | 503, {
                 message: result.error?.message ?? 'Unknown error'
             });
         }
@@ -117,10 +118,11 @@ export const getAddonRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 500 | 503, {
                 message: result.error?.message ?? 'Failed to get add-on'
             });
         }
@@ -188,10 +190,19 @@ export const purchaseAddonRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                NO_SUBSCRIPTION: 422,
+                NO_ACTIVE_SUBSCRIPTION: 422,
+                ADDON_INACTIVE: 422,
+                CUSTOMER_NOT_FOUND: 404,
+                INVALID_PROMO_CODE: 422,
+                ADDON_ALREADY_ACTIVE: 409,
+                PAYMENT_NOT_CONFIGURED: 503,
+                CHECKOUT_ERROR: 500,
+                SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 503, {
                 message: result.error?.message ?? 'Unknown error'
             });
         }
@@ -237,10 +248,11 @@ export const getUserAddonsRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 500 | 503, {
                 message: result.error?.message ?? 'Unknown error'
             });
         }
@@ -289,10 +301,15 @@ export const cancelAddonRoute = createProtectedRoute({
             });
         }
 
+        // TODO(GAP-038-48): The ownership check below (select by id + customerId) fetches the
+        // purchase record, and service.cancelAddon() likely performs a second fetch of the same
+        // row internally. Consider extending the service to accept a pre-fetched purchase to
+        // eliminate the redundant DB round-trip. Low priority until profiling confirms it matters.
+
         // Verify addon ownership with a direct atomic query instead of fetching all user addons
         const { getDb } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-        const { and, eq } = await import('drizzle-orm');
+        const { and, eq, isNull } = await import('drizzle-orm');
         const db = getDb();
 
         const [ownedAddon] = await db
@@ -302,7 +319,8 @@ export const cancelAddonRoute = createProtectedRoute({
                 and(
                     eq(billingAddonPurchases.id, params.id as string),
                     eq(billingAddonPurchases.customerId, billingCustomerId),
-                    eq(billingAddonPurchases.status, 'active')
+                    eq(billingAddonPurchases.status, 'active'),
+                    isNull(billingAddonPurchases.deletedAt)
                 )
             )
             .limit(1);
@@ -325,7 +343,7 @@ export const cancelAddonRoute = createProtectedRoute({
 
         const result = await service.cancelAddon({
             customerId: billingCustomerId,
-            addonId: params.id as string,
+            purchaseId: ownedAddon.id,
             reason: body.reason as string | undefined,
             userId: actor.id
         });
@@ -335,10 +353,13 @@ export const cancelAddonRoute = createProtectedRoute({
                 NOT_FOUND: 404,
                 VALIDATION_ERROR: 400,
                 PERMISSION_DENIED: 403,
+                NO_SUBSCRIPTION: 422,
+                NO_ACTIVE_SUBSCRIPTION: 422,
+                SERVICE_UNAVAILABLE: 503,
                 INTERNAL_ERROR: 500
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
+            throw new HTTPException(status as 400 | 403 | 404 | 422 | 500 | 503, {
                 message: result.error?.message ?? 'Unknown error'
             });
         }

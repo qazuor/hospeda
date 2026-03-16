@@ -12,7 +12,7 @@
 
 import { billingAddonPurchases, billingCustomers, getDb } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import { type SQL, and, count, desc, eq, ilike } from 'drizzle-orm';
+import { type SQL, and, count, desc, eq, ilike, isNull } from 'drizzle-orm';
 import { HTTPException } from 'hono/http-exception';
 import { CustomerAddonsListResponseSchema, ListCustomerAddonsQuerySchema } from '../../../schemas';
 import { apiLogger } from '../../../utils/logger';
@@ -59,6 +59,8 @@ export const listCustomerAddonsHandler = async (
             conditions.push(ilike(billingCustomers.email, `%${customerEmail}%`));
         }
 
+        conditions.push(isNull(billingAddonPurchases.deletedAt));
+
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
         // Get total count with join
@@ -83,7 +85,7 @@ export const listCustomerAddonsHandler = async (
                 status: billingAddonPurchases.status,
                 purchasedAt: billingAddonPurchases.purchasedAt,
                 expiresAt: billingAddonPurchases.expiresAt,
-                cancelledAt: billingAddonPurchases.cancelledAt,
+                canceledAt: billingAddonPurchases.canceledAt,
                 paymentId: billingAddonPurchases.paymentId,
                 limitAdjustments: billingAddonPurchases.limitAdjustments,
                 entitlementAdjustments: billingAddonPurchases.entitlementAdjustments,
@@ -119,7 +121,7 @@ export const listCustomerAddonsHandler = async (
                 status: row.status,
                 purchasedAt: row.purchasedAt.toISOString(),
                 expiresAt: row.expiresAt ? row.expiresAt.toISOString() : null,
-                cancelledAt: row.cancelledAt ? row.cancelledAt.toISOString() : null,
+                canceledAt: row.canceledAt ? row.canceledAt.toISOString() : null,
                 paymentId: row.paymentId ?? null,
                 limitAdjustments: row.limitAdjustments ?? null,
                 entitlementAdjustments: row.entitlementAdjustments ?? null,

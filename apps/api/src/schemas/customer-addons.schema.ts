@@ -13,13 +13,7 @@ import { z } from 'zod';
 /**
  * Valid status values for add-on purchases
  */
-export const ADDON_PURCHASE_STATUSES = [
-    'all',
-    'active',
-    'expired',
-    'cancelled',
-    'pending'
-] as const;
+export const ADDON_PURCHASE_STATUSES = ['all', 'active', 'expired', 'canceled', 'pending'] as const;
 
 /**
  * Query parameters for listing customer add-on purchases (admin)
@@ -71,7 +65,7 @@ export const CustomerAddonResponseSchema = z.object({
     status: z.string(),
     purchasedAt: z.string().datetime(),
     expiresAt: z.string().datetime().nullable(),
-    cancelledAt: z.string().datetime().nullable(),
+    canceledAt: z.string().datetime().nullable(),
     paymentId: z.string().nullable(),
     limitAdjustments: z.array(LimitAdjustmentSchema).nullable(),
     entitlementAdjustments: z.array(EntitlementAdjustmentSchema).nullable(),
