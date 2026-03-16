@@ -52,7 +52,8 @@ export const namespaces = [
     'admin-common',
     'admin-entities',
     'admin-tabs',
-    'validation'
+    'validation',
+    'revalidation'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -127,6 +128,7 @@ import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import ownersEs from './locales/es/owners.json';
 import privacyEs from './locales/es/privacy.json';
+import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
 import termsEs from './locales/es/terms.json';
@@ -164,6 +166,7 @@ import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import ownersEn from './locales/en/owners.json';
 import privacyEn from './locales/en/privacy.json';
+import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
 import termsEn from './locales/en/terms.json';
@@ -201,6 +204,7 @@ import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import ownersPt from './locales/pt/owners.json';
 import privacyPt from './locales/pt/privacy.json';
+import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
 import termsPt from './locales/pt/terms.json';
@@ -247,7 +251,8 @@ const rawTranslations = {
         'admin-common': adminCommonEs,
         'admin-entities': adminEntitiesEs,
         'admin-tabs': adminTabsEs,
-        validation: validationEs
+        validation: validationEs,
+        revalidation: revalidationEs
     },
     en: {
         about: aboutEn,
@@ -284,7 +289,8 @@ const rawTranslations = {
         'admin-common': adminCommonEn,
         'admin-entities': adminEntitiesEn,
         'admin-tabs': adminTabsEn,
-        validation: validationEn
+        validation: validationEn,
+        revalidation: revalidationEn
     },
     pt: {
         about: aboutPt,
@@ -321,7 +327,8 @@ const rawTranslations = {
         'admin-common': adminCommonPt,
         'admin-entities': adminEntitiesPt,
         'admin-tabs': adminTabsPt,
-        validation: validationPt
+        validation: validationPt,
+        revalidation: revalidationPt
     }
 };
 

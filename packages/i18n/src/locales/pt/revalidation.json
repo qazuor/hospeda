@@ -1,0 +1,87 @@
+{
+    "title": "Revalidação ISR",
+    "description": "Gerenciamento de cache de páginas com revalidação sob demanda",
+    "pageDescription": "Gerencie as configurações de revalidação ISR sob demanda, visualize os registros e acione revalidações manuais.",
+    "tabs": {
+        "config": "Configuração",
+        "logs": "Registros",
+        "manual": "Manual"
+    },
+    "config": {
+        "cardTitle": "Configuração por entidade",
+        "cardDescription": "Controle o comportamento de revalidação para cada tipo de entidade. Clique em um número para editá-lo inline.",
+        "entityType": "Entidade",
+        "autoRevalidate": "Revalidar automaticamente",
+        "cronInterval": "Intervalo cron (min)",
+        "debounce": "Debounce (seg)",
+        "enabled": "Habilitado",
+        "loading": "Carregando configurações...",
+        "error": "Erro ao carregar as configurações.",
+        "empty": "Nenhuma configuração encontrada.",
+        "updateSuccess": "Configuração atualizada",
+        "updateError": "Erro ao atualizar a configuração"
+    },
+    "logs": {
+        "cardTitle": "Registros de revalidação",
+        "loading": "Carregando registros...",
+        "error": "Erro ao carregar os registros.",
+        "empty": "Nenhum registro recente encontrado.",
+        "found_one": "{{count}} registro encontrado",
+        "found_other": "{{count}} registros encontrados",
+        "path": "Caminho",
+        "entity": "Entidade",
+        "trigger": "Gatilho",
+        "status": "Estado",
+        "duration": "Duração",
+        "createdAt": "Data"
+    },
+    "manual": {
+        "cardTitle": "Revalidação manual",
+        "cardDescription": "Insira os caminhos separados por vírgulas para forçar a revalidação ISR.",
+        "pathsLabel": "Caminhos a revalidar",
+        "pathsPlaceholder": "/pt/acomodacoes/hotel-palace, /en/accommodations/hotel-palace",
+        "pathsHint": "Separe múltiplos caminhos com vírgulas. Cada caminho deve começar com /.",
+        "reasonLabel": "Motivo (opcional)",
+        "reasonPlaceholder": "Ex.: Correção manual de conteúdo",
+        "pathsCount_one": "{{count}} caminho inserido",
+        "pathsCount_other": "{{count}} caminhos inseridos",
+        "submitButton": "Revalidar caminhos",
+        "submittingButton": "Revalidando...",
+        "successToast": "Revalidação concluída: {{succeeded}} bem-sucedida{{succeededSuffix}}, {{failed}} falhou{{failedSuffix}}",
+        "errorToast": "Erro ao executar a revalidação manual",
+        "statTotalLabel": "Total de revalidações",
+        "statSuccessRateLabel": "Taxa de sucesso",
+        "statAvgDurationLabel": "Duração média"
+    },
+    "result": {
+        "cardTitle": "Resultado",
+        "cardDescription": "{{succeeded}} bem-sucedida{{succeededSuffix}}, {{failed}} falhou{{failedSuffix}} — duração: {{duration}} ms",
+        "pathHeader": "Caminho",
+        "statusHeader": "Estado"
+    },
+    "inline": {
+        "clickToEdit": "Clique para editar"
+    },
+    "errorHint": "Verifique se a API está funcionando corretamente.",
+    "actions": {
+        "revalidate": "Revalidar",
+        "revalidateAll": "Revalidar tudo",
+        "revalidateEntity": "Revalidar entidade",
+        "triggerManual": "Acionar manualmente"
+    },
+    "status": {
+        "success": "Sucesso",
+        "failed": "Falha",
+        "skipped": "Ignorado"
+    },
+    "trigger": {
+        "manual": "Manual",
+        "hook": "Hook",
+        "cron": "Cron",
+        "stale": "Desatualizado"
+    },
+    "messages": {
+        "revalidateSuccess": "Páginas revalidadas com sucesso",
+        "revalidateError": "Erro ao revalidar as páginas"
+    }
+}

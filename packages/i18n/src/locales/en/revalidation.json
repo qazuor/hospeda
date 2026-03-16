@@ -1,0 +1,87 @@
+{
+    "title": "ISR Revalidation",
+    "description": "Page cache management with on-demand revalidation",
+    "pageDescription": "Manage on-demand ISR revalidation configurations, view logs, and trigger manual revalidations.",
+    "tabs": {
+        "config": "Configuration",
+        "logs": "Logs",
+        "manual": "Manual"
+    },
+    "config": {
+        "cardTitle": "Configuration per entity",
+        "cardDescription": "Control the revalidation behavior for each entity type. Click a number to edit it inline.",
+        "entityType": "Entity",
+        "autoRevalidate": "Auto-revalidate",
+        "cronInterval": "Cron interval (min)",
+        "debounce": "Debounce (sec)",
+        "enabled": "Enabled",
+        "loading": "Loading configurations...",
+        "error": "Error loading configurations.",
+        "empty": "No configurations found.",
+        "updateSuccess": "Configuration updated",
+        "updateError": "Error updating configuration"
+    },
+    "logs": {
+        "cardTitle": "Revalidation logs",
+        "loading": "Loading logs...",
+        "error": "Error loading logs.",
+        "empty": "No recent logs found.",
+        "found_one": "{{count}} log found",
+        "found_other": "{{count}} logs found",
+        "path": "Path",
+        "entity": "Entity",
+        "trigger": "Trigger",
+        "status": "Status",
+        "duration": "Duration",
+        "createdAt": "Date"
+    },
+    "manual": {
+        "cardTitle": "Manual revalidation",
+        "cardDescription": "Enter comma-separated paths to force their ISR revalidation.",
+        "pathsLabel": "Paths to revalidate",
+        "pathsPlaceholder": "/en/accommodations/hotel-palace, /es/alojamientos/hotel-palace",
+        "pathsHint": "Separate multiple paths with commas. Each path must start with /.",
+        "reasonLabel": "Reason (optional)",
+        "reasonPlaceholder": "E.g.: Manual content correction",
+        "pathsCount_one": "{{count}} path entered",
+        "pathsCount_other": "{{count}} paths entered",
+        "submitButton": "Revalidate paths",
+        "submittingButton": "Revalidating...",
+        "successToast": "Revalidation complete: {{succeeded}} successful, {{failed}} failed",
+        "errorToast": "Error running manual revalidation",
+        "statTotalLabel": "Total revalidations",
+        "statSuccessRateLabel": "Success rate",
+        "statAvgDurationLabel": "Average duration"
+    },
+    "result": {
+        "cardTitle": "Result",
+        "cardDescription": "{{succeeded}} successful, {{failed}} failed — duration: {{duration}} ms",
+        "pathHeader": "Path",
+        "statusHeader": "Status"
+    },
+    "inline": {
+        "clickToEdit": "Click to edit"
+    },
+    "errorHint": "Check that the API is running correctly.",
+    "actions": {
+        "revalidate": "Revalidate",
+        "revalidateAll": "Revalidate all",
+        "revalidateEntity": "Revalidate entity",
+        "triggerManual": "Trigger manually"
+    },
+    "status": {
+        "success": "Success",
+        "failed": "Failed",
+        "skipped": "Skipped"
+    },
+    "trigger": {
+        "manual": "Manual",
+        "hook": "Hook",
+        "cron": "Cron",
+        "stale": "Stale"
+    },
+    "messages": {
+        "revalidateSuccess": "Pages revalidated successfully",
+        "revalidateError": "Error revalidating pages"
+    }
+}
