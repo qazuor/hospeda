@@ -17,6 +17,11 @@ describe('AccommodationService.restore', () => {
     beforeEach(() => {
         model = createMockBaseModel();
         service = new AccommodationService({ logger: mockLogger }, model as AccommodationModel);
+        // Mock destinationService to avoid real DB access in lifecycle hooks
+        // @ts-expect-error: override for test
+        service.destinationService = {
+            updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
+        };
         vi.clearAllMocks();
         vi.spyOn(helpers, 'generateSlug').mockResolvedValue('mock-slug');
     });
