@@ -62,6 +62,18 @@ export function isDevelopment(): boolean {
 }
 
 /**
+ * Get the ISR revalidation secret.
+ *
+ * Used to authenticate on-demand revalidation requests sent from the API to the web app.
+ * Must match the `HOSPEDA_REVALIDATION_SECRET` configured in the API.
+ *
+ * @returns The revalidation secret, or undefined if not configured
+ */
+export function getRevalidationSecret(): string | undefined {
+    return _env.HOSPEDA_REVALIDATION_SECRET;
+}
+
+/**
  * Check if client-side logging is explicitly enabled via the PUBLIC_ENABLE_LOGGING flag.
  *
  * Returns true when the environment variable is set to `'true'` OR when running in

@@ -433,6 +433,25 @@ Server-side variables use the `HOSPEDA_` prefix. Client-side variables (safe to 
 - **Image optimization**: Use `<Image>` from `astro:assets` for local images; use `<img loading="lazy">` for remote URLs.
 - **Auth in islands**: Pass `Astro.locals.user` data as props. Islands cannot read server locals directly.
 
+## ISR Revalidation
+
+The web app uses Vercel On-Demand ISR for content-heavy pages. Pages are statically cached and revalidated when entities change via the `x-prerender-revalidate` header mechanism.
+
+**ISR-cached pages** (revalidated on entity changes):
+
+- `/alojamientos/` — accommodation list, type filters (`/tipo/*`), and detail pages
+- `/destinos/[slug]/` — destination detail pages
+- `/eventos/` — event list, category filters (`/categoria/*`), and detail pages
+- `/publicaciones/[slug]/` — post/article detail pages
+
+**Excluded from ISR** (always SSR): `mi-cuenta/`, `auth/`, `busqueda`, `feedback` — these require live data or authentication.
+
+**Bypass token**: Set `HOSPEDA_ISR_BYPASS_TOKEN` (32+ chars). The API sends this token as the `x-prerender-revalidate` header when calling the Vercel revalidation URL (`HOSPEDA_SITE_URL/__revalidate/[path]`).
+
+**Automatic revalidation**: Service-core's `RevalidationService` is called after entity mutations (create/update/delete). The adapter is selected by environment: `VercelRevalidationAdapter` in production (when secret is set), `NoOpRevalidationAdapter` otherwise.
+
+**Local testing**: The `NoOpRevalidationAdapter` is always active in development — no HTTP calls are made, revalidation always returns success. No setup needed.
+
 ## Related Documentation
 
 - [Adding Web Pages](docs/guides/adding-pages.md)

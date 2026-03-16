@@ -60,8 +60,22 @@ const apiHostname = (() => {
 export default defineConfig({
     site: HOSPEDA_SITE_URL,
     output: 'server',
+    trailingSlash: 'always',
     adapter: vercel({
-        isr: true,
+        isr: {
+            expiration: 86400,
+            bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET,
+            exclude: [
+                /^\/mi-cuenta(\/.*)?$/,
+                /^\/auth(\/.*)?$/,
+                /^\/busqueda(\/.*)?$/,
+                /^\/feedback(\/.*)?$/,
+                /^\/alojamientos\/(.*)\/?$/,
+                /^\/eventos\/(.*)\/?$/,
+                /^\/tipo(\/.*)?$/,
+                /^\/categoria(\/.*)?$/,
+            ],
+        },
         imageService: true
     }),
 
@@ -80,7 +94,11 @@ export default defineConfig({
             ? [
                   sentry({
                       dsn: process.env.PUBLIC_SENTRY_DSN,
-                      sourceMapsUploadOptions: { enabled: false }
+                      sourceMapsUploadOptions: {
+                          // Only upload source maps when SENTRY_AUTH_TOKEN is available.
+                          // Keeps local builds from failing when the token is not configured.
+                          enabled: Boolean(process.env.SENTRY_AUTH_TOKEN)
+                      }
                   })
               ]
             : []),
