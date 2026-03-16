@@ -43,7 +43,7 @@ export const Route = createFileRoute('/_authed/billing/addons')({
     component: BillingAddonsPage
 });
 
-type StatusFilter = 'all' | 'active' | 'expired' | 'cancelled';
+type StatusFilter = 'all' | 'active' | 'expired' | 'canceled';
 
 function BillingAddonsPage() {
     const { t } = useTranslations();
@@ -258,8 +258,8 @@ function BillingAddonsPage() {
                                         <SelectItem value="expired">
                                             {t('admin-billing.addons.statusExpired')}
                                         </SelectItem>
-                                        <SelectItem value="cancelled">
-                                            {t('admin-billing.addons.statusCancelled')}
+                                        <SelectItem value="canceled">
+                                            {t('admin-billing.addons.statusCanceled')}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>

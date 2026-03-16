@@ -57,7 +57,7 @@ export interface PurchasedAddon {
     customerName: string | null;
     addonSlug: string;
     addonName: string;
-    status: 'active' | 'expired' | 'cancelled';
+    status: 'active' | 'expired' | 'canceled';
     purchasedAt: string;
     expiresAt: string | null;
     paymentId: string | null;
@@ -65,7 +65,7 @@ export interface PurchasedAddon {
 }
 
 export interface PurchasedAddonFilters {
-    status?: 'all' | 'active' | 'expired' | 'cancelled';
+    status?: 'all' | 'active' | 'expired' | 'canceled';
     addonSlug?: string;
     customerEmail?: string;
     page?: number;

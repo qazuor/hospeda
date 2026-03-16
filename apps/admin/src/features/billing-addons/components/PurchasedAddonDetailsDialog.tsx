@@ -30,7 +30,7 @@ function getStatusVariant(status: string): 'default' | 'secondary' | 'destructiv
             return 'default';
         case 'expired':
             return 'secondary';
-        case 'cancelled':
+        case 'canceled':
             return 'destructive';
         default:
             return 'default';

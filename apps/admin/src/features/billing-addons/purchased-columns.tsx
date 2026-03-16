@@ -84,8 +84,8 @@ export function getPurchasedAddonColumns({
                     color: BadgeColor.SECONDARY
                 },
                 {
-                    value: 'cancelled',
-                    label: t('admin-billing.addons.purchasedStatuses.cancelled'),
+                    value: 'canceled',
+                    label: t('admin-billing.addons.purchasedStatuses.canceled'),
                     color: BadgeColor.RED
                 }
             ]
@@ -176,7 +176,7 @@ export function getPurchasedAddonColumns({
                                 {t('admin-billing.addons.purchasedColumns.forceExpire')}
                             </DropdownMenuItem>
                         )}
-                        {(row.status === 'expired' || row.status === 'cancelled') && (
+                        {(row.status === 'expired' || row.status === 'canceled') && (
                             <DropdownMenuItem
                                 onClick={() => actions.onForceActivate(row)}
                                 className="text-green-600 focus:text-green-600 dark:text-green-400"

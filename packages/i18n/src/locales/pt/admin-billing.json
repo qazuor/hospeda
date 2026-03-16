@@ -253,7 +253,7 @@
         "allStatuses": "Todos os status",
         "statusActive": "Ativos",
         "statusExpired": "Expirados",
-        "statusCancelled": "Cancelados",
+        "statusCanceled": "Cancelados",
         "filterByType": "Filtrar por tipo de add-on...",
         "showingResultsFor": "Exibindo resultados para:",
         "emptyForCustomer": "Nenhum add-on comprado encontrado para este cliente",
@@ -313,7 +313,7 @@
         "purchasedStatuses": {
             "active": "Ativo",
             "expired": "Expirado",
-            "cancelled": "Cancelado"
+            "canceled": "Cancelado"
         },
         "actionActivate": "Ativar",
         "actionDeactivate": "Desativar",
