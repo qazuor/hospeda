@@ -233,7 +233,7 @@ describe('Page Revalidation Cron Job', () => {
 
             mockFindAllEnabled.mockResolvedValue([accommodationConfig, destinationConfig]);
             mockFindLastCronEntry
-                .mockResolvedValueOnce(makeLogEntry(twoHoursAgo))    // accommodation: past due
+                .mockResolvedValueOnce(makeLogEntry(twoHoursAgo)) // accommodation: past due
                 .mockResolvedValueOnce(makeLogEntry(thirtyMinutesAgo)); // destination: not yet due
 
             const ctx = createMockContext();
@@ -381,7 +381,6 @@ describe('Page Revalidation Cron Job', () => {
     describe('Dry Run Mode', () => {
         it('should NOT call revalidateByEntityType when dryRun is true', async () => {
             // Arrange — two configs, both past due
-            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
             const configA = makeConfig('accommodation', 60);
             const configB = makeConfig('destination', 60, true); // stale detection ON
 
@@ -517,7 +516,6 @@ describe('Page Revalidation Cron Job', () => {
 
         it('should set processed to revalidated + staleRevalidated', async () => {
             // Arrange — one config past due with autoRevalidateOnChange
-            const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
             const config = makeConfig('accommodation', 60, true);
 
             mockFindAllEnabled.mockResolvedValue([config]);

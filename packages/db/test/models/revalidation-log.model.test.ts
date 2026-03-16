@@ -51,7 +51,7 @@ const cronLogOld = {
     createdAt: new Date('2025-01-01T00:00:00Z')
 };
 
-const manualLog = {
+const _manualLog = {
     id: 'log-uuid-0003-0000-0000-000000000003',
     path: '/en/accommodations/hotel-abc',
     entityType: 'accommodation',
@@ -84,10 +84,9 @@ describe('RevalidationLogModel', () => {
             // Arrange
             const mockDelete = vi.fn().mockReturnThis();
             const mockWhere = vi.fn().mockReturnThis();
-            const mockReturning = vi.fn().mockResolvedValue([
-                { id: cronLogOld.id },
-                { id: 'log-uuid-extra-row' }
-            ]);
+            const mockReturning = vi
+                .fn()
+                .mockResolvedValue([{ id: cronLogOld.id }, { id: 'log-uuid-extra-row' }]);
 
             getDb.mockReturnValue({
                 delete: mockDelete,
