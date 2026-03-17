@@ -16,6 +16,33 @@ import {
     getDefaultCurrency
 } from '../../src/adapters/mercadopago';
 
+// Mock @repo/config to avoid resolution issues (dist not built in test)
+vi.mock('@repo/config', () => ({
+    getEnv: vi.fn((name: string, fallback?: string) => {
+        return process.env[name] ?? fallback ?? '';
+    }),
+    getEnvBoolean: vi.fn((name: string, fallback = false) => {
+        const val = process.env[name];
+        if (val === undefined) return fallback;
+        return val === 'true';
+    }),
+    getEnvNumber: vi.fn((name: string, fallback?: number) => {
+        const val = process.env[name];
+        if (val === undefined) return fallback ?? 0;
+        return Number(val);
+    })
+}));
+
+// Mock @repo/logger
+vi.mock('@repo/logger', () => ({
+    createLogger: vi.fn(() => ({
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn()
+    }))
+}));
+
 // Mock the QZPay MercadoPago adapter
 vi.mock('@qazuor/qzpay-mercadopago', () => {
     return {
