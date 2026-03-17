@@ -29,4 +29,12 @@ describe('createEmailClient', () => {
         expect(client).toBeDefined();
         expect(client.emails).toBeDefined();
     });
+
+    it('should throw "Missing API key" error when apiKey is empty', () => {
+        // Arrange
+        const apiKey = '';
+
+        // Act & Assert
+        expect(() => createEmailClient({ apiKey })).toThrow('Missing API key');
+    });
 });

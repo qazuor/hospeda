@@ -45,6 +45,7 @@ describe('ResetPasswordTemplate', () => {
         // Assert
         expect(html).toContain('Restablecer contraseña');
         expect(html).toContain(defaultProps.resetUrl);
+        expect(html).toContain('href="https://hospeda.com.ar/reset-password?token=xyz789"');
     });
 
     it('should render expiration notice with security reason', async () => {
@@ -57,6 +58,14 @@ describe('ResetPasswordTemplate', () => {
         );
     });
 
+    it('should render CTA instruction text', async () => {
+        // Arrange & Act
+        const html = await render(<ResetPasswordTemplate {...defaultProps} />);
+
+        // Assert
+        expect(html).toContain('Haz clic en el botón de abajo para crear una nueva contraseña:');
+    });
+
     it('should render bold security question and explanation', async () => {
         // Arrange & Act
         const html = await render(<ResetPasswordTemplate {...defaultProps} />);
@@ -66,6 +75,7 @@ describe('ResetPasswordTemplate', () => {
         expect(html).toContain(
             'Si no solicitaste restablecer tu contraseña, puedes ignorar este correo de forma segura'
         );
+        expect(html).toContain('Tu contraseña actual seguirá siendo válida');
     });
 
     it('should render fallback URL text', async () => {

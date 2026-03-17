@@ -55,6 +55,7 @@ describe('VerifyEmailTemplate', () => {
         // Assert
         expect(html).toContain('Verificar correo electrónico');
         expect(html).toContain(defaultProps.verificationUrl);
+        expect(html).toContain('href="https://hospeda.com.ar/verify?token=abc123"');
     });
 
     it('should render expiration notice', async () => {

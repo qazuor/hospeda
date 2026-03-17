@@ -33,6 +33,7 @@ describe('BaseLayout', () => {
         expect(html).toContain('Si no deseas recibir estos correos, puedes');
         expect(html).toContain('darte de baja aquí');
         expect(html).toContain('https://hospeda.com.ar/unsubscribe');
+        expect(html).toContain('href="https://hospeda.com.ar/unsubscribe"');
     });
 
     it('should NOT include unsubscribe text when showUnsubscribe=false', async () => {
