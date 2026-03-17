@@ -27,7 +27,7 @@ export {
 
 export type { ApiResponse, PaginationData } from './response-schemas';
 
-// Add-on schemas
+// Add-on schemas (consolidated in @repo/schemas)
 export {
     AddonBillingTypeSchema,
     AddonResponseSchema,
@@ -37,7 +37,7 @@ export {
     PurchaseAddonResponseSchema,
     PurchaseAddonSchema,
     UserAddonResponseSchema
-} from './addon.schema';
+} from '@repo/schemas';
 
 export type {
     AddonResponse,
@@ -46,7 +46,7 @@ export type {
     PurchaseAddon,
     PurchaseAddonResponse,
     UserAddonResponse
-} from './addon.schema';
+} from '@repo/schemas';
 
 // Notification schemas
 export {
@@ -61,20 +61,26 @@ export type {
     NotificationLogsListResponse
 } from './notification.schema';
 
-// Customer add-on purchase schemas
+// Customer add-on purchase schemas (consolidated in @repo/schemas)
 export {
+    ADDON_PURCHASE_RESPONSE_STATUSES,
+    ADDON_PURCHASE_STATUSES,
+    CustomerAddonActionResponseSchema,
+    CustomerAddonIdParamSchema,
     CustomerAddonResponseSchema,
     CustomerAddonsListResponseSchema,
     EntitlementAdjustmentSchema,
     LimitAdjustmentSchema,
     ListCustomerAddonsQuerySchema
-} from './customer-addons.schema';
+} from '@repo/schemas';
 
 export type {
+    CustomerAddonActionResponse,
+    CustomerAddonIdParam,
     CustomerAddonResponse,
     CustomerAddonsListResponse,
     ListCustomerAddonsQuery
-} from './customer-addons.schema';
+} from '@repo/schemas';
 
 // Subscription events schemas (routing-specific only; response schemas live in @repo/schemas)
 export {
