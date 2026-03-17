@@ -127,7 +127,7 @@ const SENSITIVE_PATTERNS = [
  * @param key - Optional key name for context
  * @returns The redacted value
  */
-function redactSensitiveData(value: unknown, key?: string): unknown {
+export function redactSensitiveData(value: unknown, key?: string): unknown {
     // Check if the key itself indicates sensitive data
     if (key && SENSITIVE_KEYS.has(key.toLowerCase())) {
         return '[REDACTED]';
@@ -236,7 +236,7 @@ export function getColorFunction(color: LoggerColorType): ChalkFunction {
  * @param color - Color type from LoggerColors enum
  * @returns true if white text should be used, false for black text
  */
-function shouldUseWhiteText(color: LoggerColorType): boolean {
+export function shouldUseWhiteText(color: LoggerColorType): boolean {
     // Colors that are dark and need white text
     const darkColors: LoggerColorType[] = ['BLACK', 'RED', 'BLUE', 'MAGENTA'];
 

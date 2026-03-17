@@ -17,6 +17,7 @@ export {
     registerCategory,
     warn
 } from './logger.js';
+export { redactSensitiveData, shouldUseWhiteText } from './formatter.js';
 export * from './types.js';
 export { AuditEventType } from './audit-types.js';
 export type { AuditEventTypeValue } from './audit-types.js';
