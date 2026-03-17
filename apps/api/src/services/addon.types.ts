@@ -9,16 +9,33 @@
 import { z } from 'zod';
 
 /**
- * Result wrapper for service methods
+ * Discriminated union result type for add-on service methods.
+ *
+ * Aligns with the `ServiceOutput<T>` pattern from `@repo/service-core` but uses
+ * `success` as the discriminant and keeps string error codes (addon services use
+ * custom codes like 'CHECKOUT_ERROR', 'ADDON_INACTIVE', etc., not `ServiceErrorCode`).
+ *
+ * Type narrowing example:
+ * ```ts
+ * const result = await service.listAvailable();
+ * if (result.success) {
+ *   result.data; // T -- guaranteed present
+ * } else {
+ *   result.error; // { code: string; message: string } -- guaranteed present
+ * }
+ * ```
+ *
+ * TODO: Migrate addon services to extend BaseCrudService from `@repo/service-core`
+ * once addon domain has a proper DB model layer. At that point this type should be
+ * replaced by `ServiceOutput<T>`.
  */
-export interface ServiceResult<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+export type ServiceResult<T> =
+    | { readonly success: true; readonly data: T; readonly error?: never }
+    | {
+          readonly success: false;
+          readonly data?: never;
+          readonly error: { readonly code: string; readonly message: string };
+      };
 
 /**
  * List available add-ons input
@@ -88,8 +105,11 @@ export interface UserAddon {
 export interface CancelAddonInput {
     /** User's billing customer ID */
     customerId: string;
-    /** Add-on purchase ID to cancel */
-    addonId: string;
+    /**
+     * UUID of the billing_addon_purchases record to cancel.
+     * This is the primary key used for the WHERE clause on the UPDATE query.
+     */
+    purchaseId: string;
     /** Optional cancellation reason */
     reason?: string;
     /** User ID for tracking */
@@ -121,7 +141,9 @@ export const addonAdjustmentSchema = z.object({
     limitKey: z.string().optional().nullable(),
     limitIncrease: z.number().optional().nullable(),
     entitlement: z.string().optional().nullable(),
-    appliedAt: z.string()
+    appliedAt: z
+        .string()
+        .datetime({ message: 'appliedAt must be a valid ISO 8601 datetime string' })
 });
 
 /**

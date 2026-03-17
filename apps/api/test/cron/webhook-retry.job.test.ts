@@ -249,7 +249,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             name: 'Extra Photos'
         } as ReturnType<typeof getAddonBySlug>);
 
-        const confirmPurchaseMock = vi.fn().mockResolvedValue({ success: true });
+        const confirmPurchaseMock = vi.fn().mockResolvedValue({ success: true, data: undefined });
         vi.mocked(AddonService).mockImplementation(
             () =>
                 ({

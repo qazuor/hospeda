@@ -14,6 +14,9 @@
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { apiLogger } from '../utils/logger';
+import type { ServiceResult } from './addon.types';
+
+export type { ServiceResult };
 
 /** Cache entry with expiration timestamp */
 interface CacheEntry<T> {
@@ -50,18 +53,6 @@ export function resetBillingMetricsService(): void {
         instance.clearCache();
     }
     instance = null;
-}
-
-/**
- * Service result pattern
- */
-export interface ServiceResult<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
 }
 
 /**

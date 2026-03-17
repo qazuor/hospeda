@@ -716,7 +716,9 @@ describe('MercadoPago Webhook Handler', () => {
                 }
             };
 
-            const mockConfirmPurchase = vi.fn().mockResolvedValue({ success: true });
+            const mockConfirmPurchase = vi
+                .fn()
+                .mockResolvedValue({ success: true, data: undefined });
 
             vi.mocked(getQZPayBilling).mockReturnValue(
                 mockBilling as unknown as ReturnType<typeof getQZPayBilling>
