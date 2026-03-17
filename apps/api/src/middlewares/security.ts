@@ -12,7 +12,7 @@ import { apiLogger } from '../utils/logger';
  *
  * Features:
  * - Respects environment configuration
- * - Skips headers for documentation routes (/docs, /reference, /ui)
+ * - Applies permissive CSP for documentation routes (/docs) while preserving other headers
  * - Uses environment-specific security policies
  * - Always enabled in production for safety
  *
@@ -35,33 +35,8 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
         return;
     }
 
-    // Skip security headers for documentation routes
-    // These routes may need different CSP settings for UI functionality
-    if (c.req.path.startsWith('/docs')) {
-        await next();
-        return;
-    }
-
-    // Apply secure headers with environment-based configuration
-    // CSP is strict for API routes - no inline scripts/styles needed for JSON responses
-    const secureHeadersMiddleware = secureHeaders({
-        contentSecurityPolicy: {
-            defaultSrc: ["'self'"],
-            // No 'unsafe-inline' for scripts - prevents XSS attacks
-            // API routes return JSON, not HTML with scripts
-            scriptSrc: ["'self'"],
-            // No 'unsafe-inline' for styles - API responses don't need inline styles
-            styleSrc: ["'self'"],
-            imgSrc: ["'self'", 'data:', 'https:'],
-            connectSrc: ["'self'"],
-            fontSrc: ["'self'", 'https:', 'data:'],
-            objectSrc: ["'none'"],
-            mediaSrc: ["'self'"],
-            frameSrc: ["'none'"], // Changed from 'self' to 'none' for better security
-            // Explicitly block inline scripts and eval
-            baseUri: ["'self'"],
-            formAction: ["'self'"]
-        },
+    // Shared non-CSP security headers applied to all routes including /docs
+    const commonHeaders = {
         strictTransportSecurity: securityConfig.strictTransportSecurity,
         xFrameOptions: securityConfig.xFrameOptions,
         xContentTypeOptions: securityConfig.xContentTypeOptions,
@@ -77,9 +52,69 @@ export const securityHeadersMiddleware = async (c: Context, next: Next) => {
             gyroscope: false,
             accelerometer: false
         }
+    } as const;
+
+    // Documentation routes get a permissive CSP for Swagger/Scalar UI
+    // but still receive HSTS, X-Frame-Options, X-Content-Type-Options, etc.
+    if (c.req.path.startsWith('/docs')) {
+        const docsMiddleware = secureHeaders({
+            contentSecurityPolicy: {
+                defaultSrc: ["'self'"],
+                scriptSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    'https://cdn.jsdelivr.net',
+                    'https://unpkg.com'
+                ],
+                styleSrc: [
+                    "'self'",
+                    "'unsafe-inline'",
+                    'https://cdn.jsdelivr.net',
+                    'https://unpkg.com'
+                ],
+                imgSrc: ["'self'", 'data:', 'https:'],
+                connectSrc: ["'self'"],
+                fontSrc: [
+                    "'self'",
+                    'data:',
+                    'https://fonts.scalar.com',
+                    'https://fonts.googleapis.com',
+                    'https://fonts.gstatic.com'
+                ],
+                objectSrc: ["'none'"],
+                mediaSrc: ["'self'"],
+                frameSrc: ["'self'"],
+                baseUri: ["'self'"],
+                formAction: ["'self'"],
+                upgradeInsecureRequests: []
+            },
+            ...commonHeaders
+        });
+
+        await docsMiddleware(c, next);
+        return;
+    }
+
+    // Non-docs routes get strict CSP. No inline scripts/styles needed for JSON responses.
+    const strictMiddleware = secureHeaders({
+        contentSecurityPolicy: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'"],
+            styleSrc: ["'self'"],
+            imgSrc: ["'self'", 'data:', 'https:'],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+            upgradeInsecureRequests: []
+        },
+        ...commonHeaders
     });
 
-    await secureHeadersMiddleware(c, next);
+    await strictMiddleware(c, next);
 };
 
 /**

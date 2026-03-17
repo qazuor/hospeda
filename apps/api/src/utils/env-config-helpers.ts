@@ -177,9 +177,10 @@ export const getSecurityConfig = () => ({
         _safe.get('API_SECURITY_CSRF_ORIGINS', 'http://localhost:3000,http://localhost:5173')
     ),
     headersEnabled: _safe.getBoolean('API_SECURITY_HEADERS_ENABLED', true),
+    // Default CSP for API responses. Note: security.ts middleware hardcodes its own CSP policy.
     contentSecurityPolicy: _safe.get(
         'API_SECURITY_CONTENT_SECURITY_POLICY',
-        "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+        "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-src 'none';"
     ),
     strictTransportSecurity: _safe.get(
         'API_SECURITY_STRICT_TRANSPORT_SECURITY',
@@ -187,7 +188,7 @@ export const getSecurityConfig = () => ({
     ),
     xFrameOptions: _safe.get('API_SECURITY_X_FRAME_OPTIONS', 'SAMEORIGIN'),
     xContentTypeOptions: _safe.get('API_SECURITY_X_CONTENT_TYPE_OPTIONS', 'nosniff'),
-    xXssProtection: _safe.get('API_SECURITY_X_XSS_PROTECTION', '1; mode=block'),
+    xXssProtection: _safe.get('API_SECURITY_X_XSS_PROTECTION', '0'),
     referrerPolicy: _safe.get('API_SECURITY_REFERRER_POLICY', 'strict-origin-when-cross-origin'),
     permissionsPolicy: _safe.get(
         'API_SECURITY_PERMISSIONS_POLICY',

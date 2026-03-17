@@ -194,17 +194,18 @@ const ApiEnvSchema = z
             .string()
             .default('http://localhost:3000,http://localhost:5173'),
         API_SECURITY_HEADERS_ENABLED: z.coerce.boolean().default(true),
+        // Default CSP for API responses. Note: security.ts middleware hardcodes its own CSP policy.
         API_SECURITY_CONTENT_SECURITY_POLICY: z
             .string()
             .default(
-                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+                "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-src 'none';"
             ),
         API_SECURITY_STRICT_TRANSPORT_SECURITY: z
             .string()
             .default('max-age=31536000; includeSubDomains'),
         API_SECURITY_X_FRAME_OPTIONS: z.string().default('SAMEORIGIN'),
         API_SECURITY_X_CONTENT_TYPE_OPTIONS: z.string().default('nosniff'),
-        API_SECURITY_X_XSS_PROTECTION: z.string().default('1; mode=block'),
+        API_SECURITY_X_XSS_PROTECTION: z.string().default('0'),
         API_SECURITY_REFERRER_POLICY: z.string().default('strict-origin-when-cross-origin'),
         API_SECURITY_PERMISSIONS_POLICY: z
             .string()
@@ -278,6 +279,15 @@ const ApiEnvSchema = z
         // Billing
         /** MercadoPago access token for payment processing */
         HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: z.string().optional(),
+        /**
+         * Feature flag for addon lifecycle processing (cancellations, plan changes, expiry).
+         * Set to 'false' to disable all addon lifecycle side-effects without deploying code.
+         * Default: true (enabled).
+         */
+        HOSPEDA_ADDON_LIFECYCLE_ENABLED: z
+            .string()
+            .optional()
+            .transform((v) => v !== 'false'),
 
         // Email / Notifications
         HOSPEDA_RESEND_API_KEY: z.string().optional(),

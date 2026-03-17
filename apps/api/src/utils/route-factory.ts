@@ -4,7 +4,6 @@ import { createRoute, z } from '@hono/zod-openapi';
 import type { PermissionEnum } from '@repo/schemas';
 import { PaginationQuerySchema, ServiceErrorCode } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
-import { secureHeaders } from 'hono/secure-headers';
 import { createPerRouteRateLimitMiddleware } from '../middlewares/rate-limit';
 import type { AuthorizationLevel, OwnershipConfig } from '../types/authorization';
 import { createRouter } from './create-app';
@@ -233,43 +232,9 @@ const applyRouteMiddlewares = (app: ReturnType<typeof createRouter>, options?: R
 
     // Do NOT attach another validation instance here; it's globally registered in create-app
 
-    // ✅ FORCE security headers for route factories
-    // This ensures security headers are always applied regardless of env config
-    // Fixed test failures where SECURITY_ENABLED was disabled in test environment
-    app.use(
-        secureHeaders({
-            contentSecurityPolicy: {
-                defaultSrc: ["'self'"],
-                scriptSrc: [
-                    "'self'",
-                    "'unsafe-inline'",
-                    // Allow CDNs for documentation UI (Swagger, Scalar)
-                    'https://cdn.jsdelivr.net',
-                    'https://unpkg.com'
-                ],
-                styleSrc: [
-                    "'self'",
-                    "'unsafe-inline'",
-                    // Allow CDNs for documentation UI (Swagger, Scalar)
-                    'https://cdn.jsdelivr.net',
-                    'https://unpkg.com'
-                ],
-                fontSrc: [
-                    "'self'",
-                    'data:',
-                    // Allow fonts for documentation UI (Scalar)
-                    'https://fonts.scalar.com',
-                    'https://fonts.googleapis.com',
-                    'https://fonts.gstatic.com'
-                ]
-            },
-            strictTransportSecurity: 'max-age=31536000; includeSubDomains',
-            xFrameOptions: 'SAMEORIGIN',
-            xContentTypeOptions: 'nosniff',
-            xXssProtection: '1; mode=block',
-            referrerPolicy: 'strict-origin-when-cross-origin'
-        })
-    );
+    // Security headers (HSTS, X-Frame-Options, CSP, etc.) are applied globally
+    // by securityHeadersMiddleware in security.ts (registered in create-app.ts).
+    // No per-route secureHeaders() call is needed here.
 };
 
 /**
