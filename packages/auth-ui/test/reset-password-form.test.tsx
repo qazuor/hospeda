@@ -198,6 +198,34 @@ describe('ResetPasswordForm', () => {
         });
     });
 
+    // NOTE: ResetPasswordForm error div lacks role="alert" for accessibility. See specs-gaps-040.md AUTH-GAP-010.
+
+    it('shows fallback "Failed to reset password" when error.message is empty string', async () => {
+        // Arrange — AUTH-GAP-011: covers the `|| 'Failed to reset password'` fallback
+        const user = userEvent.setup();
+        const mockOnResetPassword = createMockOnResetPassword();
+        mockOnResetPassword.mockResolvedValue({
+            error: { message: '' }
+        });
+
+        render(
+            <ResetPasswordForm
+                token="valid-token"
+                onResetPassword={mockOnResetPassword}
+            />
+        );
+
+        // Act
+        await user.type(screen.getByPlaceholderText('At least 8 characters'), 'newpassword123');
+        await user.type(screen.getByPlaceholderText('Repeat your password'), 'newpassword123');
+        await user.click(screen.getByRole('button', { name: 'Reset password' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByText('Failed to reset password')).toBeInTheDocument();
+        });
+    });
+
     it('shows loading state: "Resetting..." during submit', async () => {
         const user = userEvent.setup();
         let resolvePromise: (value: { data?: unknown }) => void;

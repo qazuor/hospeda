@@ -5,7 +5,7 @@
  * @module sign-in-form.test
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SignInForm } from '../src/sign-in-form';
@@ -187,8 +187,10 @@ describe('SignInForm', () => {
                 expect(submitButton).toBeDisabled();
             });
 
-            // Cleanup - resolve the pending promise
-            resolveSignIn!({ data: { session: { id: 'ses-1' } }, error: null });
+            // Cleanup - resolve the pending promise inside act() to avoid act() warnings
+            await act(async () => {
+                resolveSignIn!({ data: { session: { id: 'ses-1' } }, error: null });
+            });
         });
 
         it('shows error message when result.error is present', async () => {
@@ -386,8 +388,10 @@ describe('SignInForm', () => {
             await user.unhover(submitButton);
             expect(submitButton.style.background).toBe(originalBackground);
 
-            // Cleanup
-            resolveSignIn!({ data: { session: { id: 'ses-1' } }, error: null });
+            // Cleanup - resolve inside act() to avoid act() warnings
+            await act(async () => {
+                resolveSignIn!({ data: { session: { id: 'ses-1' } }, error: null });
+            });
         });
 
         it('shows fallback error "Sign in failed" when result.error has no message', async () => {
@@ -531,6 +535,37 @@ describe('SignInForm', () => {
             await waitFor(() => {
                 expect(screen.getByRole('alert')).toHaveTextContent('OAuth authentication failed');
             });
+        });
+
+        it('handles OAuth Error-instance exception showing its message', async () => {
+            // Arrange — AUTH-GAP-012: covers `err instanceof Error ? err.message : ...` true branch
+            const user = userEvent.setup();
+            const { authLogger } = await import('../src/logger');
+            const mockSignIn = createMockSignIn({
+                social: vi.fn().mockRejectedValue(new Error('OAuth specific error'))
+            });
+
+            render(
+                <SignInForm
+                    signIn={mockSignIn}
+                    redirectTo="/home"
+                />
+            );
+
+            await waitFor(() => {
+                expect(
+                    screen.getByRole('button', { name: 'Continue with Google' })
+                ).toBeInTheDocument();
+            });
+
+            // Act
+            await user.click(screen.getByRole('button', { name: 'Continue with Google' }));
+
+            // Assert — should use err.message, not the fallback
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent('OAuth specific error');
+            });
+            expect(authLogger.error).toHaveBeenCalledWith('OAuth error', expect.any(Error));
         });
 
         it('uses window.location.pathname as callbackURL when redirectTo is undefined', async () => {

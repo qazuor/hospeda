@@ -312,6 +312,27 @@ describe('UserMenu', () => {
         });
     });
 
+    describe('dropdown panel with user image', () => {
+        it('shows user image inside the opened dropdown panel', async () => {
+            // Arrange
+            const user = userEvent.setup();
+            const session = createSession({ image: 'https://example.com/photo.jpg' });
+
+            // Act
+            render(<UserMenu {...createProps({ session })} />);
+            await user.click(screen.getByRole('button', { name: /Juan Perez/i }));
+
+            // Assert - the dropdown panel contains a larger (h-10 w-10) image
+            // The trigger also has an image (h-8 w-8), so there should be 2 images total
+            const images = screen.getAllByAltText('Juan Perez');
+            expect(images.length).toBe(2);
+            // The dropdown panel image (lines 125-129 of user-menu.tsx)
+            const panelImage = images[1];
+            expect(panelImage).toHaveAttribute('src', 'https://example.com/photo.jpg');
+            expect(panelImage).toHaveClass('h-10', 'w-10');
+        });
+    });
+
     describe('accessibility', () => {
         it('has aria-expanded=false when dropdown is closed', () => {
             // Arrange & Act

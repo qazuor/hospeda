@@ -7,7 +7,7 @@
  * @module sign-up-form.test
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AuthResult, SignInMethods, SignUpMethods } from '../src/types';
@@ -196,8 +196,10 @@ describe('SignUpForm', () => {
             expect(screen.getByText(/auth-ui\.signUp\.loading/i)).toBeInTheDocument();
         });
 
-        // Resolve to clean up
-        resolveSignUp!({ data: null });
+        // Resolve inside act() to avoid act() warnings
+        await act(async () => {
+            resolveSignUp!({ data: null });
+        });
 
         await waitFor(() => {
             expect(screen.getByText(/auth-ui\.signUp\.signUpButton/i)).toBeInTheDocument();
@@ -375,6 +377,36 @@ describe('SignUpForm', () => {
         expect(authLogger.error).toHaveBeenCalledWith('Sign up error', thrownError);
     });
 
+    it('handles OAuth Error-instance exception showing its message', async () => {
+        // Arrange — AUTH-GAP-013: covers `err instanceof Error ? err.message : ...` true branch
+        const user = userEvent.setup();
+        const { authLogger } = await import('../src/logger');
+        const mockSignIn = createMockSignIn();
+        vi.mocked(mockSignIn.social).mockRejectedValue(new Error('OAuth error'));
+        const SignUpForm = await importSignUpForm();
+
+        render(
+            <SignUpForm
+                signUp={createMockSignUp()}
+                signIn={mockSignIn}
+                redirectTo="/home"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByLabelText('Sign up with Google')).toBeInTheDocument();
+        });
+
+        // Act
+        await user.click(screen.getByLabelText('Sign up with Google'));
+
+        // Assert — should use err.message, not the fallback
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toHaveTextContent('OAuth error');
+        });
+        expect(authLogger.error).toHaveBeenCalledWith('OAuth error', expect.any(Error));
+    });
+
     it('handles OAuth non-Error exception with fallback message', async () => {
         const user = userEvent.setup();
         const mockSignIn = createMockSignIn();
@@ -441,8 +473,10 @@ describe('SignUpForm', () => {
         await user.unhover(submitButton);
         expect(submitButton.style.background).toBe(originalBackground);
 
-        // Cleanup
-        resolveSignUp!({ data: null });
+        // Cleanup - resolve inside act() to avoid act() warnings
+        await act(async () => {
+            resolveSignUp!({ data: null });
+        });
     });
 
     it('shows fallback error "Sign up failed" when result.error has no message', async () => {

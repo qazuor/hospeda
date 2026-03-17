@@ -183,6 +183,28 @@ describe('ForgotPasswordForm', () => {
         expect(mockOnForgotPassword).not.toHaveBeenCalled();
     });
 
+    // NOTE: ForgotPasswordForm error div lacks role="alert" for accessibility. See specs-gaps-040.md AUTH-GAP-010.
+
+    it('shows fallback "Failed to send reset email" when error.message is empty string', async () => {
+        // Arrange — AUTH-GAP-011: covers the `|| 'Failed to send reset email'` fallback
+        const user = userEvent.setup();
+        const mockOnForgotPassword = createMockOnForgotPassword();
+        mockOnForgotPassword.mockResolvedValue({
+            error: { message: '' }
+        });
+
+        render(<ForgotPasswordForm onForgotPassword={mockOnForgotPassword} />);
+
+        // Act
+        await user.type(screen.getByPlaceholderText('you@example.com'), 'test@example.com');
+        await user.click(screen.getByRole('button', { name: 'Send reset link' }));
+
+        // Assert
+        await waitFor(() => {
+            expect(screen.getByText('Failed to send reset email')).toBeInTheDocument();
+        });
+    });
+
     it('shows "An unexpected error..." on exception', async () => {
         const user = userEvent.setup();
         const mockOnForgotPassword = createMockOnForgotPassword();
