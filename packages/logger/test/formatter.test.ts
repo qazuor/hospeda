@@ -5,9 +5,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { registerCategoryInternal } from '../src/categories.js';
 import { configureLogger } from '../src/config.js';
-// NOTE: Stale compiled .js files exist in src/ that lack newer exports
-// (shouldUseWhiteText, redactSensitiveData). We import the .ts source directly
-// for those, and use .js for the rest to match internal module resolution.
 import {
     formatLogArgs,
     formatLogMessage,
@@ -19,6 +16,10 @@ import {
     levelColors,
     levelIcons
 } from '../src/formatter.js';
+// NOTE: The compiled .js file in src/ is stale and lacks redactSensitiveData
+// and shouldUseWhiteText exports. Import these directly from .ts source.
+// These are pure functions with no shared state, so the dual-module issue
+// does not apply.
 import { redactSensitiveData, shouldUseWhiteText } from '../src/formatter.ts';
 import { resetLogger } from '../src/logger.js';
 import { LogLevel, type LoggerColorType, LoggerColors } from '../src/types.js';
@@ -196,6 +197,80 @@ describe('formatter', () => {
             expect(result).toContain('123');
             expect(result).toContain('99.99');
             expect(result).not.toContain('[REDACTED]');
+        });
+
+        // GAP-006: Additional regex pattern redaction tests
+        it('should redact SSN patterns in strings', () => {
+            const result = formatValue('SSN: 123-45-6789', 2, false);
+            expect(result).toContain('[REDACTED]');
+            expect(result).not.toContain('123-45-6789');
+        });
+
+        it('should redact IPv6 addresses in strings', () => {
+            const result = formatValue('Host: 2001:0db8:85a3:0000:0000:8a2e:0370:7334', 2, false);
+            expect(result).toContain('[REDACTED]');
+            expect(result).not.toContain('2001:0db8:85a3:0000:0000:8a2e:0370:7334');
+        });
+
+        it('should redact API keys with pk_ prefix in strings', () => {
+            const result = formatValue('key: pk_abcdefghijklmnopqrstuv', 2, false);
+            expect(result).toContain('[REDACTED]');
+            expect(result).not.toContain('pk_abcdefghijklmnopqrstuv');
+        });
+
+        it('should redact API keys with api_ prefix in strings', () => {
+            const result = formatValue('key: api_abcdefghijklmnopqrstuv', 2, false);
+            expect(result).toContain('[REDACTED]');
+            expect(result).not.toContain('api_abcdefghijklmnopqrstuv');
+        });
+
+        it('should redact API keys with key_ prefix in strings', () => {
+            const result = formatValue('key: key_abcdefghijklmnopqrstuv', 2, false);
+            expect(result).toContain('[REDACTED]');
+            expect(result).not.toContain('key_abcdefghijklmnopqrstuv');
+        });
+
+        // GAP-012: stringifyObj option tests
+        it('should produce compact JSON when stringifyObj=true', () => {
+            const obj = { name: 'Alice', age: 30 };
+            const result = formatValue(obj, 2, false, 100, true);
+            // Compact JSON has no newlines or indentation
+            expect(result).not.toContain('\n');
+            const parsed = JSON.parse(result) as Record<string, unknown>;
+            expect(parsed.name).toBe('Alice');
+            expect(parsed.age).toBe(30);
+        });
+
+        it('should produce pretty JSON when stringifyObj=false', () => {
+            const obj = { name: 'Alice', age: 30 };
+            const result = formatValue(obj, 2, false, 100, false);
+            // Pretty JSON has newlines and indentation
+            expect(result).toContain('\n');
+            const parsed = JSON.parse(result) as Record<string, unknown>;
+            expect(parsed.name).toBe('Alice');
+            expect(parsed.age).toBe(30);
+        });
+
+        // GAP-007: Recursive truncation uses "... [TRUNCATED]" (with space)
+        // whereas top-level formatValue uses "...[TRUNCATED]" (no space).
+        // This test documents the inconsistency.
+        it('should use "... [TRUNCATED]" (with space) in recursive expandObject truncation', () => {
+            const obj = { data: 'x'.repeat(200) };
+            const result = formatValue(obj, 2, true, 100);
+            // The recursive expandObject path adds a space before [TRUNCATED]
+            expect(result).toContain('... [TRUNCATED]');
+        });
+
+        // GAP-015: JSON.stringify error catch path
+        it('should return error string when toJSON() throws', () => {
+            const badObj = {
+                toJSON(): never {
+                    throw new Error('toJSON failed');
+                }
+            };
+            const result = formatValue(badObj, 2, false);
+            expect(result).toContain('[Object:');
+            expect(result).toContain('toJSON failed');
         });
     });
 

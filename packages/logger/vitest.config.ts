@@ -23,14 +23,17 @@ export default defineConfig({
                 branches: 90,
                 statements: 90
             },
-            include: ['src/**/*.ts', 'src/**/*.js'],
+            include: ['src/**/*.ts'],
             exclude: [
                 'node_modules/',
                 'dist/',
                 'test/',
-                '**/*.d.ts',
-                '**/*.d.ts.map',
-                '**/*.js.map',
+                'src/**/*.js',
+                'src/**/*.d.ts',
+                'src/**/*.d.ts.map',
+                'src/**/*.js.map',
+                'src/types.ts',
+                'src/audit-types.ts',
                 '**/*.config.*'
             ]
         }

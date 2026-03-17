@@ -254,6 +254,41 @@ describe('Logger', () => {
         expect(call).toContain('insert');
     });
 
+    describe('WARN level filtering', () => {
+        it('should suppress info when level is WARN', () => {
+            // Arrange
+            configureLogger({ LEVEL: LogLevel.WARN });
+
+            // Act
+            logger.info('should be suppressed');
+
+            // Assert
+            expect(console.info).not.toHaveBeenCalled();
+        });
+
+        it('should pass warn when level is WARN', () => {
+            // Arrange
+            configureLogger({ LEVEL: LogLevel.WARN });
+
+            // Act
+            logger.warn('should pass');
+
+            // Assert
+            expect(console.warn).toHaveBeenCalled();
+        });
+
+        it('should pass error when level is WARN', () => {
+            // Arrange
+            configureLogger({ LEVEL: LogLevel.WARN });
+
+            // Act
+            logger.error('should pass');
+
+            // Assert
+            expect(console.error).toHaveBeenCalled();
+        });
+    });
+
     describe('Truncation behavior', () => {
         const longText = 'a'.repeat(200); // Text longer than default truncate limit
 

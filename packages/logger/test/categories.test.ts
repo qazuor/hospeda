@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     clearCategories,
     getCategoryByKey,
@@ -84,6 +84,25 @@ describe('categories', () => {
 
             // Assert
             expect(maxLength).toBe(0);
+        });
+    });
+
+    describe('env config merge', () => {
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('should merge env-based level config when registering a category', () => {
+            // Arrange
+            vi.stubEnv('LOG_TESTCAT_LEVEL', 'DEBUG');
+
+            // Act
+            const category = registerCategoryInternal('TestEnv', 'TESTCAT', {
+                color: LoggerColors.CYAN as const
+            });
+
+            // Assert
+            expect(category.options.level).toBe('DEBUG');
         });
     });
 

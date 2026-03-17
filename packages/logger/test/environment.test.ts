@@ -202,6 +202,50 @@ describe('environment', () => {
             expect(config.TRUNCATE_LONG_TEXT).toBe(false);
         });
 
+        it('should read LOG_STRINGIFY_OBJECTS correctly', () => {
+            // Arrange
+            vi.stubEnv('LOG_STRINGIFY_OBJECTS', 'true');
+
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.STRINGIFY_OBJECTS).toBe(true);
+        });
+
+        it('should read LOG_EXPAND_OBJECT_LEVELS correctly', () => {
+            // Arrange
+            vi.stubEnv('LOG_EXPAND_OBJECT_LEVELS', '3');
+
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.EXPAND_OBJECT_LEVELS).toBe(3);
+        });
+
+        it('should read LOG_TRUNCATE_LONG_TEXT_AT correctly', () => {
+            // Arrange
+            vi.stubEnv('LOG_TRUNCATE_LONG_TEXT_AT', '150');
+
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.TRUNCATE_LONG_TEXT_AT).toBe(150);
+        });
+
+        it('should read LOG_TRUNCATE_LONG_TEXT_ON_ERROR correctly', () => {
+            // Arrange
+            vi.stubEnv('LOG_TRUNCATE_LONG_TEXT_ON_ERROR', 'true');
+
+            // Act
+            const config = getConfigFromEnv();
+
+            // Assert
+            expect(config.TRUNCATE_LONG_TEXT_ON_ERROR).toBe(true);
+        });
+
         it('should return empty object when no env vars are defined', () => {
             // Act
             const config = getConfigFromEnv();
