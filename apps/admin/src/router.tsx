@@ -25,12 +25,7 @@ export interface RouterContext {
 function RouterPendingComponent() {
     return (
         <div className="fixed inset-x-0 top-0 z-50 h-0.5">
-            <div
-                className="h-full bg-primary"
-                style={{
-                    animation: 'router-pending-bar 1.5s ease-in-out infinite'
-                }}
-            />
+            <div className="h-full animate-router-pending bg-primary" />
         </div>
     );
 }

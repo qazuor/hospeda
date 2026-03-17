@@ -3,34 +3,9 @@
  * Extracted from middleware for testability.
  */
 
-/**
- * Builds a Sentry CSP report URI from a Sentry DSN.
- * Sentry accepts CSP violation reports at its security endpoint.
- *
- * @see https://docs.sentry.io/platforms/javascript/security-policy-reporting/
- *
- * DSN format: https://{key}@{host}/{project_id}
- * Report URI: https://{host}/api/{project_id}/security/?sentry_key={key}
- */
-// NOTE: This function is intentionally duplicated from apps/web/src/lib/middleware-helpers.ts.
-// Extracting to a shared package (@repo/utils) is deferred to avoid adding a cross-app
-// dependency for a single utility function. If more CSP utilities are needed, consolidate then.
-export function buildSentryReportUri({ dsn }: { dsn: string }): string | null {
-    try {
-        const url = new URL(dsn);
-        const key = url.username;
-        const projectId = url.pathname.replace(/\//g, '');
-        const host = url.hostname;
+import { buildSentryReportUri } from '@repo/utils';
 
-        if (!key || !projectId || !host) {
-            return null;
-        }
-
-        return `https://${host}/api/${projectId}/security/?sentry_key=${key}`;
-    } catch {
-        return null;
-    }
-}
+export { buildSentryReportUri };
 
 /**
  * Builds the complete CSP directive string for the admin app.
@@ -64,14 +39,16 @@ export function buildCspDirectives({
         "font-src 'self'",
         // MercadoPago domains for QZPay billing integration
         "img-src 'self' data: https: https://*.mlstatic.com",
-        "connect-src 'self' https://*.ingest.sentry.io https://*.vercel.app https://*.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
-        'frame-src https://*.mercadopago.com',
+        "connect-src 'self' https://*.sentry.io https://*.vercel.app https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com https://api.mercadolibre.com https://api-static.mercadopago.com",
+        'frame-src https://www.mercadopago.com',
         "worker-src 'self' blob:",
         'child-src blob:',
         "object-src 'none'",
         "base-uri 'self'",
         "form-action 'self'",
         "frame-ancestors 'none'",
+        "media-src 'self'",
+        'upgrade-insecure-requests',
         sentryReportUri ? `report-uri ${sentryReportUri}` : null
     ]
         .filter(Boolean)
