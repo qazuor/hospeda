@@ -11,14 +11,28 @@
  * - Uses idempotency keys to prevent duplicate notifications
  * - Fire-and-forget pattern for notification sending
  * - Processes in batches of 100 to avoid memory issues
+ * - Revocation retry phase for orphaned active add-ons linked to cancelled subscriptions
  *
  * @module cron/jobs/addon-expiry
  */
 
-import { and, billingNotificationLog, eq, getDb, gte } from '@repo/db';
+import { getAddonBySlug } from '@repo/billing';
+import {
+    and,
+    billingAddonPurchases,
+    billingNotificationLog,
+    billingSubscriptions,
+    eq,
+    getDb,
+    isNull
+} from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import * as Sentry from '@sentry/node';
+import { sql } from 'drizzle-orm';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { AddonExpirationService } from '../../services/addon-expiration.service.js';
+import { revokeAddonForSubscriptionCancellation } from '../../services/addon-lifecycle.service.js';
 import { lookupCustomerDetails } from '../../utils/customer-lookup.js';
 import { apiLogger } from '../../utils/logger.js';
 import { sendNotification } from '../../utils/notification-helper.js';
@@ -47,10 +61,16 @@ function generateIdempotencyKey(
  * Check if notification was already sent today by querying the billing_notification_log table.
  * This persists idempotency across cron runs (unlike an in-memory Set).
  *
+ * Matches on the exact idempotency key stored in `metadata->>'idempotencyKey'`, which
+ * encodes `type`, `customerId`, `addonSlug`, and the current date. This ensures that
+ * each (customer, addon) pair is tracked independently, preventing a notification for
+ * one addon from suppressing legitimate notifications for a different addon belonging
+ * to the same customer.
+ *
  * @param type - Notification type
  * @param customerId - Billing customer ID
- * @param addonSlug - Add-on slug
- * @returns Whether notification was already sent today
+ * @param addonSlug - Add-on slug (included in idempotency key)
+ * @returns Whether notification was already sent today for this specific addon
  */
 async function wasNotificationSent(
     type: NotificationType,
@@ -59,8 +79,7 @@ async function wasNotificationSent(
 ): Promise<boolean> {
     try {
         const db = getDb();
-        const todayStart = new Date();
-        todayStart.setHours(0, 0, 0, 0);
+        const idempotencyKey = generateIdempotencyKey(type, customerId, addonSlug);
 
         const existing = await db
             .select({ id: billingNotificationLog.id })
@@ -69,7 +88,10 @@ async function wasNotificationSent(
                 and(
                     eq(billingNotificationLog.type, type),
                     eq(billingNotificationLog.customerId, customerId),
-                    gte(billingNotificationLog.createdAt, todayStart)
+                    eq(
+                        sql<string>`${billingNotificationLog.metadata}->>'idempotencyKey'`,
+                        idempotencyKey
+                    )
                 )
             )
             .limit(1);
@@ -118,11 +140,29 @@ export const addonExpiryJob: CronJobDefinition = {
         // instead of an in-memory Set, so state persists across cron runs.
 
         try {
-            // Create add-on expiration service
-            const addonExpirationService = new AddonExpirationService();
+            // Ensure billing is initialized before proceeding
+            const billing = getQZPayBilling();
+            if (!billing) {
+                apiLogger.error('QZPay billing not initialized, skipping addon expiry job');
+                return {
+                    success: false,
+                    message: 'QZPay billing not initialized, skipping addon expiry job',
+                    processed: 0,
+                    errors: 1,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { error: 'billing_not_initialized' }
+                };
+            }
+
+            // Create add-on expiration service with billing instance
+            const addonExpirationService = new AddonExpirationService(billing);
 
             // 1. Process expired add-ons
             logger.info('Processing expired add-ons');
+
+            // TODO(GAP-038-42): Sequential processing at scale may hit the 2-minute cron timeout
+            // if the expired batch grows large (>100 items per run). Consider parallel processing
+            // with Promise.allSettled() or increasing timeoutMs, but only after profiling real load.
 
             if (dryRun) {
                 // Dry run mode - find what would be expired
@@ -184,46 +224,45 @@ export const addonExpiryJob: CronJobDefinition = {
                     warningsSent += expiring3Days.length;
                 } else {
                     // Send ADDON_EXPIRATION_WARNING for 3-day add-ons
-                    for (const addon of expiring3Days) {
+                    for (const expiringAddon of expiring3Days) {
                         try {
                             // Check idempotency via DB lookup (persists across cron runs)
                             if (
                                 await wasNotificationSent(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
-                                    addon.customerId,
-                                    addon.addonSlug
+                                    expiringAddon.customerId,
+                                    expiringAddon.addonSlug
                                 )
                             ) {
                                 logger.debug('Skipping duplicate notification (3 days)', {
-                                    customerId: addon.customerId,
-                                    addonSlug: addon.addonSlug
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug
                                 });
                                 continue;
                             }
 
-                            // Look up customer details for notification
-                            const billing = getQZPayBilling();
-                            if (!billing) {
-                                logger.warn('Billing not configured, skipping notification', {
-                                    customerId: addon.customerId
-                                });
-                                continue;
-                            }
-
+                            // Look up customer details for notification.
+                            // Reuse the billing instance already retrieved at job startup
+                            // to avoid redundant getQZPayBilling() calls inside the loop.
                             const customerDetails = await lookupCustomerDetails(
                                 billing,
-                                addon.customerId
+                                expiringAddon.customerId
                             );
                             if (!customerDetails) {
                                 logger.warn(
                                     'Could not look up customer details, skipping notification',
                                     {
-                                        customerId: addon.customerId,
-                                        addonSlug: addon.addonSlug
+                                        customerId: expiringAddon.customerId,
+                                        addonSlug: expiringAddon.addonSlug
                                     }
                                 );
                                 continue;
                             }
+
+                            // Resolve human-readable display name from config; fall back to slug
+                            const addonConfig3d = getAddonBySlug(expiringAddon.addonSlug);
+                            const addonDisplayName3d =
+                                addonConfig3d?.name ?? expiringAddon.addonSlug;
 
                             // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                             sendNotification({
@@ -231,19 +270,19 @@ export const addonExpiryJob: CronJobDefinition = {
                                 recipientEmail: customerDetails.email,
                                 recipientName: customerDetails.name,
                                 userId: customerDetails.userId,
-                                customerId: addon.customerId,
-                                addonName: addon.addonSlug,
-                                expirationDate: addon.expiresAt.toISOString(),
-                                daysRemaining: addon.daysUntilExpiration,
+                                customerId: expiringAddon.customerId,
+                                addonName: addonDisplayName3d,
+                                expirationDate: expiringAddon.expiresAt.toISOString(),
+                                daysRemaining: expiringAddon.daysUntilExpiration,
                                 idempotencyKey: generateIdempotencyKey(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
-                                    addon.customerId,
-                                    addon.addonSlug
+                                    expiringAddon.customerId,
+                                    expiringAddon.addonSlug
                                 )
                             }).catch((notifError) => {
-                                logger.debug('Add-on expiration warning failed (will retry)', {
-                                    customerId: addon.customerId,
-                                    addonSlug: addon.addonSlug,
+                                logger.warn('Add-on expiration warning failed (will retry)', {
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug,
                                     error:
                                         notifError instanceof Error
                                             ? notifError.message
@@ -254,15 +293,22 @@ export const addonExpiryJob: CronJobDefinition = {
                             warningsSent++;
 
                             logger.debug('Sent add-on expiration warning (3 days)', {
-                                customerId: addon.customerId,
-                                addonSlug: addon.addonSlug,
+                                customerId: expiringAddon.customerId,
+                                addonSlug: expiringAddon.addonSlug,
                                 daysRemaining: 3
                             });
                         } catch (error) {
                             errors++;
+                            Sentry.captureException(error, {
+                                tags: { cronJob: 'addon-expiry', phase: 'warning-3-days' },
+                                extra: {
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug
+                                }
+                            });
                             logger.error('Failed to send add-on expiration warning (3 days)', {
-                                customerId: addon.customerId,
-                                addonSlug: addon.addonSlug,
+                                customerId: expiringAddon.customerId,
+                                addonSlug: expiringAddon.addonSlug,
                                 error: error instanceof Error ? error.message : String(error)
                             });
                         }
@@ -295,46 +341,45 @@ export const addonExpiryJob: CronJobDefinition = {
                     warningsSent += expiring1Day.length;
                 } else {
                     // Send ADDON_EXPIRATION_WARNING for 1-day add-ons
-                    for (const addon of expiring1Day) {
+                    for (const expiringAddon of expiring1Day) {
                         try {
                             // Check idempotency via DB lookup (persists across cron runs)
                             if (
                                 await wasNotificationSent(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
-                                    addon.customerId,
-                                    addon.addonSlug
+                                    expiringAddon.customerId,
+                                    expiringAddon.addonSlug
                                 )
                             ) {
                                 logger.debug('Skipping duplicate notification (1 day)', {
-                                    customerId: addon.customerId,
-                                    addonSlug: addon.addonSlug
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug
                                 });
                                 continue;
                             }
 
-                            // Look up customer details for notification
-                            const billing = getQZPayBilling();
-                            if (!billing) {
-                                logger.warn('Billing not configured, skipping notification', {
-                                    customerId: addon.customerId
-                                });
-                                continue;
-                            }
-
+                            // Look up customer details for notification.
+                            // Reuse the billing instance already retrieved at job startup
+                            // to avoid redundant getQZPayBilling() calls inside the loop.
                             const customerDetails = await lookupCustomerDetails(
                                 billing,
-                                addon.customerId
+                                expiringAddon.customerId
                             );
                             if (!customerDetails) {
                                 logger.warn(
                                     'Could not look up customer details, skipping notification',
                                     {
-                                        customerId: addon.customerId,
-                                        addonSlug: addon.addonSlug
+                                        customerId: expiringAddon.customerId,
+                                        addonSlug: expiringAddon.addonSlug
                                     }
                                 );
                                 continue;
                             }
+
+                            // Resolve human-readable display name from config; fall back to slug
+                            const addonConfig1d = getAddonBySlug(expiringAddon.addonSlug);
+                            const addonDisplayName1d =
+                                addonConfig1d?.name ?? expiringAddon.addonSlug;
 
                             // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                             sendNotification({
@@ -342,19 +387,19 @@ export const addonExpiryJob: CronJobDefinition = {
                                 recipientEmail: customerDetails.email,
                                 recipientName: customerDetails.name,
                                 userId: customerDetails.userId,
-                                customerId: addon.customerId,
-                                addonName: addon.addonSlug,
-                                expirationDate: addon.expiresAt.toISOString(),
-                                daysRemaining: addon.daysUntilExpiration,
+                                customerId: expiringAddon.customerId,
+                                addonName: addonDisplayName1d,
+                                expirationDate: expiringAddon.expiresAt.toISOString(),
+                                daysRemaining: expiringAddon.daysUntilExpiration,
                                 idempotencyKey: generateIdempotencyKey(
                                     NotificationType.ADDON_EXPIRATION_WARNING,
-                                    addon.customerId,
-                                    addon.addonSlug
+                                    expiringAddon.customerId,
+                                    expiringAddon.addonSlug
                                 )
                             }).catch((notifError) => {
-                                logger.debug('Add-on expiration warning failed (will retry)', {
-                                    customerId: addon.customerId,
-                                    addonSlug: addon.addonSlug,
+                                logger.warn('Add-on expiration warning failed (will retry)', {
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug,
                                     error:
                                         notifError instanceof Error
                                             ? notifError.message
@@ -365,15 +410,22 @@ export const addonExpiryJob: CronJobDefinition = {
                             warningsSent++;
 
                             logger.debug('Sent add-on expiration warning (1 day)', {
-                                customerId: addon.customerId,
-                                addonSlug: addon.addonSlug,
+                                customerId: expiringAddon.customerId,
+                                addonSlug: expiringAddon.addonSlug,
                                 daysRemaining: 1
                             });
                         } catch (error) {
                             errors++;
+                            Sentry.captureException(error, {
+                                tags: { cronJob: 'addon-expiry', phase: 'warning-1-day' },
+                                extra: {
+                                    customerId: expiringAddon.customerId,
+                                    addonSlug: expiringAddon.addonSlug
+                                }
+                            });
                             logger.error('Failed to send add-on expiration warning (1 day)', {
-                                customerId: addon.customerId,
-                                addonSlug: addon.addonSlug,
+                                customerId: expiringAddon.customerId,
+                                addonSlug: expiringAddon.addonSlug,
                                 error: error instanceof Error ? error.message : String(error)
                             });
                         }
@@ -386,24 +438,291 @@ export const addonExpiryJob: CronJobDefinition = {
                 errors++;
             }
 
+            // 4. Revocation retry phase: pick up orphaned active add-ons linked to cancelled subscriptions.
+            // These are purchases that survived a failed webhook processing and must be cleaned up.
+            let revocationRetried = 0;
+            let revocationErrors = 0;
+
+            logger.info('Starting revocation retry phase for orphaned active add-ons');
+
+            try {
+                const db = getDb();
+
+                // Query: active purchases whose subscription is already cancelled.
+                // billing_subscriptions uses 'cancelled' (British spelling, 2 L's).
+                const orphanedPurchases = await db
+                    .select({
+                        id: billingAddonPurchases.id,
+                        customerId: billingAddonPurchases.customerId,
+                        addonSlug: billingAddonPurchases.addonSlug,
+                        metadata: billingAddonPurchases.metadata
+                    })
+                    .from(billingAddonPurchases)
+                    .innerJoin(
+                        billingSubscriptions,
+                        eq(billingAddonPurchases.subscriptionId, billingSubscriptions.id)
+                    )
+                    .where(
+                        and(
+                            eq(billingAddonPurchases.status, 'active'),
+                            isNull(billingAddonPurchases.deletedAt),
+                            eq(billingSubscriptions.status, 'cancelled')
+                        )
+                    );
+
+                logger.info('Found orphaned active add-ons linked to cancelled subscriptions', {
+                    count: orphanedPurchases.length
+                });
+
+                // Collect customerIds that were successfully revoked to batch cache invalidation.
+                const invalidatedCustomerIds = new Set<string>();
+
+                for (const purchase of orphanedPurchases) {
+                    const meta = (purchase.metadata ?? {}) as Record<string, unknown>;
+                    const retryCount =
+                        typeof meta.revocationRetryCount === 'number'
+                            ? meta.revocationRetryCount
+                            : 0;
+
+                    // Skip purchases that have already exhausted retries.
+                    // They were already escalated to Sentry on the run that hit count=3.
+                    if (retryCount >= 3) {
+                        logger.debug(
+                            'Skipping orphaned add-on: revocation retry limit already exhausted',
+                            {
+                                purchaseId: purchase.id,
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                revocationRetryCount: retryCount
+                            }
+                        );
+                        continue;
+                    }
+
+                    if (dryRun) {
+                        logger.info('Dry run mode - would revoke orphaned add-on', {
+                            purchaseId: purchase.id,
+                            customerId: purchase.customerId,
+                            addonSlug: purchase.addonSlug,
+                            revocationRetryCount: retryCount
+                        });
+                        revocationRetried++;
+                        continue;
+                    }
+
+                    try {
+                        const addonDef = getAddonBySlug(purchase.addonSlug);
+
+                        const result = await revokeAddonForSubscriptionCancellation({
+                            customerId: purchase.customerId,
+                            purchase: { id: purchase.id, addonSlug: purchase.addonSlug },
+                            addonDef,
+                            billing
+                        });
+
+                        if (result.outcome === 'success') {
+                            // Mark purchase as canceled (1 L — addon purchase convention).
+                            await db
+                                .update(billingAddonPurchases)
+                                .set({
+                                    status: 'canceled',
+                                    canceledAt: new Date(),
+                                    updatedAt: new Date()
+                                })
+                                .where(
+                                    and(
+                                        eq(billingAddonPurchases.id, purchase.id),
+                                        eq(billingAddonPurchases.status, 'active')
+                                    )
+                                );
+
+                            // Defer actual cache invalidation to avoid redundant calls per customer.
+                            invalidatedCustomerIds.add(purchase.customerId);
+                            revocationRetried++;
+
+                            logger.info(
+                                'Successfully revoked orphaned add-on via cron retry phase',
+                                {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug,
+                                    addonType: result.addonType
+                                }
+                            );
+                        } else {
+                            // revokeAddonForSubscriptionCancellation returned outcome='failed'
+                            // (only possible for unknown/retired addons in the current implementation,
+                            // since known types throw instead of returning failed).
+                            const newRetryCount = retryCount + 1;
+                            const updatedMeta: Record<string, unknown> = {
+                                ...meta,
+                                revocationRetryCount: newRetryCount,
+                                lastRevocationAttempt: new Date().toISOString()
+                            };
+
+                            await db
+                                .update(billingAddonPurchases)
+                                .set({ metadata: updatedMeta, updatedAt: new Date() })
+                                .where(eq(billingAddonPurchases.id, purchase.id));
+
+                            if (newRetryCount >= 3) {
+                                Sentry.captureException(
+                                    new Error('Addon revocation failed after 3 cron retries'),
+                                    {
+                                        tags: {
+                                            subsystem: 'billing-addon-lifecycle',
+                                            action: 'cron_retry_exhausted'
+                                        },
+                                        extra: {
+                                            customerId: purchase.customerId,
+                                            purchaseId: purchase.id,
+                                            addonSlug: purchase.addonSlug
+                                        }
+                                    }
+                                );
+                                logger.error(
+                                    'Addon revocation exhausted retries, manual intervention required',
+                                    {
+                                        purchaseId: purchase.id,
+                                        customerId: purchase.customerId,
+                                        addonSlug: purchase.addonSlug,
+                                        revocationRetryCount: newRetryCount
+                                    }
+                                );
+                            } else {
+                                logger.warn(
+                                    'Orphaned add-on revocation returned failed outcome, incrementing retry count',
+                                    {
+                                        purchaseId: purchase.id,
+                                        customerId: purchase.customerId,
+                                        addonSlug: purchase.addonSlug,
+                                        revocationRetryCount: newRetryCount,
+                                        error: result.error
+                                    }
+                                );
+                            }
+
+                            revocationErrors++;
+                        }
+                    } catch (revocationError) {
+                        // revokeAddonForSubscriptionCancellation threw (known addon type, both primary + fallback failed).
+                        const newRetryCount = retryCount + 1;
+                        const updatedMeta: Record<string, unknown> = {
+                            ...meta,
+                            revocationRetryCount: newRetryCount,
+                            lastRevocationAttempt: new Date().toISOString()
+                        };
+
+                        try {
+                            await db
+                                .update(billingAddonPurchases)
+                                .set({ metadata: updatedMeta, updatedAt: new Date() })
+                                .where(eq(billingAddonPurchases.id, purchase.id));
+                        } catch (metaUpdateError) {
+                            // Non-fatal: log but don't let this shadow the revocation error.
+                            logger.warn('Failed to persist revocation retry count to metadata', {
+                                purchaseId: purchase.id,
+                                error:
+                                    metaUpdateError instanceof Error
+                                        ? metaUpdateError.message
+                                        : String(metaUpdateError)
+                            });
+                        }
+
+                        if (newRetryCount >= 3) {
+                            Sentry.captureException(
+                                new Error('Addon revocation failed after 3 cron retries'),
+                                {
+                                    tags: {
+                                        subsystem: 'billing-addon-lifecycle',
+                                        action: 'cron_retry_exhausted'
+                                    },
+                                    extra: {
+                                        customerId: purchase.customerId,
+                                        purchaseId: purchase.id,
+                                        addonSlug: purchase.addonSlug
+                                    }
+                                }
+                            );
+                            logger.error(
+                                'Addon revocation exhausted retries, manual intervention required',
+                                {
+                                    purchaseId: purchase.id,
+                                    customerId: purchase.customerId,
+                                    addonSlug: purchase.addonSlug,
+                                    revocationRetryCount: newRetryCount,
+                                    error:
+                                        revocationError instanceof Error
+                                            ? revocationError.message
+                                            : String(revocationError)
+                                }
+                            );
+                        } else {
+                            logger.error('Orphaned add-on revocation failed, will retry next run', {
+                                purchaseId: purchase.id,
+                                customerId: purchase.customerId,
+                                addonSlug: purchase.addonSlug,
+                                revocationRetryCount: newRetryCount,
+                                error:
+                                    revocationError instanceof Error
+                                        ? revocationError.message
+                                        : String(revocationError)
+                            });
+                        }
+
+                        revocationErrors++;
+                    }
+                }
+
+                // Batch cache invalidation — one call per unique customerId that had a successful revocation.
+                for (const customerId of invalidatedCustomerIds) {
+                    clearEntitlementCache(customerId);
+                }
+
+                logger.info('Revocation retry phase completed', {
+                    revocationRetried,
+                    revocationErrors,
+                    cacheInvalidations: invalidatedCustomerIds.size
+                });
+            } catch (revocationPhaseError) {
+                const errMsg =
+                    revocationPhaseError instanceof Error
+                        ? revocationPhaseError.message
+                        : String(revocationPhaseError);
+
+                errors++;
+
+                Sentry.captureException(revocationPhaseError, {
+                    tags: { cronJob: 'addon-expiry', phase: 'revocation-retry' }
+                });
+
+                logger.error('Revocation retry phase failed with unexpected error', {
+                    error: errMsg
+                });
+            }
+
             const durationMs = Date.now() - startedAt.getTime();
 
             logger.info('Add-on expiry job completed', {
                 processed,
                 errors,
                 warningsSent,
+                revocationRetried,
+                revocationErrors,
                 durationMs
             });
 
             return {
                 success: true,
-                message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings (${errors} errors)`,
+                message: `Processed ${processed} expired add-ons, sent ${warningsSent} warnings, retried ${revocationRetried} revocations (${errors} errors)`,
                 processed: processed + warningsSent,
                 errors,
                 durationMs,
                 details: {
                     expiredAddons: processed,
                     warningsSent,
+                    revocationRetried,
+                    revocationErrors,
                     dryRun
                 }
             };
@@ -412,6 +731,10 @@ export const addonExpiryJob: CronJobDefinition = {
             const errorStack = error instanceof Error ? error.stack : undefined;
 
             errors++;
+
+            Sentry.captureException(error, {
+                tags: { cronJob: 'addon-expiry', phase: 'top-level' }
+            });
 
             logger.error('Add-on expiry job failed', {
                 error: errorMessage,

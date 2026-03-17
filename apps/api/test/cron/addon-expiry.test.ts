@@ -32,19 +32,46 @@ const mockDbWhere = vi.fn();
 const mockDbFrom = vi.fn();
 const mockDbSelect = vi.fn();
 
+// ---------------------------------------------------------------------------
+// Mock: DB chains used by the revocation retry phase
+// ---------------------------------------------------------------------------
+const mockDbInnerJoin = vi.fn();
+const mockDbUpdateWhere = vi.fn();
+const mockDbUpdateSet = vi.fn();
+const mockDbUpdate = vi.fn();
+
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
-        select: mockDbSelect
+        select: mockDbSelect,
+        update: mockDbUpdate
     })),
     billingNotificationLog: {
         id: 'id',
         type: 'type',
         customerId: 'customer_id',
-        createdAt: 'created_at'
+        createdAt: 'created_at',
+        metadata: 'metadata'
+    },
+    billingAddonPurchases: {
+        id: 'id',
+        customerId: 'customer_id',
+        addonSlug: 'addon_slug',
+        subscriptionId: 'subscription_id',
+        status: 'status',
+        metadata: 'metadata',
+        deletedAt: 'deleted_at',
+        canceledAt: 'canceled_at',
+        updatedAt: 'updated_at'
+    },
+    billingSubscriptions: {
+        id: 'id',
+        status: 'status'
     },
     eq: vi.fn((...args: unknown[]) => ({ op: 'eq', args })),
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
-    gte: vi.fn((...args: unknown[]) => ({ op: 'gte', args }))
+    gte: vi.fn((...args: unknown[]) => ({ op: 'gte', args })),
+    isNull: vi.fn((...args: unknown[]) => ({ op: 'isNull', args })),
+    sql: vi.fn((...args: unknown[]) => ({ op: 'sql', args }))
 }));
 
 // ---------------------------------------------------------------------------
@@ -79,8 +106,35 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// Mock @sentry/node to capture Sentry.captureException calls
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn(),
+    init: vi.fn(),
+    withScope: vi.fn()
+}));
+
+// Mock revokeAddonForSubscriptionCancellation (addon lifecycle service)
+vi.mock('../../src/services/addon-lifecycle.service', () => ({
+    revokeAddonForSubscriptionCancellation: vi.fn()
+}));
+
+// Mock getAddonBySlug (billing config resolver)
+vi.mock('@repo/billing', () => ({
+    getAddonBySlug: vi.fn()
+}));
+
+// Mock clearEntitlementCache (entitlement middleware)
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: vi.fn(),
+    entitlementMiddleware: vi.fn()
+}));
+
+import { getAddonBySlug } from '@repo/billing';
+import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../src/middlewares/billing';
+import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { AddonExpirationService } from '../../src/services/addon-expiration.service';
+import { revokeAddonForSubscriptionCancellation } from '../../src/services/addon-lifecycle.service';
 import { lookupCustomerDetails } from '../../src/utils/customer-lookup';
 import { sendNotification } from '../../src/utils/notification-helper';
 
@@ -108,8 +162,19 @@ describe('Add-on Expiry Cron Job', () => {
         // Set up default DB chain for wasNotificationSent: returns empty (no prior notification)
         mockDbLimit.mockResolvedValue([]);
         mockDbWhere.mockReturnValue({ limit: mockDbLimit });
-        mockDbFrom.mockReturnValue({ where: mockDbWhere });
+        // mockDbFrom supports both the simple chain (.where) and the JOIN chain (.innerJoin)
+        // By default the innerJoin chain returns no orphaned purchases (empty array).
+        mockDbInnerJoin.mockReturnValue({ where: vi.fn().mockResolvedValue([]) });
+        mockDbFrom.mockReturnValue({ where: mockDbWhere, innerJoin: mockDbInnerJoin });
         mockDbSelect.mockReturnValue({ from: mockDbFrom });
+
+        // Set up default DB chain for the revocation retry phase UPDATE
+        mockDbUpdateWhere.mockResolvedValue([]);
+        mockDbUpdateSet.mockReturnValue({ where: mockDbUpdateWhere });
+        mockDbUpdate.mockReturnValue({ set: mockDbUpdateSet });
+
+        // Default: billing is initialized (tests that need null override this explicitly)
+        vi.mocked(getQZPayBilling).mockReturnValue({ api: 'default-mock-billing' } as never);
     });
 
     describe('Job Definition', () => {
@@ -396,6 +461,136 @@ describe('Add-on Expiry Cron Job', () => {
         });
     });
 
+    describe('Multiple addons expiring on the same day', () => {
+        it('should process and notify for two different addons expiring on the same day for the same customer', async () => {
+            // Arrange — two addons with the same expiration date, same customer
+            const ctx = createMockContext();
+            const expiresAt = new Date('2024-06-18T00:00:00Z');
+
+            const _mockExpiredAddons = [
+                {
+                    id: 'addon-same-day-1',
+                    customerId: 'cust-same',
+                    addonSlug: 'visibility-boost-7d',
+                    expiresAt,
+                    daysUntilExpiration: 0
+                },
+                {
+                    id: 'addon-same-day-2',
+                    customerId: 'cust-same',
+                    addonSlug: 'visibility-boost-30d',
+                    expiresAt,
+                    daysUntilExpiration: 0
+                }
+            ];
+
+            const mockService = {
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        processed: 2,
+                        failed: 0,
+                        errors: []
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'same@example.com',
+                name: 'Same Customer',
+                userId: 'user-same'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — both addons are processed (2 processed total)
+            expect(result.success).toBe(true);
+            expect(result.processed).toBe(2);
+            expect(result.errors).toBe(0);
+            expect(result.details?.expiredAddons).toBe(2);
+
+            // processExpiredAddons is called once (batch, not per addon)
+            expect(mockService.processExpiredAddons).toHaveBeenCalledTimes(1);
+        });
+
+        it('should send warning notifications for two different addons expiring on the same day', async () => {
+            // Arrange — two different addons for the same customer, both expiring in 3 days
+            const ctx = createMockContext();
+
+            const mockWarnAddons = [
+                {
+                    id: 'warn-1',
+                    customerId: 'cust-multi',
+                    addonSlug: 'extra-photos-20',
+                    expiresAt: new Date('2024-06-18T00:00:00Z'),
+                    daysUntilExpiration: 3
+                },
+                {
+                    id: 'warn-2',
+                    customerId: 'cust-multi',
+                    addonSlug: 'extra-accommodations-5',
+                    expiresAt: new Date('2024-06-18T00:00:00Z'),
+                    daysUntilExpiration: 3
+                }
+            ];
+
+            const mockService = {
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 0, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi
+                    .fn()
+                    .mockResolvedValueOnce({
+                        success: true,
+                        data: mockWarnAddons // 3-day warnings
+                    })
+                    .mockResolvedValueOnce({
+                        success: true,
+                        data: [] // no 1-day warnings
+                    })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'multi@example.com',
+                name: 'Multi Customer',
+                userId: 'user-multi'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — two notifications sent, one per addon
+            expect(result.success).toBe(true);
+            expect(result.details?.warningsSent).toBe(2);
+            expect(sendNotification).toHaveBeenCalledTimes(2);
+
+            // Both notifications target the same customer
+            const calls = vi.mocked(sendNotification).mock.calls;
+            expect(calls[0]![0]).toMatchObject({
+                customerId: 'cust-multi',
+                addonName: 'extra-photos-20',
+                daysRemaining: 3
+            });
+            expect(calls[1]![0]).toMatchObject({
+                customerId: 'cust-multi',
+                addonName: 'extra-accommodations-5',
+                daysRemaining: 3
+            });
+        });
+    });
+
     describe('Dry Run Mode', () => {
         it('should count expired add-ons without processing in dry-run mode', async () => {
             // Arrange
@@ -566,7 +761,58 @@ describe('Add-on Expiry Cron Job', () => {
 
             // Assert
             expect(result.success).toBe(true); // Job should not fail due to notification errors
-            expect(ctx.logger.debug).toHaveBeenCalled();
+            // Notification failures are logged at warn level (visible in production)
+            expect(ctx.logger.warn).toHaveBeenCalled();
+        });
+    });
+
+    describe('Billing Instance Initialization', () => {
+        it('should pass billing instance to AddonExpirationService constructor', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockBillingInstance = { api: 'mock-billing-instance', type: 'qzpay' };
+            const mockService = {
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 0, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBillingInstance as never);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            await addonExpiryJob.handler(ctx);
+
+            // Assert - AddonExpirationService must be constructed with the billing instance
+            expect(AddonExpirationService).toHaveBeenCalledWith(mockBillingInstance);
+        });
+
+        it('should log error and return early when getQZPayBilling returns null', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = {
+                processExpiredAddons: vi.fn(),
+                findExpiringAddons: vi.fn()
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(null as never);
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert - job must fail and return early without calling processExpiredAddons
+            expect(result.success).toBe(false);
+            expect(result.message).toContain('billing');
+            expect(result.processed).toBe(0);
+            expect(result.errors).toBeGreaterThan(0);
+            expect(mockService.processExpiredAddons).not.toHaveBeenCalled();
+            expect(mockService.findExpiringAddons).not.toHaveBeenCalled();
         });
     });
 
@@ -606,6 +852,471 @@ describe('Add-on Expiry Cron Job', () => {
                     dryRun: expect.any(Boolean)
                 });
             }
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Revocation Retry Phase
+    // -------------------------------------------------------------------------
+
+    describe('Revocation Retry Phase', () => {
+        /**
+         * Creates a minimal mock service that succeeds for the expiry phases
+         * (expired processing + 3-day/1-day warnings) so the retry phase tests
+         * can focus exclusively on the new behaviour.
+         */
+        function buildBaseService() {
+            return {
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 0, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+        }
+
+        /**
+         * Builds a mock `getDb()` return value that handles:
+         * - `.select().from().where().limit()` used by `wasNotificationSent`
+         * - `.select().from().innerJoin().where()` used by the retry phase query
+         * - `.update().set().where()` used by the retry phase updates
+         *
+         * @param orphanedPurchases - rows returned by the JOIN query
+         * @param updateResult - value resolved by update().set().where()
+         */
+        function buildMockDb(
+            orphanedPurchases: Array<{
+                id: string;
+                customerId: string;
+                addonSlug: string;
+                metadata: Record<string, unknown> | null;
+            }>,
+            updateResult: unknown[] = []
+        ) {
+            // SELECT used by wasNotificationSent (simple chain, no innerJoin)
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const _notifFrom = vi.fn().mockReturnValue({ where: notifWhere });
+
+            // SELECT used by the retry phase (JOIN chain)
+            const retryWhere = vi.fn().mockResolvedValue(orphanedPurchases);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi
+                .fn()
+                .mockReturnValue({ innerJoin: retryInnerJoin, where: notifWhere });
+
+            // UPDATE chain
+            const updateWhere = vi.fn().mockResolvedValue(updateResult);
+            const updateSet = vi.fn().mockReturnValue({ where: updateWhere });
+            const update = vi.fn().mockReturnValue({ set: updateSet });
+
+            // select() must differentiate between the two usage patterns.
+            // wasNotificationSent passes `{ id: billingNotificationLog.id }` as fields.
+            // The retry phase passes a multi-field object including addonSlug.
+            // We distinguish by checking if the first call argument contains 'addonSlug'.
+            const select = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            return {
+                db: { select, update },
+                spies: {
+                    retryWhere,
+                    retryInnerJoin,
+                    retryFrom,
+                    update,
+                    updateSet,
+                    updateWhere,
+                    select
+                }
+            };
+        }
+
+        it('should revoke an orphaned active addon and set status to canceled', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchase = {
+                id: 'purchase-orphan-1',
+                customerId: 'cust-orphan',
+                addonSlug: 'visibility-boost-7d',
+                metadata: null
+            };
+
+            const { db } = buildMockDb([purchase]);
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+
+            vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'visibility-boost-7d' } as never);
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: purchase.id,
+                addonSlug: purchase.addonSlug,
+                addonType: 'entitlement',
+                outcome: 'success'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationRetried).toBe(1);
+            expect(result.details?.revocationErrors).toBe(0);
+            expect(revokeAddonForSubscriptionCancellation).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    customerId: purchase.customerId,
+                    purchase: { id: purchase.id, addonSlug: purchase.addonSlug }
+                })
+            );
+            expect(clearEntitlementCache).toHaveBeenCalledWith(purchase.customerId);
+        });
+
+        it('should skip addon when revocationRetryCount has reached the limit of 3', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchase = {
+                id: 'purchase-exhausted',
+                customerId: 'cust-exhausted',
+                addonSlug: 'extra-listings',
+                metadata: { revocationRetryCount: 3 }
+            };
+
+            const { db } = buildMockDb([purchase]);
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+            // debug log must be written for the skipped purchase
+            expect(ctx.logger.debug).toHaveBeenCalledWith(
+                expect.stringContaining('retry limit'),
+                expect.objectContaining({ purchaseId: purchase.id })
+            );
+        });
+
+        it('should increment revocationRetryCount on failed revocation outcome', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchase = {
+                id: 'purchase-fail-1',
+                customerId: 'cust-fail',
+                addonSlug: 'unknown-addon',
+                metadata: { revocationRetryCount: 0 }
+            };
+
+            const updateWhereSpy = vi.fn().mockResolvedValue([]);
+            const updateSetSpy = vi.fn().mockReturnValue({ where: updateWhereSpy });
+            const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
+
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
+
+            const selectSpy = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+
+            vi.mocked(getAddonBySlug).mockReturnValue(undefined);
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: purchase.id,
+                addonSlug: purchase.addonSlug,
+                addonType: 'unknown',
+                outcome: 'failed',
+                error: 'Addon definition not found'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationErrors).toBe(1);
+            expect(updateSpy).toHaveBeenCalled();
+            // Verify metadata was updated with incremented count
+            expect(updateSetSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    metadata: expect.objectContaining({ revocationRetryCount: 1 })
+                })
+            );
+            // lastRevocationAttempt must also be set
+            expect(updateSetSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    metadata: expect.objectContaining({
+                        lastRevocationAttempt: expect.any(String)
+                    })
+                })
+            );
+        });
+
+        it('should call Sentry.captureException when retry count reaches 3', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchase = {
+                id: 'purchase-sentry',
+                customerId: 'cust-sentry',
+                addonSlug: 'featured-listing',
+                metadata: { revocationRetryCount: 2 }
+            };
+
+            const updateWhereSpy = vi.fn().mockResolvedValue([]);
+            const updateSetSpy = vi.fn().mockReturnValue({ where: updateWhereSpy });
+            const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
+
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
+
+            const selectSpy = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+
+            vi.mocked(getAddonBySlug).mockReturnValue(undefined);
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: purchase.id,
+                addonSlug: purchase.addonSlug,
+                addonType: 'unknown',
+                outcome: 'failed',
+                error: 'Addon definition not found'
+            });
+
+            // Act
+            await addonExpiryJob.handler(ctx);
+
+            // Assert: retryCount was 2, after failure it becomes 3 >= 3, so Sentry must be called
+            expect(Sentry.captureException).toHaveBeenCalledWith(
+                expect.any(Error),
+                expect.objectContaining({
+                    tags: expect.objectContaining({ action: 'cron_retry_exhausted' }),
+                    extra: expect.objectContaining({
+                        customerId: purchase.customerId,
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug
+                    })
+                })
+            );
+        });
+
+        it('should process orphaned addons from multiple customers and call clearEntitlementCache for each', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchases = [
+                {
+                    id: 'purchase-multi-1',
+                    customerId: 'cust-alpha',
+                    addonSlug: 'visibility-boost-7d',
+                    metadata: null
+                },
+                {
+                    id: 'purchase-multi-2',
+                    customerId: 'cust-beta',
+                    addonSlug: 'extra-listings',
+                    metadata: null
+                }
+            ];
+
+            const updateWhereSpy = vi.fn().mockResolvedValue([]);
+            const updateSetSpy = vi.fn().mockReturnValue({ where: updateWhereSpy });
+            const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
+
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryWhere = vi.fn().mockResolvedValue(purchases);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
+
+            const selectSpy = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+
+            vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'test' } as never);
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: 'any',
+                addonSlug: 'any',
+                addonType: 'entitlement',
+                outcome: 'success'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationRetried).toBe(2);
+            expect(clearEntitlementCache).toHaveBeenCalledTimes(2);
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-alpha');
+            expect(clearEntitlementCache).toHaveBeenCalledWith('cust-beta');
+        });
+
+        it('should do nothing when there are no orphaned active addons', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const mockService = buildBaseService();
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const { db } = buildMockDb([]); // empty result
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue(db as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.revocationRetried).toBe(0);
+            expect(result.details?.revocationErrors).toBe(0);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
+        });
+
+        it('should still run the expiry and warning phases when retry phase is active', async () => {
+            // Arrange: set up a scenario with both expired addons AND an orphaned purchase
+            const ctx = createMockContext();
+            const mockService = {
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 2, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const orphanPurchase = {
+                id: 'purchase-coexist',
+                customerId: 'cust-coexist',
+                addonSlug: 'visibility-boost-7d',
+                metadata: null
+            };
+
+            const updateWhereSpy = vi.fn().mockResolvedValue([]);
+            const updateSetSpy = vi.fn().mockReturnValue({ where: updateWhereSpy });
+            const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
+
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryWhere = vi.fn().mockResolvedValue([orphanPurchase]);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
+
+            const selectSpy = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+
+            vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'visibility-boost-7d' } as never);
+            vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
+                purchaseId: orphanPurchase.id,
+                addonSlug: orphanPurchase.addonSlug,
+                addonType: 'entitlement',
+                outcome: 'success'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert: existing phases ran AND retry phase ran
+            expect(result.success).toBe(true);
+            expect(result.details?.expiredAddons).toBe(2);
+            expect(result.details?.revocationRetried).toBe(1);
+            expect(mockService.processExpiredAddons).toHaveBeenCalledTimes(1);
+            expect(mockService.findExpiringAddons).toHaveBeenCalledTimes(2); // 3-day + 1-day
+        });
+
+        it('should only log count and not revoke in dry run mode', async () => {
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+
+            const purchase = {
+                id: 'purchase-dryrun',
+                customerId: 'cust-dryrun',
+                addonSlug: 'visibility-boost-7d',
+                metadata: null
+            };
+
+            const updateSpy = vi.fn();
+
+            const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
+            const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
+
+            const selectSpy = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return {
+                    from: isRetryQuery ? retryFrom : vi.fn().mockReturnValue({ where: notifWhere })
+                };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert: dry run should only log count, not call revoke or update
+            expect(result.success).toBe(true);
+            expect(result.details?.dryRun).toBe(true);
+            expect(revokeAddonForSubscriptionCancellation).not.toHaveBeenCalled();
+            expect(updateSpy).not.toHaveBeenCalled();
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
+            // The dry run path logs an info with the purchaseId
+            expect(ctx.logger.info).toHaveBeenCalledWith(
+                expect.stringContaining('Dry run mode - would revoke orphaned add-on'),
+                expect.objectContaining({ purchaseId: purchase.id })
+            );
         });
     });
 });
