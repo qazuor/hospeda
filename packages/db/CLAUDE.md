@@ -281,26 +281,41 @@ const result = await db.execute(
 
 ## Migrations
 
-### Generate Migration
+The migrations folder (`src/migrations/`) is clean and will be populated when the first
+production migration is generated. The meta journal starts empty.
 
-After changing a schema file:
+### Development workflow (preferred)
 
-```bash
-pnpm db:generate
-```
-
-This creates a new migration file in `drizzle/migrations/`.
-
-### Apply Migrations
+During development, bypass the migration system entirely and push the schema directly to the DB:
 
 ```bash
-pnpm db:migrate
+pnpm db:push          # Push schema changes directly (no migration file generated)
 ```
+
+After any `db:push`, always run the extras script to apply triggers, materialized views, and
+JSONB CHECK constraints that Drizzle cannot manage:
+
+```bash
+packages/db/scripts/apply-postgres-extras.sh
+```
+
+### Production workflow
+
+When preparing a release, generate a migration file from the current schema state, then apply it:
+
+```bash
+pnpm db:generate      # Generate .sql migration file from schema diff
+pnpm db:migrate       # Apply pending migration files to the DB
+```
+
+> NOTE: `db:migrate` in `package.json` is aliased to `drizzle-kit push` — for production use
+> run `drizzle-kit migrate` directly via `pnpm run drizzle-kit migrate --config drizzle.config.ts`
+> after generating the file with `db:generate`.
 
 ### Migration File Example
 
 ```sql
--- drizzle/migrations/0001_add_accommodations.sql
+-- src/migrations/0000_initial_schema.sql
 CREATE TABLE accommodations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name VARCHAR(255) NOT NULL,
@@ -538,6 +553,35 @@ The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `u
 - Migrations are forward-only - no rollback support
 - Use Drizzle Studio for visual database management
 
+## PostgreSQL Extras: Features Drizzle Cannot Declare
+
+Three categories of PostgreSQL features are **not** visible to `drizzle-kit push` or
+`drizzle-kit generate` and must be applied separately via a dedicated script:
+
+| Category | Objects | Migration files |
+|----------|---------|-----------------|
+| Materialized view | `search_index` + GIN index + `refresh_search_index()` | `manual/0016`, `manual/0017`, `manual/0018` |
+| Triggers | `set_updated_at` (all tables), `delete_entity_bookmarks` (5 tables) | `manual/0019`, `manual/0020` |
+| CHECK constraints | `billing_addon_purchases`: status, limit_adjustments, entitlement_adjustments | `0025`, `0026` |
+
+### Applying after a schema push
+
+After any `drizzle-kit push` or `pnpm db:fresh-dev`, run:
+
+```bash
+packages/db/scripts/apply-postgres-extras.sh
+# or with an explicit URL:
+packages/db/scripts/apply-postgres-extras.sh "postgresql://user:pass@host:5432/hospeda"
+```
+
+The script is **idempotent** (uses `IF NOT EXISTS` / `CREATE OR REPLACE` throughout).
+
+After `pnpm db:migrate` on a fresh environment, the numbered migrations (0025, 0026) are already
+applied by Drizzle, but the `manual/` migrations are not. Run the script to cover those too.
+
+For full details, constraint definitions, and verification queries see:
+[packages/db/docs/triggers-manifest.md](docs/triggers-manifest.md)
+
 ## Common Gotchas
 
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
@@ -545,10 +589,14 @@ The `table` parameter comes BEFORE the default `sortOrder` parameter. Biome's `u
 - `billing_customers` uses `segment` column, not `category`
 - PostgreSQL `numeric()` returns strings in JS - use integer for monetary values (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
+- **`drizzle-kit push` alone is not enough** .. triggers, materialized views, and JSONB CHECK
+  constraints are invisible to Drizzle. Always run `apply-postgres-extras.sh` afterward.
 
 ## Related Documentation
 
 - [ADR-006: Integer Monetary Values](../../docs/decisions/ADR-006-integer-monetary-values.md)
+- [ADR-017: PostgreSQL-Specific Features via Manual Migrations](../../docs/decisions/ADR-017-postgres-specific-features.md)
+- [Triggers and Constraints Manifest](docs/triggers-manifest.md)
 - [Database Migrations Guide](../../docs/guides/database-migrations.md)
 
 <claude-mem-context>

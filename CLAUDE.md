@@ -98,6 +98,12 @@ pnpm db:fresh-dev     # Reset + push schema + seed (dev shortcut)
 pnpm build            # Build all packages
 pnpm build:api        # Build API for production
 
+# Deploy (manual fallback — normal deploys go through CI/CD)
+pnpm deploy:api       # Deploy API to Vercel production
+pnpm deploy:web       # Deploy web app to Vercel production
+pnpm deploy:admin     # Deploy admin app to Vercel production
+pnpm deploy:all       # Deploy all three apps sequentially
+
 # Environment
 pnpm env:pull         # Pull env vars from remote (Vercel / secret store)
 pnpm env:push         # Push local env vars to remote
@@ -137,6 +143,8 @@ pnpm env:check        # Validate env vars against the registry in packages/confi
 - **Minimum 90% coverage** target
 - **Run tests before committing**
 - Test files live in `test/` directories alongside or within `src/`
+- `.only()` and hard-coded `.skip()` are **forbidden** in committed code — CI will fail
+- Use `it.skipIf(condition)` for legitimate conditional test skipping
 
 ### Git Conventions
 
@@ -254,6 +262,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Env vars**: Server-side use `HOSPEDA_` prefix, client-side use `PUBLIC_` prefix (web) or `VITE_` prefix (admin)
 - **Legacy env var names**: `LEGACY_ENV_MAPPINGS` in `apps/api/src/utils/env.ts` maps old unprefixed names (e.g., `CRON_SECRET`) to their `HOSPEDA_*` equivalents for backward compat. New code must use only `HOSPEDA_*` names.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
+- **`drizzle-kit push` is not enough**: triggers, materialized views (`search_index`), and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any `drizzle-kit push` or `pnpm db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh`. See [ADR-017](docs/decisions/ADR-017-postgres-specific-features.md) and [triggers manifest](packages/db/docs/triggers-manifest.md).
 
 ## Single Source of Truth
 

@@ -3,7 +3,14 @@ import { billingCustomers } from '../../billing/index.ts';
 
 /**
  * Billing notification log table
- * Tracks all billing-related notifications sent to customers
+ * Tracks all billing-related notifications sent to customers.
+ *
+ * This is the canonical Drizzle schema definition for the `billing_notification_log`
+ * table. The QZPay billing package does NOT own this table — it is Hospeda-specific
+ * and managed via Drizzle migrations in this package.
+ *
+ * The `idempotencyKey` field is stored inside the JSONB `metadata` column as
+ * `metadata->>'idempotencyKey'` for deduplication queries in the addon-expiry cron job.
  */
 export const billingNotificationLog = pgTable(
     'billing_notification_log',
