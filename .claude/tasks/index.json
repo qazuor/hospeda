@@ -42,6 +42,55 @@
             "status": "completed",
             "progress": "24/24",
             "path": "SPEC-036-zod-validation-i18n"
+        },
+        {
+            "specId": "SPEC-036-gaps",
+            "title": "SPEC-036 Gaps Remediation - Zod Validation i18n",
+            "status": "pending",
+            "progress": "0/29",
+            "path": "SPEC-036-gaps-remediation"
+        },
+        {
+            "specId": "SPEC-026-GAPS",
+            "title": "Security Testing Gaps Remediation",
+            "status": "pending",
+            "progress": "0/34",
+            "path": "SPEC-026-security-testing-gaps"
+        },
+        {
+            "specId": "SPEC-038",
+            "title": "Addon Entitlements Architecture Fix",
+            "status": "pending",
+            "progress": "0/15",
+            "path": "SPEC-038-addon-entitlements-architecture"
+        },
+        {
+            "specId": "SPEC-034",
+            "title": "On-Demand ISR Revalidation System",
+            "status": "completed",
+            "progress": "86/86",
+            "path": "SPEC-034-on-demand-isr-revalidation"
+        },
+        {
+            "specId": "SPEC-020-GAPS",
+            "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
+            "status": "pending",
+            "progress": "0/17",
+            "path": "SPEC-020-gaps-remediation"
+        },
+        {
+            "specId": "SPEC-044",
+            "title": "Addon Purchase Schema Cleanup",
+            "status": "pending",
+            "progress": "0/21",
+            "path": "SPEC-044-addon-purchase-schema-cleanup"
+        },
+        {
+            "specId": "SPEC-042",
+            "title": "CSP Nonce/Hash Integration",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-042-csp-nonce-integration"
         }
     ],
     "standalone": {
