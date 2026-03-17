@@ -7,9 +7,16 @@
 import { createRouter } from '../../../utils/create-app';
 import { notificationsRouter } from '../notifications';
 import { settingsRouter } from '../settings';
-import { listCustomerAddonsRoute } from './customer-addons';
+import { adminAddonsRouter } from './addons';
+import {
+    activateCustomerAddonRoute,
+    expireCustomerAddonRoute,
+    listCustomerAddonsRoute
+} from './customer-addons';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
+import { adminPlansRouter } from './plans';
+import { subscriptionCancelRoute } from './subscription-cancel';
 import { subscriptionEventsRoute } from './subscription-events';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
@@ -30,10 +37,25 @@ app.route('/notifications', notificationsRouter);
 // GET /customer-addons - List purchased add-ons across all customers
 app.route('/customer-addons', listCustomerAddonsRoute);
 
+// POST /customer-addons/:id/expire - Expire an active add-on purchase
+app.route('/customer-addons', expireCustomerAddonRoute);
+
+// POST /customer-addons/:id/activate - Activate an expired/canceled add-on purchase
+app.route('/customer-addons', activateCustomerAddonRoute);
+
 // GET /metrics, /metrics/activity, /metrics/system-usage, /metrics/approaching-limits
 app.route('/metrics', adminMetricsRouter);
 
 // GET /subscriptions/:id/events - List lifecycle events for a subscription
 app.route('/subscriptions', subscriptionEventsRoute);
+
+// POST /subscriptions/:id/cancel - Cancel a subscription (admin only)
+app.route('/subscriptions', subscriptionCancelRoute);
+
+// GET /addons, /addons/:slug - Add-on definitions (admin only)
+app.route('/addons', adminAddonsRouter);
+
+// GET /plans, /plans/:id - Plan definitions (admin only)
+app.route('/plans', adminPlansRouter);
 
 export { app as adminBillingRoutes };

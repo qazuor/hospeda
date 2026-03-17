@@ -25,6 +25,7 @@ export enum PermissionCategoryEnum {
     POST_SPONSORSHIP = 'POST_SPONSORSHIP',
     PURCHASE = 'PURCHASE',
     REFUND = 'REFUND',
+    REVALIDATION = 'REVALIDATION',
     USER = 'USER',
     USER_BOOKMARK = 'USER_BOOKMARK',
     CLIENT = 'CLIENT',
@@ -719,5 +720,12 @@ export enum PermissionEnum {
     BILLING_READ_ALL = 'billing.readAll', // Allows viewing all billing data (notifications, usage, webhooks).
     BILLING_PROMO_CODE_READ = 'billing.promoCode.read', // Allows viewing promo codes.
     BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
-    BILLING_METRICS_READ = 'billing.metrics.read' // Allows viewing billing metrics and analytics.
+    BILLING_METRICS_READ = 'billing.metrics.read', // Allows viewing billing metrics and analytics.
+    BILLING_MANAGE = 'billing.manage', // Allows managing billing records (expire, activate add-ons, etc.).
+
+    // REVALIDATION: Permissions related to on-demand ISR revalidation management
+    REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
+    REVALIDATION_CONFIG_VIEW = 'revalidation.config.view', // Allows viewing revalidation configuration per entity type.
+    REVALIDATION_CONFIG_EDIT = 'revalidation.config.edit', // Allows editing revalidation configuration (intervals, debounce, enabled).
+    REVALIDATION_LOG_VIEW = 'revalidation.log.view' // Allows viewing the revalidation audit log.
 }
