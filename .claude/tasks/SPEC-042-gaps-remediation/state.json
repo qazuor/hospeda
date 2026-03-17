@@ -1,0 +1,629 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-042-GAPS",
+    "title": "CSP Security Gaps Remediation",
+    "created": "2026-03-17T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scope permissive CSP to /docs only in route factory",
+            "description": "GAP-042-39: apps/api/src/utils/route-factory.ts hardcodes permissive CSP (unsafe-inline + CDN domains cdn.jsdelivr.net, unpkg.com) on ALL routes via applyRouteMiddlewares. Move the permissive secureHeaders() config to only apply for /docs/* routes. Non-docs routes should inherit the strict CSP from security.ts middleware (scriptSrc: [\"'self'\"]). Tests: verify non-docs routes do NOT have unsafe-inline in CSP header, verify docs routes still have permissive CSP for Swagger/Scalar UI.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Read route-factory.ts and understand applyRouteMiddlewares flow",
+                    "completed": false
+                },
+                {
+                    "title": "Conditionally apply permissive CSP only for docs routes",
+                    "completed": false
+                },
+                {
+                    "title": "Verify non-docs routes use strict CSP from security.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["security", "api", "critical"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Remove inline onclick from 500.astro",
+            "description": "GAP-042-42: apps/web/src/pages/500.astro:141 has onclick=\"window.location.reload()\" which violates CSP. Replace with addEventListener in a <script> tag. Add id=\"retry-btn\" to button. Astro will auto-hash the script. Tests: verify no onclick= attributes exist in 500.astro.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "Remove onclick attribute from button", "completed": false },
+                { "title": "Add script tag with addEventListener for reload", "completed": false }
+            ],
+            "tags": ["security", "web", "critical"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Preserve non-CSP headers on /docs routes",
+            "description": "GAP-042-30: apps/api/src/middlewares/security.ts:40 bypasses ALL security headers for /docs paths. Change to only skip CSP-related config, keeping HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy. Tests: verify /docs routes have HSTS and X-Frame-Options headers.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Read security.ts and understand docs bypass logic",
+                    "completed": false
+                },
+                {
+                    "title": "Restructure to only skip CSP for docs, keep other headers",
+                    "completed": false
+                },
+                { "title": "Verify existing tests still pass", "completed": false }
+            ],
+            "tags": ["security", "api", "critical"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Disable experimental.csp in Astro config",
+            "description": "GAP-042-03: Remove experimental: { csp: { ... } } block from apps/web/astro.config.mjs (lines 137-160). CSP is handled 100% via HTTP header middleware. This eliminates the dual-policy conflict (enforcing meta tag vs report-only header). Add a comment explaining CSP is managed by middleware.ts.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Remove experimental.csp block from astro.config.mjs",
+                    "completed": false
+                },
+                { "title": "Add comment explaining CSP is in middleware.ts", "completed": false }
+            ],
+            "tags": ["config", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Remove https: from web script-src",
+            "description": "GAP-042-48: apps/web/src/middleware.ts line 111 has script-src with https: wildcard. Remove https: token. strict-dynamic ignores it in CSP3, and in CSP1 it allows scripts from any HTTPS domain. unsafe-inline already provides CSP1 fallback.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Remove https: from script-src directive in middleware.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["security", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix xXssProtection to '0' in API",
+            "description": "GAP-042-37: Change X-XSS-Protection from '1; mode=block' to '0' in apps/api/src/utils/env.ts (default value) and apps/api/src/utils/route-factory.ts (hardcoded value). The '1; mode=block' can introduce XSS in IE/old Edge. Modern recommendation is '0'. vercel.json already uses '0'.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Change default in env.ts to '0'", "completed": false },
+                { "title": "Change hardcoded value in route-factory.ts to '0'", "completed": false }
+            ],
+            "tags": ["security", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Restrict API fontSrc to self only",
+            "description": "GAP-042-36: apps/api/src/middlewares/security.ts line 57 has fontSrc: [\"'self'\", 'https:', 'data:']. API serves JSON, not HTML with fonts. Change to fontSrc: [\"'self'\"] (keep self for docs routes that may render fonts).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Change fontSrc to [\"'self'\"] in security.ts", "completed": false }
+            ],
+            "tags": ["security", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add upgrade-insecure-requests to all 3 apps",
+            "description": "GAP-042-26: Add upgrade-insecure-requests directive to CSP in: (1) apps/web/src/middleware.ts directives array, (2) apps/admin/src/lib/csp-helpers.ts directives array, (3) apps/api/src/middlewares/security.ts as upgradeInsecureRequests: []. This instructs browsers to auto-upgrade HTTP to HTTPS for all resource requests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-016", "T-019", "T-021"],
+            "subtasks": [
+                { "title": "Add to web middleware.ts CSP directives", "completed": false },
+                { "title": "Add to admin csp-helpers.ts CSP directives", "completed": false },
+                { "title": "Add to API security.ts secureHeaders config", "completed": false }
+            ],
+            "tags": ["security", "web", "admin", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add media-src 'self' to web and admin CSP",
+            "description": "GAP-042-35: Add explicit media-src 'self' to: (1) apps/web/src/middleware.ts directives array, (2) apps/admin/src/lib/csp-helpers.ts directives array. API already has mediaSrc: [\"'self'\"].",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-019", "T-021"],
+            "subtasks": [
+                { "title": "Add media-src 'self' to web middleware.ts", "completed": false },
+                { "title": "Add media-src 'self' to admin csp-helpers.ts", "completed": false }
+            ],
+            "tags": ["security", "web", "admin"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Change Sentry domain to *.sentry.io in CSP",
+            "description": "GAP-042-29: Replace https://*.ingest.sentry.io with https://*.sentry.io in connect-src of: (1) apps/web/src/middleware.ts line 115, (2) apps/admin/src/lib/csp-helpers.ts line 67. Broader pattern per Sentry docs recommendation.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-018"],
+            "subtasks": [
+                { "title": "Update web middleware.ts connect-src", "completed": false },
+                { "title": "Update admin csp-helpers.ts connect-src", "completed": false }
+            ],
+            "tags": ["config", "web", "admin"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update default CSP env var in API env.ts",
+            "description": "GAP-042-09: apps/api/src/utils/env.ts line 200 has API_SECURITY_CONTENT_SECURITY_POLICY default with unsafe-inline. The middleware ignores this env var. Either update default to match actual strict policy or remove the env var if unused. Verify if getSecurityConfig() in env-config-helpers.ts consumes it.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Check if env var is consumed anywhere", "completed": false },
+                { "title": "Update default or remove unused env var", "completed": false }
+            ],
+            "tags": ["config", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Replace inline style animation with CSS class in router.tsx",
+            "description": "GAP-042-50: apps/admin/src/router.tsx:30 has style={{animation: 'router-pending-bar 1.5s ease-in-out infinite'}}. Create CSS class .animate-router-pending in apps/admin/src/styles.css and replace style={{}} with className.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add .animate-router-pending class to styles.css", "completed": false },
+                { "title": "Replace style={{}} with className in router.tsx", "completed": false }
+            ],
+            "tags": ["admin", "css"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Simplify VITE_SENTRY_DSN env access in admin middleware",
+            "description": "GAP-042-44: apps/admin/src/middleware.ts:41 has import.meta.env.VITE_SENTRY_DSN || process.env.VITE_SENTRY_DSN || ''. Middleware runs server-side only, so simplify to process.env.VITE_SENTRY_DSN || ''. Add comment explaining server-side context.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Simplify to process.env.VITE_SENTRY_DSN || ''", "completed": false },
+                { "title": "Add comment about server-side context", "completed": false }
+            ],
+            "tags": ["admin", "config"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Restrict MercadoPago wildcard to specific subdomains",
+            "description": "GAP-042-40: apps/admin/src/lib/csp-helpers.ts:67-68 has https://*.mercadopago.com in connect-src and frame-src. Replace with specific subdomains: connect-src gets https://api.mercadopago.com https://sdk.mercadopago.com https://www.mercadopago.com, frame-src gets https://www.mercadopago.com. Tests: verify CSP contains specific subdomains not wildcard.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Replace wildcard in connect-src with specific subdomains",
+                    "completed": false
+                },
+                {
+                    "title": "Replace wildcard in frame-src with specific subdomain",
+                    "completed": false
+                }
+            ],
+            "tags": ["security", "admin"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add static CSP-Report-Only header in admin vercel.json",
+            "description": "GAP-042-51: Add Content-Security-Policy-Report-Only header in apps/admin/vercel.json as SSR fallback. Use baseline policy matching buildCspDirectives output but without nonce (static headers can't have dynamic nonces). This covers the SSR initial load that middleware doesn't reach.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Compose static CSP-Report-Only header value", "completed": false },
+                { "title": "Add to admin vercel.json headers block", "completed": false }
+            ],
+            "tags": ["security", "admin", "config"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add complete Permissions-Policy to web and admin vercel.json",
+            "description": "GAP-042-32: Update Permissions-Policy in apps/web/vercel.json and apps/admin/vercel.json from 'camera=(), microphone=(), geolocation=()' to include: payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=() matching the API's comprehensive list.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                { "title": "Update web vercel.json Permissions-Policy", "completed": false },
+                { "title": "Update admin vercel.json Permissions-Policy", "completed": false }
+            ],
+            "tags": ["security", "config"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Remove duplicate security headers from vercel.json files",
+            "description": "GAP-042-11: Remove headers from apps/web/vercel.json, apps/admin/vercel.json, apps/api/vercel.json that are already set by middleware (X-Content-Type-Options, X-Frame-Options, Referrer-Policy, HSTS, X-XSS-Protection). Keep vercel.json only for: Permissions-Policy, static CSP-Report-Only fallback (admin), cache headers, X-Robots-Tag. Add comment explaining middleware handles security headers.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-006", "T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Clean web vercel.json duplicate headers", "completed": false },
+                { "title": "Clean admin vercel.json duplicate headers", "completed": false },
+                { "title": "Clean API vercel.json duplicate headers", "completed": false },
+                { "title": "Add comments explaining middleware handles these", "completed": false }
+            ],
+            "tags": ["config", "cleanup"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Extract buildSentryReportUri to @repo/utils",
+            "description": "GAP-042-08: Move buildSentryReportUri() from apps/web/src/lib/middleware-helpers.ts and apps/admin/src/lib/csp-helpers.ts to packages/utils/src/sentry.ts. Export from packages/utils/src/index.ts. Update imports in both apps. Remove local copies and 'intentionally duplicated' NOTE comments. Add tests in packages/utils/test/sentry.test.ts covering: valid DSN, invalid DSN, missing projectId, missing key.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Create packages/utils/src/sentry.ts with the function",
+                    "completed": false
+                },
+                { "title": "Export from packages/utils/src/index.ts", "completed": false },
+                { "title": "Update web middleware-helpers.ts import", "completed": false },
+                { "title": "Update admin csp-helpers.ts import", "completed": false },
+                { "title": "Add tests in packages/utils/test/sentry.test.ts", "completed": false }
+            ],
+            "tags": ["refactor", "utils"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add missing CSP helper tests for admin",
+            "description": "GAP-042-23: Add 3-4 tests to apps/admin/test/lib/csp-helpers.test.ts: (1) buildSentryReportUri with DSN missing key, (2) buildCspDirectives includes upgrade-insecure-requests, (3) buildCspDirectives includes media-src, (4) buildCspDirectives has specific MercadoPago subdomains not wildcard. ~50 lines.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-008", "T-009", "T-014", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add test for DSN missing key", "completed": false },
+                { "title": "Add test for upgrade-insecure-requests presence", "completed": false },
+                { "title": "Add test for media-src presence", "completed": false },
+                { "title": "Add test for specific MercadoPago subdomains", "completed": false }
+            ],
+            "tags": ["testing", "admin"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add nonce security tests",
+            "description": "GAP-042-41: Create apps/admin/test/lib/csp-nonce.test.ts with tests: (1) nonce is 22 chars base64url (128 bits), (2) two sequential nonces are different (uniqueness), (3) nonce matches /^[A-Za-z0-9_-]+$/ (base64url format), (4) nonce is included in CSP header value from buildCspDirectives. ~30 lines.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create test file csp-nonce.test.ts", "completed": false },
+                { "title": "Add length/entropy test", "completed": false },
+                { "title": "Add uniqueness test", "completed": false },
+                { "title": "Add format validation test", "completed": false }
+            ],
+            "tags": ["testing", "security", "admin"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add CSP header integration tests",
+            "description": "GAP-042-06: Create integration tests verifying CSP headers in responses. (1) apps/web/test/middleware/csp-headers.test.ts: test onRequest middleware sets Content-Security-Policy-Report-Only header with expected directives (script-src, style-src, connect-src, upgrade-insecure-requests). (2) apps/admin/test/middleware/csp-headers.test.ts: test buildCspDirectives output is valid CSP syntax. ~60 lines total.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create web CSP header integration test", "completed": false },
+                { "title": "Create admin CSP header integration test", "completed": false },
+                { "title": "Verify all expected directives are present", "completed": false }
+            ],
+            "tags": ["testing", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Add CI check for CSP-incompatible patterns",
+            "description": "GAP-042-46: Add CI step or script that greps for CSP-incompatible patterns in .astro and .tsx source files: onclick=, onload=, onerror=, onsubmit=, eval(, new Function(, document.write(, javascript:. Exclude test files and node_modules. Exit 1 if matches found. Can be a shell script at scripts/check-csp-patterns.sh or inline CI step. ~15 lines.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create grep script for CSP-incompatible patterns", "completed": false },
+                { "title": "Add CI step to .github/workflows/ci.yml", "completed": false },
+                { "title": "Verify it passes after onclick fix in T-002", "completed": false }
+            ],
+            "tags": ["ci-cd", "security"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add CSP header validation in CI",
+            "description": "GAP-042-24: Create a vitest test file (scripts/validate-csp.test.ts or similar) that imports CSP configs from all 3 apps and validates: (1) no unsafe-inline in non-fallback script-src, (2) no https: wildcard in script-src, (3) upgrade-insecure-requests present, (4) object-src 'none' present, (5) frame-ancestors present. Add as part of pnpm test run. ~40 lines.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create CSP validation test file", "completed": false },
+                { "title": "Add validation rules for required directives", "completed": false },
+                { "title": "Ensure test runs in CI via pnpm test", "completed": false }
+            ],
+            "tags": ["ci-cd", "security", "testing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Document setResponseHeader usage in admin middleware",
+            "description": "GAP-042-20: Add JSDoc comment in apps/admin/src/middleware.ts above the setResponseHeader call (line 47) explaining: (1) why setResponseHeader() is used instead of spec's getResponseHeaders().set() pattern, (2) that it's an H3 API accessing event from async local storage, (3) that it only works in server function context, not initial SSR.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add JSDoc explaining pattern choice and limitations",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "admin"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Document all inline scripts in web app",
+            "description": "GAP-042-22: Create apps/web/docs/csp-inline-scripts.md listing every component with <script> tags: BaseLayout.astro (FOUC + scroll-reveal, is:inline), Header.astro, Footer.astro, ThemeToggle.astro, NavigationProgress.astro, AccordionFAQ.astro, SortDropdown.astro, HeroSection.astro, DestinationCarousel.astro, DestinationPreview.astro, LitoralMap.astro. For each: location, purpose, CSP handling (Astro auto-hash vs is:inline).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Grep for all script tags in web components", "completed": false },
+                { "title": "Document each script's purpose and CSP handling", "completed": false },
+                { "title": "Create csp-inline-scripts.md", "completed": false }
+            ],
+            "tags": ["docs", "web"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Verify web build after CSP changes",
+            "description": "GAP-042-16: Run pnpm build for web app after all CSP changes. Verify build completes without errors. Check for minimatch dependency issue reported in original gap. Fix if broken.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-005", "T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm build for web app", "completed": false },
+                { "title": "Verify no errors, fix if needed", "completed": false }
+            ],
+            "tags": ["verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Verify admin build after CSP changes",
+            "description": "GAP-042-17: Run pnpm build for admin app after all CSP changes. Verify build completes without errors. Check for VITE_API_URL env validation issue reported in original gap. Fix if broken.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm build for admin app", "completed": false },
+                { "title": "Verify no errors, fix if needed", "completed": false }
+            ],
+            "tags": ["verification"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 27,
+        "pending": 27,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.4
+    }
+}

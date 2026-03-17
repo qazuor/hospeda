@@ -91,6 +91,48 @@
             "status": "completed",
             "progress": "20/20",
             "path": "SPEC-042-csp-nonce-integration"
+        },
+        {
+            "specId": "SPEC-043",
+            "title": "Addon Lifecycle Events",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-043-addon-lifecycle-events"
+        },
+        {
+            "specId": "SPEC-043-GAPS",
+            "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+            "status": "pending",
+            "progress": "0/65",
+            "path": "SPEC-043-gaps-remediation"
+        },
+        {
+            "specId": "SPEC-042-GAPS",
+            "title": "CSP Security Gaps Remediation",
+            "status": "pending",
+            "progress": "0/27",
+            "path": "SPEC-042-gaps-remediation"
+        },
+        {
+            "specId": "SPEC-034-GAPS",
+            "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
+            "status": "pending",
+            "progress": "0/28",
+            "path": "SPEC-034-gaps-remediation"
+        },
+        {
+            "specId": "SPEC-040",
+            "title": "Critical Package Coverage - auth-ui, billing, logger, email",
+            "status": "pending",
+            "progress": "0/35",
+            "path": "SPEC-040-critical-package-coverage"
+        },
+        {
+            "specId": "SPEC-041",
+            "title": "Admin Integration Tests",
+            "status": "pending",
+            "progress": "0/29",
+            "path": "SPEC-041-admin-integration-tests"
         }
     ],
     "standalone": {
