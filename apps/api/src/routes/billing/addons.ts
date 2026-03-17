@@ -14,10 +14,6 @@
  * @module routes/billing/addons
  */
 
-import { HTTPException } from 'hono/http-exception';
-import { z } from 'zod';
-import { getActorFromContext } from '../../middlewares/actor';
-import { getQZPayBilling } from '../../middlewares/billing';
 import {
     AddonResponseSchema,
     CancelAddonSchema,
@@ -25,7 +21,11 @@ import {
     PurchaseAddonResponseSchema,
     PurchaseAddonSchema,
     UserAddonResponseSchema
-} from '../../schemas/addon.schema';
+} from '@repo/schemas';
+import { HTTPException } from 'hono/http-exception';
+import { z } from 'zod';
+import { getActorFromContext } from '../../middlewares/actor';
+import { getQZPayBilling } from '../../middlewares/billing';
 import { AddonService } from '../../services/addon.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
