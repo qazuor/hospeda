@@ -9,3 +9,4 @@ export * from './object';
 export * from './array';
 export * from './validation';
 export * from './currency';
+export * from './sentry';
