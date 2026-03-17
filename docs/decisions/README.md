@@ -14,6 +14,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-006](ADR-006-integer-monetary-values.md) | Integer Storage for Monetary Values | Accepted |
 | [ADR-007](ADR-007-vercel-deployment.md) | Vercel Deployment (migrated from Fly.io) | Accepted |
 | [ADR-008](ADR-008-afip-deferred-v2.md) | Defer AFIP Integration to v2 | Accepted |
+| [ADR-017](ADR-017-postgres-specific-features.md) | PostgreSQL-Specific Features via Manual Migrations | Accepted |
 
 ## Format
 
