@@ -32,8 +32,9 @@
         "react": ">=18.2.0 || ^19"
     },
     "devDependencies": {
-        "@repo/typescript-config": "workspace:*",
+        "@react-email/render": "^2.0.4",
         "@repo/biome-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
         "@types/node": "^22.15.3",
         "@types/react": "^19.0.0",
         "react": "^19.0.0",
