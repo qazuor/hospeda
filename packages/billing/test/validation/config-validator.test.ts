@@ -3,16 +3,32 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { ALL_ADDONS, ALL_PLANS, DEFAULT_PROMO_CODES } from '../../src/config/index';
-import type { PromoCodeDefinition } from '../../src/config/promo-codes.config';
-import type { AddonDefinition } from '../../src/types/addon.types';
-import { EntitlementKey } from '../../src/types/entitlement.types';
-import { LimitKey, type PlanDefinition } from '../../src/types/plan.types';
+import { ALL_ADDONS, ALL_PLANS, DEFAULT_PROMO_CODES } from '../../src/config/index.js';
+import type { PromoCodeDefinition } from '../../src/config/promo-codes.config.js';
+import type { AddonDefinition } from '../../src/types/addon.types.js';
+import { EntitlementKey } from '../../src/types/entitlement.types.js';
+import { LimitKey, type PlanDefinition } from '../../src/types/plan.types.js';
 import {
     type BillingConfigValidationResult,
     validateBillingConfig,
     validateBillingConfigOrThrow
-} from '../../src/validation/config-validator';
+} from '../../src/validation/config-validator.js';
+
+/**
+ * CONTRACT / SPECIFICATION TESTS
+ *
+ * These tests use a local `validateTestConfig` function that reimplements the
+ * validation logic as a specification contract. They verify the EXPECTED behavior
+ * of billing config validation, not the actual source code implementation.
+ *
+ * For tests that exercise the real `validateBillingConfig` and
+ * `validateBillingConfigOrThrow` source functions, see:
+ * `config-validator-source.test.ts`
+ *
+ * If you add new validation rules to config-validator.ts, you MUST also:
+ * 1. Add corresponding tests in config-validator-source.test.ts (source coverage)
+ * 2. Update validateTestConfig here to match (contract alignment)
+ */
 
 // ─── HELPER FUNCTIONS ──────────────────────────────────────────────
 
