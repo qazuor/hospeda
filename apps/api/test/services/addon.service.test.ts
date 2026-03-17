@@ -19,55 +19,50 @@ import { AddonService } from '../../src/services/addon.service';
 
 // Use vi.hoisted to define mock database utilities available before vi.mock runs
 // Only destructure the top-level values we need to pass to vi.mock
-const {
-    mockDbSelect,
-    mockDbUpdate,
-    mockDbInsert,
-    mockDbTransaction,
-    mockBillingAddonPurchases
-} = vi.hoisted(() => {
-    // Select chain: select() -> from() -> where()
-    const mockDbWhere = vi.fn().mockResolvedValue([]);
-    const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
-    const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
-    // Update chain: update() -> set() -> where()
-    const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
-    const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
-    const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
-    // Insert chain for confirmPurchase: insert() -> values() -> returning()
-    // Default returns a known purchaseId so confirmPurchase tests pass without extra setup
-    const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
-    const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
-    const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
-    // Transaction wrapper: executes the callback with a tx that has the same insert chain
-    const mockDbTransaction = vi.fn(
-        async (callback: (tx: { insert: typeof mockDbInsert }) => Promise<unknown>) => {
-            return callback({ insert: mockDbInsert });
-        }
-    );
-    return {
-        mockDbSelect,
-        mockDbUpdate,
-        mockDbInsert,
-        mockDbTransaction,
-        mockBillingAddonPurchases: {
-            id: 'id',
-            customerId: 'customerId',
-            status: 'status',
-            addonSlug: 'addonSlug',
-            subscriptionId: 'subscriptionId',
-            purchasedAt: 'purchasedAt',
-            expiresAt: 'expiresAt',
-            paymentId: 'paymentId',
-            limitAdjustments: 'limitAdjustments',
-            entitlementAdjustments: 'entitlementAdjustments',
-            metadata: 'metadata',
-            canceledAt: 'canceled_at',
-            deletedAt: 'deleted_at',
-            updatedAt: 'updatedAt'
-        }
-    };
-});
+const { mockDbSelect, mockDbUpdate, mockDbInsert, mockDbTransaction, mockBillingAddonPurchases } =
+    vi.hoisted(() => {
+        // Select chain: select() -> from() -> where()
+        const mockDbWhere = vi.fn().mockResolvedValue([]);
+        const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
+        const mockDbSelect = vi.fn(() => ({ from: mockDbFrom }));
+        // Update chain: update() -> set() -> where()
+        const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+        const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+        const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
+        // Insert chain for confirmPurchase: insert() -> values() -> returning()
+        // Default returns a known purchaseId so confirmPurchase tests pass without extra setup
+        const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+        const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
+        const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+        // Transaction wrapper: executes the callback with a tx that has the same insert chain
+        const mockDbTransaction = vi.fn(
+            async (callback: (tx: { insert: typeof mockDbInsert }) => Promise<unknown>) => {
+                return callback({ insert: mockDbInsert });
+            }
+        );
+        return {
+            mockDbSelect,
+            mockDbUpdate,
+            mockDbInsert,
+            mockDbTransaction,
+            mockBillingAddonPurchases: {
+                id: 'id',
+                customerId: 'customerId',
+                status: 'status',
+                addonSlug: 'addonSlug',
+                subscriptionId: 'subscriptionId',
+                purchasedAt: 'purchasedAt',
+                expiresAt: 'expiresAt',
+                paymentId: 'paymentId',
+                limitAdjustments: 'limitAdjustments',
+                entitlementAdjustments: 'entitlementAdjustments',
+                metadata: 'metadata',
+                canceledAt: 'canceled_at',
+                deletedAt: 'deleted_at',
+                updatedAt: 'updatedAt'
+            }
+        };
+    });
 
 // Mock @repo/db/client
 vi.mock('@repo/db/client', () => ({
@@ -528,6 +523,10 @@ describe('AddonService', () => {
             expect(result.data?.expiresAt).toBeDefined();
 
             // Verify MercadoPago preference creation
+            // Phase 5 wrapped the SDK in createMercadoPagoPreference which passes
+            // { accessToken, preferenceData } to the wrapper, and the wrapper calls
+            // Preference.create(preferenceData). So mockPreferenceCreate receives
+            // the preferenceData object (which has a `body` key).
             expect(mockPreferenceCreate).toHaveBeenCalledWith({
                 body: expect.objectContaining({
                     items: [
@@ -536,7 +535,8 @@ describe('AddonService', () => {
                             title: 'Boost 7 días',
                             description: 'Boost visibility for 7 days',
                             quantity: 1,
-                            unit_price: 5000,
+                            // Phase 5: price is now converted from centavos to ARS (5000 / 100 = 50)
+                            unit_price: 50,
                             currency_id: 'ARS'
                         }
                     ],
@@ -547,9 +547,17 @@ describe('AddonService', () => {
                         customerId: 'cust_123',
                         user_id: 'user_123',
                         userId: 'user_123',
-                        type: 'addon_purchase'
+                        type: 'addon_purchase',
+                        promo_code: null,
+                        promo_code_id: null,
+                        discount_amount: 0,
+                        original_price: 5000
                     }),
-                    external_reference: expect.stringContaining('addon_boost-7_')
+                    external_reference: expect.stringContaining('addon_boost-7_'),
+                    auto_return: 'approved',
+                    notification_url: 'http://localhost:3001/api/v1/webhooks/mercadopago',
+                    statement_descriptor: 'HOSPEDA',
+                    expires: true
                 })
             });
         });
@@ -830,7 +838,7 @@ describe('AddonService', () => {
 
                 // Simulate: the DB query returns no rows because the only purchase
                 // for this customer has deletedAt != null (soft-deleted)
-                const mockLimit = vi.fn().mockResolvedValue([]);
+                const _mockLimit = vi.fn().mockResolvedValue([]);
                 const mockWhere = vi.fn().mockResolvedValue([]); // select().from().where() → []
                 const mockFrom = vi.fn(() => ({ where: mockWhere }));
                 mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
@@ -892,8 +900,12 @@ describe('AddonService', () => {
             // Re-establish the transaction mock after vi.clearAllMocks() resets it.
             // The transaction must call its callback with a tx that supports insert()->values()->returning().
             mockDbTransaction.mockImplementation(
-                async (callback: (tx: { insert: ReturnType<typeof vi.fn> }) => Promise<unknown>) => {
-                    const mockInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+                async (
+                    callback: (tx: { insert: ReturnType<typeof vi.fn> }) => Promise<unknown>
+                ) => {
+                    const mockInsertReturning = vi
+                        .fn()
+                        .mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
                     const mockInsertValues = vi.fn(() => ({ returning: mockInsertReturning }));
                     const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
                     return callback({ insert: mockInsert });
@@ -918,7 +930,7 @@ describe('AddonService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active', planId: 'plan_123' }
             ]);
-            mockApplyAddonEntitlements.mockResolvedValue({ success: true });
+            mockApplyAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
 
             // Act
             const result = await service.confirmPurchase(confirmInput);
@@ -1047,11 +1059,11 @@ describe('AddonService', () => {
         });
 
         it('should return NOT_FOUND when purchase exists but status is already canceled', async () => {
-            // Arrange: purchase belongs to the right customer but is already cancelled
+            // Arrange: purchase belongs to the right customer but is already canceled
             mockSelectReturningPurchase({
                 id: PURCHASE_ID,
                 addonSlug: 'boost-7',
-                status: 'cancelled',
+                status: 'canceled',
                 customerId: 'cust_123'
             });
 
@@ -1092,7 +1104,7 @@ describe('AddonService', () => {
                 status: 'active',
                 customerId: 'cust_123'
             });
-            mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
+            mockRemoveAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
 
             // Act
             const result = await service.cancelAddon(cancelInput);
@@ -1105,7 +1117,7 @@ describe('AddonService', () => {
                 addonSlug: 'boost-7',
                 purchaseId: PURCHASE_ID
             });
-            // The DB update should have been called to set status=cancelled
+            // The DB update should have been called to set status=canceled
             expect(mockDbUpdate).toHaveBeenCalled();
         });
 
@@ -1176,7 +1188,7 @@ describe('AddonService', () => {
                     status: 'active',
                     customerId: 'cust_123'
                 });
-                mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
+                mockRemoveAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
 
                 // Act
                 const result = await service.cancelAddon(cancelInput);
@@ -1208,7 +1220,7 @@ describe('AddonService', () => {
                     status: 'active',
                     customerId: 'cust_123'
                 });
-                mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
+                mockRemoveAddonEntitlements.mockResolvedValue({ success: true, data: undefined });
 
                 // Act
                 await service.cancelAddon(cancelInput);

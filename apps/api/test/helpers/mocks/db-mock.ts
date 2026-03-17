@@ -26,7 +26,8 @@ export const billingAddonPurchasesCols = {
     promoCodeId: 'promo_code_id',
     metadata: 'metadata',
     createdAt: 'created_at',
-    updatedAt: 'updated_at'
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at'
 } as const;
 
 /** Shared billing notification log column-name stubs. */

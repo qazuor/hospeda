@@ -95,7 +95,12 @@ interface MockAddonPurchaseOverrides {
     expiresAt?: Date;
     canceledAt?: Date | null;
     paymentId?: string;
-    limitAdjustments?: Array<{ limitKey: string; increase: number; previousValue: number; newValue: number }>;
+    limitAdjustments?: Array<{
+        limitKey: string;
+        increase: number;
+        previousValue: number;
+        newValue: number;
+    }>;
     entitlementAdjustments?: Array<{ entitlementKey: string; granted: boolean }>;
     metadata?: Record<string, unknown>;
     createdAt?: Date;
@@ -104,7 +109,6 @@ interface MockAddonPurchaseOverrides {
 
 describe('AddonExpirationService', () => {
     let service: AddonExpirationService;
-    // biome-ignore lint/suspicious/noExplicitAny: mock object — ReturnThis chaining requires any
     let mockDb: MockDb;
     let mockEntitlementService: MockEntitlementService;
 
@@ -156,12 +160,11 @@ describe('AddonExpirationService', () => {
             set: vi.fn().mockReturnThis()
         };
 
-        // biome-ignore lint/suspicious/noExplicitAny: mock object — DB chain does not match full Drizzle types
-        mockGetDb.mockReturnValue(mockDb as any);
+        mockGetDb.mockReturnValue(mockDb as unknown as ReturnType<typeof import('@repo/db').getDb>);
 
         // Setup mock entitlement service
         mockEntitlementService = {
-            removeAddonEntitlements: vi.fn().mockResolvedValue({ success: true })
+            removeAddonEntitlements: vi.fn().mockResolvedValue({ success: true, data: undefined })
         };
 
         vi.mocked(AddonEntitlementService).mockImplementation(
@@ -324,7 +327,10 @@ describe('AddonExpirationService', () => {
             // Setup mock chain: select().from().where().limit() returns purchase
             mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.expireAddon({ purchaseId: 'purchase_123' });
@@ -364,7 +370,10 @@ describe('AddonExpirationService', () => {
 
             mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.expireAddon({ purchaseId: 'purchase_abc' });
@@ -455,13 +464,20 @@ describe('AddonExpirationService', () => {
             // Act
             const result = await service.expireAddon({ purchaseId: 'purchase_123' });
 
-            // Assert
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('ENTITLEMENT_REMOVAL_FAILED');
-            expect(result.error?.message).toBe('Failed to remove add-on entitlements');
+            // Assert — Phase 3 changed behavior: entitlement failures are caught
+            // and the status update proceeds anyway (reconciliation on next cron run)
+            expect(result.success).toBe(true);
+            expect(result.data?.purchaseId).toBe('purchase_123');
 
-            // Verify database was NOT updated
-            expect(mockDb.update).not.toHaveBeenCalled();
+            // Verify database WAS updated despite entitlement failure
+            expect(mockDb.update).toHaveBeenCalled();
+            expect(mockDb.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: 'expired',
+                    updatedAt: expect.any(Date),
+                    metadata: { entitlementRemovalPending: true }
+                })
+            );
         });
 
         it('should handle database errors gracefully', async () => {
@@ -511,7 +527,10 @@ describe('AddonExpirationService', () => {
             // Second call: expireAddon
             mockDb.where.mockReturnThis();
             mockDb.limit.mockResolvedValue([mockPurchase]);
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.processExpiredAddons();
@@ -551,7 +570,10 @@ describe('AddonExpirationService', () => {
                 return Promise.resolve([purchase]);
             });
 
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.processExpiredAddons();
@@ -610,24 +632,25 @@ describe('AddonExpirationService', () => {
                 return Promise.resolve([purchase]);
             });
 
-            // Second call fails
+            // Second call fails — but Phase 3 changed behavior: entitlement
+            // failures are caught and the status update proceeds anyway, so
+            // all three add-ons succeed at the expireAddon level.
             mockEntitlementService.removeAddonEntitlements
-                .mockResolvedValueOnce({ success: true })
+                .mockResolvedValueOnce({ success: true, data: undefined })
                 .mockResolvedValueOnce({
                     success: false,
                     error: { code: 'ERROR', message: 'Entitlement removal failed' }
                 })
-                .mockResolvedValueOnce({ success: true });
+                .mockResolvedValueOnce({ success: true, data: undefined });
 
             // Act
             const result = await service.processExpiredAddons();
 
             // Assert
             expect(result.success).toBe(true);
-            expect(result.data?.processed).toBe(2); // First and third succeeded
-            expect(result.data?.failed).toBe(1); // Second failed
-            expect(result.data?.errors).toHaveLength(1);
-            expect(result.data?.errors?.[0]?.purchaseId).toBe('purchase_2');
+            expect(result.data?.processed).toBe(3); // All three succeed (entitlement failure is non-fatal)
+            expect(result.data?.failed).toBe(0);
+            expect(result.data?.errors).toHaveLength(0);
 
             vi.useRealTimers();
         });
@@ -662,7 +685,10 @@ describe('AddonExpirationService', () => {
                 return Promise.resolve([purchase]);
             });
 
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.processExpiredAddons();
@@ -702,7 +728,10 @@ describe('AddonExpirationService', () => {
                 return Promise.resolve([purchase]);
             });
 
-            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({
+                success: true,
+                data: undefined
+            });
 
             // Act
             const result = await service.processExpiredAddons();
@@ -910,13 +939,20 @@ describe('AddonExpirationService', () => {
             // Act
             const result = await service.expireAddon({ purchaseId: 'purchase_123' });
 
-            // Assert
-            expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('ENTITLEMENT_REMOVAL_FAILED');
-            expect(result.error?.message).toBe('Failed to remove add-on entitlements');
+            // Assert — Phase 3 changed behavior: entitlement failures are caught
+            // and the status update proceeds anyway (reconciliation on next cron run)
+            expect(result.success).toBe(true);
+            expect(result.data?.purchaseId).toBe('purchase_123');
 
-            // Verify status was NOT updated in database
-            expect(mockDb.update).not.toHaveBeenCalled();
+            // Verify status WAS updated in database despite entitlement failure
+            expect(mockDb.update).toHaveBeenCalled();
+            expect(mockDb.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: 'expired',
+                    updatedAt: expect.any(Date),
+                    metadata: { entitlementRemovalPending: true }
+                })
+            );
         });
 
         it('should handle AddonEntitlementService throwing exception', async () => {

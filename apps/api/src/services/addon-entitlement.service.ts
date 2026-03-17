@@ -2,7 +2,7 @@
  * Add-on Entitlement Service
  *
  * Handles the application and removal of entitlements and limit adjustments
- * when add-ons are purchased or cancelled.
+ * when add-ons are purchased or canceled.
  *
  * Features:
  * - Apply add-on entitlements/limits after purchase
@@ -234,7 +234,8 @@ export class AddonEntitlementService {
             );
 
             return {
-                success: true
+                success: true,
+                data: undefined
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
@@ -259,7 +260,7 @@ export class AddonEntitlementService {
     }
 
     /**
-     * Remove entitlements and limits when an add-on is cancelled
+     * Remove entitlements and limits when an add-on is canceled
      *
      * This method:
      * 1. Finds the add-on definition
@@ -324,7 +325,8 @@ export class AddonEntitlementService {
             if (!subscriptions || subscriptions.length === 0) {
                 // No subscription - nothing to remove
                 return {
-                    success: true
+                    success: true,
+                    data: undefined
                 };
             }
 
@@ -335,7 +337,8 @@ export class AddonEntitlementService {
             if (!activeSubscription) {
                 // No active subscription - nothing to remove
                 return {
-                    success: true
+                    success: true,
+                    data: undefined
                 };
             }
 
@@ -446,7 +449,8 @@ export class AddonEntitlementService {
             );
 
             return {
-                success: true
+                success: true,
+                data: undefined
             };
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

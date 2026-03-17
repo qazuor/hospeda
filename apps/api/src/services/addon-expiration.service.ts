@@ -69,6 +69,75 @@ export interface ExpiringAddon {
 }
 
 /**
+ * Zod schema for validating JSONB limit adjustments from the database
+ */
+const LimitAdjustmentSchema = z.object({
+    limitKey: z.string(),
+    increase: z.number(),
+    previousValue: z.number(),
+    newValue: z.number()
+});
+
+/**
+ * Zod schema for validating JSONB entitlement adjustments from the database
+ */
+const EntitlementAdjustmentSchema = z.object({
+    entitlementKey: z.string(),
+    granted: z.boolean()
+});
+
+const LimitAdjustmentsSchema = z.array(LimitAdjustmentSchema).nullable();
+const EntitlementAdjustmentsSchema = z.array(EntitlementAdjustmentSchema).nullable();
+
+/**
+ * Safely parse JSONB limit adjustments from database.
+ * Returns empty array if validation fails (logs warning).
+ */
+function parseLimitAdjustments(
+    raw: unknown,
+    context: { purchaseId: string; addonSlug: string }
+): Array<{ limitKey: string; increase: number; previousValue: number; newValue: number }> {
+    const result = LimitAdjustmentsSchema.safeParse(raw);
+    if (result.success) {
+        return result.data ?? [];
+    }
+    apiLogger.warn(
+        {
+            purchaseId: context.purchaseId,
+            addonSlug: context.addonSlug,
+            raw,
+            zodErrors: result.error.flatten()
+        },
+        'Invalid limitAdjustments JSONB data, treating as empty array'
+    );
+    return [];
+}
+
+/**
+ * Safely parse JSONB entitlement adjustments from database.
+ * Returns empty array if validation fails (logs warning).
+ */
+function parseEntitlementAdjustments(
+    raw: unknown,
+    context: { purchaseId: string; addonSlug: string }
+): Array<{ entitlementKey: string; granted: boolean }> {
+    const result = EntitlementAdjustmentsSchema.safeParse(raw);
+    if (result.success) {
+        return result.data ?? [];
+    }
+    apiLogger.warn(
+        {
+            purchaseId: context.purchaseId,
+            addonSlug: context.addonSlug,
+            raw,
+            zodErrors: result.error.flatten()
+        },
+        'Invalid entitlementAdjustments JSONB data, treating as empty array'
+    );
+    return [];
+}
+
+/**
  * Zod schema for validating the `daysAhead` parameter.
  * Must be a positive integer no greater than 365.
  */
@@ -170,6 +239,11 @@ export class AddonExpirationService {
                 // expiresAt is guaranteed non-null due to isNotNull check in query
                 const expiresAt = purchase.expiresAt ?? new Date();
 
+                const parseContext = {
+                    purchaseId: purchase.id,
+                    addonSlug: purchase.addonSlug
+                };
+
                 return {
                     id: purchase.id,
                     customerId: purchase.customerId,
@@ -177,18 +251,14 @@ export class AddonExpirationService {
                     addonSlug: purchase.addonSlug,
                     purchasedAt: purchase.purchasedAt,
                     expiresAt,
-                    limitAdjustments:
-                        (purchase.limitAdjustments as Array<{
-                            limitKey: string;
-                            increase: number;
-                            previousValue: number;
-                            newValue: number;
-                        }>) || [],
-                    entitlementAdjustments:
-                        (purchase.entitlementAdjustments as Array<{
-                            entitlementKey: string;
-                            granted: boolean;
-                        }>) || []
+                    limitAdjustments: parseLimitAdjustments(
+                        purchase.limitAdjustments,
+                        parseContext
+                    ),
+                    entitlementAdjustments: parseEntitlementAdjustments(
+                        purchase.entitlementAdjustments,
+                        parseContext
+                    )
                 };
             });
 
@@ -288,6 +358,11 @@ export class AddonExpirationService {
                     (expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)
                 );
 
+                const parseContext = {
+                    purchaseId: purchase.id,
+                    addonSlug: purchase.addonSlug
+                };
+
                 return {
                     id: purchase.id,
                     customerId: purchase.customerId,
@@ -296,18 +371,14 @@ export class AddonExpirationService {
                     purchasedAt: purchase.purchasedAt,
                     expiresAt,
                     daysUntilExpiration,
-                    limitAdjustments:
-                        (purchase.limitAdjustments as Array<{
-                            limitKey: string;
-                            increase: number;
-                            previousValue: number;
-                            newValue: number;
-                        }>) || [],
-                    entitlementAdjustments:
-                        (purchase.entitlementAdjustments as Array<{
-                            entitlementKey: string;
-                            granted: boolean;
-                        }>) || []
+                    limitAdjustments: parseLimitAdjustments(
+                        purchase.limitAdjustments,
+                        parseContext
+                    ),
+                    entitlementAdjustments: parseEntitlementAdjustments(
+                        purchase.entitlementAdjustments,
+                        parseContext
+                    )
                 };
             });
 
@@ -420,42 +491,89 @@ export class AddonExpirationService {
                 };
             }
 
-            // Remove entitlements via AddonEntitlementService
-            const removeResult = await this.entitlementService.removeAddonEntitlements({
-                customerId: purchase.customerId,
-                addonSlug: purchase.addonSlug,
-                purchaseId: purchase.id
-            });
+            // Remove entitlements via AddonEntitlementService.
+            // Wrapped in try/catch so that a failure here does not prevent the
+            // status update below. Entitlements will be reconciled on the next cron run.
+            let entitlementRemovalFailed = false;
+            try {
+                const removeResult = await this.entitlementService.removeAddonEntitlements({
+                    customerId: purchase.customerId,
+                    addonSlug: purchase.addonSlug,
+                    purchaseId: purchase.id
+                });
 
-            if (!removeResult.success) {
-                apiLogger.error(
+                if (!removeResult.success) {
+                    entitlementRemovalFailed = true;
+                    apiLogger.warn(
+                        {
+                            purchaseId: input.purchaseId,
+                            customerId: purchase.customerId,
+                            addonSlug: purchase.addonSlug,
+                            error: removeResult.error
+                        },
+                        'Entitlement removal returned failure during expiry; continuing with status update. Entitlements will be reconciled on next cron run.'
+                    );
+                }
+            } catch (entitlementError) {
+                entitlementRemovalFailed = true;
+                apiLogger.warn(
                     {
+                        error:
+                            entitlementError instanceof Error
+                                ? entitlementError.message
+                                : String(entitlementError),
                         purchaseId: input.purchaseId,
                         customerId: purchase.customerId,
-                        addonSlug: purchase.addonSlug,
-                        error: removeResult.error
+                        addonSlug: purchase.addonSlug
                     },
-                    'Failed to remove entitlements when expiring add-on'
+                    'Entitlement removal failed during expiry; continuing with status update. Entitlements will be reconciled on next cron run.'
                 );
-
-                return {
-                    success: false,
-                    error: {
-                        code: 'ENTITLEMENT_REMOVAL_FAILED',
-                        message: 'Failed to remove add-on entitlements'
-                    }
-                };
             }
 
+            // TODO(SPEC-038): Add entitlement reconciliation cron to handle drift
+
             // Update billing_addon_purchases row: status='expired'
+            // This ALWAYS runs regardless of whether entitlement removal succeeded.
             const now = new Date();
-            await db
+            const updateResult = await db
                 .update(billingAddonPurchases)
                 .set({
                     status: 'expired',
-                    updatedAt: now
+                    updatedAt: now,
+                    ...(entitlementRemovalFailed
+                        ? { metadata: { entitlementRemovalPending: true } }
+                        : {})
                 })
-                .where(eq(billingAddonPurchases.id, input.purchaseId));
+                .where(
+                    and(
+                        eq(billingAddonPurchases.id, input.purchaseId),
+                        eq(billingAddonPurchases.status, 'active'),
+                        isNull(billingAddonPurchases.deletedAt)
+                    )
+                );
+
+            const rowCount = (updateResult as { rowCount?: number }).rowCount || 0;
+
+            if (rowCount === 0) {
+                apiLogger.warn(
+                    {
+                        purchaseId: input.purchaseId,
+                        customerId: purchase.customerId,
+                        addonSlug: purchase.addonSlug
+                    },
+                    'UPDATE affected 0 rows when expiring add-on — purchase was likely already expired/canceled concurrently'
+                );
+
+                return {
+                    success: true,
+                    data: {
+                        purchaseId: purchase.id,
+                        customerId: purchase.customerId,
+                        addonSlug: purchase.addonSlug,
+                        expiredAt: now
+                    }
+                };
+            }
 
             apiLogger.info(
                 {

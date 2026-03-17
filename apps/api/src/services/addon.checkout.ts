@@ -8,8 +8,9 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getAddonBySlug } from '@repo/billing';
+import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import type { AddonEntitlementService } from './addon-entitlement.service';
@@ -20,6 +21,32 @@ import type {
     ServiceResult
 } from './addon.types';
 import { PromoCodeService } from './promo-code.service';
+
+// TODO: Extend @repo/billing adapter to support preference creation.
+// Once the billing adapter has a createPreference() method, replace
+// createMercadoPagoPreference() below with the adapter call.
+
+/**
+ * Creates a MercadoPago preference using the raw SDK.
+ *
+ * This is a thin wrapper that centralizes raw SDK usage to a single place,
+ * making future migration to the billing adapter straightforward.
+ *
+ * @param accessToken - MercadoPago API access token
+ * @param preferenceData - Preference creation data
+ * @returns Created preference object
+ */
+async function createMercadoPagoPreference({
+    accessToken,
+    preferenceData
+}: {
+    accessToken: string;
+    preferenceData: PreferenceCreateData;
+}) {
+    const mpClient = new MercadoPagoConfig({ accessToken });
+    const preferenceClient = new Preference(mpClient);
+    return preferenceClient.create(preferenceData);
+}
 
 /**
  * Create a Mercado Pago checkout session for an add-on purchase.
@@ -109,6 +136,20 @@ export async function createAddonCheckout(
             };
         }
 
+        // Validate addon is available for the customer's plan category
+        if (addon.targetCategories && addon.targetCategories.length > 0) {
+            const customerPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
+            if (customerPlan && !addon.targetCategories.includes(customerPlan.category)) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'ADDON_NOT_AVAILABLE_FOR_PLAN',
+                        message: `This add-on is not available for ${customerPlan.category} plans`
+                    }
+                };
+            }
+        }
+
         // Validate and apply promo code if provided
         let finalPrice = addon.priceArs;
         let promoCodeId: string | undefined;
@@ -153,9 +194,6 @@ export async function createAddonCheckout(
             };
         }
 
-        const mpClient = new MercadoPagoConfig({ accessToken: mpAccessToken });
-        const preferenceClient = new Preference(mpClient);
-
         const orderId = `addon_${addon.slug}_${Date.now()}`;
         const webUrl = env.HOSPEDA_SITE_URL;
         if (!webUrl) {
@@ -178,43 +216,61 @@ export async function createAddonCheckout(
             };
         }
 
-        const preference = await preferenceClient.create({
-            body: {
-                items: [
-                    {
-                        id: addon.slug,
-                        title: addon.name,
-                        description: addon.description,
-                        quantity: 1,
-                        unit_price: finalPrice,
-                        currency_id: 'ARS'
-                    }
-                ],
-                metadata: {
-                    addon_slug: addon.slug,
-                    addonSlug: addon.slug,
-                    customer_id: input.customerId,
-                    customerId: input.customerId,
-                    user_id: input.userId,
-                    userId: input.userId,
-                    type: 'addon_purchase',
-                    promo_code: input.promoCode || null,
-                    promo_code_id: promoCodeId || null,
-                    discount_amount: discountAmount,
-                    original_price: addon.priceArs
-                },
-                external_reference: orderId,
-                back_urls: {
-                    success: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
-                    failure: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
-                    pending: `${webUrl}/mi-cuenta/addons?status=pending&addon=${addon.slug}`
-                },
-                auto_return: 'approved',
-                notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
-                statement_descriptor: 'HOSPEDA',
-                expires: true,
-                expiration_date_from: new Date().toISOString(),
-                expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+        const preference = await createMercadoPagoPreference({
+            accessToken: mpAccessToken,
+            preferenceData: {
+                body: {
+                    items: [
+                        {
+                            id: addon.slug,
+                            title: addon.name,
+                            description: addon.description,
+                            quantity: 1,
+                            // Convert centavos to whole ARS units (MercadoPago expects ARS, not cents)
+                            unit_price: finalPrice / 100,
+                            currency_id: 'ARS'
+                        }
+                    ],
+                    /**
+                     * Metadata is intentionally sent in both snake_case and camelCase formats
+                     * for backward compatibility.
+                     *
+                     * - snake_case keys (e.g. `addon_slug`, `customer_id`): consumed by the
+                     *   Mercado Pago webhook handler, which receives the raw MP payment object
+                     *   where metadata arrives in snake_case.
+                     * - camelCase keys (e.g. `addonSlug`, `customerId`): consumed by internal
+                     *   services (e.g. confirmAddonPurchase) that work with the JS-normalized
+                     *   representation.
+                     *
+                     * Do NOT remove either format without coordinating with the webhook handler
+                     * and any downstream consumers.
+                     */
+                    metadata: {
+                        addon_slug: addon.slug,
+                        addonSlug: addon.slug,
+                        customer_id: input.customerId,
+                        customerId: input.customerId,
+                        user_id: input.userId,
+                        userId: input.userId,
+                        type: 'addon_purchase',
+                        promo_code: input.promoCode || null,
+                        promo_code_id: promoCodeId || null,
+                        discount_amount: discountAmount,
+                        original_price: addon.priceArs
+                    },
+                    external_reference: orderId,
+                    back_urls: {
+                        success: `${webUrl}/mi-cuenta/addons?status=success&addon=${addon.slug}`,
+                        failure: `${webUrl}/mi-cuenta/addons?status=failure&addon=${addon.slug}`,
+                        pending: `${webUrl}/mi-cuenta/addons?status=pending&addon=${addon.slug}`
+                    },
+                    auto_return: 'approved',
+                    notification_url: `${apiUrl}/api/v1/webhooks/mercadopago`,
+                    statement_descriptor: 'HOSPEDA',
+                    expires: true,
+                    expiration_date_from: new Date().toISOString(),
+                    expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString()
+                }
             }
         });
 
@@ -369,14 +425,11 @@ export async function confirmAddonPurchase(
             };
         }
 
-        const plan = await billing.plans.get(activeSubscription.planId);
-
-        if (!plan) {
-            return {
-                success: false,
-                error: { code: 'PLAN_NOT_FOUND', message: 'Subscription plan not found' }
-            };
-        }
+        // Resolve plan limits from the canonical ALL_PLANS config rather than
+        // fetching them from the billing SDK. The canonical config is the
+        // single source of truth for plan definitions and avoids an extra
+        // network round-trip to QZPay for data we already have locally.
+        const canonicalPlan = ALL_PLANS.find((p) => p.slug === activeSubscription.planId);
 
         // Compute limit adjustments
         const limitAdjustments: Array<{
@@ -387,7 +440,8 @@ export async function confirmAddonPurchase(
         }> = [];
 
         if (addon.affectsLimitKey && addon.limitIncrease) {
-            const previousValue = (plan.limits?.[addon.affectsLimitKey] as number) || 0;
+            const limitDef = canonicalPlan?.limits.find((l) => l.key === addon.affectsLimitKey);
+            const previousValue = limitDef?.value ?? 0;
             const newValue = previousValue + addon.limitIncrease;
 
             limitAdjustments.push({
@@ -422,26 +476,63 @@ export async function confirmAddonPurchase(
         const db = getDb();
 
         // Wrap DB operations in a transaction to ensure atomicity
-        await db.transaction(async (tx) => {
-            await tx.insert(billingAddonPurchases).values({
-                customerId: input.customerId,
-                subscriptionId: input.subscriptionId || activeSubscription.id,
-                addonSlug: input.addonSlug,
-                status: 'active',
-                purchasedAt: now,
-                expiresAt,
-                paymentId: input.paymentId || null,
-                limitAdjustments,
-                entitlementAdjustments,
-                metadata: input.metadata || {}
+        let purchaseId: string;
+
+        try {
+            const [insertedPurchase] = await db.transaction(async (tx) => {
+                return tx
+                    .insert(billingAddonPurchases)
+                    .values({
+                        customerId: input.customerId,
+                        subscriptionId: input.subscriptionId || activeSubscription.id,
+                        addonSlug: input.addonSlug,
+                        status: 'active',
+                        purchasedAt: now,
+                        expiresAt,
+                        paymentId: input.paymentId || null,
+                        limitAdjustments,
+                        entitlementAdjustments,
+                        metadata: input.metadata || {}
+                    })
+                    .returning({ id: billingAddonPurchases.id });
             });
-        });
+
+            if (!insertedPurchase) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'INTERNAL_ERROR',
+                        message: 'Failed to insert add-on purchase record'
+                    }
+                };
+            }
+
+            purchaseId = insertedPurchase.id;
+        } catch (insertError) {
+            // Postgres unique constraint violation (partial index: active addon per customer)
+            if (
+                insertError instanceof Error &&
+                'code' in insertError &&
+                (insertError as { code: string }).code === '23505'
+            ) {
+                return {
+                    success: false,
+                    error: {
+                        code: 'ADDON_ALREADY_ACTIVE',
+                        message: 'Addon already active for this customer'
+                    }
+                };
+            }
+
+            throw insertError;
+        }
 
         apiLogger.info(
             {
                 customerId: input.customerId,
                 addonSlug: input.addonSlug,
                 subscriptionId: activeSubscription.id,
+                purchaseId,
                 expiresAt: expiresAt?.toISOString() || null,
                 limitAdjustments,
                 entitlementAdjustments
@@ -454,7 +545,8 @@ export async function confirmAddonPurchase(
         // transaction. Failure is non-fatal and logged as a warning.
         const result = await entitlementService.applyAddonEntitlements({
             customerId: input.customerId,
-            addonSlug: input.addonSlug
+            addonSlug: input.addonSlug,
+            purchaseId
         });
 
         if (!result.success) {
@@ -473,7 +565,7 @@ export async function confirmAddonPurchase(
             'Add-on purchase confirmed and entitlements applied'
         );
 
-        return { success: true };
+        return { success: true, data: undefined };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 

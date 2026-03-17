@@ -11,10 +11,20 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
 import { and, eq, isNull } from 'drizzle-orm';
+import { z } from 'zod';
 import { apiLogger } from '../utils/logger';
 import type { AddonEntitlementService } from './addon-entitlement.service';
+import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
 import type { CancelAddonInput, ServiceResult, UserAddon } from './addon.types';
 import { addonAdjustmentsArraySchema } from './addon.types';
+
+/**
+ * Zod schema for a single JSONB limit adjustment entry
+ */
+const LimitAdjustmentEntrySchema = z.object({
+    limitKey: z.string(),
+    increase: z.number()
+});
 
 /**
  * Get a user's active add-ons.
@@ -75,17 +85,20 @@ export async function getUserAddons(
                 purchase.limitAdjustments.length > 0
             ) {
                 const firstLimit = purchase.limitAdjustments[0];
-                if (
-                    firstLimit &&
-                    typeof firstLimit === 'object' &&
-                    'limitKey' in firstLimit &&
-                    'increase' in firstLimit
-                ) {
-                    affectsLimitKey = firstLimit.limitKey as string;
-                    const rawIncrease = firstLimit.increase;
-                    const parsedIncrease =
-                        typeof rawIncrease === 'number' ? rawIncrease : Number(rawIncrease);
-                    limitIncrease = Number.isNaN(parsedIncrease) ? null : parsedIncrease;
+                const parsed = LimitAdjustmentEntrySchema.safeParse(firstLimit);
+                if (parsed.success) {
+                    affectsLimitKey = parsed.data.limitKey;
+                    limitIncrease = parsed.data.increase;
+                } else {
+                    apiLogger.warn(
+                        {
+                            purchaseId: purchase.id,
+                            addonSlug: purchase.addonSlug,
+                            raw: firstLimit,
+                            zodErrors: parsed.error.flatten()
+                        },
+                        'Invalid limitAdjustment entry in JSONB, skipping'
+                    );
                 }
             }
 
@@ -218,7 +231,8 @@ export async function getUserAddons(
  * function. The `purchaseId` must belong to the given `customerId` and have
  * status 'active' — the route already enforces this with an atomic DB query.
  *
- * @param _billing - QZPay billing instance (reserved for future use; cancellation uses DB directly)
+ * @param billing - QZPay billing instance. Used for limit recalculation when the
+ *   cancelled add-on is a limit-type addon (i.e. `addonDef.affectsLimitKey != null`).
  * @param entitlementService - AddonEntitlementService for removing entitlements
  * @param input - Cancellation details (customerId, purchaseId, optional reason)
  * @returns Success or error result
@@ -234,7 +248,7 @@ export async function getUserAddons(
  * ```
  */
 export async function cancelUserAddon(
-    _billing: QZPayBilling,
+    billing: QZPayBilling,
     entitlementService: AddonEntitlementService,
     input: CancelAddonInput
 ): Promise<ServiceResult<void>> {
@@ -299,7 +313,13 @@ export async function cancelUserAddon(
                     canceledAt: new Date(),
                     updatedAt: new Date()
                 })
-                .where(eq(billingAddonPurchases.id, input.purchaseId));
+                .where(
+                    and(
+                        eq(billingAddonPurchases.id, input.purchaseId),
+                        eq(billingAddonPurchases.status, 'active'),
+                        isNull(billingAddonPurchases.deletedAt)
+                    )
+                );
 
             const rowCount = (updateResult as { rowCount?: number }).rowCount || 0;
 
@@ -311,7 +331,7 @@ export async function cancelUserAddon(
                         purchaseId: input.purchaseId,
                         reason: input.reason
                     },
-                    'UPDATE affected 0 rows — record may have been concurrently cancelled; continuing with entitlement removal'
+                    'UPDATE affected 0 rows — record may have been concurrently canceled; continuing with entitlement removal'
                 );
             } else {
                 apiLogger.info(
@@ -321,7 +341,7 @@ export async function cancelUserAddon(
                         purchaseId: input.purchaseId,
                         reason: input.reason
                     },
-                    'Cancelled billing_addon_purchase record'
+                    'Canceled billing_addon_purchase record'
                 );
             }
         } catch (dbError) {
@@ -356,6 +376,71 @@ export async function cancelUserAddon(
             );
         }
 
+        // For limit-type addons, recalculate the aggregated limit so that other
+        // active addons for the same limitKey are still accounted for.
+        //
+        // Background: after a plan-change recalculation, the QZPay limit row is
+        // stored with sourceId = ADDON_RECALC_SOURCE_ID instead of the original
+        // purchaseId. This means `removeBySource('addon', purchaseId)` returns 0
+        // (no match), and the fallback `remove(customerId, limitKey)` would wipe
+        // the entire aggregated limit — losing contributions from other active addons.
+        // Calling recalculate here avoids that data loss by recomputing from the
+        // current set of active purchases (which no longer includes this one).
+        const addonDef = getAddonBySlug(addonSlug);
+
+        if (addonDef?.affectsLimitKey != null) {
+            try {
+                const recalcResult = await recalculateAddonLimitsForCustomer({
+                    customerId: input.customerId,
+                    limitKey: addonDef.affectsLimitKey,
+                    billing,
+                    db
+                });
+
+                if (recalcResult.outcome === 'failed') {
+                    apiLogger.warn(
+                        {
+                            customerId: input.customerId,
+                            addonSlug,
+                            purchaseId: input.purchaseId,
+                            limitKey: addonDef.affectsLimitKey,
+                            reason: recalcResult.reason
+                        },
+                        'Limit recalculation failed after addon cancellation (addon is already cancelled in DB)'
+                    );
+                } else {
+                    apiLogger.info(
+                        {
+                            customerId: input.customerId,
+                            addonSlug,
+                            purchaseId: input.purchaseId,
+                            limitKey: addonDef.affectsLimitKey,
+                            outcome: recalcResult.outcome,
+                            newMaxValue: recalcResult.newMaxValue,
+                            addonCount: recalcResult.addonCount
+                        },
+                        'Addon limit recalculated after cancellation'
+                    );
+                }
+            } catch (recalcError) {
+                // Recalculation errors must not propagate — the addon is already
+                // cancelled in the DB at this point. Log and continue.
+                apiLogger.error(
+                    {
+                        error:
+                            recalcError instanceof Error
+                                ? recalcError.message
+                                : String(recalcError),
+                        customerId: input.customerId,
+                        addonSlug,
+                        purchaseId: input.purchaseId,
+                        limitKey: addonDef.affectsLimitKey
+                    },
+                    'Unexpected error during addon limit recalculation after cancellation (addon already cancelled in DB)'
+                );
+            }
+        }
+
         apiLogger.info(
             {
                 customerId: input.customerId,
@@ -363,10 +448,10 @@ export async function cancelUserAddon(
                 purchaseId: input.purchaseId,
                 reason: input.reason
             },
-            'Add-on cancelled and entitlements removed'
+            'Add-on canceled and entitlements removed'
         );
 
-        return { success: true };
+        return { success: true, data: undefined };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -406,7 +491,7 @@ export async function checkAddonActive(
     try {
         const result = await getUserAddons(billing, userId);
 
-        if (!result.success || !result.data) {
+        if (!result.success) {
             return { success: false, error: result.error };
         }
 
