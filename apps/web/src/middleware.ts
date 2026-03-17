@@ -89,15 +89,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     // Step 7: Set Content-Security-Policy-Report-Only header on HTML responses.
-    //
-    // WHY both <meta> and HTTP header?
-    // - Astro's experimental.csp emits a <meta> tag with script/style hashes.
-    //   This enforces script-src and style-src with hash integrity.
-    // - The <meta> tag CANNOT express frame-ancestors or report-uri (per CSP spec).
-    // - The HTTP header adds frame-ancestors, report-uri, and report-only mode.
-    //
-    // DUAL POLICY behavior: When both a <meta> and HTTP header CSP exist,
-    // browsers enforce BOTH independently. A resource must satisfy both.
+    // This is the single source of truth for CSP policy (Astro experimental.csp is disabled).
     const contentType = response.headers.get('content-type') ?? '';
     if (contentType.includes('text/html')) {
         const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
@@ -108,17 +100,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         const directives = [
             "default-src 'self'",
-            "script-src 'self' 'strict-dynamic' 'unsafe-inline' https:",
+            "script-src 'self' 'strict-dynamic' 'unsafe-inline'",
             "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
             "font-src 'self' https://fonts.gstatic.com",
             "img-src 'self' data: https:",
-            "connect-src 'self' https://*.ingest.sentry.io https://*.vercel.app",
+            "connect-src 'self' https://*.sentry.io https://*.vercel.app",
             "worker-src 'self' blob:",
             'child-src blob:',
             "object-src 'none'",
             "base-uri 'self'",
             "form-action 'self'",
             "frame-ancestors 'none'",
+            "media-src 'self'",
+            'upgrade-insecure-requests',
             sentryReportUri ? `report-uri ${sentryReportUri}` : null
         ]
             .filter(Boolean)

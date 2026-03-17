@@ -137,8 +137,8 @@ const feedbackUrl = buildUrl({ locale, path: `feedback` }) +
 
                 <!-- Retry button -->
                 <button
+                    id="retry-btn"
                     type="button"
-                    onclick="window.location.reload()"
                     class="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-base font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                     <RefreshIcon size={20} weight="regular" aria-hidden="true" />
@@ -165,4 +165,10 @@ const feedbackUrl = buildUrl({ locale, path: `feedback` }) +
             </div>
         </div>
     </div>
+
+    <script>
+        document.getElementById('retry-btn')?.addEventListener('click', () => {
+            window.location.reload();
+        });
+    </script>
 </BaseLayout>

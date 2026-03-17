@@ -66,14 +66,14 @@ export default defineConfig({
             expiration: 86400,
             bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET,
             exclude: [
-                /^\/mi-cuenta(\/.*)?$/,
-                /^\/auth(\/.*)?$/,
-                /^\/busqueda(\/.*)?$/,
-                /^\/feedback(\/.*)?$/,
-                /^\/alojamientos\/(.*)\/?$/,
-                /^\/eventos\/(.*)\/?$/,
-                /^\/tipo(\/.*)?$/,
-                /^\/categoria(\/.*)?$/,
+                /^(\/(?:en|pt))?\/mi-cuenta(\/.*)?$/,
+                /^(\/(?:en|pt))?\/auth(\/.*)?$/,
+                /^(\/(?:en|pt))?\/busqueda(\/.*)?$/,
+                /^(\/(?:en|pt))?\/feedback(\/.*)?$/,
+                /^(\/(?:en|pt))?\/alojamientos\/(.*)\/?$/,
+                /^(\/(?:en|pt))?\/eventos\/(.*)\/?$/,
+                /^(\/(?:en|pt))?\/alojamientos\/tipo(\/.*)?$/,
+                /^(\/(?:en|pt))?\/eventos\/categoria(\/.*)?$/,
             ],
         },
         imageService: true
@@ -133,29 +133,6 @@ export default defineConfig({
                 process.env.VERCEL_GIT_COMMIT_SHA || process.env.PUBLIC_SENTRY_RELEASE || ''
             )
         }
-    },
-    experimental: {
-        csp: {
-            algorithm: 'SHA-256',
-            scriptDirective: {
-                strictDynamic: true,
-            },
-            // NOTE: Do NOT configure styleDirective here. Astro would emit style
-            // hashes in the <meta>/<header>, causing CSP2+ browsers to ignore
-            // 'unsafe-inline' in style-src, which breaks Sentry Session Replay
-            // (rrweb inline styles). Style CSP is handled via the HTTP header
-            // set in middleware.
-            directives: [
-                "default-src 'self'",
-                "font-src 'self' https://fonts.gstatic.com",
-                "img-src 'self' data: https:",
-                "connect-src 'self' https://*.ingest.sentry.io https://*.vercel.app",
-                "worker-src 'self' blob:",
-                "child-src blob:",
-                "object-src 'none'",
-                "base-uri 'self'",
-                "form-action 'self'",
-            ],
-        },
-    },
+    }
+    // CSP is handled via HTTP headers in src/middleware.ts (not Astro experimental.csp)
 });
