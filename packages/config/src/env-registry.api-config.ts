@@ -779,8 +779,8 @@ export const API_CONFIG_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: '1; mode=block',
-        exampleValue: '1; mode=block',
+        defaultValue: '0',
+        exampleValue: '0',
         apps: ['api'],
         category: 'api-config'
     },
