@@ -151,6 +151,15 @@ function validateAddons(addons: AddonDefinition[]): string[] {
         if (addon.grantsEntitlement !== null && !validEntitlements.has(addon.grantsEntitlement)) {
             errors.push(`${prefix}: Invalid entitlement key "${addon.grantsEntitlement}"`);
         }
+
+        // Validate annualPriceArs for recurring addons
+        if (addon.billingType === 'recurring') {
+            if (addon.annualPriceArs === null || addon.annualPriceArs <= 0) {
+                errors.push(
+                    `${prefix}: annualPriceArs must be defined and > 0 for recurring addons, got ${addon.annualPriceArs}`
+                );
+            }
+        }
     }
 
     return errors;
