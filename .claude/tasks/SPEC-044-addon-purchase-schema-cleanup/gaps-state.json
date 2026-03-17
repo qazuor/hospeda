@@ -1,0 +1,668 @@
+{
+    "epic": "SPEC-044-GAPS",
+    "title": "SPEC-044 Addon Purchase Schema Cleanup - Gap Remediation",
+    "created": "2026-03-17",
+    "status": "pending",
+    "total_tasks": 49,
+    "phases": [
+        {
+            "phase": 1,
+            "name": "Quick Wins - Spelling & Mocks",
+            "depends_on": [],
+            "tasks": [
+                {
+                    "id": "GAPS-P1-T001",
+                    "title": "Update spec metadata status to in-progress",
+                    "description": "Update the `status` field from `\"draft\"` to `\"in-progress\"` in the spec metadata file.\n\nAcceptance criteria:\n- `metadata.json` shows `\"status\": \"in-progress\"`\n- No other fields modified",
+                    "gaps": ["GAP-044-05"],
+                    "files": [".claude/specs/SPEC-044-addon-purchase-schema-cleanup/metadata.json"],
+                    "complexity": 1,
+                    "effort_minutes": 5,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P1-T002",
+                    "title": "Add deletedAt column to billingAddonPurchasesCols in test mocks",
+                    "description": "Three test mock files are missing the `deletedAt: 'deleted_at'` entry in their `billingAddonPurchasesCols` mock object. Add the missing column immediately after the existing `canceledAt: 'canceled_at'` entry in each file.\n\nFiles to modify:\n- `apps/api/test/setup.ts` (~line 158): append `deletedAt: 'deleted_at'` to `billingAddonPurchasesCols`\n- `apps/api/test/helpers/mocks/db-mock.ts`: append `deletedAt: 'deleted_at'` to `billingAddonPurchasesCols`\n- `apps/api/test/services/addon.checkout.test.ts`: append `deletedAt: 'deleted_at'` to local mock column map\n\nAcceptance criteria:\n- `pnpm test` passes in `apps/api`\n- No missing column errors in addon-related tests",
+                    "gaps": ["GAP-044-13", "GAP-044-20", "GAP-044-21"],
+                    "files": [
+                        "apps/api/test/setup.ts",
+                        "apps/api/test/helpers/mocks/db-mock.ts",
+                        "apps/api/test/services/addon.checkout.test.ts"
+                    ],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P1-T003",
+                    "title": "Fix 'cancelled' spelling to 'canceled' in service files and test comments",
+                    "description": "String replacements only, no logic changes. Fix British spelling in:\n\n- `apps/api/src/services/addon-entitlement.service.ts` lines 5 and 262: JSDoc `\"cancelled\"` → `\"canceled\"`\n- `apps/api/src/services/addon.user-addons.ts` lines 314, 324, 366: log message strings `\"cancelled\"`/`\"Cancelled\"` → `\"canceled\"`/`\"Canceled\"`\n- `apps/api/test/services/addon.service.test.ts` line 1054: `'cancelled'` → `'canceled'`; fix comments on lines 1050 and 1108\n\nAcceptance criteria:\n- `rg \"cancelled\" apps/api/src/services/` returns zero results",
+                    "gaps": ["GAP-044-14", "GAP-044-17", "GAP-044-18", "GAP-044-19"],
+                    "files": [
+                        "apps/api/src/services/addon-entitlement.service.ts",
+                        "apps/api/src/services/addon.user-addons.ts",
+                        "apps/api/test/services/addon.service.test.ts"
+                    ],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P1-T004",
+                    "title": "Fix 'Cancelled' display values in English addon i18n entries",
+                    "description": "Change addon-specific display values in the English admin billing locale file.\n\nChanges:\n- `addons.statusCanceled`: `\"Cancelled\"` → `\"Canceled\"`\n- `addons.purchasedStatuses.canceled`: `\"Cancelled\"` → `\"Canceled\"`\n\nCRITICAL: Do NOT change the keys (already updated). Do NOT touch `sponsorships.statuses.cancelled` or `subscriptions.statuses.cancelled` — those use British spelling intentionally.\n\nAcceptance criteria:\n- `grep \"Cancelled\" packages/i18n/src/locales/en/admin-billing.json` returns zero results under the `addons` section",
+                    "gaps": ["GAP-044-12"],
+                    "files": ["packages/i18n/src/locales/en/admin-billing.json"],
+                    "complexity": 1,
+                    "effort_minutes": 10,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P1-T005",
+                    "title": "Delete stale agent worktree directory",
+                    "description": "Remove the stale worktree directory left by a previous agent run.\n\nCommand: `rm -rf /home/qazuor/projects/WEBS/hospeda/.claude/worktrees/agent-aadd9e3f/`\n\nAcceptance criteria:\n- Directory no longer exists",
+                    "gaps": ["GAP-044-27"],
+                    "files": [".claude/worktrees/agent-aadd9e3f/"],
+                    "complexity": 1,
+                    "effort_minutes": 2,
+                    "depends_on": [],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 2,
+            "name": "Schema & Type Safety Fixes",
+            "depends_on": [],
+            "tasks": [
+                {
+                    "id": "GAPS-P2-T001",
+                    "title": "Strengthen CustomerAddonResponseSchema status field to strict enum",
+                    "description": "Replace the weak `z.string()` status field with a strict enum in `customer-addons.schema.ts`.\n\nChange:\n```typescript\n// Before\nstatus: z.string(),\n// After\nstatus: z.enum(['active', 'expired', 'canceled', 'pending']),\n```\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Sending an invalid status produces a Zod validation error, not a silent pass",
+                    "gaps": ["GAP-044-08"],
+                    "files": ["apps/api/src/schemas/customer-addons.schema.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 10,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P2-T002",
+                    "title": "Strengthen PurchaseAddonResponseSchema orderId with format regex",
+                    "description": "Replace the permissive `z.string().uuid()` with a format-specific regex for addon order IDs.\n\nChange:\n```typescript\n// Before\norderId: z.string().uuid(),\n// After\norderId: z.string().regex(/^addon_[\\w-]+_\\d+$/, 'Invalid addon order ID format'),\n```\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- A UUID like `550e8400-e29b-41d4-a716-446655440000` fails validation\n- `addon_premium-boost_1710000000000` passes validation",
+                    "gaps": ["GAP-044-30"],
+                    "files": ["apps/api/src/schemas/addon.schema.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 10,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P2-T003",
+                    "title": "Add Zod runtime validation for JSONB columns in addon-expiration.service.ts",
+                    "description": "The service currently does unsafe type casting of JSONB columns `limitAdjustments` and `entitlementAdjustments`. Add runtime Zod validation before casting.\n\nSteps:\n1. Define inline Zod schemas:\n   - `LimitAdjustmentsSchema = z.record(z.string(), z.number()).nullable()`\n   - `EntitlementAdjustmentsSchema = z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).nullable()`\n2. Before casting, call `.parse()` on each JSONB column value\n3. If validation fails, log a warning with the raw value and skip the record rather than crashing\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Corrupted JSONB data produces a logged warning instead of a runtime exception",
+                    "gaps": ["GAP-044-11"],
+                    "files": ["apps/api/src/services/addon-expiration.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P2-T004",
+                    "title": "Add annualPriceArs validation for recurring addons in config-validator.ts",
+                    "description": "Recurring addons that support annual billing must have `annualPriceArs` defined. Add a `.refine()` check to the existing config validator.\n\nAdd:\n```typescript\n.refine(\n  (config) => config.billingType !== 'recurring' || config.annualPriceArs !== undefined,\n  { message: 'annualPriceArs is required for recurring addons', path: ['annualPriceArs'] }\n)\n```\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- A recurring addon config without `annualPriceArs` fails validation at startup",
+                    "gaps": ["GAP-044-40"],
+                    "files": ["packages/billing/src/validation/config-validator.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 3,
+            "name": "Race Condition & Resilience Fixes",
+            "depends_on": [],
+            "tasks": [
+                {
+                    "id": "GAPS-P3-T001",
+                    "title": "Harden cancelUserAddon WHERE clause against race conditions",
+                    "description": "The current `cancelUserAddon()` UPDATE only filters by `id`. Fix by adding status and deletedAt guards to prevent phantom writes on concurrent cancel requests.\n\nIn the UPDATE `.where()` clause, add:\n```typescript\n.where(\n  and(\n    eq(billingAddonPurchases.id, purchaseId),\n    eq(billingAddonPurchases.status, 'active'),  // ADD\n    isNull(billingAddonPurchases.deletedAt)       // ADD\n  )\n)\n```\n\nAfter the update, check `result.rowsAffected`. If 0, return an error or log a warning indicating the purchase was not in active state.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Concurrent cancel calls are idempotent without silent phantom writes",
+                    "gaps": ["GAP-044-15"],
+                    "files": ["apps/api/src/services/addon.user-addons.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 20,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P3-T002",
+                    "title": "Harden expireAddon WHERE clause against race conditions",
+                    "description": "Same race condition pattern as P3-T001 but for the expiry UPDATE in `addon-expiration.service.ts`. Add `eq(status, 'active')` and `isNull(deletedAt)` to the UPDATE WHERE clause in `expireAddon()` (~line 458). Check `rowsAffected` to detect phantom writes.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Concurrent expiry calls do not produce phantom writes or double-expiry events",
+                    "gaps": ["GAP-044-16"],
+                    "files": ["apps/api/src/services/addon-expiration.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 20,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P3-T003",
+                    "title": "Refactor expireAddon error handling to wrap entitlement removal in try/catch",
+                    "description": "Wrap the entitlement removal call in a try/catch block so failures are caught before they reach the status update step.\n\nPattern:\n```typescript\ntry {\n  await removeEntitlements(purchase);\n} catch (err) {\n  logger.warn({ err, purchaseId: purchase.id }, 'Entitlement removal failed during expiry, continuing with status update');\n}\n// Status update always runs here, regardless of entitlement result\n```\n\nThis is the structural change. The status update code stays in place — you are only wrapping the entitlement call above it.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- No behavior change on happy path\n- Entitlement service error no longer propagates up to block the expiry",
+                    "gaps": ["GAP-044-24"],
+                    "files": ["apps/api/src/services/addon-expiration.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 20,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P3-T004",
+                    "title": "Ensure status update always executes after entitlement removal in expireAddon",
+                    "description": "After the try/catch wrapper added in GAPS-P3-T003, verify the status update (set `status: 'expired'`, `updatedAt: new Date()`) is unconditionally placed after the catch block — not nested inside the try.\n\nAlso add a TODO comment referencing the deferred entitlement cleanup reconciliation pattern, documenting that skipped entitlements will be cleaned up on next reconciliation run.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- An entitlement service failure during expiry does not leave addon purchases stuck in 'active' state indefinitely\n- TODO comment is present near the catch block",
+                    "gaps": ["GAP-044-24"],
+                    "files": ["apps/api/src/services/addon-expiration.service.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": ["GAPS-P3-T003"],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 4,
+            "name": "Admin Route & Pagination Fixes",
+            "depends_on": [1],
+            "tasks": [
+                {
+                    "id": "GAPS-P4-T001",
+                    "title": "Fix admin customer-addons pagination to use pageSize and add totalPages",
+                    "description": "The admin customer-addons route uses `limit` instead of the project-wide `pageSize` convention. Also missing `totalPages` in the response.\n\nChanges:\n1. Replace `limit` query param with `pageSize` in the route schema\n2. Update the route handler to pass `pageSize` to Drizzle `.limit()`\n3. Compute and return `totalPages: Math.ceil(total / pageSize)`\n4. Add `totalPages: z.number().int()` to the response schema\n\nAcceptance criteria:\n- `GET /api/v1/admin/billing/customer-addons?page=2&pageSize=10` returns `{ data, total, page, pageSize, totalPages }`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-06", "GAP-044-23"],
+                    "files": [
+                        "apps/api/src/routes/billing/admin/customer-addons.ts",
+                        "apps/api/src/schemas/customer-addons.schema.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 45,
+                    "depends_on": ["GAPS-P1-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P4-T002",
+                    "title": "Add includeDeleted query param and deletedAt to admin customer-addons route",
+                    "description": "The admin route always excludes soft-deleted records. Admins need visibility into deleted records.\n\nChanges:\n1. Add `includeDeleted: z.boolean().optional().default(false)` to the query schema\n2. In the WHERE conditions array, conditionally include `isNull(billingAddonPurchases.deletedAt)` only when `includeDeleted` is false\n3. Add `deletedAt: z.string().datetime().nullable().optional()` to the response schema\n4. Include `deletedAt` in the SELECT columns\n\nAcceptance criteria:\n- `GET /api/v1/admin/billing/customer-addons?includeDeleted=true` returns soft-deleted records\n- Without the param (or false), soft-deleted records are excluded\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-01", "GAP-044-22"],
+                    "files": ["apps/api/src/routes/billing/admin/customer-addons.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P4-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P4-T003",
+                    "title": "Extract inline Drizzle query from admin customer-addons route into service method",
+                    "description": "The admin customer-addons route has a raw Drizzle query inline. Move the business logic to a new service method in `addon.user-addons.ts` or a new `addon.admin.service.ts`.\n\nNew service method signature:\n```typescript\nlistAdminCustomerAddons({\n  customerId,\n  status,\n  page,\n  pageSize,\n  includeDeleted,\n}: ListAdminCustomerAddonsParams): Promise<Result<{ data: CustomerAddon[]; total: number; totalPages: number }>>\n```\n\nUpdate the route to call this service method and use `ResponseFactory` for the response. Route file should have no Drizzle imports after this change.\n\nAcceptance criteria:\n- Route file contains no Drizzle imports\n- Business logic is in the service\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-07"],
+                    "files": [
+                        "apps/api/src/routes/billing/admin/customer-addons.ts",
+                        "apps/api/src/services/addon.user-addons.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 60,
+                    "depends_on": ["GAPS-P4-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P4-T004",
+                    "title": "Implement POST /:id/expire admin endpoint for addon purchases",
+                    "description": "Add a new admin-only endpoint:\n```\nPOST /api/v1/admin/billing/customer-addons/:id/expire\n```\n\nRequires `BILLING_MANAGE` permission. The endpoint:\n1. Validates the purchase exists\n2. Checks current status is 'active' (valid transition)\n3. Calls `expireAddon()` from the expiration service\n4. Returns the updated purchase record via `ResponseFactory`\n\nAcceptance criteria:\n- Endpoint returns 200 with updated purchase on success\n- Returns 404 if purchase not found\n- Returns 400 if purchase is not in 'active' status\n- Returns 403 without `BILLING_MANAGE` permission\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-38"],
+                    "files": ["apps/api/src/routes/billing/admin/customer-addons.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 35,
+                    "depends_on": ["GAPS-P4-T003"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P4-T005",
+                    "title": "Implement POST /:id/activate admin endpoint for addon purchases",
+                    "description": "Add a new admin-only endpoint:\n```\nPOST /api/v1/admin/billing/customer-addons/:id/activate\n```\n\nRequires `BILLING_MANAGE` permission. The endpoint:\n1. Validates the purchase exists\n2. Checks current status allows reactivation (e.g., 'expired' or 'canceled')\n3. Sets `status: 'active'`, clears `canceledAt`, sets `updatedAt: new Date()`\n4. Re-provisions entitlements by calling the appropriate entitlement service method\n5. Returns the updated purchase record via `ResponseFactory`\n\nAcceptance criteria:\n- Endpoint returns 200 with updated purchase on success\n- Returns 404 if purchase not found\n- Returns 400 if purchase is already 'active'\n- Returns 403 without `BILLING_MANAGE` permission\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-38"],
+                    "files": [
+                        "apps/api/src/routes/billing/admin/customer-addons.ts",
+                        "apps/api/src/services/addon-entitlement.service.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 40,
+                    "depends_on": ["GAPS-P4-T003"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P4-T006",
+                    "title": "Write integration tests for expire and activate admin endpoints",
+                    "description": "Add integration tests for both new admin endpoints added in GAPS-P4-T004 and GAPS-P4-T005.\n\nTest cases to cover:\n- `POST /:id/expire`: success (active → expired), 404 not found, 400 wrong status (already expired), 403 missing permission\n- `POST /:id/activate`: success (expired → active), 404 not found, 400 wrong status (already active), 403 missing permission\n\nCreate or extend the existing test file for admin customer-addons.\n\nAcceptance criteria:\n- All test cases pass\n- `pnpm test` passes in `apps/api`",
+                    "gaps": ["GAP-044-38"],
+                    "files": ["apps/api/test/integration/billing/admin-customer-addons.test.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 45,
+                    "depends_on": ["GAPS-P4-T004", "GAPS-P4-T005"],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 5,
+            "name": "Checkout Hardening",
+            "depends_on": [],
+            "tasks": [
+                {
+                    "id": "GAPS-P5-T001",
+                    "title": "Replace raw MercadoPago SDK with billing adapter in addon checkout service",
+                    "description": "The checkout service uses the raw MercadoPago SDK directly instead of the `createMercadoPagoAdapter()` factory from `@repo/billing`. This violates the Single Source of Truth principle.\n\nReplace:\n```typescript\nimport { MercadoPagoConfig, Preference } from 'mercadopago';\nconst client = new MercadoPagoConfig({ accessToken });\nconst preference = new Preference(client);\n```\nWith:\n```typescript\nimport { createMercadoPagoAdapter } from '@repo/billing';\nconst mpAdapter = createMercadoPagoAdapter({ accessToken });\n```\n\nUse the adapter's methods for preference creation. Update tests in `apps/api/test/services/addon.checkout.test.ts` to mock the adapter, not the raw SDK.\n\nAcceptance criteria:\n- `addon.checkout.ts` has no direct `mercadopago` SDK imports\n- `pnpm test` passes",
+                    "gaps": ["GAP-044-35"],
+                    "files": [
+                        "apps/api/src/services/addon.checkout.ts",
+                        "apps/api/test/services/addon.checkout.test.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 45,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P5-T002",
+                    "title": "Add targetCategories validation before addon purchase in checkout",
+                    "description": "Some addons are restricted to specific plan categories. Currently `targetCategories` is stored in the addon config but not validated during purchase.\n\nAdd validation step in `addon.checkout.ts`:\n```typescript\nif (addon.targetCategories && addon.targetCategories.length > 0) {\n  const customerCategory = await getCustomerPlanCategory(customerId);\n  if (!addon.targetCategories.includes(customerCategory)) {\n    return { success: false, error: 'ADDON_NOT_AVAILABLE_FOR_PLAN' };\n  }\n}\n```\n\nAcceptance criteria:\n- A customer on 'basic' plan cannot purchase an addon with `targetCategories: ['premium']`\n- Returns `400 ADDON_NOT_AVAILABLE_FOR_PLAN`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-36"],
+                    "files": ["apps/api/src/services/addon.checkout.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P5-T003",
+                    "title": "Fix notification calls to use addon display name instead of slug",
+                    "description": "The current code passes `addonName: expiringAddon.addonSlug` to notification calls, sending users a raw slug (e.g., `premium-boost`) instead of a human-readable name.\n\nFix:\n```typescript\n// Before\naddonName: expiringAddon.addonSlug,\n// After\nconst addonConfig = getAddonBySlug(expiringAddon.addonSlug);\naddonName: addonConfig?.name ?? expiringAddon.addonSlug,\n```\n\nImport `getAddonBySlug` from `@repo/billing`.\n\nAcceptance criteria:\n- Expiry notification emails show the addon display name, not the slug",
+                    "gaps": ["GAP-044-31"],
+                    "files": ["apps/api/src/cron/jobs/addon-expiry.job.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 6,
+            "name": "Schema Consolidation & Admin Tier Fix",
+            "depends_on": [2],
+            "tasks": [
+                {
+                    "id": "GAPS-P6-T001",
+                    "title": "Create consolidated addon-purchase.schema.ts in @repo/schemas",
+                    "description": "Create the new consolidated schema file in the schemas package, merging content from both local API schema files.\n\nSteps:\n1. Create `packages/schemas/src/billing/addon-purchase.schema.ts`\n2. Copy and merge all schemas from `apps/api/src/schemas/addon.schema.ts` and `apps/api/src/schemas/customer-addons.schema.ts` into the new file\n3. Apply Phase 2 enum fixes (status as `z.enum(['active', 'expired', 'canceled', 'pending'])`) if not already done\n4. Export all schemas from the file\n\nDo NOT update consumers yet — that is GAPS-P6-T002.\n\nAcceptance criteria:\n- `packages/schemas/src/billing/addon-purchase.schema.ts` exists with all addon schemas\n- `pnpm typecheck` passes in `packages/schemas`",
+                    "gaps": ["GAP-044-32"],
+                    "files": ["packages/schemas/src/billing/addon-purchase.schema.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 40,
+                    "depends_on": ["GAPS-P2-T001", "GAPS-P2-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T002",
+                    "title": "Export addon schemas from @repo/schemas index",
+                    "description": "Add the new addon-purchase schema file to the `@repo/schemas` barrel export.\n\nSteps:\n1. Add export to `packages/schemas/src/index.ts`: `export * from './billing/addon-purchase.schema'`\n2. Verify no naming conflicts with existing exports\n3. Run `pnpm typecheck` in `packages/schemas` to confirm\n\nAcceptance criteria:\n- `import { PurchaseAddonResponseSchema } from '@repo/schemas'` resolves correctly\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-32"],
+                    "files": ["packages/schemas/src/index.ts"],
+                    "complexity": 1,
+                    "effort_minutes": 10,
+                    "depends_on": ["GAPS-P6-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T003",
+                    "title": "Update API route and service imports to use @repo/schemas addon schemas",
+                    "description": "Update all files in `apps/api/src/` that import from the local addon schema files to import from `@repo/schemas` instead.\n\nSteps:\n1. Find all files importing from `apps/api/src/schemas/addon.schema.ts` or `apps/api/src/schemas/customer-addons.schema.ts`\n2. Update each import to use `@repo/schemas`\n3. Run `pnpm typecheck` to confirm no regressions\n\nDo NOT delete the source files yet — that is GAPS-P6-T004.\n\nAcceptance criteria:\n- `rg \"from.*schemas/addon.schema\" apps/api/src/` returns zero results\n- `rg \"from.*schemas/customer-addons.schema\" apps/api/src/` returns zero results\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-32"],
+                    "files": [
+                        "apps/api/src/routes/billing/admin/customer-addons.ts",
+                        "apps/api/src/routes/billing/addons.ts",
+                        "apps/api/src/services/addon.checkout.ts",
+                        "apps/api/src/services/addon.user-addons.ts"
+                    ],
+                    "complexity": 2,
+                    "effort_minutes": 25,
+                    "depends_on": ["GAPS-P6-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T004",
+                    "title": "Delete local addon schema files and add i18n keys to validation messages",
+                    "description": "After all consumers have been migrated (GAPS-P6-T003), clean up the local schema files.\n\nSteps:\n1. Delete `apps/api/src/schemas/addon.schema.ts`\n2. Either delete `apps/api/src/schemas/customer-addons.schema.ts` and update all consumers, OR update it to re-export from `@repo/schemas`\n3. Add i18n keys to validation error messages in the consolidated schema (e.g., `z.enum([...], { message: 'billing.addon.invalidStatus' })`)\n\nAcceptance criteria:\n- `find apps/api/src/schemas -name \"addon.schema.ts\"` returns nothing\n- `pnpm typecheck` passes\n- No broken imports",
+                    "gaps": ["GAP-044-32", "GAP-044-44"],
+                    "files": [
+                        "apps/api/src/schemas/addon.schema.ts",
+                        "apps/api/src/schemas/customer-addons.schema.ts",
+                        "packages/schemas/src/billing/addon-purchase.schema.ts"
+                    ],
+                    "complexity": 2,
+                    "effort_minutes": 25,
+                    "depends_on": ["GAPS-P6-T003"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T005",
+                    "title": "Create GET /admin/billing/addons and GET /admin/billing/addons/:slug routes",
+                    "description": "Create a new admin route file for addon management with proper permission checks.\n\nCreate `apps/api/src/routes/billing/admin/addons.ts` with:\n- `GET /api/v1/admin/billing/addons` — list all addons (requires `BILLING_READ`)\n- `GET /api/v1/admin/billing/addons/:slug` — get addon details (requires `BILLING_READ`)\n\nUse `createAdminListRoute` or `createSimpleRoute` factory. Import schemas from `@repo/schemas`.\n\nAcceptance criteria:\n- Both routes return 403 without `BILLING_READ` permission\n- Both routes return correct data with `BILLING_READ` permission\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-34"],
+                    "files": ["apps/api/src/routes/billing/admin/addons.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 40,
+                    "depends_on": ["GAPS-P6-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T006",
+                    "title": "Create GET /admin/billing/plans and GET /admin/billing/plans/:id routes",
+                    "description": "Create a new admin route file for plan management with proper permission checks.\n\nCreate `apps/api/src/routes/billing/admin/plans.ts` with:\n- `GET /api/v1/admin/billing/plans` — list all plans (requires `BILLING_READ`)\n- `GET /api/v1/admin/billing/plans/:id` — get plan details (requires `BILLING_READ`)\n\nRegister both new route files in `apps/api/src/routes/billing/admin/index.ts`.\n\nAcceptance criteria:\n- Both routes return 403 without `BILLING_READ` permission\n- `pnpm typecheck` passes\n- Routes registered and reachable",
+                    "gaps": ["GAP-044-34"],
+                    "files": [
+                        "apps/api/src/routes/billing/admin/plans.ts",
+                        "apps/api/src/routes/billing/admin/index.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 40,
+                    "depends_on": ["GAPS-P6-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T007",
+                    "title": "Update admin frontend hooks to use new admin billing endpoints",
+                    "description": "The admin panel currently consumes `/api/v1/billing/plans` and `/api/v1/billing/addons` which are public/protected tier routes with no admin permission checks.\n\nUpdate hooks in `apps/admin/src/lib/billing-http-adapter/` to use:\n- `vendor-entitlement-limit-addon-storage.ts`: change addon list/detail endpoints to `/api/v1/admin/billing/addons` and `/api/v1/admin/billing/addons/:slug`\n- `plan-price-promo-storage.ts`: change plan list/detail endpoints to `/api/v1/admin/billing/plans` and `/api/v1/admin/billing/plans/:id`\n\nAcceptance criteria:\n- Admin panel cannot access billing data without `BILLING_READ` permission\n- Public `/api/v1/billing/addons` and `/api/v1/billing/plans` remain unchanged for the web app\n- `pnpm typecheck` passes in `apps/admin`",
+                    "gaps": ["GAP-044-34"],
+                    "files": [
+                        "apps/admin/src/lib/billing-http-adapter/vendor-entitlement-limit-addon-storage.ts",
+                        "apps/admin/src/lib/billing-http-adapter/plan-price-promo-storage.ts"
+                    ],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P6-T005", "GAPS-P6-T006"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P6-T008",
+                    "title": "Replace unsafe type casts in admin plan hooks with Zod parsing",
+                    "description": "The `transformPlanRecord` function uses `as PlanRecord` casting without runtime validation. Replace with Zod parsing.\n\nChange:\n```typescript\n// Before\nreturn data as PlanRecord;\n// After\nconst result = PlanRecordSchema.safeParse(data);\nif (!result.success) {\n  logger.warn({ errors: result.error.issues }, 'Invalid plan record from API');\n  throw new Error('Invalid plan data received from API');\n}\nreturn result.data;\n```\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Malformed API responses produce a logged warning and a user-visible error, not a silent runtime type violation",
+                    "gaps": ["GAP-044-42"],
+                    "files": [
+                        "apps/admin/src/lib/billing-http-adapter/plan-price-promo-storage.ts"
+                    ],
+                    "complexity": 2,
+                    "effort_minutes": 25,
+                    "depends_on": [],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 7,
+            "name": "Service Architecture Refactor",
+            "depends_on": [6],
+            "tasks": [
+                {
+                    "id": "GAPS-P7-T001",
+                    "title": "Create AddonServiceResult bridge type alias in addon.types.ts",
+                    "description": "Before migrating services, create a bridge type alias that allows incremental migration without a flag day.\n\nIn `apps/api/src/services/addon.types.ts`, add:\n```typescript\n// Temporary bridge - will be deleted in GAPS-P7-T008\nexport type AddonServiceResult<T> = Result<T>; // re-export alias from @repo/service-core\n```\n\nThis allows each service to be migrated independently without breaking consumers.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- No services broken after this change",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon.types.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P6-T004"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T002",
+                    "title": "Migrate addon.service.ts to extend BaseCrudService with Result<T> returns",
+                    "description": "Extend `BaseCrudService` from `@repo/service-core`. Replace all `ServiceResult<T>` return types with `Result<T>`. Use `runWithLoggingAndValidation()` for automatic logging where applicable.\n\nAcceptance criteria:\n- `addon.service.ts` extends `BaseCrudService`\n- All methods return `Result<T>`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon.service.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 45,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T003",
+                    "title": "Migrate addon.checkout.ts return types to Result<T> pattern",
+                    "description": "Replace all `ServiceResult<T>` return types with `Result<T>` from `@repo/service-core` in the checkout service.\n\nAcceptance criteria:\n- `addon.checkout.ts` returns `Result<T>` on all exported functions\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon.checkout.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T004",
+                    "title": "Migrate addon.user-addons.ts to extend BaseCrudService with Result<T> returns",
+                    "description": "This service has the most methods. Extend `BaseCrudService` from `@repo/service-core`. Replace all `ServiceResult<T>` with `Result<T>`. Careful incremental migration method by method.\n\nAcceptance criteria:\n- `addon.user-addons.ts` extends `BaseCrudService`\n- All methods return `Result<T>`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon.user-addons.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 60,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T005",
+                    "title": "Migrate addon-entitlement.service.ts return types to Result<T>",
+                    "description": "Replace all `ServiceResult<T>` return types with `Result<T>` from `@repo/service-core`.\n\nAcceptance criteria:\n- All exported functions return `Result<T>`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon-entitlement.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 45,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T006",
+                    "title": "Migrate addon-expiration.service.ts return types to Result<T>",
+                    "description": "Replace all `ServiceResult<T>` return types with `Result<T>` from `@repo/service-core`.\n\nAcceptance criteria:\n- All exported functions return `Result<T>`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": ["apps/api/src/services/addon-expiration.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 45,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T007",
+                    "title": "Migrate BillingMetricsService return types to Result<T>",
+                    "description": "Replace the local `ServiceResult<T>` with standard `Result<T>` from `@repo/service-core` in `billing-metrics.service.ts`.\n\nAcceptance criteria:\n- All exported functions return `Result<T>`\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-43"],
+                    "files": ["apps/api/src/services/billing-metrics.service.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P7-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T008",
+                    "title": "Delete ServiceResult type from addon.types.ts after all migrations",
+                    "description": "Only execute after GAPS-P7-T002 through GAPS-P7-T007 are all complete.\n\nSteps:\n1. Remove the `ServiceResult` type definition from `apps/api/src/services/addon.types.ts`\n2. Remove the bridge alias added in GAPS-P7-T001\n3. If `addon.types.ts` has no remaining content, delete it\n4. Remove the export from `apps/api/src/services/index.ts` if applicable\n\nAcceptance criteria:\n- `rg \"ServiceResult\" apps/api/src/services/` returns zero results\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": [
+                        "apps/api/src/services/addon.types.ts",
+                        "apps/api/src/services/index.ts"
+                    ],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [
+                        "GAPS-P7-T002",
+                        "GAPS-P7-T003",
+                        "GAPS-P7-T004",
+                        "GAPS-P7-T005",
+                        "GAPS-P7-T006",
+                        "GAPS-P7-T007"
+                    ],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T009",
+                    "title": "Update billing route handlers for new Result<T> return types (addon + checkout routes)",
+                    "description": "After changing service return types, route handlers that destructured `{ success, data, error }` from `ServiceResult` need to use `Result<T>` shape. Update addon-related and checkout routes.\n\nFiles to update:\n- `apps/api/src/routes/billing/addons.ts`\n- `apps/api/src/routes/billing/admin/customer-addons.ts`\n\nUse `ResponseFactory` for consistent response formatting.\n\nAcceptance criteria:\n- `pnpm typecheck` passes for these route files\n- No runtime errors on these routes",
+                    "gaps": ["GAP-044-33"],
+                    "files": [
+                        "apps/api/src/routes/billing/addons.ts",
+                        "apps/api/src/routes/billing/admin/customer-addons.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 35,
+                    "depends_on": ["GAPS-P7-T008"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T010",
+                    "title": "Update billing route handlers for new Result<T> return types (metrics + usage routes)",
+                    "description": "Update remaining billing route handlers that consume migrated services.\n\nFiles to update:\n- `apps/api/src/routes/billing/metrics.ts`\n- `apps/api/src/routes/billing/admin/metrics.ts`\n- `apps/api/src/routes/billing/usage.ts`\n\nUse `ResponseFactory` for consistent response formatting.\n\nAcceptance criteria:\n- `pnpm typecheck` passes for these route files\n- `pnpm test` passes",
+                    "gaps": ["GAP-044-33"],
+                    "files": [
+                        "apps/api/src/routes/billing/metrics.ts",
+                        "apps/api/src/routes/billing/admin/metrics.ts",
+                        "apps/api/src/routes/billing/usage.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 30,
+                    "depends_on": ["GAPS-P7-T009"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T011",
+                    "title": "Update addon service unit tests for new Result<T> mock shapes",
+                    "description": "Update mock return values in addon service tests from `ServiceResult` shape to `Result<T>` shape.\n\nVerify the exact shape from `@repo/service-core` (likely `{ ok: true, value: ... }` vs `{ ok: false, error: ... }`) and update:\n- `apps/api/test/services/addon.service.test.ts`\n- `apps/api/test/services/addon.checkout.test.ts`\n- `apps/api/test/cron/addon-expiry.test.ts`\n\nAcceptance criteria:\n- `pnpm test` passes for these test files",
+                    "gaps": ["GAP-044-33"],
+                    "files": [
+                        "apps/api/test/services/addon.service.test.ts",
+                        "apps/api/test/services/addon.checkout.test.ts",
+                        "apps/api/test/cron/addon-expiry.test.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 40,
+                    "depends_on": ["GAPS-P7-T010"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P7-T012",
+                    "title": "Update integration and entitlement test files for new Result<T> patterns",
+                    "description": "Update remaining test files that test addon services and depend on the old `ServiceResult` shape.\n\nFiles to update:\n- `apps/api/test/integration/real-user-scenarios.test.ts` (addon-related sections)\n- `apps/api/test/middlewares/entitlement.test.ts`\n\nAcceptance criteria:\n- `pnpm test` passes with >= 90% coverage on modified addon service files",
+                    "gaps": ["GAP-044-33"],
+                    "files": [
+                        "apps/api/test/integration/real-user-scenarios.test.ts",
+                        "apps/api/test/middlewares/entitlement.test.ts"
+                    ],
+                    "complexity": 2.5,
+                    "effort_minutes": 35,
+                    "depends_on": ["GAPS-P7-T011"],
+                    "status": "pending"
+                }
+            ]
+        },
+        {
+            "phase": 8,
+            "name": "DB & Misc Tasks",
+            "depends_on": [],
+            "tasks": [
+                {
+                    "id": "GAPS-P8-T001",
+                    "title": "Apply pending DB migration to dev database",
+                    "description": "This is the existing T-021 from the original plan, still pending. Requires a running PostgreSQL database.\n\nSteps:\n1. Ensure `pnpm db:start` is running\n2. Run `pnpm db:migrate`\n3. Verify the migration applied correctly:\n   - `deleted_at` column exists in `billing_addon_purchases`\n   - `canceled_at` column exists (renamed from `cancelled_at`)\n   - Zero rows with `status = 'cancelled'` (British spelling)\n   - Row count with `canceled_at IS NOT NULL` is preserved\n\nAcceptance criteria:\n- `deleted_at` and `canceled_at` columns exist in the table\n- Zero rows with `status = 'cancelled'`",
+                    "gaps": ["GAP-044-02"],
+                    "files": ["packages/db/src/migrations/"],
+                    "complexity": 1,
+                    "effort_minutes": 10,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T002",
+                    "title": "Create DB migration adding CHECK constraint for status column",
+                    "description": "Generate or manually create a migration adding a CHECK constraint to prevent invalid status values at the DB level.\n\nSQL to apply:\n```sql\nALTER TABLE billing_addon_purchases\n  ADD CONSTRAINT billing_addon_purchases_status_check\n  CHECK (status IN ('active', 'expired', 'canceled', 'pending'));\n```\n\nCreate the migration file in `packages/db/src/migrations/` following the existing naming pattern (e.g., `XXXX_addon_purchases_status_check.sql`).\n\nAcceptance criteria:\n- Migration applies successfully\n- Attempting `UPDATE billing_addon_purchases SET status = 'cancelled'` fails with a constraint violation",
+                    "gaps": ["GAP-044-41"],
+                    "files": ["packages/db/src/migrations/"],
+                    "complexity": 2,
+                    "effort_minutes": 20,
+                    "depends_on": ["GAPS-P8-T001"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T003",
+                    "title": "Fix migration idempotency check to filter out soft-deleted records",
+                    "description": "The idempotency check query in `migrate-addon-purchases.ts` does not filter by `deletedAt IS NULL`, meaning a soft-deleted record could cause the migration to skip when it should run on active records.\n\nAdd `isNull(billingAddonPurchases.deletedAt)` (or raw SQL `AND deleted_at IS NULL`) to the WHERE clause of the idempotency check query.\n\nAcceptance criteria:\n- Running the migration twice on a dataset with soft-deleted records still applies correctly to active records\n- `pnpm typecheck` passes",
+                    "gaps": ["GAP-044-28"],
+                    "files": ["packages/db/src/billing/migrate-addon-purchases.ts"],
+                    "complexity": 1.5,
+                    "effort_minutes": 15,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T004",
+                    "title": "Fix BaseModel.softDelete() and restore() to update the updatedAt timestamp",
+                    "description": "`softDelete()` sets `deletedAt` but does not update `updatedAt`, creating an inconsistency in audit logs. `restore()` has the same issue.\n\nFix both methods to always set `updatedAt: new Date()` alongside the deletion/restoration timestamp.\n\nAlso add a JSDoc warning on `restore()`:\n```typescript\n/**\n * Restores a soft-deleted record.\n *\n * WARNING for addon purchases: restoring does NOT re-provision entitlements.\n * If you restore a billing_addon_purchase, you must manually call\n * addonEntitlementService.provisionEntitlements() to restore user access.\n */\n```\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- A soft-deleted record has the same `updatedAt` timestamp as `deletedAt`",
+                    "gaps": ["GAP-044-25", "GAP-044-26"],
+                    "files": ["packages/db/src/base-model.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 20,
+                    "depends_on": [],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T005",
+                    "title": "Replace JSON metadata read with DB query in UsageTrackingService.getAddonAdjustments",
+                    "description": "Migrate `getAddonAdjustments()` to read from the `billing_addon_purchases` table instead of JSON metadata.\n\nSteps:\n1. Query `billing_addon_purchases` where `status = 'active'` and `isNull(deletedAt)`\n2. Join with addon config to get `limitAdjustments` and `entitlementAdjustments`\n3. Replace the current JSON metadata parsing logic with this DB query\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Addon adjustments are sourced from the structured table, not untyped JSON",
+                    "gaps": ["GAP-044-37"],
+                    "files": ["apps/api/src/services/usage-tracking.service.ts"],
+                    "complexity": 2.5,
+                    "effort_minutes": 35,
+                    "depends_on": ["GAPS-P1-T002"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T006",
+                    "title": "Update UsageTrackingService tests for new DB query pattern",
+                    "description": "After migrating `getAddonAdjustments()` to read from the DB (GAPS-P8-T005), update the tests to mock the DB query instead of the JSON metadata path.\n\nUpdate or create test cases in the usage-tracking service test file to:\n1. Mock `billing_addon_purchases` DB query returning active addon purchases\n2. Verify `limitAdjustments` and `entitlementAdjustments` are correctly aggregated\n3. Verify soft-deleted records are excluded\n\nAcceptance criteria:\n- `pnpm test` passes in `apps/api`\n- Tests cover the new DB query path",
+                    "gaps": ["GAP-044-37"],
+                    "files": ["apps/api/test/services/usage-tracking.service.test.ts"],
+                    "complexity": 2,
+                    "effort_minutes": 25,
+                    "depends_on": ["GAPS-P8-T005"],
+                    "status": "pending"
+                },
+                {
+                    "id": "GAPS-P8-T007",
+                    "title": "Create ADDON_PURCHASE email notification template",
+                    "description": "Create an email template for addon purchase confirmations following the existing notification template pattern.\n\nCreate `packages/notifications/src/templates/addon-purchase.template.ts` with interface:\n```typescript\ninterface AddonPurchaseNotificationData {\n  customerName: string;\n  addonName: string;\n  addonDescription: string;\n  expiresAt: Date | null;  // null for lifetime addons\n  orderId: string;\n  amount: number;          // in centavos\n  currency: 'ARS';\n}\n```\n\nExport from `packages/notifications/src/index.ts`.\n\nAcceptance criteria:\n- `pnpm typecheck` passes\n- Template renders correctly following the existing notification template pattern in the package",
+                    "gaps": ["GAP-044-39"],
+                    "files": [
+                        "packages/notifications/src/templates/addon-purchase.template.ts",
+                        "packages/notifications/src/index.ts"
+                    ],
+                    "complexity": 2,
+                    "effort_minutes": 30,
+                    "depends_on": [],
+                    "status": "pending"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,11 @@
+{
+    "specId": "SPEC-044",
+    "title": "Addon Purchase Schema Cleanup",
+    "status": "in-progress",
+    "complexity": "low",
+    "type": "refactor",
+    "tags": ["billing", "addon", "schema", "migration", "soft-delete", "drizzle"],
+    "created": "2026-03-16",
+    "updated": "2026-03-16",
+    "origin": "SPEC-038 gaps GAP-038-45 and GAP-038-25"
+}
