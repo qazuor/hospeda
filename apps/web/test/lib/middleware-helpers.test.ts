@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     buildLocaleRedirect,
     buildLoginRedirect,
+    buildSentryReportUri,
     extractLocaleFromPath,
     isAuthRoute,
     isProtectedRoute,
@@ -293,6 +294,30 @@ describe('parseSessionUser', () => {
         vi.mocked(global.fetch).mockRejectedValue(new Error('Network error'));
 
         const result = await parseSessionUser({ cookieHeader: 'session=abc123' });
+        expect(result).toBeNull();
+    });
+});
+
+describe('buildSentryReportUri', () => {
+    it('should parse a valid DSN and return the security endpoint', () => {
+        const result = buildSentryReportUri({
+            dsn: 'https://abc123@o456789.ingest.sentry.io/789'
+        });
+        expect(result).toBe('https://o456789.ingest.sentry.io/api/789/security/?sentry_key=abc123');
+    });
+
+    it('should return null for an invalid DSN', () => {
+        const result = buildSentryReportUri({ dsn: 'not-a-url' });
+        expect(result).toBeNull();
+    });
+
+    it('should return null for a DSN missing the project ID', () => {
+        const result = buildSentryReportUri({ dsn: 'https://key@host/' });
+        expect(result).toBeNull();
+    });
+
+    it('should return null for a DSN missing the key', () => {
+        const result = buildSentryReportUri({ dsn: 'https://host/123' });
         expect(result).toBeNull();
     });
 });
