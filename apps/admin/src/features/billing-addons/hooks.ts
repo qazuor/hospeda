@@ -44,7 +44,7 @@ async function fetchAddons(filters: Record<string, unknown> = {}) {
         data: Record<string, unknown>[];
         metadata?: Record<string, unknown>;
     }>({
-        path: `/api/v1/protected/billing/addons?${params.toString()}`
+        path: `/api/v1/admin/billing/addons?${params.toString()}`
     });
     // Custom billing route returns { success, data: [] } without pagination
     const items = result.data.data;
@@ -76,7 +76,7 @@ async function fetchPurchasedAddons(
  */
 async function createAddon(payload: CreateAddonPayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: '/api/v1/protected/billing/addons',
+        path: '/api/v1/admin/billing/addons',
         method: 'POST',
         body: payload
     });
@@ -88,7 +88,7 @@ async function createAddon(payload: CreateAddonPayload) {
  */
 async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/addons/${id}`,
+        path: `/api/v1/admin/billing/addons/${id}`,
         method: 'PUT',
         body: payload
     });
@@ -100,7 +100,7 @@ async function updateAddon({ id, ...payload }: UpdateAddonPayload) {
  */
 async function toggleAddonActive(id: string, isActive: boolean) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/addons/${id}`,
+        path: `/api/v1/admin/billing/addons/${id}`,
         method: 'PATCH',
         body: { isActive }
     });
@@ -112,7 +112,7 @@ async function toggleAddonActive(id: string, isActive: boolean) {
  */
 async function deleteAddon(id: string) {
     const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
-        path: `/api/v1/protected/billing/addons/${id}`,
+        path: `/api/v1/admin/billing/addons/${id}`,
         method: 'DELETE'
     });
     return result.data.data;
