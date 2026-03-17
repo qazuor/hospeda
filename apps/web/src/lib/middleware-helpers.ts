@@ -209,3 +209,31 @@ export async function parseSessionUser({
         return null;
     }
 }
+
+/**
+ * Builds a Sentry CSP report URI from a Sentry DSN.
+ * Sentry accepts CSP violation reports at its security endpoint.
+ *
+ * @see https://docs.sentry.io/platforms/javascript/security-policy-reporting/
+ *
+ * DSN format: https://{key}@{host}/{project_id}
+ * Report URI: https://{host}/api/{project_id}/security/?sentry_key={key}
+ */
+// NOTE: This function is intentionally duplicated in apps/admin/src/lib/csp-helpers.ts.
+// Extracting to a shared package is deferred to avoid cross-app dependency for a single utility.
+export function buildSentryReportUri({ dsn }: { dsn: string }): string | null {
+    try {
+        const url = new URL(dsn);
+        const key = url.username;
+        const projectId = url.pathname.replace(/\//g, '');
+        const host = url.hostname;
+
+        if (!key || !projectId || !host) {
+            return null;
+        }
+
+        return `https://${host}/api/${projectId}/security/?sentry_key=${key}`;
+    } catch {
+        return null;
+    }
+}

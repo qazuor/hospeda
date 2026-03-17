@@ -7,12 +7,14 @@
  * 4. Setting validated locale in context.locals
  * 5. Protecting /mi-cuenta/* routes with authentication checks
  * 6. Rewriting 404 responses to the custom 404 page
+ * 7. Setting Content-Security-Policy header on HTML responses
  */
 
 import { defineMiddleware } from 'astro:middleware';
 import {
     buildLocaleRedirect,
     buildLoginRedirect,
+    buildSentryReportUri,
     extractLocaleFromPath,
     isAuthRoute,
     isProtectedRoute,
@@ -84,6 +86,45 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 6: If the downstream route returned a 404, rewrite to our custom 404 page.
     if (response.status === 404) {
         return context.rewrite('/404');
+    }
+
+    // Step 7: Set Content-Security-Policy-Report-Only header on HTML responses.
+    //
+    // WHY both <meta> and HTTP header?
+    // - Astro's experimental.csp emits a <meta> tag with script/style hashes.
+    //   This enforces script-src and style-src with hash integrity.
+    // - The <meta> tag CANNOT express frame-ancestors or report-uri (per CSP spec).
+    // - The HTTP header adds frame-ancestors, report-uri, and report-only mode.
+    //
+    // DUAL POLICY behavior: When both a <meta> and HTTP header CSP exist,
+    // browsers enforce BOTH independently. A resource must satisfy both.
+    const contentType = response.headers.get('content-type') ?? '';
+    if (contentType.includes('text/html')) {
+        const sentryDsn = import.meta.env.PUBLIC_SENTRY_DSN;
+        const sentryReportUri = sentryDsn ? buildSentryReportUri({ dsn: sentryDsn }) : null;
+
+        // Phase 1: Report-Only mode. Change to 'Content-Security-Policy' for Phase 2.
+        const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only';
+
+        const directives = [
+            "default-src 'self'",
+            "script-src 'self' 'strict-dynamic' 'unsafe-inline' https:",
+            "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
+            "font-src 'self' https://fonts.gstatic.com",
+            "img-src 'self' data: https:",
+            "connect-src 'self' https://*.ingest.sentry.io https://*.vercel.app",
+            "worker-src 'self' blob:",
+            'child-src blob:',
+            "object-src 'none'",
+            "base-uri 'self'",
+            "form-action 'self'",
+            "frame-ancestors 'none'",
+            sentryReportUri ? `report-uri ${sentryReportUri}` : null
+        ]
+            .filter(Boolean)
+            .join('; ');
+
+        response.headers.set(CSP_HEADER_NAME, directives);
     }
 
     return response;

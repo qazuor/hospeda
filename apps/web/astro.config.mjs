@@ -133,5 +133,29 @@ export default defineConfig({
                 process.env.VERCEL_GIT_COMMIT_SHA || process.env.PUBLIC_SENTRY_RELEASE || ''
             )
         }
-    }
+    },
+    experimental: {
+        csp: {
+            algorithm: 'SHA-256',
+            scriptDirective: {
+                strictDynamic: true,
+            },
+            // NOTE: Do NOT configure styleDirective here. Astro would emit style
+            // hashes in the <meta>/<header>, causing CSP2+ browsers to ignore
+            // 'unsafe-inline' in style-src, which breaks Sentry Session Replay
+            // (rrweb inline styles). Style CSP is handled via the HTTP header
+            // set in middleware.
+            directives: [
+                "default-src 'self'",
+                "font-src 'self' https://fonts.gstatic.com",
+                "img-src 'self' data: https:",
+                "connect-src 'self' https://*.ingest.sentry.io https://*.vercel.app",
+                "worker-src 'self' blob:",
+                "child-src blob:",
+                "object-src 'none'",
+                "base-uri 'self'",
+                "form-action 'self'",
+            ],
+        },
+    },
 });
