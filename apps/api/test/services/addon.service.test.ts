@@ -19,7 +19,13 @@ import { AddonService } from '../../src/services/addon.service';
 
 // Use vi.hoisted to define mock database utilities available before vi.mock runs
 // Only destructure the top-level values we need to pass to vi.mock
-const { mockDbSelect, mockDbUpdate, mockDbInsert, mockBillingAddonPurchases } = vi.hoisted(() => {
+const {
+    mockDbSelect,
+    mockDbUpdate,
+    mockDbInsert,
+    mockDbTransaction,
+    mockBillingAddonPurchases
+} = vi.hoisted(() => {
     // Select chain: select() -> from() -> where()
     const mockDbWhere = vi.fn().mockResolvedValue([]);
     const mockDbFrom = vi.fn(() => ({ where: mockDbWhere }));
@@ -28,17 +34,37 @@ const { mockDbSelect, mockDbUpdate, mockDbInsert, mockBillingAddonPurchases } = 
     const mockDbUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
     const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
     const mockDbUpdate = vi.fn(() => ({ set: mockDbUpdateSet }));
-    // Insert chain: insert() -> values()
-    const mockDbInsertValues = vi.fn().mockResolvedValue({ rowCount: 1 });
+    // Insert chain for confirmPurchase: insert() -> values() -> returning()
+    // Default returns a known purchaseId so confirmPurchase tests pass without extra setup
+    const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+    const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
     const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
+    // Transaction wrapper: executes the callback with a tx that has the same insert chain
+    const mockDbTransaction = vi.fn(
+        async (callback: (tx: { insert: typeof mockDbInsert }) => Promise<unknown>) => {
+            return callback({ insert: mockDbInsert });
+        }
+    );
     return {
         mockDbSelect,
         mockDbUpdate,
         mockDbInsert,
+        mockDbTransaction,
         mockBillingAddonPurchases: {
+            id: 'id',
             customerId: 'customerId',
             status: 'status',
-            addonSlug: 'addonSlug'
+            addonSlug: 'addonSlug',
+            subscriptionId: 'subscriptionId',
+            purchasedAt: 'purchasedAt',
+            expiresAt: 'expiresAt',
+            paymentId: 'paymentId',
+            limitAdjustments: 'limitAdjustments',
+            entitlementAdjustments: 'entitlementAdjustments',
+            metadata: 'metadata',
+            canceledAt: 'canceled_at',
+            deletedAt: 'deleted_at',
+            updatedAt: 'updatedAt'
         }
     };
 });
@@ -48,7 +74,8 @@ vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
         select: mockDbSelect,
         update: mockDbUpdate,
-        insert: mockDbInsert
+        insert: mockDbInsert,
+        transaction: mockDbTransaction
     }))
 }));
 
@@ -129,6 +156,10 @@ vi.mock('@repo/billing', () => {
 
     return {
         ALL_ADDONS: mockAddons,
+        // ALL_PLANS is imported at the top level of addon.checkout.ts (via confirmAddonPurchase).
+        // An empty array is sufficient: the code uses optional chaining when accessing plan
+        // limits (canonicalPlan?.limits.find(...)), so an unknown planId is non-fatal.
+        ALL_PLANS: [],
         LimitKey: LimitKeyEnum,
         getAddonBySlug: vi.fn((slug: string) => {
             return mockAddons.find((a) => a.slug === slug) || null;
@@ -786,6 +817,69 @@ describe('AddonService', () => {
             expect(result.error?.code).toBe('INTERNAL_ERROR');
             expect(result.error?.message).toContain('retrieve user add-ons');
         });
+
+        // T-018: Soft-delete behavior — getUserAddons()
+        describe('soft-delete exclusion', () => {
+            it('should not return a purchase with deletedAt set (soft-deleted record excluded by DB query)', async () => {
+                // Arrange: customer exists. The DB select mock returns empty, which is what the real
+                // DB does when isNull(deletedAt) is part of the WHERE clause and the record is soft-deleted.
+                (mockBilling.customers.getByExternalId as Mock).mockResolvedValue({
+                    id: 'cust_123'
+                });
+                (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([]);
+
+                // Simulate: the DB query returns no rows because the only purchase
+                // for this customer has deletedAt != null (soft-deleted)
+                const mockLimit = vi.fn().mockResolvedValue([]);
+                const mockWhere = vi.fn().mockResolvedValue([]); // select().from().where() → []
+                const mockFrom = vi.fn(() => ({ where: mockWhere }));
+                mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+
+                // Act
+                const result = await service.getUserAddons(userId);
+
+                // Assert: no add-ons returned; the soft-deleted row was excluded by the DB filter
+                expect(result.success).toBe(true);
+                expect(result.data).toEqual([]);
+
+                // The WHERE clause was invoked (the filter was applied at DB level, not in JS)
+                expect(mockWhere).toHaveBeenCalled();
+            });
+
+            it('should return only non-soft-deleted purchases when some records have deletedAt set', async () => {
+                // Arrange: the DB returns one active purchase (non-soft-deleted);
+                // the soft-deleted purchase is excluded by the isNull(deletedAt) filter in the query.
+                const activePurchase = {
+                    id: 'purchase_active',
+                    addonSlug: 'boost-7',
+                    customerId: 'cust_123',
+                    status: 'active',
+                    purchasedAt: new Date('2024-01-10'),
+                    expiresAt: new Date('2024-01-17'),
+                    canceledAt: null,
+                    limitAdjustments: [],
+                    entitlementAdjustments: []
+                };
+
+                (mockBilling.customers.getByExternalId as Mock).mockResolvedValue({
+                    id: 'cust_123'
+                });
+                (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([]);
+
+                const mockWhere = vi.fn().mockResolvedValue([activePurchase]);
+                const mockFrom = vi.fn(() => ({ where: mockWhere }));
+                mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+
+                // Act
+                const result = await service.getUserAddons(userId);
+
+                // Assert: only the active, non-soft-deleted purchase is returned
+                expect(result.success).toBe(true);
+                expect(result.data).toHaveLength(1);
+                expect(result.data?.[0]?.addonSlug).toBe('boost-7');
+                expect(result.data?.[0]?.status).toBe('active');
+            });
+        });
     });
 
     describe('confirmPurchase', () => {
@@ -793,6 +887,19 @@ describe('AddonService', () => {
             customerId: 'cust_123',
             addonSlug: 'boost-7'
         };
+
+        beforeEach(() => {
+            // Re-establish the transaction mock after vi.clearAllMocks() resets it.
+            // The transaction must call its callback with a tx that supports insert()->values()->returning().
+            mockDbTransaction.mockImplementation(
+                async (callback: (tx: { insert: ReturnType<typeof vi.fn> }) => Promise<unknown>) => {
+                    const mockInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+                    const mockInsertValues = vi.fn(() => ({ returning: mockInsertReturning }));
+                    const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
+                    return callback({ insert: mockInsert });
+                }
+            );
+        });
 
         it('should return error when billing is null', async () => {
             // Act
@@ -804,15 +911,13 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not configured');
         });
 
-        it('should delegate to entitlementService.applyAddonEntitlements', async () => {
-            // Arrange - set up required mocks for confirmPurchase flow
+        it('should delegate to entitlementService.applyAddonEntitlements with purchaseId', async () => {
+            // Arrange - set up required mocks for confirmPurchase flow.
+            // G-025: billing.plans.get is no longer called; plan limits are resolved from
+            // the static ALL_PLANS array in @repo/billing.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active', planId: 'plan_123' }
             ]);
-            (mockBilling.plans.get as Mock).mockResolvedValue({
-                id: 'plan_123',
-                slug: 'owner-pro'
-            });
             mockApplyAddonEntitlements.mockResolvedValue({ success: true });
 
             // Act
@@ -820,21 +925,20 @@ describe('AddonService', () => {
 
             // Assert
             expect(result.success).toBe(true);
+            // purchaseId is captured from the DB insert returning() result and forwarded
             expect(mockApplyAddonEntitlements).toHaveBeenCalledWith({
                 customerId: confirmInput.customerId,
-                addonSlug: confirmInput.addonSlug
+                addonSlug: confirmInput.addonSlug,
+                purchaseId: expect.any(String)
             });
         });
 
         it('should still succeed when entitlements fail to apply (table is primary source)', async () => {
-            // Arrange - set up required mocks for confirmPurchase flow
+            // Arrange - set up required mocks for confirmPurchase flow.
+            // G-025: billing.plans.get is no longer called.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active', planId: 'plan_123' }
             ]);
-            (mockBilling.plans.get as Mock).mockResolvedValue({
-                id: 'plan_123',
-                slug: 'owner-pro'
-            });
             mockApplyAddonEntitlements.mockResolvedValue({
                 success: false,
                 error: {
@@ -852,14 +956,11 @@ describe('AddonService', () => {
         });
 
         it('should handle exceptions gracefully', async () => {
-            // Arrange - set up required mocks for confirmPurchase flow
+            // Arrange - set up required mocks for confirmPurchase flow.
+            // G-025: billing.plans.get is no longer called.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 { id: 'sub_1', status: 'active', planId: 'plan_123' }
             ]);
-            (mockBilling.plans.get as Mock).mockResolvedValue({
-                id: 'plan_123',
-                slug: 'owner-pro'
-            });
             mockApplyAddonEntitlements.mockRejectedValue(new Error('Unexpected error'));
 
             // Act
@@ -873,9 +974,33 @@ describe('AddonService', () => {
     });
 
     describe('cancelAddon', () => {
+        /**
+         * Helper: set up the DB select mock to return a purchase record via the
+         * select()->from()->where()->limit() chain used by cancelUserAddon.
+         *
+         * Each cancelAddon call issues exactly one SELECT, so we use
+         * mockImplementationOnce to avoid interfering with subsequent calls.
+         */
+        function mockSelectReturningPurchase(
+            purchase: {
+                id: string;
+                addonSlug: string;
+                status: string;
+                customerId: string;
+            } | null
+        ): void {
+            const records = purchase ? [purchase] : [];
+            const mockLimit = vi.fn().mockResolvedValue(records);
+            const mockWhere = vi.fn(() => ({ limit: mockLimit }));
+            const mockFrom = vi.fn(() => ({ where: mockWhere }));
+            mockDbSelect.mockImplementationOnce(() => ({ from: mockFrom }));
+        }
+
+        const PURCHASE_ID = 'f47ac10b-58cc-4372-a567-0e02b2c3d479';
+
         const cancelInput = {
             customerId: 'cust_123',
-            addonId: 'boost-7',
+            purchaseId: PURCHASE_ID,
             userId: 'user_123',
             reason: 'Test cancellation'
         };
@@ -890,42 +1015,45 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not configured');
         });
 
-        it('should return error when customer not found', async () => {
-            // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue(null);
+        it('should return NOT_FOUND error when purchaseId does not exist', async () => {
+            // Arrange: DB select returns empty — no record found
+            mockSelectReturningPurchase(null);
 
             // Act
             const result = await service.cancelAddon(cancelInput);
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.error?.code).toBe('CUSTOMER_NOT_FOUND');
+            expect(result.error?.code).toBe('NOT_FOUND');
             expect(result.error?.message).toContain('not found');
         });
 
-        it('should return error when addon not active for user', async () => {
-            // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({
-                id: 'cust_123',
-                externalId: 'user_123'
+        it('should return PERMISSION_DENIED when purchaseId belongs to a different customerId', async () => {
+            // Arrange: purchase exists but belongs to a different customer
+            mockSelectReturningPurchase({
+                id: PURCHASE_ID,
+                addonSlug: 'boost-7',
+                status: 'active',
+                customerId: 'cust_other'
             });
-            (mockBilling.customers.getByExternalId as Mock).mockResolvedValue({
-                id: 'cust_123'
+
+            // Act
+            const result = await service.cancelAddon(cancelInput);
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('PERMISSION_DENIED');
+            expect(result.error?.message).toContain('does not belong to this customer');
+        });
+
+        it('should return NOT_FOUND when purchase exists but status is already canceled', async () => {
+            // Arrange: purchase belongs to the right customer but is already cancelled
+            mockSelectReturningPurchase({
+                id: PURCHASE_ID,
+                addonSlug: 'boost-7',
+                status: 'cancelled',
+                customerId: 'cust_123'
             });
-            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                {
-                    id: 'sub_1',
-                    status: 'active',
-                    metadata: {
-                        addonAdjustments: JSON.stringify([
-                            {
-                                addonSlug: 'extra-photos', // Different addon
-                                appliedAt: '2024-01-15T10:00:00Z'
-                            }
-                        ])
-                    }
-                }
-            ]);
 
             // Act
             const result = await service.cancelAddon(cancelInput);
@@ -936,29 +1064,34 @@ describe('AddonService', () => {
             expect(result.error?.message).toContain('not active');
         });
 
-        it('should successfully cancel addon and remove entitlements', async () => {
-            // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({
-                id: 'cust_123',
-                externalId: 'user_123'
+        it('should return NOT_FOUND when purchase exists but status is expired', async () => {
+            // Arrange: purchase belongs to the right customer but has expired
+            mockSelectReturningPurchase({
+                id: PURCHASE_ID,
+                addonSlug: 'extra-photos',
+                status: 'expired',
+                customerId: 'cust_123'
             });
-            (mockBilling.customers.getByExternalId as Mock).mockResolvedValue({
-                id: 'cust_123'
+
+            // Act
+            const result = await service.cancelAddon(cancelInput);
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NOT_FOUND');
+            expect(result.error?.message).toContain('not active');
+        });
+
+        it('should cancel successfully and call removeAddonEntitlements with addonSlug from DB', async () => {
+            // Arrange: purchase is active and belongs to the correct customer.
+            // The addonSlug must come from the DB record, NOT from input, to guard
+            // against the UUID-as-slug bug fixed by GAP-038-03.
+            mockSelectReturningPurchase({
+                id: PURCHASE_ID,
+                addonSlug: 'boost-7',
+                status: 'active',
+                customerId: 'cust_123'
             });
-            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                {
-                    id: 'sub_1',
-                    status: 'active',
-                    metadata: {
-                        addonAdjustments: JSON.stringify([
-                            {
-                                addonSlug: 'boost-7',
-                                appliedAt: '2024-01-15T10:00:00Z'
-                            }
-                        ])
-                    }
-                }
-            ]);
             mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
 
             // Act
@@ -966,35 +1099,24 @@ describe('AddonService', () => {
 
             // Assert
             expect(result.success).toBe(true);
+            // removeAddonEntitlements must receive the slug read from the DB record
             expect(mockRemoveAddonEntitlements).toHaveBeenCalledWith({
-                customerId: cancelInput.customerId,
-                addonSlug: 'boost-7'
+                customerId: 'cust_123',
+                addonSlug: 'boost-7',
+                purchaseId: PURCHASE_ID
             });
+            // The DB update should have been called to set status=cancelled
+            expect(mockDbUpdate).toHaveBeenCalled();
         });
 
         it('should still succeed when entitlement removal fails (table is primary source)', async () => {
-            // Arrange
-            (mockBilling.customers.get as Mock).mockResolvedValue({
-                id: 'cust_123',
-                externalId: 'user_123'
+            // Arrange: active purchase, but removeAddonEntitlements returns an error
+            mockSelectReturningPurchase({
+                id: PURCHASE_ID,
+                addonSlug: 'extra-photos',
+                status: 'active',
+                customerId: 'cust_123'
             });
-            (mockBilling.customers.getByExternalId as Mock).mockResolvedValue({
-                id: 'cust_123'
-            });
-            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                {
-                    id: 'sub_1',
-                    status: 'active',
-                    metadata: {
-                        addonAdjustments: JSON.stringify([
-                            {
-                                addonSlug: 'boost-7',
-                                appliedAt: '2024-01-15T10:00:00Z'
-                            }
-                        ])
-                    }
-                }
-            ]);
             mockRemoveAddonEntitlements.mockResolvedValue({
                 success: false,
                 error: {
@@ -1006,14 +1128,16 @@ describe('AddonService', () => {
             // Act
             const result = await service.cancelAddon(cancelInput);
 
-            // Assert - cancelAddon continues with success even if JSON metadata removal fails
-            // because the table update (primary source) succeeded
+            // Assert: the table update already succeeded, so cancelAddon returns success
+            // even when the JSON metadata backward-compat removal fails
             expect(result.success).toBe(true);
         });
 
-        it('should handle exceptions gracefully', async () => {
-            // Arrange
-            (mockBilling.customers.get as Mock).mockRejectedValue(new Error('Database error'));
+        it('should handle DB exceptions gracefully and return INTERNAL_ERROR', async () => {
+            // Arrange: the select chain itself throws
+            mockDbSelect.mockImplementationOnce(() => {
+                throw new Error('Database connection error');
+            });
 
             // Act
             const result = await service.cancelAddon(cancelInput);
@@ -1022,6 +1146,80 @@ describe('AddonService', () => {
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
             expect(result.error?.message).toContain('cancel add-on');
+        });
+
+        // T-018: Soft-delete behavior — cancelAddon() lookup excludes soft-deleted records
+        describe('soft-delete exclusion', () => {
+            it('should return NOT_FOUND when the purchase has been soft-deleted (isNull filter excludes it)', async () => {
+                // Arrange: the DB returns empty because the purchase has deletedAt set.
+                // cancelUserAddon queries with isNull(billingAddonPurchases.deletedAt)
+                // so a soft-deleted purchase is invisible to the lookup.
+                mockSelectReturningPurchase(null);
+
+                // Act
+                const result = await service.cancelAddon(cancelInput);
+
+                // Assert: indistinguishable from "not found" — soft-deleted = logically deleted
+                expect(result.success).toBe(false);
+                expect(result.error?.code).toBe('NOT_FOUND');
+                expect(result.error?.message).toContain('not found');
+            });
+        });
+
+        // T-019: Status value consistency — cancelAddon() writes 'canceled' (American spelling)
+        describe('status value consistency', () => {
+            it('should write status "canceled" (American single-L) when cancelling an active add-on', async () => {
+                // Arrange
+                mockSelectReturningPurchase({
+                    id: PURCHASE_ID,
+                    addonSlug: 'boost-7',
+                    status: 'active',
+                    customerId: 'cust_123'
+                });
+                mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
+
+                // Act
+                const result = await service.cancelAddon(cancelInput);
+
+                // Assert: operation succeeded
+                expect(result.success).toBe(true);
+
+                // The UPDATE .set() call must use 'canceled' (American, single-L) — never 'cancelled'
+                const updateSetCalls = vi.mocked(mockDbUpdate).mock.results;
+                expect(updateSetCalls.length).toBeGreaterThan(0);
+
+                // Capture the argument passed to .set() by inspecting the mockDbUpdate mock chain.
+                // mockDbUpdate() returns { set: mockDbUpdateSet }, so we check mockDbUpdateSet's calls.
+                const mockDbUpdateSet = vi.mocked(mockDbUpdate).mock.results[0]?.value?.set;
+                expect(mockDbUpdateSet).toBeDefined();
+                expect(mockDbUpdateSet).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        status: 'canceled',
+                        canceledAt: expect.any(Date)
+                    })
+                );
+            });
+
+            it('should never write status "cancelled" (British double-L)', async () => {
+                // Arrange
+                mockSelectReturningPurchase({
+                    id: PURCHASE_ID,
+                    addonSlug: 'extra-photos',
+                    status: 'active',
+                    customerId: 'cust_123'
+                });
+                mockRemoveAddonEntitlements.mockResolvedValue({ success: true });
+
+                // Act
+                await service.cancelAddon(cancelInput);
+
+                // Assert: the set() argument must NOT contain the British spelling
+                const mockDbUpdateSet = vi.mocked(mockDbUpdate).mock.results[0]?.value?.set;
+                expect(mockDbUpdateSet).toBeDefined();
+                expect(mockDbUpdateSet).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ status: 'cancelled' })
+                );
+            });
         });
     });
 

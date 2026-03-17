@@ -148,7 +148,7 @@ vi.mock('@repo/db/schemas', () => ({
         status: 'status',
         purchasedAt: 'purchased_at',
         expiresAt: 'expires_at',
-        cancelledAt: 'cancelled_at',
+        canceledAt: 'canceled_at',
         paymentId: 'payment_id',
         limitAdjustments: 'limit_adjustments',
         entitlementAdjustments: 'entitlement_adjustments',

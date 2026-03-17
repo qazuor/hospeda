@@ -29,7 +29,8 @@ vi.mock('@repo/db/schemas', () => ({
         status: 'status',
         purchasedAt: 'purchased_at',
         expiresAt: 'expires_at',
-        cancelledAt: 'cancelled_at',
+        canceledAt: 'canceled_at',
+        deletedAt: 'deleted_at',
         paymentId: 'payment_id',
         limitAdjustments: 'limit_adjustments',
         entitlementAdjustments: 'entitlement_adjustments',
@@ -45,6 +46,7 @@ vi.mock('drizzle-orm', () => ({
     lte: vi.fn((col, val) => ({ type: 'lte', col, val })),
     gte: vi.fn((col, val) => ({ type: 'gte', col, val })),
     isNotNull: vi.fn((col) => ({ type: 'isNotNull', col })),
+    isNull: vi.fn((col) => ({ type: 'isNull', col })),
     sql: vi.fn()
 }));
 
@@ -60,23 +62,58 @@ vi.mock('../../src/utils/logger', () => ({
 
 // Import after mocks
 import { getDb } from '@repo/db';
+import { isNull } from 'drizzle-orm';
 import { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { AddonExpirationService } from '../../src/services/addon-expiration.service';
 
 // Get typed mock references
 const mockGetDb = vi.mocked(getDb);
 
+/** Minimal shape of the DB query builder chain used in expiration service tests */
+interface MockDb {
+    select: ReturnType<typeof vi.fn>;
+    from: ReturnType<typeof vi.fn>;
+    where: ReturnType<typeof vi.fn>;
+    limit: ReturnType<typeof vi.fn>;
+    update: ReturnType<typeof vi.fn>;
+    set: ReturnType<typeof vi.fn>;
+}
+
+/** Minimal mock for AddonEntitlementService methods exercised by expiration service */
+interface MockEntitlementService {
+    removeAddonEntitlements: ReturnType<typeof vi.fn>;
+}
+
+/** Override fields for mock addon purchase creation */
+interface MockAddonPurchaseOverrides {
+    id?: string;
+    customerId?: string;
+    subscriptionId?: string;
+    addonSlug?: string;
+    status?: string;
+    purchasedAt?: Date;
+    expiresAt?: Date;
+    canceledAt?: Date | null;
+    paymentId?: string;
+    limitAdjustments?: Array<{ limitKey: string; increase: number; previousValue: number; newValue: number }>;
+    entitlementAdjustments?: Array<{ entitlementKey: string; granted: boolean }>;
+    metadata?: Record<string, unknown>;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
 describe('AddonExpirationService', () => {
     let service: AddonExpirationService;
-    let mockDb: any;
-    let mockEntitlementService: any;
+    // biome-ignore lint/suspicious/noExplicitAny: mock object — ReturnThis chaining requires any
+    let mockDb: MockDb;
+    let mockEntitlementService: MockEntitlementService;
 
     // Mock data
     const mockCustomerId = 'cust_123';
     const mockSubscriptionId = 'sub_123';
     const mockAddonSlug = 'extra-accommodations';
 
-    const createMockAddonPurchase = (overrides: any = {}) => ({
+    const createMockAddonPurchase = (overrides: MockAddonPurchaseOverrides = {}) => ({
         id: overrides.id || 'purchase_123',
         customerId: overrides.customerId || mockCustomerId,
         subscriptionId: overrides.subscriptionId || mockSubscriptionId,
@@ -84,7 +121,7 @@ describe('AddonExpirationService', () => {
         status: overrides.status || 'active',
         purchasedAt: overrides.purchasedAt || new Date('2024-01-01'),
         expiresAt: overrides.expiresAt || new Date('2024-01-31'),
-        cancelledAt: overrides.cancelledAt || null,
+        canceledAt: overrides.canceledAt || null,
         paymentId: overrides.paymentId || 'pay_123',
         limitAdjustments: overrides.limitAdjustments || [
             {
@@ -119,6 +156,7 @@ describe('AddonExpirationService', () => {
             set: vi.fn().mockReturnThis()
         };
 
+        // biome-ignore lint/suspicious/noExplicitAny: mock object — DB chain does not match full Drizzle types
         mockGetDb.mockReturnValue(mockDb as any);
 
         // Setup mock entitlement service
@@ -126,7 +164,9 @@ describe('AddonExpirationService', () => {
             removeAddonEntitlements: vi.fn().mockResolvedValue({ success: true })
         };
 
-        (AddonEntitlementService as any).mockImplementation(() => mockEntitlementService);
+        vi.mocked(AddonEntitlementService).mockImplementation(
+            () => mockEntitlementService as unknown as AddonEntitlementService
+        );
 
         // Create service instance
         service = new AddonExpirationService(null);
@@ -296,10 +336,11 @@ describe('AddonExpirationService', () => {
             expect(result.data?.customerId).toBe(mockCustomerId);
             expect(result.data?.addonSlug).toBe(mockAddonSlug);
 
-            // Verify entitlement removal was called
+            // Verify entitlement removal was called with all required fields including purchaseId
             expect(mockEntitlementService.removeAddonEntitlements).toHaveBeenCalledWith({
                 customerId: mockCustomerId,
-                addonSlug: mockAddonSlug
+                addonSlug: mockAddonSlug,
+                purchaseId: 'purchase_123'
             });
 
             // Verify database update was called
@@ -308,6 +349,31 @@ describe('AddonExpirationService', () => {
                 expect.objectContaining({
                     status: 'expired',
                     updatedAt: expect.any(Date)
+                })
+            );
+        });
+
+        it('should pass purchaseId to removeAddonEntitlements', async () => {
+            // Arrange
+            const mockPurchase = createMockAddonPurchase({
+                id: 'purchase_abc',
+                customerId: 'cust_xyz',
+                addonSlug: 'featured-listing',
+                status: 'active'
+            });
+
+            mockDb.where.mockReturnThis();
+            mockDb.limit.mockResolvedValue([mockPurchase]);
+            mockEntitlementService.removeAddonEntitlements.mockResolvedValue({ success: true });
+
+            // Act
+            const result = await service.expireAddon({ purchaseId: 'purchase_abc' });
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockEntitlementService.removeAddonEntitlements).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    purchaseId: 'purchase_abc'
                 })
             );
         });
@@ -327,8 +393,10 @@ describe('AddonExpirationService', () => {
 
         it('should be idempotent - return success for already expired add-on', async () => {
             // Arrange
+            const expiresAt = new Date('2024-01-31T23:59:59Z');
             const mockPurchase = createMockAddonPurchase({
-                status: 'expired'
+                status: 'expired',
+                expiresAt
             });
 
             mockDb.limit.mockResolvedValue([mockPurchase]);
@@ -340,6 +408,8 @@ describe('AddonExpirationService', () => {
             expect(result.success).toBe(true);
             expect(result.data).toBeDefined();
             expect(result.data?.purchaseId).toBe('purchase_123');
+            // Idempotent path must return expiresAt (not canceledAt)
+            expect(result.data?.expiredAt).toEqual(expiresAt);
 
             // Should NOT call entitlement service for already expired
             expect(mockEntitlementService.removeAddonEntitlements).not.toHaveBeenCalled();
@@ -351,7 +421,7 @@ describe('AddonExpirationService', () => {
         it('should return INVALID_STATUS for non-active status', async () => {
             // Arrange
             const mockPurchase = createMockAddonPurchase({
-                status: 'cancelled'
+                status: 'canceled'
             });
 
             mockDb.limit.mockResolvedValue([mockPurchase]);
@@ -362,7 +432,7 @@ describe('AddonExpirationService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INVALID_STATUS');
-            expect(result.error?.message).toContain("Cannot expire add-on with status 'cancelled'");
+            expect(result.error?.message).toContain("Cannot expire add-on with status 'canceled'");
         });
 
         it('should handle entitlement removal failure', async () => {
@@ -867,6 +937,68 @@ describe('AddonExpirationService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
+        });
+    });
+
+    // =========================================================================
+    // T-018: Soft-delete behavior
+    // =========================================================================
+    describe('soft-delete exclusion', () => {
+        it('findExpiredAddons() should pass isNull(deletedAt) filter to the WHERE clause', async () => {
+            // Arrange
+            const now = new Date('2024-02-01T10:00:00Z');
+            vi.useFakeTimers();
+            vi.setSystemTime(now);
+
+            // Return empty — simulates the DB applying the isNull(deletedAt) filter
+            mockDb.where.mockResolvedValue([]);
+
+            // Act
+            await service.findExpiredAddons();
+
+            // Assert: isNull() was called with the deletedAt column identifier from the mock schema
+            // The mock schema maps deletedAt → 'deleted_at', so isNull receives that value
+            expect(isNull).toHaveBeenCalledWith('deleted_at');
+
+            vi.useRealTimers();
+        });
+
+        it('findExpiredAddons() should not return a soft-deleted record even when status=active and expires_at is past', async () => {
+            // Arrange
+            const now = new Date('2024-02-01T10:00:00Z');
+            vi.useFakeTimers();
+            vi.setSystemTime(now);
+
+            // The DB returns empty because the isNull(deletedAt) condition excluded the row
+            // (a soft-deleted record with deletedAt=new Date() would not pass the WHERE clause)
+            mockDb.where.mockResolvedValue([]);
+
+            // Act
+            const result = await service.findExpiredAddons();
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data).toHaveLength(0);
+
+            vi.useRealTimers();
+        });
+
+        it('findExpiringAddons() should pass isNull(deletedAt) filter to the WHERE clause', async () => {
+            // Arrange
+            const now = new Date('2024-02-01T10:00:00Z');
+            vi.useFakeTimers();
+            vi.setSystemTime(now);
+
+            // Return empty — simulates DB filtering out soft-deleted records
+            mockDb.where.mockResolvedValue([]);
+
+            // Act
+            await service.findExpiringAddons({ daysAhead: 3 });
+
+            // Assert: isNull() must have been invoked with the deletedAt column from the mock schema
+            expect(isNull).toHaveBeenCalledWith('deleted_at');
+
+            vi.useRealTimers();
         });
     });
 });
