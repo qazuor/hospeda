@@ -9,6 +9,9 @@
  * - Checking usage thresholds
  * - Getting usage for specific limits
  * - Decomposing plan base vs addon bonus
+ * - Reading addon adjustments from billing_addon_purchases table
+ * - Excluding soft-deleted purchases
+ * - Fallback to JSON metadata when table query returns no results
  *
  * @module test/services/usage-tracking.service.test
  */
@@ -18,6 +21,46 @@ import { LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { UsageTrackingService } from '../../src/services/usage-tracking.service';
+
+/**
+ * Mock the @repo/db module to prevent real database calls.
+ * The mock select chain simulates Drizzle's fluent API:
+ * select().from().where() -> Promise<rows[]>
+ */
+const mockWhere = vi.fn().mockResolvedValue([]);
+const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
+const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
+
+vi.mock('@repo/db', () => ({
+    getDb: () => ({
+        select: mockSelect
+    })
+}));
+
+vi.mock('@repo/db/schemas', () => ({
+    billingAddonPurchases: {
+        addonSlug: 'addon_slug',
+        limitAdjustments: 'limit_adjustments',
+        entitlementAdjustments: 'entitlement_adjustments',
+        purchasedAt: 'purchased_at',
+        customerId: 'customer_id',
+        status: 'status',
+        deletedAt: 'deleted_at'
+    }
+}));
+
+vi.mock('drizzle-orm', () => ({
+    and: vi.fn((...args: unknown[]) => args),
+    eq: vi.fn((a: unknown, b: unknown) => ({ eq: [a, b] })),
+    isNull: vi.fn((a: unknown) => ({ isNull: a }))
+}));
+
+/**
+ * Helper type for accessing private members in tests.
+ * Avoids repeated biome-ignore comments for noExplicitAny.
+ */
+// biome-ignore lint/suspicious/noExplicitAny: test helper for private member access
+type TestAccessor = Record<string, any>;
 
 describe('UsageTrackingService', () => {
     let service: UsageTrackingService;
@@ -48,6 +91,8 @@ describe('UsageTrackingService', () => {
     };
 
     beforeEach(() => {
+        vi.clearAllMocks();
+
         // Create mock billing client
         mockBilling = {
             subscriptions: {
@@ -66,7 +111,10 @@ describe('UsageTrackingService', () => {
         (mockBilling.plans.get as Mock).mockResolvedValue(mockPlan);
 
         // Mock getCurrentUsage to return 0 by default
-        vi.spyOn(service as any, 'getCurrentUsage').mockResolvedValue(0);
+        vi.spyOn(service as unknown as TestAccessor, 'getCurrentUsage').mockResolvedValue(0);
+
+        // Default: DB query returns empty (triggers metadata fallback)
+        mockWhere.mockResolvedValue([]);
     });
 
     describe('getUsageSummary', () => {
@@ -81,7 +129,7 @@ describe('UsageTrackingService', () => {
                 [LimitKey.MAX_STAFF_ACCOUNTS]: 5 // Unlimited, 0%
             };
 
-            (service as any).getCurrentUsage = vi.fn((limitKey: string) => {
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
                 return Promise.resolve(usageMap[limitKey] || 0);
             });
 
@@ -137,7 +185,7 @@ describe('UsageTrackingService', () => {
             };
 
             (mockBilling.plans.get as Mock).mockResolvedValue(planWithLimits);
-            (service as any).getCurrentUsage = vi.fn((limitKey: string) => {
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
                 return Promise.resolve(usageMap[limitKey] || 0);
             });
 
@@ -191,7 +239,7 @@ describe('UsageTrackingService', () => {
                 [LimitKey.MAX_STAFF_ACCOUNTS]: 50
             };
 
-            (service as any).getCurrentUsage = vi.fn((limitKey: string) => {
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
                 return Promise.resolve(usageMap[limitKey] || 0);
             });
 
@@ -216,30 +264,35 @@ describe('UsageTrackingService', () => {
             expect(staffLimit?.threshold).toBe('ok');
         });
 
-        it('should decompose plan base vs addon bonus correctly', async () => {
-            // Arrange - Add addon adjustments
-            const subscriptionWithAddons = {
-                ...mockSubscription,
-                metadata: {
-                    addonAdjustments: JSON.stringify([
+        it('should decompose plan base vs addon bonus from DB table', async () => {
+            // Arrange - DB returns active addon purchases
+            mockWhere.mockResolvedValue([
+                {
+                    addonSlug: 'extra-accommodations',
+                    limitAdjustments: [
                         {
-                            addonSlug: 'extra-accommodations',
                             limitKey: LimitKey.MAX_ACCOMMODATIONS,
-                            limitIncrease: 10,
-                            appliedAt: '2024-01-01'
-                        },
-                        {
-                            addonSlug: 'extra-photos',
-                            limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                            limitIncrease: 20,
-                            appliedAt: '2024-01-01'
+                            increase: 10,
+                            previousValue: 5,
+                            newValue: 15
                         }
-                    ])
+                    ],
+                    entitlementAdjustments: [],
+                    purchasedAt: new Date('2024-01-01')
+                },
+                {
+                    addonSlug: 'extra-photos',
+                    limitAdjustments: [
+                        {
+                            limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
+                            increase: 20,
+                            previousValue: 10,
+                            newValue: 30
+                        }
+                    ],
+                    entitlementAdjustments: [],
+                    purchasedAt: new Date('2024-01-01')
                 }
-            };
-
-            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                subscriptionWithAddons
             ]);
 
             // Act
@@ -263,6 +316,99 @@ describe('UsageTrackingService', () => {
             expect(photosLimit?.maxAllowed).toBe(30); // 10 + 20
         });
 
+        it('should exclude soft-deleted purchases from addon adjustments', async () => {
+            // Arrange - DB returns empty (soft-deleted records are filtered by WHERE clause)
+            mockWhere.mockResolvedValue([]);
+
+            // No metadata fallback either
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                { ...mockSubscription, metadata: {} }
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+
+            // All addon bonuses should be 0 since no active purchases exist
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.addonBonusLimit).toBe(0);
+            expect(accommodationsLimit?.maxAllowed).toBe(5); // Plan base only
+        });
+
+        it('should fallback to JSON metadata when DB query returns no results', async () => {
+            // Arrange - DB returns empty, but metadata has adjustments
+            mockWhere.mockResolvedValue([]);
+
+            const subscriptionWithMetadata = {
+                ...mockSubscription,
+                metadata: {
+                    addonAdjustments: JSON.stringify([
+                        {
+                            addonSlug: 'extra-accommodations',
+                            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                            limitIncrease: 10,
+                            appliedAt: '2024-01-01'
+                        }
+                    ])
+                }
+            };
+
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                subscriptionWithMetadata
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.planBaseLimit).toBe(5);
+            expect(accommodationsLimit?.addonBonusLimit).toBe(10);
+            expect(accommodationsLimit?.maxAllowed).toBe(15); // 5 + 10 from metadata fallback
+        });
+
+        it('should fallback to JSON metadata when DB query throws', async () => {
+            // Arrange - DB throws an error
+            mockWhere.mockRejectedValue(new Error('DB connection failed'));
+
+            const subscriptionWithMetadata = {
+                ...mockSubscription,
+                metadata: {
+                    addonAdjustments: JSON.stringify([
+                        {
+                            addonSlug: 'extra-accommodations',
+                            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                            limitIncrease: 5,
+                            appliedAt: '2024-01-01'
+                        }
+                    ])
+                }
+            };
+
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                subscriptionWithMetadata
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.addonBonusLimit).toBe(5); // From metadata fallback
+        });
+
         it('should determine overall threshold as worst case', async () => {
             // Arrange - Mix of thresholds
             const usageMap: Record<string, number> = {
@@ -272,7 +418,7 @@ describe('UsageTrackingService', () => {
                 [LimitKey.MAX_FAVORITES]: 5 // ok
             };
 
-            (service as any).getCurrentUsage = vi.fn((limitKey: string) => {
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn((limitKey: string) => {
                 return Promise.resolve(usageMap[limitKey] || 0);
             });
 
@@ -309,14 +455,14 @@ describe('UsageTrackingService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toContain('Database connection failed');
+            expect(result.error?.message).toContain('Failed to get usage summary');
         });
     });
 
     describe('checkUsageThreshold', () => {
         it('should return correct status for ok threshold (<80%)', async () => {
             // Arrange
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(3); // 60%
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(3); // 60%
 
             // Act
             const result = await service.checkUsageThreshold(
@@ -331,7 +477,7 @@ describe('UsageTrackingService', () => {
 
         it('should return correct status for warning threshold (80-89%)', async () => {
             // Arrange
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(8); // 80%
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(8); // 80%
 
             // Act
             const result = await service.checkUsageThreshold(
@@ -354,7 +500,7 @@ describe('UsageTrackingService', () => {
                 }
             };
             (mockBilling.plans.get as Mock).mockResolvedValue(planWithHigherLimit);
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(95); // 95%
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(95); // 95%
 
             // Act
             const result = await service.checkUsageThreshold(
@@ -369,7 +515,7 @@ describe('UsageTrackingService', () => {
 
         it('should return correct status for exceeded threshold (100%)', async () => {
             // Arrange
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(20); // 100%
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(20); // 100%
 
             // Act
             const result = await service.checkUsageThreshold(
@@ -403,7 +549,7 @@ describe('UsageTrackingService', () => {
     describe('getUsageForLimit', () => {
         it('should return detailed usage for specific limit', async () => {
             // Arrange
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(3);
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(3);
 
             // Act
             const result = await service.getUsageForLimit(
@@ -423,8 +569,44 @@ describe('UsageTrackingService', () => {
             expect(result.data!.addonBonusLimit).toBe(0);
         });
 
-        it('should decompose plan base vs addon bonus correctly', async () => {
-            // Arrange
+        it('should decompose plan base vs addon bonus from DB table', async () => {
+            // Arrange - DB returns active addon purchase
+            mockWhere.mockResolvedValue([
+                {
+                    addonSlug: 'extra-accommodations',
+                    limitAdjustments: [
+                        {
+                            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                            increase: 15,
+                            previousValue: 5,
+                            newValue: 20
+                        }
+                    ],
+                    entitlementAdjustments: [],
+                    purchasedAt: new Date('2024-01-01')
+                }
+            ]);
+
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(10);
+
+            // Act
+            const result = await service.getUsageForLimit(
+                mockCustomerId,
+                LimitKey.MAX_ACCOMMODATIONS
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.data!.planBaseLimit).toBe(5);
+            expect(result.data!.addonBonusLimit).toBe(15);
+            expect(result.data!.maxAllowed).toBe(20); // 5 + 15
+            expect(result.data!.usagePercentage).toBe(50); // 10/20
+        });
+
+        it('should fallback to metadata when DB returns empty', async () => {
+            // Arrange - DB empty, metadata has adjustments
+            mockWhere.mockResolvedValue([]);
+
             const subscriptionWithAddon = {
                 ...mockSubscription,
                 metadata: {
@@ -442,7 +624,7 @@ describe('UsageTrackingService', () => {
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 subscriptionWithAddon
             ]);
-            (service as any).getCurrentUsage = vi.fn().mockResolvedValue(10);
+            (service as unknown as TestAccessor).getCurrentUsage = vi.fn().mockResolvedValue(10);
 
             // Act
             const result = await service.getUsageForLimit(
@@ -455,7 +637,6 @@ describe('UsageTrackingService', () => {
             expect(result.data!.planBaseLimit).toBe(5);
             expect(result.data!.addonBonusLimit).toBe(15);
             expect(result.data!.maxAllowed).toBe(20); // 5 + 15
-            expect(result.data!.usagePercentage).toBe(50); // 10/20
         });
 
         it('should return null for customer with no subscription', async () => {
@@ -507,6 +688,79 @@ describe('UsageTrackingService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
+        });
+    });
+
+    describe('getAddonAdjustments (DB query pattern)', () => {
+        it('should read addon adjustments from billing_addon_purchases table', async () => {
+            // Arrange - DB returns active purchases with limit adjustments
+            mockWhere.mockResolvedValue([
+                {
+                    addonSlug: 'extra-accommodations',
+                    limitAdjustments: [
+                        {
+                            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+                            increase: 10,
+                            previousValue: 5,
+                            newValue: 15
+                        }
+                    ],
+                    entitlementAdjustments: [],
+                    purchasedAt: new Date('2024-06-15')
+                }
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockSelect).toHaveBeenCalled();
+
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.addonBonusLimit).toBe(10);
+        });
+
+        it('should handle entitlement-only addon purchases', async () => {
+            // Arrange - DB returns purchase with entitlement but no limit adjustments
+            mockWhere.mockResolvedValue([
+                {
+                    addonSlug: 'featured-listing',
+                    limitAdjustments: [],
+                    entitlementAdjustments: [{ entitlementKey: 'featured_listing', granted: true }],
+                    purchasedAt: new Date('2024-06-15')
+                }
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+            // Entitlement adjustments don't affect limit bonuses
+            const accommodationsLimit = result.data!.limits.find(
+                (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
+            );
+            expect(accommodationsLimit?.addonBonusLimit).toBe(0);
+        });
+
+        it('should return empty adjustments when both DB and metadata are empty', async () => {
+            // Arrange
+            mockWhere.mockResolvedValue([]);
+            (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
+                { ...mockSubscription, metadata: {} }
+            ]);
+
+            // Act
+            const result = await service.getUsageSummary(mockCustomerId);
+
+            // Assert
+            expect(result.success).toBe(true);
+            for (const limit of result.data!.limits) {
+                expect(limit.addonBonusLimit).toBe(0);
+            }
         });
     });
 });

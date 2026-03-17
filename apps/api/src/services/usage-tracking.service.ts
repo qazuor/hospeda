@@ -16,27 +16,21 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { LIMIT_METADATA, LimitKey } from '@repo/billing';
+import { getDb } from '@repo/db';
+import { billingAddonPurchases } from '@repo/db/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     OwnerPromotionService,
     UserBookmarkService
 } from '@repo/service-core';
+import { and, eq, isNull } from 'drizzle-orm';
 import { createSystemActor } from '../utils/actor';
 import { lookupCustomerDetails } from '../utils/customer-lookup';
 import { apiLogger } from '../utils/logger';
+import type { ServiceResult } from './addon.types';
 
-/**
- * Service result pattern
- */
-export interface ServiceResult<T> {
-    success: boolean;
-    data?: T;
-    error?: {
-        code: string;
-        message: string;
-    };
-}
+export type { ServiceResult };
 
 /**
  * Threshold status levels based on usage percentage
@@ -179,8 +173,8 @@ export class UsageTrackingService {
             // Extract base limits from plan
             const planLimits = plan.limits || {};
 
-            // Get add-on adjustments from subscription metadata
-            const addonAdjustments = this.getAddonAdjustments(activeSubscription);
+            // Get add-on adjustments from billing_addon_purchases table (or metadata fallback)
+            const addonAdjustments = await this.getAddonAdjustments(activeSubscription);
 
             // Build limit usage list
             const limitUsageList: LimitUsage[] = [];
@@ -372,8 +366,8 @@ export class UsageTrackingService {
             const planLimits = plan.limits || {};
             const planBaseLimit = planLimits[limitKey] || 0;
 
-            // Get add-on adjustments
-            const addonAdjustments = this.getAddonAdjustments(activeSubscription);
+            // Get add-on adjustments from billing_addon_purchases table (or metadata fallback)
+            const addonAdjustments = await this.getAddonAdjustments(activeSubscription);
             const addonBonusLimit = addonAdjustments
                 .filter((adj) => adj.limitKey === limitKey)
                 .reduce((sum, adj) => sum + (adj.limitIncrease || 0), 0);
@@ -544,20 +538,103 @@ export class UsageTrackingService {
     }
 
     /**
-     * Get add-on adjustments from subscription metadata
+     * Get add-on adjustments from the billing_addon_purchases table.
      *
-     * @param subscription - The subscription object
+     * Queries active, non-deleted addon purchases for the given customer.
+     * Falls back to legacy JSON metadata path when the table query returns
+     * no results (for subscriptions not yet migrated).
+     *
+     * @param subscription - The subscription object (must include customerId)
      * @returns Array of add-on adjustments
      */
-    private getAddonAdjustments(subscription: {
+    private async getAddonAdjustments(subscription: {
+        customerId: string;
         metadata?: Record<string, unknown>;
-    }): Array<{
-        addonSlug: string;
-        entitlement?: string;
-        limitKey?: string;
-        limitIncrease?: number;
-        appliedAt: string;
-    }> {
+    }): Promise<
+        Array<{
+            addonSlug: string;
+            entitlement?: string;
+            limitKey?: string;
+            limitIncrease?: number;
+            appliedAt: string;
+        }>
+    > {
+        // Primary path: query billing_addon_purchases table
+        try {
+            const db = getDb();
+            const purchases = await db
+                .select({
+                    addonSlug: billingAddonPurchases.addonSlug,
+                    limitAdjustments: billingAddonPurchases.limitAdjustments,
+                    entitlementAdjustments: billingAddonPurchases.entitlementAdjustments,
+                    purchasedAt: billingAddonPurchases.purchasedAt
+                })
+                .from(billingAddonPurchases)
+                .where(
+                    and(
+                        eq(billingAddonPurchases.customerId, subscription.customerId),
+                        eq(billingAddonPurchases.status, 'active'),
+                        isNull(billingAddonPurchases.deletedAt)
+                    )
+                );
+
+            if (purchases.length > 0) {
+                return purchases.flatMap((purchase) => {
+                    const results: Array<{
+                        addonSlug: string;
+                        entitlement?: string;
+                        limitKey?: string;
+                        limitIncrease?: number;
+                        appliedAt: string;
+                    }> = [];
+
+                    const appliedAt = purchase.purchasedAt.toISOString();
+
+                    // Map limit adjustments
+                    if (Array.isArray(purchase.limitAdjustments)) {
+                        for (const adj of purchase.limitAdjustments) {
+                            results.push({
+                                addonSlug: purchase.addonSlug,
+                                limitKey: adj.limitKey,
+                                limitIncrease: adj.increase,
+                                appliedAt
+                            });
+                        }
+                    }
+
+                    // Map entitlement adjustments
+                    if (Array.isArray(purchase.entitlementAdjustments)) {
+                        for (const ent of purchase.entitlementAdjustments) {
+                            if (ent.granted) {
+                                results.push({
+                                    addonSlug: purchase.addonSlug,
+                                    entitlement: ent.entitlementKey,
+                                    appliedAt
+                                });
+                            }
+                        }
+                    }
+
+                    // If no specific adjustments, still include the addon entry
+                    if (results.length === 0) {
+                        results.push({
+                            addonSlug: purchase.addonSlug,
+                            appliedAt
+                        });
+                    }
+
+                    return results;
+                });
+            }
+        } catch (error) {
+            apiLogger.warn(
+                'Failed to query billing_addon_purchases, falling back to metadata',
+                error instanceof Error ? error.message : String(error)
+            );
+        }
+
+        // DEPRECATED: Fallback to JSON metadata path. Remove once all subscriptions
+        // have been migrated to use billing_addon_purchases table as source of truth.
         if (!subscription.metadata?.addonAdjustments) {
             return [];
         }
