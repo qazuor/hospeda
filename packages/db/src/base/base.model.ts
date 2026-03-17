@@ -305,6 +305,8 @@ export abstract class BaseModel<T> {
 
     /**
      * Soft deletes entities matching the where clause.
+     * Sets both deletedAt and updatedAt timestamps.
+     *
      * @param where - The filter object
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of deleted rows
@@ -317,9 +319,10 @@ export abstract class BaseModel<T> {
         const safeWhere = where ?? {};
         try {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const now = new Date();
             const result = await db
                 .update(this.table)
-                .set({ deletedAt: new Date() })
+                .set({ deletedAt: now, updatedAt: now })
                 .where(whereClause)
                 .returning();
             try {
@@ -336,7 +339,12 @@ export abstract class BaseModel<T> {
     }
 
     /**
-     * Restores soft-deleted entities matching the where clause.
+     * Restores a soft-deleted record by clearing deletedAt.
+     *
+     * WARNING: For billing_addon_purchases, restoring does NOT re-provision
+     * entitlements. You must manually call AddonEntitlementService.applyAddonEntitlements()
+     * after restoring an addon purchase to re-grant customer access.
+     *
      * @param where - The filter object
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of restored rows
@@ -351,7 +359,7 @@ export abstract class BaseModel<T> {
             const whereClause = buildWhereClause(safeWhere, this.table as unknown);
             const result = await db
                 .update(this.table)
-                .set({ deletedAt: null })
+                .set({ deletedAt: null, updatedAt: new Date() })
                 .where(whereClause)
                 .returning();
             try {
