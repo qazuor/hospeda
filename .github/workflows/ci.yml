@@ -83,6 +83,23 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Check CSP-incompatible patterns
+        run: bash scripts/check-csp-patterns.sh
+
+      - name: Check for disabled tests (.only/.skip)
+        run: |
+          echo "Checking for .only() test isolation..."
+          if grep -rn "\.only(" apps/*/test packages/*/test --include="*.test.ts" 2>/dev/null; then
+            echo "ERROR: Found .only() in test files. Remove before merging."
+            exit 1
+          fi
+          echo "Checking for hard-coded .skip()..."
+          if grep -rn "\.skip(" apps/*/test packages/*/test --include="*.test.ts" 2>/dev/null | grep -v "skipIf" | grep -v "skip\.if"; then
+            echo "ERROR: Found hard-coded .skip() in test files. Use it.skipIf() for conditional skips."
+            exit 1
+          fi
+          echo "No disabled tests found."
+
       - name: Run tests with coverage
         run: pnpm test:coverage
 
