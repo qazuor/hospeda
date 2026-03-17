@@ -34,7 +34,7 @@
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
         "@sentry/astro": "^10.40.0",
-        "astro": "^5.7.13",
+        "astro": "^5.9.0",
         "better-auth": "^1.4.18",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
