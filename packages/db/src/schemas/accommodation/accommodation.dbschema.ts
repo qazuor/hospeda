@@ -98,6 +98,10 @@ export const accommodations = pgTable(
         accommodations_deletedAt_idx: index('accommodations_deletedAt_idx').on(table.deletedAt),
         accommodations_moderationState_idx: index('accommodations_moderationState_idx').on(
             table.moderationState
+        ),
+        accommodations_ownerId_deletedAt_idx: index('accommodations_ownerId_deletedAt_idx').on(
+            table.ownerId,
+            table.deletedAt
         )
     })
 );

@@ -85,7 +85,8 @@ export const posts = pgTable(
         posts_relatedDestinationId_idx: index('posts_relatedDestinationId_idx').on(
             table.relatedDestinationId
         ),
-        posts_relatedEventId_idx: index('posts_relatedEventId_idx').on(table.relatedEventId)
+        posts_relatedEventId_idx: index('posts_relatedEventId_idx').on(table.relatedEventId),
+        posts_sponsorshipId_idx: index('posts_sponsorshipId_idx').on(table.sponsorshipId)
     })
 );
 
