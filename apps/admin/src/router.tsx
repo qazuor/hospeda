@@ -3,6 +3,9 @@ import { createRouter as createTanstackRouter } from '@tanstack/react-router';
 // Import the generated route tree
 import { routeTree } from './routeTree.gen';
 
+// Register global CSP middleware (side-effect import - must execute before server functions)
+import './start';
+
 /**
  * Router context interface
  * Provides shared services and state to all routes
@@ -17,6 +20,7 @@ export interface RouterContext {
 /**
  * Loading bar shown during route transitions.
  * Only appears after defaultPendingMs delay to avoid flash on fast navigations.
+ * The @keyframes animation is defined in styles.css to avoid inline <style> CSP violations.
  */
 function RouterPendingComponent() {
     return (
@@ -27,13 +31,6 @@ function RouterPendingComponent() {
                     animation: 'router-pending-bar 1.5s ease-in-out infinite'
                 }}
             />
-            <style>{`
-                @keyframes router-pending-bar {
-                    0% { width: 0%; margin-left: 0%; }
-                    50% { width: 60%; margin-left: 20%; }
-                    100% { width: 0%; margin-left: 100%; }
-                }
-            `}</style>
         </div>
     );
 }
