@@ -121,14 +121,14 @@ describe('Environment Configuration', () => {
             expect(envModule.env.API_SECURITY_ENABLED).toBe(true);
             expect(envModule.env.API_SECURITY_HEADERS_ENABLED).toBe(true);
             expect(envModule.env.API_SECURITY_CONTENT_SECURITY_POLICY).toBe(
-                "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+                "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-src 'none';"
             );
             expect(envModule.env.API_SECURITY_STRICT_TRANSPORT_SECURITY).toBe(
                 'max-age=31536000; includeSubDomains'
             );
             expect(envModule.env.API_SECURITY_X_FRAME_OPTIONS).toBe('DENY');
             expect(envModule.env.API_SECURITY_X_CONTENT_TYPE_OPTIONS).toBe('nosniff');
-            expect(envModule.env.API_SECURITY_X_XSS_PROTECTION).toBe('1; mode=block');
+            expect(envModule.env.API_SECURITY_X_XSS_PROTECTION).toBe('0');
             expect(envModule.env.API_SECURITY_REFERRER_POLICY).toBe(
                 'strict-origin-when-cross-origin'
             );

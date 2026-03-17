@@ -187,7 +187,7 @@ describe('Middleware Interactions Integration', () => {
                 // Regardless of compression, security headers should be present
                 expect(res.headers.get('x-content-type-options')).toBe('nosniff');
                 expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-                expect(res.headers.get('x-xss-protection')).toBe('1; mode=block');
+                expect(res.headers.get('x-xss-protection')).toBe('0');
 
                 // Should be able to read response (compressed or not)
                 if (contentEncoding?.includes('gzip')) {

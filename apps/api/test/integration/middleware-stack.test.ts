@@ -82,7 +82,7 @@ describe('Middleware Stack Integration', () => {
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
             // Allow either DENY or SAMEORIGIN for x-frame-options
             expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-            expect(res.headers.get('x-xss-protection')).toBe('1; mode=block');
+            expect(res.headers.get('x-xss-protection')).toBe('0');
 
             // Verify CORS middleware worked
             expect(res.headers.get('access-control-allow-origin')).toBeTruthy();
@@ -309,7 +309,7 @@ describe('Middleware Stack Integration', () => {
             if (res.status === 200) {
                 expect(res.headers.get('x-content-type-options')).toBe('nosniff');
                 expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-                expect(res.headers.get('x-xss-protection')).toBe('1; mode=block');
+                expect(res.headers.get('x-xss-protection')).toBe('0');
                 expect(res.headers.get('referrer-policy')).toBeTruthy();
             } else {
                 // Rate limited responses might not have all security headers

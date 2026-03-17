@@ -12,11 +12,11 @@ vi.mock('../../src/utils/env', () => {
         API_SECURITY_ENABLED: true,
         API_SECURITY_HEADERS_ENABLED: true,
         API_SECURITY_CONTENT_SECURITY_POLICY:
-            "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';",
+            "default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; frame-src 'none';",
         API_SECURITY_STRICT_TRANSPORT_SECURITY: 'max-age=31536000; includeSubDomains',
         API_SECURITY_X_FRAME_OPTIONS: 'SAMEORIGIN',
         API_SECURITY_X_CONTENT_TYPE_OPTIONS: 'nosniff',
-        API_SECURITY_X_XSS_PROTECTION: '1; mode=block',
+        API_SECURITY_X_XSS_PROTECTION: '0',
         API_SECURITY_REFERRER_POLICY: 'strict-origin-when-cross-origin',
         API_SECURITY_PERMISSIONS_POLICY: 'camera=(), microphone=(), geolocation=()'
     };
@@ -86,7 +86,7 @@ describe('Security Middleware', () => {
             const res = await app.request('/test');
 
             expect(res.status).toBe(200);
-            expect(res.headers.get('X-XSS-Protection')).toBe('1; mode=block');
+            expect(res.headers.get('X-XSS-Protection')).toBe('0');
         });
 
         it('should include Referrer-Policy header', async () => {
@@ -109,40 +109,47 @@ describe('Security Middleware', () => {
     });
 
     describe('Documentation Routes', () => {
-        it('should skip security headers for /docs routes', async () => {
+        it('should apply permissive CSP for /docs routes', async () => {
             app.get('/docs', (c) => c.json({ docs: 'content' }));
 
             const res = await app.request('/docs');
 
             expect(res.status).toBe(200);
-            expect(res.headers.get('Content-Security-Policy')).toBeNull();
-            expect(res.headers.get('Strict-Transport-Security')).toBeNull();
-            expect(res.headers.get('X-Frame-Options')).toBeNull();
+            const csp = res.headers.get('Content-Security-Policy');
+            expect(csp).not.toBeNull();
+            expect(csp).toContain("'unsafe-inline'");
+            expect(csp).toContain('cdn.jsdelivr.net');
+            expect(res.headers.get('Strict-Transport-Security')).not.toBeNull();
+            expect(res.headers.get('X-Frame-Options')).not.toBeNull();
         });
 
-        it('should skip security headers for /docs/reference routes', async () => {
+        it('should apply permissive CSP for /docs/reference routes', async () => {
             app.get('/docs/reference', (c) => c.json({ reference: 'content' }));
 
             const res = await app.request('/docs/reference');
 
             expect(res.status).toBe(200);
-            expect(res.headers.get('Content-Security-Policy')).toBeNull();
-            expect(res.headers.get('Strict-Transport-Security')).toBeNull();
-            expect(res.headers.get('X-Frame-Options')).toBeNull();
+            const csp = res.headers.get('Content-Security-Policy');
+            expect(csp).not.toBeNull();
+            expect(csp).toContain("'unsafe-inline'");
+            expect(res.headers.get('Strict-Transport-Security')).not.toBeNull();
+            expect(res.headers.get('X-Frame-Options')).not.toBeNull();
         });
 
-        it('should skip security headers for /docs/ui routes', async () => {
+        it('should apply permissive CSP for /docs/ui routes', async () => {
             app.get('/docs/ui', (c) => c.json({ ui: 'content' }));
 
             const res = await app.request('/docs/ui');
 
             expect(res.status).toBe(200);
-            expect(res.headers.get('Content-Security-Policy')).toBeNull();
-            expect(res.headers.get('Strict-Transport-Security')).toBeNull();
-            expect(res.headers.get('X-Frame-Options')).toBeNull();
+            const csp = res.headers.get('Content-Security-Policy');
+            expect(csp).not.toBeNull();
+            expect(csp).toContain("'unsafe-inline'");
+            expect(res.headers.get('Strict-Transport-Security')).not.toBeNull();
+            expect(res.headers.get('X-Frame-Options')).not.toBeNull();
         });
 
-        it('should skip security headers for nested documentation routes', async () => {
+        it('should apply permissive CSP for nested documentation routes', async () => {
             app.get('/docs/api', (c) => c.json({ apiDocs: 'content' }));
             app.get('/docs/reference/v1', (c) => c.json({ v1Docs: 'content' }));
             app.get('/docs/ui/components', (c) => c.json({ components: 'content' }));
@@ -155,9 +162,12 @@ describe('Security Middleware', () => {
             expect(refRes.status).toBe(200);
             expect(uiRes.status).toBe(200);
 
-            expect(docsRes.headers.get('Content-Security-Policy')).toBeNull();
-            expect(refRes.headers.get('Content-Security-Policy')).toBeNull();
-            expect(uiRes.headers.get('Content-Security-Policy')).toBeNull();
+            // All docs routes should have permissive CSP with unsafe-inline
+            for (const res of [docsRes, refRes, uiRes]) {
+                const csp = res.headers.get('Content-Security-Policy');
+                expect(csp).not.toBeNull();
+                expect(csp).toContain("'unsafe-inline'");
+            }
         });
     });
 
@@ -308,7 +318,7 @@ describe('Security Middleware', () => {
             expect(csp).toContain("style-src 'self'");
             expect(csp).toContain("img-src 'self' data: https:");
             expect(csp).toContain("connect-src 'self'");
-            expect(csp).toContain("font-src 'self' https: data:");
+            expect(csp).toContain("font-src 'self'");
             expect(csp).toContain("object-src 'none'");
             expect(csp).toContain("media-src 'self'");
             expect(csp).toContain("frame-src 'none'");

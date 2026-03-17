@@ -16,6 +16,17 @@ describe('buildSentryReportUri', () => {
     it('should return null for a DSN missing the project ID', () => {
         expect(buildSentryReportUri({ dsn: 'https://key@host/' })).toBeNull();
     });
+
+    it('should return null for a DSN missing the key (empty username)', () => {
+        // Arrange
+        const dsn = 'https://@o456.ingest.sentry.io/789';
+
+        // Act
+        const result = buildSentryReportUri({ dsn });
+
+        // Assert
+        expect(result).toBeNull();
+    });
 });
 
 describe('buildCspDirectives', () => {
@@ -36,7 +47,9 @@ describe('buildCspDirectives', () => {
 
     it('should include MercadoPago domains in connect-src', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-        expect(result).toContain('https://*.mercadopago.com');
+        expect(result).toContain('https://api.mercadopago.com');
+        expect(result).toContain('https://sdk.mercadopago.com');
+        expect(result).toContain('https://www.mercadopago.com');
         expect(result).toContain('https://api.mercadolibre.com');
         expect(result).toContain('https://api-static.mercadopago.com');
     });
@@ -49,7 +62,7 @@ describe('buildCspDirectives', () => {
 
     it('should include frame-src for MercadoPago', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
-        expect(result).toContain('frame-src https://*.mercadopago.com');
+        expect(result).toContain('frame-src https://www.mercadopago.com');
     });
 
     it('should include report-uri when DSN is provided', () => {
@@ -69,5 +82,34 @@ describe('buildCspDirectives', () => {
     it('should include frame-ancestors none', () => {
         const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
         expect(result).toContain("frame-ancestors 'none'");
+    });
+
+    it('should include upgrade-insecure-requests directive', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert
+        expect(result).toContain('upgrade-insecure-requests');
+    });
+
+    it('should include media-src self directive', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert
+        expect(result).toContain("media-src 'self'");
+    });
+
+    it('should use specific MercadoPago subdomains instead of wildcard', () => {
+        // Arrange & Act
+        const result = buildCspDirectives({ nonce: 'test', sentryDsn: '' });
+
+        // Assert - specific subdomains must be listed
+        expect(result).toContain('https://api.mercadopago.com');
+        expect(result).toContain('https://sdk.mercadopago.com');
+        expect(result).toContain('https://www.mercadopago.com');
+
+        // Assert - wildcard must NOT be used
+        expect(result).not.toContain('*.mercadopago.com');
     });
 });
