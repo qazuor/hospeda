@@ -1,5 +1,5 @@
 import { createQZPayBilling } from '@qazuor/qzpay-core';
-import { QZPayProvider, QZPayThemeProvider } from '@qazuor/qzpay-react';
+import { QZPayProvider, type QZPayProviderProps, QZPayThemeProvider } from '@qazuor/qzpay-react';
 import { TanstackDevtools } from '@tanstack/react-devtools';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HeadContent, Link, Outlet, Scripts, createRootRoute } from '@tanstack/react-router';
@@ -122,11 +122,14 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             // getAuthToken not provided - Better Auth handles auth via cookies
         });
 
+        // Cast needed: @qazuor/qzpay-react depends on qzpay-core@1.1.0
+        // while admin uses qzpay-core@1.2.0. The interfaces are compatible
+        // but TypeScript sees them as distinct nominal types.
         return createQZPayBilling({
             storage: adapter,
             defaultCurrency: 'ARS',
             livemode: env.PROD ?? false
-        });
+        }) as unknown as QZPayProviderProps['billing'];
     });
 
     return (

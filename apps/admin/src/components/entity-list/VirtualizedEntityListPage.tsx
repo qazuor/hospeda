@@ -190,7 +190,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
                     </button>
 
                     {/* Debug info toggle */}
-                    {process.env.NODE_ENV === 'development' && (
+                    {import.meta.env.DEV && (
                         <button
                             type="button"
                             onClick={() => {
@@ -248,7 +248,7 @@ export const VirtualizedEntityListPage = <TData extends { id: string }>({
             {footer && <div className="mt-4">{footer}</div>}
 
             {/* Debug panel */}
-            {showDebugInfo && process.env.NODE_ENV === 'development' && (
+            {showDebugInfo && import.meta.env.DEV && (
                 <div className="mt-4 rounded border bg-muted p-3 text-xs">
                     <h4 className="mb-2 font-semibold">Debug Info</h4>
                     <div className="grid grid-cols-2 gap-2">

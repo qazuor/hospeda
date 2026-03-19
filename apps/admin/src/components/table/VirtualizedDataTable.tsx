@@ -290,7 +290,7 @@ export const VirtualizedDataTable = <TData,>({
     return (
         <div className="space-y-3">
             {/* Virtualization debug info */}
-            {showVirtualizationDebug && process.env.NODE_ENV === 'development' && (
+            {showVirtualizationDebug && import.meta.env.DEV && (
                 <div className="rounded border bg-primary/5 px-3 py-2 text-primary text-xs">
                     <span className="font-medium">Virtualization:</span>{' '}
                     {useVirtualRendering ? 'Active' : 'Disabled'}

@@ -78,7 +78,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         const hasError = error || !!errorMessage;
         const showHelperText = helperText && !hasError;
 
-        const inputId = `input-${Math.random().toString(36).substr(2, 9)}`;
+        const inputId = `input-${crypto.randomUUID()}`;
 
         return (
             <div className="w-full">

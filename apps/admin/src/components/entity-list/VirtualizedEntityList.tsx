@@ -208,7 +208,7 @@ export const VirtualizedEntityList = <TData extends { id: string }>({
             </div>
 
             {/* Debug info (only in development) */}
-            {process.env.NODE_ENV === 'development' && (
+            {import.meta.env.DEV && (
                 <div className="mt-2 text-muted-foreground text-xs">
                     Total: {items.length} | Visible: {visibleRange.start}-{visibleRange.end} |
                     Rendered: {virtualItems.length}

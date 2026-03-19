@@ -156,7 +156,7 @@ const EntityErrorFallback: React.FC<EntityErrorFallbackProps> = ({
                 </div>
 
                 {/* Development Error Details */}
-                {process.env.NODE_ENV === 'development' && (
+                {import.meta.env.DEV && (
                     <details className="mt-6 text-left">
                         <summary className="cursor-pointer text-muted-foreground text-sm">
                             {t('admin-common.errorBoundary.devOnly.title')}

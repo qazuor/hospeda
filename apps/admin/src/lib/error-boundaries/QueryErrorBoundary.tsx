@@ -116,7 +116,7 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
                 <p className="mb-4 text-muted-foreground text-sm">{errorInfo.message}</p>
 
                 {/* Query Key (if available and in development) */}
-                {process.env.NODE_ENV === 'development' && queryKey && (
+                {import.meta.env.DEV && queryKey && (
                     <p className="mb-3 font-mono text-muted-foreground text-xs">
                         Query: {JSON.stringify(queryKey)}
                     </p>
@@ -154,7 +154,7 @@ const QueryErrorFallback: React.FC<QueryErrorFallbackProps> = ({
                 </div>
 
                 {/* Development Error Details */}
-                {process.env.NODE_ENV === 'development' && (
+                {import.meta.env.DEV && (
                     <details className="mt-4 text-left">
                         <summary className="cursor-pointer text-muted-foreground text-xs">
                             {t('admin-common.errorBoundary.devOnly.title')}
