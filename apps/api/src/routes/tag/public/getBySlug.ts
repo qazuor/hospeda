@@ -1,3 +1,4 @@
+import { z } from '@hono/zod-openapi';
 /**
  * Public tag by slug endpoint
  * Returns a single tag by its URL slug
@@ -5,7 +6,6 @@
 import { ServiceErrorCode, TagSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { createPublicRoute } from '../../../utils/route-factory.js';

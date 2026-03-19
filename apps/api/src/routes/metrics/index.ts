@@ -2,13 +2,12 @@
  * Metrics routes
  * Endpoints for exposing application metrics
  */
-import { createRoute } from '@hono/zod-openapi';
+import { createRoute, z } from '@hono/zod-openapi';
 import {
     MetricsOperationResponseSchema,
     MetricsSuccessResponseSchema,
     PermissionEnum
 } from '@repo/schemas';
-import { z } from 'zod';
 import { adminAuthMiddleware } from '../../middlewares/authorization';
 import {
     getApiMetrics,

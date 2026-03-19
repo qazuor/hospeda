@@ -1,10 +1,10 @@
+import { z } from '@hono/zod-openapi';
 /**
  * Public plans list endpoint
  * Returns the list of available billing plans from the billing configuration
  */
 import { ALL_PLANS } from '@repo/billing';
 import type { PlanDefinition } from '@repo/billing';
-import { z } from 'zod';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
 
 /**
