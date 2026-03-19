@@ -254,7 +254,11 @@ const API_KNOWN_GAPS = new Set<string>([
 
     // Test/infrastructure vars — not validated by ApiEnvSchema by design.
     'TEST_DB_URL',
-    'TEST_DB_NAME'
+    'TEST_DB_NAME',
+
+    // Feedback vars registered but validated via feedback section schema, not ApiEnvSchema.
+    'HOSPEDA_FEEDBACK_ENABLED',
+    'HOSPEDA_FEEDBACK_FALLBACK_EMAIL'
 ]);
 
 /**
@@ -277,7 +281,14 @@ const ADMIN_KNOWN_GAPS = new Set<string>([
 
     // VITE_LOG_LEVEL is in the CLIENT_ADMIN_ENV_VARS registry but has not yet
     // been added to AdminEnvSchema. This is a schema gap — track as TODO.
-    'VITE_LOG_LEVEL'
+    'VITE_LOG_LEVEL',
+
+    // VITE_LOG_INCLUDE_TIMESTAMPS, VITE_LOG_INCLUDE_LEVEL, VITE_LOG_USE_COLORS
+    // are consumed by sections/logger.schema.ts (client-side logger config) but
+    // are not validated directly by AdminEnvSchema. Schema gap — track as TODO.
+    'VITE_LOG_INCLUDE_TIMESTAMPS',
+    'VITE_LOG_INCLUDE_LEVEL',
+    'VITE_LOG_USE_COLORS'
 ]);
 
 /**
@@ -301,9 +312,9 @@ const WEB_KNOWN_GAPS = new Set<string>([
  * Tracked for awareness; they should eventually be registered.
  */
 const ADMIN_SCHEMA_KEYS_NOT_IN_REGISTRY = new Set<string>([
-    'VITE_SITE_URL', // In AdminEnvSchema but not in CLIENT_ADMIN_ENV_VARS
-    'DEV', // Vite internal
-    'PROD' // Vite internal
+    // VITE_SITE_URL was added to CLIENT_ADMIN_ENV_VARS — no longer a registry gap.
+    'DEV', // Vite internal — not a user-configurable var
+    'PROD' // Vite internal — not a user-configurable var
 ]);
 
 // ---------------------------------------------------------------------------

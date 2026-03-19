@@ -14,12 +14,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * Breakdown:
  *  - HOSPEDA_*    : 37 vars (server-side platform)
  *  - API_*        : 91 vars (Hono middleware configuration)
- *  - PUBLIC_*     :  4 vars (Astro web app, browser-exposed)
- *  - VITE_*       : 18 vars (TanStack admin, Vite-exposed)
+ *  - PUBLIC_*     :  6 vars (Astro web app, browser-exposed)
+ *  - VITE_*       : 23 vars (TanStack admin, Vite-exposed)
  *  - Docker       :  5 vars (docker-compose services)
- *  - System       :  5 vars (runtime/CI/Vercel)
+ *  - System       :  6 vars (runtime/CI/Vercel)
  */
-const EXPECTED_VAR_COUNT = 171;
+const EXPECTED_VAR_COUNT = 177;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -343,12 +343,12 @@ describe('ENV_REGISTRY', () => {
             expect(entry?.secret).toBe(true);
         });
 
-        it('should contain all 19 VITE_* admin variables', () => {
+        it('should contain all 23 VITE_* admin variables', () => {
             // Arrange
             const viteVars = REGISTRY.filter((e) => e.name.startsWith('VITE_'));
 
             // Assert
-            expect(viteVars.length).toBe(19);
+            expect(viteVars.length).toBe(23);
         });
     });
 

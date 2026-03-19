@@ -193,8 +193,8 @@ export function exposeSharedEnv(
             const define: Record<string, string> = {};
             const { validate = false, context = 'Client App', schema } = options;
 
-            // Load environment variables from root .env.local if needed
-            // This ensures variables are available in the plugin context
+            // Environment variables are loaded by each app from its own .env.local
+            // (per-app env strategy, SPEC-035). No root-level loading is needed here.
 
             // Validate environment if requested
             if (validate && schema) {

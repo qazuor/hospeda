@@ -102,6 +102,16 @@ export const CLIENT_ADMIN_ENV_VARS = [
         category: 'client-admin'
     },
     {
+        name: 'VITE_SITE_URL',
+        description: 'Public web app URL exposed to the admin dashboard (Vite VITE_ prefix)',
+        type: 'url',
+        required: true,
+        secret: false,
+        exampleValue: 'http://localhost:4321',
+        apps: ['admin'],
+        category: 'client-admin'
+    },
+    {
         name: 'VITE_BETTER_AUTH_URL',
         description: 'Better Auth endpoint URL for the admin dashboard',
         type: 'url',
@@ -291,6 +301,39 @@ export const CLIENT_ADMIN_ENV_VARS = [
         defaultValue: 'INFO',
         exampleValue: 'DEBUG',
         enumValues: ['DEBUG', 'INFO', 'WARN', 'ERROR'] as const,
+        apps: ['admin'],
+        category: 'client-admin'
+    },
+    {
+        name: 'VITE_LOG_INCLUDE_TIMESTAMPS',
+        description: 'Include ISO-8601 timestamps in admin client-side log output',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['admin'],
+        category: 'client-admin'
+    },
+    {
+        name: 'VITE_LOG_INCLUDE_LEVEL',
+        description: 'Include severity level label in admin client-side log output',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'true',
+        apps: ['admin'],
+        category: 'client-admin'
+    },
+    {
+        name: 'VITE_LOG_USE_COLORS',
+        description: 'Colorise admin client-side log output (disable in CI/production)',
+        type: 'boolean',
+        required: false,
+        secret: false,
+        defaultValue: 'true',
+        exampleValue: 'false',
         apps: ['admin'],
         category: 'client-admin'
     }

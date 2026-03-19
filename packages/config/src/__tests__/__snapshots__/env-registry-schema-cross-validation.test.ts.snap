@@ -2,8 +2,8 @@
 
 exports[`ENV_REGISTRY ↔ Zod schema cross-validation (GAP-026) > Registry completeness snapshot > should report the count of known gaps per app 1`] = `
 {
-  "admin": 5,
-  "api": 7,
+  "admin": 8,
+  "api": 9,
   "web": 1,
 }
 `;
