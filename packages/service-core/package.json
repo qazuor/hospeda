@@ -37,10 +37,12 @@
         "vitest": "^3.1.3"
     },
     "dependencies": {
+        "@repo/billing": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/utils": "workspace:*",
+        "drizzle-orm": "^0.44.7",
         "zod": "^4.0.8"
     }
 }
