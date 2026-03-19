@@ -36,7 +36,7 @@ export function configureOpenAPI(app: AppOpenAPI) {
                     apiLogger.error('🔍 TagSchema dependency issue detected in OpenAPI generation');
                 }
 
-                const isDebug = process.env.HOSPEDA_API_DEBUG_ERRORS === 'true';
+                const isDebug = env.HOSPEDA_API_DEBUG_ERRORS;
                 return c.json(
                     {
                         error: 'OpenAPI generation failed',

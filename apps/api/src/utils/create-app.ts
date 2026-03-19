@@ -135,8 +135,9 @@ export function createApp() {
         .use(
             wrapMiddleware(
                 bodyLimit({
+                    // pre-validation: createApp() may be called before validateApiEnv() in tests
                     maxSize: process.env.VERCEL
-                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless (not in HOSPEDA_* schema)
+                        ? 4.5 * 1024 * 1024 // 4.5MB for Vercel serverless
                         : 10 * 1024 * 1024, // 10MB for long-running server
                     onError: (c) => {
                         return c.json(
@@ -167,7 +168,7 @@ export function createApp() {
         // Response validation (development/test only by default)
         .use(wrapMiddleware(responseValidatorMiddleware));
 
-    // Mock authentication for testing (injected before real auth, lazy-loaded)
+    // pre-validation: createApp() may be called before validateApiEnv() in tests
     if (process.env.NODE_ENV === 'test') {
         app.use(wrapMiddleware(lazyMockAuthMiddleware));
     }

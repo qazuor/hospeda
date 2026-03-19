@@ -68,7 +68,7 @@ const ApiEnvSchema = z
             .string()
             .min(32, 'HOSPEDA_BETTER_AUTH_SECRET must be at least 32 characters'),
         /** Better Auth base URL used in auth.ts initialization */
-        HOSPEDA_BETTER_AUTH_URL: z.string().url().optional(),
+        HOSPEDA_BETTER_AUTH_URL: z.string().url('Must be a valid URL for Better Auth'),
 
         // OAuth providers
         HOSPEDA_GOOGLE_CLIENT_ID: z.string().optional(),
@@ -77,7 +77,7 @@ const ApiEnvSchema = z
         HOSPEDA_FACEBOOK_CLIENT_SECRET: z.string().optional(),
 
         // Trusted origins
-        HOSPEDA_SITE_URL: z.string().url().optional(),
+        HOSPEDA_SITE_URL: z.string().url('Must be a valid URL for the web app'),
         HOSPEDA_ADMIN_URL: z.string().url().optional(),
 
         // Test / debug flags (explicit opt-in; use HOSPEDA_* names)
@@ -402,7 +402,10 @@ export let env: z.infer<typeof ApiEnvSchema>;
  */
 export const validateApiEnv = (): void => {
     env = _validateApiEnv() as z.infer<typeof ApiEnvSchema>;
-    apiLogger.log(env, 'validateApiEnv');
+    // Guard against test environments where apiLogger may be a partial mock
+    if (typeof apiLogger.log === 'function') {
+        apiLogger.log(env, 'validateApiEnv');
+    }
 };
 
 // Export the schema for testing

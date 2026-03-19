@@ -8,6 +8,7 @@
  * @module auth-lockout
  */
 
+import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { getRedisClient } from '../utils/redis.js';
 
@@ -33,8 +34,8 @@ interface LockoutStore {
  */
 function getConfig() {
     return {
-        maxAttempts: Number(process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS) || 5,
-        windowMs: Number(process.env.HOSPEDA_AUTH_LOCKOUT_WINDOW_MS) || 900000
+        maxAttempts: env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS,
+        windowMs: env.HOSPEDA_AUTH_LOCKOUT_WINDOW_MS
     };
 }
 
@@ -61,6 +62,7 @@ function cleanupExpiredEntries(): void {
     }
 }
 
+// pre-validation: must use process.env directly (module-level, before validateApiEnv() runs)
 if (process.env.NODE_ENV !== 'test') {
     cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL_MS);
     cleanupInterval.unref();
@@ -299,12 +301,12 @@ let activeStore: LockoutStore | undefined;
  */
 function getStore(): LockoutStore {
     if (!activeStore) {
-        const redisUrl = process.env.HOSPEDA_REDIS_URL;
+        const redisUrl = env.HOSPEDA_REDIS_URL;
         if (redisUrl) {
             activeStore = createRedisStore();
         } else {
             activeStore = inMemoryStore;
-            if (process.env.NODE_ENV === 'production') {
+            if (env.NODE_ENV === 'production') {
                 apiLogger.warn(
                     'Lockout store using in-memory fallback. ' +
                         'Set HOSPEDA_REDIS_URL for multi-instance lockout support.'

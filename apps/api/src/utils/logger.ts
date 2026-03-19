@@ -14,10 +14,11 @@ import { fileURLToPath } from 'node:url';
 import logger, { type ILogger, LoggerColors, LogLevel } from '@repo/logger';
 import { config } from 'dotenv';
 
-// Ensure .env.local is loaded before reading env vars
+// Ensure .env.local is loaded before reading env vars.
+// Per-app env strategy (SPEC-035): read from apps/api/.env.local, not the monorepo root.
 const _loggerDirname = dirname(fileURLToPath(import.meta.url));
-const _rootDir = resolve(_loggerDirname, '../../../..');
-const _envLocal = resolve(_rootDir, '.env.local');
+const _appDir = resolve(_loggerDirname, '../../..');
+const _envLocal = resolve(_appDir, '.env.local');
 if (existsSync(_envLocal)) {
     config({ path: _envLocal });
 }
@@ -72,13 +73,33 @@ type ApiLogger = ILogger & {
 };
 
 /**
- * This cast is safe and necessary to extend the logger instance with a custom 'permission' method
- * for service-level permission logging. The base logger does not include this method, but our
- * service logging infrastructure expects it. This approach allows us to add the method while
- * preserving the base logger's type safety for all other methods. The extended logger is then
- * exported for use throughout the service layer.
+ * This cast is safe and necessary because `registerLogMethod` adds the `permission` method to
+ * the logger instance at runtime, but TypeScript cannot infer the specific method signature
+ * from the dynamic `[key: string]: unknown` index on `ILogger`. The cast through `unknown`
+ * is required since `ILogger` and `ApiLogger` are not directly assignable.
  */
 const typedApiLogger = apiLogger as unknown as ApiLogger;
 
-export { typedApiLogger as apiLogger };
+/**
+ * Dedicated logger for the addon lifecycle subsystem.
+ *
+ * Registered under the `ADDON_LIFECYCLE` category key so it can be filtered
+ * independently via the `ADDON_LIFECYCLE_LOG_LEVEL` environment variable.
+ *
+ * @example
+ * ```ts
+ * import { addonLogger } from '../utils/logger';
+ * addonLogger.info({ customerId, addonSlug }, 'Addon purchased');
+ * ```
+ */
+const addonLogger = logger.registerCategory('ADDON-LIFECYCLE', 'ADDON_LIFECYCLE', {
+    color: LoggerColors.CYAN,
+    truncateLongText: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_TRUNCATE_TEXT', true),
+    truncateLongTextAt: safeGetEnvNumber('ADDON_LIFECYCLE_LOG_TRUNCATE_AT', 1000),
+    save: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_SAVE', false),
+    expandObjectLevels: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_EXPAND_OBJECTS', false) ? -1 : 0,
+    stringifyObj: safeGetEnvBoolean('ADDON_LIFECYCLE_LOG_STRINGIFY', false)
+});
+
+export { typedApiLogger as apiLogger, addonLogger };
 export type { ApiLogger };

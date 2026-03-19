@@ -54,6 +54,12 @@ export interface AppBindings {
         billingCustomerId?: string | null;
         userEntitlements: Set<EntitlementKey>;
         userLimits: Map<LimitKey, number>;
+        /**
+         * True when the billing service failed to load entitlements.
+         * Used by requireLimit and requireEntitlement to return 503
+         * instead of silently granting unlimited access.
+         */
+        billingLoadFailed?: boolean;
         webhookEventId?: string;
     };
 }

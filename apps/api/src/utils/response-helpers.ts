@@ -8,6 +8,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
+import { env } from './env';
 import { apiLogger } from './logger';
 
 /**
@@ -166,7 +167,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: error.code,
                 message: error.message,
-                details: process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.details : undefined
+                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.details : undefined
             },
             c,
             statusCode
@@ -207,8 +208,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
                 },
                 c,
                 400
@@ -220,7 +220,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: 'DATABASE_ERROR',
                 message: 'A database error occurred',
-                details: process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
             },
             c,
             500
@@ -253,8 +253,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code,
                     message,
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
                 },
                 c,
                 statusCode
@@ -267,8 +266,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
                 },
                 c,
                 400
@@ -281,8 +279,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'VALIDATION_ERROR',
                     message: error.message,
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
                 },
                 c,
                 400
@@ -293,7 +290,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: 'INTERNAL_ERROR',
                 message: 'An unexpected error occurred',
-                details: process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? error.message : undefined
+                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.message : undefined
             },
             c,
             500
@@ -310,8 +307,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'INVALID_REFERENCE',
                     message: 'Invalid reference: The specified resource does not exist',
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? errorMessage : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? errorMessage : undefined
                 },
                 c,
                 400
@@ -324,8 +320,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 {
                     code: 'VALIDATION_ERROR',
                     message: errorMessage,
-                    details:
-                        process.env.HOSPEDA_API_DEBUG_ERRORS === 'true' ? errorMessage : undefined
+                    details: env.HOSPEDA_API_DEBUG_ERRORS ? errorMessage : undefined
                 },
                 c,
                 400

@@ -64,8 +64,7 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
 
     // Compute environment-dependent flags using validated env (called after validateApiEnv())
     const isDev = env.NODE_ENV !== 'production';
-    // VERCEL is platform-injected and not part of the HOSPEDA_* schema
-    const isServerless = !!process.env.VERCEL;
+    const isServerless = !!env.VERCEL;
 
     const resolvedDefaults: SentryConfig = {
         ...DEFAULT_CONFIG,

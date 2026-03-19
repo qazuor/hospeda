@@ -65,7 +65,7 @@ function getNotificationService(): NotificationService | null {
 
         // Create email transport with validated env config
         const emailTransport = new ResendEmailTransport(resendClient, {
-            fromEmail: env.HOSPEDA_RESEND_FROM_EMAIL,
+            fromEmail: env.HOSPEDA_RESEND_FROM_EMAIL ?? 'noreply@hospeda.com.ar',
             fromName: env.HOSPEDA_RESEND_FROM_NAME ?? 'Hospeda'
         });
 
@@ -89,7 +89,7 @@ function getNotificationService(): NotificationService | null {
             retryService,
             db,
             logger: apiLogger,
-            siteUrl: env.HOSPEDA_SITE_URL
+            siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar'
         });
 
         apiLogger.info('NotificationService initialized successfully');

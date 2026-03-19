@@ -26,9 +26,7 @@ import { env } from '../utils/env';
  * @returns Whether mock authentication is allowed
  */
 const isMockAuthAllowed = (): boolean => {
-    return (
-        env.NODE_ENV === 'test' && env.HOSPEDA_DISABLE_AUTH === true && process.env.CI !== 'true'
-    );
+    return env.NODE_ENV === 'test' && env.HOSPEDA_DISABLE_AUTH === true && env.CI !== 'true';
 };
 
 /**

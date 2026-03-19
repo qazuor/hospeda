@@ -41,11 +41,7 @@ const MockPermissionsSchema = z.array(z.nativeEnum(PermissionEnum));
  * - x-mock-actor-permissions: JSON array of permissions
  */
 const isMockActorAllowed = (): boolean => {
-    return (
-        env.NODE_ENV === 'test' &&
-        env.HOSPEDA_ALLOW_MOCK_ACTOR === true &&
-        process.env.CI !== 'true'
-    );
+    return env.NODE_ENV === 'test' && env.HOSPEDA_ALLOW_MOCK_ACTOR === true && env.CI !== 'true';
 };
 
 /**

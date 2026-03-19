@@ -32,9 +32,8 @@ export const createValidationMiddleware = (options: ValidationMiddlewareOptions 
             // Route factories attach routeOptions directly on the context object
             // (not through c.set/c.get) as a non-standard property. This pattern
             // is intentional and there is no ContextVariableMap entry for it.
-            const routeOptions = (c as unknown as Record<string, unknown>).routeOptions as
-                | { skipValidation?: boolean }
-                | undefined;
+            const routeOptions = (c as unknown as { routeOptions?: { skipValidation?: boolean } })
+                .routeOptions;
             if (routeOptions?.skipValidation || isPublicPath) {
                 await next();
                 return;

@@ -48,6 +48,7 @@ export function cleanupExpiredEntries(): void {
 /** Handle for the periodic cleanup interval (undefined in test env) */
 let cleanupInterval: ReturnType<typeof setInterval> | undefined;
 
+// pre-validation: must use process.env directly (module-level, before validateApiEnv() runs)
 if (process.env.NODE_ENV !== 'test') {
     cleanupInterval = setInterval(cleanupExpiredEntries, CLEANUP_INTERVAL_MS);
     cleanupInterval.unref(); // Don't prevent process exit

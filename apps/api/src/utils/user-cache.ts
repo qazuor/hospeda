@@ -2,10 +2,11 @@ import type { User } from '@repo/schemas';
 import { UserService } from '@repo/service-core';
 import { LRUCache } from 'lru-cache';
 import { createSystemActor } from './actor.js';
+import { env } from './env.js';
 import { apiLogger } from './logger.js';
 
 /** Whether running in Vercel serverless environment */
-const isServerless = !!process.env.VERCEL;
+const isServerless = !!env.VERCEL;
 
 /**
  * Cached user data with metadata
