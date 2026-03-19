@@ -56,7 +56,9 @@ function BillingPlansPage() {
 
     // Use API data if available, otherwise fall back to static config
     const hasApiData = Array.isArray(data?.items) && data.items.length > 0;
-    const plans = hasApiData ? (data.items as PlanDefinition[]) : ALL_PLANS;
+    // API returns ParsedPlanRecord[] which is structurally compatible with PlanDefinition
+    // but has different branded types for entitlements/limits. Cast via unknown.
+    const plans = hasApiData ? (data.items as unknown as PlanDefinition[]) : ALL_PLANS;
     const total = hasApiData
         ? ((data?.pagination?.total as number | undefined) ?? plans.length)
         : ALL_PLANS.length;
