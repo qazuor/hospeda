@@ -1,9 +1,8 @@
 /**
  * Add-on User Management Module
  *
- * Handles retrieval and cancellation of user-owned add-ons.
- * Queries billing_addon_purchases table as primary source, with fallback
- * to JSON subscription metadata for backward compatibility.
+ * API-layer wrapper that delegates query logic to @repo/service-core
+ * and adds infra concerns (logging, Sentry, notifications).
  *
  * @module services/addon.user-addons
  */
@@ -11,206 +10,51 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
 import { NotificationType } from '@repo/notifications';
+import {
+    cancelAddonPurchaseRecord,
+    queryActiveAddonPurchases,
+    queryAddonActive,
+    queryUserAddons
+} from '@repo/service-core';
+import type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
-import { and, eq, isNull } from 'drizzle-orm';
-import { z } from 'zod';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
 import type { CancelAddonInput, ServiceResult, UserAddon } from './addon.types';
-import { addonAdjustmentsArraySchema } from './addon.types';
 
-/**
- * Zod schema for a single JSONB limit adjustment entry
- */
-const LimitAdjustmentEntrySchema = z.object({
-    limitKey: z.string(),
-    increase: z.number()
-});
+// Re-export types from service-core for backward compatibility
+export type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
 
 /**
  * Get a user's active add-ons.
  *
- * Queries `billing_addon_purchases` as primary source, then merges results
- * from JSON metadata in subscription records for backward compatibility.
- * Table entries take priority over metadata entries for the same slug.
+ * Delegates to the pure query function in @repo/service-core and adds
+ * structured logging for observability.
  *
  * @param billing - QZPay billing instance
  * @param userId - The user's external ID
  * @returns List of active user add-ons
- *
- * @example
- * ```ts
- * const result = await getUserAddons(billing, 'user_123');
- * if (result.success) {
- *   for (const addon of result.data) {
- *     console.log(addon.addonSlug, addon.status);
- *   }
- * }
- * ```
  */
 export async function getUserAddons(
     billing: QZPayBilling,
     userId: string
 ): Promise<ServiceResult<UserAddon[]>> {
     try {
-        const customer = await billing.customers.getByExternalId(userId);
+        const result = await queryUserAddons({ billing, userId });
 
-        if (!customer) {
-            return { success: true, data: [] };
+        if (result.success) {
+            apiLogger.debug(
+                {
+                    userId,
+                    totalAddons: result.data.length
+                },
+                'Retrieved user add-ons'
+            );
         }
 
-        const { getDb } = await import('@repo/db/client');
-        const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-        const db = getDb();
-
-        const addonPurchases = await db
-            .select()
-            .from(billingAddonPurchases)
-            .where(
-                and(
-                    eq(billingAddonPurchases.customerId, customer.id),
-                    eq(billingAddonPurchases.status, 'active'),
-                    isNull(billingAddonPurchases.deletedAt)
-                )
-            );
-
-        const userAddonsFromTable: UserAddon[] = addonPurchases.map((purchase) => {
-            const addonDef = getAddonBySlug(purchase.addonSlug);
-
-            let affectsLimitKey: string | null = null;
-            let limitIncrease: number | null = null;
-
-            if (
-                purchase.limitAdjustments &&
-                Array.isArray(purchase.limitAdjustments) &&
-                purchase.limitAdjustments.length > 0
-            ) {
-                const firstLimit = purchase.limitAdjustments[0];
-                const parsed = LimitAdjustmentEntrySchema.safeParse(firstLimit);
-                if (parsed.success) {
-                    affectsLimitKey = parsed.data.limitKey;
-                    limitIncrease = parsed.data.increase;
-                } else {
-                    apiLogger.warn(
-                        {
-                            purchaseId: purchase.id,
-                            addonSlug: purchase.addonSlug,
-                            raw: firstLimit,
-                            zodErrors: parsed.error.flatten()
-                        },
-                        'Invalid limitAdjustment entry in JSONB, skipping'
-                    );
-                }
-            }
-
-            let grantsEntitlement: string | null = null;
-            if (
-                purchase.entitlementAdjustments &&
-                Array.isArray(purchase.entitlementAdjustments) &&
-                purchase.entitlementAdjustments.length > 0
-            ) {
-                const firstEntitlement = purchase.entitlementAdjustments[0];
-                grantsEntitlement = firstEntitlement?.entitlementKey ?? null;
-            }
-
-            return {
-                id: purchase.id,
-                addonSlug: purchase.addonSlug,
-                addonName: addonDef?.name || purchase.addonSlug,
-                billingType: addonDef?.billingType || 'one_time',
-                status: purchase.status as 'active' | 'expired' | 'canceled',
-                purchasedAt: purchase.purchasedAt.toISOString(),
-                expiresAt: purchase.expiresAt ? purchase.expiresAt.toISOString() : null,
-                canceledAt: purchase.canceledAt ? purchase.canceledAt.toISOString() : null,
-                priceArs: addonDef?.priceArs || 0,
-                affectsLimitKey,
-                limitIncrease,
-                grantsEntitlement
-            };
-        });
-
-        // Backward compatibility: merge from JSON metadata
-        const userAddonsFromMetadata: UserAddon[] = [];
-        const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
-
-        if (subscriptions && subscriptions.length > 0) {
-            const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
-            );
-
-            if (activeSubscription) {
-                const metadata = activeSubscription.metadata as Record<string, unknown> | undefined;
-                const adjustmentsJson = metadata?.addonAdjustments as string | undefined;
-
-                if (adjustmentsJson) {
-                    try {
-                        const parsed = JSON.parse(adjustmentsJson);
-                        const validationResult = addonAdjustmentsArraySchema.safeParse(parsed);
-
-                        if (validationResult.success) {
-                            for (const adj of validationResult.data) {
-                                const existsInTable = userAddonsFromTable.some(
-                                    (addon) => addon.addonSlug === adj.addonSlug
-                                );
-
-                                if (!existsInTable) {
-                                    const addonDef = getAddonBySlug(adj.addonSlug);
-                                    userAddonsFromMetadata.push({
-                                        id: `${activeSubscription.id}_${adj.addonSlug}`,
-                                        addonSlug: adj.addonSlug,
-                                        addonName: addonDef?.name || adj.addonSlug,
-                                        billingType: addonDef?.billingType || 'one_time',
-                                        status: 'active' as const,
-                                        purchasedAt: adj.appliedAt,
-                                        expiresAt: null,
-                                        canceledAt: null,
-                                        priceArs: addonDef?.priceArs || 0,
-                                        affectsLimitKey: adj.limitKey || null,
-                                        limitIncrease: adj.limitIncrease || null,
-                                        grantsEntitlement: adj.entitlement || null
-                                    });
-                                }
-                            }
-                        } else {
-                            apiLogger.warn(
-                                {
-                                    userId,
-                                    customerId: customer.id,
-                                    validationErrors: validationResult.error.flatten()
-                                },
-                                'Addon adjustments JSON failed schema validation, skipping malformed data'
-                            );
-                        }
-                    } catch (error) {
-                        apiLogger.error(
-                            {
-                                error: error instanceof Error ? error.message : String(error),
-                                userId,
-                                customerId: customer.id
-                            },
-                            'Failed to parse addon adjustments JSON from metadata'
-                        );
-                    }
-                }
-            }
-        }
-
-        const allUserAddons = [...userAddonsFromTable, ...userAddonsFromMetadata];
-
-        apiLogger.debug(
-            {
-                userId,
-                customerId: customer.id,
-                addonsCountFromTable: userAddonsFromTable.length,
-                addonsCountFromMetadata: userAddonsFromMetadata.length,
-                totalAddons: allUserAddons.length
-            },
-            'Retrieved user add-ons from billing_addon_purchases table and metadata'
-        );
-
-        return { success: true, data: allUserAddons };
+        return result;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -230,25 +74,10 @@ export async function getUserAddons(
  * `addonSlug`, updates its status to 'canceled', then removes entitlements
  * from JSON metadata for backward compatibility.
  *
- * The route handler is responsible for verifying ownership before calling this
- * function. The `purchaseId` must belong to the given `customerId` and have
- * status 'active' — the route already enforces this with an atomic DB query.
- *
- * @param billing - QZPay billing instance. Used for limit recalculation when the
- *   cancelled add-on is a limit-type addon (i.e. `addonDef.affectsLimitKey != null`).
+ * @param billing - QZPay billing instance
  * @param entitlementService - AddonEntitlementService for removing entitlements
  * @param input - Cancellation details (customerId, purchaseId, optional reason)
  * @returns Success or error result
- *
- * @example
- * ```ts
- * const result = await cancelUserAddon(billing, entitlementService, {
- *   customerId: 'cust_123',
- *   purchaseId: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
- *   userId: 'user_456',
- *   reason: 'No longer needed',
- * });
- * ```
  */
 export async function cancelUserAddon(
     billing: QZPayBilling,
@@ -258,10 +87,10 @@ export async function cancelUserAddon(
     try {
         const { getDb } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
+        const { and, eq, isNull } = await import('drizzle-orm');
         const db = getDb();
 
         // Fetch the purchase record by primary key to get the real addonSlug.
-        // This avoids the UUID-as-slug bug: we never trust input to carry the slug.
         const [purchase] = await db
             .select({
                 id: billingAddonPurchases.id,
@@ -309,8 +138,6 @@ export async function cancelUserAddon(
         const addonDef = getAddonBySlug(addonSlug);
 
         // Atomically cancel the purchase and recalculate limits in a single transaction.
-        // If limit recalculation fails the DB update is rolled back, ensuring the
-        // user's limits stay consistent with the purchase status visible in the DB.
         if (addonDef?.affectsLimitKey != null) {
             const limitKey = addonDef.affectsLimitKey;
 
@@ -355,8 +182,6 @@ export async function cancelUserAddon(
                         );
                     }
 
-                    // Recalculate inside the transaction so the new active-purchase
-                    // set (excluding this now-canceled record) is consistent.
                     const recalcResult = await recalculateAddonLimitsForCustomer({
                         customerId: input.customerId,
                         limitKey,
@@ -379,8 +204,6 @@ export async function cancelUserAddon(
                             }
                         });
 
-                        // Throw inside the transaction to trigger rollback of the
-                        // DB update above, keeping purchase status as 'active'.
                         throw recalcError;
                     }
 
@@ -421,24 +244,11 @@ export async function cancelUserAddon(
                 };
             }
         } else {
-            // No limit recalculation needed — update the purchase record directly.
+            // No limit recalculation needed — use service-core helper for the DB update.
             try {
-                const updateResult = await db
-                    .update(billingAddonPurchases)
-                    .set({
-                        status: 'canceled',
-                        canceledAt: new Date(),
-                        updatedAt: new Date()
-                    })
-                    .where(
-                        and(
-                            eq(billingAddonPurchases.id, input.purchaseId),
-                            eq(billingAddonPurchases.status, 'active'),
-                            isNull(billingAddonPurchases.deletedAt)
-                        )
-                    );
-
-                const rowCount = (updateResult as { rowCount?: number }).rowCount || 0;
+                const rowCount = await cancelAddonPurchaseRecord({
+                    purchaseId: input.purchaseId
+                });
 
                 if (rowCount === 0) {
                     apiLogger.warn(
@@ -483,7 +293,6 @@ export async function cancelUserAddon(
         }
 
         // Remove entitlements from JSON metadata for backward compatibility.
-        // Uses the real addonSlug obtained from the purchase record — never from input.
         const result = await entitlementService.removeAddonEntitlements({
             customerId: input.customerId,
             addonSlug,
@@ -513,7 +322,6 @@ export async function cancelUserAddon(
         );
 
         // Fire-and-forget: notify the user about the cancellation.
-        // Failure is non-blocking — the cancellation already succeeded.
         try {
             const customer = await billing.customers.get(input.customerId);
             if (customer) {
@@ -573,18 +381,12 @@ export async function cancelUserAddon(
 /**
  * Check whether a specific add-on is currently active for a user.
  *
+ * Delegates to the pure query function in @repo/service-core.
+ *
  * @param billing - QZPay billing instance
  * @param userId - User ID to check
  * @param addonSlug - Add-on slug to look for
  * @returns True if the add-on is found with status 'active'
- *
- * @example
- * ```ts
- * const result = await checkAddonActive(billing, 'user_123', 'extra-photos');
- * if (result.success && result.data) {
- *   // user has the add-on active
- * }
- * ```
  */
 export async function checkAddonActive(
     billing: QZPayBilling,
@@ -592,17 +394,7 @@ export async function checkAddonActive(
     addonSlug: string
 ): Promise<ServiceResult<boolean>> {
     try {
-        const result = await getUserAddons(billing, userId);
-
-        if (!result.success) {
-            return { success: false, error: result.error };
-        }
-
-        const hasAddon = result.data.some(
-            (addon) => addon.addonSlug === addonSlug && addon.status === 'active'
-        );
-
-        return { success: true, data: hasAddon };
+        return await queryAddonActive({ billing, userId, addonSlug });
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
@@ -621,67 +413,21 @@ export async function checkAddonActive(
 // ─── Bulk revocation (GAP-043-012) ────────────────────────────────────────────
 
 /**
- * Result of a bulk addon revocation for a customer.
- */
-export interface RevokeAllAddonsResult {
-    /** Number of purchases successfully revoked. */
-    revokedCount: number;
-    /** Purchase IDs that failed to be revoked. */
-    failedIds: string[];
-}
-
-/**
- * Input parameters for {@link revokeAllAddonsForCustomer}.
- */
-export interface RevokeAllAddonsInput {
-    /** Billing customer UUID whose ALL active addon purchases should be revoked. */
-    readonly customerId: string;
-}
-
-/**
- * Revokes ALL active addon purchases for a customer, regardless of which
- * subscription they are linked to.
+ * Revokes ALL active addon purchases for a customer.
  *
- * Intended for account deletion or suspension flows where every entitlement
- * must be removed — including one-time addons that have no subscription link.
- * Each purchase is cancelled individually; failures are collected and returned
- * rather than aborting the entire batch.
+ * Uses queryActiveAddonPurchases and cancelAddonPurchaseRecord from
+ * @repo/service-core for DB operations. Adds Sentry reporting and
+ * structured logging as infra concerns.
  *
  * @param input - Customer ID whose addons should be revoked
  * @returns Count of successfully revoked purchases and IDs of any failures
- *
- * @example
- * ```ts
- * const result = await revokeAllAddonsForCustomer({ customerId: 'cust-uuid' });
- * if (result.revokedCount > 0) {
- *   logger.info({ revokedCount: result.revokedCount }, 'All customer addons revoked');
- * }
- * if (result.failedIds.length > 0) {
- *   logger.error({ failedIds: result.failedIds }, 'Some addon revocations failed');
- * }
- * ```
  */
 export async function revokeAllAddonsForCustomer(
     input: RevokeAllAddonsInput
 ): Promise<RevokeAllAddonsResult> {
     const { customerId } = input;
-    const { getDb } = await import('@repo/db/client');
-    const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-    const db = getDb();
 
-    const activePurchases = await db
-        .select({
-            id: billingAddonPurchases.id,
-            addonSlug: billingAddonPurchases.addonSlug
-        })
-        .from(billingAddonPurchases)
-        .where(
-            and(
-                eq(billingAddonPurchases.customerId, customerId),
-                eq(billingAddonPurchases.status, 'active'),
-                isNull(billingAddonPurchases.deletedAt)
-            )
-        );
+    const activePurchases = await queryActiveAddonPurchases({ customerId });
 
     apiLogger.info(
         { customerId, activePurchaseCount: activePurchases.length },
@@ -693,21 +439,7 @@ export async function revokeAllAddonsForCustomer(
 
     for (const purchase of activePurchases) {
         try {
-            await db
-                .update(billingAddonPurchases)
-                .set({
-                    status: 'canceled',
-                    canceledAt: new Date(),
-                    updatedAt: new Date()
-                })
-                .where(
-                    and(
-                        eq(billingAddonPurchases.id, purchase.id),
-                        eq(billingAddonPurchases.status, 'active'),
-                        isNull(billingAddonPurchases.deletedAt)
-                    )
-                );
-
+            await cancelAddonPurchaseRecord({ purchaseId: purchase.id });
             revokedCount++;
 
             apiLogger.info(
