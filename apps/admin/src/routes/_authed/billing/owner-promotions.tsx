@@ -21,8 +21,8 @@ import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { PromotionDetailDialog } from './components/PromotionDetailDialog';
-import { PromotionFormDialog } from './components/PromotionFormDialog';
+import { PromotionDetailDialog } from '@/features/owner-promotions/components/PromotionDetailDialog';
+import { PromotionFormDialog } from '@/features/owner-promotions/components/PromotionFormDialog';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
     component: BillingOwnerPromotionsPage

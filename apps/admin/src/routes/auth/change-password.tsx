@@ -22,8 +22,14 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { type AuthBackgroundImage, getRandomAuthImage } from '../../utils/auth-images';
 
-import { PasswordRequirements, PasswordStrengthIndicator } from './components/PasswordIndicators';
-import { checkPasswordRules, mapApiErrorToTranslationKey } from './components/password-validation';
+import {
+    PasswordRequirements,
+    PasswordStrengthIndicator
+} from '@/features/auth/components/PasswordIndicators';
+import {
+    checkPasswordRules,
+    mapApiErrorToTranslationKey
+} from '@/features/auth/components/password-validation';
 
 export const Route = createFileRoute('/auth/change-password')({
     beforeLoad: async () => {

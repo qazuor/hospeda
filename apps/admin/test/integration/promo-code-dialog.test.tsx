@@ -18,7 +18,7 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { PromoCode } from '@/features/promo-codes';
-import { PromoCodeFormDialog } from '@/routes/_authed/billing/components/PromoCodeFormDialog';
+import { PromoCodeFormDialog } from '@/features/promo-codes/components/PromoCodeFormDialog';
 import { mockPromoCode } from '../fixtures/promo-code.fixture';
 import { renderWithProviders } from '../helpers/render-with-providers';
 

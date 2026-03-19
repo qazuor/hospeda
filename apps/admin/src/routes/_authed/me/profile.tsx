@@ -24,7 +24,11 @@ import {
 } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 
-import { ProfileField, ProfileSection, SocialLink } from './profile-components';
+import {
+    ProfileField,
+    ProfileSection,
+    SocialLink
+} from '@/features/user-profile/components/profile-components';
 
 export const Route = createFileRoute('/_authed/me/profile')({
     component: MyProfilePage

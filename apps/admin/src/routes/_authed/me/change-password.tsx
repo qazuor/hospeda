@@ -19,8 +19,14 @@ import { AlertTriangleIcon, CheckCircleIcon, ShieldIcon, XCircleIcon } from '@re
 import { createFileRoute, useNavigate, useRouteContext } from '@tanstack/react-router';
 import { useCallback, useMemo, useState } from 'react';
 
-import { PasswordRequirements, PasswordStrengthIndicator } from './password-strength-components';
-import { checkPasswordRules, mapApiErrorToTranslationKey } from './password-validation';
+import {
+    PasswordRequirements,
+    PasswordStrengthIndicator
+} from '@/features/user-profile/components/password-strength-components';
+import {
+    checkPasswordRules,
+    mapApiErrorToTranslationKey
+} from '@/features/user-profile/components/password-validation';
 
 export const Route = createFileRoute('/_authed/me/change-password')({
     component: ChangePasswordPage

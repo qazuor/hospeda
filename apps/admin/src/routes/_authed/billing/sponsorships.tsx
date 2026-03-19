@@ -8,9 +8,9 @@ import { useTranslations } from '@/hooks/use-translations';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { SponsorshipLevelsTab } from './components/SponsorshipLevelsTab';
-import { SponsorshipPackagesTab } from './components/SponsorshipPackagesTab';
-import { SponsorshipsTab } from './components/SponsorshipsTab';
+import { SponsorshipLevelsTab } from '@/features/sponsorships/components/SponsorshipLevelsTab';
+import { SponsorshipPackagesTab } from '@/features/sponsorships/components/SponsorshipPackagesTab';
+import { SponsorshipsTab } from '@/features/sponsorships/components/SponsorshipsTab';
 
 export const Route = createFileRoute('/_authed/billing/sponsorships')({
     component: BillingSponsorshipsPage

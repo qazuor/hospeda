@@ -9,9 +9,9 @@
  */
 
 import type { NotificationLog } from '@/features/billing-notification-logs';
+import { NotificationDetailDialog } from '@/features/billing-notification-logs/components/NotificationDetailDialog';
 import type { WebhookEvent } from '@/features/billing-webhook-events';
-import { NotificationDetailDialog } from '@/routes/_authed/billing/components/NotificationDetailDialog';
-import { WebhookEventDetailDialog } from '@/routes/_authed/billing/components/WebhookEventDetailDialog';
+import { WebhookEventDetailDialog } from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';

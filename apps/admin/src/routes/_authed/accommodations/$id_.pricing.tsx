@@ -12,8 +12,11 @@ import { useTranslations } from '@/hooks/use-translations';
 import { formatCurrency } from '@repo/i18n';
 import { createFileRoute } from '@tanstack/react-router';
 
-import type { DiscountBadgeLabels, FeeBadgeLabels } from './pricing-components';
-import { DiscountItem, FeeItem } from './pricing-components';
+import type {
+    DiscountBadgeLabels,
+    FeeBadgeLabels
+} from '@/features/accommodations/components/pricing-components';
+import { DiscountItem, FeeItem } from '@/features/accommodations/components/pricing-components';
 
 export const Route = createFileRoute('/_authed/accommodations/$id_/pricing')({
     component: AccommodationPricingPage

@@ -26,7 +26,7 @@ import {
     type InvoiceStatus,
     getStatusLabel,
     getStatusVariant
-} from './components/InvoiceDetailDialog';
+} from '@/features/billing-invoices/components/InvoiceDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/invoices')({
     component: BillingInvoicesPage

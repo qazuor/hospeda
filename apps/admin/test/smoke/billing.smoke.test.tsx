@@ -278,13 +278,13 @@ vi.mock('@/components/ui/select', () => ({
 // Route sub-component mocks (imported from ./components/ in route files)
 // ---------------------------------------------------------------------------
 
-vi.mock('@/routes/_authed/billing/components/InvoiceDetailDialog', () => ({
+vi.mock('@/features/billing-invoices/components/InvoiceDetailDialog', () => ({
     InvoiceDetailDialog: () => <div data-testid="invoice-detail-dialog" />,
     getStatusLabel: () => 'status',
     getStatusVariant: () => 'default'
 }));
 
-vi.mock('@/routes/_authed/billing/components/NotificationDetailDialog', () => ({
+vi.mock('@/features/billing-notification-logs/components/NotificationDetailDialog', () => ({
     NotificationDetailDialog: () => <div data-testid="notification-detail-dialog" />,
     getChannelLabel: () => 'channel',
     getStatusLabel: () => 'status',
@@ -292,31 +292,31 @@ vi.mock('@/routes/_authed/billing/components/NotificationDetailDialog', () => ({
     getTypeLabel: () => 'type'
 }));
 
-vi.mock('@/routes/_authed/billing/components/PromoCodeDeleteDialog', () => ({
+vi.mock('@/features/promo-codes/components/PromoCodeDeleteDialog', () => ({
     PromoCodeDeleteDialog: () => <div data-testid="promo-code-delete-dialog" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/PromotionDetailDialog', () => ({
+vi.mock('@/features/owner-promotions/components/PromotionDetailDialog', () => ({
     PromotionDetailDialog: () => <div data-testid="promotion-detail-dialog" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/PromotionFormDialog', () => ({
+vi.mock('@/features/owner-promotions/components/PromotionFormDialog', () => ({
     PromotionFormDialog: () => <div data-testid="promotion-form-dialog" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/SponsorshipsTab', () => ({
+vi.mock('@/features/sponsorships/components/SponsorshipsTab', () => ({
     SponsorshipsTab: () => <div data-testid="sponsorships-tab" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/SponsorshipLevelsTab', () => ({
+vi.mock('@/features/sponsorships/components/SponsorshipLevelsTab', () => ({
     SponsorshipLevelsTab: () => <div data-testid="sponsorship-levels-tab" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/SponsorshipPackagesTab', () => ({
+vi.mock('@/features/sponsorships/components/SponsorshipPackagesTab', () => ({
     SponsorshipPackagesTab: () => <div data-testid="sponsorship-packages-tab" />
 }));
 
-vi.mock('@/routes/_authed/billing/components/WebhookEventDetailDialog', () => ({
+vi.mock('@/features/billing-webhook-events/components/WebhookEventDetailDialog', () => ({
     WebhookEventDetailDialog: () => <div data-testid="webhook-event-detail-dialog" />,
     getStatusLabel: () => 'status',
     getStatusVariant: () => 'default',

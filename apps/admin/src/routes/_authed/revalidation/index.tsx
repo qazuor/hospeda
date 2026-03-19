@@ -48,7 +48,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 
-import { LogsTab } from './components/LogsTab';
+import { LogsTab } from '@/features/revalidation/components/LogsTab';
 import {
     EmptyState,
     ErrorState,
@@ -57,7 +57,7 @@ import {
     ManualForm,
     RevalidationResultTable,
     StatCard
-} from './components/revalidation-shared';
+} from '@/features/revalidation/components/revalidation-shared';
 
 export const Route = createFileRoute('/_authed/revalidation/')({
     component: RevalidationPage

@@ -23,12 +23,12 @@ import {
     useTogglePromoCodeActiveMutation,
     useUpdatePromoCodeMutation
 } from '@/features/promo-codes';
+import { PromoCodeDeleteDialog } from '@/features/promo-codes/components/PromoCodeDeleteDialog';
+import { PromoCodeFormDialog } from '@/features/promo-codes/components/PromoCodeFormDialog';
 import { useTranslations } from '@/hooks/use-translations';
 import { AddIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
-import { PromoCodeDeleteDialog } from './components/PromoCodeDeleteDialog';
-import { PromoCodeFormDialog } from './components/PromoCodeFormDialog';
 
 export const Route = createFileRoute('/_authed/billing/promo-codes')({
     component: BillingPromoCodesPage

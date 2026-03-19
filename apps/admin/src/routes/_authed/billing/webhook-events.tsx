@@ -35,7 +35,7 @@ import {
     getStatusLabel,
     getStatusVariant,
     getTypeLabel
-} from './components/WebhookEventDetailDialog';
+} from '@/features/billing-webhook-events/components/WebhookEventDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/webhook-events')({
     component: WebhookEventsPage

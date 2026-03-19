@@ -27,7 +27,7 @@ import {
     getStatusLabel,
     getStatusVariant,
     getTypeLabel
-} from './components/NotificationDetailDialog';
+} from '@/features/billing-notification-logs/components/NotificationDetailDialog';
 
 export const Route = createFileRoute('/_authed/billing/notification-logs')({
     component: NotificationLogsPage
