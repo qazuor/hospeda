@@ -64,7 +64,11 @@ function applyUpdateField<K extends keyof FeedbackEnvironment>(
 describe('useAutoCollect (initialisation logic)', () => {
     beforeEach(() => {
         vi.stubGlobal('window', {
-            location: { href: 'https://example.com/feedback' },
+            location: {
+                href: 'https://example.com/feedback',
+                origin: 'https://example.com',
+                pathname: '/feedback'
+            },
             innerWidth: 1440,
             innerHeight: 900
         });
@@ -249,7 +253,11 @@ describe('useAutoCollect (updateField logic)', () => {
 
     beforeEach(() => {
         vi.stubGlobal('window', {
-            location: { href: 'https://example.com' },
+            location: {
+                href: 'https://example.com',
+                origin: 'https://example.com',
+                pathname: '/'
+            },
             innerWidth: 1920,
             innerHeight: 1080
         });
@@ -270,7 +278,7 @@ describe('useAutoCollect (updateField logic)', () => {
 
         // Assert
         expect(updated.currentUrl).toBe(newUrl);
-        expect(baseEnv.currentUrl).toBe('https://example.com');
+        expect(baseEnv.currentUrl).toBe('https://example.com/');
     });
 
     it('should update browser field', () => {

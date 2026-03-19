@@ -120,8 +120,8 @@ export function formatDiff(params: FormatDiffParams): string {
         lines.push(`    ${colors.dim('remote:')} ${colors.dim('(not set)')}`);
         lines.push(`    ${colors.red('- Not in remote')}`);
     } else if (isChanged) {
-        lines.push(`    ${colors.dim('local :')} ${colors.yellow(maskValue(local))}`);
-        lines.push(`    ${colors.dim('remote:')} ${colors.yellow(maskValue(remote))}`);
+        lines.push(`    ${colors.dim('local :')} ${colors.yellow(show(local))}`);
+        lines.push(`    ${colors.dim('remote:')} ${colors.yellow(show(remote))}`);
         lines.push(`    ${colors.yellow('~ Values differ')}`);
     } else if (isSame) {
         lines.push(`    ${colors.dim('local :')} ${colors.dim(show(local))}`);

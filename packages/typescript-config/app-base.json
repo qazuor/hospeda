@@ -23,7 +23,9 @@
             "@repo/seed": ["../../packages/seed/src/index.ts"],
             "@repo/seed/*": ["../../packages/seed/src/*"],
             "@repo/notifications": ["../../packages/notifications/src/index.ts"],
-            "@repo/notifications/*": ["../../packages/notifications/src/*"]
+            "@repo/notifications/*": ["../../packages/notifications/src/*"],
+            "@repo/i18n": ["../../packages/i18n/src/index.ts"],
+            "@repo/i18n/*": ["../../packages/i18n/src/*"]
         }
     },
     "include": ["src/**/*"],

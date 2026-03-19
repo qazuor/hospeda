@@ -22,7 +22,11 @@ describe('collectEnvironmentData', () => {
         beforeEach(() => {
             // Simulate a browser-like environment
             vi.stubGlobal('window', {
-                location: { href: 'https://example.com/page?q=1' },
+                location: {
+                    href: 'https://example.com/page?q=1',
+                    origin: 'https://example.com',
+                    pathname: '/page'
+                },
                 innerWidth: 1920,
                 innerHeight: 1080
             });
@@ -38,7 +42,7 @@ describe('collectEnvironmentData', () => {
             const result = collectEnvironmentData({ appSource: 'web' });
 
             // Assert
-            expect(result.currentUrl).toBe('https://example.com/page?q=1');
+            expect(result.currentUrl).toBe('https://example.com/page');
         });
 
         it('should return viewport as WIDTHxHEIGHT string', () => {

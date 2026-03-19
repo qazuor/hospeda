@@ -1081,4 +1081,21 @@ describe('formatDiff - edge cases', () => {
         expect(result).toContain('\x1b[2m');
         expect(result).toContain('Identical');
     });
+
+    it('shows raw values for changed non-secret variables', () => {
+        // Regression test for GAP-047: isChanged branch was hardcoding maskValue
+        // instead of using the show function derived from the secret flag.
+        // Act
+        const result = formatDiff({
+            key: 'NON_SECRET_CHANGED',
+            local: 'old_value',
+            remote: 'new_value',
+            secret: false
+        });
+
+        // Assert - non-secret changed values must be visible
+        expect(result).toContain('old_value');
+        expect(result).toContain('new_value');
+        expect(result).toContain('Values differ');
+    });
 });
