@@ -26,7 +26,7 @@ import {
     UpdateRevalidationConfigInputSchema
 } from '@repo/schemas';
 import type { RevalidationEntityType } from '@repo/schemas';
-import { getRevalidationService } from '@repo/service-core';
+import { getAffectedPaths, getRevalidationService } from '@repo/service-core';
 import { z } from 'zod';
 import { RevalidationStatsService } from '../../services/revalidation-stats.service';
 import { getActorFromContext } from '../../utils/actor';
@@ -80,7 +80,13 @@ export const manualRevalidateRoute = createAdminRoute({
         apiLogger.info({ paths, triggeredBy, reason }, 'Manual revalidation requested');
 
         try {
-            await service.revalidatePaths(paths);
+            await service.revalidatePaths({
+                paths,
+                triggeredBy,
+                reason,
+                trigger: 'manual',
+                entityType: 'manual'
+            });
             return {
                 success: true,
                 revalidated: paths,
@@ -114,28 +120,38 @@ export const manualRevalidateRoute = createAdminRoute({
 
 /**
  * POST /api/v1/admin/revalidation/revalidate/entity
- * Revalidate all paths associated with a specific entity type.
+ * Revalidate all paths associated with a specific entity instance.
+ *
+ * Uses the configured {@link EntityResolver} to look up the entity by ID,
+ * compute its affected paths, and trigger immediate revalidation.
+ * Falls back to type-level revalidation when no resolver is available.
  */
 export const revalidateEntityRoute = createAdminRoute({
     method: 'post',
     path: '/revalidate/entity',
     summary: 'Entity revalidation',
     description:
-        'Triggers immediate ISR revalidation for all paths associated with the given entity type. Requires REVALIDATION_TRIGGER permission.',
+        'Triggers immediate ISR revalidation for all paths associated with a specific entity instance (by ID). Falls back to type-level revalidation if the entity cannot be resolved. Requires REVALIDATION_TRIGGER permission.',
     tags: ['Revalidation'],
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: RevalidateEntityRequestSchema,
     responseSchema: RevalidationResponseSchema,
-    handler: async (_c, _params, body) => {
-        const { entityType } = body as {
+    handler: async (c, _params, body) => {
+        const { entityType, entityId, reason } = body as {
             entityType: RevalidationEntityType;
             entityId: string;
             reason?: string;
         };
 
+        const actor = getActorFromContext(c);
+        const triggeredBy = actor?.id ?? 'system';
+
         const service = getRevalidationService();
         if (!service) {
-            apiLogger.warn({}, 'Revalidation service not initialized — entity revalidate skipped');
+            apiLogger.warn(
+                { triggeredBy, reason },
+                'Revalidation service not initialized — entity revalidate skipped'
+            );
             return {
                 success: false,
                 revalidated: [],
@@ -146,8 +162,53 @@ export const revalidateEntityRoute = createAdminRoute({
 
         const start = Date.now();
 
+        apiLogger.info(
+            { entityType, entityId, triggeredBy, reason },
+            'Entity revalidation requested'
+        );
+
         try {
-            await service.revalidateByEntityType(entityType);
+            const resolver = service.getEntityResolver();
+
+            if (resolver) {
+                const entityData = await resolver.resolveById({ entityType, entityId });
+
+                if (!entityData) {
+                    return c.json(
+                        {
+                            error: `Entity not found: ${entityType}/${entityId}`,
+                            code: 'NOT_FOUND'
+                        },
+                        404
+                    );
+                }
+
+                const paths = getAffectedPaths(entityData, service.getLocales());
+                const results = await service.revalidatePaths({
+                    paths,
+                    triggeredBy,
+                    reason,
+                    trigger: 'manual',
+                    entityType
+                });
+
+                const revalidated = results.filter((r) => r.success).map((r) => r.path);
+                const failed = results.filter((r) => !r.success).map((r) => r.path);
+
+                return {
+                    success: failed.length === 0,
+                    revalidated,
+                    failed,
+                    duration: Date.now() - start
+                };
+            }
+
+            // Fallback: no resolver configured, fall back to type-level revalidation
+            apiLogger.info(
+                { entityType, entityId },
+                'No entity resolver configured — falling back to type-level revalidation'
+            );
+            await service.revalidateByEntityType({ entityType, trigger: 'manual' });
             return {
                 success: true,
                 revalidated: [entityType],
@@ -156,7 +217,13 @@ export const revalidateEntityRoute = createAdminRoute({
             };
         } catch (error) {
             apiLogger.error(
-                { error: error instanceof Error ? error.message : String(error), entityType },
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    entityType,
+                    entityId,
+                    triggeredBy,
+                    reason
+                },
                 'Entity revalidation failed'
             );
             return {
@@ -188,15 +255,21 @@ export const revalidateTypeRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.REVALIDATION_TRIGGER],
     requestBody: RevalidateTypeRequestSchema,
     responseSchema: RevalidationResponseSchema,
-    handler: async (_c, _params, body) => {
-        const { entityType } = body as {
+    handler: async (c, _params, body) => {
+        const { entityType, reason } = body as {
             entityType: RevalidationEntityType;
             reason?: string;
         };
 
+        const actor = getActorFromContext(c);
+        const triggeredBy = actor?.id ?? 'system';
+
         const service = getRevalidationService();
         if (!service) {
-            apiLogger.warn({}, 'Revalidation service not initialized — type revalidate skipped');
+            apiLogger.warn(
+                { triggeredBy, reason },
+                'Revalidation service not initialized — type revalidate skipped'
+            );
             return {
                 success: false,
                 revalidated: [],
@@ -207,8 +280,10 @@ export const revalidateTypeRoute = createAdminRoute({
 
         const start = Date.now();
 
+        apiLogger.info({ entityType, triggeredBy, reason }, 'Type revalidation requested');
+
         try {
-            await service.revalidateByEntityType(entityType);
+            await service.revalidateByEntityType({ entityType, trigger: 'manual' });
             return {
                 success: true,
                 revalidated: [entityType],
@@ -217,7 +292,12 @@ export const revalidateTypeRoute = createAdminRoute({
             };
         } catch (error) {
             apiLogger.error(
-                { error: error instanceof Error ? error.message : String(error), entityType },
+                {
+                    error: error instanceof Error ? error.message : String(error),
+                    entityType,
+                    triggeredBy,
+                    reason
+                },
                 'Type revalidation failed'
             );
             return {
@@ -316,16 +396,27 @@ export const listRevalidationLogsRoute = createAdminRoute({
     handler: async (_c, _params, _body, query) => {
         const model = new RevalidationLogModel();
 
-        const page = query?.page ?? 1;
-        const pageSize = query?.pageSize ?? 50;
+        const page = Number(query?.page ?? 1);
+        const pageSize = Number(query?.pageSize ?? 50);
 
-        const filters: Record<string, unknown> = {};
-        if (query?.entityType) filters.entityType = query.entityType;
-        if (query?.entityId) filters.entityId = query.entityId;
-        if (query?.trigger) filters.trigger = query.trigger;
-        if (query?.status) filters.status = query.status;
+        const filters: {
+            entityType?: string;
+            entityId?: string;
+            trigger?: string;
+            status?: string;
+            path?: string;
+            fromDate?: Date;
+            toDate?: Date;
+        } = {};
+        if (query?.entityType) filters.entityType = query.entityType as string;
+        if (query?.entityId) filters.entityId = query.entityId as string;
+        if (query?.trigger) filters.trigger = query.trigger as string;
+        if (query?.status) filters.status = query.status as string;
+        if (query?.path) filters.path = query.path as string;
+        if (query?.fromDate) filters.fromDate = query.fromDate as Date;
+        if (query?.toDate) filters.toDate = query.toDate as Date;
 
-        const { items, total } = await model.findAll(filters, { page, pageSize });
+        const { items, total } = await model.findWithFilters(filters, { page, pageSize });
 
         return { data: items, total };
     }
@@ -389,7 +480,11 @@ export const revalidationHealthRoute = createAdminRoute({
 
         const start = Date.now();
         try {
-            await service.revalidatePaths(['/__health-probe__']);
+            await service.revalidatePaths({
+                paths: ['/__health-probe__'],
+                trigger: 'manual',
+                entityType: 'manual'
+            });
             return {
                 status: 'operational' as const,
                 adapter: 'active' as const,

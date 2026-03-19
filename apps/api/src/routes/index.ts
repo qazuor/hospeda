@@ -65,6 +65,7 @@ import { publicFeedbackRoutes } from './feedback';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { metricsRoutes } from './metrics';
 import { reportRoutes } from './reports';
+import { revalidationRouter } from './revalidation';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes, publicSponsorshipLevelRoutes } from './sponsorship-level';
 import {
@@ -223,6 +224,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing', adminBillingRoutes);
         app.route('/api/v1/admin/webhooks', adminWebhookRouter);
         app.route('/api/v1/admin/auth', adminAuthRoutes);
+
+        // ISR revalidation management (admin only)
+        app.route('/api/v1/admin/revalidation', revalidationRouter);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

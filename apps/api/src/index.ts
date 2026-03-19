@@ -4,9 +4,11 @@
  */
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
+import { locales } from '@repo/i18n';
 import { initializeRevalidationService } from '@repo/service-core';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
+import { createEntityResolver } from './lib/entity-resolver';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { ensureDefaultPromoCodes } from './services/promo-code-defaults';
 import { closeDatabase, initializeDatabase } from './utils/database';
@@ -46,7 +48,8 @@ const startServer = async (): Promise<void> => {
                 nodeEnv: env.NODE_ENV,
                 revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
                 siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
-                debounceMs: 5000
+                locales,
+                entityResolver: createEntityResolver()
             });
             apiLogger.info('ISR revalidation service initialized');
         }

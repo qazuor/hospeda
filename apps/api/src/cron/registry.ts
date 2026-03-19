@@ -10,6 +10,7 @@ import {
     exchangeRateFetchJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
+    pageRevalidationJob,
     searchIndexRefreshJob,
     trialExpiryJob,
     webhookRetryJob
@@ -28,7 +29,8 @@ export const cronJobs: CronJobDefinition[] = [
     exchangeRateFetchJob,
     dunningJob,
     searchIndexRefreshJob,
-    notificationLogPurgeJob
+    notificationLogPurgeJob,
+    pageRevalidationJob
 ];
 
 /**

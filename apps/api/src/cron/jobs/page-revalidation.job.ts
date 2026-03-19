@@ -9,7 +9,7 @@
  * Features:
  * - Interval-based revalidation per entity type (configurable per config row)
  * - Stale detection: re-triggers revalidation for entities not refreshed in 48 h
- * - Automatic cleanup of log entries older than 30 days
+ * - Automatic cleanup of log entries older than the configured retention period
  * - Gracefully skips if RevalidationService is not initialized
  *
  * @module cron/jobs/page-revalidation
@@ -20,8 +20,8 @@ import type { RevalidationEntityType } from '@repo/schemas';
 import { getRevalidationService } from '@repo/service-core';
 import type { CronJobDefinition } from '../types.js';
 
-/** 30 days in milliseconds — retention window for revalidation log entries */
-const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+/** Milliseconds per day — used to compute retention window dynamically */
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /** 48 hours in milliseconds — stale detection window */
 const STALE_WINDOW_MS = 48 * 60 * 60 * 1000;
@@ -36,6 +36,7 @@ export const pageRevalidationJob: CronJobDefinition = {
     name: 'page-revalidation',
     description:
         'Trigger ISR revalidation for entity types based on configured cron intervals and stale detection',
+    // pre-validation: must use process.env directly (module-level object literal, before validateApiEnv() runs)
     schedule: process.env.HOSPEDA_REVALIDATION_CRON_SCHEDULE ?? '0 * * * *',
     enabled: true,
     timeoutMs: 120000, // 2 minutes
@@ -93,9 +94,10 @@ export const pageRevalidationJob: CronJobDefinition = {
                         });
 
                         if (!dryRun) {
-                            await service.revalidateByEntityType(
-                                config.entityType as RevalidationEntityType
-                            );
+                            await service.revalidateByEntityType({
+                                entityType: config.entityType as RevalidationEntityType,
+                                trigger: 'cron'
+                            });
                         }
 
                         alreadyRevalidated.add(config.entityType);
@@ -143,9 +145,10 @@ export const pageRevalidationJob: CronJobDefinition = {
                         });
 
                         if (!dryRun) {
-                            await service.revalidateByEntityType(
-                                config.entityType as RevalidationEntityType
-                            );
+                            await service.revalidateByEntityType({
+                                entityType: config.entityType as RevalidationEntityType,
+                                trigger: 'stale'
+                            });
                         }
 
                         staleRevalidated++;
@@ -160,7 +163,8 @@ export const pageRevalidationJob: CronJobDefinition = {
             }
 
             // --- Cleanup old log entries ---
-            const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
+            const retentionDays = service.getLogRetentionDays();
+            const cutoff = new Date(Date.now() - retentionDays * MS_PER_DAY);
             let deleted = 0;
 
             if (!dryRun) {
