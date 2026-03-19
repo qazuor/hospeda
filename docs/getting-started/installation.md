@@ -151,7 +151,7 @@ NODE_ENV=development
 API_PORT=3001
 ```
 
-For the full list of available variables, see [docs/environment-variables.md](../environment-variables.md) or run `pnpm env:check`.
+For the full list of available variables, see [docs/guides/environment-variables.md](../guides/environment-variables.md) or run `pnpm env:check`.
 
 #### Verify Configuration
 

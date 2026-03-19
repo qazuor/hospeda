@@ -1017,7 +1017,7 @@ export const createAccommodationRoute = createOpenApiRoute({
     }
 
     // Check permission
-    if (!hasPermission(actor.role, 'accommodation:write')) {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_CREATE)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
 
@@ -1096,7 +1096,7 @@ export const deleteAccommodationRoute = createOpenApiRoute({
     }
 
     // Manual permission check
-    if (!hasPermission(actor.role, 'accommodation:delete')) {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_DELETE)) {
       return c.json({ error: 'Forbidden' }, 403);
     }
 
@@ -1267,7 +1267,7 @@ export class AccommodationService extends BaseService {
     // Check ownership or admin permission
     const canDelete =
       existing.ownerId === actor.userId ||
-      hasPermission(actor.role, 'accommodation:delete');
+      hasPermission(actor, PermissionEnum.ACCOMMODATION_DELETE);
 
     if (!canDelete) {
       return ServiceResult.failure(

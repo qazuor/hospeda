@@ -24,10 +24,11 @@ import type {
     Subscription,
     SubscriptionIdType
 } from '@repo/schemas';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, SubscriptionStatusEnum } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import { hasPermission } from '../../utils/permission';
 import { ServiceError } from '../../types';
 
 /**
@@ -141,9 +142,9 @@ export class SubscriptionUpgradeService extends BaseCrudService<
                     );
                 }
 
-                // Check ownership (unless admin)
+                // Check ownership (unless has permission to upgrade any)
                 if (
-                    validatedActor.role !== RoleEnum.ADMIN &&
+                    !hasPermission(validatedActor, PermissionEnum.SUBSCRIPTION_UPDATE) &&
                     currentSubscription.clientId !== validatedActor.id
                 ) {
                     throw new ServiceError(
@@ -278,11 +279,10 @@ export class SubscriptionUpgradeService extends BaseCrudService<
             );
         }
 
-        const hasPermission =
-            actor.role === RoleEnum.ADMIN ||
-            actor.permissions.includes(PermissionEnum.SUBSCRIPTION_UPDATE);
+        const hasUpgradePermission =
+            hasPermission(actor, PermissionEnum.SUBSCRIPTION_UPDATE);
 
-        if (!hasPermission) {
+        if (!hasUpgradePermission) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
                 'Permission denied: Insufficient permissions to upgrade subscription'

@@ -170,7 +170,7 @@ Code examples for common patterns. See also `api-examples/` for API route sample
 
 ## Other
 
-- [Environment Variables](environment-variables.md)
+- [Environment Variables](guides/environment-variables.md)
 - [Claude Code Configuration](claude-code.md)
 
 ---

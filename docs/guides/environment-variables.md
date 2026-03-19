@@ -195,6 +195,45 @@ as that would add a redundant mapping with no benefit.
 | `TEST_DB_URL` | - | PostgreSQL connection string for E2E test setup |
 | `TEST_DB_NAME` | `hospeda_test` | Database name for E2E test setup scripts |
 
+## Per-App Env File Strategy
+
+Each app owns its env files. There is **no root-level `.env.local`**. The layout is:
+
+```
+apps/api/.env.example    # committed template
+apps/api/.env.local      # gitignored, real dev values
+apps/api/.env.test       # committed, safe test overrides
+
+apps/web/.env.example
+apps/web/.env.local
+apps/web/.env.test
+
+apps/admin/.env.example
+apps/admin/.env.local
+apps/admin/.env.test
+```
+
+Packages that need database access (`packages/db`, `packages/seed`) have no env
+files of their own. They read `apps/api/.env.local` explicitly via a `dotenv`
+call at the top of their entry points. This is documented with a comment at each
+call site:
+
+```ts
+// Per-app env strategy (SPEC-035): packages/db has no env of its own.
+// Database connection string lives in the API app's env file.
+envConfig({ path: path.resolve(__dirname, '../../apps/api/.env.local') });
+```
+
+Files that load `apps/api/.env.local` explicitly:
+
+| File | Purpose |
+|------|---------|
+| `packages/db/drizzle.config.ts` | Drizzle-kit for migrations and studio |
+| `packages/db/test/enum-consistency.test.ts` | DB enum sync test |
+| `packages/seed/src/index.ts` | Seed runner |
+| `packages/seed/src/cli.ts` | Seed CLI entry point |
+| `apps/api/src/utils/logger.ts` | Logger pre-init (before `env.ts` runs) |
+
 ## Per-App Configuration
 
 Each app has its own `.env.example` with only the variables it needs.

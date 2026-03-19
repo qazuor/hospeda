@@ -704,8 +704,8 @@ export class ReviewService extends BaseCrudService<
   }
 
   protected _canUpdate(actor: Actor, entity: Review): void {
-    // Only author or admin can update
-    if (actor.userId !== entity.authorId && actor.role !== 'admin') {
+    // Only author or users with update permission can update
+    if (actor.userId !== entity.authorId && !hasPermission(actor, PermissionEnum.REVIEW_UPDATE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
         'You can only update your own reviews'
@@ -714,8 +714,8 @@ export class ReviewService extends BaseCrudService<
   }
 
   protected _canSoftDelete(actor: Actor, entity: Review): void {
-    // Only author or admin can delete
-    if (actor.userId !== entity.authorId && actor.role !== 'admin') {
+    // Only author or users with delete permission can delete
+    if (actor.userId !== entity.authorId && !hasPermission(actor, PermissionEnum.REVIEW_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
         'You can only delete your own reviews'
@@ -724,21 +724,21 @@ export class ReviewService extends BaseCrudService<
   }
 
   protected _canHardDelete(actor: Actor, _entity: Review): void {
-    // Only admins can hard delete
-    if (actor.role !== 'admin') {
+    // Only users with hard delete permission can permanently delete
+    if (!hasPermission(actor, PermissionEnum.REVIEW_HARD_DELETE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only admins can permanently delete reviews'
+        'Insufficient permissions to permanently delete reviews'
       );
     }
   }
 
   protected _canRestore(actor: Actor, _entity: Review): void {
-    // Only admins can restore
-    if (actor.role !== 'admin') {
+    // Only users with restore permission can restore
+    if (!hasPermission(actor, PermissionEnum.REVIEW_RESTORE)) {
       throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
-        'Only admins can restore reviews'
+        'Insufficient permissions to restore reviews'
       );
     }
   }
@@ -746,8 +746,8 @@ export class ReviewService extends BaseCrudService<
   protected _canView(actor: Actor, entity: Review): void {
     // Everyone can view active reviews
     if (entity.lifecycleState !== 'ACTIVE') {
-      // Only author or admin can view non-active reviews
-      if (actor.userId !== entity.authorId && actor.role !== 'admin') {
+      // Only author or users with view-all permission can view non-active reviews
+      if (actor.userId !== entity.authorId && !hasPermission(actor, PermissionEnum.REVIEW_VIEW_ALL)) {
         throw new ServiceError(
           ServiceErrorCode.FORBIDDEN,
           'You cannot view this review'

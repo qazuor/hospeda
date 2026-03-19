@@ -120,7 +120,7 @@ export const authMiddleware = async (c: Context, next: Next) => {
 export const requirePermission = (action: string) => {
   return async (c: Context, next: Next) => {
     const user = c.get('user');
-    const actor = user.role; // 'admin', 'owner', 'user'
+    const actor = buildActorFromSession(user);
 
     if (!hasPermission(actor, action)) {
       return c.json({ error: 'Forbidden' }, 403);

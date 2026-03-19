@@ -716,10 +716,10 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
   // Higher limits for authenticated users
   if (auth?.userId) {
     const user = await auth.api.getSession({ headers: c.req.raw.headers });
-    const role = user.publicMetadata?.role as UserRole;
+    const actor = buildActorFromSession(user);
 
-    // Admin bypass
-    if (role === 'admin') {
+    // Users with rate-limit bypass permission skip limiting
+    if (hasPermission(actor, PermissionEnum.RATE_LIMIT_BYPASS)) {
       await next();
       return;
     }
