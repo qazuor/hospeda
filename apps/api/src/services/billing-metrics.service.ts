@@ -13,9 +13,9 @@
 
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ServiceResult } from '@repo/service-core';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
-import type { ServiceResult } from './addon.types';
 
 export type { ServiceResult };
 

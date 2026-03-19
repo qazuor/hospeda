@@ -15,8 +15,8 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ADDON_RECALC_SOURCE_ID } from '../../src/services/addon-lifecycle.constants';
 import { recalculateAddonLimitsForCustomer } from '../../src/services/addon-limit-recalculation.service';
 import { createMockBilling } from '../helpers/mock-factories';
 

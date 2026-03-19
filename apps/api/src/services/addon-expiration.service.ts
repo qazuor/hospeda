@@ -20,12 +20,12 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
+import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger.js';
 import { AddonEntitlementService } from './addon-entitlement.service.js';
 import { processExpiredAddonsBatch } from './addon-expiration.batch.js';
 import { findExpiredAddons, findExpiringAddons } from './addon-expiration.queries.js';
-import type { ServiceResult } from './addon.types.js';
 
 // ─── Re-export types for backward compatibility ───────────────────────────────
 

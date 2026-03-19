@@ -31,8 +31,8 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { NotificationType } from '@repo/notifications';
+import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { type MockInstance, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ADDON_RECALC_SOURCE_ID } from '../../src/services/addon-lifecycle.constants';
 import {
     type PlanChangeRecalculationResult,
     handlePlanChangeAddonRecalculation

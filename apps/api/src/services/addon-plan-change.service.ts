@@ -25,6 +25,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
+import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
@@ -32,7 +33,6 @@ import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 import { detectAndNotifyDowngrades } from './addon-downgrade-detection.service.js';
-import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 import type { RecalculationResult } from './addon-limit-recalculation.service.js';
 import {
     computeDirection,

@@ -27,8 +27,8 @@ import {
 } from '@repo/schemas';
 import type { RevalidationEntityType } from '@repo/schemas';
 import { getAffectedPaths, getRevalidationService } from '@repo/service-core';
+import { RevalidationStatsService } from '@repo/service-core';
 import { z } from 'zod';
-import { RevalidationStatsService } from '../../services/revalidation-stats.service';
 import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';

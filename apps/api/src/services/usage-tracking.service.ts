@@ -23,6 +23,7 @@ import {
     AccommodationService,
     type LimitUsage,
     OwnerPromotionService,
+    type ServiceResult,
     type UsageSummary,
     type UsageThreshold,
     UserBookmarkService,
@@ -34,7 +35,6 @@ import { createSystemActor } from '../utils/actor';
 import { lookupCustomerDetails } from '../utils/customer-lookup';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
-import type { ServiceResult } from './addon.types';
 
 export type { ServiceResult, LimitUsage, UsageSummary, UsageThreshold };
 

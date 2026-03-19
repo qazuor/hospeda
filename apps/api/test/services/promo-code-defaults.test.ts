@@ -9,11 +9,8 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
+import { ensureDefaultPromoCodes, getDefaultPromoCodeConfigs } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    ensureDefaultPromoCodes,
-    getDefaultPromoCodeConfigs
-} from '../../src/services/promo-code-defaults';
 import { PromoCodeService } from '../../src/services/promo-code.service';
 
 // Mock the PromoCodeService

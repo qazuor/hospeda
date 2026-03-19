@@ -24,8 +24,8 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ADDON_RECALC_SOURCE_ID } from '../../src/services/addon-lifecycle.constants.js';
 import type { RecalculateAddonLimitsInput } from '../../src/services/addon-limit-recalculation.service.js';
 import { recalculateAddonLimitsForCustomer } from '../../src/services/addon-limit-recalculation.service.js';
 import type { PlanChangeRecalculationInput } from '../../src/services/addon-plan-change.service.js';

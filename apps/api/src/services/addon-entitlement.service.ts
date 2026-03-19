@@ -17,10 +17,10 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
+import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
-import type { ServiceResult } from './addon.types';
 
 /**
  * Add-on entitlement adjustment tracking

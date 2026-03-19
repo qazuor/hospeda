@@ -10,6 +10,12 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
 import { NotificationType } from '@repo/notifications';
+import type {
+    ConfirmPurchaseInput,
+    PurchaseAddonInput,
+    PurchaseAddonResult,
+    ServiceResult
+} from '@repo/service-core';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -17,12 +23,6 @@ import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
-import type {
-    ConfirmPurchaseInput,
-    PurchaseAddonInput,
-    PurchaseAddonResult,
-    ServiceResult
-} from './addon.types';
 import { PromoCodeService } from './promo-code.service';
 
 // TODO: Extend @repo/billing adapter to support preference creation.

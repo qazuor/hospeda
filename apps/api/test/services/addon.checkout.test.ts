@@ -12,10 +12,10 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { ConfirmPurchaseInput } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import { confirmAddonPurchase } from '../../src/services/addon.checkout';
-import type { ConfirmPurchaseInput } from '../../src/services/addon.types';
 
 // ---------------------------------------------------------------------------
 // Hoisted mock setup

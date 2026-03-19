@@ -14,9 +14,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { AddonDefinition } from '@repo/billing';
-import { AddonEntitlementService } from './addon-entitlement.service';
-import { getAddonCatalogEntry, listAvailableAddons } from './addon.catalog';
-import { confirmAddonPurchase, createAddonCheckout } from './addon.checkout';
+import { getAddonCatalogEntry, listAvailableAddons } from '@repo/service-core';
 import type {
     CancelAddonInput,
     ConfirmPurchaseInput,
@@ -25,7 +23,9 @@ import type {
     PurchaseAddonResult,
     ServiceResult,
     UserAddon
-} from './addon.types';
+} from '@repo/service-core';
+import { AddonEntitlementService } from './addon-entitlement.service';
+import { confirmAddonPurchase, createAddonCheckout } from './addon.checkout';
 import { cancelUserAddon, checkAddonActive, getUserAddons } from './addon.user-addons';
 
 // Re-export types so existing consumers that import from this module keep working
@@ -37,7 +37,7 @@ export type {
     PurchaseAddonResult,
     ServiceResult,
     UserAddon
-} from './addon.types';
+} from '@repo/service-core';
 
 /**
  * Facade service for add-on management.

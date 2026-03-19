@@ -17,12 +17,12 @@ import {
     queryUserAddons
 } from '@repo/service-core';
 import type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
+import type { CancelAddonInput, ServiceResult, UserAddon } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
-import type { CancelAddonInput, ServiceResult, UserAddon } from './addon.types';
 
 // Re-export types from service-core for backward compatibility
 export type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';

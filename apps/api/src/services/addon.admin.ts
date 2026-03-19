@@ -10,11 +10,11 @@
 
 import { getAddonBySlug } from '@repo/billing';
 import { billingAddonPurchases, billingCustomers, getDb } from '@repo/db';
+import type { ServiceResult } from '@repo/service-core';
 import { type SQL, and, count, desc, eq, ilike, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';
-import type { ServiceResult } from './addon.types';
 
 /**
  * Input parameters for listing customer add-on purchases
