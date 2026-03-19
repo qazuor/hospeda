@@ -153,6 +153,100 @@ describe('RevalidationLogModel', () => {
     });
 
     // =========================================================================
+    // findWithFilters
+    // =========================================================================
+
+    describe('findWithFilters', () => {
+        /**
+         * Helper to create a mock db object for findWithFilters.
+         * The method calls getDb() once and uses the same db instance for
+         * both the items query and the count query via Promise.all.
+         * We use select() call count to distinguish between the two chains.
+         */
+        function createFindWithFiltersMock(items: unknown[], total: number) {
+            // Items chain ends: select().from().where().orderBy().limit().offset()
+            const mockOffset = vi.fn().mockResolvedValue(items);
+            const mockLimit = vi.fn().mockReturnValue({ offset: mockOffset });
+            const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit });
+
+            // Count chain ends: select({count}).from().where()
+            const mockCountWhere = vi.fn().mockResolvedValue([{ count: total }]);
+            const mockCountFrom = vi.fn().mockReturnValue({ where: mockCountWhere });
+
+            // Items chain where -> orderBy
+            const mockItemsWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
+            const mockItemsFrom = vi.fn().mockReturnValue({ where: mockItemsWhere });
+
+            let selectCallCount = 0;
+            const mockSelect = vi.fn().mockImplementation(() => {
+                selectCallCount++;
+                if (selectCallCount === 1) {
+                    return { from: mockItemsFrom };
+                }
+                return { from: mockCountFrom };
+            });
+
+            getDb.mockReturnValue({ select: mockSelect });
+
+            return { mockSelect, mockItemsWhere, mockLimit, mockOffset };
+        }
+
+        it('returns paginated items and total count with no filters', async () => {
+            // Arrange
+            createFindWithFiltersMock([cronLogRecent, cronLogOld], 2);
+
+            // Act
+            const result = await model.findWithFilters({});
+
+            // Assert
+            expect(result.items).toHaveLength(2);
+            expect(result.total).toBe(2);
+        });
+
+        it('applies path filter parameter', async () => {
+            // Arrange
+            const { mockItemsWhere } = createFindWithFiltersMock([cronLogRecent], 1);
+
+            // Act
+            const result = await model.findWithFilters({ path: '/en/accommodations' });
+
+            // Assert
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockItemsWhere).toHaveBeenCalled();
+        });
+
+        it('applies date range filters', async () => {
+            // Arrange
+            const { mockItemsWhere } = createFindWithFiltersMock([], 0);
+
+            // Act
+            const result = await model.findWithFilters({
+                fromDate: new Date('2025-01-01'),
+                toDate: new Date('2025-06-30')
+            });
+
+            // Assert
+            expect(result.items).toHaveLength(0);
+            expect(result.total).toBe(0);
+            expect(mockItemsWhere).toHaveBeenCalled();
+        });
+
+        it('respects pagination options', async () => {
+            // Arrange
+            const { mockLimit, mockOffset } = createFindWithFiltersMock([], 50);
+
+            // Act
+            const result = await model.findWithFilters({}, { page: 3, pageSize: 10 });
+
+            // Assert
+            expect(result.total).toBe(50);
+            expect(mockLimit).toHaveBeenCalledWith(10);
+            expect(mockOffset).toHaveBeenCalledWith(20);
+        });
+    });
+
+    // =========================================================================
     // findLastCronEntry
     // =========================================================================
 

@@ -310,13 +310,15 @@ async function restoreAllPlans(input: RestoreAllPlansInput): Promise<void> {
     // beyond the first page (GAP-038-19). Page size of 100 is used per request;
     // iteration continues until all pages are exhausted.
     const PAGE_SIZE = 100;
-    const firstPage = await storage.plans.list({ limit: PAGE_SIZE });
+    let currentOffset = 0;
+    const firstPage = await storage.plans.list({ limit: PAGE_SIZE, offset: currentOffset });
     const allPlans: (typeof firstPage.data)[number][] = [...firstPage.data];
-    let cursor: string | undefined = firstPage.hasMore ? firstPage.nextCursor : undefined;
-    while (cursor !== undefined) {
-        const page = await storage.plans.list({ limit: PAGE_SIZE, startingAfter: cursor });
+    currentOffset += firstPage.data.length;
+    while (firstPage.hasMore && currentOffset < firstPage.total) {
+        const page = await storage.plans.list({ limit: PAGE_SIZE, offset: currentOffset });
         allPlans.push(...page.data);
-        cursor = page.hasMore ? page.nextCursor : undefined;
+        currentOffset += page.data.length;
+        if (!page.hasMore || page.data.length === 0) break;
     }
 
     for (const qzPlan of allPlans) {

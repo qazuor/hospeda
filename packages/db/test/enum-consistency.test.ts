@@ -25,9 +25,9 @@ import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initializeDb } from '../src/client';
 
-// Load environment variables from root .env.local file
+// Per-app env strategy (SPEC-035): HOSPEDA_DATABASE_URL lives in apps/api/.env.local.
 envConfig({
-    path: path.resolve(__dirname, '../../../.env.local')
+    path: path.resolve(__dirname, '../../../apps/api/.env.local')
 });
 
 // Recreate AllEnums from schemas

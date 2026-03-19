@@ -11,6 +11,18 @@
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
             "require": "./dist/index.cjs"
+        },
+        "./client": {
+            "types": "./src/client.ts",
+            "import": "./src/client.ts"
+        },
+        "./schemas": {
+            "types": "./src/schemas/index.ts",
+            "import": "./src/schemas/index.ts"
+        },
+        "./schemas/billing": {
+            "types": "./src/schemas/billing/index.ts",
+            "import": "./src/schemas/billing/index.ts"
         }
     },
     "files": ["dist"],
@@ -37,8 +49,8 @@
         "test:coverage": "vitest run --coverage"
     },
     "dependencies": {
-        "@qazuor/qzpay-core": "^1.1.0",
-        "@qazuor/qzpay-drizzle": "^1.1.0",
+        "@qazuor/qzpay-core": "^1.2.0",
+        "@qazuor/qzpay-drizzle": "^1.2.0",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/logger": "workspace:*",

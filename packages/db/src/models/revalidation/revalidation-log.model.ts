@@ -1,5 +1,5 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { and, desc, eq, lt } from 'drizzle-orm';
+import { and, count, desc, eq, gte, ilike, lt, lte } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { revalidationLog } from '../../schemas/revalidation/revalidation-log.dbschema.ts';
@@ -39,6 +39,75 @@ export class RevalidationLogModel extends BaseModel<RevalidationLogRecord> {
             .where(lt(revalidationLog.createdAt, date))
             .returning({ id: revalidationLog.id });
         return deleted.length;
+    }
+
+    /**
+     * Finds revalidation log entries with advanced filtering support.
+     *
+     * Supports exact-match filters (entityType, entityId, trigger, status),
+     * substring matching on `path` (case-insensitive ILIKE), and date-range
+     * filtering on `createdAt` via `fromDate` / `toDate`.
+     *
+     * @param filters - Filter criteria including optional path, fromDate, toDate
+     * @param options - Pagination options (page, pageSize)
+     * @returns Promise resolving to paginated items and total count
+     */
+    async findWithFilters(
+        filters: {
+            readonly entityType?: string;
+            readonly entityId?: string;
+            readonly trigger?: string;
+            readonly status?: string;
+            readonly path?: string;
+            readonly fromDate?: Date;
+            readonly toDate?: Date;
+        },
+        options: { readonly page?: number; readonly pageSize?: number } = {}
+    ): Promise<{ items: RevalidationLogRecord[]; total: number }> {
+        const db = getDb();
+
+        const page = options.page ?? 1;
+        const pageSize = Math.min(options.pageSize ?? 50, 100);
+        const offset = (page - 1) * pageSize;
+
+        const clauses = [];
+
+        if (filters.entityType) {
+            clauses.push(eq(revalidationLog.entityType, filters.entityType));
+        }
+        if (filters.entityId) {
+            clauses.push(eq(revalidationLog.entityId, filters.entityId));
+        }
+        if (filters.trigger) {
+            clauses.push(eq(revalidationLog.trigger, filters.trigger));
+        }
+        if (filters.status) {
+            clauses.push(eq(revalidationLog.status, filters.status));
+        }
+        if (filters.path) {
+            clauses.push(ilike(revalidationLog.path, `%${filters.path}%`));
+        }
+        if (filters.fromDate) {
+            clauses.push(gte(revalidationLog.createdAt, filters.fromDate));
+        }
+        if (filters.toDate) {
+            clauses.push(lte(revalidationLog.createdAt, filters.toDate));
+        }
+
+        const whereClause = clauses.length > 0 ? and(...clauses) : undefined;
+
+        const [items, totalResult] = await Promise.all([
+            db
+                .select()
+                .from(revalidationLog)
+                .where(whereClause)
+                .orderBy(desc(revalidationLog.createdAt))
+                .limit(pageSize)
+                .offset(offset),
+            db.select({ count: count() }).from(revalidationLog).where(whereClause)
+        ]);
+
+        return { items, total: Number(totalResult[0]?.count ?? 0) };
     }
 
     /**
