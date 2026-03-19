@@ -18,17 +18,17 @@ import {
 describe('Date Utilities', () => {
     describe('formatDate', () => {
         it('formats date with default format', () => {
-            const date = new Date('2024-01-15');
+            const date = new Date('2024-01-15T12:00:00Z');
             expect(formatDate(date)).toBe('2024-01-15');
         });
 
         it('formats date with custom format', () => {
-            const date = new Date('2024-01-15');
+            const date = new Date('2024-01-15T12:00:00Z');
             expect(formatDate(date, 'dd/MM/yyyy')).toBe('15/01/2024');
         });
 
         it('handles ISO string input', () => {
-            expect(formatDate('2024-01-15T00:00:00.000Z')).toBe('2024-01-15');
+            expect(formatDate('2024-01-15T12:00:00.000Z')).toBe('2024-01-15');
         });
 
         it('returns error message for invalid date', () => {
@@ -121,30 +121,30 @@ describe('Date Utilities', () => {
 
     describe('addDaysToDate', () => {
         it('adds days to a date', () => {
-            const date = new Date('2024-01-15');
+            const date = new Date('2024-01-15T12:00:00Z');
             const result = addDaysToDate(date, 5);
-            expect(result.getDate()).toBe(20);
+            expect(result.getUTCDate()).toBe(20);
         });
 
         it('handles string input', () => {
             const result = addDaysToDate('2024-01-15', 5);
-            expect(result.getDate()).toBe(20);
+            expect(result.getUTCDate()).toBe(20);
         });
     });
 
     describe('addMonthsToDate', () => {
         it('adds months to a date', () => {
-            const date = new Date('2024-01-15');
+            const date = new Date('2024-01-15T12:00:00Z');
             const result = addMonthsToDate(date, 2);
-            expect(result.getMonth()).toBe(2); // March
+            expect(result.getUTCMonth()).toBe(2); // March
         });
     });
 
     describe('addYearsToDate', () => {
         it('adds years to a date', () => {
-            const date = new Date('2024-01-15');
+            const date = new Date('2024-01-15T12:00:00Z');
             const result = addYearsToDate(date, 1);
-            expect(result.getFullYear()).toBe(2025);
+            expect(result.getUTCFullYear()).toBe(2025);
         });
     });
 });

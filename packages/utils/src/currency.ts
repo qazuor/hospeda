@@ -89,5 +89,19 @@ export function calculateTotalWithDiscount(amount: number, discountRate: number)
  * @returns Parsed number
  */
 export function parseCurrency(currencyString: string): number {
-    return Number.parseFloat(currencyString.replace(/[^\d.-]/g, ''));
+    // Strip currency symbols, whitespace, and letters
+    let cleaned = currencyString.replace(/[^\d.,-]/g, '');
+
+    // Detect European format: comma as decimal separator (e.g., "1.234,56")
+    const lastComma = cleaned.lastIndexOf(',');
+    const lastDot = cleaned.lastIndexOf('.');
+    if (lastComma > lastDot) {
+        // European format: dots are thousands separators, comma is decimal
+        cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else {
+        // US format: commas are thousands separators, dot is decimal
+        cleaned = cleaned.replace(/,/g, '');
+    }
+
+    return Number.parseFloat(cleaned);
 }
