@@ -71,7 +71,9 @@
         "status": {
             "active": "Activo",
             "expiringSoon": "Por vencer",
-            "expired": "Vencido"
+            "expired": "Vencido",
+            "canceled": "Cancelado",
+            "pending": "Pendiente"
         },
         "quantity": "Cantidad:",
         "expiredOn": "Venció el:",
@@ -229,6 +231,13 @@
         "available": {
             "title": "Promociones VIP Disponibles",
             "cta": "Ver promociones"
+        }
+    },
+    "notifications": {
+        "planDowngradeLimitWarning": {
+            "title": "Aviso: límite reducido en el plan {{planName}}",
+            "body": "Tu límite de {{limitKey}} se redujo de {{oldLimit}} a {{newLimit}}. Actualmente usás {{currentUsage}}.",
+            "action": "Ver planes"
         }
     },
     "errorBoundary": {

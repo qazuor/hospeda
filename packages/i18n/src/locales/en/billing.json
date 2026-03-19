@@ -71,7 +71,9 @@
         "status": {
             "active": "Active",
             "expiringSoon": "Expiring soon",
-            "expired": "Expired"
+            "expired": "Expired",
+            "canceled": "Canceled",
+            "pending": "Pending"
         },
         "quantity": "Quantity:",
         "expiredOn": "Expired on:",
@@ -229,6 +231,13 @@
         "available": {
             "title": "VIP Promotions Available",
             "cta": "View promotions"
+        }
+    },
+    "notifications": {
+        "planDowngradeLimitWarning": {
+            "title": "Notice: limit reduced on {{planName}} plan",
+            "body": "Your {{limitKey}} limit was reduced from {{oldLimit}} to {{newLimit}}. You currently use {{currentUsage}}.",
+            "action": "View plans"
         }
     },
     "errorBoundary": {

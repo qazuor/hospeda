@@ -33,7 +33,27 @@
         "trigger": "Gatilho",
         "status": "Estado",
         "duration": "Duração",
-        "createdAt": "Data"
+        "createdAt": "Data",
+        "filters": {
+            "entityType": "Tipo de entidade",
+            "trigger": "Gatilho",
+            "status": "Estado",
+            "path": "Caminho",
+            "fromDate": "De",
+            "toDate": "Até",
+            "all": "Todos",
+            "clearFilters": "Limpar filtros"
+        },
+        "pagination": {
+            "previous": "Anterior",
+            "next": "Próximo",
+            "pageOf": "Página {{page}} de {{totalPages}}",
+            "pageSize": "Por página"
+        },
+        "autoRefresh": "Auto-atualização a cada 30s",
+        "refresh": "Atualizar",
+        "sortAsc": "Ordenar ascendente",
+        "sortDesc": "Ordenar descendente"
     },
     "manual": {
         "cardTitle": "Revalidação manual",
@@ -51,7 +71,19 @@
         "errorToast": "Erro ao executar a revalidação manual",
         "statTotalLabel": "Total de revalidações",
         "statSuccessRateLabel": "Taxa de sucesso",
-        "statAvgDurationLabel": "Duração média"
+        "statAvgDurationLabel": "Duração média",
+        "byTypeTitle": "Revalidar por tipo de entidade",
+        "byTypeDescription": "Regenerar todas as páginas em cache para um tipo de entidade específico. Isso pode acionar muitas revalidações.",
+        "entityTypeLabel": "Tipo de entidade",
+        "entityTypePlaceholder": "Selecione um tipo de entidade",
+        "byTypeSubmitButton": "Regenerar tudo",
+        "byTypeSubmittingButton": "Regenerando...",
+        "byTypeSuccessToast": "Revalidação por tipo concluída: {{succeeded}} bem-sucedida(s), {{failed}} falhou(aram)",
+        "byTypeErrorToast": "Erro ao executar a revalidação por tipo de entidade",
+        "byTypeConfirmTitle": "Confirmar revalidação por tipo",
+        "byTypeConfirmDescription": "Isso regenerará todas as páginas de \"{{entityType}}\". Esta operação pode demorar dependendo da quantidade de páginas. Continuar?",
+        "byTypeConfirmAction": "Regenerar",
+        "byTypeConfirmCancel": "Cancelar"
     },
     "result": {
         "cardTitle": "Resultado",
@@ -79,6 +111,16 @@
         "hook": "Hook",
         "cron": "Cron",
         "stale": "Desatualizado"
+    },
+    "entityType": {
+        "accommodation": "Acomodação",
+        "destination": "Destino",
+        "event": "Evento",
+        "post": "Publicação",
+        "accommodation_review": "Avaliação de acomodação",
+        "destination_review": "Avaliação de destino",
+        "tag": "Etiqueta",
+        "amenity": "Comodidade"
     },
     "messages": {
         "revalidateSuccess": "Páginas revalidadas com sucesso",

@@ -39,7 +39,8 @@
         "permissions": "Permisos",
         "tags": "Etiquetas",
         "seo": "SEO",
-        "portalSettings": "Configuración del Portal"
+        "portalSettings": "Configuración del Portal",
+        "revalidation": "Revalidación ISR"
     },
     "billing": {
         "title": "Facturación"

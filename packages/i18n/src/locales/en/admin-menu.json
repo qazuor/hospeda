@@ -39,7 +39,8 @@
         "permissions": "Permissions",
         "tags": "Tags",
         "seo": "SEO",
-        "portalSettings": "Portal Settings"
+        "portalSettings": "Portal Settings",
+        "revalidation": "ISR Revalidation"
     },
     "billing": {
         "title": "Billing"

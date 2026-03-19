@@ -33,7 +33,27 @@
         "trigger": "Trigger",
         "status": "Status",
         "duration": "Duration",
-        "createdAt": "Date"
+        "createdAt": "Date",
+        "filters": {
+            "entityType": "Entity type",
+            "trigger": "Trigger",
+            "status": "Status",
+            "path": "Path",
+            "fromDate": "From",
+            "toDate": "To",
+            "all": "All",
+            "clearFilters": "Clear filters"
+        },
+        "pagination": {
+            "previous": "Previous",
+            "next": "Next",
+            "pageOf": "Page {{page}} of {{totalPages}}",
+            "pageSize": "Per page"
+        },
+        "autoRefresh": "Auto-refresh every 30s",
+        "refresh": "Refresh",
+        "sortAsc": "Sort ascending",
+        "sortDesc": "Sort descending"
     },
     "manual": {
         "cardTitle": "Manual revalidation",
@@ -47,15 +67,27 @@
         "pathsCount_other": "{{count}} paths entered",
         "submitButton": "Revalidate paths",
         "submittingButton": "Revalidating...",
-        "successToast": "Revalidation complete: {{succeeded}} successful, {{failed}} failed",
+        "successToast": "Revalidation complete: {{succeeded}} successful{{succeededSuffix}}, {{failed}} failed{{failedSuffix}}",
         "errorToast": "Error running manual revalidation",
         "statTotalLabel": "Total revalidations",
         "statSuccessRateLabel": "Success rate",
-        "statAvgDurationLabel": "Average duration"
+        "statAvgDurationLabel": "Average duration",
+        "byTypeTitle": "Revalidate by Entity Type",
+        "byTypeDescription": "Regenerate all cached pages for a specific entity type. This may trigger many revalidations.",
+        "entityTypeLabel": "Entity type",
+        "entityTypePlaceholder": "Select an entity type",
+        "byTypeSubmitButton": "Regenerate All",
+        "byTypeSubmittingButton": "Regenerating...",
+        "byTypeSuccessToast": "Revalidation by type complete: {{succeeded}} successful, {{failed}} failed",
+        "byTypeErrorToast": "Error running entity type revalidation",
+        "byTypeConfirmTitle": "Confirm entity type revalidation",
+        "byTypeConfirmDescription": "This will regenerate all pages for \"{{entityType}}\". This operation may take a while depending on the number of pages. Continue?",
+        "byTypeConfirmAction": "Regenerate",
+        "byTypeConfirmCancel": "Cancel"
     },
     "result": {
         "cardTitle": "Result",
-        "cardDescription": "{{succeeded}} successful, {{failed}} failed — duration: {{duration}} ms",
+        "cardDescription": "{{succeeded}} successful{{succeededSuffix}}, {{failed}} failed{{failedSuffix}} — duration: {{duration}} ms",
         "pathHeader": "Path",
         "statusHeader": "Status"
     },
@@ -79,6 +111,16 @@
         "hook": "Hook",
         "cron": "Cron",
         "stale": "Stale"
+    },
+    "entityType": {
+        "accommodation": "Accommodation",
+        "destination": "Destination",
+        "event": "Event",
+        "post": "Post",
+        "accommodation_review": "Accommodation review",
+        "destination_review": "Destination review",
+        "tag": "Tag",
+        "amenity": "Amenity"
     },
     "messages": {
         "revalidateSuccess": "Pages revalidated successfully",

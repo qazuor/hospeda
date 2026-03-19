@@ -33,7 +33,27 @@
         "trigger": "Trigger",
         "status": "Estado",
         "duration": "Duración",
-        "createdAt": "Fecha"
+        "createdAt": "Fecha",
+        "filters": {
+            "entityType": "Tipo de entidad",
+            "trigger": "Trigger",
+            "status": "Estado",
+            "path": "Path",
+            "fromDate": "Desde",
+            "toDate": "Hasta",
+            "all": "Todos",
+            "clearFilters": "Limpiar filtros"
+        },
+        "pagination": {
+            "previous": "Anterior",
+            "next": "Siguiente",
+            "pageOf": "Página {{page}} de {{totalPages}}",
+            "pageSize": "Por página"
+        },
+        "autoRefresh": "Auto-refresco cada 30s",
+        "refresh": "Refrescar",
+        "sortAsc": "Ordenar ascendente",
+        "sortDesc": "Ordenar descendente"
     },
     "manual": {
         "cardTitle": "Revalidación manual",
@@ -51,7 +71,19 @@
         "errorToast": "Error al ejecutar la revalidación manual",
         "statTotalLabel": "Total revalidaciones",
         "statSuccessRateLabel": "Tasa de éxito",
-        "statAvgDurationLabel": "Duración promedio"
+        "statAvgDurationLabel": "Duración promedio",
+        "byTypeTitle": "Revalidar por tipo de entidad",
+        "byTypeDescription": "Regenerar todas las páginas cacheadas para un tipo de entidad específico. Esto puede disparar muchas revalidaciones.",
+        "entityTypeLabel": "Tipo de entidad",
+        "entityTypePlaceholder": "Seleccionar un tipo de entidad",
+        "byTypeSubmitButton": "Regenerar todo",
+        "byTypeSubmittingButton": "Regenerando...",
+        "byTypeSuccessToast": "Revalidación por tipo completada: {{succeeded}} exitosa(s), {{failed}} fallida(s)",
+        "byTypeErrorToast": "Error al ejecutar la revalidación por tipo de entidad",
+        "byTypeConfirmTitle": "Confirmar revalidación por tipo",
+        "byTypeConfirmDescription": "Esto regenerará todas las páginas de \"{{entityType}}\". Esta operación puede tardar según la cantidad de páginas. ¿Continuar?",
+        "byTypeConfirmAction": "Regenerar",
+        "byTypeConfirmCancel": "Cancelar"
     },
     "result": {
         "cardTitle": "Resultado",
@@ -79,6 +111,16 @@
         "hook": "Hook",
         "cron": "Cron",
         "stale": "Desactualizado"
+    },
+    "entityType": {
+        "accommodation": "Alojamiento",
+        "destination": "Destino",
+        "event": "Evento",
+        "post": "Publicación",
+        "accommodation_review": "Reseña de alojamiento",
+        "destination_review": "Reseña de destino",
+        "tag": "Etiqueta",
+        "amenity": "Amenidad"
     },
     "messages": {
         "revalidateSuccess": "Páginas revalidadas correctamente",

@@ -15,9 +15,15 @@
  * 3. Assert that every key with >= 3 segments is present in all 3 locales.
  */
 
+import { describe, expect, it, vi } from 'vitest';
+
+// Restore real fs and path — the global setup mocks them for locale-loading tests,
+// but this test needs the real filesystem to read the inventory and locale files.
+vi.unmock('node:fs');
+vi.unmock('node:path');
+
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { describe, expect, it } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Paths

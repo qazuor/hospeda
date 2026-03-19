@@ -39,7 +39,8 @@
         "permissions": "Permissões",
         "tags": "Etiquetas",
         "seo": "SEO",
-        "portalSettings": "Configurações do Portal"
+        "portalSettings": "Configurações do Portal",
+        "revalidation": "Revalidação ISR"
     },
     "billing": {
         "title": "Faturamento"
