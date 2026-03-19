@@ -53,10 +53,16 @@ vi.mock('../../src/middlewares/billing', () => ({
     }))
 }));
 
-// Mock the CRUD sub-module (service layer) instead of @repo/db
-vi.mock('../../src/services/promo-code.crud', () => ({
-    getPromoCodeByCode: mockGetPromoCodeByCode
-}));
+// Mock the CRUD sub-module in @repo/service-core (where PromoCodeService lives after migration).
+// The promo-code.redemption module inside service-core imports getPromoCodeByCode from
+// ./promo-code.crud.js using a relative path. We mock it at that resolved location.
+vi.mock(
+    '../../../../packages/service-core/src/services/billing/promo-code/promo-code.crud',
+    () => ({
+        getPromoCodeByCode: mockGetPromoCodeByCode,
+        mapDbToPromoCode: vi.fn((row: unknown) => row)
+    })
+);
 
 // Mock @repo/db only for withTransaction (needed by redemption module)
 // and drizzle helpers, but NOT for raw query chain (select/from/where/limit)

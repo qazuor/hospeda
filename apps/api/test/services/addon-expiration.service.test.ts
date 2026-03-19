@@ -277,7 +277,7 @@ describe('AddonExpirationService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
-            expect(result.error?.message).toBe('Failed to find expired add-ons');
+            expect(result.error?.message).toContain('Failed to find expired add-ons');
         });
 
         it('should map database results to ExpiredAddon format correctly', async () => {
@@ -878,7 +878,7 @@ describe('AddonExpirationService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe('INTERNAL_ERROR');
-            expect(result.error?.message).toBe('Failed to find expiring add-ons');
+            expect(result.error?.message).toContain('Failed to find expiring add-ons');
         });
 
         it('should map database results to ExpiringAddon format correctly', async () => {

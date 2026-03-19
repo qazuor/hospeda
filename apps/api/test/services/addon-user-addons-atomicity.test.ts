@@ -64,6 +64,19 @@ vi.mock('@repo/config', async (importOriginal) => {
     return { ...actual };
 });
 
+// Mock service-core addon-user-addons module for cancelAddonPurchaseRecord.
+// After migration, the non-limit cancel path delegates to this function.
+const { mockCancelAddonPurchaseRecord } = vi.hoisted(() => ({
+    mockCancelAddonPurchaseRecord: vi.fn().mockResolvedValue(1)
+}));
+
+vi.mock('../../../../packages/service-core/src/services/billing/addon/addon-user-addons', () => ({
+    queryUserAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+    queryAddonActive: vi.fn().mockResolvedValue({ success: true, data: false }),
+    queryActiveAddonPurchases: vi.fn().mockResolvedValue([]),
+    cancelAddonPurchaseRecord: mockCancelAddonPurchaseRecord
+}));
+
 // ─── Hoisted DB mock ──────────────────────────────────────────────────────────
 
 const { mockTxUpdate, mockDbSelect, mockDbUpdate, mockDbTransaction } = vi.hoisted(() => {
@@ -463,8 +476,8 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
     // =========================================================================
     // T-029-4: non-limit addon → direct DB update, no transaction
     // =========================================================================
-    describe('T-029-4: non-limit addon → direct DB update without transaction', () => {
-        it('should use direct db.update (no transaction) for addons without affectsLimitKey', async () => {
+    describe('T-029-4: non-limit addon → cancelAddonPurchaseRecord, no transaction', () => {
+        it('should use cancelAddonPurchaseRecord (no transaction) for addons without affectsLimitKey', async () => {
             // Arrange
             const { getAddonBySlug } = await import('@repo/billing');
             (getAddonBySlug as unknown as MockInstance).mockReturnValue(nonLimitAddonDef);
@@ -479,10 +492,12 @@ describe('cancelUserAddon() atomicity — GAP-043-29', () => {
                 cancelInput
             );
 
-            // Assert: success, transaction NOT used, direct update used
+            // Assert: success, transaction NOT used, cancelAddonPurchaseRecord from service-core used
             expect(result.success).toBe(true);
             expect(mockDbTransaction).not.toHaveBeenCalled();
-            expect(mockDbUpdate).toHaveBeenCalled();
+            expect(mockCancelAddonPurchaseRecord).toHaveBeenCalledWith({
+                purchaseId: PURCHASE_ID
+            });
         });
     });
 
