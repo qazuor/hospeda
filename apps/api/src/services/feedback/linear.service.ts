@@ -1,12 +1,12 @@
 import { LinearClient } from '@linear/sdk';
 import { createLogger } from '@repo/logger';
-import type { FeedbackConfigInput } from './linear.types';
 import {
     ALLOWED_UPLOAD_HOST_PATTERN,
     escapeMarkdown,
     sanitizeConsoleError,
     truncateStack
-} from './markdown-helpers';
+} from '@repo/utils';
+import type { FeedbackConfigInput } from './linear.types';
 
 export type { FeedbackConfigType, ReportTypesType, SeverityLevelsType } from './linear.types';
 
