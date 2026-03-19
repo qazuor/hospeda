@@ -222,7 +222,7 @@ describe('Destination Query Schemas', () => {
     });
 
     describe('DestinationSummaryExtendedSchema', () => {
-        it('should fail because DestinationSummaryExtendedSchema picks non-existent climate field', () => {
+        it('should validate extended summary with optional climate field', () => {
             const destination = createValidDestination();
             const extendedSummary = {
                 id: destination.id,
@@ -239,11 +239,10 @@ describe('Destination Query Schemas', () => {
                 averageRating: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
                 reviewsCount: faker.number.int({ min: 0, max: 100 })
             };
-            // DestinationSummaryExtendedSchema picks 'climate' from DestinationSchema,
-            // but DestinationSchema does not have a 'climate' field, causing Zod to throw
-            expect(() => DestinationSummaryExtendedSchema.parse(extendedSummary)).toThrow(
-                /Unrecognized key.*climate/
-            );
+            // climate is now an optional extended field, so parsing should succeed
+            const result = DestinationSummaryExtendedSchema.parse(extendedSummary);
+            expect(result.id).toBe(extendedSummary.id);
+            expect(result.climate).toBeUndefined();
         });
     });
 

@@ -127,8 +127,9 @@ export const AmenityWithCategorySchema = AmenitySchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                icon: true,
-                usageCount: true
+                icon: true
+            }).extend({
+                usageCount: z.number().int().min(0).optional()
             })
         )
         .optional(),
@@ -147,10 +148,10 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1), // How similar (0-1)
                 coOccurrenceCount: z.number().int().min(0) // How often used together
             })
@@ -163,9 +164,9 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
                 id: true,
                 slug: true,
                 name: true,
-                category: true,
                 icon: true
             }).extend({
+                category: z.string().optional(),
                 coOccurrenceRate: z.number().min(0).max(1), // Percentage of co-occurrence
                 coOccurrenceCount: z.number().int().min(0)
             })
@@ -179,10 +180,10 @@ export const AmenityWithSimilarSchema = AmenitySchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                usageCount: z.number().int().min(0).optional(),
                 alternativeReason: z.string().optional() // Why it's an alternative
             })
         )
@@ -284,8 +285,9 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                icon: true,
-                usageCount: true
+                icon: true
+            }).extend({
+                usageCount: z.number().int().min(0).optional()
             })
         )
         .optional(),
@@ -299,10 +301,10 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
             })
@@ -315,9 +317,9 @@ export const AmenityWithFullRelationsSchema = AmenitySchema.extend({
                 id: true,
                 slug: true,
                 name: true,
-                category: true,
                 icon: true
             }).extend({
+                category: z.string().optional(),
                 coOccurrenceRate: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
             })

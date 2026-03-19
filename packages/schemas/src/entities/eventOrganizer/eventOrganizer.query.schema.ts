@@ -128,14 +128,16 @@ export const EventOrganizerSummarySchema = EventOrganizerSchema.pick({
     name: true,
     description: true,
     logo: true,
-    email: true,
-    website: true,
-    city: true,
-    state: true,
-    country: true,
-    organizerType: true,
-    isActive: true,
-    isVerified: true
+    contactInfo: true
+}).extend({
+    email: z.string().email().optional(),
+    website: z.string().url().optional(),
+    city: z.string().optional(),
+    state: z.string().optional(),
+    country: z.string().optional(),
+    organizerType: z.string().optional(),
+    isActive: z.boolean().optional(),
+    isVerified: z.boolean().optional()
 });
 
 /**

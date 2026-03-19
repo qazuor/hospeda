@@ -316,10 +316,9 @@ export const DestinationWithNearbySchema = DestinationSchema.extend({
                 location: true,
                 media: true,
                 averageRating: true,
-                accommodationsCount: true,
-                distance: true // Distance in kilometers
+                accommodationsCount: true
             }).extend({
-                distance: z.number().min(0).optional()
+                distance: z.number().min(0).optional() // Distance in kilometers
             })
         )
         .optional(),

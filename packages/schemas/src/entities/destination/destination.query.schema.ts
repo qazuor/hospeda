@@ -289,9 +289,9 @@ export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
     isFeatured: true,
     accommodationsCount: true,
     attractions: true,
-    tags: true,
-    climate: true
+    tags: true
 }).extend({
+    climate: z.string().optional(),
     // Explicitly make review fields optional since they might not be present in extended summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
     averageRating: z

@@ -244,10 +244,11 @@ export const AccommodationReviewSummarySchema = AccommodationReviewSchema.pick({
     rating: true,
     title: true,
     content: true,
-    stayDate: true,
-    isVerified: true,
-    isPublished: true,
     createdAt: true
+}).extend({
+    stayDate: z.date().optional(),
+    isVerified: z.boolean().optional(),
+    isPublished: z.boolean().optional()
 });
 
 /**

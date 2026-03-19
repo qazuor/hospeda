@@ -310,9 +310,9 @@ export const TagWithFullRelationsSchema = TagSchema.extend({
 export const TagCloudItemSchema = TagSchema.pick({
     id: true,
     name: true,
-    color: true,
-    usageCount: true
+    color: true
 }).extend({
+    usageCount: z.number().int().min(0).optional(),
     weight: z.number().min(0).max(1), // Normalized weight for display
     fontSize: z.number().min(8).max(48).optional(), // Suggested font size
     popularity: z.enum(['low', 'medium', 'high', 'trending']).optional()
@@ -406,9 +406,9 @@ export const RelatedTagsOutputSchema = z.object({
         TagSchema.pick({
             id: true,
             name: true,
-            color: true,
-            usageCount: true
+            color: true
         }).extend({
+            usageCount: z.number().int().min(0).optional(),
             relationStrength: z.number().min(0).max(1), // How often used together
             coOccurrenceCount: z.number().int().min(0) // Number of entities with both tags
         })

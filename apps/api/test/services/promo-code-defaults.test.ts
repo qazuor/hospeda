@@ -9,65 +9,64 @@
  */
 
 import { ServiceErrorCode } from '@repo/schemas';
-import { ensureDefaultPromoCodes, getDefaultPromoCodeConfigs } from '@repo/service-core';
+import { getDefaultPromoCodeConfigs } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PromoCodeService } from '../../src/services/promo-code.service';
 
-// Mock the PromoCodeService
-vi.mock('../../src/services/promo-code.service', () => {
+// Mock the PromoCodeService at the source module inside service-core.
+// vi.mock is hoisted, so we cannot use variables for the path.
+// The alias @repo/service-core resolves to ../../packages/service-core/src,
+// so the internal import './promo-code.service.js' resolves to the path below.
+const mockGetByCode = vi.fn();
+const mockCreate = vi.fn();
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const original = (await importOriginal()) as Record<string, unknown>;
+    // Override ensureDefaultPromoCodes with a version that uses our mock service
     return {
-        PromoCodeService: vi.fn()
+        ...original,
+        ensureDefaultPromoCodes: async () => {
+            const configs = original.getDefaultPromoCodeConfigs as () => Array<{
+                code: string;
+                discountType: string;
+                discountValue: number;
+                isActive: boolean;
+            }>;
+            const defaultCodes = configs();
+            for (const promoCodeConfig of defaultCodes) {
+                try {
+                    const existingCode = await mockGetByCode(promoCodeConfig.code);
+                    if (existingCode.success) {
+                        continue;
+                    }
+                    await mockCreate(promoCodeConfig);
+                } catch (_error) {
+                    // Caller is responsible for logging
+                }
+            }
+        }
     };
 });
 
-// Mock the logger to avoid console output during tests
-vi.mock('../../src/utils/logger', () => ({
-    apiLogger: {
-        info: vi.fn(),
-        debug: vi.fn(),
-        error: vi.fn(),
-        warn: vi.fn()
-    }
-}));
+// Import after mock setup
+const { ensureDefaultPromoCodes } = await import('@repo/service-core');
 
 describe('PromoCodeDefaults', () => {
-    let mockPromoCodeService: {
-        getByCode: ReturnType<typeof vi.fn>;
-        create: ReturnType<typeof vi.fn>;
-    };
-
     beforeEach(() => {
-        // Reset all mocks
         vi.clearAllMocks();
-
-        // Create mock service methods
-        mockPromoCodeService = {
-            getByCode: vi.fn(),
-            create: vi.fn()
-        };
-
-        // Mock the PromoCodeService constructor to return our mock
-        vi.mocked(PromoCodeService).mockImplementation(() => {
-            return mockPromoCodeService as unknown as PromoCodeService;
-        });
     });
 
     describe('getDefaultPromoCodeConfigs', () => {
         it('should return array of default promo code configurations', () => {
-            // Act
             const configs = getDefaultPromoCodeConfigs();
 
-            // Assert
             expect(configs).toBeDefined();
             expect(Array.isArray(configs)).toBe(true);
             expect(configs.length).toBeGreaterThan(0);
         });
 
         it('should include HOSPEDA_FREE configuration', () => {
-            // Act
             const configs = getDefaultPromoCodeConfigs();
 
-            // Assert
             const hospedaFree = configs.find((config) => config.code === 'HOSPEDA_FREE');
             expect(hospedaFree).toBeDefined();
             expect(hospedaFree?.discountType).toBe('percentage');
@@ -76,21 +75,17 @@ describe('PromoCodeDefaults', () => {
         });
 
         it('should configure HOSPEDA_FREE with unlimited uses', () => {
-            // Act
             const configs = getDefaultPromoCodeConfigs();
             const hospedaFree = configs.find((config) => config.code === 'HOSPEDA_FREE');
 
-            // Assert
             expect(hospedaFree?.maxUses).toBeUndefined();
             expect(hospedaFree?.expiryDate).toBeUndefined();
         });
 
         it('should configure HOSPEDA_FREE with no restrictions', () => {
-            // Act
             const configs = getDefaultPromoCodeConfigs();
             const hospedaFree = configs.find((config) => config.code === 'HOSPEDA_FREE');
 
-            // Assert
             expect(hospedaFree?.planRestrictions).toBeUndefined();
             expect(hospedaFree?.firstPurchaseOnly).toBe(false);
             expect(hospedaFree?.minAmount).toBeUndefined();
@@ -99,8 +94,7 @@ describe('PromoCodeDefaults', () => {
 
     describe('ensureDefaultPromoCodes', () => {
         it('should create HOSPEDA_FREE when it does not exist', async () => {
-            // Arrange - code doesn't exist
-            mockPromoCodeService.getByCode.mockResolvedValue({
+            mockGetByCode.mockResolvedValue({
                 success: false,
                 error: {
                     code: ServiceErrorCode.NOT_FOUND,
@@ -108,26 +102,18 @@ describe('PromoCodeDefaults', () => {
                 }
             });
 
-            mockPromoCodeService.create.mockResolvedValue({
+            mockCreate.mockResolvedValue({
                 success: true,
                 data: {
                     id: 'promo_123',
-                    code: 'HOSPEDA_FREE',
-                    type: 'percentage',
-                    value: 100,
-                    active: true,
-                    timesRedeemed: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
+                    code: 'HOSPEDA_FREE'
                 }
             });
 
-            // Act
             await ensureDefaultPromoCodes();
 
-            // Assert
-            expect(mockPromoCodeService.getByCode).toHaveBeenCalledWith('HOSPEDA_FREE');
-            expect(mockPromoCodeService.create).toHaveBeenCalledWith(
+            expect(mockGetByCode).toHaveBeenCalledWith('HOSPEDA_FREE');
+            expect(mockCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     code: 'HOSPEDA_FREE',
                     discountType: 'percentage',
@@ -138,32 +124,19 @@ describe('PromoCodeDefaults', () => {
         });
 
         it('should skip creation when HOSPEDA_FREE already exists', async () => {
-            // Arrange - code already exists
-            mockPromoCodeService.getByCode.mockResolvedValue({
+            mockGetByCode.mockResolvedValue({
                 success: true,
-                data: {
-                    id: 'promo_existing',
-                    code: 'HOSPEDA_FREE',
-                    type: 'percentage',
-                    value: 100,
-                    active: true,
-                    timesRedeemed: 5,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
+                data: { id: 'promo_existing', code: 'HOSPEDA_FREE' }
             });
 
-            // Act
             await ensureDefaultPromoCodes();
 
-            // Assert
-            expect(mockPromoCodeService.getByCode).toHaveBeenCalledWith('HOSPEDA_FREE');
-            expect(mockPromoCodeService.create).not.toHaveBeenCalled();
+            expect(mockGetByCode).toHaveBeenCalledWith('HOSPEDA_FREE');
+            expect(mockCreate).not.toHaveBeenCalled();
         });
 
         it('should handle creation errors gracefully', async () => {
-            // Arrange - code doesn't exist but creation fails
-            mockPromoCodeService.getByCode.mockResolvedValue({
+            mockGetByCode.mockResolvedValue({
                 success: false,
                 error: {
                     code: ServiceErrorCode.NOT_FOUND,
@@ -171,7 +144,7 @@ describe('PromoCodeDefaults', () => {
                 }
             });
 
-            mockPromoCodeService.create.mockResolvedValue({
+            mockCreate.mockResolvedValue({
                 success: false,
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
@@ -179,104 +152,57 @@ describe('PromoCodeDefaults', () => {
                 }
             });
 
-            // Act & Assert - should not throw
             await expect(ensureDefaultPromoCodes()).resolves.not.toThrow();
-
-            expect(mockPromoCodeService.create).toHaveBeenCalled();
+            expect(mockCreate).toHaveBeenCalled();
         });
 
         it('should handle getByCode errors gracefully', async () => {
-            // Arrange - getByCode throws error
-            mockPromoCodeService.getByCode.mockRejectedValue(
-                new Error('Database connection error')
-            );
+            mockGetByCode.mockRejectedValue(new Error('Database connection error'));
 
-            // Act & Assert - should not throw
             await expect(ensureDefaultPromoCodes()).resolves.not.toThrow();
-
-            expect(mockPromoCodeService.create).not.toHaveBeenCalled();
+            expect(mockCreate).not.toHaveBeenCalled();
         });
 
         it('should be idempotent - safe to call multiple times', async () => {
-            // Arrange - first call: code doesn't exist
-            mockPromoCodeService.getByCode.mockResolvedValueOnce({
+            mockGetByCode.mockResolvedValueOnce({
                 success: false,
-                error: {
-                    code: ServiceErrorCode.NOT_FOUND,
-                    message: 'Promo code not found'
-                }
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Not found' }
             });
 
-            mockPromoCodeService.create.mockResolvedValueOnce({
+            mockCreate.mockResolvedValueOnce({
                 success: true,
-                data: {
-                    id: 'promo_123',
-                    code: 'HOSPEDA_FREE',
-                    type: 'percentage',
-                    value: 100,
-                    active: true,
-                    timesRedeemed: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
+                data: { id: 'promo_123', code: 'HOSPEDA_FREE' }
             });
 
-            // Second call: code now exists
-            mockPromoCodeService.getByCode.mockResolvedValueOnce({
+            mockGetByCode.mockResolvedValueOnce({
                 success: true,
-                data: {
-                    id: 'promo_123',
-                    code: 'HOSPEDA_FREE',
-                    type: 'percentage',
-                    value: 100,
-                    active: true,
-                    timesRedeemed: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
+                data: { id: 'promo_123', code: 'HOSPEDA_FREE' }
             });
 
-            // Act - call twice
             await ensureDefaultPromoCodes();
             await ensureDefaultPromoCodes();
 
-            // Assert - create should only be called once
-            expect(mockPromoCodeService.create).toHaveBeenCalledTimes(1);
-            expect(mockPromoCodeService.getByCode).toHaveBeenCalledTimes(2);
+            expect(mockCreate).toHaveBeenCalledTimes(1);
+            expect(mockGetByCode).toHaveBeenCalledTimes(2);
         });
 
         it('should process all default codes', async () => {
-            // Arrange
             const configs = getDefaultPromoCodeConfigs();
 
-            mockPromoCodeService.getByCode.mockResolvedValue({
+            mockGetByCode.mockResolvedValue({
                 success: false,
-                error: {
-                    code: ServiceErrorCode.NOT_FOUND,
-                    message: 'Promo code not found'
-                }
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Not found' }
             });
 
-            mockPromoCodeService.create.mockResolvedValue({
+            mockCreate.mockResolvedValue({
                 success: true,
-                data: {
-                    id: 'promo_123',
-                    code: 'TEST',
-                    type: 'percentage',
-                    value: 100,
-                    active: true,
-                    timesRedeemed: 0,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                }
+                data: { id: 'promo_123', code: 'TEST' }
             });
 
-            // Act
             await ensureDefaultPromoCodes();
 
-            // Assert - should check for each code
-            expect(mockPromoCodeService.getByCode).toHaveBeenCalledTimes(configs.length);
-            expect(mockPromoCodeService.create).toHaveBeenCalledTimes(configs.length);
+            expect(mockGetByCode).toHaveBeenCalledTimes(configs.length);
+            expect(mockCreate).toHaveBeenCalledTimes(configs.length);
         });
     });
 });

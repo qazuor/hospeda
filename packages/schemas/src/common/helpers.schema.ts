@@ -93,13 +93,22 @@ export const PartialEntitySchema = <T extends z.ZodRawShape>(schema: z.ZodObject
 /**
  * Schema for new entity input (excludes system-managed fields)
  */
+/** Fields automatically managed by the system that should be excluded from create inputs */
+const SYSTEM_MANAGED_FIELDS = {
+    id: true,
+    createdAt: true,
+    updatedAt: true,
+    deletedAt: true,
+    createdById: true,
+    updatedById: true,
+    deletedById: true
+} as const;
+
+type SystemManagedKeys = keyof typeof SYSTEM_MANAGED_FIELDS;
+
+// Zod v4's .omit() method has a strict generic constraint that prevents passing a mask
+// with keys that TypeScript cannot statically prove exist in the generic shape T.
+// We use z.util.omit() which performs the same runtime operation without the strict
+// generic type constraint, then cast the result to preserve proper typing.
 export const NewEntityInputSchema = <T extends z.ZodRawShape>(schema: z.ZodObject<T>) =>
-    schema.omit({
-        id: true,
-        createdAt: true,
-        updatedAt: true,
-        deletedAt: true,
-        createdById: true,
-        updatedById: true,
-        deletedById: true
-    });
+    z.util.omit(schema, SYSTEM_MANAGED_FIELDS) as z.ZodObject<Omit<T, SystemManagedKeys>>;

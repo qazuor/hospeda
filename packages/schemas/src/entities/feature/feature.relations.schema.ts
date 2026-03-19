@@ -133,10 +133,10 @@ export const FeatureWithCategorySchema = FeatureSchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                icon: true,
-                priority: true,
-
-                usageCount: true
+                icon: true
+            }).extend({
+                priority: z.number().int().min(0).max(100).optional(),
+                usageCount: z.number().int().min(0).optional()
             })
         )
         .optional(),
@@ -156,12 +156,11 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                priority: true,
-
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
+                usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1), // How similar (0-1)
                 coOccurrenceCount: z.number().int().min(0) // How often used together
             })
@@ -174,10 +173,10 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 name: true,
-                category: true,
-                icon: true,
-                priority: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
                 coOccurrenceRate: z.number().min(0).max(1), // Percentage of co-occurrence
                 coOccurrenceCount: z.number().int().min(0)
             })
@@ -191,12 +190,11 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                priority: true,
-
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
+                usageCount: z.number().int().min(0).optional(),
                 alternativeReason: z.string().optional(), // Why it's an alternative
                 priorityDifference: z.number().optional() // Priority difference from current feature
             })
@@ -209,10 +207,10 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 name: true,
-                category: true,
-                icon: true,
-                priority: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
                 complementReason: z.string().optional(), // Why it complements this feature
                 synergySCore: z.number().min(0).max(1).optional() // How well they work together
             })
@@ -376,10 +374,10 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                icon: true,
-                priority: true,
-
-                usageCount: true
+                icon: true
+            }).extend({
+                priority: z.number().int().min(0).max(100).optional(),
+                usageCount: z.number().int().min(0).optional()
             })
         )
         .optional(),
@@ -394,12 +392,11 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 slug: true,
                 name: true,
                 description: true,
-                category: true,
-                icon: true,
-                priority: true,
-
-                usageCount: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
+                usageCount: z.number().int().min(0).optional(),
                 similarityScore: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
             })
@@ -412,10 +409,10 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
                 id: true,
                 slug: true,
                 name: true,
-                category: true,
-                icon: true,
-                priority: true
+                icon: true
             }).extend({
+                category: z.string().optional(),
+                priority: z.number().int().min(0).max(100).optional(),
                 coOccurrenceRate: z.number().min(0).max(1),
                 coOccurrenceCount: z.number().int().min(0)
             })
