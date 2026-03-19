@@ -5,6 +5,7 @@ import { ExchangeRateModel } from '@repo/db';
  */
 import type { ExchangeRateTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { ExchangeRateConvertHttpInputSchema, ExchangeRateConvertOutputSchema } from '@repo/schemas';
+import { ServiceErrorCode } from '@repo/schemas';
 import {
     DolarApiClient,
     ExchangeRateApiClient,
@@ -36,7 +37,7 @@ export const publicConvertExchangeRateRoute = createPublicRoute({
         // Validate required parameters (types are enforced by Zod schema)
         if (!query?.from || !query?.to || query?.amount === undefined) {
             throw new ServiceError(
-                'VALIDATION_ERROR',
+                ServiceErrorCode.VALIDATION_ERROR,
                 'Missing required query parameters: from, to, amount'
             );
         }
@@ -60,7 +61,7 @@ export const publicConvertExchangeRateRoute = createPublicRoute({
 
         if (!config) {
             throw new ServiceError(
-                'INTERNAL_ERROR',
+                ServiceErrorCode.INTERNAL_ERROR,
                 'Failed to retrieve exchange rate configuration'
             );
         }
@@ -78,7 +79,7 @@ export const publicConvertExchangeRateRoute = createPublicRoute({
 
         if (!rateResult.rate) {
             throw new ServiceError(
-                'NOT_FOUND',
+                ServiceErrorCode.NOT_FOUND,
                 `Exchange rate not found for ${query.from} to ${query.to}`
             );
         }

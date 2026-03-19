@@ -9,7 +9,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createSimpleRoute } from '../../../utils/route-factory';
+import { createPublicRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -50,7 +50,7 @@ const getByDestinationHandler = async (c: Context) => {
  * Route definition using createSimpleRoute factory
  * ✅ 80% less boilerplate than manual createRoute
  */
-export const getByDestinationRoute = createSimpleRoute({
+export const getByDestinationRoute = createPublicRoute({
     method: 'get',
     path: '/destination/{destinationId}',
     summary: 'Get accommodations by destination',
@@ -58,7 +58,7 @@ export const getByDestinationRoute = createSimpleRoute({
     tags: ['Accommodations'],
     requestParams: { destinationId: z.string().uuid() },
     responseSchema: AccommodationListWrapperSchema,
-    handler: getByDestinationHandler
+    handler: async (c: Context) => getByDestinationHandler(c)
 });
 
 // Export handler for use in route registration (compatibility)

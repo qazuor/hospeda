@@ -126,7 +126,12 @@ export function validateMagicBytes({
     // WebP has an additional check: bytes 8-11 must be "WEBP"
     if (declaredType === 'image/webp') {
         if (buffer.length < 12) return false;
-        const webpTag = String.fromCharCode(buffer[8], buffer[9], buffer[10], buffer[11]);
+        const webpTag = String.fromCharCode(
+            buffer[8] ?? 0,
+            buffer[9] ?? 0,
+            buffer[10] ?? 0,
+            buffer[11] ?? 0
+        );
         if (webpTag !== 'WEBP') return false;
     }
 

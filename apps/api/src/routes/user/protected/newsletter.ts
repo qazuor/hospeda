@@ -3,6 +3,7 @@
  * Toggles the user's newsletter email preference.
  * @route POST /api/v1/protected/users/me/newsletter/toggle
  */
+import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError, UserService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -37,7 +38,7 @@ export const newsletterToggleRoute = createProtectedRoute({
 
         const user = getResult.data;
         if (!user) {
-            throw new ServiceError('NOT_FOUND', 'User not found');
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
         }
 
         // Toggle allowEmails
