@@ -1,4 +1,5 @@
 import { REntityTagModel, TagModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import type { EntityTag, EntityTypeEnum, Tag } from '@repo/schemas';
 import {
     ServiceErrorCode,
@@ -55,6 +56,7 @@ export class TagService extends BaseCrudRelatedService<
 > {
     static readonly ENTITY_NAME = 'tag';
     protected readonly entityName = TagService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('tag-revalidation');
     /**
      * The database model for Tag.
      */
@@ -153,16 +155,44 @@ export class TagService extends BaseCrudRelatedService<
     }
 
     protected async _afterCreate(entity: Tag): Promise<Tag> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'tag'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: Tag): Promise<Tag> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'tag'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(entity: Tag, _actor: Actor): Promise<Tag> {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
@@ -170,9 +200,16 @@ export class TagService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'tag'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -180,9 +217,16 @@ export class TagService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'tag'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -190,9 +234,16 @@ export class TagService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'tag'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'tag'
+            });
+        } catch (error) {
+            TagService.revalidationLogger.warn(
+                { error, entityType: 'tag' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

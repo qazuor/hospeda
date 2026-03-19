@@ -1,4 +1,5 @@
 import { PostModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import type {
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
@@ -64,6 +65,7 @@ export class PostService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'post';
     protected readonly entityName = PostService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('post-revalidation');
     public readonly model: PostModel;
 
     public readonly createSchema = PostCreateInputSchema;
@@ -363,25 +365,57 @@ export class PostService extends BaseCrudService<
 
     protected async _afterCreate(entity: Post): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'post',
-            slug: entity.slug,
-            tagSlugs
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: entity.slug,
+                tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: Post): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'post',
-            slug: entity.slug,
-            tagSlugs
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: entity.slug,
+                tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(entity: Post, _actor: Actor): Promise<Post> {
+        const tagSlugs = entity.tags?.map((t) => t.slug);
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: entity.slug,
+                tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     private _lastRestoredPost: { slug: string; tagSlugs?: string[] } | undefined;
+    private _lastDeletedPost: { slug: string; tagSlugs?: string[] } | undefined;
 
     protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
         const entity = await this.model.findById(id);
@@ -400,31 +434,82 @@ export class PostService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const restored = this._lastRestoredPost;
         this._lastRestoredPost = undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'post',
-            slug: restored?.slug,
-            tagSlugs: restored?.tagSlugs
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: restored?.slug,
+                tagSlugs: restored?.tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastDeletedPost = {
+                slug: entity.slug,
+                tagSlugs: entity.tags?.map((t) => t.slug)
+            };
+        }
+        return id;
     }
 
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'post'
-        });
+        const deleted = this._lastDeletedPost;
+        this._lastDeletedPost = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: deleted?.slug,
+                tagSlugs: deleted?.tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastDeletedPost = {
+                slug: entity.slug,
+                tagSlugs: entity.tags?.map((t) => t.slug)
+            };
+        }
+        return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'post'
-        });
+        const deleted = this._lastDeletedPost;
+        this._lastDeletedPost = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'post',
+                slug: deleted?.slug,
+                tagSlugs: deleted?.tagSlugs
+            });
+        } catch (error) {
+            PostService.revalidationLogger.warn(
+                { error, entityType: 'post' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

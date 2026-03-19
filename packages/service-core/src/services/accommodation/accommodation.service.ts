@@ -4,6 +4,7 @@ import {
     AccommodationModel,
     DestinationModel
 } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import {
     type Accommodation,
     type AccommodationByDestinationParams,
@@ -93,6 +94,7 @@ export class AccommodationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodation';
     protected readonly entityName = AccommodationService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('accommodation-revalidation');
     /**
      * @inheritdoc
      */
@@ -137,7 +139,7 @@ export class AccommodationService extends BaseCrudService<
     };
 
     private destinationService: DestinationService;
-    private _lastDeletedDestinationId: string | undefined;
+    private _lastDeletedEntity: { destinationId?: string; slug: string; type?: string } | undefined;
     private readonly _destinationModel: DestinationModel;
     private _lastRestoredAccommodation:
         | { slug: string; destinationId?: string; type?: string }
@@ -267,12 +269,19 @@ export class AccommodationService extends BaseCrudService<
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
             : undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation',
-            slug: entity.slug,
-            destinationSlug,
-            accommodationType: entity.type?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: entity.slug,
+                destinationSlug,
+                accommodationType: entity.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
@@ -280,12 +289,42 @@ export class AccommodationService extends BaseCrudService<
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
             : undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation',
-            slug: entity.slug,
-            destinationSlug,
-            accommodationType: entity.type?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: entity.slug,
+                destinationSlug,
+                accommodationType: entity.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(
+        entity: Accommodation,
+        _actor: Actor
+    ): Promise<Accommodation> {
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: entity.slug,
+                destinationSlug,
+                accommodationType: entity.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
@@ -313,19 +352,31 @@ export class AccommodationService extends BaseCrudService<
         const destinationSlug = restored?.destinationId
             ? await this._resolveDestinationSlug(restored.destinationId)
             : undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation',
-            slug: restored?.slug,
-            destinationSlug,
-            accommodationType: restored?.type?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: restored?.slug,
+                destinationSlug,
+                accommodationType: restored?.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
     protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
-        // Find the accommodation before deleting to get the destinationId
         const entity = await this.model.findById(id);
-        this._lastDeletedDestinationId = entity?.destinationId;
+        if (entity) {
+            this._lastDeletedEntity = {
+                destinationId: entity.destinationId,
+                slug: entity.slug,
+                type: entity.type
+            };
+        }
         return id;
     }
 
@@ -333,20 +384,39 @@ export class AccommodationService extends BaseCrudService<
         result: { count: number },
         _actor: Actor
     ): Promise<CountResponse> {
-        if (this._lastDeletedDestinationId) {
-            await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
-            this._lastDeletedDestinationId = undefined;
+        const deleted = this._lastDeletedEntity;
+        this._lastDeletedEntity = undefined;
+        if (deleted?.destinationId) {
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId);
         }
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation'
-        });
+        const destinationSlug = deleted?.destinationId
+            ? await this._resolveDestinationSlug(deleted.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: deleted?.slug,
+                destinationSlug,
+                accommodationType: deleted?.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
     protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
-        // Find the accommodation before deleting to get the destinationId
         const entity = await this.model.findById(id);
-        this._lastDeletedDestinationId = entity?.destinationId;
+        if (entity) {
+            this._lastDeletedEntity = {
+                destinationId: entity.destinationId,
+                slug: entity.slug,
+                type: entity.type
+            };
+        }
         return id;
     }
 
@@ -354,13 +424,27 @@ export class AccommodationService extends BaseCrudService<
         result: { count: number },
         _actor: Actor
     ): Promise<CountResponse> {
-        if (this._lastDeletedDestinationId) {
-            await this.destinationService.updateAccommodationsCount(this._lastDeletedDestinationId);
-            this._lastDeletedDestinationId = undefined;
+        const deleted = this._lastDeletedEntity;
+        this._lastDeletedEntity = undefined;
+        if (deleted?.destinationId) {
+            await this.destinationService.updateAccommodationsCount(deleted.destinationId);
         }
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation'
-        });
+        const destinationSlug = deleted?.destinationId
+            ? await this._resolveDestinationSlug(deleted.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                slug: deleted?.slug,
+                destinationSlug,
+                accommodationType: deleted?.type?.toLowerCase()
+            });
+        } catch (error) {
+            AccommodationService.revalidationLogger.warn(
+                { error, entityType: 'accommodation' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

@@ -1,4 +1,5 @@
 import { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import {
     type AccommodationAmenityRelation,
     type AccommodationIdType as AccommodationId,
@@ -58,6 +59,7 @@ export class AmenityService extends BaseCrudRelatedService<
 > {
     static readonly ENTITY_NAME = 'amenity';
     protected readonly entityName = AmenityService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('amenity-revalidation');
     protected readonly model: AmenityModel;
 
     protected readonly createSchema = AmenityCreateInputSchema;
@@ -128,16 +130,44 @@ export class AmenityService extends BaseCrudRelatedService<
     }
 
     protected async _afterCreate(entity: Amenity): Promise<Amenity> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'amenity'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: Amenity): Promise<Amenity> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'amenity'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(entity: Amenity, _actor: Actor): Promise<Amenity> {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
@@ -145,9 +175,16 @@ export class AmenityService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'amenity'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -155,9 +192,16 @@ export class AmenityService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'amenity'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -165,9 +209,16 @@ export class AmenityService extends BaseCrudRelatedService<
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'amenity'
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'amenity'
+            });
+        } catch (error) {
+            AmenityService.revalidationLogger.warn(
+                { error, entityType: 'amenity' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

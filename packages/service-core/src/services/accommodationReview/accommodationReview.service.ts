@@ -1,4 +1,5 @@
 import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import {
     type AccommodationReview,
     type AccommodationReviewCreateInput,
@@ -49,6 +50,7 @@ export class AccommodationReviewService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodationReview';
     protected readonly entityName = AccommodationReviewService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('accommodation-review-revalidation');
     protected readonly model: AccommodationReviewModel;
 
     protected readonly createSchema = AccommodationReviewCreateInputSchema;
@@ -73,6 +75,19 @@ export class AccommodationReviewService extends BaseCrudService<
         super(ctx, AccommodationReviewService.ENTITY_NAME);
         this.model = new AccommodationReviewModel();
         this.accommodationService = new AccommodationService(ctx);
+    }
+
+    /**
+     * Resolves the accommodation slug for a given accommodationId using the model directly
+     * to avoid service-layer permission checks in lifecycle hooks.
+     */
+    private async _resolveAccommodationSlug(accommodationId: string): Promise<string | undefined> {
+        try {
+            const accommodation = await this.accommodationModel.findById(accommodationId);
+            return accommodation?.slug;
+        } catch {
+            return undefined;
+        }
     }
 
     protected _canCreate(actor: Actor, _data: AccommodationReviewCreateInput): void {
@@ -166,16 +181,53 @@ export class AccommodationReviewService extends BaseCrudService<
 
     protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation_review'
-        });
+        const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: AccommodationReview): Promise<AccommodationReview> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation_review'
-        });
+        const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(
+        entity: AccommodationReview,
+        _actor: Actor
+    ): Promise<AccommodationReview> {
+        const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
@@ -194,23 +246,54 @@ export class AccommodationReviewService extends BaseCrudService<
         result: { count: number },
         _actor: Actor
     ): Promise<CountResponse> {
-        if (this._lastDeletedAccommodationId) {
-            await this.recalculateAndUpdateAccommodationStats(this._lastDeletedAccommodationId);
-            this._lastDeletedAccommodationId = undefined;
+        const deletedAccommodationId = this._lastDeletedAccommodationId;
+        this._lastDeletedAccommodationId = undefined;
+        if (deletedAccommodationId) {
+            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
         }
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation_review'
-        });
+        const accommodationSlug = deletedAccommodationId
+            ? await this._resolveAccommodationSlug(deletedAccommodationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        const review = await this.model.findOne({ id });
+        this._lastDeletedAccommodationId = review?.accommodationId;
+        return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<CountResponse> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation_review'
-        });
+        const deletedAccommodationId = this._lastDeletedAccommodationId;
+        this._lastDeletedAccommodationId = undefined;
+        const accommodationSlug = deletedAccommodationId
+            ? await this._resolveAccommodationSlug(deletedAccommodationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -228,11 +311,22 @@ export class AccommodationReviewService extends BaseCrudService<
     ): Promise<{ count: number }> {
         if (this._lastRestoredAccommodationId) {
             await this.recalculateAndUpdateAccommodationStats(this._lastRestoredAccommodationId);
-            this._lastRestoredAccommodationId = undefined;
         }
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'accommodation_review'
-        });
+        const accommodationSlug = this._lastRestoredAccommodationId
+            ? await this._resolveAccommodationSlug(this._lastRestoredAccommodationId)
+            : undefined;
+        this._lastRestoredAccommodationId = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation_review',
+                accommodationSlug
+            });
+        } catch (error) {
+            AccommodationReviewService.revalidationLogger.warn(
+                { error, entityType: 'accommodation_review' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

@@ -1,4 +1,5 @@
 import { EventModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import type {
     Event,
     EventByAuthorInput,
@@ -58,6 +59,7 @@ export class EventService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'event';
     protected readonly entityName = EventService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('event-revalidation');
     protected readonly model: EventModel;
 
     protected readonly createSchema = EventCreateInputSchema;
@@ -202,24 +204,55 @@ export class EventService extends BaseCrudService<
     }
 
     protected async _afterCreate(entity: Event): Promise<Event> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'event',
-            slug: entity.slug,
-            category: entity.category?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: entity.slug,
+                category: entity.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: Event): Promise<Event> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'event',
-            slug: entity.slug,
-            category: entity.category?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: entity.slug,
+                category: entity.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    protected async _afterUpdateVisibility(entity: Event, _actor: Actor): Promise<Event> {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: entity.slug,
+                category: entity.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     private _lastRestoredEvent: { slug: string; category?: string } | undefined;
+    private _lastDeletedEvent: { slug: string; category?: string } | undefined;
 
     protected async _beforeRestore(id: string, _actor: Actor): Promise<string> {
         const entity = await this.model.findById(id);
@@ -238,31 +271,76 @@ export class EventService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const restored = this._lastRestoredEvent;
         this._lastRestoredEvent = undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'event',
-            slug: restored?.slug,
-            category: restored?.category?.toLowerCase()
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: restored?.slug,
+                category: restored?.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
+        }
+        return id;
     }
 
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'event'
-        });
+        const deleted = this._lastDeletedEvent;
+        this._lastDeletedEvent = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: deleted?.slug,
+                category: deleted?.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        if (entity) {
+            this._lastDeletedEvent = { slug: entity.slug, category: entity.category };
+        }
+        return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'event'
-        });
+        const deleted = this._lastDeletedEvent;
+        this._lastDeletedEvent = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'event',
+                slug: deleted?.slug,
+                category: deleted?.category?.toLowerCase()
+            });
+        } catch (error) {
+            EventService.revalidationLogger.warn(
+                { error, entityType: 'event' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 

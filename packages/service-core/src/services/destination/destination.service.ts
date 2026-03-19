@@ -1,4 +1,5 @@
 import { AccommodationModel, DestinationModel } from '@repo/db';
+import { createLogger } from '@repo/logger';
 import type {
     AccommodationListItem,
     BreadcrumbItem,
@@ -77,6 +78,7 @@ export class DestinationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'destination';
     protected readonly entityName = DestinationService.ENTITY_NAME;
+    private static readonly revalidationLogger = createLogger('destination-revalidation');
     protected readonly model: DestinationModel;
     protected readonly logger: ServiceLogger;
 
@@ -601,38 +603,104 @@ export class DestinationService extends BaseCrudService<
     }
 
     protected async _afterCreate(entity: Destination): Promise<Destination> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'destination',
-            slug: entity.slug
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug: entity.slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
     }
 
     protected async _afterUpdate(entity: Destination): Promise<Destination> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'destination',
-            slug: entity.slug
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug: entity.slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return entity;
+    }
+
+    protected async _afterUpdateVisibility(
+        entity: Destination,
+        _actor: Actor
+    ): Promise<Destination> {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug: entity.slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+        return entity;
+    }
+
+    private _lastDeletedDestinationSlug: string | undefined;
+
+    protected async _beforeSoftDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        this._lastDeletedDestinationSlug = entity?.slug;
+        return id;
     }
 
     protected async _afterSoftDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'destination'
-        });
+        const slug = this._lastDeletedDestinationSlug;
+        this._lastDeletedDestinationSlug = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
+    }
+
+    protected async _beforeHardDelete(id: string, _actor: Actor): Promise<string> {
+        const entity = await this.model.findById(id);
+        this._lastDeletedDestinationSlug = entity?.slug;
+        return id;
     }
 
     protected async _afterHardDelete(
         result: { count: number },
         _actor: Actor
     ): Promise<{ count: number }> {
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'destination'
-        });
+        const slug = this._lastDeletedDestinationSlug;
+        this._lastDeletedDestinationSlug = undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
@@ -650,10 +718,17 @@ export class DestinationService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const slug = this._lastRestoredDestinationSlug;
         this._lastRestoredDestinationSlug = undefined;
-        getRevalidationService()?.scheduleRevalidation({
-            entityType: 'destination',
-            slug
-        });
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'destination',
+                slug
+            });
+        } catch (error) {
+            DestinationService.revalidationLogger.warn(
+                { error, entityType: 'destination' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
         return result;
     }
 
