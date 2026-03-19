@@ -13,6 +13,7 @@
  */
 
 import { PermissionEnum } from '@repo/schemas';
+import { PromoCodeService } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
@@ -25,9 +26,9 @@ import {
     ValidatePromoCodeSchema,
     ValidationResultSchema
 } from '../../schemas/promo-code.schema';
-import { PromoCodeService } from '../../services/promo-code.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger';
 import {
     createAdminListRoute,
@@ -102,18 +103,21 @@ export const createPromoCodeRoute = createAdminRoute({
 
         apiLogger.info('Creating promo code');
 
-        const result = await service.create({
-            code: body.code as string,
-            discountType: body.discountType as 'percentage' | 'fixed',
-            discountValue: body.discountValue as number,
-            description: body.description as string | undefined,
-            expiryDate: body.expiryDate as Date | undefined,
-            maxUses: body.maxUses as number | undefined,
-            planRestrictions: body.planRestrictions as string[] | undefined,
-            firstPurchaseOnly: (body.firstPurchaseOnly as boolean | undefined) ?? false,
-            minAmount: body.minAmount as number | undefined,
-            isActive: (body.isActive as boolean | undefined) ?? true
-        });
+        const result = await service.create(
+            {
+                code: body.code as string,
+                discountType: body.discountType as 'percentage' | 'fixed',
+                discountValue: body.discountValue as number,
+                description: body.description as string | undefined,
+                expiryDate: body.expiryDate as Date | undefined,
+                maxUses: body.maxUses as number | undefined,
+                planRestrictions: body.planRestrictions as string[] | undefined,
+                firstPurchaseOnly: (body.firstPurchaseOnly as boolean | undefined) ?? false,
+                minAmount: body.minAmount as number | undefined,
+                isActive: (body.isActive as boolean | undefined) ?? true
+            },
+            { livemode: env.NODE_ENV === 'production' }
+        );
 
         if (!result.success || !result.data) {
             const statusMap: Record<string, number> = {
@@ -373,7 +377,8 @@ export const applyPromoCodeRoute = createProtectedRoute({
         const result = await service.apply(
             body.code as string,
             body.customerId as string,
-            body.amount as number | undefined
+            body.amount as number | undefined,
+            { livemode: env.NODE_ENV === 'production' }
         );
 
         if (result.success === false) {
