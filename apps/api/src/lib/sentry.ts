@@ -96,7 +96,12 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
             },
 
             // Integrations - skip profiling in development and serverless (native bindings unsupported)
-            integrations: isDev || isServerless ? [] : [nodeProfilingIntegration()],
+            // Profiling integration disabled in dev/serverless (native bindings unsupported).
+            // Cast needed: @sentry/profiling-node pins @sentry/core@10.38, @sentry/node uses 10.40.
+            ...(isDev || isServerless
+                ? {}
+                : // biome-ignore lint/suspicious/noExplicitAny: Sentry version mismatch between profiling-node and node packages
+                  { integrations: [nodeProfilingIntegration()] as any }),
 
             // Before send hook - filter sensitive data
             beforeSend(event, _hint) {
