@@ -26,6 +26,7 @@ function createValidEnv(overrides: Record<string, unknown> = {}): Record<string,
     return {
         VITE_API_URL: 'http://localhost:3001',
         VITE_SITE_URL: 'http://localhost:4321',
+        HOSPEDA_API_URL: 'http://localhost:3001',
         VITE_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
         NODE_ENV: 'development',
         ...overrides
@@ -68,6 +69,18 @@ describe('AdminEnvSchema', () => {
 
         it('should reject invalid VITE_SITE_URL (not a URL)', () => {
             const result = AdminEnvSchema.safeParse(createValidEnv({ VITE_SITE_URL: 'not-a-url' }));
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject missing HOSPEDA_API_URL', () => {
+            const result = AdminEnvSchema.safeParse(createValidEnv({ HOSPEDA_API_URL: undefined }));
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject invalid HOSPEDA_API_URL (not a URL)', () => {
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({ HOSPEDA_API_URL: 'not-a-url' })
+            );
             expect(result.success).toBe(false);
         });
     });

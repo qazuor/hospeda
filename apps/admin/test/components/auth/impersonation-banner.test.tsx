@@ -74,18 +74,6 @@ vi.mock('@/lib/auth-client', () => ({
     }
 }));
 
-vi.mock('@phosphor-icons/react', () => ({
-    Warning: ({ className }: { size: number; className: string }) => (
-        <span
-            data-testid="warning-icon"
-            className={className}
-        >
-            Warning
-        </span>
-    ),
-    X: () => <span data-testid="x-icon">X</span>
-}));
-
 import { ImpersonationBanner } from '@/components/auth/ImpersonationBanner';
 
 describe('ImpersonationBanner', () => {

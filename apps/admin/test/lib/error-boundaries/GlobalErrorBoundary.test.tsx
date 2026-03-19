@@ -49,10 +49,14 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        expect(screen.getByText('Error de la aplicación')).toBeInTheDocument();
-        expect(screen.getByText('Intentar de nuevo')).toBeInTheDocument();
-        expect(screen.getByText('Recargar página')).toBeInTheDocument();
-        expect(screen.getByText('Volver al panel')).toBeInTheDocument();
+        expect(screen.getByText('admin-common.errorBoundary.global.title')).toBeInTheDocument();
+        expect(screen.getByText('admin-common.errorBoundary.actions.tryAgain')).toBeInTheDocument();
+        expect(
+            screen.getByText('admin-common.errorBoundary.actions.reloadPage')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('admin-common.errorBoundary.actions.returnToDashboard')
+        ).toBeInTheDocument();
     });
 
     it('should display error details in development mode', () => {
@@ -66,7 +70,7 @@ describe('GlobalErrorBoundary', () => {
         );
 
         // Click to expand details
-        const details = screen.getByText('Detalles del error (solo desarrollo)');
+        const details = screen.getByText('admin-common.errorBoundary.devOnly.title');
         expect(details).toBeInTheDocument();
 
         process.env.NODE_ENV = originalEnv;
@@ -96,10 +100,10 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        expect(screen.getByText('Error de la aplicación')).toBeInTheDocument();
+        expect(screen.getByText('admin-common.errorBoundary.global.title')).toBeInTheDocument();
 
         // Click Try Again
-        fireEvent.click(screen.getByText('Intentar de nuevo'));
+        fireEvent.click(screen.getByText('admin-common.errorBoundary.actions.tryAgain'));
 
         // Now render without error
         rerender(
@@ -125,7 +129,7 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        fireEvent.click(screen.getByText('Recargar página'));
+        fireEvent.click(screen.getByText('admin-common.errorBoundary.actions.reloadPage'));
         expect(reloadMock).toHaveBeenCalled();
     });
 
@@ -138,7 +142,7 @@ describe('GlobalErrorBoundary', () => {
             </GlobalErrorBoundary>
         );
 
-        fireEvent.click(screen.getByText('Volver al panel'));
+        fireEvent.click(screen.getByText('admin-common.errorBoundary.actions.returnToDashboard'));
         // The href should have been set to '/'
         expect(window.location.href).toBe('/');
 

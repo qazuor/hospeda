@@ -339,4 +339,4 @@ export const mockData = {
 /**
  * Export response factories for custom test scenarios
  */
-export { mockPaginatedResponse, mockSuccessResponse, mockErrorResponse };
+export { API_BASE, mockPaginatedResponse, mockSuccessResponse, mockErrorResponse };

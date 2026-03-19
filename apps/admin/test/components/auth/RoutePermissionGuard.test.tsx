@@ -19,6 +19,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+// Undo the global mock from test/setup.tsx so we test the real component
+vi.unmock('@/components/auth/RoutePermissionGuard');
+
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: vi.fn()
 }));

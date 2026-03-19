@@ -9,7 +9,10 @@
 
 import { useTranslations } from '@/hooks/use-translations';
 import { renderHook } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Undo the global mock from test/setup.tsx so we test the real implementation
+vi.unmock('@/hooks/use-translations');
 
 describe('useTranslations hook', () => {
     describe('Basic translation', () => {
@@ -164,6 +167,3 @@ describe('useTranslations hook', () => {
         });
     });
 });
-
-// Import vi for the spy test
-import { vi } from 'vitest';

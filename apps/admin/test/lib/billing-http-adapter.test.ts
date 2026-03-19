@@ -580,7 +580,7 @@ describe('Billing HTTP Adapter', () => {
                 };
 
                 server.use(
-                    http.get(`${API_URL}/api/v1/protected/billing/plans/${planId}`, () => {
+                    http.get(`${API_URL}/api/v1/admin/billing/plans/${planId}`, () => {
                         return HttpResponse.json({ data: mockPlan });
                     })
                 );

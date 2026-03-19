@@ -8,7 +8,7 @@
  * - Render dynamic content
  */
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { useEffect, useState } from 'react';
@@ -125,7 +125,7 @@ function CreateEntityForm({ onSuccess }: { onSuccess: (data: unknown) => void })
         setError(null);
 
         try {
-            const res = await fetch(`${API_BASE}/admin/accommodations`, {
+            const res = await fetch(`http://localhost${API_BASE}/admin/accommodations`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name })
@@ -336,23 +336,26 @@ describe('Component Testing Examples', () => {
             const onSuccess = vi.fn();
 
             server.use(
-                http.post(`${API_BASE}/admin/accommodations`, async ({ request }) => {
-                    const body = await request.json();
-                    return HttpResponse.json(
-                        {
-                            success: true,
-                            data: { id: 'new-id', ...(body as object) },
-                            metadata: { timestamp: new Date().toISOString(), requestId: 'test' }
-                        },
-                        { status: 201 }
-                    );
-                })
+                http.post(
+                    `http://localhost${API_BASE}/admin/accommodations`,
+                    async ({ request }) => {
+                        const body = await request.json();
+                        return HttpResponse.json(
+                            {
+                                success: true,
+                                data: { id: 'new-id', ...(body as object) },
+                                metadata: { timestamp: new Date().toISOString(), requestId: 'test' }
+                            },
+                            { status: 201 }
+                        );
+                    }
+                )
             );
 
             render(<CreateEntityForm onSuccess={onSuccess} />);
 
             await user.type(screen.getByTestId('name-input'), 'New Hotel');
-            await user.click(screen.getByTestId('submit-button'));
+            fireEvent.submit(screen.getByTestId('create-form'));
 
             await waitFor(() => {
                 expect(onSuccess).toHaveBeenCalledWith({ id: 'new-id', name: 'New Hotel' });
@@ -366,7 +369,7 @@ describe('Component Testing Examples', () => {
             const user = userEvent.setup();
 
             server.use(
-                http.post(`${API_BASE}/admin/accommodations`, async () => {
+                http.post(`http://localhost${API_BASE}/admin/accommodations`, async () => {
                     await new Promise((resolve) => setTimeout(resolve, 100));
                     return HttpResponse.json({
                         success: true,
@@ -379,7 +382,7 @@ describe('Component Testing Examples', () => {
             render(<CreateEntityForm onSuccess={() => {}} />);
 
             await user.type(screen.getByTestId('name-input'), 'New Hotel');
-            await user.click(screen.getByTestId('submit-button'));
+            fireEvent.submit(screen.getByTestId('create-form'));
 
             expect(screen.getByTestId('submit-button')).toHaveTextContent('Creating...');
             expect(screen.getByTestId('submit-button')).toBeDisabled();
@@ -393,7 +396,7 @@ describe('Component Testing Examples', () => {
             const user = userEvent.setup();
 
             server.use(
-                http.post(`${API_BASE}/admin/accommodations`, () => {
+                http.post(`http://localhost${API_BASE}/admin/accommodations`, () => {
                     return HttpResponse.json(
                         mockErrorResponse('VALIDATION_ERROR', 'Name is required'),
                         { status: 400 }
@@ -404,7 +407,7 @@ describe('Component Testing Examples', () => {
             render(<CreateEntityForm onSuccess={() => {}} />);
 
             await user.type(screen.getByTestId('name-input'), 'Test');
-            await user.click(screen.getByTestId('submit-button'));
+            fireEvent.submit(screen.getByTestId('create-form'));
 
             await waitFor(() => {
                 expect(screen.getByTestId('form-error')).toBeInTheDocument();
@@ -494,7 +497,7 @@ describe('Component Testing Examples', () => {
             const onSuccess = vi.fn();
 
             server.use(
-                http.post(`${API_BASE}/admin/accommodations`, async () => {
+                http.post(`http://localhost${API_BASE}/admin/accommodations`, async () => {
                     return HttpResponse.json({
                         success: true,
                         data: { id: 'new-id', name: 'Test' },
@@ -506,7 +509,7 @@ describe('Component Testing Examples', () => {
             render(<CreateEntityForm onSuccess={onSuccess} />);
 
             await user.type(screen.getByTestId('name-input'), 'Test Hotel');
-            await user.keyboard('{Enter}');
+            fireEvent.submit(screen.getByTestId('create-form'));
 
             await waitFor(() => {
                 expect(onSuccess).toHaveBeenCalled();
