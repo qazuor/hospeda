@@ -12,3 +12,4 @@ dist/
 test/e2e/.results/
 test-results/
 playwright-report/
+.env*.local
