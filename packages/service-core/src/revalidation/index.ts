@@ -24,3 +24,4 @@ export type {
     RevalidationServiceConfig,
     RevalidationTrigger
 } from './revalidation.service.js';
+export * from './revalidation-stats.service.js';
