@@ -29,5 +29,14 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Subscription lifecycle - Transactional, always sent
     [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL,
+
+    // Plan management - Transactional
+    [NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING]: NotificationCategory.TRANSACTIONAL,
+
+    // Payment retry warning - Transactional (billing-critical)
+    [NotificationType.PAYMENT_RETRY_WARNING]: NotificationCategory.TRANSACTIONAL,
+
+    // Addon cancellation - Transactional
+    [NotificationType.ADDON_CANCELLATION]: NotificationCategory.TRANSACTIONAL
 };

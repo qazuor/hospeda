@@ -780,7 +780,7 @@ describe('Feedback Notification Integration Tests', () => {
                     to: 'admin@hospeda.com.ar',
                     tags: expect.arrayContaining([
                         { name: 'notification_type', value: NotificationType.FEEDBACK_REPORT },
-                        { name: 'category', value: 'transactional' }
+                        { name: 'category', value: 'admin' }
                     ])
                 })
             );

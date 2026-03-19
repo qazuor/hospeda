@@ -72,7 +72,7 @@ export class RetryService {
         } catch (error) {
             logger.error(
                 `[RetryService] Failed to enqueue notification ${notification.id}:`,
-                error
+                error instanceof Error ? error.message : String(error)
             );
             throw error;
         }
@@ -113,7 +113,10 @@ export class RetryService {
 
             return notifications;
         } catch (error) {
-            logger.error('[RetryService] Failed to dequeue ready notifications:', error);
+            logger.error(
+                '[RetryService] Failed to dequeue ready notifications:',
+                error instanceof Error ? error.message : String(error)
+            );
             throw error;
         }
     }
@@ -261,7 +264,7 @@ export class RetryService {
                     failed++;
                     logger.error(
                         `[RetryService] Error processing retry for notification ${notification.id}:`,
-                        error
+                        error instanceof Error ? error.message : String(error)
                     );
 
                     // Re-enqueue with incremented attempt count if not at max
@@ -288,16 +291,17 @@ export class RetryService {
                 }
             }
 
-            logger.info('[RetryService] Retry processing complete', {
-                processed,
-                succeeded,
-                failed,
-                permanentlyFailed
-            });
+            logger.info(
+                { processed, succeeded, failed, permanentlyFailed },
+                '[RetryService] Retry processing complete'
+            );
 
             return { processed, succeeded, failed, permanentlyFailed };
         } catch (error) {
-            logger.error('[RetryService] Failed to process retries:', error);
+            logger.error(
+                '[RetryService] Failed to process retries:',
+                error instanceof Error ? error.message : String(error)
+            );
             throw error;
         }
     }
@@ -318,7 +322,7 @@ export class RetryService {
         } catch (callbackError) {
             logger.error(
                 `[RetryService] onPermanentFailure callback failed for notification ${notification.id}:`,
-                callbackError
+                callbackError instanceof Error ? callbackError.message : String(callbackError)
             );
         }
     }

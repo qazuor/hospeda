@@ -18,7 +18,10 @@ export enum NotificationType {
     FEEDBACK_REPORT = 'feedback_report',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
     SUBSCRIPTION_PAUSED = 'subscription_paused',
-    SUBSCRIPTION_REACTIVATED = 'subscription_reactivated'
+    SUBSCRIPTION_REACTIVATED = 'subscription_reactivated',
+    PLAN_DOWNGRADE_LIMIT_WARNING = 'plan_downgrade_limit_warning',
+    PAYMENT_RETRY_WARNING = 'payment_retry_warning',
+    ADDON_CANCELLATION = 'addon_cancellation'
 }
 
 /**
@@ -161,6 +164,98 @@ export interface SubscriptionLifecyclePayload extends BaseNotificationPayload {
     readonly nextBillingDate?: string;
 }
 
+/**
+ * Payload for plan downgrade limit warning notifications.
+ *
+ * Sent when a plan downgrade causes a specific resource limit to decrease
+ * while the user's current usage is at or near the new (lower) limit.
+ *
+ * @example
+ * ```ts
+ * const payload: PlanDowngradeLimitWarningPayload = {
+ *   type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   limitKey: 'accommodations',
+ *   oldLimit: 10,
+ *   newLimit: 3,
+ *   currentUsage: 7,
+ *   planName: 'Basic',
+ * };
+ * ```
+ */
+export interface PlanDowngradeLimitWarningPayload extends BaseNotificationPayload {
+    type: NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING;
+    /** Identifier for the resource limit (e.g. 'accommodations', 'photos') */
+    limitKey: string;
+    /** The limit value before the downgrade */
+    oldLimit: number;
+    /** The limit value after the downgrade */
+    newLimit: number;
+    /** The user's current usage count for this resource */
+    currentUsage: number;
+    /** The name of the plan the user is downgrading to */
+    planName: string;
+}
+
+/**
+ * Payload for payment retry warning notifications.
+ *
+ * Sent when a subscription payment fails and the system will automatically retry.
+ * Warns the user how many attempts remain before auto-cancellation.
+ *
+ * @example
+ * ```ts
+ * const payload: PaymentRetryWarningPayload = {
+ *   type: NotificationType.PAYMENT_RETRY_WARNING,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   failureCount: 2,
+ *   maxRetries: 3,
+ *   paymentMethodHint: 'Visa terminada en 4242',
+ * };
+ * ```
+ */
+export interface PaymentRetryWarningPayload extends BaseNotificationPayload {
+    type: NotificationType.PAYMENT_RETRY_WARNING;
+    /** Number of payment failures so far (1-based) */
+    readonly failureCount: number;
+    /** Maximum number of retries before auto-cancellation */
+    readonly maxRetries: number;
+    /** Optional masked payment method hint shown to the user */
+    readonly paymentMethodHint?: string;
+}
+
+/**
+ * Payload for addon cancellation notifications.
+ *
+ * Sent to the user when one of their active add-ons is cancelled, either
+ * voluntarily (user-initiated) or administratively.
+ *
+ * @example
+ * ```ts
+ * const payload: AddonCancellationPayload = {
+ *   type: NotificationType.ADDON_CANCELLATION,
+ *   recipientEmail: 'owner@example.com',
+ *   recipientName: 'Juan',
+ *   userId: 'user-uuid',
+ *   customerId: 'cus-uuid',
+ *   addonName: 'Fotos extra',
+ *   canceledAt: '2026-03-17T10:00:00.000Z',
+ * };
+ * ```
+ */
+export interface AddonCancellationPayload extends BaseNotificationPayload {
+    type: NotificationType.ADDON_CANCELLATION;
+    /** Human-readable add-on name shown in the email body */
+    readonly addonName: string;
+    /** ISO 8601 timestamp of when the add-on was cancelled */
+    readonly canceledAt: string;
+}
+
 /** Admin notifications */
 export interface AdminNotificationPayload extends BaseNotificationPayload {
     type: NotificationType.ADMIN_PAYMENT_FAILURE | NotificationType.ADMIN_SYSTEM_EVENT;
@@ -208,4 +303,7 @@ export type NotificationPayload =
     | AddonEventPayload
     | TrialEventPayload
     | AdminNotificationPayload
-    | FeedbackReportPayload;
+    | FeedbackReportPayload
+    | PlanDowngradeLimitWarningPayload
+    | PaymentRetryWarningPayload
+    | AddonCancellationPayload;

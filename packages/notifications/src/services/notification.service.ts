@@ -4,6 +4,7 @@ import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
 import { NOTIFICATION_CONSTANTS } from '../constants/notification.constants.js';
 import {
+    AddonCancellation,
     AddonExpirationWarning,
     AddonExpired,
     AddonRenewalConfirmation,
@@ -11,8 +12,10 @@ import {
     AdminSystemEvent,
     FeedbackReportEmail,
     PaymentFailure,
+    PaymentRetryWarning,
     PaymentSuccess,
     PlanChangeConfirmation,
+    PlanDowngradeLimitWarning,
     PurchaseConfirmation,
     RenewalReminder,
     SubscriptionCancelled,
@@ -24,11 +27,14 @@ import {
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
 import type { DeliveryResult, DeliveryStatus } from '../types/delivery.types.js';
 import type {
+    AddonCancellationPayload,
     AddonEventPayload,
     AdminNotificationPayload,
     FeedbackReportPayload,
     NotificationPayload,
     PaymentNotificationPayload,
+    PaymentRetryWarningPayload,
+    PlanDowngradeLimitWarningPayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
     SubscriptionEventPayload,
@@ -472,6 +478,40 @@ export class NotificationService {
                 });
             }
 
+            case 'plan_downgrade_limit_warning': {
+                const p = payload as PlanDowngradeLimitWarningPayload;
+                return PlanDowngradeLimitWarning({
+                    customerName: p.recipientName,
+                    planName: p.planName,
+                    limitKey: p.limitKey,
+                    oldLimit: p.oldLimit,
+                    newLimit: p.newLimit,
+                    currentUsage: p.currentUsage,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'payment_retry_warning': {
+                const p = payload as PaymentRetryWarningPayload;
+                return PaymentRetryWarning({
+                    recipientName,
+                    failureCount: p.failureCount,
+                    maxRetries: p.maxRetries,
+                    paymentMethodHint: p.paymentMethodHint,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'addon_cancellation': {
+                const p = payload as AddonCancellationPayload;
+                return AddonCancellation({
+                    recipientName,
+                    addonName: p.addonName,
+                    canceledAt: p.canceledAt,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -517,6 +557,12 @@ export class NotificationService {
         if (payload.type === 'feedback_report' && 'reportType' in payload) {
             subjectData.reportType = payload.reportType;
             subjectData.reportTitle = payload.reportTitle;
+        }
+
+        // Payment retry warning specific fields
+        if (payload.type === 'payment_retry_warning' && 'failureCount' in payload) {
+            subjectData.failureCount = String(payload.failureCount);
+            subjectData.maxRetries = String(payload.maxRetries);
         }
 
         return getSubject(payload.type, subjectData);

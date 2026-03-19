@@ -22,7 +22,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',
     [NotificationType.SUBSCRIPTION_PAUSED]:
         'Tu suscripción {planName} ha sido pausada - Acción requerida',
-    [NotificationType.SUBSCRIPTION_REACTIVATED]: 'Tu suscripción {planName} ha sido reactivada'
+    [NotificationType.SUBSCRIPTION_REACTIVATED]: 'Tu suscripción {planName} ha sido reactivada',
+    [NotificationType.PLAN_DOWNGRADE_LIMIT_WARNING]:
+        'Límite reducido en tu plan {planName} - Revisá tu contenido',
+    [NotificationType.PAYMENT_RETRY_WARNING]:
+        'Problema con tu pago - Intento {failureCount} de {maxRetries}',
+    [NotificationType.ADDON_CANCELLATION]: 'Tu complemento {addonName} ha sido cancelado'
 };
 
 /**
