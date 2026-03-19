@@ -5,8 +5,7 @@
 import { serve } from '@hono/node-server';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import { locales } from '@repo/i18n';
-import { initializeRevalidationService } from '@repo/service-core';
-import { ensureDefaultPromoCodes } from '@repo/service-core';
+import { ensureDefaultPromoCodes, initializeRevalidationService } from '@repo/service-core';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { createEntityResolver } from './lib/entity-resolver';

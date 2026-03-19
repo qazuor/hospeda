@@ -16,8 +16,13 @@ import {
     queryAddonActive,
     queryUserAddons
 } from '@repo/service-core';
-import type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
-import type { CancelAddonInput, ServiceResult, UserAddon } from '@repo/service-core';
+import type {
+    CancelAddonInput,
+    RevokeAllAddonsInput,
+    RevokeAllAddonsResult,
+    ServiceResult,
+    UserAddon
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';

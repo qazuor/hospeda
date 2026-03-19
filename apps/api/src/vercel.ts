@@ -1,4 +1,3 @@
-import { ensureDefaultPromoCodes } from '@repo/service-core';
 /**
  * Vercel Serverless Entry Point
  *
@@ -8,6 +7,7 @@ import { ensureDefaultPromoCodes } from '@repo/service-core';
  *
  * @module vercel
  */
+import { ensureDefaultPromoCodes } from '@repo/service-core';
 import { handle } from 'hono/vercel';
 import { initApp } from './app';
 import { initializeSentry } from './lib/sentry';
