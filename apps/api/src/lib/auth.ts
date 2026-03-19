@@ -13,7 +13,7 @@
 
 import { asc, eq, getDb } from '@repo/db';
 import { accounts, sessions, users, verifications } from '@repo/db';
-import { sendEmail } from '@repo/email';
+import { createEmailClient, sendEmail } from '@repo/email';
 import { ResetPasswordTemplate } from '@repo/email';
 import { VerifyEmailTemplate } from '@repo/email';
 import { createLogger } from '@repo/logger';
@@ -210,42 +210,84 @@ export function getAuth(): ReturnType<typeof betterAuth> {
             },
             sendResetPassword: async ({ user, url }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
-                void sendEmail({
-                    to: user.email,
-                    subject: 'Restablece tu contraseña de Hospeda',
-                    react: ResetPasswordTemplate({
-                        name: user.name || user.email,
-                        resetUrl: url
-                    })
-                }).then((result) => {
-                    if (!result.success) {
+                void (async () => {
+                    try {
+                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        if (!apiKey) {
+                            logger.warn(
+                                { userId: user.id },
+                                'HOSPEDA_RESEND_API_KEY not set - skipping password reset email'
+                            );
+                            return;
+                        }
+                        const client = createEmailClient({ apiKey });
+                        const result = await sendEmail({
+                            client,
+                            to: user.email,
+                            subject: 'Restablece tu contraseña de Hospeda',
+                            react: ResetPasswordTemplate({
+                                name: user.name || user.email,
+                                resetUrl: url
+                            })
+                        });
+                        if (!result.success) {
+                            logger.warn(
+                                { userId: user.id, error: result.error },
+                                'Failed to send password reset email'
+                            );
+                        }
+                    } catch (error) {
                         logger.warn(
-                            { userId: user.id, error: result.error },
+                            {
+                                userId: user.id,
+                                error: error instanceof Error ? error.message : String(error)
+                            },
                             'Failed to send password reset email'
                         );
                     }
-                });
+                })();
             }
         },
 
         emailVerification: {
             sendVerificationEmail: async ({ user, url }) => {
                 // Fire-and-forget to prevent timing attacks (BA recommendation)
-                void sendEmail({
-                    to: user.email,
-                    subject: 'Verifica tu cuenta de Hospeda',
-                    react: VerifyEmailTemplate({
-                        name: user.name || user.email,
-                        verificationUrl: url
-                    })
-                }).then((result) => {
-                    if (!result.success) {
+                void (async () => {
+                    try {
+                        const apiKey = env.HOSPEDA_RESEND_API_KEY;
+                        if (!apiKey) {
+                            logger.warn(
+                                { userId: user.id },
+                                'HOSPEDA_RESEND_API_KEY not set - skipping verification email'
+                            );
+                            return;
+                        }
+                        const client = createEmailClient({ apiKey });
+                        const result = await sendEmail({
+                            client,
+                            to: user.email,
+                            subject: 'Verifica tu cuenta de Hospeda',
+                            react: VerifyEmailTemplate({
+                                name: user.name || user.email,
+                                verificationUrl: url
+                            })
+                        });
+                        if (!result.success) {
+                            logger.warn(
+                                { userId: user.id, error: result.error },
+                                'Failed to send verification email'
+                            );
+                        }
+                    } catch (error) {
                         logger.warn(
-                            { userId: user.id, error: result.error },
+                            {
+                                userId: user.id,
+                                error: error instanceof Error ? error.message : String(error)
+                            },
                             'Failed to send verification email'
                         );
                     }
-                });
+                })();
             },
             sendOnSignUp: true,
             autoSignInAfterVerification: true
