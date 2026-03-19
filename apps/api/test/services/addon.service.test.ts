@@ -34,10 +34,19 @@ const { mockDbSelect, mockDbUpdate, mockDbInsert, mockDbTransaction, mockBilling
         const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
         const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
         const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
-        // Transaction wrapper: executes the callback with a tx that has the same insert chain
+        // Transaction update chain (same shape as mockDbUpdate for cancel operations)
+        const mockTxUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+        const mockTxUpdateSet = vi.fn(() => ({ where: mockTxUpdateWhere }));
+        const mockTxUpdate = vi.fn(() => ({ set: mockTxUpdateSet }));
+        // Transaction wrapper: executes the callback with a tx that has insert and update chains
         const mockDbTransaction = vi.fn(
-            async (callback: (tx: { insert: typeof mockDbInsert }) => Promise<unknown>) => {
-                return callback({ insert: mockDbInsert });
+            async (
+                callback: (tx: {
+                    insert: typeof mockDbInsert;
+                    update: typeof mockTxUpdate;
+                }) => Promise<unknown>
+            ) => {
+                return callback({ insert: mockDbInsert, update: mockTxUpdate });
             }
         );
         return {
@@ -192,6 +201,23 @@ vi.mock('../../src/services/addon-entitlement.service', () => ({
     }))
 }));
 
+// Mock addon-limit-recalculation service — default to success so cancelAddon tests
+// that don't care about recalculation still pass
+vi.mock('../../src/services/addon-limit-recalculation.service', () => ({
+    recalculateAddonLimitsForCustomer: vi.fn().mockResolvedValue({
+        outcome: 'success',
+        limitKey: 'max_photos_per_accommodation',
+        oldMaxValue: 20,
+        newMaxValue: 20,
+        addonCount: 0
+    })
+}));
+
+// Mock Sentry to suppress real Sentry calls in unit tests
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn()
+}));
+
 // Mock env to provide required environment variables (uses hoisted mockEnv for per-test mutation)
 vi.mock('../../src/utils/env', () => ({
     env: mockEnv
@@ -239,6 +265,23 @@ describe('AddonService', () => {
         mockEnv.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'test-token';
         mockEnv.HOSPEDA_SITE_URL = 'http://localhost:4321';
         mockEnv.HOSPEDA_API_URL = 'http://localhost:3001';
+
+        // Restore mockDbTransaction implementation after clearAllMocks wipes it.
+        // cancelUserAddon now uses db.transaction() for limit-type addon cancellations,
+        // so the tx object must expose both insert (for confirmPurchase) and update.
+        const txUpdateWhere = vi.fn().mockResolvedValue({ rowCount: 1 });
+        const txUpdateSet = vi.fn(() => ({ where: txUpdateWhere }));
+        const txUpdate = vi.fn(() => ({ set: txUpdateSet }));
+        mockDbTransaction.mockImplementation(
+            async (
+                callback: (tx: {
+                    insert: typeof mockDbInsert;
+                    update: typeof txUpdate;
+                }) => Promise<unknown>
+            ) => {
+                return callback({ insert: mockDbInsert, update: txUpdate });
+            }
+        );
     });
 
     describe('listAvailable', () => {
@@ -899,18 +942,16 @@ describe('AddonService', () => {
         beforeEach(() => {
             // Re-establish the transaction mock after vi.clearAllMocks() resets it.
             // The transaction must call its callback with a tx that supports insert()->values()->returning().
-            mockDbTransaction.mockImplementation(
-                async (
-                    callback: (tx: { insert: ReturnType<typeof vi.fn> }) => Promise<unknown>
-                ) => {
-                    const mockInsertReturning = vi
-                        .fn()
-                        .mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
-                    const mockInsertValues = vi.fn(() => ({ returning: mockInsertReturning }));
-                    const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
-                    return callback({ insert: mockInsert });
-                }
-            );
+            mockDbTransaction.mockImplementation((async (
+                callback: (tx: Record<string, unknown>) => Promise<unknown>
+            ) => {
+                const mockInsertReturning = vi
+                    .fn()
+                    .mockResolvedValue([{ id: 'mock_purchase_id_001' }]);
+                const mockInsertValues = vi.fn(() => ({ returning: mockInsertReturning }));
+                const mockInsert = vi.fn(() => ({ values: mockInsertValues }));
+                return callback({ insert: mockInsert });
+            }) as unknown as Parameters<typeof mockDbTransaction.mockImplementation>[0]);
         });
 
         it('should return error when billing is null', async () => {
@@ -1213,10 +1254,11 @@ describe('AddonService', () => {
             });
 
             it('should never write status "cancelled" (British double-L)', async () => {
-                // Arrange
+                // Arrange: use boost-7 (no affectsLimitKey) so the direct db.update path is used.
+                // extra-photos has affectsLimitKey, which routes through db.transaction/tx.update.
                 mockSelectReturningPurchase({
                     id: PURCHASE_ID,
-                    addonSlug: 'extra-photos',
+                    addonSlug: 'boost-7',
                     status: 'active',
                     customerId: 'cust_123'
                 });

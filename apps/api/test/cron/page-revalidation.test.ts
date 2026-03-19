@@ -30,8 +30,10 @@ import type { CronJobContext } from '../../src/cron/types';
 // Mock: @repo/service-core — getRevalidationService singleton getter
 // ---------------------------------------------------------------------------
 const mockRevalidateByEntityType = vi.fn();
+const mockGetLogRetentionDays = vi.fn().mockReturnValue(30);
 const mockRevalidationService = {
-    revalidateByEntityType: mockRevalidateByEntityType
+    revalidateByEntityType: mockRevalidateByEntityType,
+    getLogRetentionDays: mockGetLogRetentionDays
 };
 
 vi.mock('@repo/service-core', () => ({
@@ -200,7 +202,10 @@ describe('Page Revalidation Cron Job', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith('accommodation');
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'accommodation',
+                trigger: 'cron'
+            });
             expect(result.details?.revalidated).toBe(1);
         });
 
@@ -219,8 +224,48 @@ describe('Page Revalidation Cron Job', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith('destination');
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'destination',
+                trigger: 'cron'
+            });
             expect(result.details?.revalidated).toBe(1);
+        });
+
+        it('should handle first-ever run with no prior log entries for multiple entity types', async () => {
+            // Arrange -- multiple configs, all without prior log entries
+            const accommodationConfig = makeConfig('accommodation', 60);
+            const destinationConfig = makeConfig('destination', 120);
+            const eventConfig = makeConfig('event', 30);
+
+            mockFindAllEnabled.mockResolvedValue([
+                accommodationConfig,
+                destinationConfig,
+                eventConfig
+            ]);
+            // All findLastCronEntry calls return undefined (no prior entries at all)
+            mockFindLastCronEntry.mockResolvedValue(undefined);
+
+            const ctx = createMockContext();
+
+            // Act
+            const result = await pageRevalidationJob.handler(ctx);
+
+            // Assert -- all entity types should be revalidated on first run
+            expect(result.success).toBe(true);
+            expect(mockRevalidateByEntityType).toHaveBeenCalledTimes(3);
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'accommodation',
+                trigger: 'cron'
+            });
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'destination',
+                trigger: 'cron'
+            });
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'event',
+                trigger: 'cron'
+            });
+            expect(result.details?.revalidated).toBe(3);
         });
 
         it('should process multiple entity types and revalidate each one that is past due', async () => {
@@ -244,7 +289,10 @@ describe('Page Revalidation Cron Job', () => {
             // Assert
             expect(result.success).toBe(true);
             expect(mockRevalidateByEntityType).toHaveBeenCalledOnce();
-            expect(mockRevalidateByEntityType).toHaveBeenCalledWith('accommodation');
+            expect(mockRevalidateByEntityType).toHaveBeenCalledWith({
+                entityType: 'accommodation',
+                trigger: 'cron'
+            });
             expect(result.details?.revalidated).toBe(1);
         });
     });
@@ -290,9 +338,12 @@ describe('Page Revalidation Cron Job', () => {
             // Act
             const result = await pageRevalidationJob.handler(ctx);
 
-            // Assert — revalidated (interval) and staleRevalidated should each be 1
+            // Assert — interval fires first (no prior entry means lastRunTime=0, interval elapsed),
+            // which adds the entity type to alreadyRevalidated. Stale detection then skips it.
+            // So revalidated=1, staleRevalidated=0, total processed=1.
             expect(result.success).toBe(true);
-            expect(result.details?.staleRevalidated).toBe(1);
+            expect(result.details?.revalidated).toBe(1);
+            expect(result.details?.staleRevalidated).toBe(0);
         });
 
         it('should skip stale detection when autoRevalidateOnChange is false', async () => {

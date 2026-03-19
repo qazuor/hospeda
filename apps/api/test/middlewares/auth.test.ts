@@ -16,25 +16,35 @@ vi.mock('../../src/lib/auth', () => ({
     })
 }));
 
-// Mock process.env for auth middleware
-const originalEnv = process.env;
+// Mock the validated env object used by auth middleware.
+// vi.resetModules() in tests below re-imports auth.ts, which reads env at module level.
+// This mock must survive resets, so we use a mutable reference.
+const mockEnvValues: Record<string, unknown> = {
+    NODE_ENV: 'test',
+    HOSPEDA_DISABLE_AUTH: true,
+    HOSPEDA_ALLOW_MOCK_ACTOR: true
+};
 
-beforeEach(() => {
-    process.env = {
-        ...originalEnv,
-        NODE_ENV: 'test',
-        DISABLE_AUTH: 'true',
-        CI: 'false'
-    };
-});
+vi.mock('../../src/utils/env', () => ({
+    env: new Proxy(
+        {},
+        {
+            get: (_target, prop: string) => mockEnvValues[prop]
+        }
+    ),
+    validateApiEnv: vi.fn()
+}));
 
 describe('Auth Middleware', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Reset to mock-auth-enabled defaults
+        mockEnvValues.NODE_ENV = 'test';
+        mockEnvValues.HOSPEDA_DISABLE_AUTH = true;
+        mockEnvValues.HOSPEDA_ALLOW_MOCK_ACTOR = true;
     });
 
     afterEach(() => {
-        process.env = originalEnv;
         vi.resetModules();
     });
 
@@ -142,7 +152,7 @@ describe('Auth Middleware', () => {
 
     describe('authMiddleware (real mode)', () => {
         beforeEach(() => {
-            process.env.HOSPEDA_DISABLE_AUTH = 'false';
+            mockEnvValues.HOSPEDA_DISABLE_AUTH = false;
         });
 
         it('should call getSession with request headers', async () => {

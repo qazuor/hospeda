@@ -27,7 +27,7 @@ import { NoOpRevalidationAdapter } from '../../../../packages/service-core/src/r
 import {
     _resetRevalidationService,
     getRevalidationService,
-    initializeRevalidationService,
+    initializeRevalidationService
 } from '../../../../packages/service-core/src/revalidation/revalidation-init';
 import { RevalidationService } from '../../../../packages/service-core/src/revalidation/revalidation.service';
 
@@ -37,11 +37,11 @@ import { RevalidationService } from '../../../../packages/service-core/src/reval
 
 vi.mock('@repo/db', () => ({
     RevalidationConfigModel: vi.fn().mockImplementation(() => ({
-        findByEntityType: vi.fn().mockResolvedValue(undefined),
+        findByEntityType: vi.fn().mockResolvedValue(undefined)
     })),
     RevalidationLogModel: vi.fn().mockImplementation(() => ({
-        create: vi.fn().mockResolvedValue(undefined),
-    })),
+        create: vi.fn().mockResolvedValue(undefined)
+    }))
 }));
 
 vi.mock('@repo/logger', () => ({
@@ -49,8 +49,8 @@ vi.mock('@repo/logger', () => ({
         error: vi.fn(),
         warn: vi.fn(),
         info: vi.fn(),
-        debug: vi.fn(),
-    }),
+        debug: vi.fn()
+    })
 }));
 
 // ---------------------------------------------------------------------------
@@ -61,11 +61,7 @@ vi.mock('@repo/logger', () => ({
  * Creates a spy-wrapped NoOpRevalidationAdapter.
  * The spy records all calls while preserving the real implementation.
  */
-function createSpyAdapter(): {
-    adapter: NoOpRevalidationAdapter;
-    revalidateSpy: ReturnType<typeof vi.spyOn>;
-    revalidateManySpy: ReturnType<typeof vi.spyOn>;
-} {
+function createSpyAdapter() {
     const adapter = new NoOpRevalidationAdapter();
     const revalidateSpy = vi.spyOn(adapter, 'revalidate');
     const revalidateManySpy = vi.spyOn(adapter, 'revalidateMany');
@@ -86,7 +82,11 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
     describe('Service Initialization', () => {
         it('should create a RevalidationService instance', () => {
             const { adapter } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
             expect(service).toBeInstanceOf(RevalidationService);
         });
 
@@ -99,23 +99,26 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
                 nodeEnv: 'test',
                 revalidationSecret: 'test-secret',
                 siteUrl: 'http://localhost:4321',
+                locales: ['es', 'en', 'pt']
             });
 
             const instance = getRevalidationService();
             expect(instance).toBeInstanceOf(RevalidationService);
         });
 
-        it('initializeRevalidationService should be idempotent — second call returns same instance', () => {
+        it('initializeRevalidationService should be idempotent -- second call returns same instance', () => {
             const first = initializeRevalidationService({
                 nodeEnv: 'test',
                 revalidationSecret: 'test-secret',
                 siteUrl: 'http://localhost:4321',
+                locales: ['es', 'en', 'pt']
             });
 
             const second = initializeRevalidationService({
                 nodeEnv: 'test',
                 revalidationSecret: 'different-secret',
                 siteUrl: 'http://different.example.com',
+                locales: ['es', 'en', 'pt']
             });
 
             expect(first).toBe(second);
@@ -126,47 +129,65 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
     describe('revalidatePaths — direct service call', () => {
         it('should call adapter.revalidateMany with the provided paths', async () => {
             const { adapter, revalidateManySpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
             const paths = ['/alojamientos/', '/en/alojamientos/'];
 
-            await service.revalidatePaths(paths);
+            await service.revalidatePaths({ paths });
 
             expect(revalidateManySpy).toHaveBeenCalledOnce();
-            const [calledPaths] = revalidateManySpy.mock.calls[0]!;
-            expect(calledPaths).toEqual(expect.arrayContaining(paths));
+            const [calledParams] = revalidateManySpy.mock.calls[0]!;
+            expect((calledParams as { paths: string[] }).paths).toEqual(
+                expect.arrayContaining(paths)
+            );
         });
 
         it('should return without throwing when all adapter calls succeed', async () => {
             const { adapter } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
             await expect(
-                service.revalidatePaths(['/alojamientos/', '/eventos/'])
-            ).resolves.toBeUndefined();
+                service.revalidatePaths({ paths: ['/alojamientos/', '/eventos/'] })
+            ).resolves.toBeDefined();
         });
 
         it('should handle an empty path list gracefully', async () => {
             const { adapter, revalidateManySpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
-            await service.revalidatePaths([]);
+            await service.revalidatePaths({ paths: [] });
 
             expect(revalidateManySpy).not.toHaveBeenCalled();
         });
 
         it('each adapter result should have success=true with a path and durationMs', async () => {
             const { adapter, revalidateSpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
             const paths = ['/alojamientos/', '/eventos/'];
 
-            await service.revalidatePaths(paths);
+            await service.revalidatePaths({ paths });
 
             for (const call of revalidateSpy.mock.results) {
                 const result = await call.value;
                 expect(result).toMatchObject({
                     path: expect.any(String),
                     success: true,
-                    durationMs: expect.any(Number),
+                    durationMs: expect.any(Number)
                 });
                 expect(result.error).toBeUndefined();
             }
@@ -177,32 +198,46 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
     describe('revalidateByEntityType — entity-type expansion', () => {
         it('should expand "accommodation" entity type into multiple paths', async () => {
             const { adapter, revalidateManySpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
-            await service.revalidateByEntityType('accommodation');
+            await service.revalidateByEntityType({ entityType: 'accommodation' });
 
             expect(revalidateManySpy).toHaveBeenCalledOnce();
-            const [calledPaths] = revalidateManySpy.mock.calls[0]!;
-            expect((calledPaths as string[]).length).toBeGreaterThan(0);
+            const [calledParams] = revalidateManySpy.mock.calls[0]!;
+            const calledPaths = (calledParams as { paths: string[] }).paths;
+            expect(calledPaths.length).toBeGreaterThan(0);
             expect(calledPaths).toContain('/alojamientos/');
         });
 
         it('should generate locale-prefixed paths for accommodation entity type', async () => {
             const { adapter, revalidateManySpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
-            await service.revalidateByEntityType('accommodation');
+            await service.revalidateByEntityType({ entityType: 'accommodation' });
 
-            const [calledPaths] = revalidateManySpy.mock.calls[0]!;
-            expect((calledPaths as string[]).some((p) => p.startsWith('/en/'))).toBe(true);
-            expect((calledPaths as string[]).some((p) => p.startsWith('/pt/'))).toBe(true);
+            const [calledParams2] = revalidateManySpy.mock.calls[0]!;
+            const calledPaths2 = (calledParams2 as { paths: string[] }).paths;
+            expect(calledPaths2.some((p) => p.startsWith('/en/'))).toBe(true);
+            expect(calledPaths2.some((p) => p.startsWith('/pt/'))).toBe(true);
         });
 
         it('should not generate paths for unknown entity type (no adapter calls)', async () => {
             const { adapter, revalidateManySpy } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
-            await service.revalidateByEntityType('unknown_type' as never);
+            await service.revalidateByEntityType({ entityType: 'unknown_type' as never });
 
             // revalidateMany is called with an empty array, so adapter.revalidate is never invoked
             expect(revalidateManySpy).not.toHaveBeenCalled();
@@ -210,9 +245,15 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
 
         it('should resolve without throwing on entity type expansion', async () => {
             const { adapter } = createSpyAdapter();
-            const service = new RevalidationService({ adapter, debounceMs: 0 });
+            const service = new RevalidationService({
+                adapter,
+                debounceMs: 0,
+                locales: ['es', 'en', 'pt']
+            });
 
-            await expect(service.revalidateByEntityType('event')).resolves.toBeUndefined();
+            await expect(
+                service.revalidateByEntityType({ entityType: 'event' })
+            ).resolves.toBeDefined();
         });
     });
 
@@ -225,7 +266,7 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
 
         it('should always return success=true from revalidate()', async () => {
             const adapter = new NoOpRevalidationAdapter();
-            const result = await adapter.revalidate('/alojamientos/');
+            const result = await adapter.revalidate({ path: '/alojamientos/' });
             expect(result.success).toBe(true);
             expect(result.path).toBe('/alojamientos/');
             expect(result.durationMs).toBeGreaterThanOrEqual(0);
@@ -234,36 +275,42 @@ describe('Manual Revalidation Flow — Integration Smoke Test', () => {
 
         it('should never throw — adapter contract requires non-throwing', async () => {
             const adapter = new NoOpRevalidationAdapter();
-            await expect(adapter.revalidate('')).resolves.toMatchObject({ success: true });
+            await expect(adapter.revalidate({ path: '' })).resolves.toMatchObject({
+                success: true
+            });
         });
     });
 
     // -----------------------------------------------------------------------
     describe('End-to-End: full manual revalidation flow', () => {
-        it('should complete the full flow: init → getService → revalidatePaths', async () => {
+        it('should complete the full flow: init -> getService -> revalidatePaths', async () => {
             const service = initializeRevalidationService({
                 nodeEnv: 'test',
                 revalidationSecret: 'e2e-bypass-token',
                 siteUrl: 'http://localhost:4321',
                 debounceMs: 0,
+                locales: ['es', 'en', 'pt']
             });
 
             expect(getRevalidationService()).toBe(service);
 
-            await service.revalidatePaths(['/alojamientos/', '/en/alojamientos/']);
+            await service.revalidatePaths({ paths: ['/alojamientos/', '/en/alojamientos/'] });
 
             expect(service).toBeInstanceOf(RevalidationService);
         });
 
-        it('should complete the full flow: init → revalidateByEntityType', async () => {
+        it('should complete the full flow: init -> revalidateByEntityType', async () => {
             const service = initializeRevalidationService({
                 nodeEnv: 'test',
                 revalidationSecret: 'e2e-bypass-token',
                 siteUrl: 'http://localhost:4321',
                 debounceMs: 0,
+                locales: ['es', 'en', 'pt']
             });
 
-            await expect(service.revalidateByEntityType('destination')).resolves.toBeUndefined();
+            await expect(
+                service.revalidateByEntityType({ entityType: 'destination' })
+            ).resolves.toBeDefined();
 
             expect(getRevalidationService()).toBe(service);
         });

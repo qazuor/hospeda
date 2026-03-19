@@ -110,8 +110,8 @@ const createTestApp = ({
 }: {
     actor?: Actor;
     excludePaths?: readonly string[];
-} = {}): Hono => {
-    const app = new Hono();
+} = {}) => {
+    const app = new Hono<{ Variables: { actor: Actor } }>();
 
     // Simulate actor middleware: inject actor (or nothing) into context
     app.use(async (c, next) => {
@@ -141,7 +141,7 @@ const createTestApp = ({
  * Automatically sets `content-type: application/json` when a body is provided.
  */
 async function sendRequest(
-    app: Hono,
+    app: Hono<{ Variables: { actor: Actor } }>,
     {
         method,
         path,
@@ -571,7 +571,7 @@ describe('Audit Middleware', () => {
             const actor = createUserActor();
             let handlerExecuted = false;
 
-            const app = new Hono();
+            const app = new Hono<{ Variables: { actor: Actor } }>();
             app.use(async (c, next) => {
                 c.set('actor', actor);
                 await next();
@@ -690,7 +690,7 @@ describe('Audit Middleware', () => {
         it('should work with no configuration arguments', async () => {
             // Arrange
             const actor = createUserActor();
-            const app = new Hono();
+            const app = new Hono<{ Variables: { actor: Actor } }>();
             app.use(async (c, next) => {
                 c.set('actor', actor);
                 await next();

@@ -1,14 +1,14 @@
 /**
- * Tests for GET /api/v1/protected/exchange-rates/history endpoint
+ * Tests for GET /api/v1/admin/exchange-rates/history endpoint
  * Tests pagination, date range filtering, and permission enforcement
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
 
-describe('GET /api/v1/protected/exchange-rates/history', () => {
+describe('GET /api/v1/admin/exchange-rates/history', () => {
     let app: AppOpenAPI;
-    const base = '/api/v1/protected/exchange-rates/history';
+    const base = '/api/v1/admin/exchange-rates/history';
 
     beforeAll(async () => {
         app = initApp();

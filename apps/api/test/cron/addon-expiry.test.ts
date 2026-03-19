@@ -43,7 +43,9 @@ const mockDbUpdate = vi.fn();
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
         select: mockDbSelect,
-        update: mockDbUpdate
+        update: mockDbUpdate,
+        // Required for the PostgreSQL advisory lock check at the start of the handler
+        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     })),
     billingNotificationLog: {
         id: 'id',
@@ -65,7 +67,10 @@ vi.mock('@repo/db', () => ({
     },
     billingSubscriptions: {
         id: 'id',
-        status: 'status'
+        customerId: 'customer_id',
+        status: 'status',
+        deletedAt: 'deleted_at',
+        updatedAt: 'updated_at'
     },
     eq: vi.fn((...args: unknown[]) => ({ op: 'eq', args })),
     and: vi.fn((...args: unknown[]) => ({ op: 'and', args })),
@@ -130,6 +135,7 @@ vi.mock('../../src/middlewares/entitlement', () => ({
 }));
 
 import { getAddonBySlug } from '@repo/billing';
+import { getDb } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
@@ -159,12 +165,26 @@ describe('Add-on Expiry Cron Job', () => {
     beforeEach(() => {
         vi.clearAllMocks();
 
+        // Restore getDb to the shared mock object so tests that do NOT call
+        // vi.mocked(getDb).mockReturnValue(...) still get a usable DB instance.
+        // Tests that previously overrode getDb would have had their override
+        // cleared by clearAllMocks(), leaving getDb returning undefined.
+        vi.mocked(getDb).mockReturnValue({
+            select: mockDbSelect,
+            update: mockDbUpdate,
+            execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+        } as never);
+
         // Set up default DB chain for wasNotificationSent: returns empty (no prior notification)
         mockDbLimit.mockResolvedValue([]);
         mockDbWhere.mockReturnValue({ limit: mockDbLimit });
-        // mockDbFrom supports both the simple chain (.where) and the JOIN chain (.innerJoin)
+        // mockDbFrom supports both the simple chain (.where) and the JOIN chain (.innerJoin).
+        // Phase 4 (revocation retry) uses .innerJoin().where().limit(100) — the where inside
+        // innerJoin must return { limit } so that .limit(100) does not throw.
         // By default the innerJoin chain returns no orphaned purchases (empty array).
-        mockDbInnerJoin.mockReturnValue({ where: vi.fn().mockResolvedValue([]) });
+        mockDbInnerJoin.mockReturnValue({
+            where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+        });
         mockDbFrom.mockReturnValue({ where: mockDbWhere, innerJoin: mockDbInnerJoin });
         mockDbSelect.mockReturnValue({ from: mockDbFrom });
 
@@ -173,8 +193,15 @@ describe('Add-on Expiry Cron Job', () => {
         mockDbUpdateSet.mockReturnValue({ where: mockDbUpdateWhere });
         mockDbUpdate.mockReturnValue({ set: mockDbUpdateSet });
 
-        // Default: billing is initialized (tests that need null override this explicitly)
-        vi.mocked(getQZPayBilling).mockReturnValue({ api: 'default-mock-billing' } as never);
+        // Default: billing is initialized (tests that need null override this explicitly).
+        // subscriptions.get returns null by default so Phase 5 skips reconciliation silently.
+        vi.mocked(getQZPayBilling).mockReturnValue({
+            api: 'default-mock-billing',
+            subscriptions: {
+                get: vi.fn().mockResolvedValue(null),
+                cancel: vi.fn().mockResolvedValue(undefined)
+            }
+        } as never);
     });
 
     describe('Job Definition', () => {
@@ -194,6 +221,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
@@ -226,6 +257,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
@@ -255,6 +290,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
@@ -306,6 +345,10 @@ describe('Add-on Expiry Cron Job', () => {
             ];
 
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -363,6 +406,10 @@ describe('Add-on Expiry Cron Job', () => {
             ];
 
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -419,6 +466,10 @@ describe('Add-on Expiry Cron Job', () => {
             ];
 
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -485,6 +536,10 @@ describe('Add-on Expiry Cron Job', () => {
             ];
 
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: {
@@ -543,6 +598,10 @@ describe('Add-on Expiry Cron Job', () => {
             ];
 
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -649,6 +708,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi
                     .fn()
                     .mockRejectedValue(new Error('Database connection failed')),
@@ -672,6 +735,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: false,
                     error: { code: 'ERROR', message: 'Failed' }
@@ -719,6 +786,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -772,6 +843,10 @@ describe('Add-on Expiry Cron Job', () => {
             const ctx = createMockContext();
             const mockBillingInstance = { api: 'mock-billing-instance', type: 'qzpay' };
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -821,6 +896,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 2, failed: 0, errors: [] }
@@ -867,6 +946,10 @@ describe('Add-on Expiry Cron Job', () => {
          */
         function buildBaseService() {
             return {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 0, failed: 0, errors: [] }
@@ -900,8 +983,11 @@ describe('Add-on Expiry Cron Job', () => {
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
             const _notifFrom = vi.fn().mockReturnValue({ where: notifWhere });
 
-            // SELECT used by the retry phase (JOIN chain)
-            const retryWhere = vi.fn().mockResolvedValue(orphanedPurchases);
+            // SELECT used by the retry phase (JOIN chain).
+            // Phase 4 calls .innerJoin().where().limit(100) so where must return { limit }.
+            const retryWhere = vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue(orphanedPurchases)
+            });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi
                 .fn()
@@ -924,7 +1010,12 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             return {
-                db: { select, update },
+                db: {
+                    select,
+                    update,
+                    // Required for the PostgreSQL advisory lock at handler start/finally
+                    execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+                },
                 spies: {
                     retryWhere,
                     retryInnerJoin,
@@ -1026,7 +1117,10 @@ describe('Add-on Expiry Cron Job', () => {
             const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
-            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
+            const retryWhere = vi
+                .fn()
+                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1038,7 +1132,11 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+            vi.mocked(getDb).mockReturnValue({
+                select: selectSpy,
+                update: updateSpy,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
 
             vi.mocked(getAddonBySlug).mockReturnValue(undefined);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1090,7 +1188,10 @@ describe('Add-on Expiry Cron Job', () => {
             const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
-            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
+            const retryWhere = vi
+                .fn()
+                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1102,7 +1203,11 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+            vi.mocked(getDb).mockReturnValue({
+                select: selectSpy,
+                update: updateSpy,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
 
             vi.mocked(getAddonBySlug).mockReturnValue(undefined);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1156,7 +1261,10 @@ describe('Add-on Expiry Cron Job', () => {
             const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
-            const retryWhere = vi.fn().mockResolvedValue(purchases);
+            // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
+            const retryWhere = vi
+                .fn()
+                .mockReturnValue({ limit: vi.fn().mockResolvedValue(purchases) });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1168,7 +1276,11 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+            vi.mocked(getDb).mockReturnValue({
+                select: selectSpy,
+                update: updateSpy,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
 
             vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'test' } as never);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1214,6 +1326,10 @@ describe('Add-on Expiry Cron Job', () => {
             // Arrange: set up a scenario with both expired addons AND an orphaned purchase
             const ctx = createMockContext();
             const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                }),
                 processExpiredAddons: vi.fn().mockResolvedValue({
                     success: true,
                     data: { processed: 2, failed: 0, errors: [] }
@@ -1237,7 +1353,10 @@ describe('Add-on Expiry Cron Job', () => {
             const updateSpy = vi.fn().mockReturnValue({ set: updateSetSpy });
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
-            const retryWhere = vi.fn().mockResolvedValue([orphanPurchase]);
+            // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
+            const retryWhere = vi
+                .fn()
+                .mockReturnValue({ limit: vi.fn().mockResolvedValue([orphanPurchase]) });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1249,7 +1368,11 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+            vi.mocked(getDb).mockReturnValue({
+                select: selectSpy,
+                update: updateSpy,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
 
             vi.mocked(getAddonBySlug).mockReturnValue({ slug: 'visibility-boost-7d' } as never);
             vi.mocked(revokeAddonForSubscriptionCancellation).mockResolvedValue({
@@ -1289,7 +1412,10 @@ describe('Add-on Expiry Cron Job', () => {
             const updateSpy = vi.fn();
 
             const notifWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
-            const retryWhere = vi.fn().mockResolvedValue([purchase]);
+            // Phase 4 calls .innerJoin().where().limit(100) — where must return { limit }
+            const retryWhere = vi
+                .fn()
+                .mockReturnValue({ limit: vi.fn().mockResolvedValue([purchase]) });
             const retryInnerJoin = vi.fn().mockReturnValue({ where: retryWhere });
             const retryFrom = vi.fn().mockReturnValue({ innerJoin: retryInnerJoin });
 
@@ -1301,7 +1427,11 @@ describe('Add-on Expiry Cron Job', () => {
             });
 
             const { getDb } = await import('@repo/db');
-            vi.mocked(getDb).mockReturnValue({ select: selectSpy, update: updateSpy } as never);
+            vi.mocked(getDb).mockReturnValue({
+                select: selectSpy,
+                update: updateSpy,
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
 
             // Act
             const result = await addonExpiryJob.handler(ctx);
@@ -1317,6 +1447,395 @@ describe('Add-on Expiry Cron Job', () => {
                 expect.stringContaining('Dry run mode - would revoke orphaned add-on'),
                 expect.objectContaining({ purchaseId: purchase.id })
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // ADDON_EXPIRED Notification
+    // -------------------------------------------------------------------------
+
+    describe('ADDON_EXPIRED Notification', () => {
+        it('should send ADDON_EXPIRED notification for each successfully expired add-on', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const expiredAddon = {
+                id: 'purchase-expired-1',
+                customerId: 'cust-expired',
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [expiredAddon]
+                }),
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 1, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            vi.mocked(getAddonBySlug).mockReturnValue({
+                slug: 'extra-listings',
+                name: 'Extra Listings'
+            } as never);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'expired@example.com',
+                name: 'Expired Customer',
+                userId: 'user-expired'
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED,
+                    recipientEmail: 'expired@example.com',
+                    recipientName: 'Expired Customer',
+                    userId: 'user-expired',
+                    customerId: 'cust-expired',
+                    addonName: 'Extra Listings',
+                    expirationDate: expiredAddon.expiresAt.toISOString()
+                })
+            );
+        });
+
+        it('should not send ADDON_EXPIRED notification when already sent today (idempotency)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const expiredAddon = {
+                id: 'purchase-expired-idem',
+                customerId: 'cust-idem',
+                addonSlug: 'featured',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [expiredAddon]
+                }),
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 1, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(() => mockService as never);
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            // Include subscriptions so Phase 5 does not throw when it calls billing.subscriptions.get()
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                api: 'mock-billing',
+                subscriptions: {
+                    get: vi.fn().mockResolvedValue(null),
+                    cancel: vi.fn().mockResolvedValue(undefined)
+                }
+            } as never);
+            vi.mocked(getAddonBySlug).mockReturnValue({
+                slug: 'featured',
+                name: 'Featured'
+            } as never);
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'idem@example.com',
+                name: 'Idem Customer',
+                userId: 'user-idem'
+            });
+
+            // Use a custom getDb mock that returns a "already sent" row for wasNotificationSent
+            // queries (no addonSlug in fields) but empty results for Phase 4 (innerJoin) and
+            // Phase 5/6 (.where().limit() without innerJoin, no addonSlug).
+            const alreadySentWhere = vi.fn().mockReturnValue({
+                limit: vi.fn().mockResolvedValue([{ id: 'log-already-sent' }])
+            });
+            const notifFrom = vi.fn().mockReturnValue({ where: alreadySentWhere });
+
+            // Phase 4 (revocation retry): addonSlug in fields, uses innerJoin.where().limit() — empty
+            const retryInnerJoin = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            // Phase 5/6: addonSlug in fields (Phase 6) or not (Phase 5), .where().limit() — empty
+            const emptyWhere = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+            const retryFrom = vi.fn().mockReturnValue({
+                where: emptyWhere,
+                innerJoin: retryInnerJoin
+            });
+
+            const selectMock = vi.fn().mockImplementation((fields: Record<string, unknown>) => {
+                const isRetryQuery = fields && 'addonSlug' in fields;
+                return { from: isRetryQuery ? retryFrom : notifFrom };
+            });
+
+            const { getDb } = await import('@repo/db');
+            vi.mocked(getDb).mockReturnValue({
+                select: selectMock,
+                update: vi.fn(),
+                execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert — notification must NOT be sent because idempotency check returns "already sent"
+            expect(result.success).toBe(true);
+            expect(sendNotification).not.toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED
+                })
+            );
+        });
+    });
+
+    describe('Phase 5: DB-QZPay Split State Reconciliation (GAP-043-42)', () => {
+        /**
+         * Helper: creates a minimal default mock service that passes all phases 1-4
+         * so Phase 5 can be tested in isolation.
+         */
+        function createDefaultMockService() {
+            return {
+                findExpiredAddons: vi.fn().mockResolvedValue({ success: true, data: [] }),
+                processExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: { processed: 0, failed: 0, errors: [] }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({ success: true, data: [] })
+            };
+        }
+
+        /**
+         * Creates a getDb mock whose SELECT chain returns the given subscription rows
+         * for the recently-cancelled query (Phase 5) while keeping Phase 1-4 chains working.
+         */
+        function _mockGetDbWithSplitStateSubs(
+            subs: Array<{ id: string; customerId: string; updatedAt: Date }>
+        ) {
+            const limitMock = vi.fn().mockResolvedValue(subs);
+            const whereForPhase5 = vi.fn().mockReturnValue({ limit: limitMock });
+
+            // Phase 4 uses innerJoin().where().limit(100) — where must return { limit }
+            const innerJoin = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            // wasNotificationSent uses .where().limit() — return empty (no prior notification)
+            const whereForNotif = vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) });
+
+            mockDbFrom.mockImplementation((table: unknown) => {
+                // Phase 5 queries billingSubscriptions table (no innerJoin, has limit)
+                if (table === 'status') {
+                    return { where: whereForPhase5, innerJoin };
+                }
+                return { where: whereForNotif, innerJoin };
+            });
+
+            return { limitMock, whereForPhase5 };
+        }
+
+        it('should reconcile split-state subscription when QZPay is active', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitSub = {
+                id: 'sub-split-1',
+                customerId: 'cust-split-1',
+                updatedAt: new Date()
+            };
+
+            // Phase 5: recently-cancelled query returns our split-state sub
+            const limitMock = vi.fn().mockResolvedValue([splitSub]);
+            const whereLimitChain = vi.fn().mockReturnValue({ limit: limitMock });
+            // Phase 4 calls .innerJoin().where().limit(100) — the inner where must return { limit }
+            const innerJoinEmpty = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+
+            mockDbFrom.mockReturnValue({ where: whereLimitChain, innerJoin: innerJoinEmpty });
+
+            // Billing mock: QZPay returns active status, cancel succeeds
+            const cancelMock = vi.fn().mockResolvedValue(undefined);
+            const getMock = vi.fn().mockResolvedValue({ status: 'active' });
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                subscriptions: { get: getMock, cancel: cancelMock }
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(result.details?.splitStateReconciled).toBe(1);
+            expect(result.details?.splitStateErrors).toBe(0);
+            expect(cancelMock).toHaveBeenCalledWith(
+                'sub-split-1',
+                expect.objectContaining({
+                    cancelAtPeriodEnd: false
+                })
+            );
+        });
+
+        it('should skip reconciliation when QZPay status is already cancelled', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitSub = {
+                id: 'sub-already-cancelled',
+                customerId: 'cust-already-cancelled',
+                updatedAt: new Date()
+            };
+
+            const limitMock = vi.fn().mockResolvedValue([splitSub]);
+            const whereLimitChain = vi.fn().mockReturnValue({ limit: limitMock });
+            // Phase 4 calls .innerJoin().where().limit(100) — the inner where must return { limit }
+            const innerJoinEmpty = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            mockDbFrom.mockReturnValue({ where: whereLimitChain, innerJoin: innerJoinEmpty });
+
+            const cancelMock = vi.fn();
+            const getMock = vi.fn().mockResolvedValue({ status: 'canceled' });
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                subscriptions: { get: getMock, cancel: cancelMock }
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(cancelMock).not.toHaveBeenCalled();
+            expect(result.details?.splitStateReconciled).toBe(0);
+        });
+
+        it('should handle QZPay errors gracefully without failing the job', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitSub = {
+                id: 'sub-error',
+                customerId: 'cust-error',
+                updatedAt: new Date()
+            };
+
+            const limitMock = vi.fn().mockResolvedValue([splitSub]);
+            const whereLimitChain = vi.fn().mockReturnValue({ limit: limitMock });
+            // Phase 4 calls .innerJoin().where().limit(100) — the inner where must return { limit }
+            const innerJoinEmpty = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            mockDbFrom.mockReturnValue({ where: whereLimitChain, innerJoin: innerJoinEmpty });
+
+            const getMock = vi.fn().mockRejectedValue(new Error('QZPay unavailable'));
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                subscriptions: { get: getMock }
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert: job still succeeds, error is counted
+            expect(result.success).toBe(true);
+            expect(result.details?.splitStateErrors).toBe(1);
+        });
+
+        it('should not call cancel in dry-run mode', async () => {
+            // Arrange
+            const ctx = createMockContext({ dryRun: true });
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitSub = {
+                id: 'sub-dry-run',
+                customerId: 'cust-dry-run',
+                updatedAt: new Date()
+            };
+
+            const limitMock = vi.fn().mockResolvedValue([splitSub]);
+            const whereLimitChain = vi.fn().mockReturnValue({ limit: limitMock });
+            // Phase 4 calls .innerJoin().where().limit(100) — the inner where must return { limit }
+            const innerJoinEmpty = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            mockDbFrom.mockReturnValue({ where: whereLimitChain, innerJoin: innerJoinEmpty });
+
+            const cancelMock = vi.fn();
+            const getMock = vi.fn().mockResolvedValue({ status: 'active' });
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                subscriptions: { get: getMock, cancel: cancelMock }
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(cancelMock).not.toHaveBeenCalled();
+            expect(result.details?.dryRun).toBe(true);
+        });
+
+        it('should skip subscription with null QZPay response', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            vi.mocked(AddonExpirationService).mockImplementation(
+                () => createDefaultMockService() as never
+            );
+
+            const splitSub = {
+                id: 'sub-null',
+                customerId: 'cust-null',
+                updatedAt: new Date()
+            };
+
+            const limitMock = vi.fn().mockResolvedValue([splitSub]);
+            const whereLimitChain = vi.fn().mockReturnValue({ limit: limitMock });
+            // Phase 4 calls .innerJoin().where().limit(100) — the inner where must return { limit }
+            const innerJoinEmpty = vi.fn().mockReturnValue({
+                where: vi.fn().mockReturnValue({ limit: vi.fn().mockResolvedValue([]) })
+            });
+            mockDbFrom.mockReturnValue({ where: whereLimitChain, innerJoin: innerJoinEmpty });
+
+            const cancelMock = vi.fn();
+            // QZPay returns null (subscription deleted/not found)
+            const getMock = vi.fn().mockResolvedValue(null);
+            vi.mocked(getQZPayBilling).mockReturnValue({
+                subscriptions: { get: getMock, cancel: cancelMock }
+            } as never);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(cancelMock).not.toHaveBeenCalled();
+            expect(result.details?.splitStateReconciled).toBe(0);
         });
     });
 });

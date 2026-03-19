@@ -127,9 +127,9 @@ describe('Zod → i18n pipeline (GAP-034)', () => {
             // Assert — the key must exist in the locale file
             expect(key).toBeDefined();
             if (key) {
-                expect(esLocaleKeys[key]).toBeDefined();
-                expect(typeof esLocaleKeys[key]).toBe('string');
-                expect(esLocaleKeys[key].length).toBeGreaterThan(0);
+                expect(esLocaleKeys[key!]).toBeDefined();
+                expect(typeof esLocaleKeys[key!]).toBe('string');
+                expect(esLocaleKeys[key!]!.length).toBeGreaterThan(0);
             }
         });
 

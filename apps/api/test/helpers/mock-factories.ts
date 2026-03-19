@@ -275,13 +275,17 @@ export function createMockBilling(): QZPayBilling {
             getByCustomerId: vi.fn(),
             grant: vi.fn(),
             revoke: vi.fn(),
+            revokeBySource: vi.fn(),
             check: vi.fn()
         },
         limits: {
             getByCustomerId: vi.fn(),
             set: vi.fn(),
+            remove: vi.fn(),
+            removeBySource: vi.fn(),
             increment: vi.fn(),
-            check: vi.fn()
+            check: vi.fn(),
+            recordUsage: vi.fn()
         },
         metrics: {
             getMRR: vi.fn(),

@@ -239,8 +239,10 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             // Act & Assert
             await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
+            // The handler wraps errors: when HOSPEDA_API_DEBUG_ERRORS is false,
+            // the message is "Failed to check expired trials" (no original error detail).
             await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
-                'Database connection failed'
+                'Failed to check expired trials'
             );
         });
 
@@ -258,7 +260,7 @@ describe('Trial Check Expiry - Admin Authentication', () => {
             await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(HTTPException);
 
             await expect(handleCheckExpiry(mockContext as Context)).rejects.toThrow(
-                'Unknown error'
+                'Failed to check expired trials'
             );
         });
     });

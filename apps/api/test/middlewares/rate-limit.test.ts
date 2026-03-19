@@ -56,7 +56,12 @@ vi.mock('../../src/utils/env', () => {
         API_RATE_LIMIT_WEBHOOK_ENABLED: true,
         API_RATE_LIMIT_WEBHOOK_WINDOW_MS: 1000,
         API_RATE_LIMIT_WEBHOOK_MAX_REQUESTS: 8, // High throughput for webhooks
-        API_RATE_LIMIT_WEBHOOK_MESSAGE: 'Too many webhook requests, please try again later.'
+        API_RATE_LIMIT_WEBHOOK_MESSAGE: 'Too many webhook requests, please try again later.',
+
+        // Infrastructure — mutable so Redis store tests can toggle it
+        NODE_ENV: 'test',
+        HOSPEDA_TESTING_RATE_LIMIT: true,
+        HOSPEDA_REDIS_URL: undefined as string | undefined
     };
 
     const getRateLimitConfig = () => ({
@@ -859,13 +864,15 @@ describe('Rate Limit Middleware', () => {
             await clearRateLimitStore();
             // Reset store so it re-checks for Redis on next call
             resetRateLimitStore();
-            // Enable Redis URL so the Redis store is selected
-            process.env.HOSPEDA_REDIS_URL = 'redis://localhost:6379';
+            // Enable Redis URL in the mocked env so the Redis store is selected
+            const { env: mockEnvRef } = await import('../../src/utils/env');
+            (mockEnvRef as Record<string, unknown>).HOSPEDA_REDIS_URL = 'redis://localhost:6379';
             vi.clearAllMocks();
         });
 
-        afterEach(() => {
-            process.env.HOSPEDA_REDIS_URL = undefined;
+        afterEach(async () => {
+            const { env: mockEnvRef } = await import('../../src/utils/env');
+            (mockEnvRef as Record<string, unknown>).HOSPEDA_REDIS_URL = undefined;
             resetRateLimitStore();
         });
 

@@ -96,12 +96,26 @@ vi.mock('@repo/logger', () => {
         DEBUG: 'DEBUG'
     };
 
+    const AuditEventType = {
+        AUTH_LOGIN_FAILED: 'auth.login.failed',
+        AUTH_LOGIN_SUCCESS: 'auth.login.success',
+        AUTH_LOCKOUT: 'auth.lockout',
+        AUTH_PASSWORD_CHANGED: 'auth.password.changed',
+        ACCESS_DENIED: 'access.denied',
+        BILLING_MUTATION: 'billing.mutation',
+        PERMISSION_CHANGE: 'permission.change',
+        SESSION_SIGNOUT: 'session.signout',
+        USER_ADMIN_MUTATION: 'user.admin.mutation',
+        ROUTE_MUTATION: 'route.mutation'
+    };
+
     return {
         default: mockedLogger,
         logger: mockedLogger,
         createLogger: mockedLogger.createLogger,
         LoggerColors,
         LogLevel,
+        AuditEventType,
         apiLogger: createMockedLogger()
     };
 });
@@ -260,7 +274,7 @@ vi.mock('../../src/cron/registry', () => ({
 
 describe('Cron Routes Integration Tests', () => {
     let app: ReturnType<typeof initApp>;
-    const TEST_CRON_SECRET = 'test-cron-secret-12345';
+    const TEST_CRON_SECRET = 'test-cron-secret-12345-must-be-at-least-32-characters-long';
 
     beforeAll(() => {
         // Set environment variables for tests

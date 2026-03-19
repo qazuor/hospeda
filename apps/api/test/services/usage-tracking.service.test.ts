@@ -59,7 +59,6 @@ vi.mock('drizzle-orm', () => ({
  * Helper type for accessing private members in tests.
  * Avoids repeated biome-ignore comments for noExplicitAny.
  */
-// biome-ignore lint/suspicious/noExplicitAny: test helper for private member access
 type TestAccessor = Record<string, any>;
 
 describe('UsageTrackingService', () => {

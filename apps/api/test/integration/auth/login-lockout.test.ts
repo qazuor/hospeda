@@ -12,11 +12,10 @@
 
 // Set lockout threshold BEFORE any imports so the lazy config picks it up
 process.env.HOSPEDA_AUTH_LOCKOUT_MAX_ATTEMPTS = '3';
-
-import type { Hono } from 'hono';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { clearLockoutStore } from '../../../src/middlewares/auth-lockout';
+import type { AppOpenAPI } from '../../../src/types';
 import { validateApiEnv } from '../../../src/utils/env';
 
 /** Maximum failed attempts before lockout (matches process.env override) */
@@ -53,7 +52,7 @@ async function signIn({
     email,
     password
 }: {
-    app: Hono;
+    app: AppOpenAPI;
     email: string;
     password: string;
 }): Promise<Response> {
@@ -80,7 +79,7 @@ async function signUp({
     password,
     name
 }: {
-    app: Hono;
+    app: AppOpenAPI;
     email: string;
     password: string;
     name: string;
@@ -93,7 +92,7 @@ async function signUp({
 }
 
 describe('Auth Login Lockout Integration', () => {
-    let app: Hono;
+    let app: AppOpenAPI;
 
     beforeAll(async () => {
         validateApiEnv();

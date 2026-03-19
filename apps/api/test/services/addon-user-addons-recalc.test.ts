@@ -12,7 +12,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import type { AddonDefinition } from '@repo/billing';
+import { type AddonDefinition, EntitlementKey, LimitKey } from '@repo/billing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AddonEntitlementService } from '../../src/services/addon-entitlement.service';
 import type { RecalculationResult } from '../../src/services/addon-limit-recalculation.service';
@@ -79,7 +79,16 @@ const {
 vi.mock('@repo/db/client', () => ({
     getDb: vi.fn(() => ({
         select: mockDbSelect,
-        update: mockDbUpdate
+        update: mockDbUpdate,
+        // Transaction mock: executes the callback with a tx object that mirrors the db shape.
+        // The tx object uses the same hoisted mocks so test assertions work transparently.
+        transaction: vi.fn(async (cb: (tx: unknown) => Promise<unknown>) => {
+            const tx = {
+                select: mockDbSelect,
+                update: mockDbUpdate
+            };
+            return cb(tx);
+        })
     }))
 }));
 
@@ -91,9 +100,13 @@ vi.mock('../../src/services/addon-limit-recalculation.service', () => ({
     recalculateAddonLimitsForCustomer: (...args: unknown[]) => mockRecalculate(...args)
 }));
 
-vi.mock('@repo/billing', () => ({
-    getAddonBySlug: (slug: string) => mockGetAddonBySlug(slug)
-}));
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return {
+        ...actual,
+        getAddonBySlug: (slug: string) => mockGetAddonBySlug(slug)
+    };
+});
 
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: {
@@ -111,7 +124,7 @@ const PURCHASE_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 const ADDON_SLUG_LIMIT = 'extra-photos-20';
 const ADDON_SLUG_ENT = 'visibility-boost-7d';
 const ADDON_SLUG_UNKNOWN = 'retired-addon-slug';
-const LIMIT_KEY = 'max_photos_per_accommodation';
+const LIMIT_KEY = LimitKey.MAX_PHOTOS_PER_ACCOMMODATION;
 
 /** Minimal limit-type addon definition (affectsLimitKey is set) */
 const limitAddonDef: AddonDefinition = {
@@ -141,7 +154,7 @@ const entitlementAddonDef: AddonDefinition = {
     durationDays: 7,
     affectsLimitKey: null,
     limitIncrease: null,
-    grantsEntitlement: 'FEATURED_LISTING',
+    grantsEntitlement: EntitlementKey.FEATURED_LISTING,
     targetCategories: ['owner'],
     isActive: true,
     sortOrder: 1
@@ -393,10 +406,10 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
     // T-AC39-4: recalculation throws — error swallowed, function still succeeds
     // =========================================================================
 
-    describe('T-AC39-4: recalculation throws — cancelUserAddon still succeeds', () => {
-        it('should return success when recalculateAddonLimitsForCustomer throws', async () => {
-            // Arrange: the addon is already marked canceled in the DB before
-            // recalculation runs. A throw from recalculate must not surface.
+    describe('T-AC39-4: recalculation throws — transaction rolled back, returns error', () => {
+        it('should return error when recalculateAddonLimitsForCustomer throws (transaction rollback)', async () => {
+            // Arrange: recalculation throws inside the transaction,
+            // causing the DB update to be rolled back. The function returns an error.
             setupPurchaseLookup({
                 id: PURCHASE_ID,
                 addonSlug: ADDON_SLUG_LIMIT,
@@ -409,8 +422,9 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             const result = await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — addon cancel succeeded; recalc error must not propagate
-            expect(result.success).toBe(true);
+            // Assert — transaction rolled back, cancel returns error
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('LIMIT_RECALCULATION_FAILED');
         });
 
         it('should log an error when recalculateAddonLimitsForCustomer throws', async () => {
@@ -430,15 +444,15 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — the error catch block must log
+            // Assert — the error catch block must log about the transaction rollback
             expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    error: recalcError.message,
+                    error: expect.stringContaining('Billing service unavailable'),
                     customerId: CUSTOMER_ID,
                     purchaseId: PURCHASE_ID,
                     limitKey: LIMIT_KEY
                 }),
-                expect.stringContaining('Unexpected error during addon limit recalculation')
+                expect.stringContaining('Transaction rolled back')
             );
         });
 
@@ -465,8 +479,8 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
     // T-AC39-5: recalculation returns outcome 'failed' — warning logged, no crash
     // =========================================================================
 
-    describe('T-AC39-5: recalculation returns outcome failed — warning logged, no crash', () => {
-        it('should return success when recalculateAddonLimitsForCustomer resolves with outcome failed', async () => {
+    describe('T-AC39-5: recalculation returns outcome failed — transaction rolled back, returns error', () => {
+        it('should return error when recalculateAddonLimitsForCustomer resolves with outcome failed', async () => {
             // Arrange
             setupPurchaseLookup({
                 id: PURCHASE_ID,
@@ -488,11 +502,12 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             const result = await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — a graceful failed outcome must not propagate as a function failure
-            expect(result.success).toBe(true);
+            // Assert — failed outcome now throws inside the transaction, causing rollback
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('LIMIT_RECALCULATION_FAILED');
         });
 
-        it('should log a warning when recalculation outcome is failed', async () => {
+        it('should log an error when recalculation outcome is failed (transaction rolled back)', async () => {
             // Arrange
             setupPurchaseLookup({
                 id: PURCHASE_ID,
@@ -516,20 +531,19 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — the warn branch in cancelUserAddon must fire
-            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+            // Assert — the error catch block logs after transaction rollback
+            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
                 expect.objectContaining({
                     customerId: CUSTOMER_ID,
                     purchaseId: PURCHASE_ID,
-                    limitKey: LIMIT_KEY,
-                    reason: failedResult.reason
+                    limitKey: LIMIT_KEY
                 }),
-                expect.stringContaining('Limit recalculation failed after addon cancellation')
+                expect.stringContaining('Transaction rolled back')
             );
         });
 
-        it('should NOT call apiLogger.error for a failed outcome result (only warn is expected)', async () => {
-            // Arrange — outcome 'failed' uses warn, not error. error is only for thrown exceptions.
+        it('should log an error with limitKey context for a failed outcome result', async () => {
+            // Arrange — outcome 'failed' now throws inside the transaction, so error is logged
             setupPurchaseLookup({
                 id: PURCHASE_ID,
                 addonSlug: ADDON_SLUG_LIMIT,
@@ -551,13 +565,12 @@ describe('cancelUserAddon — AC-3.9 limit recalculation', () => {
             // Act
             await cancelUserAddon(mockBilling, mockEntitlementService, defaultInput);
 
-            // Assert — filter error calls that contain a limitKey context key to
-            // distinguish from unrelated DB/entitlement error log calls
+            // Assert — the transaction rollback error path logs with limitKey
             const recalcErrorCalls = vi.mocked(apiLogger.error).mock.calls.filter(([ctx]) => {
                 if (typeof ctx !== 'object' || ctx === null) return false;
                 return 'limitKey' in (ctx as Record<string, unknown>);
             });
-            expect(recalcErrorCalls).toHaveLength(0);
+            expect(recalcErrorCalls.length).toBeGreaterThan(0);
         });
     });
 

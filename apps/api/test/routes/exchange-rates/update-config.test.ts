@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
 
-describe('PUT /api/v1/protected/exchange-rates/config (update configuration)', () => {
+describe('PUT /api/v1/admin/exchange-rates/config (update configuration)', () => {
     let app: AppOpenAPI;
-    const base = '/api/v1/protected/exchange-rates/config';
+    const base = '/api/v1/admin/exchange-rates/config';
 
     beforeAll(async () => {
         app = initApp();

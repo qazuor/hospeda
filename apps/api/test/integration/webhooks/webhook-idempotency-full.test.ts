@@ -262,7 +262,9 @@ describe('Webhook Idempotency - Full DB Integration (SPEC-026 T-003)', () => {
         // The record for this providerEventId must NOT remain permanently
         // 'failed' after reprocessing; it should have been reset to 'pending'
         // (if still processing) or advanced to 'processed'.
-        const relevantRecord = after.find((e) => e.providerEventId === providerEventId);
+        const relevantRecord = after.find(
+            (e: { providerEventId: string }) => e.providerEventId === providerEventId
+        );
         expect(relevantRecord).toBeDefined();
         expect(relevantRecord?.status).not.toBe('failed');
     });

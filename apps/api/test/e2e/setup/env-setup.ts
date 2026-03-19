@@ -7,8 +7,8 @@ import { validateApiEnv } from '../../../src/utils/env.js';
  * This must be called BEFORE any imports from src/
  */
 export function setupTestEnv() {
-    // Load .env.test from project root
-    const envPath = resolve(__dirname, '../../../../../.env.test');
+    // Load .env.test from API app directory (per-app env strategy, SPEC-035)
+    const envPath = resolve(__dirname, '../../../.env.test');
     const result = config({ path: envPath });
 
     if (result.error) {

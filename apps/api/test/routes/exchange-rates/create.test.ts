@@ -2,9 +2,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
 
-describe('POST /api/v1/protected/exchange-rates (create manual override)', () => {
+describe('POST /api/v1/admin/exchange-rates (create manual override)', () => {
     let app: AppOpenAPI;
-    const base = '/api/v1/protected/exchange-rates';
+    const base = '/api/v1/admin/exchange-rates';
 
     beforeAll(async () => {
         app = initApp();

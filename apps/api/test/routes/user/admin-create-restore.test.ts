@@ -101,7 +101,8 @@ vi.mock('../../../src/utils/logger', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../src/utils/actor';
 import { AuditEventType } from '../../../src/utils/audit-logger';
@@ -116,10 +117,10 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-const ADMIN_ACTOR = {
+const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
     role: RoleEnum.ADMIN,
-    permissions: ['user:create', 'user:restore']
+    permissions: [PermissionEnum.USER_CREATE, PermissionEnum.USER_RESTORE]
 };
 
 const TARGET_USER_ID = 'target-user-id-123';
@@ -133,7 +134,7 @@ const CREATED_USER = {
     role: RoleEnum.USER
 };
 
-function buildMockContext(): Partial<Context> {
+function buildMockContext(): Record<string, unknown> {
     return {
         get: vi.fn(),
         set: vi.fn(),
@@ -175,7 +176,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Arrange
             mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const body = {
                 email: 'newuser@example.com',
                 firstName: 'New',
@@ -205,7 +206,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
                 error: { code: 'VALIDATION_ERROR', message: 'Email already exists' }
             });
             const handler = getHandler('/');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const body = { email: 'duplicate@example.com', firstName: 'Dup', lastName: 'User' };
 
             // Act: handler throws ServiceError before reaching auditLog
@@ -221,7 +222,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             mockGetActorFromContext.mockReturnValue(otherAdmin);
             mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, {}, { email: 'user@example.com' });
@@ -239,7 +240,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
                 error: undefined
             });
             const handler = getHandler('/');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, {}, { email: 'user@example.com' });
@@ -253,7 +254,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Arrange
             mockCreate.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, {}, { email: 'user@example.com' });
@@ -276,7 +277,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Arrange
             mockRestore.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/{id}/restore');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const params = { id: TARGET_USER_ID };
 
             // Act
@@ -300,7 +301,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
                 error: { code: 'NOT_FOUND', message: 'User not found' }
             });
             const handler = getHandler('/{id}/restore');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const params = { id: TARGET_USER_ID };
 
             // Act: handler throws ServiceError before reaching auditLog
@@ -318,7 +319,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
                 error: undefined
             });
             const handler = getHandler('/{id}/restore');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: specificId }, {});
@@ -334,7 +335,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             mockGetActorFromContext.mockReturnValue(otherAdmin);
             mockRestore.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/{id}/restore');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});
@@ -348,7 +349,7 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
             // Arrange
             mockRestore.mockResolvedValue({ data: CREATED_USER, error: undefined });
             const handler = getHandler('/{id}/restore');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});

@@ -1163,7 +1163,9 @@ describe('AddonEntitlementService', () => {
             expect(mockBilling.subscriptions.update).toHaveBeenCalled();
 
             // Cache was still cleared
-            expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith('cust_cascade');
+            expect(entitlementMiddleware.clearEntitlementCache).toHaveBeenCalledWith(
+                'cust_cascade'
+            );
         });
 
         it('should return INTERNAL_ERROR when subscriptions.update throws (outer catch)', async () => {
@@ -1278,7 +1280,6 @@ describe('AddonEntitlementService', () => {
                 select: mockSelect,
                 from: mockFrom,
                 where: mockWhere
-                // biome-ignore lint/suspicious/noExplicitAny: mock object used only in test setup
             } as any);
 
             const mockSubscription = createMockSubscriptionWithHelpers({
@@ -1330,7 +1331,6 @@ describe('AddonEntitlementService', () => {
                 select: mockSelect,
                 from: mockFrom,
                 where: mockWhere
-                // biome-ignore lint/suspicious/noExplicitAny: mock object used only in test setup
             } as any);
 
             const mockSubscription = createMockSubscriptionWithHelpers({

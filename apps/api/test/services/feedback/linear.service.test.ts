@@ -152,7 +152,7 @@ describe('LinearFeedbackService', () => {
             const file = makeFile();
             mockClientInstance.fileUpload.mockResolvedValue(
                 mockUploadPayload(
-                    'https://s3.example.com/upload',
+                    'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                     'https://cdn.example.com/asset.png'
                 )
             );
@@ -175,7 +175,7 @@ describe('LinearFeedbackService', () => {
             const file = makeFile();
             mockClientInstance.fileUpload.mockResolvedValue(
                 mockUploadPayload(
-                    'https://s3.example.com/upload',
+                    'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                     'https://cdn.example.com/asset.png'
                 )
             );
@@ -186,7 +186,7 @@ describe('LinearFeedbackService', () => {
 
             // Assert
             expect(mockFetch).toHaveBeenCalledWith(
-                'https://s3.example.com/upload',
+                'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                 expect.objectContaining({
                     method: 'PUT',
                     headers: expect.objectContaining({
@@ -204,7 +204,7 @@ describe('LinearFeedbackService', () => {
             const file = makeFile();
             mockClientInstance.fileUpload.mockResolvedValue(
                 mockUploadPayload(
-                    'https://s3.example.com/upload',
+                    'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                     'https://cdn.example.com/my-asset.png'
                 )
             );
@@ -223,7 +223,7 @@ describe('LinearFeedbackService', () => {
             const file = makeFile();
             mockClientInstance.fileUpload.mockResolvedValue(
                 mockUploadPayload(
-                    'https://s3.example.com/upload',
+                    'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                     'https://cdn.example.com/asset.png'
                 )
             );
@@ -258,14 +258,14 @@ describe('LinearFeedbackService', () => {
             const service = makeService();
             mockClientInstance.createIssue.mockResolvedValue(mockIssuePayload('id-1', 'ABC-1'));
 
-            const input = makeInput({ reportType: 'Error de JavaScript', title: 'Crash on load' });
+            const input = makeInput({ reportTypeId: 'bug-js', title: 'Crash on load' });
 
             // Act
             await service.createIssue(input);
 
-            // Assert
+            // Assert — service uses reportTypeId (not reportType) in the title prefix
             expect(mockClientInstance.createIssue).toHaveBeenCalledWith(
-                expect.objectContaining({ title: '[Error de JavaScript] Crash on load' })
+                expect.objectContaining({ title: '[bug-js] Crash on load' })
             );
         });
     });
@@ -348,7 +348,7 @@ describe('LinearFeedbackService', () => {
                 callOrder.push('fileUpload');
                 return Promise.resolve(
                     mockUploadPayload(
-                        'https://s3.example.com/upload',
+                        'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                         'https://cdn.example.com/a.png'
                     )
                 );
@@ -378,7 +378,7 @@ describe('LinearFeedbackService', () => {
             const service = makeService();
             mockClientInstance.fileUpload.mockResolvedValue(
                 mockUploadPayload(
-                    'https://s3.example.com/upload',
+                    'https://linear-uploads.s3.us-east-1.amazonaws.com/upload',
                     'https://cdn.example.com/screenshot.png'
                 )
             );

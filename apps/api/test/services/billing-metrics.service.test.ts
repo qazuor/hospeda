@@ -203,7 +203,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Database connection failed');
+            expect(result.error?.message).toBe('Failed to get overview metrics');
         });
 
         it('should handle missing/null values in rows gracefully', async () => {
@@ -362,7 +362,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Query timeout');
+            expect(result.error?.message).toBe('Failed to get revenue time series');
         });
 
         it('should handle non-Error thrown values', async () => {
@@ -479,7 +479,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Connection pool exhausted');
+            expect(result.error?.message).toBe('Failed to get recent activity');
         });
 
         it('should correctly convert updatedAt to ISO string', async () => {
@@ -615,7 +615,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Syntax error in query');
+            expect(result.error?.message).toBe('Failed to get subscription breakdown');
         });
 
         it('should handle non-Error thrown values', async () => {

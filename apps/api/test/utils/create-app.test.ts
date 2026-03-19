@@ -143,9 +143,24 @@ describe('Create App Utility', () => {
 
             const module = await import('../../src/utils/create-app');
             module.createRouter();
-            expect(mockOpenAPIHono).toHaveBeenCalledWith({
-                strict: false
-            });
+            expect(mockOpenAPIHono).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    strict: false
+                })
+            );
+        });
+
+        it('should register a defaultHook function on the router (GAP-004)', async () => {
+            const { OpenAPIHono } = await import('@hono/zod-openapi');
+            const mockOpenAPIHono = vi.mocked(OpenAPIHono);
+
+            const module = await import('../../src/utils/create-app');
+            module.createRouter();
+            expect(mockOpenAPIHono).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    defaultHook: expect.any(Function)
+                })
+            );
         });
     });
 
@@ -316,9 +331,11 @@ describe('Create App Utility', () => {
             const module = await import('../../src/utils/create-app');
             module.createApp();
 
-            expect(mockOpenAPIHono).toHaveBeenCalledWith({
-                strict: false
-            });
+            expect(mockOpenAPIHono).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    strict: false
+                })
+            );
         });
 
         it('should register all required middlewares', async () => {

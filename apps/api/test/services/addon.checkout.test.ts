@@ -525,4 +525,122 @@ describe('confirmAddonPurchase', () => {
             });
         });
     });
+
+    // =========================================================================
+    // GAP-043-57: Subscription re-check regression tests
+    // Subscription could be cancelled between checkout creation and confirmation.
+    // =========================================================================
+
+    describe('subscription re-check before DB insert (GAP-043-57)', () => {
+        it('should return SUBSCRIPTION_CANCELLED when subscription is cancelled between checkout and confirmation', async () => {
+            // Arrange: initial check returns active, re-check (second call) returns cancelled
+            const billingWithCancelledRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+                        ])
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'canceled', planId: 'plan_basico' }
+                        ])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithCancelledRecheck,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert: rejected before the DB insert even runs
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SUBSCRIPTION_CANCELLED');
+            expect(result.error?.message).toContain('subscription was cancelled during checkout');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+            expect(mockEntitlementService.applyAddonEntitlements).not.toHaveBeenCalled();
+        });
+
+        it('should return SUBSCRIPTION_CANCELLED when re-check returns an empty subscription list', async () => {
+            // Arrange: initial check returns active, re-check returns empty (all gone)
+            const billingWithEmptyRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+                        ])
+                        .mockResolvedValueOnce([])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithEmptyRecheck,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('SUBSCRIPTION_CANCELLED');
+            expect(mockDbTransaction).not.toHaveBeenCalled();
+        });
+
+        it('should succeed when re-check still shows an active subscription', async () => {
+            // Arrange: both the initial check and re-check return active
+            // (default mockBilling returns the same active subscription both times)
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_recheck_ok' }]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert: re-check passes, DB insert proceeds normally
+            expect(result.success).toBe(true);
+            expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+
+        it('should succeed when re-check shows a trialing subscription', async () => {
+            // Arrange: initial check active, re-check trialing — trialing is still valid
+            const billingWithTrialingRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+                        ])
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'trialing', planId: 'plan_basico' }
+                        ])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
+
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_trialing_ok' }]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithTrialingRecheck,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert: trialing counts as valid active subscription
+            expect(result.success).toBe(true);
+            expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+    });
 });

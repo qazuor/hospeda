@@ -1,14 +1,14 @@
 /**
- * Tests for POST /api/v1/protected/exchange-rates/fetch-now
+ * Tests for POST /api/v1/admin/exchange-rates/fetch-now
  * Manual exchange rate fetch endpoint tests
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
 
-describe('POST /api/v1/protected/exchange-rates/fetch-now', () => {
+describe('POST /api/v1/admin/exchange-rates/fetch-now', () => {
     let app: AppOpenAPI;
-    const endpoint = '/api/v1/protected/exchange-rates/fetch-now';
+    const endpoint = '/api/v1/admin/exchange-rates/fetch-now';
 
     beforeAll(async () => {
         app = initApp();

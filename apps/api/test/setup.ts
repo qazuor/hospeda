@@ -1,6 +1,10 @@
 /**
  * Test setup file for Vitest.
  * Configures test environment and global mocks.
+ *
+ * IMPORTANT: Environment variables MUST be set at module scope (before any
+ * beforeAll block) because modules like env.ts are imported and validated
+ * during test collection, which happens before beforeAll runs.
  */
 
 import { webcrypto } from 'node:crypto';
@@ -11,21 +15,40 @@ if (!globalThis.crypto) {
     globalThis.crypto = webcrypto as Crypto;
 }
 
+// ---------------------------------------------------------------------------
+// Environment variables — set at MODULE SCOPE so they are available when
+// modules (env.ts, create-app.ts, etc.) are imported during test collection.
+// ---------------------------------------------------------------------------
+process.env.NODE_ENV = 'test';
+process.env.PORT = '3001';
+process.env.API_PORT = '3001';
+process.env.HOSPEDA_API_URL = 'http://localhost:3001';
+process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
+process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
+process.env.HOSPEDA_BETTER_AUTH_URL = 'http://localhost:3001/api/auth';
+process.env.API_VALIDATION_AUTH_ENABLED = 'false';
+// Enable mock authentication for tests (required for isMockAuthAllowed())
+process.env.HOSPEDA_DISABLE_AUTH = 'true';
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+// Mock exchange rate API key for tests
+process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
+// Cron secret must be >= 32 chars
+process.env.HOSPEDA_CRON_SECRET = 'test_cron_secret_key_that_is_at_least_32_characters_long';
+// Revalidation secret must be >= 32 chars
+process.env.HOSPEDA_REVALIDATION_SECRET = 'test_revalidation_secret_key_at_least_32_characters';
+// Trusted origins
+process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
+process.env.HOSPEDA_ADMIN_URL = 'http://localhost:3000';
+// Disable rate limiting in tests by default.
+// IMPORTANT: z.coerce.boolean() uses Boolean() constructor, so any non-empty
+// string (including 'false') coerces to TRUE. Use empty string '' to get false.
+// This also overrides any value from .env.test that dotenv might load.
+process.env.HOSPEDA_TESTING_RATE_LIMIT = '';
+// Disable origin verification in tests
+process.env.HOSPEDA_TESTING_ORIGIN_VERIFICATION = '';
+
 // Global test setup
 beforeAll(async () => {
-    // Setup test environment
-    process.env.NODE_ENV = 'test';
-
-    // Mock environment variables for testing
-    process.env.PORT = '3001';
-    process.env.HOSPEDA_DATABASE_URL = 'postgresql://test:test@localhost:5432/test_db';
-    process.env.HOSPEDA_BETTER_AUTH_SECRET = 'test_better_auth_secret_key_32chars!';
-    process.env.API_VALIDATION_AUTH_ENABLED = 'false';
-    // Enable mock authentication for tests (required for isMockAuthAllowed())
-    process.env.HOSPEDA_DISABLE_AUTH = 'true';
-    // Mock exchange rate API key for tests
-    process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
-
     // Initialize environment validation
     try {
         const envModule = await import('../src/utils/env');
@@ -39,7 +62,9 @@ beforeAll(async () => {
     // Reduce logger noise in tests: show only errors
     try {
         const loggerModule = await import('@repo/logger');
-        const baseLogger = (loggerModule as any).default;
+        const baseLogger = (loggerModule as Record<string, unknown>).default as
+            | { configure?: (opts: Record<string, unknown>) => void }
+            | undefined;
         if (baseLogger?.configure) {
             baseLogger.configure({
                 LEVEL: 'ERROR',
@@ -61,6 +86,7 @@ beforeAll(async () => {
 // Mock @repo/logger - must be top-level to ensure hoisting before module imports
 vi.mock('@repo/logger', () => {
     const createMockedLogger = () => ({
+        log: vi.fn(),
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),

@@ -13,13 +13,70 @@ import {
 } from '../../src/middlewares/metrics';
 
 // Mock the logger
-vi.mock('@repo/logger', () => ({
-    logger: {
-        warn: vi.fn(),
+vi.mock('@repo/logger', () => {
+    const createMockedLogger = () => ({
+        log: vi.fn(),
         info: vi.fn(),
+        warn: vi.fn(),
         error: vi.fn(),
-        debug: vi.fn()
-    }
+        debug: vi.fn(),
+        registerLogMethod: vi.fn().mockReturnThis(),
+        permission: vi.fn()
+    });
+
+    const mockedLogger = {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+        registerCategory: vi.fn(() => createMockedLogger()),
+        configure: vi.fn(),
+        resetConfig: vi.fn(),
+        createLogger: vi.fn(() => createMockedLogger()),
+        registerLogMethod: vi.fn().mockReturnThis()
+    };
+
+    const AuditEventType = {
+        AUTH_LOGIN_FAILED: 'auth.login.failed',
+        AUTH_LOGIN_SUCCESS: 'auth.login.success',
+        AUTH_LOCKOUT: 'auth.lockout',
+        AUTH_PASSWORD_CHANGED: 'auth.password.changed',
+        ACCESS_DENIED: 'access.denied',
+        BILLING_MUTATION: 'billing.mutation',
+        PERMISSION_CHANGE: 'permission.change',
+        SESSION_SIGNOUT: 'session.signout',
+        USER_ADMIN_MUTATION: 'user.admin.mutation',
+        ROUTE_MUTATION: 'route.mutation'
+    };
+
+    return {
+        default: mockedLogger,
+        logger: mockedLogger,
+        createLogger: mockedLogger.createLogger,
+        LoggerColors: {
+            BLACK: 'BLACK',
+            RED: 'RED',
+            GREEN: 'GREEN',
+            YELLOW: 'YELLOW',
+            BLUE: 'BLUE',
+            MAGENTA: 'MAGENTA',
+            CYAN: 'CYAN',
+            WHITE: 'WHITE'
+        },
+        LogLevel: { LOG: 'LOG', INFO: 'INFO', WARN: 'WARN', ERROR: 'ERROR', DEBUG: 'DEBUG' },
+        AuditEventType
+    };
+});
+
+// Mock env to provide metrics thresholds (env is undefined unless validateApiEnv is called)
+vi.mock('../../src/utils/env', () => ({
+    env: {
+        NODE_ENV: 'test',
+        API_METRICS_SLOW_REQUEST_THRESHOLD_MS: 1000,
+        API_METRICS_SLOW_AUTH_THRESHOLD_MS: 2000,
+        API_METRICS_ENABLED: true
+    },
+    validateApiEnv: vi.fn()
 }));
 
 describe('Metrics Middleware', () => {

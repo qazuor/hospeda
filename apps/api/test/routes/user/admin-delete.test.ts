@@ -101,7 +101,8 @@ vi.mock('../../../src/utils/logger', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../src/utils/actor';
 import { AuditEventType } from '../../../src/utils/audit-logger';
@@ -116,15 +117,15 @@ const mockGetActorFromContext = vi.mocked(getActorFromContext);
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-const ADMIN_ACTOR = {
+const ADMIN_ACTOR: Actor = {
     id: 'admin-actor-id',
     role: RoleEnum.ADMIN,
-    permissions: ['user:delete', 'user:hard_delete']
+    permissions: [PermissionEnum.USER_DELETE, PermissionEnum.USER_HARD_DELETE]
 };
 
 const TARGET_USER_ID = 'target-user-id-123';
 
-function buildMockContext(): Partial<Context> {
+function buildMockContext(): Record<string, unknown> {
     return {
         get: vi.fn(),
         set: vi.fn(),
@@ -166,7 +167,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             // Arrange
             mockSoftDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
             const handler = getHandler('/{id}');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const params = { id: TARGET_USER_ID };
 
             // Act
@@ -190,7 +191,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
                 error: { code: 'NOT_FOUND', message: 'User not found' }
             });
             const handler = getHandler('/{id}');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
             const params = { id: TARGET_USER_ID };
 
             // Act: handler throws ServiceError before reaching auditLog
@@ -206,7 +207,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             mockGetActorFromContext.mockReturnValue(otherAdmin);
             mockSoftDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
             const handler = getHandler('/{id}');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});
@@ -220,7 +221,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             // Arrange
             mockSoftDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
             const handler = getHandler('/{id}');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});
@@ -241,7 +242,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             // Arrange
             mockHardDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
             const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});
@@ -264,7 +265,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
                 error: { code: 'NOT_FOUND', message: 'User not found' }
             });
             const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await expect(handler(ctx, { id: TARGET_USER_ID }, {})).rejects.toThrow();
@@ -278,7 +279,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             const specificId = 'specific-target-user-999';
             mockHardDelete.mockResolvedValue({ data: { id: specificId }, error: undefined });
             const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: specificId }, {});
@@ -292,7 +293,7 @@ describe('Admin user delete routes - audit log [SPEC-026 GAP-009]', () => {
             // Arrange
             mockHardDelete.mockResolvedValue({ data: { count: 1 }, error: undefined });
             const handler = getHandler('/{id}/hard');
-            const ctx = buildMockContext() as Context;
+            const ctx = buildMockContext() as unknown as Context;
 
             // Act
             await handler(ctx, { id: TARGET_USER_ID }, {});

@@ -342,10 +342,15 @@ describe('billingMiddleware', () => {
     });
 
     it('should set billingEnabled false when env vars are missing', async () => {
-        // No MERCADO_PAGO_ACCESS_TOKEN or HOSPEDA_DATABASE_URL
-        const originalEnv = { ...process.env };
-        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = undefined;
-        process.env.HOSPEDA_DATABASE_URL = undefined;
+        // Mock env to have no billing-related vars
+        vi.doMock('../../src/utils/env', () => ({
+            env: {
+                NODE_ENV: 'test',
+                HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: undefined,
+                HOSPEDA_DATABASE_URL: undefined
+            },
+            validateApiEnv: vi.fn()
+        }));
 
         const { billingMiddleware } = await import('../../src/middlewares/billing');
         const store: Record<string, unknown> = {};
@@ -356,14 +361,18 @@ describe('billingMiddleware', () => {
 
         expect(store.billingEnabled).toBe(false);
         expect(next).toHaveBeenCalled();
-
-        process.env = originalEnv;
     });
 
     it('should log warning when billing env vars are missing', async () => {
-        const originalEnv = { ...process.env };
-        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = undefined;
-        process.env.HOSPEDA_DATABASE_URL = undefined;
+        // Mock env to have no billing-related vars
+        vi.doMock('../../src/utils/env', () => ({
+            env: {
+                NODE_ENV: 'test',
+                HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: undefined,
+                HOSPEDA_DATABASE_URL: undefined
+            },
+            validateApiEnv: vi.fn()
+        }));
 
         const { billingMiddleware } = await import('../../src/middlewares/billing');
         const ctx = createMockContext();
@@ -374,7 +383,5 @@ describe('billingMiddleware', () => {
         expect(mockLoggerWarn).toHaveBeenCalledWith(
             expect.stringContaining('Missing environment variables')
         );
-
-        process.env = originalEnv;
     });
 });

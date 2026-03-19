@@ -78,7 +78,7 @@ function buildMockDb({
         return callCount === 1 ? eventsChain : countChain;
     });
 
-    vi.mocked(getDb).mockReturnValue({ select: mockSelect } as ReturnType<typeof getDb>);
+    vi.mocked(getDb).mockReturnValue({ select: mockSelect } as unknown as ReturnType<typeof getDb>);
 
     return { mockSelect, eventsChain, countChain };
 }
@@ -128,8 +128,8 @@ describe('listSubscriptionEventsHandler', () => {
 
             // Assert
             expect(result.data).toHaveLength(1);
-            expect(result.data[0].id).toBe('evt-001');
-            expect(result.data[0].subscriptionId).toBe(subscriptionId);
+            expect(result.data[0]!.id).toBe('evt-001');
+            expect(result.data[0]!.subscriptionId).toBe(subscriptionId);
             expect(result.pagination.totalItems).toBe(1);
         });
 
@@ -154,7 +154,7 @@ describe('listSubscriptionEventsHandler', () => {
             );
 
             // Assert - every expected field is present
-            const evt = result.data[0];
+            const evt = result.data[0]!;
             expect(evt).toHaveProperty('id', 'evt-shape-test');
             expect(evt).toHaveProperty('subscriptionId', subscriptionId);
             expect(evt).toHaveProperty('previousStatus', 'paused');
@@ -283,7 +283,7 @@ describe('listSubscriptionEventsHandler', () => {
             // The exact argument shape is an internal Drizzle SQL object, so we only
             // check the call count and that a truthy argument was provided.
             expect(eventsChain.orderBy).toHaveBeenCalledTimes(1);
-            const [orderArg] = eventsChain.orderBy.mock.calls[0];
+            const [orderArg] = eventsChain.orderBy.mock.calls[0]!;
             expect(orderArg).toBeDefined();
         });
     });
@@ -324,7 +324,7 @@ describe('listSubscriptionEventsHandler', () => {
             );
 
             // Assert
-            expect(result.data[0].providerEventId).toBeNull();
+            expect(result.data[0]!.providerEventId).toBeNull();
         });
 
         it('should set metadata to empty object when the DB row metadata is null', async () => {
@@ -341,7 +341,7 @@ describe('listSubscriptionEventsHandler', () => {
             );
 
             // Assert
-            expect(result.data[0].metadata).toEqual({});
+            expect(result.data[0]!.metadata).toEqual({});
         });
     });
 
@@ -368,7 +368,7 @@ describe('listSubscriptionEventsHandler', () => {
                     callCount += 1;
                     return callCount === 1 ? eventsChain : countChain;
                 })
-            } as ReturnType<typeof getDb>);
+            } as unknown as ReturnType<typeof getDb>);
 
             // Act & Assert
             await expect(

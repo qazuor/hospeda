@@ -29,6 +29,8 @@ const createValidTestEnv = (overrides: Record<string, string | undefined> = {}) 
     HOSPEDA_API_URL: 'http://localhost:3001',
     HOSPEDA_DATABASE_URL: 'postgresql://localhost:5432/hospeda_test',
     HOSPEDA_BETTER_AUTH_SECRET: 'test_better_auth_secret_key_32chars!',
+    HOSPEDA_BETTER_AUTH_URL: 'http://localhost:3001/api/auth',
+    HOSPEDA_SITE_URL: 'http://localhost:4321',
     ...overrides
 });
 
@@ -492,10 +494,14 @@ describe('Environment Configuration', () => {
         });
 
         it('should leave optional HOSPEDA_* vars undefined when not set', async () => {
+            // HOSPEDA_SITE_URL and HOSPEDA_BETTER_AUTH_URL are now required (registry
+            // marks them required: true). createValidTestEnv provides both.
+            // Only truly optional vars are tested here.
             process.env = createValidTestEnv();
             const envModule = await import('../../src/utils/env');
             envModule.validateApiEnv();
-            expect(envModule.env.HOSPEDA_SITE_URL).toBeUndefined();
+            expect(envModule.env.HOSPEDA_SITE_URL).toBe('http://localhost:4321');
+            expect(envModule.env.HOSPEDA_BETTER_AUTH_URL).toBe('http://localhost:3001/api/auth');
             expect(envModule.env.HOSPEDA_ADMIN_URL).toBeUndefined();
             expect(envModule.env.HOSPEDA_SENTRY_DSN).toBeUndefined();
             expect(envModule.env.HOSPEDA_RESEND_API_KEY).toBeUndefined();
@@ -694,6 +700,273 @@ describe('Environment Configuration', () => {
             expect(envModule.env.API_LOG_TRUNCATE_TEXT).toBe(true);
             expect(envModule.env.API_LOG_TRUNCATE_AT).toBe(1000);
             expect(envModule.env.API_LOG_STRINGIFY).toBe(false);
+        });
+    });
+
+    describe('Production CSRF Localhost Rejection', () => {
+        it('should reject localhost in API_SECURITY_CSRF_ORIGINS in production', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'http://localhost:3000'
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should reject 127.0.0.1 in API_SECURITY_CSRF_ORIGINS in production', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'http://127.0.0.1:3000'
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept valid CSRF origins in production', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_CRON_SECRET: 'production-cron-secret-value-min-32ch',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar,https://admin.hospeda.com.ar'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe(
+                'https://hospeda.com.ar,https://admin.hospeda.com.ar'
+            );
+        });
+
+        it('should allow localhost CSRF origins in non-production environments', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                NODE_ENV: 'development',
+                API_SECURITY_CSRF_ORIGINS: 'http://localhost:3000,http://localhost:5173'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.API_SECURITY_CSRF_ORIGINS).toBe(
+                'http://localhost:3000,http://localhost:5173'
+            );
+        });
+    });
+
+    describe('OAuth Provider Cross-Validation', () => {
+        it('should reject HOSPEDA_GOOGLE_CLIENT_ID without HOSPEDA_GOOGLE_CLIENT_SECRET', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                HOSPEDA_GOOGLE_CLIENT_ID: 'google-client-id-123',
+                HOSPEDA_GOOGLE_CLIENT_SECRET: undefined
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_GOOGLE_CLIENT_ID when HOSPEDA_GOOGLE_CLIENT_SECRET is provided', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_GOOGLE_CLIENT_ID: 'google-client-id-123',
+                HOSPEDA_GOOGLE_CLIENT_SECRET: 'google-client-secret-456'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_ID).toBe('google-client-id-123');
+            expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_SECRET).toBe('google-client-secret-456');
+        });
+
+        it('should reject HOSPEDA_FACEBOOK_CLIENT_ID without HOSPEDA_FACEBOOK_CLIENT_SECRET', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                HOSPEDA_FACEBOOK_CLIENT_ID: 'facebook-app-id-789',
+                HOSPEDA_FACEBOOK_CLIENT_SECRET: undefined
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should accept HOSPEDA_FACEBOOK_CLIENT_ID when HOSPEDA_FACEBOOK_CLIENT_SECRET is provided', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_FACEBOOK_CLIENT_ID: 'facebook-app-id-789',
+                HOSPEDA_FACEBOOK_CLIENT_SECRET: 'facebook-app-secret-012'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_ID).toBe('facebook-app-id-789');
+            expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_SECRET).toBe('facebook-app-secret-012');
+        });
+
+        it('should allow both Google and Facebook providers configured simultaneously', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_GOOGLE_CLIENT_ID: 'google-id',
+                HOSPEDA_GOOGLE_CLIENT_SECRET: 'google-secret',
+                HOSPEDA_FACEBOOK_CLIENT_ID: 'fb-id',
+                HOSPEDA_FACEBOOK_CLIENT_SECRET: 'fb-secret'
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_ID).toBe('google-id');
+            expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_ID).toBe('fb-id');
+        });
+
+        it('should allow omitting both OAuth providers entirely', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                HOSPEDA_GOOGLE_CLIENT_ID: undefined,
+                HOSPEDA_GOOGLE_CLIENT_SECRET: undefined,
+                HOSPEDA_FACEBOOK_CLIENT_ID: undefined,
+                HOSPEDA_FACEBOOK_CLIENT_SECRET: undefined
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_ID).toBeUndefined();
+            expect(envModule.env.HOSPEDA_GOOGLE_CLIENT_SECRET).toBeUndefined();
+            expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_ID).toBeUndefined();
+            expect(envModule.env.HOSPEDA_FACEBOOK_CLIENT_SECRET).toBeUndefined();
+        });
+    });
+
+    describe('Production HOSPEDA_CRON_SECRET Requirement', () => {
+        it('should require HOSPEDA_CRON_SECRET in production', async () => {
+            // Arrange
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+            const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => {
+                throw new Error('Process exit');
+            });
+
+            process.env = createValidTestEnv({
+                NODE_ENV: 'production',
+                HOSPEDA_REDIS_URL: 'redis://prod:6379',
+                API_CORS_ORIGINS: 'https://hospeda.com.ar',
+                API_SECURITY_CSRF_ORIGINS: 'https://hospeda.com.ar'
+                // HOSPEDA_CRON_SECRET intentionally missing
+            });
+
+            // Act
+            const { validateApiEnv } = await import('../../src/utils/env');
+
+            // Assert
+            expect(() => validateApiEnv()).toThrow('Process exit');
+            expect(exitSpy).toHaveBeenCalledWith(1);
+
+            consoleSpy.mockRestore();
+            exitSpy.mockRestore();
+        });
+
+        it('should not require HOSPEDA_CRON_SECRET in development', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                NODE_ENV: 'development'
+                // HOSPEDA_CRON_SECRET intentionally missing
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_CRON_SECRET).toBeUndefined();
+        });
+
+        it('should not require HOSPEDA_CRON_SECRET in test environment', async () => {
+            // Arrange
+            process.env = createValidTestEnv({
+                NODE_ENV: 'test'
+                // HOSPEDA_CRON_SECRET intentionally missing
+            });
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_CRON_SECRET).toBeUndefined();
         });
     });
 });
