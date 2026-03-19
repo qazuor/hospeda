@@ -21,6 +21,7 @@ import {
     entitlementMiddleware,
     getAllEntitlements,
     getAllLimits,
+    getEntitlementCacheStats,
     getRemainingLimit,
     hasEntitlement,
     requireEntitlement,
@@ -55,22 +56,35 @@ vi.mock('../../src/utils/logger', () => ({
 
 describe('entitlementMiddleware', () => {
     let app: Hono<AppBindings>;
-    let mockBilling: any;
+    let mockBilling: {
+        subscriptions: { getByCustomerId: ReturnType<typeof vi.fn> };
+        plans: { get: ReturnType<typeof vi.fn> };
+        entitlements: { getByCustomerId: ReturnType<typeof vi.fn> };
+        limits: { getByCustomerId: ReturnType<typeof vi.fn> };
+    };
 
     beforeEach(() => {
         app = new Hono<AppBindings>();
 
-        // Set up mock billing
+        // Set up mock billing with all required methods
         mockBilling = {
             subscriptions: {
                 getByCustomerId: vi.fn()
             },
             plans: {
                 get: vi.fn()
+            },
+            entitlements: {
+                getByCustomerId: vi.fn()
+            },
+            limits: {
+                getByCustomerId: vi.fn()
             }
         };
 
-        vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+        );
 
         // Clear cache before each test
         clearEntitlementCache('test-customer-id');
@@ -159,6 +173,10 @@ describe('entitlementMiddleware', () => {
                     [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20
                 }
             });
+
+            // Default: no customer-level overrides
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
         });
 
         it('should load and cache entitlements', async () => {
@@ -210,6 +228,8 @@ describe('entitlementMiddleware', () => {
         beforeEach(() => {
             // Mock no active subscription
             mockBilling.subscriptions.getByCustomerId.mockResolvedValue([]);
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
         });
 
         it('should set empty entitlements', async () => {
@@ -230,6 +250,872 @@ describe('entitlementMiddleware', () => {
             expect(data.entitlementsCount).toBe(0);
         });
     });
+
+    describe('customer-level entitlement/limit merging', () => {
+        beforeEach(() => {
+            // Common setup: active subscription pointing to plan-456
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-456',
+                    planId: 'plan-456',
+                    status: 'active'
+                }
+            ]);
+
+            // Plan with two entitlements and two limits
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-456',
+                name: 'Base Plan',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.VIEW_BASIC_STATS
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 5,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 5
+                }
+            });
+        });
+
+        it('should return only plan-level data when getByCustomerId returns empty arrays', async () => {
+            // Arrange
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - only the two plan-level entitlements are present
+            expect(data.entitlements).toHaveLength(2);
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
+
+            // Assert - only the two plan-level limits are present
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(5);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
+            expect(Object.keys(data.limits)).toHaveLength(2);
+        });
+
+        it('should union plan entitlements with customer-level entitlements from addon', async () => {
+            // Arrange - customer has an extra entitlement (e.g. from a purchased addon)
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([
+                { entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION }
+            ]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                return c.json({ entitlements: Array.from(entitlements) });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - plan entitlements are preserved AND addon entitlement is added
+            expect(data.entitlements).toHaveLength(3);
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
+            expect(data.entitlements).toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+        });
+
+        it('should override plan limit when customer has a higher limit from addon', async () => {
+            // Arrange - customer addon overrides MAX_PHOTOS_PER_ACCOMMODATION from 5 to 25
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([
+                { limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, maxValue: 25 }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const limits = c.get('userLimits');
+                return c.json({ limits: Object.fromEntries(limits) });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - plan limit is overridden by the customer-level value
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(25);
+
+            // Assert - the other plan limit is unchanged
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(5);
+        });
+
+        it('should correctly merge mixed sources: some limits from plan only, some overridden by customer', async () => {
+            // Arrange - customer overrides only MAX_ACCOMMODATIONS; MAX_PHOTOS stays at plan value
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([
+                { limitKey: LimitKey.MAX_ACCOMMODATIONS, maxValue: 50 }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'test-customer-id');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const limits = c.get('userLimits');
+                return c.json({ limits: Object.fromEntries(limits) });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - overridden limit uses customer value
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(50);
+
+            // Assert - non-overridden limit keeps plan value
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(5);
+
+            // Assert - exactly the two limit keys are present (no extras created)
+            expect(Object.keys(data.limits)).toHaveLength(2);
+        });
+    });
+
+    // =========================================================================
+    // GAP-038-18: Cache TTL and FIFO eviction
+    // =========================================================================
+    describe('cache TTL and FIFO eviction', () => {
+        beforeEach(() => {
+            // Active subscription and plan with known limits for cache tests
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-cache', planId: 'plan-cache', status: 'active' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-cache',
+                name: 'Cache Test Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: { [LimitKey.MAX_ACCOMMODATIONS]: 5 }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+        });
+
+        it('should return a cache hit on the second request within TTL', async () => {
+            // Arrange - unique customer so no pollution from other tests
+            const customerId = 'ttl-hit-customer';
+            clearEntitlementCache(customerId);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', customerId);
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act - first request populates cache
+            await app.request('/test');
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+            // Act - second request within TTL should read from cache
+            await app.request('/test');
+
+            // Assert - QZPay was NOT called again (cache hit)
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+        });
+
+        it('should return a cache miss and re-fetch after TTL expires', async () => {
+            // Arrange
+            const customerId = 'ttl-expired-customer';
+            clearEntitlementCache(customerId);
+
+            vi.useFakeTimers();
+
+            try {
+                app.use((c, next) => {
+                    c.set('billingEnabled', true);
+                    c.set('billingCustomerId', customerId);
+                    return next();
+                });
+                app.use(entitlementMiddleware());
+                app.get('/test', (c) => c.json({ ok: true }));
+
+                // Act - first request at t=0 populates cache
+                await app.request('/test');
+                expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+                // Advance time past the 5-minute TTL (5 * 60 * 1000 ms + 1 ms)
+                vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+
+                // Act - second request after TTL expiry should be a cache miss
+                await app.request('/test');
+
+                // Assert - QZPay was called again because the cached entry expired
+                expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(2);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should evict the oldest (FIFO) entry when cache reaches maxSize', async () => {
+            // Arrange - clear the entire cache to start from a known state
+            const stats = getEntitlementCacheStats();
+            const maxSize = stats.maxSize;
+
+            // Clear any entries left over from other tests
+            for (let i = 0; i < maxSize + 10; i++) {
+                clearEntitlementCache(`fifo-warmup-${i}`);
+            }
+
+            // Fill cache to exactly maxSize with unique customer IDs
+            for (let i = 0; i < maxSize; i++) {
+                const customerId = `fifo-fill-${i}`;
+                const fillerApp = new Hono<AppBindings>();
+                fillerApp.use((c, next) => {
+                    c.set('billingEnabled', true);
+                    c.set('billingCustomerId', customerId);
+                    return next();
+                });
+                fillerApp.use(entitlementMiddleware());
+                fillerApp.get('/test', (c) => c.json({ ok: true }));
+                await fillerApp.request('/test');
+            }
+
+            // Verify cache is full
+            const statsAfterFill = getEntitlementCacheStats();
+            expect(statsAfterFill.size).toBe(maxSize);
+
+            // Record call count before adding the overflow entry
+            const _callsBeforeOverflow =
+                mockBilling.subscriptions.getByCustomerId.mock.calls.length;
+
+            // Act - add one more entry (maxSize + 1), which should evict the oldest (fifo-fill-0)
+            const overflowApp = new Hono<AppBindings>();
+            overflowApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'fifo-overflow');
+                return next();
+            });
+            overflowApp.use(entitlementMiddleware());
+            overflowApp.get('/test', (c) => c.json({ ok: true }));
+            await overflowApp.request('/test');
+
+            // Cache size should still be maxSize (oldest was evicted to make room)
+            const statsAfterOverflow = getEntitlementCacheStats();
+            expect(statsAfterOverflow.size).toBe(maxSize);
+
+            // Record call count before verifying eviction
+            const callsBeforeEvictionCheck =
+                mockBilling.subscriptions.getByCustomerId.mock.calls.length;
+
+            // Act - request the first entry (fifo-fill-0) again; it should be evicted (cache miss)
+            const evictedApp = new Hono<AppBindings>();
+            evictedApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'fifo-fill-0');
+                return next();
+            });
+            evictedApp.use(entitlementMiddleware());
+            evictedApp.get('/test', (c) => c.json({ ok: true }));
+            await evictedApp.request('/test');
+
+            // Assert - QZPay was called again for the evicted entry
+            expect(mockBilling.subscriptions.getByCustomerId.mock.calls.length).toBe(
+                callsBeforeEvictionCheck + 1
+            );
+
+            // Act - request the overflow entry which should still be cached (recently added)
+            const cachedApp = new Hono<AppBindings>();
+            cachedApp.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'fifo-overflow');
+                return next();
+            });
+            cachedApp.use(entitlementMiddleware());
+            cachedApp.get('/test', (c) => c.json({ ok: true }));
+
+            const callsBeforeCacheHit = mockBilling.subscriptions.getByCustomerId.mock.calls.length;
+            await cachedApp.request('/test');
+
+            // Assert - no additional QZPay call (cache hit)
+            expect(mockBilling.subscriptions.getByCustomerId.mock.calls.length).toBe(
+                callsBeforeCacheHit
+            );
+        });
+    });
+
+    // =========================================================================
+    // GAP-043-016: Graceful degradation behavior
+    // =========================================================================
+    describe('graceful degradation behavior', () => {
+        beforeEach(() => {
+            // Active subscription pointing to plan-degraded
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-deg', planId: 'plan-deg', status: 'active' }
+            ]);
+            // Plan with plan-level entitlements and limits
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-deg',
+                name: 'Degraded Plan',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.VIEW_BASIC_STATS
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 3,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 10
+                }
+            });
+            // Clear any lingering cache entry for the customer used in these tests
+            clearEntitlementCache('degradation-customer');
+        });
+
+        it('should return only plan-level entitlements when limits.getByCustomerId throws', async () => {
+            // Arrange — limits call throws; entitlements call returns addon grant
+            mockBilling.limits.getByCustomerId.mockRejectedValue(new Error('billing timeout'));
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([
+                { entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION }
+            ]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'degradation-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                return c.json({ entitlements: Array.from(entitlements) });
+            });
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert — plan-level entitlements are present; request is 200
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.VIEW_BASIC_STATS);
+        });
+
+        it('should NOT include addon-granted entitlements in degraded response when customer call fails', async () => {
+            // Arrange — both customer-level calls fail; addon-granted entitlements are therefore absent
+            mockBilling.entitlements.getByCustomerId.mockRejectedValue(new Error('service 503'));
+            mockBilling.limits.getByCustomerId.mockRejectedValue(new Error('service 503'));
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'degradation-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                return c.json({ entitlements: Array.from(entitlements) });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert — addon-granted entitlement is absent in degraded set
+            expect(data.entitlements).not.toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            // Plan-level entitlements are still present
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+        });
+
+        it('should set shouldCache=false on a degraded response (limits call throws)', async () => {
+            // Arrange — limits call fails so degraded path is taken
+            mockBilling.limits.getByCustomerId.mockRejectedValue(new Error('billing timeout'));
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'degradation-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => c.json({ ok: true }));
+
+            // Act — first request triggers degraded path
+            await app.request('/test');
+            // Second request MUST re-fetch (degraded result must not be cached)
+            await app.request('/test');
+
+            // Assert — getByCustomerId was called twice (no cache re-use for degraded response)
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(2);
+        });
+
+        it('should retry fresh fetch on next request after a degraded response (not served from cache)', async () => {
+            // Arrange — first request: customer-level calls throw
+            mockBilling.entitlements.getByCustomerId.mockRejectedValueOnce(new Error('transient'));
+            mockBilling.limits.getByCustomerId.mockRejectedValueOnce(new Error('transient'));
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'degradation-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                return c.json({ entitlements: Array.from(entitlements) });
+            });
+
+            // Act — first request is degraded (transient error)
+            await app.request('/test');
+            const callsAfterFirst = mockBilling.subscriptions.getByCustomerId.mock.calls.length;
+
+            // Arrange — second request: customer-level calls now succeed with addon entitlement
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([
+                { entitlementKey: EntitlementKey.CAN_USE_RICH_DESCRIPTION }
+            ]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            // Act — second request must NOT use the cached degraded result
+            const res2 = await app.request('/test');
+
+            // Assert — QZPay was called again for the second request
+            expect(mockBilling.subscriptions.getByCustomerId.mock.calls.length).toBe(
+                callsAfterFirst + 1
+            );
+
+            // Assert — addon entitlement is present in the recovered response
+            const data2 = await res2.json();
+            expect(data2.entitlements).toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+        });
+    });
+
+    describe('graceful degradation when customer-level calls fail', () => {
+        beforeEach(() => {
+            // Active subscription
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                {
+                    id: 'sub-789',
+                    planId: 'plan-789',
+                    status: 'active'
+                }
+            ]);
+
+            // Plan with entitlements and limits
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-789',
+                name: 'Pro Plan',
+                entitlements: [
+                    EntitlementKey.PUBLISH_ACCOMMODATIONS,
+                    EntitlementKey.EDIT_ACCOMMODATION_INFO
+                ],
+                limits: {
+                    [LimitKey.MAX_ACCOMMODATIONS]: 10,
+                    [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20
+                }
+            });
+        });
+
+        it('should return plan-only data when entitlements.getByCustomerId throws', async () => {
+            // Arrange
+            mockBilling.entitlements.getByCustomerId.mockRejectedValue(new Error('QZPay timeout'));
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'degraded-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlements: Array.from(entitlements),
+                    limits: Object.fromEntries(limits)
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert
+            expect(res.status).toBe(200);
+
+            const data = await res.json();
+            // Plan-level entitlements should still be present despite customer call failure
+            expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
+            expect(data.entitlements).toContain(EntitlementKey.EDIT_ACCOMMODATION_INFO);
+            // Plan-level limits should still be present
+            expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(10);
+            expect(data.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(20);
+        });
+
+        it('should NOT cache degraded result so next request retries', async () => {
+            // Arrange - first request: customer-level calls fail
+            mockBilling.entitlements.getByCustomerId.mockRejectedValue(new Error('QZPay timeout'));
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'no-cache-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                return c.json({ entitlements: Array.from(entitlements) });
+            });
+
+            // Act - first request produces degraded (plan-only) result
+            await app.request('/test');
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+            // Arrange - second request: customer-level calls now succeed
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([
+                { entitlementKey: EntitlementKey.FEATURED_LISTING }
+            ]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            // Act - second request must NOT use cached degraded result
+            const res2 = await app.request('/test');
+
+            // Assert - fresh calls were made (cache was not used for degraded result)
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(2);
+
+            const data2 = await res2.json();
+            // Customer-level entitlement should now be present
+            expect(data2.entitlements).toContain(EntitlementKey.FEATURED_LISTING);
+        });
+
+        it('should set empty entitlements when loadEntitlements returns null (billing unavailable)', async () => {
+            // Arrange - billing module returns null (unavailable)
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                null as unknown as ReturnType<typeof getQZPayBilling>
+            );
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'null-billing-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlementsCount: entitlements.size,
+                    limitsCount: limits.size
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert - request succeeds with empty entitlements (fail-open)
+            expect(res.status).toBe(200);
+
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+
+        it('should set empty entitlements when outer catch fires (subscriptions call throws)', async () => {
+            // Arrange - subscriptions.getByCustomerId throws to trigger outer catch
+            mockBilling.subscriptions.getByCustomerId.mockRejectedValue(
+                new Error('Critical billing failure')
+            );
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'error-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const entitlements = c.get('userEntitlements');
+                const limits = c.get('userLimits');
+                return c.json({
+                    entitlementsCount: entitlements.size,
+                    limitsCount: limits.size
+                });
+            });
+
+            // Act
+            const res = await app.request('/test');
+
+            // Assert - request does not fail (fail-open strategy per ADR-016)
+            expect(res.status).toBe(200);
+
+            const data = await res.json();
+            expect(data.entitlementsCount).toBe(0);
+            expect(data.limitsCount).toBe(0);
+        });
+    });
+
+    // =========================================================================
+    // GAP-043-43: billingLoadFailed flag
+    // =========================================================================
+    describe('billingLoadFailed flag', () => {
+        it('should set billingLoadFailed=false when billing loads successfully', async () => {
+            // Arrange
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-ok', planId: 'plan-ok', status: 'active' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-ok',
+                name: 'OK Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: { [LimitKey.MAX_ACCOMMODATIONS]: 5 }
+            });
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'healthy-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                return c.json({ billingLoadFailed: c.get('billingLoadFailed') });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(data.billingLoadFailed).toBe(false);
+        });
+
+        it('should set billingLoadFailed=true when loadEntitlements returns null', async () => {
+            // Arrange - billing module returns null (unavailable)
+            vi.mocked(getQZPayBilling).mockReturnValue(
+                null as unknown as ReturnType<typeof getQZPayBilling>
+            );
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'null-billing-failed-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                return c.json({ billingLoadFailed: c.get('billingLoadFailed') });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert
+            expect(res.status).toBe(200);
+            expect(data.billingLoadFailed).toBe(true);
+        });
+
+        it('should set billingLoadFailed=true when outer catch fires', async () => {
+            // Arrange
+            mockBilling.subscriptions.getByCustomerId.mockRejectedValue(
+                new Error('Critical billing failure')
+            );
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', 'catch-failed-customer');
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                return c.json({ billingLoadFailed: c.get('billingLoadFailed') });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - request succeeds but flag is true
+            expect(res.status).toBe(200);
+            expect(data.billingLoadFailed).toBe(true);
+        });
+
+        it('should set billingLoadFailed=false when billing is not enabled', async () => {
+            // Arrange - billing disabled path
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                return c.json({ billingLoadFailed: c.get('billingLoadFailed') });
+            });
+
+            // Act
+            const res = await app.request('/test');
+            const data = await res.json();
+
+            // Assert - no failure, just billing disabled
+            expect(res.status).toBe(200);
+            expect(data.billingLoadFailed).toBe(false);
+        });
+    });
+
+    // =========================================================================
+    // GAP-043-011: Cache invalidation race condition
+    // =========================================================================
+    describe('cache invalidation race condition (GAP-043-011)', () => {
+        const raceCustomerId = 'race-condition-customer';
+
+        beforeEach(() => {
+            // Active subscription with known limits for race condition tests
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-race', planId: 'plan-race', status: 'active' }
+            ]);
+            mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+            clearEntitlementCache(raceCustomerId);
+        });
+
+        it('should serve stale limit before cache clear and correct limit after cache clear', async () => {
+            // Arrange - initial state: plan has limit=20 for extra-photos
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-race',
+                name: 'Race Test Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: { [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 20 }
+            });
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            app.use((c, next) => {
+                c.set('billingEnabled', true);
+                c.set('billingCustomerId', raceCustomerId);
+                return next();
+            });
+            app.use(entitlementMiddleware());
+            app.get('/test', (c) => {
+                const limits = c.get('userLimits');
+                return c.json({ limits: Object.fromEntries(limits) });
+            });
+
+            // Act - first request at t=0 populates cache with limit=20
+            const res1 = await app.request('/test');
+            const data1 = await res1.json();
+
+            // Assert - cache is warm with stale limit=20
+            expect(data1.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(20);
+
+            // Simulate: DB write happens (addon cancelled, limit drops to 10).
+            // BEFORE cache clear, a concurrent request reads stale data from cache.
+            // The mock still returns old data, but the cache holds the old value regardless.
+            const concurrentRes = await app.request('/test');
+            const concurrentData = await concurrentRes.json();
+
+            // Assert - concurrent request reads stale limit=20 (race: cache not yet cleared)
+            expect(concurrentData.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(20);
+            // QZPay was only called once (both requests served from cache)
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+            // Now the cache clear happens (e.g. webhook fires after DB write)
+            clearEntitlementCache(raceCustomerId);
+
+            // Update the mock to reflect the new state after DB write (limit=10)
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-race',
+                name: 'Race Test Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: { [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 10 }
+            });
+
+            // Act - next request AFTER cache clear fetches fresh data
+            const res2 = await app.request('/test');
+            const data2 = await res2.json();
+
+            // Assert - post-clear request reads correct limit=10
+            expect(data2.limits[LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]).toBe(10);
+            // QZPay was called again (cache miss after invalidation)
+            expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(2);
+        });
+
+        it('should evict stale entry after 5-minute TTL even without explicit cache clear', async () => {
+            // Arrange
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-race',
+                name: 'TTL Eviction Plan',
+                entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+                limits: { [LimitKey.MAX_ACCOMMODATIONS]: 5 }
+            });
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            const ttlCustomerId = 'ttl-eviction-race-customer';
+            clearEntitlementCache(ttlCustomerId);
+
+            vi.useFakeTimers();
+
+            try {
+                const ttlApp = new Hono<AppBindings>();
+                ttlApp.use((c, next) => {
+                    c.set('billingEnabled', true);
+                    c.set('billingCustomerId', ttlCustomerId);
+                    return next();
+                });
+                ttlApp.use(entitlementMiddleware());
+                ttlApp.get('/test', (c) => c.json({ ok: true }));
+
+                // Act - populate cache at t=0
+                await ttlApp.request('/test');
+                expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+                // Act - request within TTL window: served from cache, no re-fetch
+                await ttlApp.request('/test');
+                expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(1);
+
+                // Advance time past 5-minute TTL (300_001 ms)
+                vi.advanceTimersByTime(5 * 60 * 1000 + 1);
+
+                // Act - request after TTL expiry: cache entry is evicted, re-fetch occurs
+                await ttlApp.request('/test');
+
+                // Assert - stale entry was evicted by TTL, not by explicit clear
+                expect(mockBilling.subscriptions.getByCustomerId).toHaveBeenCalledTimes(2);
+            } finally {
+                vi.useRealTimers();
+            }
+        });
+
+        it('should not throw when clearEntitlementCache is called multiple times in quick succession', () => {
+            // Arrange - populate cache first so there is something to clear
+            // (cache population happens via the in-memory Map, which we can prime by
+            // running a prior test; here we just assert the calls are idempotent)
+            const multiClearCustomerId = 'multi-clear-customer';
+
+            // Act - calling clear multiple times must never throw
+            expect(() => {
+                clearEntitlementCache(multiClearCustomerId);
+                clearEntitlementCache(multiClearCustomerId);
+                clearEntitlementCache(multiClearCustomerId);
+            }).not.toThrow();
+
+            // Assert - cache stats are still valid after redundant clears
+            const stats = getEntitlementCacheStats();
+            expect(stats.size).toBeGreaterThanOrEqual(0);
+            expect(stats.maxSize).toBeGreaterThan(0);
+            expect(stats.ttlMs).toBe(5 * 60 * 1000);
+        });
+    });
 });
 
 describe('requireEntitlement middleware', () => {
@@ -242,6 +1128,7 @@ describe('requireEntitlement middleware', () => {
     it('should allow request when user has entitlement', async () => {
         app.use((c, next) => {
             c.set('userEntitlements', new Set([EntitlementKey.PUBLISH_ACCOMMODATIONS]));
+            c.set('billingLoadFailed', false);
             return next();
         });
         app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
@@ -254,6 +1141,7 @@ describe('requireEntitlement middleware', () => {
     it('should return 403 when user lacks entitlement', async () => {
         app.use((c, next) => {
             c.set('userEntitlements', new Set<EntitlementKey>());
+            c.set('billingLoadFailed', false);
             return next();
         });
         app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
@@ -261,6 +1149,47 @@ describe('requireEntitlement middleware', () => {
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+    });
+
+    // =========================================================================
+    // GAP-043-43: 503 guard when billing load failed
+    // =========================================================================
+    it('should return 503 when billingLoadFailed is true', async () => {
+        // Arrange - simulate billing outage
+        app.use((c, next) => {
+            c.set('userEntitlements', new Set<EntitlementKey>());
+            c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', true);
+            return next();
+        });
+        app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
+        app.get('/test', (c) => c.json({ ok: true }));
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert - 503 instead of 403 or silently granting access
+        expect(res.status).toBe(503);
+        const body = await res.json();
+        expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
+    });
+
+    it('should NOT return 503 when billingLoadFailed is false and user has entitlement', async () => {
+        // Arrange - billing healthy, user has entitlement
+        app.use((c, next) => {
+            c.set('userEntitlements', new Set([EntitlementKey.PUBLISH_ACCOMMODATIONS]));
+            c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', false);
+            return next();
+        });
+        app.use(requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS));
+        app.get('/test', (c) => c.json({ ok: true }));
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert - works normally
+        expect(res.status).toBe(200);
     });
 });
 
@@ -276,6 +1205,7 @@ describe('requireLimit middleware', () => {
             const limits = new Map<LimitKey, number>();
             limits.set(LimitKey.MAX_ACCOMMODATIONS, 10);
             c.set('userLimits', limits);
+            c.set('billingLoadFailed', false);
             return next();
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
@@ -288,6 +1218,7 @@ describe('requireLimit middleware', () => {
     it('should return 403 when limit is not defined', async () => {
         app.use((c, next) => {
             c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', false);
             return next();
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
@@ -302,6 +1233,7 @@ describe('requireLimit middleware', () => {
             const limits = new Map<LimitKey, number>();
             limits.set(LimitKey.MAX_ACCOMMODATIONS, 0);
             c.set('userLimits', limits);
+            c.set('billingLoadFailed', false);
             return next();
         });
         app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
@@ -309,6 +1241,67 @@ describe('requireLimit middleware', () => {
 
         const res = await app.request('/test');
         expect(res.status).toBe(403);
+    });
+
+    // =========================================================================
+    // GAP-043-43: 503 guard when billing load failed
+    // =========================================================================
+    it('should return 503 when billingLoadFailed is true', async () => {
+        // Arrange - simulate billing outage: empty limits Map (would return -1 = unlimited)
+        app.use((c, next) => {
+            c.set('userEntitlements', new Set<EntitlementKey>());
+            c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', true);
+            return next();
+        });
+        app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
+        app.get('/test', (c) => c.json({ ok: true }));
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert - 503 instead of silently granting unlimited access
+        expect(res.status).toBe(503);
+        const body = await res.json();
+        expect(body.error.code).toBe('SERVICE_UNAVAILABLE');
+    });
+
+    it('should NOT return 503 when billingLoadFailed is false and limit is set', async () => {
+        // Arrange - billing healthy
+        app.use((c, next) => {
+            const limits = new Map<LimitKey, number>();
+            limits.set(LimitKey.MAX_ACCOMMODATIONS, 5);
+            c.set('userEntitlements', new Set<EntitlementKey>());
+            c.set('userLimits', limits);
+            c.set('billingLoadFailed', false);
+            return next();
+        });
+        app.use(requireLimit(LimitKey.MAX_ACCOMMODATIONS));
+        app.get('/test', (c) => c.json({ ok: true }));
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert - works normally
+        expect(res.status).toBe(200);
+    });
+
+    it('getRemainingLimit should still return -1 when limits Map is empty regardless of billingLoadFailed', () => {
+        // getRemainingLimit is a helper used in non-middleware contexts.
+        // It must NOT change behavior based on billingLoadFailed - that would break callers.
+        // The 503 protection lives exclusively in the middleware layer.
+        const mockContext = {
+            get: (key: string) => {
+                if (key === 'userLimits') return new Map<LimitKey, number>();
+                if (key === 'billingLoadFailed') return true;
+                return undefined;
+            }
+        } as Context<AppBindings>;
+
+        const result = getRemainingLimit(mockContext, LimitKey.MAX_ACCOMMODATIONS);
+
+        // Unchanged behavior: -1 means unlimited (caller decides how to handle)
+        expect(result).toBe(-1);
     });
 });
 

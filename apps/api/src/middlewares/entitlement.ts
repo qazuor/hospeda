@@ -7,7 +7,7 @@
  * This middleware:
  * - Runs AFTER actor and billing customer middleware
  * - Loads entitlements and limits from QZPay
- * - Caches per-user with 5-minute TTL (in-memory LRU cache)
+ * - Caches per-user with 5-minute TTL (in-memory FIFO cache)
  * - Sets entitlements and limits in context for route handlers
  * - Provides helper functions for route-level entitlement checks
  * - Silently skips if billing is not enabled or user is not authenticated
@@ -36,7 +36,7 @@ interface EntitlementCacheEntry {
 }
 
 /**
- * In-memory LRU cache for user entitlements
+ * In-memory FIFO cache for user entitlements
  * Key: billingCustomerId
  * Value: EntitlementCacheEntry
  */
@@ -118,14 +118,32 @@ const entitlementCache = new EntitlementCache({
 });
 
 /**
- * Load entitlements and limits for a billing customer
+ * Result of loading entitlements for a billing customer.
+ */
+interface LoadEntitlementsResult {
+    /** User's entitled features (plan-level + customer-level overrides) */
+    entitlements: Set<EntitlementKey>;
+    /** User's usage limits (plan-level + customer-level overrides) */
+    limits: Map<LimitKey, number>;
+    /**
+     * Whether this result is safe to cache.
+     * False when customer-level calls failed and values are plan-only.
+     * Degraded results must NOT be cached so the next request retries.
+     */
+    shouldCache: boolean;
+}
+
+/**
+ * Load entitlements and limits for a billing customer.
+ *
+ * Fetches plan-level entitlements first, then attempts to merge customer-level
+ * overrides. If the customer-level calls fail, returns plan-only data with
+ * `shouldCache: false` so degraded results are never stored in cache.
  *
  * @param customerId - The QZPay customer ID
- * @returns Entitlements and limits, or null if customer not found
+ * @returns Entitlements, limits, and cache flag, or null if billing unavailable
  */
-async function loadEntitlements(
-    customerId: string
-): Promise<{ entitlements: Set<EntitlementKey>; limits: Map<LimitKey, number> } | null> {
+async function loadEntitlements(customerId: string): Promise<LoadEntitlementsResult | null> {
     try {
         const billing = getQZPayBilling();
 
@@ -140,7 +158,8 @@ async function loadEntitlements(
             // No subscription - return empty entitlements
             return {
                 entitlements: new Set<EntitlementKey>(),
-                limits: new Map<LimitKey, number>()
+                limits: new Map<LimitKey, number>(),
+                shouldCache: true
             };
         }
 
@@ -153,7 +172,8 @@ async function loadEntitlements(
             // No active subscription - return empty entitlements
             return {
                 entitlements: new Set<EntitlementKey>(),
-                limits: new Map<LimitKey, number>()
+                limits: new Map<LimitKey, number>(),
+                shouldCache: true
             };
         }
 
@@ -166,7 +186,8 @@ async function loadEntitlements(
             );
             return {
                 entitlements: new Set<EntitlementKey>(),
-                limits: new Map<LimitKey, number>()
+                limits: new Map<LimitKey, number>(),
+                shouldCache: true
             };
         }
 
@@ -181,7 +202,44 @@ async function loadEntitlements(
             }
         }
 
-        return { entitlements, limits };
+        // Attempt to merge customer-level entitlements and limits.
+        // These calls are wrapped in try-catch for graceful degradation:
+        // if they fail, plan-only values are returned with shouldCache=false
+        // so the next request retries instead of serving stale plan-only data.
+        let shouldCache = true;
+
+        try {
+            // Fetch customer-level entitlements and merge with plan entitlements (union)
+            const customerEntitlements = await billing.entitlements.getByCustomerId(customerId);
+            for (const ce of customerEntitlements) {
+                entitlements.add(ce.entitlementKey as EntitlementKey);
+            }
+
+            // Fetch customer-level limits and override plan-level values (customer takes precedence)
+            const customerLimits = await billing.limits.getByCustomerId(customerId);
+            for (const cl of customerLimits) {
+                limits.set(cl.limitKey as LimitKey, cl.maxValue);
+            }
+        } catch (customerError) {
+            const errorMessage =
+                customerError instanceof Error ? customerError.message : String(customerError);
+
+            apiLogger.warn(
+                `Failed to load customer-level entitlements for customer ${customerId}. Falling back to plan-only values. Error: ${errorMessage}`
+            );
+            Sentry.captureException(customerError, {
+                tags: {
+                    subsystem: 'billing-entitlements',
+                    action: 'load-customer-overrides'
+                },
+                extra: { customerId }
+            });
+
+            // Do not cache degraded results - next request must retry customer-level calls
+            shouldCache = false;
+        }
+
+        return { entitlements, limits, shouldCache };
     } catch (error) {
         apiLogger.error(
             `Error loading entitlements for customer ${customerId}: ${error instanceof Error ? error.message : String(error)}`
@@ -230,6 +288,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             // Billing not enabled - set empty entitlements
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', false);
             await next();
             return;
         }
@@ -241,6 +300,7 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             // No billing customer - set empty entitlements
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', false);
             await next();
             return;
         }
@@ -249,30 +309,45 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
             // Check cache first
             let cached = entitlementCache.get(billingCustomerId);
 
-            if (!cached) {
+            if (cached) {
+                // Cache hit - billing was previously healthy
+                c.set('billingLoadFailed', false);
+            } else {
                 // Cache miss - load from QZPay
                 const result = await loadEntitlements(billingCustomerId);
 
                 if (result) {
-                    // Cache the result
                     cached = {
                         entitlements: result.entitlements,
                         limits: result.limits,
                         timestamp: Date.now()
                     };
-                    entitlementCache.set(billingCustomerId, cached);
 
-                    apiLogger.debug(
-                        `Loaded and cached entitlements for customer ${billingCustomerId}. Entitlements: ${result.entitlements.size}, Limits: ${result.limits.size}`
-                    );
+                    if (result.shouldCache) {
+                        // Full result (plan + customer overrides) - safe to cache
+                        entitlementCache.set(billingCustomerId, cached);
+                        apiLogger.debug(
+                            `Loaded and cached entitlements for customer ${billingCustomerId}. Entitlements: ${result.entitlements.size}, Limits: ${result.limits.size}`
+                        );
+                    } else {
+                        // Degraded result (plan-only, customer calls failed) - do NOT cache
+                        // so the next request retries the customer-level calls
+                        apiLogger.debug(
+                            `Loaded degraded entitlements (plan-only) for customer ${billingCustomerId}. Skipping cache. Entitlements: ${result.entitlements.size}, Limits: ${result.limits.size}`
+                        );
+                    }
+
+                    // Billing succeeded - mark as healthy
+                    c.set('billingLoadFailed', false);
                 } else {
-                    // Failed to load - use empty entitlements
+                    // Failed to load entirely - use empty entitlements, do not cache
+                    // Mark as failed so middleware guards return 503 instead of granting unlimited access
                     cached = {
                         entitlements: new Set<EntitlementKey>(),
                         limits: new Map<LimitKey, number>(),
                         timestamp: Date.now()
                     };
-                    // Don't cache failures - try again next time
+                    c.set('billingLoadFailed', true);
                 }
             }
 
@@ -291,9 +366,11 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
                 extra: { billingCustomerId }
             });
 
-            // Set empty entitlements and continue - don't break the request
+            // Set empty entitlements and mark billing as failed
+            // requireLimit / requireEntitlement will return 503 instead of silently granting unlimited access
             c.set('userEntitlements', new Set<EntitlementKey>());
             c.set('userLimits', new Map<LimitKey, number>());
+            c.set('billingLoadFailed', true);
         }
 
         await next();
@@ -325,6 +402,19 @@ export const entitlementMiddleware = (): MiddlewareHandler<AppBindings> => {
  */
 export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
+        // If billing failed to load, return 503 instead of silently granting access
+        if (c.get('billingLoadFailed')) {
+            return c.json(
+                {
+                    error: {
+                        code: 'SERVICE_UNAVAILABLE',
+                        message: 'Billing service temporarily unavailable'
+                    }
+                },
+                503
+            );
+        }
+
         const entitlements = c.get('userEntitlements');
 
         if (!entitlements || !entitlements.has(key)) {
@@ -365,6 +455,21 @@ export function requireEntitlement(key: EntitlementKey): MiddlewareHandler<AppBi
  */
 export function requireLimit(key: LimitKey): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
+        // If billing failed to load, return 503 instead of silently granting unlimited access.
+        // Without this guard, an empty limits Map causes getRemainingLimit() to return -1
+        // (unlimited) for every key, which would be a privilege escalation during outages.
+        if (c.get('billingLoadFailed')) {
+            return c.json(
+                {
+                    error: {
+                        code: 'SERVICE_UNAVAILABLE',
+                        message: 'Billing service temporarily unavailable'
+                    }
+                },
+                503
+            );
+        }
+
         const limits = c.get('userLimits');
 
         if (!limits || !limits.has(key)) {
@@ -534,8 +639,8 @@ export function getAllLimits(c: Context<AppBindings>): Map<LimitKey, number> {
  * ```
  */
 export function clearEntitlementCache(customerId: string): void {
+    apiLogger.debug({ customerId }, 'Entitlement cache cleared');
     entitlementCache.invalidate(customerId);
-    apiLogger.debug(`Cleared entitlement cache for customer ${customerId}`);
 }
 
 /**
