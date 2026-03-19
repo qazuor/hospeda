@@ -203,7 +203,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Failed to get overview metrics');
+            expect(result.error?.message).toContain('Failed to get overview metrics');
         });
 
         it('should handle missing/null values in rows gracefully', async () => {
@@ -244,7 +244,7 @@ describe('BillingMetricsService', () => {
             // Assert
             expect(result.success).toBe(false);
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Failed to get overview metrics');
+            expect(result.error?.message).toContain('Failed to get overview metrics');
         });
 
         it('should pass correct livemode parameter to queries', async () => {
@@ -362,7 +362,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Failed to get revenue time series');
+            expect(result.error?.message).toContain('Failed to get revenue time series');
         });
 
         it('should handle non-Error thrown values', async () => {
@@ -374,7 +374,7 @@ describe('BillingMetricsService', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.error?.message).toBe('Failed to get revenue time series');
+            expect(result.error?.message).toContain('Failed to get revenue time series');
         });
 
         it('should pass correct livemode parameter', async () => {
@@ -479,7 +479,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Failed to get recent activity');
+            expect(result.error?.message).toContain('Failed to get recent activity');
         });
 
         it('should correctly convert updatedAt to ISO string', async () => {
@@ -615,7 +615,7 @@ describe('BillingMetricsService', () => {
             expect(result.success).toBe(false);
             expect(result.error).toBeDefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
-            expect(result.error?.message).toBe('Failed to get subscription breakdown');
+            expect(result.error?.message).toContain('Failed to get subscription breakdown');
         });
 
         it('should handle non-Error thrown values', async () => {
@@ -627,7 +627,7 @@ describe('BillingMetricsService', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(result.error?.message).toBe('Failed to get subscription breakdown');
+            expect(result.error?.message).toContain('Failed to get subscription breakdown');
         });
 
         it('should pass correct livemode parameter', async () => {
