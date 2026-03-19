@@ -9,3 +9,5 @@ export * from './addon-expiration.batch.js';
 export * from './addon-limit-recalculation.service.js';
 export * from './addon-downgrade-detection.js';
 export * from './addon-user-addons.js';
+export * from './trial.types.js';
+export * from './usage-tracking.types.js';

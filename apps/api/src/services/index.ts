@@ -14,7 +14,10 @@ export { TrialService } from './trial.service';
 export type {
     TrialStatus,
     StartTrialInput,
-    ReactivateFromTrialInput
+    ReactivateFromTrialInput,
+    ReactivateSubscriptionInput,
+    ReactivateSubscriptionResult,
+    TrialEndingSubscription
 } from './trial.service';
 
 export { AddonExpirationService } from './addon-expiration.service';

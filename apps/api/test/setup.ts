@@ -197,7 +197,9 @@ vi.mock('@repo/db/schemas', () => ({
 
 // Mock @repo/service-core - service classes are imported from dedicated mock files.
 // Must be top-level to ensure hoisting before module imports.
-vi.mock('@repo/service-core', async () => {
+// Pure utility functions (no side effects) are passed through from the real module.
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
     const { PostService, TagService, PostSponsorService, ServiceError } = await import(
         './helpers/mocks/content-services'
     );
@@ -271,6 +273,8 @@ vi.mock('@repo/service-core', async () => {
     } = await import('./helpers/mocks/marketplace-services');
 
     return {
+        // Pass through all actual exports (types, enums, pure functions) then override service classes
+        ...actual,
         ServiceError,
         PostService,
         TagService,

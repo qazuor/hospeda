@@ -20,92 +20,28 @@ import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import {
+    type ReactivateFromTrialInput,
+    type ReactivateSubscriptionInput,
+    type ReactivateSubscriptionResult,
+    type StartTrialInput,
+    type TrialEndingSubscription,
+    type TrialStatus,
+    calculateTrialDaysRemaining
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 
-/**
- * Trial status information
- */
-export interface TrialStatus {
-    /** Whether user is currently on trial */
-    isOnTrial: boolean;
-    /** Whether trial has expired */
-    isExpired: boolean;
-    /** Trial start date (ISO string) */
-    startedAt: string | null;
-    /** Trial expiry date (ISO string) */
-    expiresAt: string | null;
-    /** Days remaining in trial (0 if expired) */
-    daysRemaining: number;
-    /** Current plan slug */
-    planSlug: string | null;
-}
-
-/**
- * Input for starting a trial.
- *
- * All HOST users receive the same trial plan and duration.
- * The accommodation type (simple vs complex/hotel) is determined later
- * when the user creates their first accommodation, not at trial start.
- */
-export interface StartTrialInput {
-    /** Billing customer ID */
-    customerId: string;
-}
-
-/**
- * Input for reactivating from trial
- */
-export interface ReactivateFromTrialInput {
-    /** Billing customer ID */
-    customerId: string;
-    /** New plan ID to subscribe to */
-    planId: string;
-}
-
-/**
- * Input for reactivating a canceled subscription (BILL-13)
- */
-export interface ReactivateSubscriptionInput {
-    /** Billing customer ID */
-    customerId: string;
-    /** New plan ID to subscribe to */
-    planId: string;
-}
-
-/**
- * Result from reactivating a canceled subscription
- */
-export interface ReactivateSubscriptionResult {
-    /** New subscription ID */
-    subscriptionId: string;
-    /** Previous plan ID (from the canceled subscription), or null */
-    previousPlanId: string | null;
-}
-
-/**
- * Trial ending subscription (for notifications)
- */
-export interface TrialEndingSubscription {
-    /** Subscription ID */
-    id: string;
-    /** Customer ID */
-    customerId: string;
-    /** User email */
-    userEmail: string;
-    /** User name */
-    userName: string;
-    /** User ID */
-    userId: string;
-    /** Plan slug */
-    planSlug: string;
-    /** Trial end date */
-    trialEnd: Date;
-    /** Days remaining */
-    daysRemaining: number;
-}
+export type {
+    ReactivateFromTrialInput,
+    ReactivateSubscriptionInput,
+    ReactivateSubscriptionResult,
+    StartTrialInput,
+    TrialEndingSubscription,
+    TrialStatus
+};
 
 /**
  * In-memory flag to prevent concurrent blockExpiredTrials runs.
@@ -295,11 +231,8 @@ export class TrialService {
             const isExpired = trialEnd ? now > trialEnd : false;
 
             // Calculate days remaining
-            let daysRemaining = 0;
-            if (trialEnd && !isExpired) {
-                const msRemaining = trialEnd.getTime() - now.getTime();
-                daysRemaining = Math.max(0, Math.ceil(msRemaining / (1000 * 60 * 60 * 24)));
-            }
+            const daysRemaining =
+                trialEnd && !isExpired ? calculateTrialDaysRemaining({ trialEnd, now }) : 0;
 
             return {
                 isOnTrial,
@@ -868,8 +801,7 @@ export class TrialService {
                 }
 
                 // Calculate days remaining
-                const msRemaining = trialEnd.getTime() - now.getTime();
-                const daysRemaining = Math.ceil(msRemaining / (1000 * 60 * 60 * 24));
+                const daysRemaining = calculateTrialDaysRemaining({ trialEnd, now });
 
                 // Check if trial ends exactly on the specified day window.
                 // Using exact match (===) instead of range (<=) to prevent duplicate

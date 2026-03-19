@@ -21,8 +21,13 @@ import { billingAddonPurchases } from '@repo/db/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
+    type LimitUsage,
     OwnerPromotionService,
-    UserBookmarkService
+    type UsageSummary,
+    type UsageThreshold,
+    UserBookmarkService,
+    calculateThreshold,
+    determineOverallThreshold
 } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { createSystemActor } from '../utils/actor';
@@ -31,76 +36,7 @@ import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { ServiceResult } from './addon.types';
 
-export type { ServiceResult };
-
-/**
- * Threshold status levels based on usage percentage
- */
-export type UsageThreshold = 'ok' | 'warning' | 'critical' | 'exceeded';
-
-/**
- * Usage information for a single limit
- */
-export interface LimitUsage {
-    /** The limit key identifier */
-    limitKey: string;
-    /** Human-readable name in Spanish */
-    displayName: string;
-    /** Current usage count */
-    currentUsage: number;
-    /** Maximum allowed by plan + add-ons */
-    maxAllowed: number;
-    /** Usage percentage (0-100) */
-    usagePercentage: number;
-    /** Threshold status based on usage percentage */
-    threshold: UsageThreshold;
-    /** Base limit from plan (before add-ons) */
-    planBaseLimit: number;
-    /** Additional limit from add-ons */
-    addonBonusLimit: number;
-}
-
-/**
- * Complete usage summary for a customer
- */
-export interface UsageSummary {
-    /** Billing customer ID */
-    customerId: string;
-    /** Usage details for each limit */
-    limits: LimitUsage[];
-    /** Worst threshold across all limits */
-    overallThreshold: UsageThreshold;
-    /** URL to upgrade plan */
-    upgradeUrl: string;
-}
-
-/**
- * Calculate threshold based on current usage and max allowed
- *
- * @param current - Current usage count
- * @param max - Maximum allowed count
- * @returns Threshold status
- */
-function calculateThreshold(current: number, max: number): UsageThreshold {
-    // Unlimited or disabled (max = 0 or -1)
-    if (max <= 0) {
-        return 'ok';
-    }
-
-    const percentage = (current / max) * 100;
-
-    if (percentage >= 100) {
-        return 'exceeded';
-    }
-    if (percentage >= 90) {
-        return 'critical';
-    }
-    if (percentage >= 80) {
-        return 'warning';
-    }
-
-    return 'ok';
-}
+export type { ServiceResult, LimitUsage, UsageSummary, UsageThreshold };
 
 /**
  * Usage Tracking Service
@@ -201,7 +137,7 @@ export class UsageTrackingService {
                 const displayName = LIMIT_METADATA[limitKey]?.name || limitKey;
 
                 // Calculate threshold
-                const threshold = calculateThreshold(currentUsage, maxAllowed);
+                const threshold = calculateThreshold({ current: currentUsage, max: maxAllowed });
 
                 limitUsageList.push({
                     limitKey,
@@ -216,9 +152,9 @@ export class UsageTrackingService {
             }
 
             // Determine overall threshold (worst case)
-            const overallThreshold = this.determineOverallThreshold(
-                limitUsageList.map((l) => l.threshold)
-            );
+            const overallThreshold = determineOverallThreshold({
+                thresholds: limitUsageList.map((l) => l.threshold)
+            });
 
             const summary: UsageSummary = {
                 customerId,
@@ -383,7 +319,7 @@ export class UsageTrackingService {
             const displayName = LIMIT_METADATA[limitKey as LimitKey]?.name || limitKey;
 
             // Calculate threshold
-            const threshold = calculateThreshold(currentUsage, maxAllowed);
+            const threshold = calculateThreshold({ current: currentUsage, max: maxAllowed });
 
             const limitUsage: LimitUsage = {
                 limitKey,
@@ -643,27 +579,5 @@ export class UsageTrackingService {
         } catch {
             return [];
         }
-    }
-
-    /**
-     * Determine overall threshold from list of thresholds
-     *
-     * Returns the worst threshold (highest severity).
-     *
-     * @param thresholds - List of threshold statuses
-     * @returns Overall threshold (worst case)
-     */
-    private determineOverallThreshold(thresholds: UsageThreshold[]): UsageThreshold {
-        // Priority: exceeded > critical > warning > ok
-        if (thresholds.includes('exceeded')) {
-            return 'exceeded';
-        }
-        if (thresholds.includes('critical')) {
-            return 'critical';
-        }
-        if (thresholds.includes('warning')) {
-            return 'warning';
-        }
-        return 'ok';
     }
 }
