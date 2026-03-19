@@ -7,12 +7,12 @@ const content = readFileSync(pagePath, 'utf8');
 
 describe('[lang]/eventos/[slug].astro', () => {
     describe('Rendering mode', () => {
-        it('should export prerender = true for SSG', () => {
-            expect(content).toContain('export const prerender = true');
+        it('should use SSR (no prerender export)', () => {
+            expect(content).not.toContain('export const prerender = true');
         });
 
-        it('should export getStaticPaths function', () => {
-            expect(content).toContain('export async function getStaticPaths');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(content).toContain('getLocaleFromParams');
         });
     });
 
@@ -55,8 +55,10 @@ describe('[lang]/eventos/[slug].astro', () => {
             expect(content).toContain('eventsApi as eventsApiEndpoints');
         });
 
-        it('should import fetchAllPages', () => {
-            expect(content).toContain('fetchAllPages');
+        it('should import getLocaleFromParams and HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../../lib/page-helpers'");
         });
 
         it('should import toEventCardProps transform', () => {
@@ -73,9 +75,9 @@ describe('[lang]/eventos/[slug].astro', () => {
             expect(content).toContain('@repo/i18n');
         });
 
-        it('should import SUPPORTED_LOCALES from page-helpers', () => {
-            expect(content).toContain('SUPPORTED_LOCALES');
-            expect(content).toContain("from '../../../lib/page-helpers'");
+        it('should import buildUrl from urls', () => {
+            expect(content).toContain('buildUrl');
+            expect(content).toContain("from '../../../lib/urls'");
         });
 
         it('should import EventPublic from @repo/schemas', () => {
@@ -89,35 +91,19 @@ describe('[lang]/eventos/[slug].astro', () => {
         });
     });
 
-    describe('getStaticPaths', () => {
-        it('should use SUPPORTED_LOCALES', () => {
-            expect(content).toContain('SUPPORTED_LOCALES');
+    describe('SSR data fetching', () => {
+        it('should fetch event by slug on every request', () => {
+            expect(content).toContain('eventsApiEndpoints.getBySlug');
         });
 
-        it('should fetch all event pages with fetchAllPages', () => {
-            expect(content).toContain('fetchAllPages');
-            expect(content).toContain('eventsApiEndpoints.list');
-        });
-
-        it('should filter events by slug presence', () => {
-            expect(content).toContain('Boolean(e.slug)');
-        });
-
-        it('should return lang and slug params', () => {
-            expect(content).toContain('params: { lang, slug: e.slug }');
-        });
-
-        it('should pass event as props', () => {
-            expect(content).toContain('props: { event: e }');
+        it('should read slug from Astro.params', () => {
+            expect(content).toContain('Astro.params');
+            expect(content).toContain('slug');
         });
     });
 
     describe('Data fetching', () => {
-        it('should use props from getStaticPaths if available', () => {
-            expect(content).toContain('Astro.props.event');
-        });
-
-        it('should fetch event by slug on SSR fallback', () => {
+        it('should fetch event via SSR API call', () => {
             expect(content).toContain('eventsApiEndpoints.getBySlug');
         });
 

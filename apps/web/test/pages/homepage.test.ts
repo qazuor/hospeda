@@ -9,12 +9,12 @@ const rootRedirectPath = resolve(__dirname, '../../src/pages/index.astro');
 const rootContent = readFileSync(rootRedirectPath, 'utf8');
 
 describe('[lang]/index.astro', () => {
-    it('should export prerender = true for SSG', () => {
-        expect(content).toContain('export const prerender = true');
+    it('should use SSR (no prerender export)', () => {
+        expect(content).not.toContain('export const prerender = true');
     });
 
-    it('should export getStaticPaths', () => {
-        expect(content).toContain('getStaticLocalePaths as getStaticPaths');
+    it('should use getLocaleFromParams for runtime locale resolution', () => {
+        expect(content).toContain('getLocaleFromParams');
     });
 
     it('should import and use SEOHead', () => {

@@ -7,12 +7,12 @@ const content = readFileSync(pagePath, 'utf8');
 
 describe('[lang]/destinos/[...path].astro', () => {
     describe('Rendering mode', () => {
-        it('should export prerender = true for SSG', () => {
-            expect(content).toContain('export const prerender = true');
+        it('should use SSR (no prerender export)', () => {
+            expect(content).not.toContain('export const prerender = true');
         });
 
-        it('should export getStaticPaths function', () => {
-            expect(content).toContain('export async function getStaticPaths');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(content).toContain('getLocaleFromParams');
         });
     });
 
@@ -74,7 +74,7 @@ describe('[lang]/destinos/[...path].astro', () => {
 
         it('should import createTranslations from i18n', () => {
             expect(content).toContain('createTranslations');
-            expect(content).toContain('SUPPORTED_LOCALES');
+            expect(content).toContain("from '../../../lib/i18n'");
         });
 
         it('should import buildUrl and buildUrlWithParams from urls', () => {
@@ -87,9 +87,10 @@ describe('[lang]/destinos/[...path].astro', () => {
             expect(content).toContain('eventsApi');
         });
 
-        it('should import fetchAllPages from api client', () => {
-            expect(content).toContain('fetchAllPages');
-            expect(content).toContain("from '../../../lib/api/client'");
+        it('should import getLocaleFromParams and HOME_BREADCRUMB from page-helpers', () => {
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('HOME_BREADCRUMB');
+            expect(content).toContain("from '../../../lib/page-helpers'");
         });
 
         it('should import media helpers', () => {
@@ -111,44 +112,28 @@ describe('[lang]/destinos/[...path].astro', () => {
         });
     });
 
-    describe('getStaticPaths', () => {
-        it('should use SUPPORTED_LOCALES', () => {
-            expect(content).toContain('SUPPORTED_LOCALES');
+    describe('SSR data fetching', () => {
+        it('should fetch destination by path using destinationsApi.getByPath', () => {
+            expect(content).toContain('destinationsApi.getByPath');
         });
 
-        it('should fetch all destination pages with fetchAllPages', () => {
-            expect(content).toContain('fetchAllPages');
-            expect(content).toContain('destinationsApi.list');
+        it('should read path from Astro.params', () => {
+            expect(content).toContain('Astro.params');
+            expect(content).toContain('path');
         });
 
-        it('should filter destinations by path or slug', () => {
-            expect(content).toContain('d.path || d.slug');
-        });
-
-        it('should return lang and path params', () => {
-            expect(content).toContain('params: { lang, path:');
-        });
-
-        it('should strip leading slash from path', () => {
-            expect(content).toContain(".replace(/^\\//, '')");
-        });
-
-        it('should pass destinationData as props', () => {
-            expect(content).toContain('props: { destinationData: d }');
+        it('should redirect to destinos listing on API error', () => {
+            expect(content).toContain('destinos');
+            expect(content).toContain('Astro.redirect');
         });
     });
 
     describe('Data fetching', () => {
-        it('should use destinationData from getStaticPaths props', () => {
-            expect(content).toContain('destinationData');
-            expect(content).toContain('Astro.props');
-        });
-
-        it('should fetch destination by path on SSR fallback', () => {
+        it('should fetch destination data on every request via SSR', () => {
             expect(content).toContain('destinationsApi.getByPath');
         });
 
-        it('should redirect on API error without fallback data', () => {
+        it('should redirect on API error', () => {
             expect(content).toContain('destinos');
             expect(content).toContain('Astro.redirect');
         });

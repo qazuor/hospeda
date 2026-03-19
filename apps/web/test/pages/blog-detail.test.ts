@@ -16,21 +16,21 @@ const src = readFileSync(
 
 describe('publicaciones/[slug].astro', () => {
     describe('rendering strategy', () => {
-        it('has prerender = true for SSG', () => {
-            expect(src).toContain('export const prerender = true');
+        it('should use SSR (no prerender export)', () => {
+            expect(src).not.toContain('export const prerender = true');
         });
 
-        it('exports getStaticPaths', () => {
-            expect(src).toContain('export async function getStaticPaths');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(src).toContain('getLocaleFromParams');
         });
 
-        it('fetches all pages in getStaticPaths', () => {
-            expect(src).toContain('fetchAllPages');
+        it('should fetch post directly via API on every request', () => {
+            expect(src).toContain('postsApi.getBySlug');
         });
 
-        it('maps all SUPPORTED_LOCALES in getStaticPaths', () => {
-            expect(src).toContain('SUPPORTED_LOCALES');
-            expect(src).toContain('flatMap');
+        it('should redirect to listing when post is not found', () => {
+            expect(src).toContain('publicaciones');
+            expect(src).toContain('Astro.redirect');
         });
     });
 
@@ -116,12 +116,13 @@ describe('publicaciones/[slug].astro', () => {
     });
 
     describe('post data loading', () => {
-        it('reads post from Astro.props (SSG path)', () => {
-            expect(src).toContain('Astro.props.post');
+        it('fetches post via SSR API call on every request', () => {
+            expect(src).toContain('postsApi.getBySlug');
         });
 
-        it('falls back to API call when post is not in props', () => {
-            expect(src).toContain('postsApi.getBySlug');
+        it('uses slug from Astro.params', () => {
+            expect(src).toContain('Astro.params');
+            expect(src).toContain('slug');
         });
 
         it('redirects to listing when post is not found', () => {

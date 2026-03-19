@@ -237,14 +237,14 @@ describe('homepage-sections-integration', () => {
             expect(homepageSrc).toContain('slot="head"');
         });
 
-        it('should enable SSG with prerender export', () => {
+        it('should use SSR (no prerender export)', () => {
             // Arrange / Act / Assert
-            expect(homepageSrc).toContain('export const prerender = true');
+            expect(homepageSrc).not.toContain('export const prerender = true');
         });
 
-        it('should export getStaticPaths via getStaticLocalePaths for locale generation', () => {
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
             // Arrange / Act / Assert
-            expect(homepageSrc).toContain('getStaticLocalePaths as getStaticPaths');
+            expect(homepageSrc).toContain('getLocaleFromParams');
         });
 
         it('should pass isHero and isHomepage flags to BaseLayout', () => {

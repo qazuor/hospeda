@@ -55,13 +55,12 @@ describe('[lang]/eventos/page/[page].astro', () => {
 
 describe('[lang]/eventos/categoria/[category]/index.astro', () => {
     describe('Rendering mode', () => {
-        it('should export getStaticPaths function for SSG', () => {
-            expect(categoryIndexContent).toContain('export function getStaticPaths');
+        it('should use SSR (no prerender export)', () => {
+            expect(categoryIndexContent).not.toContain('export const prerender = true');
         });
 
-        it('should generate paths for all locale and category combinations', () => {
-            expect(categoryIndexContent).toContain('SUPPORTED_LOCALES.flatMap');
-            expect(categoryIndexContent).toContain('categories.map');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(categoryIndexContent).toContain('getLocaleFromParams');
         });
     });
 
@@ -117,7 +116,7 @@ describe('[lang]/eventos/categoria/[category]/index.astro', () => {
 
         it('should import createT from i18n', () => {
             expect(categoryIndexContent).toContain('createT');
-            expect(categoryIndexContent).toContain('SUPPORTED_LOCALES');
+            expect(categoryIndexContent).toContain("from '../../../../../lib/i18n'");
         });
     });
 

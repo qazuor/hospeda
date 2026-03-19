@@ -7,12 +7,12 @@ const content = readFileSync(pagePath, 'utf8');
 
 describe('[lang]/destinos/index.astro', () => {
     describe('Rendering mode', () => {
-        it('should export prerender = true for SSG', () => {
-            expect(content).toContain('export const prerender = true');
+        it('should use SSR (no prerender export)', () => {
+            expect(content).not.toContain('export const prerender = true');
         });
 
-        it('should re-export getStaticLocalePaths as getStaticPaths', () => {
-            expect(content).toContain('getStaticLocalePaths as getStaticPaths');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(content).toContain('getLocaleFromParams');
         });
     });
 
@@ -82,8 +82,8 @@ describe('[lang]/destinos/index.astro', () => {
             expect(content).toContain('destinationsApi.list({ page, pageSize })');
         });
 
-        it('should always render page 1 at build time', () => {
-            expect(content).toContain('const page = 1');
+        it('should read page number from URL searchParams', () => {
+            expect(content).toContain("sp.get('page')");
             expect(content).toContain('const pageSize = 12');
         });
 
@@ -108,7 +108,7 @@ describe('[lang]/destinos/index.astro', () => {
         });
 
         it('should use createT for translations', () => {
-            expect(content).toContain('createT(locale)');
+            expect(content).toContain('createT(locale');
         });
 
         it('should translate listing title', () => {
@@ -120,7 +120,7 @@ describe('[lang]/destinos/index.astro', () => {
         });
 
         it('should use HOME_BREADCRUMB for breadcrumb label', () => {
-            expect(content).toContain('HOME_BREADCRUMB[locale]');
+            expect(content).toContain('HOME_BREADCRUMB[locale');
         });
     });
 

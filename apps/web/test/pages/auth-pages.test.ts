@@ -95,12 +95,12 @@ describe('auth/signup.astro', () => {
 describe('auth/forgot-password.astro', () => {
     const content = readPage('forgot-password');
 
-    it('should export prerender = true (SSG page)', () => {
-        expect(content).toContain('export const prerender = true');
+    it('should use SSR (no prerender export)', () => {
+        expect(content).not.toContain('export const prerender = true');
     });
 
-    it('should export getStaticPaths', () => {
-        expect(content).toContain('getStaticLocalePaths as getStaticPaths');
+    it('should use getLocaleFromParams for runtime locale resolution', () => {
+        expect(content).toContain('getLocaleFromParams');
     });
 
     it('should import ForgotPasswordClient component', () => {

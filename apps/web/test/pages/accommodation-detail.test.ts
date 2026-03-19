@@ -7,12 +7,12 @@ const content = readFileSync(pagePath, 'utf8');
 
 describe('[lang]/alojamientos/[slug].astro', () => {
     describe('Rendering mode', () => {
-        it('should export prerender = true for SSG', () => {
-            expect(content).toContain('export const prerender = true');
+        it('should use SSR (no prerender export)', () => {
+            expect(content).not.toContain('export const prerender = true');
         });
 
-        it('should export getStaticPaths function', () => {
-            expect(content).toContain('export async function getStaticPaths');
+        it('should use getLocaleFromParams for runtime locale resolution', () => {
+            expect(content).toContain('getLocaleFromParams');
         });
     });
 
@@ -90,8 +90,9 @@ describe('[lang]/alojamientos/[slug].astro', () => {
             expect(content).toContain('sanitizeHtml');
         });
 
-        it('should import fetchAllPages', () => {
-            expect(content).toContain('fetchAllPages');
+        it('should import getLocaleFromParams', () => {
+            expect(content).toContain('getLocaleFromParams');
+            expect(content).toContain('page-helpers');
         });
 
         it('should import toAccommodationCardProps transform', () => {
@@ -112,35 +113,33 @@ describe('[lang]/alojamientos/[slug].astro', () => {
         });
     });
 
-    describe('getStaticPaths', () => {
-        it('should use SUPPORTED_LOCALES for locale generation', () => {
-            expect(content).toContain('SUPPORTED_LOCALES');
+    describe('SSR data fetching', () => {
+        it('should fetch accommodation by slug from API', () => {
+            expect(content).toContain('accommodationsApi.getBySlug');
         });
 
-        it('should fetch all pages of accommodations', () => {
-            expect(content).toContain('fetchAllPages');
+        it('should resolve locale from Astro.params', () => {
+            expect(content).toContain('Astro.params');
+            expect(content).toContain('getLocaleFromParams');
+        });
+
+        it('should handle missing accommodation with redirect', () => {
+            expect(content).toContain("buildUrl({ locale, path: '404' })");
+            expect(content).toContain('Astro.redirect');
+        });
+
+        it('should fetch similar accommodations from API', () => {
             expect(content).toContain('accommodationsApi.list');
-        });
-
-        it('should filter accommodations by slug presence', () => {
-            expect(content).toContain('.filter((a) => Boolean(a.slug))');
-        });
-
-        it('should return lang and slug params', () => {
-            expect(content).toContain('params: { lang, slug: a.slug }');
-        });
-
-        it('should pass accommodation as props', () => {
-            expect(content).toContain('props: { accommodation: a }');
         });
     });
 
     describe('Data fetching', () => {
-        it('should use props from getStaticPaths', () => {
-            expect(content).toContain('Astro.props.accommodation');
+        it('should fetch accommodation from API by slug', () => {
+            expect(content).toContain('accommodationsApi.getBySlug');
+            expect(content).toContain('slug');
         });
 
-        it('should fetch from API as fallback', () => {
+        it('should fetch from API on every request (SSR)', () => {
             expect(content).toContain('accommodationsApi.getBySlug');
         });
 
