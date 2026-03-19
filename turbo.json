@@ -10,6 +10,7 @@
         "HOSPEDA_SITE_URL",
         "HOSPEDA_ADMIN_URL",
         "VITE_API_URL",
+        "VITE_SITE_URL",
         "VITE_BETTER_AUTH_URL",
         "VITE_APP_NAME",
         "VITE_APP_VERSION",
@@ -22,7 +23,9 @@
         "PUBLIC_ENABLE_LOGGING",
         "PUBLIC_VERSION",
         "PUBLIC_SENTRY_DSN",
-        "PUBLIC_SENTRY_RELEASE"
+        "PUBLIC_SENTRY_RELEASE",
+        "HOSPEDA_REDIS_URL",
+        "HOSPEDA_CRON_SECRET"
     ],
     "tasks": {
         "build": {

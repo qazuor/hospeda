@@ -71,3 +71,25 @@ jobs:
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID_ADMIN }}
           vercel-args: '--prod'
           working-directory: apps/admin
+
+  verify-production:
+    name: Verify Production Health
+    needs: [deploy-api, deploy-web, deploy-admin]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Wait for services to start
+        run: sleep 30
+
+      - name: Verify API health
+        run: |
+          curl --retry 5 --retry-delay 10 --retry-connrefused \
+            --fail --silent --show-error \
+            "${{ vars.HOSPEDA_API_URL }}/health/live"
+
+      - name: Verify Web is reachable
+        run: |
+          curl --retry 5 --retry-delay 10 --retry-connrefused \
+            --fail --silent --show-error \
+            "${{ vars.HOSPEDA_SITE_URL }}"
