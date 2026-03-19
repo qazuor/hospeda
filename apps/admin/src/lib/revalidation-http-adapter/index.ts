@@ -13,11 +13,13 @@
 
 import type {
     ManualRevalidateRequest,
+    RevalidateTypeRequest,
     RevalidationConfig,
     RevalidationLog,
+    RevalidationLogFilter,
     RevalidationResponse,
     RevalidationStats,
-    UpdateRevalidationConfigInput,
+    UpdateRevalidationConfigInput
 } from '@repo/schemas';
 
 import { fetchApi } from '../api/client';
@@ -69,11 +71,24 @@ export async function revalidateEntity(
     entityId: string,
     reason = 'Manual admin revalidation'
 ): Promise<RevalidationResponse> {
-    return revalidationFetch<RevalidationResponse>(
-        `${BASE}/revalidate/entity`,
-        'POST',
-        { entityType, entityId, reason }
-    );
+    return revalidationFetch<RevalidationResponse>(`${BASE}/revalidate/entity`, 'POST', {
+        entityType,
+        entityId,
+        reason
+    });
+}
+
+/**
+ * Triggers revalidation of all paths for an entire entity type.
+ * Use with caution as this can trigger a large number of revalidations.
+ *
+ * @param input - Entity type and optional audit reason
+ * @returns Revalidation result with per-path success/failure breakdown
+ */
+export async function revalidateByType(
+    input: RevalidateTypeRequest
+): Promise<RevalidationResponse> {
+    return revalidationFetch<RevalidationResponse>(`${BASE}/revalidate/type`, 'POST', input);
 }
 
 /**
@@ -99,13 +114,35 @@ export async function updateRevalidationConfig(
     return revalidationFetch<RevalidationConfig>(`${BASE}/config/${id}`, 'PATCH', input);
 }
 
+/** Paginated response shape returned by the logs endpoint */
+export type RevalidationLogPage = {
+    readonly data: readonly RevalidationLog[];
+    readonly total: number;
+};
+
 /**
- * Returns recent revalidation log entries.
+ * Returns revalidation log entries with optional filtering and pagination.
  *
- * @returns List of revalidation log records
+ * Accepts all fields from RevalidationLogFilter: entityType, entityId,
+ * trigger, status, path (substring match), fromDate, toDate, page, pageSize.
+ *
+ * @param filters - Optional query filters for narrowing log results
+ * @returns Paginated log records with total count
  */
-export async function getRevalidationLogs(): Promise<RevalidationLog[]> {
-    return revalidationFetch<RevalidationLog[]>(`${BASE}/logs`);
+export async function getRevalidationLogs(
+    filters?: Partial<RevalidationLogFilter>
+): Promise<RevalidationLogPage> {
+    const params = new URLSearchParams();
+    if (filters) {
+        for (const [key, value] of Object.entries(filters)) {
+            if (value !== undefined && value !== null && value !== '') {
+                params.set(key, value instanceof Date ? value.toISOString() : String(value));
+            }
+        }
+    }
+    const qs = params.toString();
+    const url = qs ? `${BASE}/logs?${qs}` : `${BASE}/logs`;
+    return revalidationFetch<RevalidationLogPage>(url);
 }
 
 /**

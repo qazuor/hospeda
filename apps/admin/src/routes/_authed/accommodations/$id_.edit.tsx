@@ -1,3 +1,4 @@
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -33,11 +34,17 @@ function AccommodationEditPage() {
             ]}
         >
             <div className="space-y-4">
-                {/* Level 3 Navigation: Page Tabs */}
-                <PageTabs
-                    tabs={accommodationTabs}
-                    basePath={`/accommodations/${id}`}
-                />
+                <div className="flex items-center justify-between">
+                    {/* Level 3 Navigation: Page Tabs */}
+                    <PageTabs
+                        tabs={accommodationTabs}
+                        basePath={`/accommodations/${id}`}
+                    />
+                    <RevalidateEntityButton
+                        entityType="accommodation"
+                        entityId={id}
+                    />
+                </div>
 
                 <EntityPageBase
                     entityType="accommodation"

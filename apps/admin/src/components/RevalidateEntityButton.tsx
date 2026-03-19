@@ -11,7 +11,11 @@ import { useMutation } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui-wrapped/Button';
 import { useToast } from '@/hooks/use-toast';
+import { useTranslations } from '@/hooks/use-translations';
+import { useHasPermission } from '@/hooks/use-user-permissions';
 import { revalidateEntity } from '@/lib/revalidation-http-adapter';
+import { cn } from '@/lib/utils';
+import { PermissionEnum } from '@repo/schemas';
 
 /**
  * Props for the RevalidateEntityButton component.
@@ -21,8 +25,10 @@ export type RevalidateEntityButtonProps = {
     readonly entityType: string;
     /** The ID of the specific entity instance */
     readonly entityId: string;
-    /** Optional label override (defaults to `'Revalidar'`) */
+    /** Optional label override */
     readonly label?: string;
+    /** Optional additional CSS classes for the button */
+    readonly className?: string;
 };
 
 /**
@@ -32,6 +38,9 @@ export type RevalidateEntityButtonProps = {
  * revalidation for the given entity. While the request is in flight the button
  * is disabled and shows a loading spinner via the wrapped Button component.
  *
+ * Requires the `REVALIDATION_TRIGGER` permission. Returns `null` if the
+ * current user lacks that permission.
+ *
  * @example
  * ```tsx
  * <RevalidateEntityButton entityType="accommodation" entityId={accommodation.id} />
@@ -40,35 +49,45 @@ export type RevalidateEntityButtonProps = {
 export function RevalidateEntityButton({
     entityType,
     entityId,
-    label = 'Revalidar',
+    label,
+    className
 }: RevalidateEntityButtonProps) {
+    const { t } = useTranslations();
     const { addToast } = useToast();
+    const canTriggerRevalidation = useHasPermission(PermissionEnum.REVALIDATION_TRIGGER);
+
+    if (!canTriggerRevalidation) {
+        return null;
+    }
+
+    const buttonLabel = label ?? t('revalidation.actions.revalidateEntity');
 
     const mutation = useMutation({
         mutationFn: () => revalidateEntity(entityType, entityId),
         onSuccess: () => {
             addToast({
-                message: 'Páginas revalidadas correctamente',
-                variant: 'success',
+                message: t('revalidation.messages.revalidateSuccess'),
+                variant: 'success'
             });
         },
         onError: () => {
             addToast({
-                message: 'Error al revalidar las páginas',
-                variant: 'error',
+                message: t('revalidation.messages.revalidateError'),
+                variant: 'error'
             });
-        },
+        }
     });
 
     return (
         <Button
             variant="outline"
             size="sm"
+            className={cn(className)}
             loading={mutation.isPending}
             disabled={mutation.isPending}
             onClick={() => mutation.mutate()}
         >
-            {mutation.isPending ? 'Revalidando...' : label}
+            {mutation.isPending ? `${t('revalidation.actions.revalidate')}...` : buttonLabel}
         </Button>
     );
 }

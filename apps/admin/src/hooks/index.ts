@@ -22,7 +22,7 @@ export {
     useRevalidationConfigs,
     useRevalidationLogs,
     useRevalidationStats,
-    useUpdateRevalidationConfig,
+    useUpdateRevalidationConfig
 } from './useRevalidation';
 
 // Re-export types

@@ -21,6 +21,8 @@ type InlineNumberFieldProps = {
     readonly min: number;
     readonly max: number;
     readonly onSave: (value: number) => void;
+    /** Accessible label describing what this field controls */
+    readonly 'aria-label'?: string;
 };
 
 /**
@@ -29,7 +31,13 @@ type InlineNumberFieldProps = {
  * Displays the number as plain text. Clicking opens an `<input type="number">`
  * that commits on blur or Enter, and cancels on Escape.
  */
-export function InlineNumberField({ value, min, max, onSave }: InlineNumberFieldProps) {
+export function InlineNumberField({
+    value,
+    min,
+    max,
+    onSave,
+    'aria-label': ariaLabel
+}: InlineNumberFieldProps) {
     const { t } = useTranslations();
     const [editing, setEditing] = useState(false);
     const [draft, setDraft] = useState(String(value));
@@ -44,20 +52,22 @@ export function InlineNumberField({ value, min, max, onSave }: InlineNumberField
 
     if (editing) {
         return (
-            <input
-                type="number"
-                className="w-20 rounded border px-2 py-1 text-right text-sm"
-                value={draft}
-                min={min}
-                max={max}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={commit}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter') commit();
-                    if (e.key === 'Escape') setEditing(false);
-                }}
-                autoFocus
-            />
+            <output>
+                <input
+                    type="number"
+                    className="w-20 rounded border px-2 py-1 text-right text-sm"
+                    value={draft}
+                    min={min}
+                    max={max}
+                    aria-label={ariaLabel}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onBlur={commit}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') commit();
+                        if (e.key === 'Escape') setEditing(false);
+                    }}
+                />
+            </output>
         );
     }
 
@@ -66,6 +76,7 @@ export function InlineNumberField({ value, min, max, onSave }: InlineNumberField
             type="button"
             className="rounded px-2 py-1 text-right text-sm hover:bg-muted"
             title={t('revalidation.inline.clickToEdit')}
+            aria-label={ariaLabel ? `${ariaLabel}: ${value}` : undefined}
             onClick={() => {
                 setDraft(String(value));
                 setEditing(true);
@@ -96,9 +107,7 @@ export function ErrorState({ message }: { readonly message: string }) {
     return (
         <div className="py-12 text-center">
             <p className="text-destructive text-sm">{message}</p>
-            <p className="mt-2 text-muted-foreground text-xs">
-                {t('revalidation.errorHint')}
-            </p>
+            <p className="mt-2 text-muted-foreground text-xs">{t('revalidation.errorHint')}</p>
         </div>
     );
 }
@@ -161,13 +170,19 @@ export function ManualForm({
     parsedCount,
     onPathsChange,
     onReasonChange,
-    onSubmit,
+    onSubmit
 }: ManualFormProps) {
     const { t, tPlural } = useTranslations();
     return (
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form
+            onSubmit={onSubmit}
+            className="space-y-4"
+        >
             <div>
-                <label htmlFor="revalidation-paths" className="mb-2 block font-medium text-sm">
+                <label
+                    htmlFor="revalidation-paths"
+                    className="mb-2 block font-medium text-sm"
+                >
                     {t('revalidation.manual.pathsLabel')}
                 </label>
                 <textarea
@@ -183,7 +198,10 @@ export function ManualForm({
                 </p>
             </div>
             <div>
-                <label htmlFor="revalidation-reason" className="mb-2 block font-medium text-sm">
+                <label
+                    htmlFor="revalidation-reason"
+                    className="mb-2 block font-medium text-sm"
+                >
                     {t('revalidation.manual.reasonLabel')}
                 </label>
                 <Input
@@ -198,7 +216,10 @@ export function ManualForm({
                 <p className="text-muted-foreground text-sm">
                     {tPlural('revalidation.manual.pathsCount', parsedCount, { count: parsedCount })}
                 </p>
-                <Button type="submit" disabled={isPending || parsedCount === 0}>
+                <Button
+                    type="submit"
+                    disabled={isPending || parsedCount === 0}
+                >
                     {isPending ? (
                         <>
                             <LoaderIcon className="mr-2 size-4 animate-spin" />
@@ -239,7 +260,7 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                         succeededSuffix: succeeded !== 1 ? 's' : '',
                         failed,
                         failedSuffix: failed !== 1 ? 's' : '',
-                        duration: result.duration,
+                        duration: result.duration
                     })}
                 </CardDescription>
             </CardHeader>
@@ -258,7 +279,10 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                         </thead>
                         <tbody>
                             {result.revalidated.map((path) => (
-                                <tr key={`ok-${path}`} className="border-b hover:bg-muted/50">
+                                <tr
+                                    key={`ok-${path}`}
+                                    className="border-b hover:bg-muted/50"
+                                >
                                     <td className="px-4 py-2 font-mono text-xs">{path}</td>
                                     <td className="px-4 py-2 text-center">
                                         <Badge variant="default">OK</Badge>
@@ -266,7 +290,10 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                                 </tr>
                             ))}
                             {result.failed.map((path) => (
-                                <tr key={`fail-${path}`} className="border-b hover:bg-muted/50">
+                                <tr
+                                    key={`fail-${path}`}
+                                    className="border-b hover:bg-muted/50"
+                                >
                                     <td className="px-4 py-2 font-mono text-xs">{path}</td>
                                     <td className="px-4 py-2 text-center">
                                         <Badge variant="destructive">

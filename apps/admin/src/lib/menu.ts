@@ -206,6 +206,11 @@ export const menuTree: readonly MenuItem[] = [
                 titleKey: 'admin-menu.admin.portalSettings',
                 to: '/settings/critical',
                 permission: PermissionEnum.SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.admin.revalidation',
+                to: '/revalidation',
+                permission: PermissionEnum.REVALIDATION_CONFIG_VIEW
             }
         ]
     },

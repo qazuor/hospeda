@@ -13,12 +13,16 @@ import {
     getRevalidationLogs,
     getRevalidationStats,
     manualRevalidate,
+    revalidateByType,
     revalidateEntity,
-    updateRevalidationConfig,
+    updateRevalidationConfig
 } from '@/lib/revalidation-http-adapter';
+import type { RevalidationLogPage } from '@/lib/revalidation-http-adapter';
 import type {
     ManualRevalidateRequest,
-    UpdateRevalidationConfigInput,
+    RevalidateTypeRequest,
+    RevalidationLogFilter,
+    UpdateRevalidationConfigInput
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
@@ -29,7 +33,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 export const REVALIDATION_QUERY_KEYS = {
     configs: ['revalidation', 'configs'] as const,
     logs: ['revalidation', 'logs'] as const,
-    stats: ['revalidation', 'stats'] as const,
+    stats: ['revalidation', 'stats'] as const
 } as const;
 
 /**
@@ -40,19 +44,38 @@ export const REVALIDATION_QUERY_KEYS = {
 export function useRevalidationConfigs() {
     return useQuery({
         queryKey: REVALIDATION_QUERY_KEYS.configs,
-        queryFn: getRevalidationConfigs,
+        queryFn: getRevalidationConfigs
     });
 }
 
 /**
- * Fetches recent revalidation log entries.
+ * Fetches recent revalidation log entries (basic, no filters).
  *
- * @returns TanStack Query result with `RevalidationLog[]` data
+ * @returns TanStack Query result with `RevalidationLogPage` data
  */
 export function useRevalidationLogs() {
     return useQuery({
         queryKey: REVALIDATION_QUERY_KEYS.logs,
-        queryFn: getRevalidationLogs,
+        queryFn: () => getRevalidationLogs()
+    });
+}
+
+/**
+ * Fetches paginated revalidation log entries with optional filters.
+ * Supports auto-refresh via `refetchInterval`.
+ *
+ * @param filters - Query filters including pagination (page, pageSize)
+ * @returns TanStack Query result with `RevalidationLogPage` data
+ */
+export function useRevalidationLogsFiltered({
+    filters
+}: {
+    readonly filters: Partial<RevalidationLogFilter>;
+}) {
+    return useQuery<RevalidationLogPage>({
+        queryKey: [...REVALIDATION_QUERY_KEYS.logs, filters],
+        queryFn: () => getRevalidationLogs(filters),
+        refetchInterval: 30_000
     });
 }
 
@@ -64,7 +87,7 @@ export function useRevalidationLogs() {
 export function useRevalidationStats() {
     return useQuery({
         queryKey: REVALIDATION_QUERY_KEYS.stats,
-        queryFn: getRevalidationStats,
+        queryFn: getRevalidationStats
     });
 }
 
@@ -79,14 +102,14 @@ export function useUpdateRevalidationConfig() {
     return useMutation({
         mutationFn: ({
             id,
-            input,
+            input
         }: {
             readonly id: string;
             readonly input: UpdateRevalidationConfigInput;
         }) => updateRevalidationConfig(id, input),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.configs });
-        },
+        }
     });
 }
 
@@ -103,7 +126,24 @@ export function useManualRevalidate() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.logs });
             queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.stats });
-        },
+        }
+    });
+}
+
+/**
+ * Mutation hook for revalidating all paths for an entire entity type.
+ * Automatically invalidates logs and stats queries on success.
+ *
+ * @returns TanStack Query mutation for `revalidateByType`
+ */
+export function useRevalidateByType() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (input: RevalidateTypeRequest) => revalidateByType(input),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.logs });
+            queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.stats });
+        }
     });
 }
 
@@ -118,13 +158,13 @@ export function useRevalidateEntity() {
     return useMutation({
         mutationFn: ({
             entityType,
-            entityId,
+            entityId
         }: {
             readonly entityType: string;
             readonly entityId: string;
         }) => revalidateEntity(entityType, entityId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: REVALIDATION_QUERY_KEYS.logs });
-        },
+        }
     });
 }

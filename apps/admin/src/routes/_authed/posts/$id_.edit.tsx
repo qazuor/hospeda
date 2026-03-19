@@ -1,3 +1,4 @@
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -27,6 +28,12 @@ function PostEditPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.POST_UPDATE]}>
             <div className="space-y-4">
+                <div className="flex justify-end">
+                    <RevalidateEntityButton
+                        entityType="post"
+                        entityId={id}
+                    />
+                </div>
                 <EntityPageBase
                     entityType="post"
                     entityId={id}

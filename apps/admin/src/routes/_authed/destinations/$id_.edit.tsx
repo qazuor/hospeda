@@ -1,3 +1,4 @@
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
@@ -28,11 +29,17 @@ function DestinationEditPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.DESTINATION_UPDATE]}>
             <div className="space-y-4">
-                {/* Level 3 Navigation: Page Tabs */}
-                <PageTabs
-                    tabs={destinationTabs}
-                    basePath={`/destinations/${id}`}
-                />
+                <div className="flex items-center justify-between">
+                    {/* Level 3 Navigation: Page Tabs */}
+                    <PageTabs
+                        tabs={destinationTabs}
+                        basePath={`/destinations/${id}`}
+                    />
+                    <RevalidateEntityButton
+                        entityType="destination"
+                        entityId={id}
+                    />
+                </div>
 
                 <EntityPageBase
                     entityType="destination"
