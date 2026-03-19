@@ -7,7 +7,7 @@ import type { RevalidatePathResult, RevalidationAdapter } from './revalidation.a
  * @example
  * ```ts
  * const adapter = new NoOpRevalidationAdapter();
- * const result = await adapter.revalidate('/alojamientos/hotel-paradise/');
+ * const result = await adapter.revalidate({ path: '/alojamientos/hotel-paradise/' });
  * // result.success === true, no HTTP request was made
  * ```
  */
@@ -18,10 +18,12 @@ export class NoOpRevalidationAdapter implements RevalidationAdapter {
      * Simulates a successful revalidation without making any HTTP calls.
      * Used in development and test environments to avoid network dependencies.
      *
-     * @param path - The URL path (returned in the result, otherwise ignored)
+     * @param params - Object containing the URL path to simulate revalidating
+     * @param params.path - The URL path (returned in the result, otherwise ignored)
      * @returns A successful result with the given path and measured duration
      */
-    async revalidate(path: string): Promise<RevalidatePathResult> {
+    async revalidate(params: { readonly path: string }): Promise<RevalidatePathResult> {
+        const { path } = params;
         const start = Date.now();
         return {
             path,
@@ -33,10 +35,14 @@ export class NoOpRevalidationAdapter implements RevalidationAdapter {
     /**
      * Simulates successful revalidation for all paths without making any HTTP calls.
      *
-     * @param paths - The URL paths to simulate revalidating
+     * @param params - Object containing the URL paths to simulate revalidating
+     * @param params.paths - The URL paths to simulate revalidating
      * @returns Array of successful results, one per path
      */
-    async revalidateMany(paths: readonly string[]): Promise<readonly RevalidatePathResult[]> {
-        return Promise.all(paths.map((path) => this.revalidate(path)));
+    async revalidateMany(params: {
+        readonly paths: ReadonlyArray<string>;
+    }): Promise<ReadonlyArray<RevalidatePathResult>> {
+        const { paths } = params;
+        return Promise.all(paths.map((path) => this.revalidate({ path })));
     }
 }

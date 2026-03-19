@@ -1,11 +1,12 @@
 /**
  * @fileoverview
  * Unit tests for RevalidationService:
- * - scheduleRevalidation: fire-and-forget debounced path scheduling with config gating
+ * - scheduleRevalidation: fire-and-forget entity-level debounced scheduling with config gating
  * - revalidateByEntityType: immediate revalidation of all paths for an entity type
- * - revalidatePaths: immediate revalidation of an explicit path list
+ * - revalidatePaths: immediate revalidation of an explicit path list with entityType threading
  * - getRevalidationService / initializeRevalidationService: singleton management
  * - _resetRevalidationService: test isolation helper
+ * - Config getters: getLocales, getMaxCronRevalidations, getLogRetentionDays
  *
  * Uses vi.useFakeTimers() for deterministic debounce testing.
  * Mocks @repo/db models and @repo/logger to isolate the service under test.
@@ -17,7 +18,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Mocks must be declared before any imports of the mocked modules.
 // vi.mock is hoisted to the top of the file by Vitest, but factory functions
 // MUST NOT reference outer-scope `const`/`let` variables because those
-// declarations are NOT hoisted — only the vi.mock() call itself is.
+// declarations are NOT hoisted -- only the vi.mock() call itself is.
 // Use vi.fn() inline inside the factory, then configure in beforeEach.
 // ---------------------------------------------------------------------------
 
@@ -53,6 +54,12 @@ import {
 import { RevalidationService } from '../../src/revalidation/revalidation.service.js';
 
 // ---------------------------------------------------------------------------
+// Test constants
+// ---------------------------------------------------------------------------
+
+const TEST_LOCALES = ['es', 'en', 'pt'] as const;
+
+// ---------------------------------------------------------------------------
 // Helpers to access mock instances
 // ---------------------------------------------------------------------------
 
@@ -83,16 +90,21 @@ function makeMockAdapter(
     revalidateImpl: (path: string) => Promise<RevalidatePathResult> = (path) =>
         Promise.resolve(makeSuccessResult(path))
 ): RevalidationAdapter {
-    const revalidate = vi.fn(revalidateImpl);
+    const revalidateFn = vi.fn((params: { readonly path: string }) => revalidateImpl(params.path));
     return {
         name: 'MockAdapter',
-        revalidate,
-        revalidateMany: vi.fn(async (paths: readonly string[]) => {
-            const settled = await Promise.allSettled(paths.map((p) => revalidate(p)));
+        revalidate: revalidateFn,
+        revalidateMany: vi.fn(async (params: { readonly paths: ReadonlyArray<string> }) => {
+            const settled = await Promise.allSettled(
+                params.paths.map((p) => revalidateFn({ path: p }))
+            );
             return settled.map((r, i) =>
                 r.status === 'fulfilled'
                     ? r.value
-                    : makeFailureResult(paths[i] ?? '', String((r as PromiseRejectedResult).reason))
+                    : makeFailureResult(
+                          params.paths[i] ?? '',
+                          String((r as PromiseRejectedResult).reason)
+                      )
             );
         })
     };
@@ -112,11 +124,16 @@ function makeEnabledConfig(entityType: string, debounceSeconds = 1) {
     };
 }
 
+/** Creates a RevalidationService with test defaults */
+function createTestService(adapter: RevalidationAdapter) {
+    return new RevalidationService({ adapter, locales: TEST_LOCALES });
+}
+
 // ---------------------------------------------------------------------------
-// scheduleRevalidation — fire-and-forget
+// scheduleRevalidation -- fire-and-forget
 // ---------------------------------------------------------------------------
 
-describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
+describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
@@ -142,7 +159,7 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
 
     it('returns void immediately without blocking', () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         const result = service.scheduleRevalidation({ entityType: 'tag' });
 
@@ -151,7 +168,7 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
 
     it('does not call adapter synchronously before debounce expires', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
 
@@ -162,9 +179,9 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
 
     it('calls adapter for each affected path after debounce timeout fires', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        // tag → 3 paths (/alojamientos/ + /en/alojamientos/ + /pt/alojamientos/)
+        // tag -> 3 paths (/alojamientos/ + /en/alojamientos/ + /pt/alojamientos/)
         service.scheduleRevalidation({ entityType: 'tag' });
 
         await vi.runAllTimersAsync();
@@ -172,9 +189,9 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
         expect(adapter.revalidate).toHaveBeenCalledTimes(3);
     });
 
-    it('merges multiple calls for the same path within debounce window into one call', async () => {
+    it('merges multiple calls for the same entity within debounce window into one batch', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         service.scheduleRevalidation({ entityType: 'tag' });
@@ -182,11 +199,11 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
 
         await vi.runAllTimersAsync();
 
-        // Still 3 paths (es, en, pt) — NOT 9 (3 calls × 3 paths)
+        // Still 3 paths (es, en, pt) -- NOT 9 (3 calls x 3 paths)
         expect(adapter.revalidate).toHaveBeenCalledTimes(3);
     });
 
-    it('creates separate timers for different paths', async () => {
+    it('creates separate debounce entries for different entity keys', async () => {
         (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
             findByEntityType: vi
                 .fn()
@@ -196,7 +213,7 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
         }));
 
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         service.scheduleRevalidation({ entityType: 'destination', slug: 'my-dest' });
@@ -204,19 +221,46 @@ describe('RevalidationService.scheduleRevalidation — fire-and-forget', () => {
         await vi.runAllTimersAsync();
 
         const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
-            (args: unknown[]) => args[0] as string
+            (args: unknown[]) => (args[0] as { path: string }).path
         );
 
         expect(paths.some((p: string) => p.includes('/alojamientos/'))).toBe(true);
         expect(paths.some((p: string) => p.includes('/destinos/my-dest/'))).toBe(true);
     });
+
+    it('uses entity-level debounce key (entityType:entityId) for slug-bearing events', async () => {
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: vi
+                .fn()
+                .mockImplementation((entityType: string) =>
+                    Promise.resolve(makeEnabledConfig(entityType, 1))
+                )
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Two different accommodations should get separate debounce entries
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-a' });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-b' });
+
+        await vi.runAllTimersAsync();
+
+        // Both should fire independently, producing paths for both slugs
+        const paths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { path: string }).path
+        );
+
+        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-a/'))).toBe(true);
+        expect(paths.some((p: string) => p.includes('/alojamientos/hotel-b/'))).toBe(true);
+    });
 });
 
 // ---------------------------------------------------------------------------
-// scheduleRevalidation — config gating
+// scheduleRevalidation -- config gating
 // ---------------------------------------------------------------------------
 
-describe('RevalidationService.scheduleRevalidation — config gating', () => {
+describe('RevalidationService.scheduleRevalidation -- config gating', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
@@ -241,7 +285,7 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
             findByEntityType: vi.fn().mockResolvedValue(undefined)
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
@@ -257,7 +301,7 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
             })
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
@@ -273,7 +317,7 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
             })
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
@@ -286,13 +330,13 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
             findByEntityType: vi.fn().mockResolvedValue(makeEnabledConfig('tag', 2))
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
 
         // Allow async config lookup to complete
         await vi.runAllTicks();
-        // Advance 1 s — still within the 2 s debounce window
+        // Advance 1 s -- still within the 2 s debounce window
         await vi.advanceTimersByTimeAsync(1000);
         expect(adapter.revalidate).not.toHaveBeenCalled();
 
@@ -300,21 +344,54 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
         expect(adapter.revalidate).toHaveBeenCalled();
     });
 
-    it('caches config — does not call DB again within 60 s for the same entity type', async () => {
+    it('refetches config after cache expires (60s TTL)', async () => {
         const mockFindByEntityType = vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1));
         (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
             findByEntityType: mockFindByEntityType
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        // First call — DB is hit
+        // First call -- DB is hit (cache miss)
+        service.scheduleRevalidation({ entityType: 'tag' });
+        await vi.runAllTimersAsync();
+
+        const firstCallCount = mockFindByEntityType.mock.calls.length;
+        expect(firstCallCount).toBeGreaterThan(0);
+
+        // Second call within 60s -- cache hit, no new DB call
+        service.scheduleRevalidation({ entityType: 'tag' });
+        await vi.runAllTimersAsync();
+
+        const secondCallCount = mockFindByEntityType.mock.calls.length;
+        expect(secondCallCount).toBe(firstCallCount);
+
+        // Advance past the 60s TTL
+        await vi.advanceTimersByTimeAsync(61_000);
+
+        // Third call after cache expiry -- DB must be hit again
+        service.scheduleRevalidation({ entityType: 'tag' });
+        await vi.runAllTimersAsync();
+
+        const thirdCallCount = mockFindByEntityType.mock.calls.length;
+        expect(thirdCallCount).toBeGreaterThan(secondCallCount);
+    });
+
+    it('caches config -- does not call DB again within 60 s for the same entity type', async () => {
+        const mockFindByEntityType = vi.fn().mockResolvedValue(makeEnabledConfig('tag', 1));
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: mockFindByEntityType
+        }));
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // First call -- DB is hit
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
 
         const firstCallCount = mockFindByEntityType.mock.calls.length;
 
-        // Second call — cache should serve it
+        // Second call -- cache should serve it
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
 
@@ -324,10 +401,10 @@ describe('RevalidationService.scheduleRevalidation — config gating', () => {
 });
 
 // ---------------------------------------------------------------------------
-// scheduleRevalidation — error isolation
+// scheduleRevalidation -- error isolation
 // ---------------------------------------------------------------------------
 
-describe('RevalidationService.scheduleRevalidation — error isolation', () => {
+describe('RevalidationService.scheduleRevalidation -- error isolation', () => {
     beforeEach(() => {
         vi.useFakeTimers();
         vi.clearAllMocks();
@@ -352,14 +429,14 @@ describe('RevalidationService.scheduleRevalidation — error isolation', () => {
 
     it('does not propagate adapter rejection to caller', async () => {
         const adapter = makeMockAdapter(() => Promise.reject(new Error('network error')));
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        // scheduleRevalidation must not throw synchronously — fire-and-forget
+        // scheduleRevalidation must not throw synchronously -- fire-and-forget
         expect(() => {
             service.scheduleRevalidation({ entityType: 'tag' });
         }).not.toThrow();
 
-        // Run timers — adapter rejects but the .catch() in debouncePath handles it gracefully
+        // Run timers -- adapter rejects but the .catch() in debounceEntity handles it gracefully
         await vi.runAllTimersAsync();
     });
 
@@ -373,7 +450,7 @@ describe('RevalidationService.scheduleRevalidation — error isolation', () => {
         const adapter = makeMockAdapter((path) =>
             Promise.resolve(makeFailureResult(path, 'upstream error'))
         );
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         service.scheduleRevalidation({ entityType: 'tag' });
         await vi.runAllTimersAsync();
@@ -384,7 +461,7 @@ describe('RevalidationService.scheduleRevalidation — error isolation', () => {
 });
 
 // ---------------------------------------------------------------------------
-// revalidateByEntityType — immediate execution
+// revalidateByEntityType -- immediate execution
 // ---------------------------------------------------------------------------
 
 describe('RevalidationService.revalidateByEntityType', () => {
@@ -410,29 +487,50 @@ describe('RevalidationService.revalidateByEntityType', () => {
 
     it('calls adapter.revalidateMany with paths for the entity type', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        await service.revalidateByEntityType('tag');
+        await service.revalidateByEntityType({ entityType: 'tag' });
 
-        // tag → 3 paths (es, en, pt)
+        // tag -> 3 paths (es, en, pt)
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
-        const [paths] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
-        expect((paths as string[]).length).toBe(3);
+        const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
+        expect((params as { paths: string[] }).paths.length).toBe(3);
+    });
+
+    it('passes entityType to log entries', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidateByEntityType({ entityType: 'tag', trigger: 'cron' });
+
+        // Allow pending log writes
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalled();
+        const firstCallArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(firstCallArg.entityType).toBe('tag');
+        expect(firstCallArg.trigger).toBe('cron');
     });
 
     it('resolves without throwing even when adapter calls fail', async () => {
-        const adapter = makeMockAdapter((path) => {
-            void path;
+        const adapter = makeMockAdapter((_path) => {
             return Promise.reject(new Error('forced fail'));
         });
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        await expect(service.revalidateByEntityType('event')).resolves.toBeUndefined();
+        await expect(
+            service.revalidateByEntityType({ entityType: 'event' })
+        ).resolves.toBeDefined();
     });
 });
 
 // ---------------------------------------------------------------------------
-// revalidatePaths — immediate execution
+// revalidatePaths -- immediate execution
 // ---------------------------------------------------------------------------
 
 describe('RevalidationService.revalidatePaths', () => {
@@ -458,31 +556,34 @@ describe('RevalidationService.revalidatePaths', () => {
 
     it('calls adapter.revalidateMany with the provided paths', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
         const paths = ['/path-a/', '/path-b/', '/path-c/'] as const;
 
-        await service.revalidatePaths(paths);
+        await service.revalidatePaths({ paths });
 
         expect(adapter.revalidateMany).toHaveBeenCalledOnce();
-        const [calledPaths] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
-        expect(calledPaths).toEqual(expect.arrayContaining([...paths]));
+        const [params] = (adapter.revalidateMany as ReturnType<typeof vi.fn>).mock.calls[0]!;
+        expect((params as { paths: readonly string[] }).paths).toEqual(
+            expect.arrayContaining([...paths])
+        );
     });
 
     it('handles empty array gracefully without calling adapter', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        await expect(service.revalidatePaths([])).resolves.toBeUndefined();
+        const result = await service.revalidatePaths({ paths: [] });
+        expect(result).toEqual([]);
         expect(adapter.revalidateMany).not.toHaveBeenCalled();
     });
 
     it('handles adapter failure without aborting (allSettled semantics)', async () => {
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
         await expect(
-            service.revalidatePaths(['/path-1/', '/path-2/', '/path-3/'])
-        ).resolves.toBeUndefined();
+            service.revalidatePaths({ paths: ['/path-1/', '/path-2/', '/path-3/'] })
+        ).resolves.toBeDefined();
     });
 
     it('logs error when a path returns a non-success result', async () => {
@@ -495,9 +596,9 @@ describe('RevalidationService.revalidatePaths', () => {
         const adapter = makeMockAdapter((path) =>
             Promise.resolve(makeFailureResult(path, 'upstream 500'))
         );
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        await service.revalidatePaths(['/some-path/']);
+        await service.revalidatePaths({ paths: ['/some-path/'] });
 
         const loggerMock = getMockLogger();
         expect(loggerMock?.error).toHaveBeenCalled();
@@ -509,15 +610,126 @@ describe('RevalidationService.revalidatePaths', () => {
             create: mockCreate
         }));
         const adapter = makeMockAdapter();
-        const service = new RevalidationService({ adapter });
+        const service = createTestService(adapter);
 
-        await service.revalidatePaths(['/path-x/', '/path-y/']);
+        await service.revalidatePaths({ paths: ['/path-x/', '/path-y/'] });
 
         // Allow any pending async log writes to complete
         await Promise.resolve();
         await Promise.resolve();
 
         expect(mockCreate).toHaveBeenCalledTimes(2);
+    });
+
+    it('threads entityType through to log entries', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidatePaths({
+            paths: ['/some-path/'],
+            triggeredBy: 'user-1',
+            reason: 'test reason',
+            trigger: 'manual',
+            entityType: 'accommodation'
+        });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityType).toBe('accommodation');
+        expect(logArg.trigger).toBe('manual');
+        expect(logArg.triggeredBy).toBe('user-1');
+    });
+
+    it('defaults entityType to "manual" when not provided', async () => {
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        await service.revalidatePaths({ paths: ['/path/'] });
+
+        await Promise.resolve();
+        await Promise.resolve();
+
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityType).toBe('manual');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Config getters
+// ---------------------------------------------------------------------------
+
+describe('RevalidationService config getters', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: vi.fn().mockResolvedValue(undefined)
+        }));
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: vi.fn().mockResolvedValue(undefined)
+        }));
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    it('getLocales returns the configured locales', () => {
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({
+            adapter,
+            locales: ['es', 'en']
+        });
+
+        expect(service.getLocales()).toEqual(['es', 'en']);
+    });
+
+    it('getMaxCronRevalidations returns configured value', () => {
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({
+            adapter,
+            locales: TEST_LOCALES,
+            maxCronRevalidations: 100
+        });
+
+        expect(service.getMaxCronRevalidations()).toBe(100);
+    });
+
+    it('getMaxCronRevalidations returns default 500 when not configured', () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        expect(service.getMaxCronRevalidations()).toBe(500);
+    });
+
+    it('getLogRetentionDays returns configured value', () => {
+        const adapter = makeMockAdapter();
+        const service = new RevalidationService({
+            adapter,
+            locales: TEST_LOCALES,
+            logRetentionDays: 7
+        });
+
+        expect(service.getLogRetentionDays()).toBe(7);
+    });
+
+    it('getLogRetentionDays returns default 30 when not configured', () => {
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        expect(service.getLogRetentionDays()).toBe(30);
     });
 });
 
@@ -554,7 +766,8 @@ describe('singleton management', () => {
     it('initializeRevalidationService returns a RevalidationService instance', () => {
         const service = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com'
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES
         });
 
         expect(service).toBeInstanceOf(RevalidationService);
@@ -563,7 +776,8 @@ describe('singleton management', () => {
     it('getRevalidationService returns the same instance after initialization', () => {
         const initialized = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com'
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES
         });
 
         const retrieved = getRevalidationService();
@@ -571,29 +785,22 @@ describe('singleton management', () => {
         expect(retrieved).toBe(initialized);
     });
 
-    it('initializeRevalidationService is idempotent — repeated calls return same instance', () => {
+    it('initializeRevalidationService is idempotent -- repeated calls return same instance', () => {
         const first = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com'
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES
         });
         const second = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://different.com'
+            siteUrl: 'https://different.com',
+            locales: TEST_LOCALES
         });
 
         expect(second).toBe(first);
     });
 
     it('logs a warning on re-initialization attempt', () => {
-        // The module-level logger in revalidation-init.ts is created when the module is
-        // first imported (before any test runs). vi.clearAllMocks() in beforeEach resets
-        // call counts but preserves the object reference. We can spy on the warn function
-        // that is currently assigned to the module-level logger by tracking calls from
-        // this point forward.
-        //
-        // We set up a fresh spy on the module-level logger via mockReturnValue BEFORE
-        // this test, then re-trigger createLogger for the module logger by getting
-        // the warn fn from the current mock return value.
         const warnSpy = vi.fn();
         (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
             error: vi.fn(),
@@ -602,16 +809,15 @@ describe('singleton management', () => {
             debug: vi.fn()
         });
 
-        // The module already has its logger instance — we can't replace it easily.
-        // Instead, verify that `initializeRevalidationService` called twice is idempotent
-        // (returns same instance) as a proxy for the warning behavior.
         const first = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com'
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES
         });
         const second = initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://other.com'
+            siteUrl: 'https://other.com',
+            locales: TEST_LOCALES
         });
 
         // The idempotent behavior (same instance) is the observable effect of the warning path
@@ -621,7 +827,8 @@ describe('singleton management', () => {
     it('_resetRevalidationService clears the singleton', () => {
         initializeRevalidationService({
             nodeEnv: 'test',
-            siteUrl: 'https://example.com'
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES
         });
 
         _resetRevalidationService();
@@ -630,11 +837,42 @@ describe('singleton management', () => {
     });
 
     it('new instance can be created after reset', () => {
-        initializeRevalidationService({ nodeEnv: 'test', siteUrl: 'https://a.com' });
+        initializeRevalidationService({
+            nodeEnv: 'test',
+            siteUrl: 'https://a.com',
+            locales: TEST_LOCALES
+        });
         _resetRevalidationService();
-        const second = initializeRevalidationService({ nodeEnv: 'test', siteUrl: 'https://b.com' });
+        const second = initializeRevalidationService({
+            nodeEnv: 'test',
+            siteUrl: 'https://b.com',
+            locales: TEST_LOCALES
+        });
 
         expect(second).toBeInstanceOf(RevalidationService);
         expect(getRevalidationService()).toBe(second);
+    });
+
+    it('passes locales config through to the service', () => {
+        const service = initializeRevalidationService({
+            nodeEnv: 'test',
+            siteUrl: 'https://example.com',
+            locales: ['es', 'en']
+        });
+
+        expect(service.getLocales()).toEqual(['es', 'en']);
+    });
+
+    it('passes maxCronRevalidations and logRetentionDays through to the service', () => {
+        const service = initializeRevalidationService({
+            nodeEnv: 'test',
+            siteUrl: 'https://example.com',
+            locales: TEST_LOCALES,
+            maxCronRevalidations: 200,
+            logRetentionDays: 14
+        });
+
+        expect(service.getMaxCronRevalidations()).toBe(200);
+        expect(service.getLogRetentionDays()).toBe(14);
     });
 });

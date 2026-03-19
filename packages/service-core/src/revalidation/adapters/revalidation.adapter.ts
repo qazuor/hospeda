@@ -37,7 +37,7 @@ export interface RevalidatePathResult {
  *   siteUrl: process.env.HOSPEDA_SITE_URL,
  * });
  *
- * const result = await adapter.revalidate('/alojamientos/hotel-paradise/');
+ * const result = await adapter.revalidate({ path: '/alojamientos/hotel-paradise/' });
  * if (!result.success) {
  *   logger.error('Revalidation failed', { path: result.path, error: result.error });
  * }
@@ -51,18 +51,22 @@ export interface RevalidationAdapter {
      * Revalidate a single page path.
      * Must never throw — errors are captured in the result.
      *
-     * @param path - The URL path to revalidate (e.g. '/alojamientos/hotel-paradise/')
+     * @param params - Object containing the URL path to revalidate
+     * @param params.path - The URL path to revalidate (e.g. '/alojamientos/hotel-paradise/')
      * @returns Result with success flag, duration, and optional error message
      */
-    revalidate(path: string): Promise<RevalidatePathResult>;
+    revalidate(params: { readonly path: string }): Promise<RevalidatePathResult>;
 
     /**
      * Revalidate multiple page paths concurrently.
      * Uses `Promise.allSettled` internally — a failure on one path does not abort others.
      * Must never throw.
      *
-     * @param paths - Array of URL paths to revalidate
+     * @param params - Object containing the array of URL paths to revalidate
+     * @param params.paths - Array of URL paths to revalidate
      * @returns Array of results, one per path, in the same order as input
      */
-    revalidateMany(paths: readonly string[]): Promise<readonly RevalidatePathResult[]>;
+    revalidateMany(params: {
+        readonly paths: ReadonlyArray<string>;
+    }): Promise<ReadonlyArray<RevalidatePathResult>>;
 }

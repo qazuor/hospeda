@@ -1,6 +1,9 @@
+import { createLogger } from '@repo/logger';
 import { NoOpRevalidationAdapter } from './noop-revalidation.adapter.js';
 import type { RevalidationAdapter } from './revalidation.adapter.js';
 import { VercelRevalidationAdapter } from './vercel-revalidation.adapter.js';
+
+const logger = createLogger('revalidation-adapter-factory');
 
 /**
  * Parameters for {@link createRevalidationAdapter}.
@@ -50,6 +53,10 @@ export function createRevalidationAdapter(params: AdapterFactoryParams): Revalid
             bypassToken: revalidationSecret as string,
             siteUrl
         });
+    }
+
+    if (isNonLocalEnv && !hasSecret) {
+        logger.warn('ISR revalidation DISABLED: missing HOSPEDA_REVALIDATION_SECRET');
     }
 
     return new NoOpRevalidationAdapter();

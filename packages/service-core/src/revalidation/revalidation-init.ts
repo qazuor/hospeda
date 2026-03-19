@@ -1,7 +1,7 @@
 import { createLogger } from '@repo/logger';
 import { createRevalidationAdapter } from './adapters/adapter-factory.js';
 import { RevalidationService } from './revalidation.service.js';
-import type { RevalidationServiceConfig } from './revalidation.service.js';
+import type { EntityResolver, RevalidationServiceConfig } from './revalidation.service.js';
 
 const logger = createLogger('revalidation-init');
 
@@ -24,9 +24,34 @@ export interface InitRevalidationParams {
     /**
      * Debounce window in milliseconds for hook-triggered revalidations.
      * Overridden per-entity-type by the `revalidation_config` DB table.
-     * Defaults to 5000 ms.
+     * Defaults to 30000 ms (30 seconds).
      */
     readonly debounceMs?: number;
+    /**
+     * Supported locales for URL path generation.
+     * Used by getAffectedPaths to generate locale-prefixed paths.
+     * Should match the locales supported by the web app.
+     */
+    readonly locales: ReadonlyArray<string>;
+    /**
+     * Maximum number of entity types to revalidate per cron job run.
+     * Prevents runaway revalidation in large deployments.
+     * Defaults to 500.
+     */
+    readonly maxCronRevalidations?: number;
+    /**
+     * Number of days to retain revalidation log entries before cleanup.
+     * Used by the cron job to delete old log entries.
+     * Defaults to 30.
+     */
+    readonly logRetentionDays?: number;
+    /**
+     * Optional entity resolver for looking up published entities from the database.
+     * When provided, enables entity-level revalidation that queries individual
+     * entity detail pages instead of only generic listing pages.
+     * Typically created in the API layer using {@link createEntityResolver}.
+     */
+    readonly entityResolver?: EntityResolver;
 }
 
 /**
@@ -63,7 +88,11 @@ export function initializeRevalidationService(params: InitRevalidationParams): R
 
     const config: RevalidationServiceConfig = {
         adapter,
-        debounceMs: params.debounceMs
+        debounceMs: params.debounceMs,
+        locales: params.locales,
+        maxCronRevalidations: params.maxCronRevalidations,
+        logRetentionDays: params.logRetentionDays,
+        entityResolver: params.entityResolver
     };
 
     _instance = new RevalidationService(config);

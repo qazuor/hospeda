@@ -19,4 +19,8 @@ export {
 } from './revalidation-init.js';
 export type { InitRevalidationParams } from './revalidation-init.js';
 export { RevalidationService } from './revalidation.service.js';
-export type { RevalidationServiceConfig, RevalidationTrigger } from './revalidation.service.js';
+export type {
+    EntityResolver,
+    RevalidationServiceConfig,
+    RevalidationTrigger
+} from './revalidation.service.js';
