@@ -4,14 +4,11 @@
  * @description Event category list page. Renders a filtered grid of events
  * pre-scoped to a single category slug (festival, fair, sport, cultural, gastronomy).
  *
- * Rendering: SSG (Static Site Generation).
- * All locale + category combinations are pre-rendered at build time.
- * Pagination uses URL-segment mode: page/[page]/ is handled by a sibling page.
- *
+ * Rendering: SSR (on-demand).
  * Route: /[lang]/eventos/categoria/[category]/
  */
 
-import { SUPPORTED_LOCALES, createT, type SupportedLocale } from '../../../../../lib/i18n';
+import { createT, type SupportedLocale } from '../../../../../lib/i18n';
 import { buildUrl } from '../../../../../lib/urls';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../../../lib/page-helpers';
 import { eventsApi } from '../../../../../lib/api/endpoints';
@@ -22,22 +19,6 @@ import Breadcrumb from '../../../../../components/shared/Breadcrumb.astro';
 import EventCard from '../../../../../components/shared/EventCard.astro';
 import EmptyState from '../../../../../components/shared/EmptyState.astro';
 import Pagination from '../../../../../components/shared/Pagination.astro';
-
-/**
- * Generates static paths for all supported locale + category combinations.
- * 3 locales x 5 categories = 15 pre-rendered pages.
- *
- * NOTE: ALLOWED_CATEGORIES is defined inline because getStaticPaths runs in
- * an isolated scope during SSG and cannot access module-level frontmatter vars.
- */
-export const prerender = true;
-
-export function getStaticPaths() {
-    const categories = ['festival', 'fair', 'sport', 'cultural', 'gastronomy'] as const;
-    return SUPPORTED_LOCALES.flatMap((lang) =>
-        categories.map((category) => ({ params: { lang, category } }))
-    );
-}
 
 /** Allowed event category slugs that map to API values. */
 const ALLOWED_CATEGORIES = ['festival', 'fair', 'sport', 'cultural', 'gastronomy'] as const;

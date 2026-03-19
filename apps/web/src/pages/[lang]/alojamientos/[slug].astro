@@ -17,11 +17,9 @@
  * - Breadcrumb with destination hierarchy
  * - LodgingBusiness JSON-LD structured data
  *
- * Rendering: SSG (prerender = true) + server:defer islands for auth-aware content.
+ * Rendering: SSR (on-demand) + server:defer islands for auth-aware content.
  * Route: /[lang]/alojamientos/[slug]
  */
-
-export const prerender = true;
 
 import type { AccommodationPublic } from '@repo/schemas';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -37,7 +35,6 @@ import { ImageGallery } from '../../../components/shared/ImageGallery.client';
 import { ShareButtons } from '../../../components/shared/ShareButtons.client';
 import { MapView } from '../../../components/shared/MapView.client';
 import { accommodationsApi } from '../../../lib/api/endpoints';
-import { fetchAllPages } from '../../../lib/api/client';
 import { createT } from '../../../lib/i18n';
 import { buildUrl } from '../../../lib/urls';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media';
@@ -45,26 +42,7 @@ import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { sanitizeHtml } from '../../../lib/sanitize-html';
 import { toAccommodationCardProps } from '../../../lib/api/transforms';
 import { getSiteUrl } from '../../../lib/env';
-import { SUPPORTED_LOCALES, getLocaleFromParams } from '../../../lib/page-helpers';
-
-/**
- * Generate static paths for all accommodation slugs across all locales.
- * Uses fetchAllPages to paginate through the full catalog.
- */
-export async function getStaticPaths() {
-    const accommodations = await fetchAllPages({
-        fetcher: (p) => accommodationsApi.list(p),
-    });
-
-    return SUPPORTED_LOCALES.flatMap((lang) =>
-        accommodations
-            .filter((a) => Boolean(a.slug))
-            .map((a) => ({
-                params: { lang, slug: a.slug },
-                props: { accommodation: a },
-            }))
-    );
-}
+import { getLocaleFromParams } from '../../../lib/page-helpers';
 
 // --- Locale validation ---
 
@@ -74,15 +52,13 @@ if (!locale) return Astro.redirect('/es/');
 const { slug } = Astro.params;
 
 // --- Accommodation data ---
-// Props come from getStaticPaths. Fallback fetch for dev/preview environments.
-let accommodation = Astro.props.accommodation as AccommodationPublic | undefined;
-if (!accommodation) {
-    const result = await accommodationsApi.getBySlug({ slug: slug ?? '' });
-    if (!result.ok) {
-        return Astro.redirect(buildUrl({ locale, path: '404' }));
-    }
-    accommodation = result.data;
+// SSR: fetch on every request from the API.
+let accommodation: AccommodationPublic | undefined;
+const result = await accommodationsApi.getBySlug({ slug: slug ?? '' });
+if (!result.ok) {
+    return Astro.redirect(buildUrl({ locale, path: '404' }));
 }
+accommodation = result.data;
 
 // --- Media extraction ---
 

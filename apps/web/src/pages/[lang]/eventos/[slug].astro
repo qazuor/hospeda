@@ -1,11 +1,9 @@
 ---
-export const prerender = true;
-
 /**
  * Event detail page - displays comprehensive information about a specific event.
  * Validates locale parameter and redirects invalid locales to Spanish (default).
  *
- * Rendering: SSG with fallback fetch on-demand
+ * Rendering: SSR (on-demand)
  * Route: /[lang]/eventos/[slug]
  */
 
@@ -16,37 +14,16 @@ import SEOHead from '../../../components/seo/SEOHead.astro';
 import EventJsonLd from '../../../components/seo/EventJsonLd.astro';
 import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
 import { ShareButtons } from '../../../components/shared/ShareButtons.client';
-import { fetchAllPages } from '../../../lib/api/client';
 import { eventsApi as eventsApiEndpoints } from '../../../lib/api/endpoints';
 import { extractFeaturedImageUrl } from '../../../lib/media';
 import { toEventCardProps } from '../../../lib/api/transforms';
 import {
     getLocaleFromParams,
     HOME_BREADCRUMB,
-    SUPPORTED_LOCALES
 } from '../../../lib/page-helpers';
 import { createT } from '../../../lib/i18n';
 import { buildUrl } from '../../../lib/urls';
 import { formatDate as i18nFormatDate, toBcp47Locale } from '@repo/i18n';
-
-/**
- * Generate static paths for all events across all locales.
- * Pre-renders event detail pages at build time for SSG.
- */
-export async function getStaticPaths() {
-    const events = await fetchAllPages({
-        fetcher: (p) => eventsApiEndpoints.list(p),
-    });
-
-    return SUPPORTED_LOCALES.flatMap((lang) =>
-        events
-            .filter((e) => Boolean(e.slug))
-            .map((e) => ({
-                params: { lang, slug: e.slug },
-                props: { event: e },
-            }))
-    );
-}
 
 const { slug } = Astro.params;
 const locale = getLocaleFromParams(Astro.params);
@@ -59,17 +36,14 @@ const t = createT(locale);
 
 /**
  * Fetch event data from API.
- * Uses prop from getStaticPaths if available, otherwise fetches on-demand.
+ * SSR: fetches on every request.
  */
-let event = Astro.props.event as EventPublic | undefined;
-
-if (!event) {
-    const result = await eventsApiEndpoints.getBySlug({ slug: slug ?? '' });
-    if (!result.ok) {
-        return Astro.redirect(buildUrl({ locale, path: 'eventos' }));
-    }
-    event = result.data;
+let event: EventPublic | undefined;
+const eventResult = await eventsApiEndpoints.getBySlug({ slug: slug ?? '' });
+if (!eventResult.ok) {
+    return Astro.redirect(buildUrl({ locale, path: 'eventos' }));
 }
+event = eventResult.data;
 
 /**
  * Extract featured image URL from the nested media structure.

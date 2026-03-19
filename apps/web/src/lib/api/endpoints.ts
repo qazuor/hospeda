@@ -340,7 +340,7 @@ export const contactApi = {
     sendContactMessage({
         name,
         email,
-        _subject,
+        subject: _subject,
         message
     }: {
         readonly name: string;

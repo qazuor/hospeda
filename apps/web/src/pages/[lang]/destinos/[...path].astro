@@ -1,6 +1,4 @@
 ---
-export const prerender = true;
-
 /**
  * Destination Detail Page
  *
@@ -9,7 +7,7 @@ export const prerender = true;
  * accommodations preview, and events for a single destination.
  *
  * Route: /[lang]/destinos/[...path]
- * Rendering: SSG (pre-rendered at build time)
+ * Rendering: SSR (on-demand)
  */
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
@@ -23,11 +21,10 @@ import FavoriteButtonIsland from '../../../components/shared/FavoriteButtonIslan
 import { ImageGallery } from '../../../components/shared/ImageGallery.client';
 import { ShareButtons } from '../../../components/shared/ShareButtons.client';
 import { MapView } from '../../../components/shared/MapView.client';
-import { createTranslations, SUPPORTED_LOCALES, type SupportedLocale } from '../../../lib/i18n';
+import { createTranslations, type SupportedLocale } from '../../../lib/i18n';
 import { buildUrl, buildUrlWithParams } from '../../../lib/urls';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { destinationsApi, eventsApi } from '../../../lib/api/endpoints';
-import { fetchAllPages } from '../../../lib/api/client';
 import {
     toAccommodationCardProps,
     toEventCardProps,
@@ -38,44 +35,25 @@ import { extractFeaturedImageUrl, extractGalleryUrls } from '../../../lib/media'
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { sanitizeHtml } from '../../../lib/sanitize-html';
 
-/**
- * Generates static paths for every destination in every supported locale.
- * The catch-all `path` parameter handles any hierarchy depth.
- */
-export async function getStaticPaths() {
-    const all = await fetchAllPages<Record<string, unknown>>({
-        fetcher: (p) => destinationsApi.list(p),
-    });
-    return SUPPORTED_LOCALES.flatMap((lang) =>
-        all
-            .filter((d) => d.path || d.slug)
-            .map((d) => ({
-                params: { lang, path: String(d.path || d.slug).replace(/^\//, '') },
-                props: { destinationData: d },
-            }))
-    );
-}
-
 // ─── Locale & route params ────────────────────────────────────────────────────
 
 const { path } = Astro.params;
-const { destinationData } = Astro.props as { destinationData: Record<string, unknown> };
 
 const locale = getLocaleFromParams(Astro.params) as SupportedLocale;
 if (!locale) return Astro.redirect('/es/');
 
 const { t, tPlural } = createTranslations(locale);
 
-// ─── Destination data (refresh on SSR, fallback to getStaticPaths props) ─────
+// ─── Destination data (SSR: fetch on every request) ──────────────────────────
 
-let destination: Record<string, unknown> = destinationData ?? {};
+let destination: Record<string, unknown> = {};
 
 if (path) {
     const pathStr = Array.isArray(path) ? path.join('/') : String(path);
     const result = await destinationsApi.getByPath({ path: pathStr });
     if (result.ok) {
         destination = result.data as unknown as Record<string, unknown>;
-    } else if (!destinationData) {
+    } else {
         return Astro.redirect(buildUrl({ locale, path: 'destinos' }));
     }
 }

@@ -1,16 +1,14 @@
 ---
-export const prerender = true;
-
-export { getStaticLocalePaths as getStaticPaths } from '../../../lib/page-helpers';
-
 /**
- * Destination list page for the Hospeda web application.
+ * @file destinos/index.astro
+ * @description Destination list page for the Hospeda web application.
  * Displays all destinations in the Litoral region with pagination.
  *
- * Rendering: SSG (pre-rendered at build time for all supported locales)
+ * Rendering: SSR (on-demand) with query-param driven pagination.
  * Route: /[lang]/destinos/
  */
 
+import type { SupportedLocale } from '../../../lib/i18n';
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
 import Breadcrumb from '../../../components/shared/Breadcrumb.astro';
@@ -20,20 +18,24 @@ import DestinationCard from '../../../components/shared/DestinationCard.astro';
 import EmptyState from '../../../components/shared/EmptyState.astro';
 import Pagination from '../../../components/shared/Pagination.astro';
 import { LocationIcon } from '@repo/icons';
-import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { createT } from '../../../lib/i18n';
 import { buildUrl } from '../../../lib/urls';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { destinationsApi } from '../../../lib/api/endpoints';
 import { toDestinationCardProps } from '../../../lib/api/transforms';
 import type { DestinationCardData } from '../../../lib/api/transforms';
 
-const locale = getLocaleFromParams(Astro.params) as SupportedLocale;
+const locale = getLocaleFromParams(Astro.params);
 if (!locale) return Astro.redirect('/es/');
 
-const t = createT(locale);
+const t = createT(locale as SupportedLocale);
 
-/** Pagination parameters (SSG pages always render page 1 at build time) */
-const page = 1;
+// ─── Parse query params ───────────────────────────────────────────────────────
+
+const sp = Astro.url.searchParams;
+
+/** Pagination page number */
+const page = Math.max(1, Number.parseInt(sp.get('page') ?? '1', 10));
 const pageSize = 12;
 
 /** Fetch destinations from the public API */
@@ -73,8 +75,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 /** Breadcrumb navigation items */
 const breadcrumbItems = [
-    { label: HOME_BREADCRUMB[locale], href: buildUrl({ locale, path: '' }) },
-    { label: pageTitle, href: buildUrl({ locale, path: 'destinos' }) },
+    { label: HOME_BREADCRUMB[locale as SupportedLocale], href: buildUrl({ locale: locale as SupportedLocale, path: '' }) },
+    { label: pageTitle, href: buildUrl({ locale: locale as SupportedLocale, path: 'destinos' }) },
 ] as const;
 ---
 
@@ -140,7 +142,7 @@ const breadcrumbItems = [
                     )}
                     cta={{
                         label: t('destination.error.retry', 'Volver al inicio'),
-                        href: buildUrl({ locale, path: '' }),
+                        href: buildUrl({ locale: locale as SupportedLocale, path: '' }),
                     }}
                 />
             ) : (
@@ -154,7 +156,7 @@ const breadcrumbItems = [
                 <Pagination
                     currentPage={pagination.page}
                     totalPages={pagination.totalPages}
-                    baseUrl={buildUrl({ locale, path: 'destinos' }).replace(/\/$/, '')}
+                    baseUrl={buildUrl({ locale: locale as SupportedLocale, path: 'destinos' }).replace(/\/$/, '')}
                     locale={locale}
                 />
             </div>

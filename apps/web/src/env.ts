@@ -19,6 +19,7 @@ export const serverEnvSchema = z
         HOSPEDA_SITE_URL: z.string().url().optional(),
         PUBLIC_SITE_URL: z.string().url().optional(),
         HOSPEDA_BETTER_AUTH_URL: z.string().url().optional(),
+        HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
         PUBLIC_SENTRY_DSN: z.string().url().optional(),
         PUBLIC_SENTRY_RELEASE: z.string().optional(),
         PUBLIC_VERSION: z.string().optional(),

@@ -9,10 +9,16 @@ import { defineConfig } from 'astro/config';
 import { validateWebEnv } from './src/env.ts';
 
 const rootDir = resolve(new URL('.', import.meta.url).pathname, '../../');
-const envPath = resolve(rootDir, '.env.local');
+// appDir is this file's directory (apps/web). envDir is set here so Vite
+// auto-loads .env files from apps/web/ rather than the monorepo root.
+const appDir = resolve(new URL('.', import.meta.url).pathname);
 
+// Load apps/web/.env.local into process.env before validateWebEnv() runs.
+// Vite/Astro only populates import.meta.env AFTER astro.config.mjs executes,
+// so we manually pre-load the file here the same way the old code did for the
+// root .env.local.
 try {
-    const envContent = readFileSync(envPath, 'utf8');
+    const envContent = readFileSync(resolve(appDir, '.env.local'), 'utf8');
     const lines = envContent.split('\n').filter((line) => line.trim() && !line.startsWith('#'));
     for (const line of lines) {
         const [key, ...valueParts] = line.split('=');
@@ -73,8 +79,8 @@ export default defineConfig({
                 /^(\/(?:en|pt))?\/alojamientos\/(.*)\/?$/,
                 /^(\/(?:en|pt))?\/eventos\/(.*)\/?$/,
                 /^(\/(?:en|pt))?\/alojamientos\/tipo(\/.*)?$/,
-                /^(\/(?:en|pt))?\/eventos\/categoria(\/.*)?$/,
-            ],
+                /^(\/(?:en|pt))?\/eventos\/categoria(\/.*)?$/
+            ]
         },
         imageService: true
     }),
@@ -112,7 +118,7 @@ export default defineConfig({
     ],
     vite: {
         plugins: [tailwindcss()],
-        envDir: rootDir,
+        envDir: appDir,
         resolve: {
             alias: {
                 '@repo/config': resolve(rootDir, 'packages/config/src'),

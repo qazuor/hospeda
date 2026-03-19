@@ -5,7 +5,7 @@
  * Displays a grid of accommodations matching the type URL segment with pagination.
  * Validates locale and type parameters, redirects if either is invalid.
  *
- * Rendering: SSG (pre-rendered per locale+type) with hybrid query-param handling.
+ * Rendering: SSR (on-demand) with query-param driven filtering.
  * Route: /[lang]/alojamientos/tipo/[type]/
  */
 

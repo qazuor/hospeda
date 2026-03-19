@@ -4,11 +4,9 @@
  * @description Blog post detail page. Displays full article content with metadata,
  * author info, tags, share buttons, JSON-LD Article schema, and related posts.
  *
- * Rendering: SSG with prerender + API fallback for unpublished paths.
+ * Rendering: SSR (on-demand).
  * Route: /[lang]/publicaciones/[slug]/
  */
-
-export const prerender = true;
 
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import SEOHead from '../../../components/seo/SEOHead.astro';
@@ -19,36 +17,16 @@ import EmptyState from '../../../components/shared/EmptyState.astro';
 import SecondaryArticleCard from '../../../components/shared/SecondaryArticleCard.astro';
 import { ShareButtons } from '../../../components/shared/ShareButtons.client';
 import { CalendarIcon, ClockIcon, UserIcon, TagIcon, ShareIcon } from '@repo/icons';
-import { createT, SUPPORTED_LOCALES, type SupportedLocale } from '../../../lib/i18n';
+import { createT, type SupportedLocale } from '../../../lib/i18n';
 import { getLocaleFromParams, HOME_BREADCRUMB } from '../../../lib/page-helpers';
 import { buildUrl } from '../../../lib/urls';
 import { postsApi } from '../../../lib/api/endpoints';
-import { fetchAllPages } from '../../../lib/api/client';
 import { toPostCardProps } from '../../../lib/api/transforms';
 import { renderTiptapContent } from '../../../lib/tiptap-renderer';
 import { sanitizeHtml } from '../../../lib/sanitize-html';
 import { formatDate, toBcp47Locale } from '@repo/i18n';
 import type { PostPublic } from '@repo/schemas';
 import type { TiptapDocument } from '../../../lib/tiptap-renderer';
-
-/**
- * Generates static paths for all blog posts across all supported locales.
- * Fetches all published posts and maps each to locale + slug combinations.
- */
-export async function getStaticPaths() {
-    const posts = await fetchAllPages<PostPublic>({
-        fetcher: (p) => postsApi.list(p),
-    });
-
-    return SUPPORTED_LOCALES.flatMap((lang) =>
-        posts
-            .filter((p) => Boolean(p.slug))
-            .map((p) => ({
-                params: { lang, slug: p.slug },
-                props: { post: p },
-            }))
-    );
-}
 
 // --- Locale validation ---
 const locale = getLocaleFromParams(Astro.params);
@@ -57,16 +35,13 @@ if (!locale) return Astro.redirect('/es/publicaciones/');
 const { slug } = Astro.params;
 const t = createT(locale as SupportedLocale);
 
-// --- Post data: from props (SSG) or API fallback ---
-let post = Astro.props.post as PostPublic | undefined;
-
-if (!post) {
-    const result = await postsApi.getBySlug({ slug: slug ?? '' });
-    if (!result.ok) {
-        return Astro.redirect(buildUrl({ locale: locale as SupportedLocale, path: 'publicaciones' }));
-    }
-    post = result.data;
+// --- Post data: SSR — fetch on every request ---
+let post: PostPublic | undefined;
+const postResult = await postsApi.getBySlug({ slug: slug ?? '' });
+if (!postResult.ok) {
+    return Astro.redirect(buildUrl({ locale: locale as SupportedLocale, path: 'publicaciones' }));
 }
+post = postResult.data;
 
 // --- Related posts (up to 3, excluding current) ---
 const relResult = await postsApi.list({ pageSize: 4 });

@@ -1,13 +1,9 @@
 ---
-export const prerender = true;
-
-export { getStaticLocalePaths as getStaticPaths } from '../../lib/page-helpers';
-
 /**
  * Localized homepage for Hospeda platform (web3).
- * Static shell with Server Islands for dynamic featured content.
+ * Server Islands provide dynamic featured content with streaming skeletons.
  *
- * Rendering: SSG + Server Islands
+ * Rendering: SSR + server:defer Server Islands
  * Route: /[lang]/
  */
 import AccommodationsSection from '../../components/sections/AccommodationsSection.astro';
