@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
+import { RevalidationLogFilterSchema } from '../../../src/entities/revalidation/revalidation-log.query.schema.js';
 import {
     RevalidationLogSchema,
     RevalidationStatusEnum,
     RevalidationTriggerEnum
 } from '../../../src/entities/revalidation/revalidation-log.schema.js';
-import { RevalidationLogFilterSchema } from '../../../src/entities/revalidation/revalidation-log.query.schema.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -255,6 +255,7 @@ describe('RevalidationLogFilterSchema', () => {
                 entityId: 'some-entity-id',
                 trigger: 'manual' as const,
                 status: 'success' as const,
+                path: '/en/accommodations',
                 fromDate: new Date('2024-01-01'),
                 toDate: new Date('2024-12-31'),
                 page: 2,
@@ -264,8 +265,15 @@ describe('RevalidationLogFilterSchema', () => {
             expect(result.entityType).toBe('accommodation');
             expect(result.trigger).toBe('manual');
             expect(result.status).toBe('success');
+            expect(result.path).toBe('/en/accommodations');
             expect(result.page).toBe(2);
             expect(result.pageSize).toBe(25);
+        });
+
+        it('should accept path filter as optional string', () => {
+            const result = RevalidationLogFilterSchema.parse({ path: 'hotel' });
+            expect(result.path).toBe('hotel');
+            expect(result.page).toBe(1);
         });
 
         it('should coerce string values for page and pageSize', () => {
@@ -360,6 +368,7 @@ describe('RevalidationLogFilterSchema', () => {
             expect(result.entityId).toBeUndefined();
             expect(result.trigger).toBeUndefined();
             expect(result.status).toBeUndefined();
+            expect(result.path).toBeUndefined();
             expect(result.fromDate).toBeUndefined();
             expect(result.toDate).toBeUndefined();
         });

@@ -17,6 +17,8 @@ export const RevalidationLogFilterSchema = z.object({
     trigger: RevalidationTriggerEnum.optional(),
     /** Filter by revalidation outcome */
     status: RevalidationStatusEnum.optional(),
+    /** Filter by path substring (case-insensitive) */
+    path: z.string().optional(),
     /** Return only log entries created on or after this date */
     fromDate: z.coerce.date().optional(),
     /** Return only log entries created on or before this date */

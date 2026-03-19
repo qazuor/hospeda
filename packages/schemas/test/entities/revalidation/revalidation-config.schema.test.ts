@@ -1,10 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ZodError } from 'zod';
+import { UpdateRevalidationConfigInputSchema } from '../../../src/entities/revalidation/revalidation-config.crud.schema.js';
 import {
     RevalidationConfigSchema,
     RevalidationEntityTypeEnum
 } from '../../../src/entities/revalidation/revalidation-config.schema.js';
-import { UpdateRevalidationConfigInputSchema } from '../../../src/entities/revalidation/revalidation-config.crud.schema.js';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -260,7 +259,8 @@ describe('UpdateRevalidationConfigInputSchema', () => {
                 UpdateRevalidationConfigInputSchema.safeParse({ cronIntervalMinutes: 1 }).success
             ).toBe(true);
             expect(
-                UpdateRevalidationConfigInputSchema.safeParse({ cronIntervalMinutes: 10080 }).success
+                UpdateRevalidationConfigInputSchema.safeParse({ cronIntervalMinutes: 10080 })
+                    .success
             ).toBe(true);
         });
 
@@ -276,7 +276,9 @@ describe('UpdateRevalidationConfigInputSchema', () => {
 
     describe('Invalid data', () => {
         it('should reject cronIntervalMinutes below minimum when provided', () => {
-            const result = UpdateRevalidationConfigInputSchema.safeParse({ cronIntervalMinutes: 0 });
+            const result = UpdateRevalidationConfigInputSchema.safeParse({
+                cronIntervalMinutes: 0
+            });
             expect(result.success).toBe(false);
         });
 

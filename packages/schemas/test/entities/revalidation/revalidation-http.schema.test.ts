@@ -241,9 +241,9 @@ describe('RevalidateTypeRequestSchema', () => {
         });
 
         it('should reject invalid entityType', () => {
-            expect(
-                RevalidateTypeRequestSchema.safeParse({ entityType: 'booking' }).success
-            ).toBe(false);
+            expect(RevalidateTypeRequestSchema.safeParse({ entityType: 'booking' }).success).toBe(
+                false
+            );
         });
 
         it('should reject reason exceeding 500 characters', () => {

@@ -104,7 +104,7 @@ export const UserAddonResponseSchema = z.object({
     /** Billing type */
     billingType: AddonBillingTypeSchema,
     /** Current status */
-    status: z.enum(['active', 'expired', 'canceled']),
+    status: z.enum(['active', 'expired', 'canceled', 'pending']),
     /** When the addon was purchased */
     purchasedAt: z.string().datetime(),
     /** When the addon expires (null for recurring) */
