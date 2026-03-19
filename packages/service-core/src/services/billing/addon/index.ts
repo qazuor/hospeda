@@ -7,3 +7,4 @@ export * from './addon-plan-change.helpers.js';
 export * from './addon-expiration.queries.js';
 export * from './addon-expiration.batch.js';
 export * from './addon-limit-recalculation.service.js';
+export * from './addon-downgrade-detection.js';

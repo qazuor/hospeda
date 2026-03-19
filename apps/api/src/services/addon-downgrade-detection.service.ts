@@ -24,6 +24,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { PlanDefinition } from '@repo/billing';
 import { NotificationType } from '@repo/notifications';
+import { detectDowngradedKeys, filterExceededDowngrades } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from '../utils/logger.js';
 import { sendNotification } from '../utils/notification-helper.js';
@@ -74,9 +75,8 @@ export async function detectAndNotifyDowngrades(
 ): Promise<void> {
     const { customerId, recalculations, billing, newPlanDef } = input;
 
-    const downgradedKeys = recalculations.filter(
-        (r) => r.outcome === 'success' && r.newMaxValue < r.oldMaxValue
-    );
+    // Use pure detection function from service-core
+    const downgradedKeys = detectDowngradedKeys({ recalculations });
 
     if (downgradedKeys.length === 0) {
         return;
@@ -110,35 +110,39 @@ export async function detectAndNotifyDowngrades(
         );
     }
 
-    for (const recalc of downgradedKeys) {
-        const { limitKey, oldMaxValue, newMaxValue } = recalc;
+    // AC-4.1: collect current usage for each downgraded key
+    const usageByKey = new Map<string, number>();
 
-        // AC-4.1: check current usage for this limitKey
-        let currentValue: number;
-
+    for (const dk of downgradedKeys) {
         try {
-            const usage = await billing.limits.check(customerId, limitKey);
-            currentValue = usage.currentValue;
+            const usage = await billing.limits.check(customerId, dk.limitKey);
+            usageByKey.set(dk.limitKey, usage.currentValue);
         } catch (usageErr) {
             const msg = usageErr instanceof Error ? usageErr.message : String(usageErr);
             // AC-4.4: log warning, skip notification, continue to next key
             apiLogger.warn(
-                { customerId, limitKey, error: msg },
-                `Could not read current usage for ${limitKey}, skipping downgrade warning check`
+                { customerId, limitKey: dk.limitKey, error: msg },
+                `Could not read current usage for ${dk.limitKey}, skipping downgrade warning check`
             );
-            continue;
         }
+    }
 
-        // AC-4.2: no notification needed when usage is within the new limit
-        if (currentValue <= newMaxValue) {
+    // Log keys within the new limit (AC-4.2)
+    for (const dk of downgradedKeys) {
+        const currentValue = usageByKey.get(dk.limitKey);
+        if (currentValue !== undefined && currentValue <= dk.newMaxValue) {
             apiLogger.debug(
-                { customerId, limitKey, currentValue, newMaxValue },
+                { customerId, limitKey: dk.limitKey, currentValue, newMaxValue: dk.newMaxValue },
                 'Current usage within new limit after downgrade; no notification needed'
             );
-            continue;
         }
+    }
 
-        // AC-4.3: usage exceeds new limit — notify and report to Sentry
+    // Use pure filter function from service-core to find exceeded downgrades
+    const exceededDowngrades = filterExceededDowngrades({ downgrades: downgradedKeys, usageByKey });
+
+    for (const exceeded of exceededDowngrades) {
+        const { limitKey, oldMaxValue, newMaxValue, currentUsage } = exceeded;
 
         // AC-4.3-b: report to Sentry (captureMessage, not captureException — expected behavior)
         Sentry.captureMessage(
@@ -154,7 +158,7 @@ export async function detectAndNotifyDowngrades(
                     limitKey,
                     oldLimit: oldMaxValue,
                     newLimit: newMaxValue,
-                    currentUsage: currentValue
+                    currentUsage
                 }
             }
         );
@@ -167,7 +171,7 @@ export async function detectAndNotifyDowngrades(
                 limitKey,
                 oldLimit: oldMaxValue,
                 newLimit: newMaxValue,
-                currentUsage: currentValue
+                currentUsage
             },
             'Customer usage exceeds new limit after plan downgrade'
         );
@@ -184,7 +188,7 @@ export async function detectAndNotifyDowngrades(
                     limitKey,
                     oldLimit: oldMaxValue,
                     newLimit: newMaxValue,
-                    currentUsage: currentValue,
+                    currentUsage,
                     planName: newPlanDef.name,
                     idempotencyKey: `plan_downgrade_limit_warning:${customerId}:${limitKey}:${new Date().toISOString().slice(0, 10)}`
                 }).catch((notifyErr: unknown) => {
