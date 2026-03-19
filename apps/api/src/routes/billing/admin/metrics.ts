@@ -16,6 +16,7 @@
 import { PermissionEnum } from '@repo/schemas';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
+import { getAddonLifecycleMetrics } from '../../../services/addon-lifecycle-events.js';
 import { getBillingMetricsService } from '../../../services/billing-metrics.service';
 import { getApproachingLimits, getSystemUsage } from '../../../services/billing-usage.service';
 import { createRouter } from '../../../utils/create-app';
@@ -397,6 +398,54 @@ export const getApproachingLimitsRoute = createAdminRoute({
 });
 
 /**
+ * Response schema for addon lifecycle metrics
+ */
+const AddonLifecycleMetricsResponseSchema = z.object({
+    revocationDurationMs: z
+        .array(z.number())
+        .describe('Duration in ms for each completed revocation batch'),
+    revocationOutcomes: z
+        .object({
+            success: z.number().describe('Total successful revocation batches'),
+            failed: z.number().describe('Total failed revocation attempts')
+        })
+        .describe('Cumulative revocation outcome counters'),
+    recalculationDurationMs: z
+        .array(z.number())
+        .describe('Duration in ms for each limit recalculation run'),
+    expiryRetryCount: z.number().describe('Total addon expiry events processed since last restart'),
+    cacheHitRate: z
+        .object({
+            hits: z.number().describe('Cache hit count'),
+            misses: z.number().describe('Cache miss count')
+        })
+        .describe('Cumulative cache hit/miss counters')
+});
+
+/**
+ * GET /api/v1/admin/billing/metrics/lifecycle
+ * Get in-memory addon lifecycle metrics snapshot (admin only).
+ *
+ * Returns counters accumulated since the last process start.
+ * Useful for debugging revocation failures, recalculation performance,
+ * and expiry job health without querying the database.
+ */
+export const getAddonLifecycleMetricsRoute = createAdminRoute({
+    method: 'get',
+    path: '/lifecycle',
+    summary: 'Get addon lifecycle metrics snapshot',
+    description:
+        'Returns in-memory counters for revocation outcomes, recalculation durations, expiry counts, and cache hit rates accumulated since the last process restart. Admin only.',
+    tags: ['Billing - Metrics'],
+    requiredPermissions: [PermissionEnum.BILLING_READ_ALL],
+    responseSchema: AddonLifecycleMetricsResponseSchema,
+    handler: async () => {
+        apiLogger.debug('Fetching addon lifecycle metrics snapshot');
+        return getAddonLifecycleMetrics();
+    }
+});
+
+/**
  * Admin billing metrics router
  *
  * Combines all admin metrics routes under /api/v1/admin/billing/metrics
@@ -407,3 +456,4 @@ adminMetricsRouter.route('/', getDashboardMetricsRoute);
 adminMetricsRouter.route('/', getRecentActivityRoute);
 adminMetricsRouter.route('/', getSystemUsageRoute);
 adminMetricsRouter.route('/', getApproachingLimitsRoute);
+adminMetricsRouter.route('/', getAddonLifecycleMetricsRoute);

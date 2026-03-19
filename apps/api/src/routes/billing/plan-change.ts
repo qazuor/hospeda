@@ -20,6 +20,7 @@ import { PlanChangeRequestSchema, PlanChangeResponseSchema } from '@repo/schemas
 import { HTTPException } from 'hono/http-exception';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { clearEntitlementCache } from '../../middlewares/entitlement';
+import { handlePlanChangeAddonRecalculation } from '../../services/addon-plan-change.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { type SimpleRouteInterface, createSimpleRoute } from '../../utils/route-factory';
@@ -207,7 +208,10 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
         const normalizedTargetPrice = targetPrice.unitAmount / targetIntervalCount;
         const isUpgrade = normalizedTargetPrice > normalizedCurrentPrice;
 
-        // 9. Change the plan with appropriate proration behavior
+        // 9. Capture oldPlanId BEFORE changePlan() mutates the subscription record
+        const oldPlanId = activeSubscription.planId;
+
+        // 10. Change the plan with appropriate proration behavior
         const result = await billing.subscriptions.changePlan(activeSubscription.id, {
             newPlanId,
             newPriceId: targetPrice.id,
@@ -215,7 +219,36 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             applyAt: isUpgrade ? 'immediately' : 'period_end'
         });
 
-        // 10. Map to response format
+        // 11. Recalculate addon limits for the new plan (Flow B — AC-3.8).
+        //     This is the PRIMARY trigger. Runs after QZPay confirms the plan change.
+        //     Failures are logged and non-blocking: the plan change already succeeded.
+        try {
+            const { getDb } = await import('@repo/db/client');
+            const db = getDb();
+
+            await handlePlanChangeAddonRecalculation({
+                customerId: billingCustomerId,
+                oldPlanId,
+                newPlanId,
+                billing,
+                db
+            });
+        } catch (recalcError) {
+            const recalcMessage =
+                recalcError instanceof Error ? recalcError.message : String(recalcError);
+
+            apiLogger.error(
+                {
+                    customerId: billingCustomerId,
+                    oldPlanId,
+                    newPlanId,
+                    error: recalcMessage
+                },
+                'Addon limit recalculation failed after plan change, will be caught by webhook safety net'
+            );
+        }
+
+        // 12. Map to response format
         const response: {
             subscriptionId: string;
             previousPlanId: string;
@@ -225,7 +258,7 @@ export const handlePlanChange = async (c: Parameters<SimpleRouteInterface['handl
             status: 'active' | 'scheduled';
         } = {
             subscriptionId: result.subscription.id,
-            previousPlanId: activeSubscription.planId,
+            previousPlanId: oldPlanId,
             newPlanId,
             effectiveAt: result.proration?.effectiveDate
                 ? result.proration.effectiveDate.toISOString()

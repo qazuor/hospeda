@@ -13,6 +13,7 @@
 
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { ServiceResult } from './billing-metrics.service';
 
@@ -148,10 +149,9 @@ export async function getSystemUsage(livemode = true): Promise<ServiceResult<Sys
             },
             'Failed to get system usage stats'
         );
-        const errorMessage =
-            process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                ? `Failed to get system usage stats: ${error instanceof Error ? error.message : 'Unknown error'}`
-                : 'Failed to get system usage stats';
+        const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+            ? `Failed to get system usage stats: ${error instanceof Error ? error.message : 'Unknown error'}`
+            : 'Failed to get system usage stats';
         return {
             success: false,
             error: {
@@ -222,10 +222,9 @@ export async function getApproachingLimits(
             { error: error instanceof Error ? error.message : String(error) },
             'Failed to get approaching limits'
         );
-        const errorMessage =
-            process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                ? `Failed to get approaching limits: ${error instanceof Error ? error.message : 'Unknown error'}`
-                : 'Failed to get approaching limits';
+        const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+            ? `Failed to get approaching limits: ${error instanceof Error ? error.message : 'Unknown error'}`
+            : 'Failed to get approaching limits';
         return {
             success: false,
             error: {

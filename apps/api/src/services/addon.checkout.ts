@@ -9,10 +9,13 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import { NotificationType } from '@repo/notifications';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import type { PreferenceCreateData } from 'mercadopago/dist/clients/preference/create/types';
+import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
+import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import type {
     ConfirmPurchaseInput,
@@ -288,39 +291,9 @@ export async function createAddonCheckout(
 
         const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
-        // Record promo code usage if applicable
-        if (promoCodeId && input.promoCode) {
-            try {
-                const promoService = new PromoCodeService();
-                await promoService.incrementUsage(promoCodeId);
-                await promoService.recordUsage({
-                    promoCodeId,
-                    customerId: input.customerId,
-                    discountAmount,
-                    currency: 'ARS'
-                });
-
-                apiLogger.info(
-                    {
-                        promoCodeId,
-                        promoCode: input.promoCode,
-                        customerId: input.customerId,
-                        discountAmount
-                    },
-                    'Promo code usage recorded for add-on purchase'
-                );
-            } catch (error) {
-                // Log but don't fail the purchase
-                apiLogger.warn(
-                    {
-                        promoCodeId,
-                        promoCode: input.promoCode,
-                        error: error instanceof Error ? error.message : String(error)
-                    },
-                    'Failed to record promo code usage'
-                );
-            }
-        }
+        // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
+        // NOT recorded here. It is recorded in confirmAddonPurchase() after payment
+        // is confirmed, to prevent inflated usage counts from abandoned checkouts.
 
         apiLogger.info(
             {
@@ -475,6 +448,26 @@ export async function confirmAddonPurchase(
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
         const db = getDb();
 
+        // Re-verify the subscription is still active immediately before the DB
+        // insert. The initial check at the top of this function happened earlier
+        // in the request lifecycle; the subscription could have been cancelled
+        // in the window between checkout creation and payment confirmation.
+        const currentSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
+        const stillActive = currentSubscriptions?.find(
+            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        );
+
+        if (!stillActive) {
+            return {
+                success: false,
+                error: {
+                    code: 'SUBSCRIPTION_CANCELLED',
+                    message:
+                        'Cannot confirm addon purchase: subscription was cancelled during checkout'
+                }
+            };
+        }
+
         // Wrap DB operations in a transaction to ensure atomicity
         let purchaseId: string;
 
@@ -540,6 +533,9 @@ export async function confirmAddonPurchase(
             'Inserted add-on purchase into billing_addon_purchases table'
         );
 
+        // Clear entitlement cache so the new add-on is reflected immediately
+        clearEntitlementCache(input.customerId);
+
         // Apply entitlements to JSON metadata for backward compatibility.
         // This uses the billing SDK (not direct DB), so it runs outside the
         // transaction. Failure is non-fatal and logged as a warning.
@@ -560,10 +556,101 @@ export async function confirmAddonPurchase(
             );
         }
 
+        // Record promo code usage now that payment is confirmed (GAP-043-049).
+        // Doing this here (not at checkout creation) prevents inflating usage
+        // counts for abandoned checkouts.
+        const confirmedPromoCodeId =
+            typeof input.metadata?.promoCodeId === 'string'
+                ? input.metadata.promoCodeId
+                : undefined;
+        const confirmedPromoCode =
+            typeof input.metadata?.promoCode === 'string' ? input.metadata.promoCode : undefined;
+        const confirmedDiscountAmount =
+            typeof input.metadata?.discountAmount === 'number' ? input.metadata.discountAmount : 0;
+
+        if (confirmedPromoCodeId && confirmedPromoCode) {
+            try {
+                const promoService = new PromoCodeService();
+                await promoService.incrementUsage(confirmedPromoCodeId);
+                await promoService.recordUsage({
+                    promoCodeId: confirmedPromoCodeId,
+                    customerId: input.customerId,
+                    discountAmount: confirmedDiscountAmount,
+                    currency: 'ARS'
+                });
+
+                apiLogger.info(
+                    {
+                        promoCodeId: confirmedPromoCodeId,
+                        promoCode: confirmedPromoCode,
+                        customerId: input.customerId,
+                        discountAmount: confirmedDiscountAmount
+                    },
+                    'Promo code usage recorded after payment confirmation'
+                );
+            } catch (promoError) {
+                // Non-fatal: log and continue — purchase is already committed
+                apiLogger.warn(
+                    {
+                        promoCodeId: confirmedPromoCodeId,
+                        promoCode: confirmedPromoCode,
+                        error: promoError instanceof Error ? promoError.message : String(promoError)
+                    },
+                    'Failed to record promo code usage after payment confirmation'
+                );
+            }
+        }
+
         apiLogger.info(
             { customerId: input.customerId, addonSlug: input.addonSlug },
             'Add-on purchase confirmed and entitlements applied'
         );
+
+        // Fire-and-forget: notify the user about the purchase confirmation.
+        // Failure is non-blocking — the purchase already succeeded.
+        try {
+            const customer = await billing.customers.get(input.customerId);
+            if (customer) {
+                const customerName =
+                    typeof customer.metadata?.name === 'string'
+                        ? customer.metadata.name
+                        : (customer.email ?? 'Usuario');
+                const userId =
+                    typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
+                sendNotification({
+                    type: NotificationType.ADDON_PURCHASE,
+                    recipientEmail: customer.email,
+                    recipientName: customerName,
+                    userId,
+                    customerId: input.customerId,
+                    planName: addon.name,
+                    amount: addon.priceArs,
+                    currency: 'ARS',
+                    nextBillingDate: expiresAt?.toISOString() || undefined
+                }).catch((notifErr) => {
+                    apiLogger.debug(
+                        {
+                            customerId: input.customerId,
+                            addonSlug: input.addonSlug,
+                            error: notifErr instanceof Error ? notifErr.message : String(notifErr)
+                        },
+                        'ADDON_PURCHASE notification failed (non-blocking)'
+                    );
+                });
+            }
+        } catch (notifLookupErr) {
+            apiLogger.debug(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    error:
+                        notifLookupErr instanceof Error
+                            ? notifLookupErr.message
+                            : String(notifLookupErr)
+                },
+                'Could not look up customer for ADDON_PURCHASE notification, skipping'
+            );
+        }
 
         return { success: true, data: undefined };
     } catch (error) {

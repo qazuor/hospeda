@@ -27,6 +27,7 @@ import {
 import { and, eq, isNull } from 'drizzle-orm';
 import { createSystemActor } from '../utils/actor';
 import { lookupCustomerDetails } from '../utils/customer-lookup';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { ServiceResult } from './addon.types';
 
@@ -244,10 +245,9 @@ export class UsageTrackingService {
                 'Failed to get usage summary',
                 error instanceof Error ? error.message : String(error)
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get usage summary: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get usage summary';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get usage summary: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get usage summary';
             return {
                 success: false,
                 error: {
@@ -293,10 +293,9 @@ export class UsageTrackingService {
                 'Failed to check usage threshold',
                 error instanceof Error ? error.message : String(error)
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to check usage threshold: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to check usage threshold';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to check usage threshold: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to check usage threshold';
             return {
                 success: false,
                 error: {
@@ -411,10 +410,9 @@ export class UsageTrackingService {
                 'Failed to get usage for limit',
                 error instanceof Error ? error.message : String(error)
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get limit usage: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get limit usage';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get limit usage: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get limit usage';
             return {
                 success: false,
                 error: {

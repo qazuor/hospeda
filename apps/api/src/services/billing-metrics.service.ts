@@ -13,6 +13,7 @@
 
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import type { ServiceResult } from './addon.types';
 
@@ -283,10 +284,9 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get overview metrics'
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get overview metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get overview metrics';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get overview metrics: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get overview metrics';
             return {
                 success: false,
                 error: {
@@ -349,10 +349,9 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get revenue time series'
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get revenue time series: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get revenue time series';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get revenue time series: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get revenue time series';
             return {
                 success: false,
                 error: {
@@ -411,10 +410,9 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get recent activity'
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get recent activity: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get recent activity';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get recent activity: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get recent activity';
             return {
                 success: false,
                 error: {
@@ -465,10 +463,9 @@ export class BillingMetricsService {
                 { error: error instanceof Error ? error.message : String(error) },
                 'Failed to get subscription breakdown'
             );
-            const errorMessage =
-                process.env.HOSPEDA_API_DEBUG_ERRORS === 'true'
-                    ? `Failed to get subscription breakdown: ${error instanceof Error ? error.message : 'Unknown error'}`
-                    : 'Failed to get subscription breakdown';
+            const errorMessage = env.HOSPEDA_API_DEBUG_ERRORS
+                ? `Failed to get subscription breakdown: ${error instanceof Error ? error.message : 'Unknown error'}`
+                : 'Failed to get subscription breakdown';
             return {
                 success: false,
                 error: {

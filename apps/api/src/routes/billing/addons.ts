@@ -26,6 +26,7 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
+import { clearEntitlementCache } from '../../middlewares/entitlement';
 import { AddonService } from '../../services/addon.service';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
@@ -363,6 +364,9 @@ export const cancelAddonRoute = createProtectedRoute({
                 message: result.error?.message ?? 'Unknown error'
             });
         }
+
+        // Clear entitlement cache so the cancellation is reflected immediately
+        clearEntitlementCache(billingCustomerId);
 
         return null;
     }

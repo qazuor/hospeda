@@ -12,11 +12,43 @@ import type { QZPayBilling, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { extractMPSubscriptionEventData } from '@qazuor/qzpay-mercadopago';
 import { billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
+import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
+import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
+import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
 import { apiLogger } from '../../../utils/logger.js';
+import { sendNotification } from '../../../utils/notification-helper.js';
+
+/**
+ * Safety margin timeout before MercadoPago's 22s webhook deadline.
+ *
+ * MercadoPago times out webhook processing at 22 seconds and retries on
+ * non-2xx responses. Addon lifecycle calls (revocation, plan-change
+ * recalculation) can take longer than 22s when processing many addons.
+ * Using a 20s race timeout gives a 2s margin so the webhook returns 200
+ * before MercadoPago retries, preventing double-processing.
+ *
+ * Any in-flight work continues running after the timeout (intentional).
+ * Per-addon DB commits preserve partial progress, and cron Phase 4 picks
+ * up any remaining work on the next scheduled run.
+ */
+const WEBHOOK_TIMEOUT_MS = 20_000;
+
+/**
+ * Minimum number of payment failures before sending a PAYMENT_RETRY_WARNING.
+ * First failure sends a generic PAYMENT_FAILURE notification (handled elsewhere).
+ * From the 2nd failure onward, we send the escalated retry warning.
+ */
+const PAYMENT_RETRY_WARNING_THRESHOLD = 2;
+
+/**
+ * Total maximum retries MercadoPago performs before auto-cancellation.
+ * Shown to the user in the retry warning email so they know how many attempts remain.
+ */
+const PAYMENT_RETRY_MAX_ATTEMPTS = 3;
 
 /** Masks an ID to show only the last 4 characters */
 function maskId(id: string): string {
@@ -265,9 +297,102 @@ export async function processSubscriptionUpdated({
         return { success: true, statusChanged: false };
     }
 
+    // Step 5b: Detect planId change (webhook safety net for AC-3.7)
+    //
+    // MercadoPago webhooks carry an optional planId in the event payload.
+    // The primary trigger for plan-change recalculation is the plan-change
+    // route (AC-3.8). This block is a safety net that fires only when the
+    // webhook signals a planId that differs from what is stored locally,
+    // and only while the subscription is (or is becoming) ACTIVE.
+    //
+    // Recalculation errors are intentionally non-blocking: the webhook still
+    // returns 200 to prevent infinite retries from MercadoPago.
+    const fetchedPlanId = eventData.planId;
+    const localPlanId = localSubscription.planId;
+
+    if (
+        fetchedPlanId != null &&
+        localPlanId != null &&
+        fetchedPlanId !== localPlanId &&
+        [SubscriptionStatusEnum.ACTIVE, SubscriptionStatusEnum.TRIALING].includes(mappedStatus)
+    ) {
+        apiLogger.info(
+            {
+                subscriptionId: localSubscription.id,
+                customerId: localSubscription.customerId,
+                oldPlanId: localPlanId,
+                newPlanId: fetchedPlanId,
+                source
+            },
+            'Plan change detected via webhook safety net'
+        );
+
+        try {
+            const planChangeTimeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(
+                    () => reject(new Error('Webhook addon lifecycle timeout (20s)')),
+                    WEBHOOK_TIMEOUT_MS
+                );
+            });
+
+            await Promise.race([
+                handlePlanChangeAddonRecalculation({
+                    customerId: localSubscription.customerId,
+                    oldPlanId: localPlanId,
+                    newPlanId: fetchedPlanId,
+                    billing,
+                    db
+                }),
+                planChangeTimeoutPromise
+            ]);
+        } catch (recalcError) {
+            if (recalcError instanceof Error && recalcError.message.includes('timeout')) {
+                apiLogger.warn(
+                    {
+                        subscriptionId: localSubscription.id,
+                        customerId: localSubscription.customerId,
+                        elapsedMs: WEBHOOK_TIMEOUT_MS,
+                        source
+                    },
+                    'Addon lifecycle processing timed out — cron Phase 4 will complete remaining work'
+                );
+                // Non-blocking: return 200 to prevent MercadoPago retry
+            } else {
+                apiLogger.error(
+                    {
+                        error: recalcError,
+                        subscriptionId: localSubscription.id,
+                        customerId: localSubscription.customerId,
+                        oldPlanId: localPlanId,
+                        newPlanId: fetchedPlanId,
+                        source
+                    },
+                    'Plan-change recalculation failed in webhook safety net; continuing webhook processing'
+                );
+                Sentry.captureException(recalcError, {
+                    extra: {
+                        subscriptionId: localSubscription.id,
+                        customerId: localSubscription.customerId,
+                        oldPlanId: localPlanId,
+                        newPlanId: fetchedPlanId,
+                        source
+                    }
+                });
+            }
+        }
+    }
+
     // Step 6: Compare statuses
     const previousStatus = localSubscription.status;
     if (previousStatus === mappedStatus) {
+        // If no status change but planId changed, persist the new planId
+        if (fetchedPlanId != null && localPlanId != null && fetchedPlanId !== localPlanId) {
+            await db
+                .update(billingSubscriptions)
+                .set({ planId: fetchedPlanId, updatedAt: new Date() })
+                .where(eq(billingSubscriptions.id, localSubscription.id));
+        }
+
         apiLogger.debug(
             { subscriptionId: localSubscription.id, status: mappedStatus, source },
             `No status change for subscription ${localSubscription.id}: still ${mappedStatus}`
@@ -280,6 +405,11 @@ export async function processSubscriptionUpdated({
         status: mappedStatus,
         updatedAt: new Date()
     };
+
+    // Persist planId update within the same transaction as the status change
+    if (fetchedPlanId != null && localPlanId != null && fetchedPlanId !== localPlanId) {
+        updateData.planId = fetchedPlanId;
+    }
 
     // Only set canceled_at if transitioning TO cancelled and not already set
     if (mappedStatus === SubscriptionStatusEnum.CANCELLED && !localSubscription.canceledAt) {
@@ -299,6 +429,23 @@ export async function processSubscriptionUpdated({
 
         // Step 8: Insert audit log within the transaction (non-blocking on failure)
         try {
+            // Extract cancellation reason from the MercadoPago payload for audit trail (GAP-043-023)
+            let cancellationReason: string | undefined;
+            if (mappedStatus === SubscriptionStatusEnum.CANCELLED) {
+                const rawPayload = event.data as Record<string, unknown> | undefined;
+                const rawReason =
+                    typeof rawPayload?.reason === 'string'
+                        ? rawPayload.reason
+                        : typeof rawPayload?.status_detail === 'string'
+                          ? rawPayload.status_detail
+                          : 'unknown';
+                cancellationReason = rawReason.includes('payment')
+                    ? 'auto_payment_failure'
+                    : rawReason.includes('user')
+                      ? 'user_initiated'
+                      : 'unknown';
+            }
+
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId: localSubscription.id,
                 previousStatus,
@@ -307,7 +454,8 @@ export async function processSubscriptionUpdated({
                 providerEventId,
                 metadata: {
                     qzpayStatus,
-                    mpPreapprovalId
+                    mpPreapprovalId,
+                    ...(cancellationReason !== undefined ? { cancellationReason } : {})
                 }
             });
         } catch (auditError) {
@@ -332,6 +480,245 @@ export async function processSubscriptionUpdated({
         },
         `Subscription status updated: ${previousStatus} -> ${mappedStatus}`
     );
+
+    // Step 8b: Addon cancellation cleanup (CANCELLED transitions only)
+    //
+    // Runs AFTER the subscription status is committed to the DB and the
+    // entitlement cache is cleared. If handleSubscriptionCancellationAddons
+    // throws (partial failure), the error propagates to the webhook error
+    // handler and MercadoPago will retry. Successfully revoked purchases are
+    // already persisted as 'canceled' across retries (partial progress is safe).
+    //
+    // AC-1.9: if the customer does not exist in the billing system, log a
+    // warning and acknowledge the event (return 200) to prevent infinite retries.
+    if (mappedStatus === SubscriptionStatusEnum.CANCELLED) {
+        let customerExists = true;
+
+        try {
+            await billing.customers.get(localSubscription.customerId);
+        } catch (customerErr) {
+            // Only treat a genuine 404 as "customer not found".
+            // Infrastructure errors (timeout, 500, connection failure) must
+            // propagate so MercadoPago retries the webhook — skipping addon
+            // cleanup due to a transient error would silently leave orphaned
+            // purchases in an active state (AC-1.9).
+            const isNotFound =
+                customerErr instanceof Error &&
+                (('statusCode' in customerErr &&
+                    (customerErr as { statusCode: number }).statusCode === 404) ||
+                    ('status' in customerErr &&
+                        (customerErr as { status: number }).status === 404));
+
+            if (isNotFound) {
+                customerExists = false;
+            } else {
+                throw customerErr;
+            }
+        }
+
+        if (customerExists) {
+            // Wrap in a 20s race to prevent MercadoPago double-processing (GAP-043-03).
+            // If processing exceeds the deadline the webhook returns 200; cron Phase 4
+            // picks up any remaining addon revocations on the next scheduled run.
+            // Non-timeout errors propagate: MercadoPago will retry and partial DB
+            // progress (per-addon commits) ensures idempotent re-processing.
+            const cancellationTimeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(
+                    () => reject(new Error('Webhook addon lifecycle timeout (20s)')),
+                    WEBHOOK_TIMEOUT_MS
+                );
+            });
+
+            try {
+                await Promise.race([
+                    handleSubscriptionCancellationAddons({
+                        subscriptionId: localSubscription.id,
+                        customerId: localSubscription.customerId,
+                        billing,
+                        db
+                    }),
+                    cancellationTimeoutPromise
+                ]);
+            } catch (err) {
+                if (err instanceof Error && err.message.includes('timeout')) {
+                    apiLogger.warn(
+                        {
+                            subscriptionId: localSubscription.id,
+                            elapsedMs: WEBHOOK_TIMEOUT_MS,
+                            source
+                        },
+                        'Addon lifecycle processing timed out — cron Phase 4 will complete remaining work'
+                    );
+                    // Return 200 to prevent MercadoPago retry — cron will handle remaining addons
+                } else {
+                    throw err; // Re-throw non-timeout errors
+                }
+            }
+        } else {
+            apiLogger.warn(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    mpPreapprovalId: maskId(mpPreapprovalId),
+                    source
+                },
+                'Customer not found in billing system during cancellation cleanup; skipping addon revocation (AC-1.9)'
+            );
+        }
+    }
+
+    // Step 8c: Payment failure tracking and retry warning (GAP-043-17)
+    //
+    // When a subscription transitions to PAST_DUE (payment failure), we increment
+    // a failure counter in the subscription metadata. If the count reaches 2 or more,
+    // we send a PAYMENT_RETRY_WARNING notification to warn the user before auto-cancel.
+    //
+    // This is fire-and-forget: errors do not block webhook processing.
+    if (mappedStatus === SubscriptionStatusEnum.PAST_DUE) {
+        try {
+            const subMeta = (localSubscription.metadata ?? {}) as Record<string, unknown>;
+            const previousFailureCount =
+                typeof subMeta.paymentFailureCount === 'number' ? subMeta.paymentFailureCount : 0;
+            const newFailureCount = previousFailureCount + 1;
+
+            // Persist updated failure count
+            await db
+                .update(billingSubscriptions)
+                .set({
+                    metadata: { ...subMeta, paymentFailureCount: newFailureCount },
+                    updatedAt: new Date()
+                })
+                .where(eq(billingSubscriptions.id, localSubscription.id));
+
+            apiLogger.info(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    paymentFailureCount: newFailureCount
+                },
+                'Payment failure count incremented on subscription'
+            );
+
+            // Dispatch PAYMENT_RETRY_WARNING on 2nd+ failure
+            if (newFailureCount >= PAYMENT_RETRY_WARNING_THRESHOLD) {
+                const today = new Date().toISOString().split('T')[0] ?? '';
+                const idempotencyKey = `payment_retry_warning:${localSubscription.customerId}:${newFailureCount}:${today}`;
+
+                try {
+                    const warningCustomer = await billing.customers.get(
+                        localSubscription.customerId
+                    );
+                    if (warningCustomer) {
+                        const warningCustomerName =
+                            typeof warningCustomer.metadata?.name === 'string'
+                                ? warningCustomer.metadata.name
+                                : (warningCustomer.email ?? 'Usuario');
+                        const warningUserId =
+                            typeof warningCustomer.metadata?.userId === 'string'
+                                ? warningCustomer.metadata.userId
+                                : null;
+
+                        sendNotification({
+                            type: NotificationType.PAYMENT_RETRY_WARNING,
+                            recipientEmail: warningCustomer.email,
+                            recipientName: warningCustomerName,
+                            userId: warningUserId,
+                            customerId: localSubscription.customerId,
+                            failureCount: newFailureCount,
+                            maxRetries: PAYMENT_RETRY_MAX_ATTEMPTS,
+                            idempotencyKey
+                        }).catch((notifErr) => {
+                            apiLogger.debug(
+                                {
+                                    subscriptionId: localSubscription.id,
+                                    customerId: localSubscription.customerId,
+                                    error:
+                                        notifErr instanceof Error
+                                            ? notifErr.message
+                                            : String(notifErr)
+                                },
+                                'PAYMENT_RETRY_WARNING notification failed (will retry)'
+                            );
+                        });
+
+                        apiLogger.info(
+                            {
+                                subscriptionId: localSubscription.id,
+                                customerId: localSubscription.customerId,
+                                paymentFailureCount: newFailureCount,
+                                idempotencyKey
+                            },
+                            'Dispatched PAYMENT_RETRY_WARNING notification'
+                        );
+                    }
+                } catch (customerLookupErr) {
+                    apiLogger.warn(
+                        {
+                            subscriptionId: localSubscription.id,
+                            customerId: localSubscription.customerId,
+                            error:
+                                customerLookupErr instanceof Error
+                                    ? customerLookupErr.message
+                                    : String(customerLookupErr)
+                        },
+                        'Could not look up customer for PAYMENT_RETRY_WARNING, skipping'
+                    );
+                }
+            }
+        } catch (paymentTrackingErr) {
+            // Non-blocking: log and continue to avoid blocking webhook processing
+            apiLogger.error(
+                {
+                    subscriptionId: localSubscription.id,
+                    customerId: localSubscription.customerId,
+                    error:
+                        paymentTrackingErr instanceof Error
+                            ? paymentTrackingErr.message
+                            : String(paymentTrackingErr)
+                },
+                'Payment failure tracking failed, continuing webhook processing'
+            );
+        }
+    }
+
+    // Reset failure count when subscription becomes active again
+    if (
+        mappedStatus === SubscriptionStatusEnum.ACTIVE &&
+        previousStatus === SubscriptionStatusEnum.PAST_DUE
+    ) {
+        try {
+            const subMeta = (localSubscription.metadata ?? {}) as Record<string, unknown>;
+            if (
+                typeof subMeta.paymentFailureCount === 'number' &&
+                subMeta.paymentFailureCount > 0
+            ) {
+                await db
+                    .update(billingSubscriptions)
+                    .set({
+                        metadata: { ...subMeta, paymentFailureCount: 0 },
+                        updatedAt: new Date()
+                    })
+                    .where(eq(billingSubscriptions.id, localSubscription.id));
+
+                apiLogger.info(
+                    {
+                        subscriptionId: localSubscription.id,
+                        customerId: localSubscription.customerId
+                    },
+                    'Payment failure count reset on subscription reactivation'
+                );
+            }
+        } catch (resetErr) {
+            // Non-blocking
+            apiLogger.warn(
+                {
+                    subscriptionId: localSubscription.id,
+                    error: resetErr instanceof Error ? resetErr.message : String(resetErr)
+                },
+                'Failed to reset payment failure count on reactivation'
+            );
+        }
+    }
 
     // Step 9: Send notifications (fire-and-forget)
     let customer: Awaited<ReturnType<typeof billing.customers.get>> | null = null;
@@ -403,3 +790,21 @@ export async function processSubscriptionUpdated({
     // Step 10: Return success
     return { success: true, statusChanged: true, newStatus: mappedStatus };
 }
+
+// GAP-043-53: ADDON_RENEWAL_CONFIRMATION dispatch is intentionally not implemented here.
+//
+// MercadoPago handles add-on recurring billing externally and does not emit a
+// distinct webhook event per add-on renewal. The `subscription_preapproval.updated`
+// event only signals changes to the subscription's overall status (active, paused,
+// canceled, etc.) — it carries no per-addon granularity.
+//
+// To implement ADDON_RENEWAL_CONFIRMATION in the future:
+//   1. Create a dedicated webhook handler for add-on payment events (e.g.
+//      `payment.approved` with metadata.type === 'addon_renewal').
+//   2. Extract the addonSlug from the payment metadata.
+//   3. Call sendNotification({ type: NotificationType.ADDON_RENEWAL_CONFIRMATION, ... })
+//      after confirming the renewal in billing_addon_purchases.
+//
+// Until MercadoPago surfaces add-on renewal events separately, this notification
+// cannot be reliably dispatched from subscription webhook processing without
+// risking false positives or requiring a per-addon payment scan on every event.
