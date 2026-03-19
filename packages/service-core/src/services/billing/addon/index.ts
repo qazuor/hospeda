@@ -5,3 +5,5 @@ export * from './addon-lifecycle-events.js';
 export * from './addon.catalog.js';
 export * from './addon-plan-change.helpers.js';
 export * from './addon-expiration.queries.js';
+export * from './addon-expiration.batch.js';
+export * from './addon-limit-recalculation.service.js';
