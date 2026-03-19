@@ -1,3 +1,4 @@
+import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core/index.js';
 import requiredManifest from '../manifest-required.json';
 import { STATUS_ICONS, createDateTransformer, createSeedFactory } from '../utils/index.js';
@@ -33,9 +34,9 @@ export const seedUsers = createSeedFactory({
         const displayName = user.displayName || 'Unknown';
         const role = user.role || 'USER';
         const roleIcon =
-            role === 'SUPER_ADMIN'
+            role === RoleEnum.SUPER_ADMIN
                 ? ` ${STATUS_ICONS.UserSuperAdmin}`
-                : role === 'ADMIN'
+                : role === RoleEnum.ADMIN
                   ? ` ${STATUS_ICONS.UserAdmin}`
                   : ` ${STATUS_ICONS.User}`;
         return `"${displayName}" (${role})${roleIcon}`;
@@ -44,7 +45,7 @@ export const seedUsers = createSeedFactory({
     // Custom validation to ensure super admin is not created here
     validateBeforeCreate: (data) => {
         const userData = data as { role?: string };
-        if (userData.role === 'SUPER_ADMIN') {
+        if (userData.role === RoleEnum.SUPER_ADMIN) {
             throw new Error('Super admin user must be created separately');
         }
         return true;

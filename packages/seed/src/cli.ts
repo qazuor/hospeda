@@ -8,7 +8,8 @@ import { config } from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-config({ path: path.resolve(__dirname, '../../../.env.local') });
+// Per-app env strategy (SPEC-035): HOSPEDA_DATABASE_URL lives in apps/api/.env.local.
+config({ path: path.resolve(__dirname, '../../../apps/api/.env.local') });
 
 import { dbLogger } from '@repo/db';
 import { runSeed } from './index.js';

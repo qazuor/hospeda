@@ -6,9 +6,10 @@ import { config as envConfig } from 'dotenv';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables FIRST, before any other imports that use them
+// Per-app env strategy (SPEC-035): HOSPEDA_DATABASE_URL lives in apps/api/.env.local.
+// packages/seed has no env of its own; it borrows the API app's env file.
 envConfig({
-    path: path.resolve(__dirname, '../../../.env.local')
+    path: path.resolve(__dirname, '../../../apps/api/.env.local')
 });
 
 import { configureLogger } from '@repo/logger';

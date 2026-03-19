@@ -219,7 +219,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_READ_ALL,
         PermissionEnum.BILLING_PROMO_CODE_READ,
         PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-        PermissionEnum.BILLING_METRICS_READ
+        PermissionEnum.BILLING_METRICS_READ,
+
+        // REVALIDATION: All permissions
+        PermissionEnum.REVALIDATION_TRIGGER,
+        PermissionEnum.REVALIDATION_CONFIG_VIEW,
+        PermissionEnum.REVALIDATION_CONFIG_EDIT,
+        PermissionEnum.REVALIDATION_LOG_VIEW
     ],
 
     [RoleEnum.ADMIN]: [
@@ -408,7 +414,13 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_READ_ALL,
         PermissionEnum.BILLING_PROMO_CODE_READ,
         PermissionEnum.BILLING_PROMO_CODE_MANAGE,
-        PermissionEnum.BILLING_METRICS_READ
+        PermissionEnum.BILLING_METRICS_READ,
+
+        // REVALIDATION: All permissions
+        PermissionEnum.REVALIDATION_TRIGGER,
+        PermissionEnum.REVALIDATION_CONFIG_VIEW,
+        PermissionEnum.REVALIDATION_CONFIG_EDIT,
+        PermissionEnum.REVALIDATION_LOG_VIEW
     ],
 
     [RoleEnum.CLIENT_MANAGER]: [

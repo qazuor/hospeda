@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
 import { STATUS_ICONS } from '../utils/icons.js';
@@ -43,9 +44,9 @@ const getUserInfo = (item: unknown) => {
     const displayName = userData.displayName as string;
     const role = userData.role as string;
     const roleIcon =
-        role === 'SUPER_ADMIN'
+        role === RoleEnum.SUPER_ADMIN
             ? ` ${STATUS_ICONS.UserSuperAdmin}`
-            : role === 'ADMIN'
+            : role === RoleEnum.ADMIN
               ? ` ${STATUS_ICONS.UserAdmin}`
               : ` ${STATUS_ICONS.User}`;
     return `"${displayName}" (${role})${roleIcon}`;
