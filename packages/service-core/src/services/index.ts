@@ -19,3 +19,4 @@ export * from './owner-promotion';
 export * from './tag/tag.service';
 export * from './user/user.service';
 export * from './userBookmark/userBookmark.service';
+export * from './billing';

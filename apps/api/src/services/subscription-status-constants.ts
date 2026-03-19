@@ -1,29 +1,9 @@
 /**
- * Subscription Status Constants
- *
- * Defines typed constants for billing subscription statuses.
- * Subscriptions use British spelling ('cancelled', 2 L's) per MercadoPago/QZPay convention.
- *
- * See also: {@link ADDON_PURCHASE_STATUSES} in `addon-status-transitions.ts`, which
- * uses American spelling ('canceled') to match the `billing_addon_purchases` DB column.
+ * Re-export from @repo/service-core (migrated to packages/service-core/src/services/billing/subscription/).
+ * This shim maintains backward compatibility for existing consumers in the API layer.
  *
  * @module services/subscription-status-constants
  */
+export type { SubscriptionStatus } from '@repo/service-core';
 
-/**
- * All valid subscription status values.
- * British spelling ('cancelled') matches the MercadoPago/QZPay API convention and
- * the `billing_subscriptions.status` column constraint.
- */
-export const SUBSCRIPTION_STATUSES = {
-    ACTIVE: 'active',
-    TRIALING: 'trialing',
-    /** British spelling — subscription convention (MercadoPago/QZPay). */
-    CANCELLED: 'cancelled',
-    PAUSED: 'paused'
-} as const;
-
-/**
- * Union type of all subscription status strings.
- */
-export type SubscriptionStatus = (typeof SUBSCRIPTION_STATUSES)[keyof typeof SUBSCRIPTION_STATUSES];
+export { SUBSCRIPTION_STATUSES } from '@repo/service-core';
