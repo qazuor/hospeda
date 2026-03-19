@@ -16,6 +16,14 @@ const AdminEnvSchema = z.object({
     VITE_API_URL: z.string().url().describe('API base URL'),
     VITE_SITE_URL: z.string().url().describe('Public web app URL'),
 
+    // Server-side API URL used by TanStack Start server functions (e.g. auth-session.ts).
+    // Must be set as a plain process.env variable (no VITE_ prefix) since it is never
+    // exposed to the browser bundle.
+    HOSPEDA_API_URL: z
+        .string()
+        .url()
+        .describe('API base URL for server-side requests (server functions)'),
+
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),
 
@@ -135,6 +143,7 @@ export const validateAdminEnv = (): AdminEnv => {
         const envData = {
             VITE_API_URL: import.meta.env.VITE_API_URL,
             VITE_SITE_URL: import.meta.env.VITE_SITE_URL,
+            HOSPEDA_API_URL: import.meta.env.HOSPEDA_API_URL ?? process.env.HOSPEDA_API_URL,
             VITE_BETTER_AUTH_URL: import.meta.env.VITE_BETTER_AUTH_URL,
             VITE_APP_NAME: import.meta.env.VITE_APP_NAME || 'Hospeda Admin',
             VITE_APP_VERSION: import.meta.env.VITE_APP_VERSION || '1.0.0',

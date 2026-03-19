@@ -1,68 +1,55 @@
-import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { URL, fileURLToPath } from 'node:url';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { z } from 'zod';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 
-// Load environment variables manually (monorepo) or use Vercel env vars (deployment)
-const rootDir = resolve(__dirname, '../../');
-const envPath = resolve(rootDir, '.env.local');
-
-try {
-    // Try to load from monorepo root first
-    const envContent = readFileSync(envPath, 'utf8');
-    const lines = envContent.split('\n').filter((line) => line.trim() && !line.startsWith('#'));
-
-    // Prefer for...of instead of forEach for clarity and style consistency
-    for (const line of lines) {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length) {
-            let value = valueParts.join('=').trim();
-            // Remove inline comments (everything after # including the #)
-            const commentIndex = value.indexOf('#');
-            if (commentIndex !== -1) {
-                value = value.substring(0, commentIndex).trim();
-            }
-            // Only set if not already defined (Vercel env vars take precedence)
-            if (!process.env[key.trim()]) {
-                process.env[key.trim()] = value;
-            }
-        }
+// Load .env, .env.local, .env.[mode], .env.[mode].local from the admin app
+// directory.  loadEnv() reads the files synchronously so we can validate
+// before defineConfig() is evaluated.  The empty-string prefix loads ALL
+// variables regardless of prefix (VITE_*, HOSPEDA_*, etc.).
+// Platform env vars (Vercel) are already in process.env and take precedence
+// because we only set keys that are not already defined.
+const rawEnv = loadEnv(process.env.NODE_ENV ?? 'development', __dirname, '');
+for (const [key, value] of Object.entries(rawEnv)) {
+    if (!process.env[key]) {
+        process.env[key] = value;
     }
-} catch (_error) {
-    // In deployment (Vercel), .env.local won't exist - use platform env vars
-    console.info('📦 Running in deployment mode - using platform environment variables');
 }
 
-// Validate environment variables for Admin App
-const AdminEnvSchema = z.object({
-    VITE_API_URL: z.string().url('Must be a valid API URL')
+// Validate required environment variables for the Admin App.
+const AdminViteEnvSchema = z.object({
+    VITE_API_URL: z.string().url('Must be a valid API URL'),
+    VITE_SITE_URL: z.string().url('Must be a valid site URL'),
+    HOSPEDA_API_URL: z.string().url('Must be a valid API URL for server-side requests'),
+    VITE_BETTER_AUTH_URL: z.string().min(1, 'Must be a non-empty Better Auth URL')
 });
 
 try {
-    AdminEnvSchema.parse(process.env);
+    AdminViteEnvSchema.parse(process.env);
 } catch (error) {
-    console.error('❌ Admin App environment validation FAILED');
+    console.error('Admin App environment validation FAILED');
 
     if (error instanceof z.ZodError && error.issues && Array.isArray(error.issues)) {
         const errorMessages = error.issues
             .map((err: z.ZodIssue) => `  - ${err.path.join('.')}: ${err.message}`)
             .join('\n');
-        console.error(`❌ Environment validation failed for Admin App:\n${errorMessages}`);
+        console.error(`Environment validation failed for Admin App:\n${errorMessages}`);
         process.exit(1);
     }
-    console.error('❌ Unexpected error during Admin App environment validation:', error);
+    console.error('Unexpected error during Admin App environment validation:', error);
     process.exit(1);
 }
 
 export default defineConfig({
-    envDir: resolve(__dirname, '../../'),
+    // Load .env files from the admin app directory, not the monorepo root.
+    // Vite will auto-load: .env, .env.local, .env.[mode], .env.[mode].local
+    envDir: __dirname,
     plugins: [
         tsconfigPaths({ projects: ['./tsconfig.json'] }),
         tailwindcss(),
@@ -106,7 +93,10 @@ export default defineConfig({
                 }
             }
         },
-        // Environment variable mapping plugin
+        // Environment variable mapping plugin.
+        // Explicitly injects process.env values into import.meta.env so that
+        // server-side (HOSPEDA_*) vars and VITE_* vars are all available
+        // consistently in both SSR and client builds.
         {
             name: 'hospeda-env-mapping',
             config() {
@@ -114,6 +104,15 @@ export default defineConfig({
                     define: {
                         'import.meta.env.VITE_API_URL': JSON.stringify(
                             process.env.VITE_API_URL || ''
+                        ),
+                        'import.meta.env.VITE_SITE_URL': JSON.stringify(
+                            process.env.VITE_SITE_URL || ''
+                        ),
+                        'import.meta.env.HOSPEDA_API_URL': JSON.stringify(
+                            process.env.HOSPEDA_API_URL || ''
+                        ),
+                        'import.meta.env.VITE_BETTER_AUTH_URL': JSON.stringify(
+                            process.env.VITE_BETTER_AUTH_URL || ''
                         ),
                         'import.meta.env.VITE_DEBUG_ACTOR_ID': JSON.stringify(
                             process.env.VITE_DEBUG_ACTOR_ID || ''

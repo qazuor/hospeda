@@ -14,18 +14,16 @@ export type FetchApiOutput<T> = {
     readonly status: number;
 };
 
+/**
+ * Reads a Vite environment variable by name.
+ *
+ * Vite statically replaces `import.meta.env.*` at build time for known
+ * variable names. For dynamic key access we fall back to the full
+ * `import.meta.env` object, which Vite exposes at runtime.
+ */
 const getEnvVar = (key: string): string | undefined => {
-    // Handle both import.meta.env (Vite) and process.env (Node.js)
-    if (
-        typeof window !== 'undefined' &&
-        'import' in globalThis &&
-        // biome-ignore lint/suspicious/noExplicitAny: Complex type checking for globalThis.import.meta
-        'meta' in (globalThis as any).import
-    ) {
-        // biome-ignore lint/suspicious/noExplicitAny: Complex type checking for globalThis.import.meta
-        return (globalThis as any).import.meta?.env?.[key];
-    }
-    return process.env?.[key];
+    const value = (import.meta.env as Record<string, string | undefined>)[key];
+    return value;
 };
 
 const getBaseUrl = (): string => {

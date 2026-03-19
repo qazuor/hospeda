@@ -38,8 +38,7 @@ const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only' as const;
  */
 export const cspMiddleware = createMiddleware({ type: 'function' }).server(async ({ next }) => {
     const nonce = randomBytes(16).toString('base64url');
-    // Server-side only: process.env is sufficient in middleware context
-    const sentryDsn = process.env.VITE_SENTRY_DSN || '';
+    const sentryDsn = import.meta.env.VITE_SENTRY_DSN ?? '';
     const cspValue = buildCspDirectives({ nonce, sentryDsn });
 
     /**
