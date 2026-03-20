@@ -42,4 +42,7 @@ export * from './social.schema.js';
 export * from './tags.schema.js';
 export * from './visibility.schema.js';
 
+// Query helpers
+export { queryBooleanParam } from './query-helpers.js';
+
 // Migration completed ✅

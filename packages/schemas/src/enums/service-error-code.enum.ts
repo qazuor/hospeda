@@ -20,5 +20,7 @@ export enum ServiceErrorCode {
      */
     NOT_IMPLEMENTED = 'NOT_IMPLEMENTED',
     /** External service or dependency is not available or not configured */
-    SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE'
+    SERVICE_UNAVAILABLE = 'SERVICE_UNAVAILABLE',
+    /** Service method called without required configuration */
+    CONFIGURATION_ERROR = 'CONFIGURATION_ERROR'
 }
