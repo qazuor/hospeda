@@ -134,12 +134,20 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_SETTINGS_UPDATE,
         PermissionEnum.USER_BOOKMARK_VIEW_ANY,
 
+        // USER_BOOKMARK: Full management including hard delete
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+        PermissionEnum.USER_BOOKMARK_HARD_DELETE,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         PermissionEnum.DESTINATION_REVIEW_CREATE,
         PermissionEnum.DESTINATION_REVIEW_UPDATE,
-        PermissionEnum.FAVORITE_ENTITY,
+
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
@@ -344,12 +352,19 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_SETTINGS_UPDATE,
         PermissionEnum.USER_BOOKMARK_VIEW_ANY,
 
+        // USER_BOOKMARK: Full management (own + any, no hard delete)
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         PermissionEnum.DESTINATION_REVIEW_CREATE,
         PermissionEnum.DESTINATION_REVIEW_UPDATE,
-        PermissionEnum.FAVORITE_ENTITY,
+
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
@@ -488,12 +503,20 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // USER_BOOKMARK: Own bookmarks + view any (moderator support)
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+        PermissionEnum.USER_BOOKMARK_VIEW_ANY,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         PermissionEnum.DESTINATION_REVIEW_CREATE,
         PermissionEnum.DESTINATION_REVIEW_UPDATE,
-        PermissionEnum.FAVORITE_ENTITY,
+
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
@@ -545,12 +568,19 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         PermissionEnum.DESTINATION_REVIEW_CREATE,
         PermissionEnum.DESTINATION_REVIEW_UPDATE,
-        PermissionEnum.FAVORITE_ENTITY,
+
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
@@ -580,12 +610,19 @@ const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_PROFILE,
         PermissionEnum.USER_SETTINGS_UPDATE,
 
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
         // PUBLIC USER ACTIONS: All permissions
         PermissionEnum.ACCOMMODATION_REVIEW_CREATE,
         PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         PermissionEnum.DESTINATION_REVIEW_CREATE,
         PermissionEnum.DESTINATION_REVIEW_UPDATE,
-        PermissionEnum.FAVORITE_ENTITY,
+
         PermissionEnum.HOST_CONTACT_VIEW,
         PermissionEnum.HOST_MESSAGE_SEND,
 
