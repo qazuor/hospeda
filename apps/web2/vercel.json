@@ -1,0 +1,18 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": "astro",
+    "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-web2",
+    "outputDirectory": "dist",
+    "installCommand": "pnpm install --frozen-lockfile",
+    "headers": [
+        {
+            "source": "/(.*)",
+            "headers": [
+                {
+                    "key": "Permissions-Policy",
+                    "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()"
+                }
+            ]
+        }
+    ]
+}
