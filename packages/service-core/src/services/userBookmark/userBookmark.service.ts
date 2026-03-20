@@ -56,7 +56,7 @@ export class UserBookmarkService extends BaseCrudService<
     }
 
     /**
-     * Only the owner (with FAVORITE_ENTITY permission) can create bookmarks for themselves.
+     * Only the owner (with USER_BOOKMARK_CREATE permission) can create bookmarks for themselves.
      */
     protected _canCreate(actor: Actor, data: UserBookmarkCreateInput): void {
         if (actor && typeof actor.id === 'string') {

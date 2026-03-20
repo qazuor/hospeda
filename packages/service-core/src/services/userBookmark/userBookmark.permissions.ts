@@ -34,7 +34,7 @@ export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookma
 
 /**
  * Verifies that the actor is allowed to create a bookmark for the given user.
- * Only the owner (with FAVORITE_ENTITY permission) can create bookmarks for themselves.
+ * Only the owner with USER_BOOKMARK_CREATE permission can create bookmarks for themselves.
  *
  * @param actor - The actor performing the action
  * @param userId - The target user ID for the bookmark
@@ -42,7 +42,7 @@ export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookma
  */
 export const canCreateBookmark = (actor: Actor | undefined, userId: string): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
-    if (actor.id !== userId || !actor.permissions?.includes(PermissionEnum.FAVORITE_ENTITY)) {
+    if (actor.id !== userId || !actor.permissions?.includes(PermissionEnum.USER_BOOKMARK_CREATE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'FORBIDDEN: Only owner with permission can create bookmark'

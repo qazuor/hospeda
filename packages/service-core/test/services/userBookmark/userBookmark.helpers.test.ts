@@ -102,7 +102,7 @@ describe('userBookmark.permissions', () => {
     });
 
     it('canCreateBookmark allows owner', () => {
-        const ownerWithPerm = { ...owner, permissions: [PermissionEnum.FAVORITE_ENTITY] };
+        const ownerWithPerm = { ...owner, permissions: [PermissionEnum.USER_BOOKMARK_CREATE] };
         expect(() => canCreateBookmark(ownerWithPerm, userId)).not.toThrow();
     });
 

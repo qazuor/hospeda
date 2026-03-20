@@ -217,7 +217,6 @@ export enum PermissionEnum {
     ACCOMMODATION_REVIEW_UPDATE = 'accommodation.review.update', // Allows updating own accommodation review.
     DESTINATION_REVIEW_CREATE = 'destination.review.create', // Allows creating a review for a destination.
     DESTINATION_REVIEW_UPDATE = 'destination.review.update', // Allows updating own destination review.
-    FAVORITE_ENTITY = 'entity.favorite', // Allows favoriting any entity (accommodation, post, etc.).
     HOST_CONTACT_VIEW = 'host.contact.view', // Allows viewing host contact information.
     HOST_MESSAGE_SEND = 'host.message.send', // Allows sending a message to a host.
 
