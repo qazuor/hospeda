@@ -87,7 +87,8 @@ describe('PostService - Relations Support', () => {
                     sponsorship: { sponsor: true }
                 },
                 {},
-                { page: undefined, pageSize: undefined }
+                { page: undefined, pageSize: undefined },
+                undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
         });
@@ -108,7 +109,8 @@ describe('PostService - Relations Support', () => {
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
                 customRelations,
                 {},
-                { page: undefined, pageSize: undefined }
+                { page: undefined, pageSize: undefined },
+                undefined
             );
         });
     });

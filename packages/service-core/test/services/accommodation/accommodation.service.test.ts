@@ -83,7 +83,8 @@ describe('AccommodationService - Relations Support', () => {
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
                 { destination: true, owner: true },
                 {},
-                { page: undefined, pageSize: undefined }
+                { page: undefined, pageSize: undefined },
+                undefined
             );
             expect(mockModel.findAll).not.toHaveBeenCalled();
         });
@@ -104,7 +105,8 @@ describe('AccommodationService - Relations Support', () => {
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
                 customRelations,
                 {},
-                { page: undefined, pageSize: undefined }
+                { page: undefined, pageSize: undefined },
+                undefined
             );
         });
 
@@ -120,7 +122,8 @@ describe('AccommodationService - Relations Support', () => {
             expect(mockModel.findAllWithRelations).toHaveBeenCalledWith(
                 { destination: true, owner: true },
                 {},
-                { page: 2, pageSize: 20 }
+                { page: 2, pageSize: 20 },
+                undefined
             );
         });
     });

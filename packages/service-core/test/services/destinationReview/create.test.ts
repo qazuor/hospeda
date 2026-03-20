@@ -110,6 +110,7 @@ describe('create', () => {
         };
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
         vi.spyOn(reviewModel, 'findAll').mockResolvedValue({ items: [createdReview], total: 1 });
+        vi.spyOn(reviewModel, 'update').mockResolvedValue(createdReview);
         // Use 'as unknown as { destinationService: ... }' to access the private property for testing
         const updateStatsMock = vi
             .spyOn(

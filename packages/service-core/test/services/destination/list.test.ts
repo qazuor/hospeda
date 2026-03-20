@@ -51,7 +51,7 @@ describe('DestinationService.list', () => {
         const firstEntity = entities[0] as NonNullable<(typeof entities)[0]>;
         expect(firstItem.id).toBe(firstEntity.id);
         expect(result.error).toBeUndefined();
-        expect(model.findAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 });
+        expect(model.findAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 2 }, undefined);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {
@@ -97,6 +97,6 @@ describe('DestinationService.list', () => {
         (model.findAll as Mock).mockResolvedValue(paginated(entities, 99, 10));
         await serviceWithNorm.list(actor, { page: 1, pageSize: 10 });
         expect(normalizer).toHaveBeenCalledWith({ page: 1, pageSize: 10 }, actor);
-        expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 });
+        expect(model.findAll).toHaveBeenCalledWith({}, { page: 99, pageSize: 10 }, undefined);
     });
 });

@@ -67,7 +67,7 @@ describe('BaseService: list', () => {
         expect(result.error).toBeUndefined();
         expect(canListSpy).toHaveBeenCalledWith(mockActor);
         expect(beforeListSpy).toHaveBeenCalledWith(options, mockActor);
-        expect(modelMock.findAll).toHaveBeenCalledWith({}, options);
+        expect(modelMock.findAll).toHaveBeenCalledWith({}, options, undefined);
         expect(afterListSpy).toHaveBeenCalledWith(mockPaginatedResult, mockActor);
     });
 
@@ -171,7 +171,8 @@ describe('BaseService: list', () => {
         expect(normalizer).toHaveBeenCalledWith(options, mockActor);
         expect(localModelMock.findAll).toHaveBeenCalledWith(
             {},
-            { page: 1, pageSize: 20, sortBy: undefined, sortOrder: undefined }
+            { page: 1, pageSize: 20, sortBy: undefined, sortOrder: undefined },
+            undefined
         );
     });
 });

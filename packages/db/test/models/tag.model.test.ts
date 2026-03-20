@@ -133,7 +133,7 @@ describe('TagModel', () => {
 
             const result = await model.findAllWithRelations({});
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, {});
+            expect(mockFindAll).toHaveBeenCalledWith({}, {}, undefined);
             expect(result.items).toHaveLength(1);
             expect(logQuery).toHaveBeenCalledWith(
                 'tags',

@@ -149,7 +149,8 @@ describe('list', () => {
         expect(reviewModel.findAllWithRelations as Mock).toHaveBeenCalledWith(
             { user: true, destination: true },
             {},
-            { page: 1, pageSize: 10 }
+            { page: 1, pageSize: 10 },
+            undefined
         );
     });
 });

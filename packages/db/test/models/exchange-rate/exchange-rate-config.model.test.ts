@@ -57,7 +57,12 @@ describe('ExchangeRateConfigModel', () => {
 
             const result = await model.getConfig();
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, undefined);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                undefined
+            );
             expect(result).toEqual(existingConfig);
 
             mockFindAll.mockRestore();
@@ -87,7 +92,12 @@ describe('ExchangeRateConfigModel', () => {
 
             const result = await model.getConfig();
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, undefined);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                undefined
+            );
             expect(mockCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     defaultRateType: ExchangeRateTypeEnum.OFICIAL,
@@ -130,7 +140,12 @@ describe('ExchangeRateConfigModel', () => {
 
             await model.getConfig(mockTx);
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, mockTx);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                mockTx
+            );
             expect(mockCreate).toHaveBeenCalledWith(expect.any(Object), mockTx);
 
             mockFindAll.mockRestore();
@@ -177,7 +192,12 @@ describe('ExchangeRateConfigModel', () => {
                 updatedById: 'user-uuid-2'
             });
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, undefined);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                undefined
+            );
             expect(mockUpdate).toHaveBeenCalledWith(
                 { id: existingConfig.id },
                 expect.objectContaining({
@@ -253,7 +273,12 @@ describe('ExchangeRateConfigModel', () => {
                 updatedById: 'user-uuid-3'
             });
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, undefined);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                undefined
+            );
             expect(mockCreate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     defaultRateType: ExchangeRateTypeEnum.OFICIAL,
@@ -358,7 +383,12 @@ describe('ExchangeRateConfigModel', () => {
                 mockTx
             );
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, { page: 1, pageSize: 1 }, mockTx);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                {},
+                { page: 1, pageSize: 1 },
+                undefined,
+                mockTx
+            );
             expect(mockUpdate).toHaveBeenCalledWith(
                 { id: existingConfig.id },
                 expect.any(Object),

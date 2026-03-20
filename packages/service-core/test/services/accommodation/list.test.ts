@@ -69,7 +69,8 @@ describe('AccommodationService.list', () => {
         expect(model.findAllWithRelations).toHaveBeenCalledWith(
             { destination: true, owner: true },
             {},
-            { page: 1, pageSize: 2 }
+            { page: 1, pageSize: 2 },
+            undefined
         );
     });
 
@@ -129,7 +130,8 @@ describe('AccommodationService.list', () => {
         expect(model.findAllWithRelations).toHaveBeenCalledWith(
             { destination: true, owner: true },
             {},
-            { page: 99, pageSize: 10 }
+            { page: 99, pageSize: 10 },
+            undefined
         );
     });
 });
