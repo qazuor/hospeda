@@ -1,5 +1,7 @@
+import { buildSearchCondition } from '@repo/db';
 import type { ListRelationsConfig } from '@repo/schemas';
-import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceErrorCode, parseAdminSort } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import {
@@ -21,6 +23,7 @@ import { BaseCrudHooks } from './base.crud.hooks';
  * - `getByName` - Convenience wrapper for `getByField('name', ...)`
  * - `list` - Paginated listing with optional filtering, sorting, and relations
  * - `search` - Full search with filters and pagination (delegates to `_executeSearch`)
+ * - `adminList` - Admin list with standardized filtering, sorting, and pagination (delegates to `_executeAdminSearch`)
  * - `count` - Count entities matching criteria (delegates to `_executeCount`)
  *
  * @template TEntity - The primary entity type this service manages.
@@ -184,12 +187,17 @@ export abstract class BaseCrudRead<
                 const search = (processedOptions as Record<string, unknown>).search as
                     | string
                     | undefined;
+                let searchCondition: SQL | undefined;
                 if (search && search.trim().length > 0) {
                     const searchColumns = this.getSearchableColumns();
-                    for (const col of searchColumns) {
-                        whereClause[`${col}_like`] = search.trim();
-                    }
+                    searchCondition = buildSearchCondition(
+                        search,
+                        searchColumns,
+                        this.model.getTable()
+                    );
                 }
+
+                const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
                 const sortBy = (processedOptions as Record<string, unknown>).sortBy as
                     | string
@@ -200,18 +208,27 @@ export abstract class BaseCrudRead<
                     | undefined;
 
                 const result = relationsToUse
-                    ? await this.model.findAllWithRelations(relationsToUse, whereClause, {
-                          page: processedOptions.page,
-                          pageSize: processedOptions.pageSize,
-                          sortBy,
-                          sortOrder
-                      })
-                    : await this.model.findAll(whereClause, {
-                          page: processedOptions.page,
-                          pageSize: processedOptions.pageSize,
-                          sortBy,
-                          sortOrder
-                      });
+                    ? await this.model.findAllWithRelations(
+                          relationsToUse,
+                          whereClause,
+                          {
+                              page: processedOptions.page,
+                              pageSize: processedOptions.pageSize,
+                              sortBy,
+                              sortOrder
+                          },
+                          additionalConditions
+                      )
+                    : await this.model.findAll(
+                          whereClause,
+                          {
+                              page: processedOptions.page,
+                              pageSize: processedOptions.pageSize,
+                              sortBy,
+                              sortOrder
+                          },
+                          additionalConditions
+                      );
 
                 return this._afterList(result, validatedActor);
             }
@@ -253,6 +270,203 @@ export abstract class BaseCrudRead<
                 return this._afterSearch(result, validActor);
             }
         });
+    }
+
+    /**
+     * Fetches a paginated, filtered, and sorted list of entities for admin endpoints.
+     *
+     * Requires `adminSearchSchema` to be set on the service. Validates incoming params
+     * against that schema, applies lifecycle status and soft-delete filters, parses the
+     * sort string, validates the sort field against actual table columns, builds a text
+     * search condition, and delegates the final query to `_executeAdminSearch`.
+     *
+     * Lifecycle steps:
+     * 1. **Configuration check**: Ensures `adminSearchSchema` is defined.
+     * 2. **Validation**: Validates params against `adminSearchSchema`.
+     * 3. **Permissions**: Calls `_canList` to verify the actor may list entities.
+     * 4. **Sort parsing**: Parses and validates sort field against table columns.
+     * 5. **Where clause**: Builds where from status, includeDeleted, and date range.
+     * 6. **Search condition**: Builds ILIKE search across searchable columns.
+     * 7. **Delegation**: Calls `_executeAdminSearch` with the assembled query params.
+     *
+     * @param actor - The user or system performing the action.
+     * @param params - The admin search parameters (pagination, sort, filters, search).
+     * @returns A `ServiceOutput` containing the paginated list or a `ServiceError`.
+     */
+    public async adminList(
+        actor: Actor,
+        params: Record<string, unknown>
+    ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminList',
+            input: { actor, ...params },
+            schema: z.record(z.string(), z.unknown()),
+            execute: async (_passthrough, validatedActor) => {
+                if (!this.adminSearchSchema) {
+                    throw new ServiceError(
+                        ServiceErrorCode.CONFIGURATION_ERROR,
+                        `adminSearchSchema is not configured for ${this.entityName}. Set it in the service constructor.`
+                    );
+                }
+
+                const parseResult = this.adminSearchSchema.safeParse(params);
+                if (!parseResult.success) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Admin search validation failed: ${parseResult.error.message}`,
+                        parseResult.error.flatten()
+                    );
+                }
+
+                const validParams = parseResult.data as Record<string, unknown>;
+
+                await this._canList(validatedActor);
+
+                const {
+                    page,
+                    pageSize,
+                    search,
+                    sort,
+                    status,
+                    includeDeleted,
+                    createdAfter,
+                    createdBefore,
+                    ...entityFilters
+                } = validParams as {
+                    page: number;
+                    pageSize: number;
+                    search?: string;
+                    sort: string;
+                    status: string;
+                    includeDeleted: boolean;
+                    createdAfter?: Date;
+                    createdBefore?: Date;
+                    [key: string]: unknown;
+                };
+
+                const { field: sortBy, direction: sortOrder } = parseAdminSort(sort);
+
+                // Validate sort field against actual table columns
+                // biome-ignore lint/suspicious/noExplicitAny: getTable() is not in BaseModel interface but exists on concrete models
+                const table = (this.model as any).getTable();
+                const tableRecord = table as unknown as Record<string, unknown>;
+                if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Invalid sort field "${sortBy}". Field does not exist on ${this.entityName} table.`
+                    );
+                }
+
+                // Build where clause from base admin filters
+                const where: Record<string, unknown> = {};
+
+                if (status !== 'all') {
+                    where.lifecycleState = status;
+                }
+
+                if (!includeDeleted) {
+                    where.deletedAt = null;
+                }
+
+                if (createdAfter) {
+                    where.createdAt_gte = createdAfter;
+                }
+
+                if (createdBefore) {
+                    where.createdAt_lte = createdBefore;
+                }
+
+                // Build search condition from text query
+                let searchCondition: SQL | undefined;
+                if (search && search.trim().length > 0) {
+                    searchCondition = buildSearchCondition(
+                        search,
+                        this.getSearchableColumns(),
+                        table
+                    );
+                }
+
+                return this._executeAdminSearch({
+                    where,
+                    entityFilters,
+                    pagination: { page, pageSize },
+                    sort: { sortBy, sortOrder },
+                    search: searchCondition,
+                    actor: validatedActor
+                });
+            }
+        });
+    }
+
+    /**
+     * Default implementation for executing admin search queries.
+     *
+     * Merges entity-specific filters into the where clause, combines search and extra
+     * SQL conditions, and delegates to the model's `findAllWithRelations` or `findAll`
+     * depending on whether default relations are configured.
+     *
+     * Concrete services can override this method to apply entity-specific query logic
+     * (e.g., custom joins, computed filters, or specialized sorting).
+     *
+     * @param params - The assembled admin search parameters.
+     * @param params.where - Base where clause (status, soft-delete, date range filters).
+     * @param params.entityFilters - Entity-specific filters extracted from the admin search schema.
+     * @param params.pagination - Page and pageSize for pagination.
+     * @param params.sort - Sort field and direction.
+     * @param params.search - Optional SQL condition for text search.
+     * @param params.extraConditions - Optional additional SQL conditions.
+     * @param params.actor - The actor performing the action.
+     * @returns A paginated list of matching entities.
+     */
+    protected async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<TEntity>> {
+        const { where, entityFilters, pagination, sort, search, extraConditions } = params;
+
+        const mergedWhere: Record<string, unknown> = { ...where, ...entityFilters };
+
+        const additionalConditions: SQL[] = [];
+        if (search) {
+            additionalConditions.push(search);
+        }
+        if (extraConditions) {
+            additionalConditions.push(...extraConditions);
+        }
+
+        const conditionsToPass = additionalConditions.length > 0 ? additionalConditions : undefined;
+
+        const relationsToUse = this.getDefaultListRelations();
+
+        if (relationsToUse) {
+            return this.model.findAllWithRelations(
+                relationsToUse,
+                mergedWhere,
+                {
+                    page: pagination.page,
+                    pageSize: pagination.pageSize,
+                    sortBy: sort.sortBy,
+                    sortOrder: sort.sortOrder
+                },
+                conditionsToPass
+            );
+        }
+
+        return this.model.findAll(
+            mergedWhere,
+            {
+                page: pagination.page,
+                pageSize: pagination.pageSize,
+                sortBy: sort.sortBy,
+                sortOrder: sort.sortOrder
+            },
+            conditionsToPass
+        );
     }
 
     /**

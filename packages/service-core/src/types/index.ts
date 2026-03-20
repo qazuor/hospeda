@@ -7,6 +7,7 @@ import type {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { SQL, Table } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
 
@@ -168,16 +169,23 @@ export interface BaseModel<T> {
     softDelete(where: Record<string, unknown>): Promise<number>;
     restore(where: Record<string, unknown>): Promise<number>;
     hardDelete(where: Record<string, unknown>): Promise<number>;
-    count(params: Record<string, unknown>): Promise<number>;
+    count(
+        where: Record<string, unknown>,
+        options?: { additionalConditions?: SQL[]; tx?: unknown }
+    ): Promise<number>;
     findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: SQL[]
     ): Promise<PaginatedListOutput<T>>;
     findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where?: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' }
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: SQL[]
     ): Promise<PaginatedListOutput<T>>;
+    /** Returns the Drizzle table schema for this model */
+    getTable(): Table;
 }
 
 // --- Search Types ---

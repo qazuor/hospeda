@@ -1,5 +1,5 @@
 import type { VisibilityEnum } from '@repo/schemas';
-import type { ZodObject } from 'zod';
+import type { ZodObject, ZodType } from 'zod';
 import type { z } from 'zod';
 import type { Actor, BaseModel, PaginatedListOutput, ServiceContext } from '../types';
 import type { CrudNormalizersFromSchemas } from './base.crud.types';
@@ -37,6 +37,9 @@ export abstract class BaseCrudPermissions<
 
     /** Zod schema for validating the input of the `search` method. */
     protected abstract readonly searchSchema: TSearchSchema;
+
+    /** Optional Zod schema for validating admin list search input. Required for adminList(). */
+    protected adminSearchSchema?: ZodType;
 
     /**
      * Default relations configuration for list operations.
