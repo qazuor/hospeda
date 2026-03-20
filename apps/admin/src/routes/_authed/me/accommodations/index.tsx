@@ -25,7 +25,7 @@ function MyAccommodations() {
     const navigate = useNavigate();
 
     const { data, isLoading, error } = useAccommodationListQuery(
-        { ownerId: user?.id ? [user.id] : undefined, limit: 50 },
+        { ownerId: user?.id ? [user.id] : undefined, pageSize: 50 },
         { enabled: !!user?.id }
     );
 
