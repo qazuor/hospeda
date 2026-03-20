@@ -1,0 +1,71 @@
+---
+/**
+ * @file Homepage for each locale.
+ * @description Minimal landing page for web2.
+ */
+import '@/styles/global.css';
+
+export function getStaticPaths() {
+    return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}
+
+export const prerender = true;
+
+const lang = Astro.params.lang ?? 'es';
+
+const titles: Record<string, string> = {
+    es: 'Bienvenido a Hospeda',
+    en: 'Welcome to Hospeda',
+    pt: 'Bem-vindo ao Hospeda'
+};
+
+const subtitles: Record<string, string> = {
+    es: 'Plataforma de alojamientos turisticos',
+    en: 'Tourist accommodation platform',
+    pt: 'Plataforma de alojamento turistico'
+};
+---
+
+<!doctype html>
+<html lang={lang}>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>{titles[lang]} | Hospeda</title>
+        <meta name="description" content={subtitles[lang]} />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+        />
+        <script is:inline>
+            // FOUC prevention: apply dark mode before first paint
+            const theme = localStorage.getItem('theme');
+            if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        </script>
+    </head>
+    <body class="min-h-screen flex flex-col items-center justify-center p-8">
+        <main class="text-center max-w-2xl mx-auto space-y-6">
+            <h1 class="text-4xl font-bold text-primary">
+                {titles[lang]}
+            </h1>
+            <p class="text-lg text-muted-foreground">
+                {subtitles[lang]}
+            </p>
+            <div class="flex gap-3 justify-center">
+                <a href="/es/" class:list={['px-4 py-2 rounded-lg text-sm font-medium transition-colors', lang === 'es' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80']}>
+                    ES
+                </a>
+                <a href="/en/" class:list={['px-4 py-2 rounded-lg text-sm font-medium transition-colors', lang === 'en' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80']}>
+                    EN
+                </a>
+                <a href="/pt/" class:list={['px-4 py-2 rounded-lg text-sm font-medium transition-colors', lang === 'pt' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:bg-muted/80']}>
+                    PT
+                </a>
+            </div>
+        </main>
+    </body>
+</html>
