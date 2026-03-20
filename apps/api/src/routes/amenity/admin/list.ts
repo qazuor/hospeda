@@ -23,14 +23,14 @@ export const adminListAmenitiesRoute = createAdminListRoute({
     description: 'Returns a paginated list of all amenities with full admin details',
     tags: ['Amenities'],
     requiredPermissions: [PermissionEnum.AMENITY_VIEW],
-    requestQuery: AmenityAdminSearchSchema.shape,
+    requestQuery: AmenityAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: AmenityAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await amenityService.list(actor, { ...query });
+        const result = await amenityService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

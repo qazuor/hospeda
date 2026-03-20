@@ -27,14 +27,14 @@ export const adminListAccommodationsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all accommodations with full admin details',
     tags: ['Accommodations'],
     requiredPermissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
-    requestQuery: AccommodationAdminSearchSchema.shape,
+    requestQuery: AccommodationAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: AccommodationAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await accommodationService.list(actor, { ...query });
+        const result = await accommodationService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

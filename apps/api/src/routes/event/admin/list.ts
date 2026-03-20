@@ -23,14 +23,14 @@ export const adminListEventsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all events with full admin details',
     tags: ['Events'],
     requiredPermissions: [PermissionEnum.EVENT_VIEW_ALL],
-    requestQuery: EventAdminSearchSchema.shape,
+    requestQuery: EventAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: EventAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await eventService.list(actor, { ...query });
+        const result = await eventService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

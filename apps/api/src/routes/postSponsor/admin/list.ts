@@ -23,14 +23,14 @@ export const adminListPostSponsorsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all post sponsors with full admin details',
     tags: ['Post Sponsors'],
     requiredPermissions: [PermissionEnum.POST_SPONSOR_VIEW],
-    requestQuery: PostSponsorAdminSearchSchema.shape,
+    requestQuery: PostSponsorAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: PostSponsorSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await postSponsorService.list(actor, { ...query });
+        const result = await postSponsorService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

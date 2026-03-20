@@ -158,6 +158,12 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.NOT_IMPLEMENTED:
                 statusCode = 501;
                 break;
+            case ServiceErrorCode.CONFIGURATION_ERROR:
+                statusCode = 500;
+                break;
+            case ServiceErrorCode.SERVICE_UNAVAILABLE:
+                statusCode = 503;
+                break;
             default:
                 statusCode = 500;
                 break;
@@ -245,7 +251,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.UNAUTHORIZED]: 401,
                 [ServiceErrorCode.FORBIDDEN]: 403,
                 [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
-                [ServiceErrorCode.INTERNAL_ERROR]: 500
+                [ServiceErrorCode.INTERNAL_ERROR]: 500,
+                [ServiceErrorCode.CONFIGURATION_ERROR]: 500,
+                [ServiceErrorCode.SERVICE_UNAVAILABLE]: 503
             };
 
             const statusCode = statusCodeMap[code] ?? 500;

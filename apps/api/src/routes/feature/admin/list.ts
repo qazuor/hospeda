@@ -23,14 +23,14 @@ export const adminListFeaturesRoute = createAdminListRoute({
     description: 'Returns a paginated list of all features with full admin details',
     tags: ['Features'],
     requiredPermissions: [PermissionEnum.FEATURE_VIEW],
-    requestQuery: FeatureAdminSearchSchema.shape,
+    requestQuery: FeatureAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: FeatureAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await featureService.list(actor, { ...query });
+        const result = await featureService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

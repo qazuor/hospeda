@@ -23,14 +23,14 @@ export const adminListUsersRoute = createAdminListRoute({
     description: 'Returns a paginated list of all users with full admin details',
     tags: ['Users'],
     requiredPermissions: [PermissionEnum.USER_READ_ALL],
-    requestQuery: UserAdminSearchSchema.shape,
+    requestQuery: UserAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: UserAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await userService.list(actor, { ...query });
+        const result = await userService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

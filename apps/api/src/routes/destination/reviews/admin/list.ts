@@ -25,14 +25,15 @@ export const adminListDestinationReviewsRoute = createAdminListRoute({
     summary: 'List all destination reviews (admin)',
     description: 'Returns a paginated list of all destination reviews with full admin details',
     tags: ['Destinations', 'Reviews'],
-    requestQuery: DestinationReviewAdminSearchSchema.shape,
+    requestQuery: DestinationReviewAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: DestinationReviewSchema,
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_VIEW],
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
-        const result = await destinationReviewService.list(actor, { ...query });
+        // Pass all admin search filters to service
+        const result = await destinationReviewService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

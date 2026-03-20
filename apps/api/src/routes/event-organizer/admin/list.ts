@@ -26,14 +26,14 @@ export const adminListEventOrganizersRoute = createAdminListRoute({
     description: 'Returns a paginated list of all event organizers including soft-deleted ones',
     tags: ['Event Organizers'],
     requiredPermissions: [PermissionEnum.EVENT_ORGANIZER_VIEW],
-    requestQuery: EventOrganizerAdminSearchSchema.shape,
+    requestQuery: EventOrganizerAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: EventOrganizerAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await eventOrganizerService.list(actor, { ...query });
+        const result = await eventOrganizerService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

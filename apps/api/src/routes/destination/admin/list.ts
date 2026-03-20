@@ -27,14 +27,14 @@ export const adminListDestinationsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all destinations with full admin details',
     tags: ['Destinations'],
     requiredPermissions: [PermissionEnum.DESTINATION_VIEW_ALL],
-    requestQuery: DestinationAdminSearchSchema.shape,
+    requestQuery: DestinationAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: DestinationAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await destinationService.list(actor, { ...query });
+        const result = await destinationService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

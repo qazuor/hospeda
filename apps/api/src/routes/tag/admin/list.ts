@@ -23,14 +23,14 @@ export const adminListTagsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all tags with full admin details',
     tags: ['Tags'],
     requiredPermissions: [PermissionEnum.TAG_VIEW],
-    requestQuery: TagAdminSearchSchema.shape,
+    requestQuery: TagAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: TagSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await tagService.list(actor, { ...query });
+        const result = await tagService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

@@ -22,16 +22,14 @@ export const adminListPostsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all posts including deleted ones',
     tags: ['Posts'],
     requiredPermissions: [PermissionEnum.POST_VIEW_ALL],
-    requestQuery: PostAdminSearchSchema.shape,
+    requestQuery: PostAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: PostAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Admin can see all posts
-        const result = await postService.list(actor, {
-            ...query
-        });
+        const result = await postService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

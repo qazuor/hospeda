@@ -27,14 +27,14 @@ export const adminListOwnerPromotionsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all owner promotions with full admin details',
     tags: ['Owner Promotions'],
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_VIEW],
-    requestQuery: OwnerPromotionAdminSearchSchema.shape,
+    requestQuery: OwnerPromotionAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: OwnerPromotionSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // Pass all admin search filters to service
-        const result = await ownerPromotionService.list(actor, { ...query });
+        const result = await ownerPromotionService.adminList(actor, query || {});
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
