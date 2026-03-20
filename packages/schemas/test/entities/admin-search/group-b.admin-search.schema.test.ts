@@ -76,16 +76,15 @@ describe('Group B Admin Search Schemas', () => {
             const result = TagAdminSearchSchema.parse({});
             expect(result.page).toBe(1);
             expect(result.color).toBeUndefined();
-            expect(result.nameContains).toBeUndefined();
         });
 
         it('should accept tag-specific filters', () => {
             const result = TagAdminSearchSchema.parse({
                 color: '#FF5733',
-                nameContains: 'beach'
+                search: 'beach'
             });
             expect(result.color).toBe('#FF5733');
-            expect(result.nameContains).toBe('beach');
+            expect(result.search).toBe('beach');
         });
 
         it('should reject invalid color format', () => {
@@ -93,10 +92,9 @@ describe('Group B Admin Search Schemas', () => {
             expect(() => TagAdminSearchSchema.parse({ color: '#GGG' })).toThrow(ZodError);
         });
 
-        it('should reject nameContains exceeding max length', () => {
-            expect(() => TagAdminSearchSchema.parse({ nameContains: 'a'.repeat(51) })).toThrow(
-                ZodError
-            );
+        it('should not include nameContains (use search instead)', () => {
+            const result = TagAdminSearchSchema.parse({ nameContains: 'beach' });
+            expect('nameContains' in result).toBe(false);
         });
     });
 });

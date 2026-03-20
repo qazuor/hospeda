@@ -10,7 +10,7 @@ import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
  * const params = TagAdminSearchSchema.parse({
  *   page: 1,
  *   color: '#FF5733',
- *   nameContains: 'beach'
+ *   search: 'beach'
  * });
  * ```
  */
@@ -20,9 +20,7 @@ export const TagAdminSearchSchema = AdminSearchBaseSchema.extend({
         .string()
         .regex(/^#[0-9A-Fa-f]{6}$/)
         .optional()
-        .describe('Filter by tag color'),
-    /** Filter tags whose name contains this text */
-    nameContains: z.string().min(1).max(50).optional().describe('Filter tags by name substring')
+        .describe('Filter by tag color')
 });
 
 /** Inferred TypeScript type for tag admin search parameters */
