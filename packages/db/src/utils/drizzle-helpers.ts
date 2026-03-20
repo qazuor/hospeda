@@ -1,4 +1,16 @@
-import { type SQL, type SQLWrapper, and, asc, desc, eq, ilike, isNull } from 'drizzle-orm';
+import {
+    type SQL,
+    type SQLWrapper,
+    and,
+    asc,
+    desc,
+    eq,
+    gte,
+    ilike,
+    isNull,
+    lte,
+    or
+} from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 
 /**
@@ -7,6 +19,10 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
  *
  * - `_like` suffix: Uses ilike (case-insensitive LIKE with % wildcards)
  *   Example: `{ name_like: 'hotel' }` generates `WHERE name ILIKE '%hotel%'`
+ * - `_gte` suffix: Uses >= comparison
+ *   Example: `{ price_gte: 100 }` generates `WHERE price >= 100`
+ * - `_lte` suffix: Uses <= comparison
+ *   Example: `{ price_lte: 500 }` generates `WHERE price <= 500`
  */
 
 /**
@@ -16,6 +32,8 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
  * - Direct equality: `{ column: value }` -> `WHERE column = value`
  * - Null check: `{ column: null }` -> `WHERE column IS NULL`
  * - Case-insensitive search: `{ column_like: 'text' }` -> `WHERE column ILIKE '%text%'`
+ * - Greater than or equal: `{ column_gte: value }` -> `WHERE column >= value`
+ * - Less than or equal: `{ column_lte: value }` -> `WHERE column <= value`
  *
  * @param where - Filter object with key-value pairs
  * @param table - Drizzle table schema object
@@ -33,6 +51,26 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
                 if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as SQLWrapper;
                     return ilike(column as PgColumn, `%${value}%`);
+                }
+                return undefined;
+            }
+
+            // Handle _gte suffix for >= comparisons
+            if (key.endsWith('_gte')) {
+                const columnName = key.slice(0, -4);
+                if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
+                    const column = tableRecord[columnName] as PgColumn;
+                    return gte(column, value);
+                }
+                return undefined;
+            }
+
+            // Handle _lte suffix for <= comparisons
+            if (key.endsWith('_lte')) {
+                const columnName = key.slice(0, -4);
+                if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
+                    const column = tableRecord[columnName] as PgColumn;
+                    return lte(column, value);
                 }
                 return undefined;
             }
@@ -74,4 +112,35 @@ export function buildOrderByClause(
 
     const column = tableRecord[sortBy] as PgColumn;
     return sortOrder === 'desc' ? desc(column) : asc(column);
+}
+
+/**
+ * Builds an OR search condition across multiple columns using ILIKE.
+ *
+ * @param term - The search term to match
+ * @param columns - Array of column names to search across
+ * @param table - Drizzle table schema object
+ * @returns SQL OR clause, or undefined if no valid columns found
+ */
+export function buildSearchCondition(
+    term: string,
+    columns: readonly string[],
+    table: unknown
+): SQL | undefined {
+    if (!term || term.trim().length === 0) return undefined;
+    if (typeof table !== 'object' || table === null) return undefined;
+
+    const tableRecord = table as Record<string, unknown>;
+    const trimmedTerm = term.trim();
+
+    const conditions = columns
+        .filter((col) => Object.prototype.hasOwnProperty.call(tableRecord, col))
+        .map((col) => {
+            const column = tableRecord[col] as PgColumn;
+            return ilike(column, `%${trimmedTerm}%`);
+        });
+
+    if (conditions.length === 0) return undefined;
+    if (conditions.length === 1) return conditions[0];
+    return or(...conditions);
 }
