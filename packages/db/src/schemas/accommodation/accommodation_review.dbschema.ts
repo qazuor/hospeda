@@ -1,6 +1,15 @@
 import type { AccommodationRatingInput, AdminInfoType } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import {
+    index,
+    jsonb,
+    numeric,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
@@ -18,6 +27,7 @@ export const accommodationReviews = pgTable(
         title: text('title'),
         content: text('content'),
         rating: jsonb('rating').$type<AccommodationRatingInput>().notNull(),
+        averageRating: numeric('average_rating', { precision: 3, scale: 2 }).notNull().default('0'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
