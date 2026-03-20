@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 import { EventCategoryEnumSchema } from '../../enums/index.js';
 
 /**
@@ -49,7 +50,7 @@ export const EventAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by event author'),
 
     /** Filter featured events */
-    isFeatured: z.coerce.boolean().optional().describe('Filter by featured status'),
+    isFeatured: queryBooleanParam().describe('Filter by featured status'),
 
     /** Filter events starting after this date */
     startDateAfter: z.coerce.date().optional().describe('Filter events starting after this date'),

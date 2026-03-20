@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 import { PostCategoryEnumSchema } from '../../enums/index.js';
 
 /**
@@ -34,10 +35,10 @@ export const PostAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by author'),
 
     /** Filter featured posts */
-    isFeatured: z.coerce.boolean().optional().describe('Filter by featured status'),
+    isFeatured: queryBooleanParam().describe('Filter by featured status'),
 
     /** Filter news posts */
-    isNews: z.coerce.boolean().optional().describe('Filter news posts'),
+    isNews: queryBooleanParam().describe('Filter news posts'),
 
     /** Filter by related destination UUID */
     relatedDestinationId: z

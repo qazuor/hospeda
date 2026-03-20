@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Admin search schema for event locations.
@@ -13,7 +14,7 @@ export const EventLocationAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Maximum venue capacity */
     maxCapacity: z.coerce.number().int().min(1).optional().describe('Maximum venue capacity'),
     /** Filter by verified status */
-    isVerified: z.coerce.boolean().optional().describe('Filter by verified status')
+    isVerified: queryBooleanParam().describe('Filter by verified status')
 });
 
 export type EventLocationAdminSearch = z.infer<typeof EventLocationAdminSearchSchema>;

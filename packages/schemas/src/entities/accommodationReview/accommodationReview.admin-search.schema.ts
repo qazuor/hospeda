@@ -24,6 +24,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Admin search schema for accommodation reviews.
@@ -86,17 +87,10 @@ export const AccommodationReviewAdminSearchSchema = AdminSearchBaseSchema.extend
         .optional()
         .describe('Maximum rating filter (1-5, inclusive)'),
 
-    /**
-     * Filter by verification status.
-     *
-     * NOTE: Uses z.coerce.boolean(). From query params, any non-empty string
-     * (including "false") coerces to true. Consumers should send "true" or
-     * omit the param entirely (defaults to undefined / no filter).
-     */
-    isVerified: z.coerce
-        .boolean()
-        .optional()
-        .describe('Filter by verification status (true = verified only, false = unverified only)')
+    /** Filter by verification status (true = verified only, false = unverified only) */
+    isVerified: queryBooleanParam().describe(
+        'Filter by verification status (true = verified only, false = unverified only)'
+    )
 });
 
 /**

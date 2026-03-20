@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -23,7 +24,7 @@ export const OwnerPromotionAdminSearchSchema = AdminSearchBaseSchema.extend({
     discountType:
         OwnerPromotionDiscountTypeEnumSchema.optional().describe('Filter by discount type'),
     /** Filter by active status */
-    isActive: z.coerce.boolean().optional().describe('Filter by active status')
+    isActive: queryBooleanParam().describe('Filter by active status')
 });
 
 export type OwnerPromotionAdminSearch = z.infer<typeof OwnerPromotionAdminSearchSchema>;

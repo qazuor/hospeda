@@ -105,10 +105,10 @@ describe('Group C Admin Search Schemas', () => {
             expect(result.search).toBe('john');
         });
 
-        it('should coerce string "false" to true via z.coerce.boolean', () => {
-            // z.coerce.boolean() uses Boolean() coercion: any non-empty string is true
+        it('should correctly parse string "false" to false via queryBooleanParam', () => {
+            // queryBooleanParam() correctly handles string "false" (unlike z.coerce.boolean())
             const result = EventOrganizerAdminSearchSchema.parse({ isVerified: 'false' });
-            expect(result.isVerified).toBe(true);
+            expect(result.isVerified).toBe(false);
         });
     });
 

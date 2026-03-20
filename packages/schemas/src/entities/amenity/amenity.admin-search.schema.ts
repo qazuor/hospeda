@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Admin search schema for amenities.
@@ -19,7 +20,7 @@ export const AmenityAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by amenity category */
     category: z.string().optional().describe('Filter by amenity category'),
     /** Filter by built-in status */
-    isBuiltin: z.coerce.boolean().optional().describe('Filter built-in amenities')
+    isBuiltin: queryBooleanParam().describe('Filter built-in amenities')
 });
 
 /** Inferred TypeScript type for amenity admin search parameters */

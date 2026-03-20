@@ -6,6 +6,7 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
+import { queryBooleanParam } from '../../common/query-helpers.js';
 import { DestinationTypeEnumSchema } from '../../enums/index.js';
 
 /**
@@ -52,7 +53,7 @@ export const DestinationAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by hierarchy level'),
 
     /** Filter featured destinations */
-    isFeatured: z.coerce.boolean().optional().describe('Filter by featured status')
+    isFeatured: queryBooleanParam().describe('Filter by featured status')
 });
 
 /**
