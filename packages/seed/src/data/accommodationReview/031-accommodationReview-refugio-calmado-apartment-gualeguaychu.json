@@ -1,7 +1,7 @@
 {
     "$schema": "../../../schemas/accommodationReview.schema.json",
     "id": "031-accommodationReview-refugio-calmado-apartment-gualeguaychu",
-    "userId": "003-user-usuario-invitado",
+    "userId": "006-user-laura-vega",
     "accommodationId": "039-accommodation-gualeguaychu-apartment-refugio-calmado-apartment-gualeguaychu",
     "title": "Buena experiencia en general",
     "content": "Tuve una estadía agradable. Las instalaciones son adecuadas, el personal es profesional y la limpieza es buena. Hay WiFi disponible y la comunicación con el host fue fluida. Recomendado para una estadía cómoda.",
