@@ -9,6 +9,7 @@ import type {
 import {
     type AttractionAddToDestinationInput,
     AttractionAddToDestinationInputSchema,
+    AttractionAdminSearchSchema,
     type AttractionCreateInput,
     AttractionCreateInputSchema,
     type AttractionListWithCountsResponse,
@@ -67,6 +68,7 @@ export class AttractionService extends BaseCrudRelatedService<
     public readonly createSchema = AttractionCreateInputSchema;
     public readonly updateSchema = AttractionUpdateInputSchema;
     public readonly searchSchema = AttractionSearchInputSchema;
+    protected readonly adminSearchSchema = AttractionAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;

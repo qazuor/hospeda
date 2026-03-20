@@ -6,6 +6,7 @@ import {
     type TagAddToEntityInput,
     TagAddToEntityInputSchema,
     type TagAddToEntityOutput,
+    TagAdminSearchSchema,
     type TagCreateInput,
     TagCreateInputSchema,
     type TagGetEntitiesByTagInput,
@@ -77,6 +78,7 @@ export class TagService extends BaseCrudRelatedService<
      * Zod schema for tag search/filtering.
      */
     protected readonly searchSchema = TagSearchInputSchema;
+    protected readonly adminSearchSchema = TagAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;

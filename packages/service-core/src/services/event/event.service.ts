@@ -1,4 +1,4 @@
-import { EventModel } from '@repo/db';
+import { EventModel, events as eventTable } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type {
     Event,
@@ -15,6 +15,7 @@ import type {
     EventUpdateInput
 } from '@repo/schemas';
 import {
+    EventAdminSearchSchema,
     EventByAuthorInputSchema,
     EventByCategoryInputSchema,
     EventByLocationInputSchema,
@@ -29,6 +30,8 @@ import {
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
+import { sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
@@ -73,6 +76,7 @@ export class EventService extends BaseCrudService<
     constructor(ctx: ServiceContext & { model?: EventModel }) {
         super(ctx, EventService.ENTITY_NAME);
         this.model = ctx.model ?? new EventModel();
+        this.adminSearchSchema = EventAdminSearchSchema;
     }
 
     /**
@@ -342,6 +346,64 @@ export class EventService extends BaseCrudService<
             );
         }
         return result;
+    }
+
+    /**
+     * Executes admin search for events with JSONB date filters.
+     *
+     * Extracts date range filters (startDateAfter, startDateBefore, endDateAfter, endDateBefore)
+     * from entity filters and converts them into raw SQL conditions against the JSONB `date` column.
+     * The JSONB column uses `start` and `end` keys as defined by EventDateSchema.
+     *
+     * @param params - The assembled admin search parameters from the base class.
+     * @returns A paginated list of events matching the criteria.
+     */
+    protected override async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<Event>> {
+        const { entityFilters, ...rest } = params;
+        const { startDateAfter, startDateBefore, endDateAfter, endDateBefore, ...simpleFilters } =
+            entityFilters as {
+                startDateAfter?: Date;
+                startDateBefore?: Date;
+                endDateAfter?: Date;
+                endDateBefore?: Date;
+                [key: string]: unknown;
+            };
+
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+
+        // JSONB date extraction - EventDateSchema uses 'start' and 'end' keys
+        if (startDateAfter) {
+            extraConditions.push(
+                sql`(${eventTable.date}->>'start')::timestamptz >= ${startDateAfter}`
+            );
+        }
+        if (startDateBefore) {
+            extraConditions.push(
+                sql`(${eventTable.date}->>'start')::timestamptz <= ${startDateBefore}`
+            );
+        }
+        if (endDateAfter) {
+            extraConditions.push(sql`(${eventTable.date}->>'end')::timestamptz >= ${endDateAfter}`);
+        }
+        if (endDateBefore) {
+            extraConditions.push(
+                sql`(${eventTable.date}->>'end')::timestamptz <= ${endDateBefore}`
+            );
+        }
+
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: simpleFilters,
+            extraConditions
+        });
     }
 
     /**

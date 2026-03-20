@@ -1,6 +1,7 @@
 import { EventLocationModel, EventModel } from '@repo/db';
 import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
+    EventLocationAdminSearchSchema,
     EventLocationCreateInputSchema,
     EventLocationSearchInputSchema,
     EventLocationUpdateInputSchema,
@@ -48,6 +49,7 @@ export class EventLocationService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: EventLocationModel) {
         super(ctx, EventLocationService.ENTITY_NAME);
         this.model = model ?? new EventLocationModel();
+        this.adminSearchSchema = EventLocationAdminSearchSchema;
     }
 
     /**

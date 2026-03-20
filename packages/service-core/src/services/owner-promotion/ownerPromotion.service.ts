@@ -5,6 +5,7 @@ import type {
     OwnerPromotionSearchInput
 } from '@repo/schemas';
 import {
+    OwnerPromotionAdminSearchSchema,
     OwnerPromotionCreateInputSchema,
     OwnerPromotionSearchSchema,
     OwnerPromotionUpdateInputSchema
@@ -54,6 +55,7 @@ export class OwnerPromotionService extends BaseCrudService<
     constructor(ctx: ServiceContext & { model?: OwnerPromotionModel }) {
         super(ctx, OwnerPromotionService.ENTITY_NAME);
         this.model = ctx.model ?? new OwnerPromotionModel();
+        this.adminSearchSchema = OwnerPromotionAdminSearchSchema;
     }
 
     protected _canCreate(actor: Actor, data: OwnerPromotionCreateInput): void {

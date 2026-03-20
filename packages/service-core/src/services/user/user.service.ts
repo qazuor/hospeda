@@ -1,10 +1,11 @@
-import { UserModel } from '@repo/db';
+import { UserModel, ilike, users as userTable } from '@repo/db';
 import type { User } from '@repo/schemas';
 import {
     PermissionEnum,
     ServiceErrorCode,
     type UserAddPermissionInput,
     UserAddPermissionInputSchema,
+    UserAdminSearchSchema,
     type UserAssignRoleInput,
     UserAssignRoleInputSchema,
     type UserCreateInput,
@@ -20,9 +21,16 @@ import {
     UserSetPermissionsInputSchema,
     UserUpdateInputSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceLogger,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { hasPermission } from '../../utils/permission';
@@ -74,6 +82,7 @@ export class UserService extends BaseCrudService<
         super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new UserModel();
+        this.adminSearchSchema = UserAdminSearchSchema;
     }
 
     /**
@@ -371,6 +380,48 @@ export class UserService extends BaseCrudService<
                 return { user: updated };
             }
         });
+    }
+
+    /**
+     * Executes admin search for users with email partial match support.
+     *
+     * Overrides the base implementation to handle the `email` filter as a
+     * case-insensitive partial match (ILIKE) instead of an exact equality check.
+     * Intentionally bypasses relations and calls `this.model.findAll()` directly
+     * for performance.
+     *
+     * @param params - The assembled admin search parameters.
+     * @returns A paginated list of users matching the criteria.
+     */
+    protected override async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<User>> {
+        const { where, entityFilters, pagination, sort, search, extraConditions } = params;
+        const { email, ...simpleFilters } = entityFilters as {
+            email?: string;
+            [key: string]: unknown;
+        };
+
+        const additionalConditions: SQL[] = [...(extraConditions ?? [])];
+        if (search) additionalConditions.push(search);
+
+        // email partial match (ilike, not eq)
+        if (email) {
+            additionalConditions.push(ilike(userTable.email, `%${email}%`));
+        }
+
+        const mergedWhere = { ...where, ...simpleFilters };
+        return this.model.findAll(
+            mergedWhere,
+            { ...pagination, sortBy: sort.sortBy, sortOrder: sort.sortOrder },
+            additionalConditions.length > 0 ? additionalConditions : undefined
+        );
     }
 
     /**

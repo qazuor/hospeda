@@ -7,6 +7,7 @@ import type {
     PostSponsorSearchInput
 } from '@repo/schemas';
 import {
+    PostSponsorAdminSearchSchema,
     PostSponsorCreateInputSchema,
     PostSponsorSearchInputSchema,
     PostSponsorUpdateInputSchema
@@ -47,6 +48,7 @@ export class PostSponsorService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: PostSponsorModel) {
         super(ctx, PostSponsorService.ENTITY_NAME);
         this.model = model ?? new RealPostSponsorModel();
+        this.adminSearchSchema = PostSponsorAdminSearchSchema;
     }
 
     protected _canCreate(actor: Actor, _data: PostSponsorCreateInput): void {

@@ -9,6 +9,7 @@ import type {
 import {
     AddFeatureToAccommodationInputSchema,
     FeatureCreateInputSchema as CreateFeatureSchema,
+    FeatureAdminSearchSchema,
     GetAccommodationsByFeatureSchema,
     GetFeaturesForAccommodationSchema,
     RemoveFeatureFromAccommodationInputSchema,
@@ -51,6 +52,7 @@ export class FeatureService extends BaseCrudRelatedService<
     public readonly createSchema = CreateFeatureSchema;
     public readonly updateSchema = UpdateFeatureSchema;
     public readonly searchSchema = SearchFeatureSchema;
+    protected readonly adminSearchSchema = FeatureAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;

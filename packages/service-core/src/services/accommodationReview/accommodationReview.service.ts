@@ -1,7 +1,14 @@
-import { AccommodationModel, AccommodationReviewModel } from '@repo/db';
+import {
+    AccommodationModel,
+    AccommodationReviewModel,
+    accommodationReviews,
+    gte,
+    lte
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationReview,
+    AccommodationReviewAdminSearchSchema,
     type AccommodationReviewCreateInput,
     AccommodationReviewCreateInputSchema,
     type AccommodationReviewListByAccommodationParams,
@@ -18,6 +25,7 @@ import {
     type CountResponse,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import {
@@ -75,6 +83,7 @@ export class AccommodationReviewService extends BaseCrudService<
         super(ctx, AccommodationReviewService.ENTITY_NAME);
         this.model = new AccommodationReviewModel();
         this.accommodationService = new AccommodationService(ctx);
+        this.adminSearchSchema = AccommodationReviewAdminSearchSchema;
     }
 
     /**
@@ -143,6 +152,46 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     /**
+     * Overrides the base admin search to handle rating range filters (minRating, maxRating).
+     * These filters require SQL conditions against the numeric `averageRating` column
+     * and cannot be handled by the generic where-clause builder.
+     *
+     * @param params - The admin search parameters assembled by `adminList()`.
+     * @returns A paginated list of accommodation reviews matching the filters.
+     */
+    protected override async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<AccommodationReview>> {
+        const { entityFilters, ...rest } = params;
+        const { minRating, maxRating, ...simpleFilters } = entityFilters as {
+            minRating?: number;
+            maxRating?: number;
+            [key: string]: unknown;
+        };
+
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+
+        if (minRating !== undefined) {
+            extraConditions.push(gte(accommodationReviews.averageRating, minRating.toString()));
+        }
+        if (maxRating !== undefined) {
+            extraConditions.push(lte(accommodationReviews.averageRating, maxRating.toString()));
+        }
+
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: simpleFilters,
+            extraConditions
+        });
+    }
+
+    /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given accommodation.
      */
     private async recalculateAndUpdateAccommodationStats(accommodationId: string): Promise<void> {
@@ -179,7 +228,23 @@ export class AccommodationReviewService extends BaseCrudService<
         return data as Partial<AccommodationReview>;
     }
 
+    /**
+     * Computes the per-review average from the JSONB rating dimensions
+     * (cleanliness, hospitality, services, accuracy, communication, location)
+     * and persists it to the review's averageRating column.
+     */
+    private async computeAndStoreReviewAverage(entity: AccommodationReview): Promise<void> {
+        const rating = entity.rating as Record<string, number>;
+        const values = Object.values(rating).filter((v) => typeof v === 'number');
+        const avg = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+        const roundedAvg = Math.round(avg * 100) / 100;
+        await this.model.updateById(entity.id, {
+            averageRating: roundedAvg
+        } as Partial<AccommodationReview>);
+    }
+
     protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
+        await this.computeAndStoreReviewAverage(entity);
         await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
@@ -197,6 +262,8 @@ export class AccommodationReviewService extends BaseCrudService<
     }
 
     protected async _afterUpdate(entity: AccommodationReview): Promise<AccommodationReview> {
+        await this.computeAndStoreReviewAverage(entity);
+        await this.recalculateAndUpdateAccommodationStats(entity.accommodationId);
         const accommodationSlug = await this._resolveAccommodationSlug(entity.accommodationId);
         try {
             getRevalidationService()?.scheduleRevalidation({

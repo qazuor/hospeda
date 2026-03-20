@@ -8,6 +8,7 @@ import {
     type AmenityAccommodationListWrapper,
     type AmenityAddToAccommodationInput,
     AmenityAddToAccommodationInputSchema,
+    AmenityAdminSearchSchema,
     type AmenityCreateInput,
     AmenityCreateInputSchema,
     type AmenityGetAccommodationsInput,
@@ -65,6 +66,7 @@ export class AmenityService extends BaseCrudRelatedService<
     protected readonly createSchema = AmenityCreateInputSchema;
     protected readonly updateSchema = AmenityUpdateInputSchema;
     protected readonly searchSchema = AmenitySearchInputSchema;
+    protected readonly adminSearchSchema = AmenityAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;

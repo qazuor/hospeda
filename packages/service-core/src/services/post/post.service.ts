@@ -29,6 +29,7 @@ import {
     GetPostSummaryInputSchema,
     LikePostInputSchema,
     PermissionEnum,
+    PostAdminSearchSchema,
     PostCreateInputSchema,
     PostListInputSchema as PostFilterInputSchema,
     PostUpdateInputSchema as PostUpdateSchema,
@@ -96,6 +97,7 @@ export class PostService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: PostModel) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
+        this.adminSearchSchema = PostAdminSearchSchema;
     }
 
     /**

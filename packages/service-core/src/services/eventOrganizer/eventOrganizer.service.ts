@@ -8,6 +8,7 @@ import type {
     VisibilityEnum
 } from '@repo/schemas';
 import {
+    EventOrganizerAdminSearchSchema,
     EventOrganizerCreateInputSchema,
     EventOrganizerSearchInputSchema,
     EventOrganizerUpdateInputSchema,
@@ -63,6 +64,7 @@ export class EventOrganizerService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: EventOrganizerModel) {
         super(ctx, EventOrganizerService.ENTITY_NAME);
         this.model = model ?? new EventOrganizerModel();
+        this.adminSearchSchema = EventOrganizerAdminSearchSchema;
     }
 
     // --- Permission Hooks ---

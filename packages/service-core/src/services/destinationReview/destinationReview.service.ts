@@ -1,7 +1,8 @@
-import { DestinationModel, DestinationReviewModel } from '@repo/db';
+import { DestinationModel, DestinationReviewModel, destinationReviews, gte, lte } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type DestinationReview,
+    DestinationReviewAdminSearchSchema,
     type DestinationReviewCreateInput,
     DestinationReviewCreateInputSchema,
     type DestinationReviewListResponse,
@@ -12,11 +13,12 @@ import {
     type DestinationReviewsByUserInput,
     DestinationReviewsByUserSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { DestinationService } from '../destination/destination.service';
-import { calculateStatsFromReviews } from './destinationReview.helpers';
+import { calculateStatsFromReviews, computeReviewAverageRating } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
 import {
     checkCanCreateDestinationReview,
@@ -59,6 +61,7 @@ export class DestinationReviewService extends BaseCrudService<
         super(ctx, DestinationReviewService.ENTITY_NAME);
         this.model = new DestinationReviewModel();
         this.destinationService = new DestinationService(ctx);
+        this.adminSearchSchema = DestinationReviewAdminSearchSchema;
     }
 
     /**
@@ -127,6 +130,46 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     /**
+     * Overrides the base admin search to handle rating range filters (minRating, maxRating).
+     * These filters require SQL conditions against the numeric `averageRating` column
+     * and cannot be handled by the generic where-clause builder.
+     *
+     * @param params - The admin search parameters assembled by `adminList()`.
+     * @returns A paginated list of destination reviews matching the filters.
+     */
+    protected override async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<DestinationReview>> {
+        const { entityFilters, ...rest } = params;
+        const { minRating, maxRating, ...simpleFilters } = entityFilters as {
+            minRating?: number;
+            maxRating?: number;
+            [key: string]: unknown;
+        };
+
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+
+        if (minRating !== undefined) {
+            extraConditions.push(gte(destinationReviews.averageRating, minRating.toString()));
+        }
+        if (maxRating !== undefined) {
+            extraConditions.push(lte(destinationReviews.averageRating, maxRating.toString()));
+        }
+
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: simpleFilters,
+            extraConditions
+        });
+    }
+
+    /**
      * Recalculates and updates the stats (reviewsCount, averageRating, rating) for the given destination.
      */
     private async recalculateAndUpdateDestinationStats(destinationId: string): Promise<void> {
@@ -141,6 +184,12 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     protected async _afterCreate(entity: DestinationReview): Promise<DestinationReview> {
+        // Compute per-review average from JSONB rating dimensions and persist it
+        const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
+        await this.model.update({ id: entity.id }, {
+            averageRating: reviewAvg.toString()
+        } as Partial<DestinationReview>);
+
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
@@ -158,6 +207,15 @@ export class DestinationReviewService extends BaseCrudService<
     }
 
     protected async _afterUpdate(entity: DestinationReview): Promise<DestinationReview> {
+        // Recompute per-review average from JSONB rating dimensions and persist it
+        const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
+        await this.model.update({ id: entity.id }, {
+            averageRating: reviewAvg.toString()
+        } as Partial<DestinationReview>);
+
+        // Recalculate parent destination stats after rating change
+        await this.recalculateAndUpdateDestinationStats(entity.destinationId);
+
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
         try {
             getRevalidationService()?.scheduleRevalidation({

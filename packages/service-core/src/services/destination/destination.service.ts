@@ -21,6 +21,7 @@ import type {
     GetDestinationSummaryInput
 } from '@repo/schemas';
 import {
+    DestinationAdminSearchSchema,
     DestinationCreateInputSchema,
     DestinationSearchSchema,
     DestinationUpdateInputSchema,
@@ -106,6 +107,7 @@ export class DestinationService extends BaseCrudService<
         super(ctx, DestinationService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new DestinationModel();
+        this.adminSearchSchema = DestinationAdminSearchSchema;
     }
 
     // --- Permissions Hooks ---

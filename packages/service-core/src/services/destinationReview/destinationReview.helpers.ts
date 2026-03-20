@@ -1,6 +1,21 @@
 import type { DestinationRatingInput, DestinationReview } from '@repo/schemas';
 
 /**
+ * Computes the per-review average rating from the JSONB rating dimensions.
+ * Uses dynamic extraction so it works regardless of how many dimensions exist.
+ * @param rating - The JSONB rating object with numeric dimension values
+ * @returns The rounded average (2 decimal places), or 0 if no valid numeric values
+ */
+export function computeReviewAverageRating(rating: Record<string, unknown>): number {
+    const values = Object.values(rating).filter((v): v is number => typeof v === 'number');
+    if (values.length === 0) {
+        return 0;
+    }
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    return Math.round(avg * 100) / 100;
+}
+
+/**
  * Calculates stats (reviewsCount, averageRating, rating) from a list of destination reviews.
  * @param reviews - Array of DestinationReview
  * @returns Object with reviewsCount, averageRating, and rating (per-field averages)

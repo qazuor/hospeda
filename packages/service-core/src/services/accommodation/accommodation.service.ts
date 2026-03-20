@@ -2,11 +2,14 @@ import {
     AccommodationFaqModel,
     AccommodationIaDataModel,
     AccommodationModel,
-    DestinationModel
+    DestinationModel,
+    accommodations,
+    sql
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type Accommodation,
+    AccommodationAdminSearchSchema,
     type AccommodationByDestinationParams,
     AccommodationByDestinationParamsSchema,
     type AccommodationCreateInput,
@@ -55,9 +58,10 @@ import {
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
@@ -152,6 +156,7 @@ export class AccommodationService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: AccommodationModel) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
+        this.adminSearchSchema = AccommodationAdminSearchSchema;
         this.destinationService = new DestinationService(ctx);
         this._destinationModel = new DestinationModel();
     }
@@ -226,6 +231,53 @@ export class AccommodationService extends BaseCrudService<
         _newVisibility: Accommodation['visibility']
     ): void {
         checkCanUpdate(actor, entity);
+    }
+
+    // --- Admin Search Override ---
+
+    /**
+     * Overrides the default admin search to handle JSONB price filters.
+     *
+     * The accommodation `price` column is JSONB with a nested `price` key holding
+     * the numeric nightly rate. Standard column filters cannot query inside JSONB,
+     * so `minPrice` and `maxPrice` are extracted from `entityFilters` and converted
+     * into raw SQL conditions that cast `(price->>'price')::numeric` for comparison.
+     *
+     * All other filters are passed through to the base implementation unchanged.
+     *
+     * @param params - The assembled admin search parameters from `adminList`.
+     * @returns A paginated list of matching accommodations.
+     */
+    protected override async _executeAdminSearch(params: {
+        readonly where: Record<string, unknown>;
+        readonly entityFilters: Record<string, unknown>;
+        readonly pagination: { readonly page: number; readonly pageSize: number };
+        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+        readonly search?: SQL;
+        readonly extraConditions?: SQL[];
+        readonly actor: Actor;
+    }): Promise<PaginatedListOutput<Accommodation>> {
+        const { entityFilters, ...rest } = params;
+        const { minPrice, maxPrice, ...simpleFilters } = entityFilters as {
+            minPrice?: number;
+            maxPrice?: number;
+            [key: string]: unknown;
+        };
+
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+
+        if (minPrice !== undefined) {
+            extraConditions.push(sql`(${accommodations.price}->>'price')::numeric >= ${minPrice}`);
+        }
+        if (maxPrice !== undefined) {
+            extraConditions.push(sql`(${accommodations.price}->>'price')::numeric <= ${maxPrice}`);
+        }
+
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: simpleFilters,
+            extraConditions
+        });
     }
 
     // --- Lifecycle Hooks ---
