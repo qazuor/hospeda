@@ -58,7 +58,7 @@ export class ExchangeRateConfigModel extends BaseModel<ExchangeRateConfig> {
      * ```
      */
     async getConfig(tx?: NodePgDatabase<typeof schema>): Promise<ExchangeRateConfig> {
-        const result = await this.findAll({}, { page: 1, pageSize: 1 }, tx);
+        const result = await this.findAll({}, { page: 1, pageSize: 1 }, undefined, tx);
         const existingConfig = result.items[0];
 
         if (existingConfig) {
@@ -104,7 +104,7 @@ export class ExchangeRateConfigModel extends BaseModel<ExchangeRateConfig> {
         tx?: NodePgDatabase<typeof schema>
     ): Promise<ExchangeRateConfig> {
         const { data, updatedById } = input;
-        const result = await this.findAll({}, { page: 1, pageSize: 1 }, tx);
+        const result = await this.findAll({}, { page: 1, pageSize: 1 }, undefined, tx);
         const existingConfig = result.items[0];
 
         const updatePayload = {

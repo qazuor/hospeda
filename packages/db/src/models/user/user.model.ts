@@ -28,7 +28,8 @@ export class UserModel extends BaseModel<User> {
      */
     async findAll(
         where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number },
+        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        _additionalConditions?: SQL[],
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: User[]; total: number }> {
         const db = this.getClient(tx);
@@ -82,13 +83,14 @@ export class UserModel extends BaseModel<User> {
      */
     async count(
         where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
+        options?: { additionalConditions?: SQL[]; tx?: NodePgDatabase<typeof schema> }
     ): Promise<number> {
         // If no 'q' parameter, use parent implementation
         if (!where.q) {
-            return super.count(where, tx);
+            return super.count(where, options);
         }
 
+        const { tx } = options ?? {};
         const db = this.getClient(tx);
         const { q, ...otherFilters } = where;
 

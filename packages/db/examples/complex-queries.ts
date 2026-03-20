@@ -652,7 +652,7 @@ export class OrderModel extends BaseModel<Order> {
                 ? await this.searchOrders({ filters, tx })
                 : (await this.findAll({ deletedAt: null }, { page, pageSize }, tx)).items;
 
-            const total = await this.count({ deletedAt: null }, tx);
+            const total = await this.count({ deletedAt: null }, { tx });
             const totalPages = Math.ceil(total / pageSize);
 
             const result: PaginatedResult<Order> = {

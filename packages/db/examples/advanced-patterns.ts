@@ -721,7 +721,7 @@ export class PostModel extends BaseModel<Post> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'countEstimate', {}, err);
             // Fallback to exact count
-            return this.count({ deletedAt: null }, tx);
+            return this.count({ deletedAt: null }, { tx });
         }
     }
 

@@ -57,7 +57,7 @@ export class DestinationReviewModel extends BaseModel<DestinationReview> {
                         limit: pageSize,
                         offset: offset
                     }),
-                    this.count(safeWhere, tx)
+                    this.count(safeWhere, { tx })
                 ]);
 
                 const result = {

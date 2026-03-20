@@ -1,6 +1,6 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
-import { count } from 'drizzle-orm';
+import { and, count } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { getDb, type schema } from '../client.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
@@ -50,6 +50,14 @@ export abstract class BaseModel<T> {
     }
 
     /**
+     * Returns the Drizzle table schema for this model.
+     * Used by the service layer to build search conditions against table columns.
+     */
+    public getTable() {
+        return this.table;
+    }
+
+    /**
      * Finds entities matching a where clause with mandatory pagination.
      *
      * Pagination is ALWAYS applied to prevent unbounded queries:
@@ -58,12 +66,14 @@ export abstract class BaseModel<T> {
      *
      * @param where - The filter object to apply.
      * @param options - Optional pagination parameters: `{ page, pageSize }`.
+     * @param additionalConditions - Optional extra SQL conditions to combine with the where clause.
      * @param tx - Optional transaction client.
      * @returns A promise resolving to an object containing the `items` array and `total` count.
      */
     async findAll(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
+        additionalConditions?: SQL[],
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
@@ -78,8 +88,20 @@ export abstract class BaseModel<T> {
         const logContext = { where: safeWhere, page, pageSize, requestedPageSize };
 
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
             const offset = (page - 1) * pageSize;
+
+            // Combine base where clause with any additional SQL conditions
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions) allConditions.push(...additionalConditions);
+
+            const finalWhereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
 
             // Build orderBy clause if sorting is requested
             const orderClause = options?.sortBy
@@ -91,12 +113,12 @@ export abstract class BaseModel<T> {
                 : undefined;
 
             // Build query - use $dynamic() to allow conditional chaining
-            const baseQuery = db.select().from(this.table).where(whereClause).$dynamic();
+            const baseQuery = db.select().from(this.table).where(finalWhereClause).$dynamic();
             const sortedQuery = orderClause ? baseQuery.orderBy(orderClause) : baseQuery;
 
             const [items, total] = await Promise.all([
                 sortedQuery.limit(pageSize).offset(offset),
-                this.count(safeWhere, tx)
+                this.count(safeWhere, { additionalConditions, tx })
             ]);
 
             const result = { items: items as T[], total };
@@ -223,21 +245,31 @@ export abstract class BaseModel<T> {
     }
 
     /**
-     * Counts entities matching the where clause.
-     * @param where - The filter object
-     * @param tx - Optional transaction client
+     * Counts entities matching the given where clause and optional additional conditions.
+     *
+     * @param where - Record of column-value pairs for filtering
+     * @param options - Optional configuration: tx for transaction, additionalConditions for extra SQL
      * @returns Promise resolving to the count
      */
     async count(
         where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
+        options?: { additionalConditions?: SQL[]; tx?: NodePgDatabase<typeof schema> }
     ): Promise<number> {
+        const { additionalConditions = [], tx } = options ?? {};
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
 
-            const result = await db.select({ count: count() }).from(this.table).where(whereClause);
+            const finalWhereClause =
+                additionalConditions.length > 0
+                    ? and(baseWhereClause, ...additionalConditions)
+                    : baseWhereClause;
+
+            const result = await db
+                .select({ count: count() })
+                .from(this.table)
+                .where(finalWhereClause);
 
             try {
                 logQuery(this.entityName, 'count', safeWhere, result);
@@ -445,12 +477,14 @@ export abstract class BaseModel<T> {
      * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
      * @param options Pagination and other options
+     * @param additionalConditions Optional extra SQL conditions to combine with the where clause.
      * @returns Promise resolving to paginated list with relations
      */
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
-        options: PaginatedListOptions = {}
+        options: PaginatedListOptions = {},
+        additionalConditions?: SQL[]
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient();
         // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
@@ -485,7 +519,7 @@ export abstract class BaseModel<T> {
                     { where: safeWhere, options, relations },
                     'Falling back to findAll - no relations requested'
                 );
-                return this.findAll(safeWhere, options);
+                return this.findAll(safeWhere, options, additionalConditions);
             }
 
             // Get table name for dynamic query
@@ -494,8 +528,19 @@ export abstract class BaseModel<T> {
                 throw new Error(`Table name not defined for entity: ${this.entityName}`);
             }
 
-            // Build WHERE clause using existing helper
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            // Build WHERE clause using existing helper and combine with additional conditions
+            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
+
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions) allConditions.push(...additionalConditions);
+
+            const whereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
 
             // Build the query with relations using dynamic table access
             // Dynamic access to db.query[tableName] - type safety verified at runtime
@@ -561,7 +606,7 @@ export abstract class BaseModel<T> {
             // Execute query with relations and get total count
             const [items, totalCount] = await Promise.all([
                 typedQueryTable.findMany(queryOptions),
-                this.count(safeWhere)
+                this.count(safeWhere, { additionalConditions })
             ]);
 
             const result = { items: items as T[], total: totalCount };
