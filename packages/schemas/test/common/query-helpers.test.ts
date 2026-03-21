@@ -53,16 +53,16 @@ describe('queryBooleanParam', () => {
             expect(result).toBeUndefined();
         });
 
-        it('should reject empty string (preprocess returns undefined, inner boolean rejects)', () => {
-            const result = schema.safeParse('');
+        it('should parse empty string as undefined (treated as not provided)', () => {
+            const result = schema.parse('');
 
-            expect(result.success).toBe(false);
+            expect(result).toBeUndefined();
         });
 
-        it('should reject null (preprocess returns undefined, inner boolean rejects)', () => {
-            const result = schema.safeParse(null);
+        it('should parse null as undefined (treated as not provided)', () => {
+            const result = schema.parse(null);
 
-            expect(result.success).toBe(false);
+            expect(result).toBeUndefined();
         });
     });
 

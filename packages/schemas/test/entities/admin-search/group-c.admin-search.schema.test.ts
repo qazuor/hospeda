@@ -46,10 +46,16 @@ describe('Group C Admin Search Schemas', () => {
             const result = EventLocationAdminSearchSchema.parse({});
             expect(result.page).toBe(1);
             expect(result.city).toBeUndefined();
-            expect(result.minCapacity).toBeUndefined();
         });
 
-        it('should accept location-specific filters', () => {
+        it('should accept city filter', () => {
+            const result = EventLocationAdminSearchSchema.parse({
+                city: 'Buenos Aires'
+            });
+            expect(result.city).toBe('Buenos Aires');
+        });
+
+        it('should strip unknown fields like isVerified, minCapacity, maxCapacity', () => {
             const result = EventLocationAdminSearchSchema.parse({
                 city: 'Buenos Aires',
                 minCapacity: 50,
@@ -57,35 +63,9 @@ describe('Group C Admin Search Schemas', () => {
                 isVerified: true
             });
             expect(result.city).toBe('Buenos Aires');
-            expect(result.minCapacity).toBe(50);
-            expect(result.maxCapacity).toBe(500);
-            expect(result.isVerified).toBe(true);
-        });
-
-        it('should coerce string numbers for capacity', () => {
-            const result = EventLocationAdminSearchSchema.parse({
-                minCapacity: '10',
-                maxCapacity: '200'
-            });
-            expect(result.minCapacity).toBe(10);
-            expect(result.maxCapacity).toBe(200);
-        });
-
-        it('should coerce string boolean for isVerified', () => {
-            const result = EventLocationAdminSearchSchema.parse({ isVerified: 'true' });
-            expect(result.isVerified).toBe(true);
-        });
-
-        it('should reject capacity less than 1', () => {
-            expect(() => EventLocationAdminSearchSchema.parse({ minCapacity: 0 })).toThrow(
-                ZodError
-            );
-        });
-
-        it('should reject negative maxCapacity', () => {
-            expect(() => EventLocationAdminSearchSchema.parse({ maxCapacity: -5 })).toThrow(
-                ZodError
-            );
+            expect('minCapacity' in result).toBe(false);
+            expect('maxCapacity' in result).toBe(false);
+            expect('isVerified' in result).toBe(false);
         });
     });
 
@@ -93,22 +73,20 @@ describe('Group C Admin Search Schemas', () => {
         it('should parse with only base defaults', () => {
             const result = EventOrganizerAdminSearchSchema.parse({});
             expect(result.page).toBe(1);
-            expect(result.isVerified).toBeUndefined();
         });
 
-        it('should accept organizer-specific filters', () => {
+        it('should accept base search filters', () => {
             const result = EventOrganizerAdminSearchSchema.parse({
-                isVerified: true,
-                search: 'john'
+                search: 'john',
+                status: 'ACTIVE'
             });
-            expect(result.isVerified).toBe(true);
             expect(result.search).toBe('john');
+            expect(result.status).toBe('ACTIVE');
         });
 
-        it('should correctly parse string "false" to false via queryBooleanParam', () => {
-            // queryBooleanParam() correctly handles string "false" (unlike z.coerce.boolean())
-            const result = EventOrganizerAdminSearchSchema.parse({ isVerified: 'false' });
-            expect(result.isVerified).toBe(false);
+        it('should strip unknown fields like isVerified', () => {
+            const result = EventOrganizerAdminSearchSchema.parse({ isVerified: true });
+            expect('isVerified' in result).toBe(false);
         });
     });
 

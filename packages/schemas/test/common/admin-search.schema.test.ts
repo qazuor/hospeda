@@ -140,10 +140,26 @@ describe('AdminSearchBaseSchema', () => {
         });
 
         it('should coerce falsy values to false', () => {
-            // z.coerce.boolean() calls Boolean(value)
-            // Boolean("") = false, Boolean(0) = false, Boolean(false) = false
+            // queryBooleanParam: only "true", true, "1" are truthy
+            // everything else resolves to false via the .default(false) chain
             expect(AdminSearchBaseSchema.parse({ includeDeleted: '' }).includeDeleted).toBe(false);
             expect(AdminSearchBaseSchema.parse({ includeDeleted: 0 }).includeDeleted).toBe(false);
+        });
+
+        it('should coerce string "false" to boolean false (queryBooleanParam fix)', () => {
+            // Unlike z.coerce.boolean() where Boolean("false") === true,
+            // queryBooleanParam correctly treats "false" as falsy
+            expect(AdminSearchBaseSchema.parse({ includeDeleted: 'false' }).includeDeleted).toBe(
+                false
+            );
+        });
+
+        it('should coerce string "1" to boolean true', () => {
+            expect(AdminSearchBaseSchema.parse({ includeDeleted: '1' }).includeDeleted).toBe(true);
+        });
+
+        it('should coerce string "0" to boolean false', () => {
+            expect(AdminSearchBaseSchema.parse({ includeDeleted: '0' }).includeDeleted).toBe(false);
         });
     });
 
@@ -225,5 +241,21 @@ describe('parseAdminSort', () => {
             field: 'name',
             direction: 'asc'
         });
+    });
+
+    it('should throw on missing direction', () => {
+        expect(() => parseAdminSort('name')).toThrow('Invalid sort format');
+    });
+
+    it('should throw on invalid direction', () => {
+        expect(() => parseAdminSort('name:invalid')).toThrow('Invalid sort format');
+    });
+
+    it('should throw on empty string', () => {
+        expect(() => parseAdminSort('')).toThrow('Invalid sort format');
+    });
+
+    it('should throw on missing field', () => {
+        expect(() => parseAdminSort(':asc')).toThrow('Invalid sort format');
     });
 });
