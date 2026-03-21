@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
 
@@ -6,18 +6,18 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  * Admin search schema for features.
  * Extends base admin search with feature-specific filters.
  *
+ * Note: The features table has no `category` column.
+ *
  * @example
  * ```ts
  * const params = FeatureAdminSearchSchema.parse({
  *   page: 1,
- *   category: 'outdoor',
- *   isBuiltin: false
+ *   isBuiltin: false,
+ *   search: 'pool'
  * });
  * ```
  */
 export const FeatureAdminSearchSchema = AdminSearchBaseSchema.extend({
-    /** Filter by feature category */
-    category: z.string().optional().describe('Filter by feature category'),
     /** Filter by built-in status */
     isBuiltin: queryBooleanParam().describe('Filter built-in features')
 });

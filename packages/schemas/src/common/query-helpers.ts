@@ -12,6 +12,6 @@ export function queryBooleanParam() {
         .preprocess((val) => {
             if (val === undefined || val === null || val === '') return undefined;
             return val === 'true' || val === true || val === '1';
-        }, z.boolean())
+        }, z.boolean().optional())
         .optional();
 }

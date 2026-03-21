@@ -1,6 +1,7 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
+import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
 
 /**
  * Admin search schema for amenities.
@@ -10,15 +11,15 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  * ```ts
  * const params = AmenityAdminSearchSchema.parse({
  *   page: 1,
- *   category: 'connectivity',
+ *   type: 'CONNECTIVITY',
  *   isBuiltin: true,
  *   search: 'wifi'
  * });
  * ```
  */
 export const AmenityAdminSearchSchema = AdminSearchBaseSchema.extend({
-    /** Filter by amenity category */
-    category: z.string().optional().describe('Filter by amenity category'),
+    /** Filter by amenity type (matches the `type` column using AmenitiesTypePgEnum) */
+    type: AmenitiesTypeEnumSchema.optional().describe('Filter by amenity type'),
     /** Filter by built-in status */
     isBuiltin: queryBooleanParam().describe('Filter built-in amenities')
 });

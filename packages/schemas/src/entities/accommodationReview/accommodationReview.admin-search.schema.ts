@@ -15,16 +15,14 @@
  *   status: 'ACTIVE',
  *   includeDeleted: false,
  *   accommodationId: '123e4567-e89b-12d3-a456-426614174000',
- *   minRating: 3,
+ *   minRating: 3.5,
  *   maxRating: 5,
- *   isVerified: true,
  *   createdAfter: '2025-01-01T00:00:00Z'
  * });
  * ```
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Admin search schema for accommodation reviews.
@@ -41,15 +39,17 @@ import { queryBooleanParam } from '../../common/query-helpers.js';
  * Additional filters:
  * - `accommodationId`: Narrow to a specific accommodation
  * - `userId`: Narrow to reviews by a specific user
- * - `minRating` / `maxRating`: Filter by rating range (1-5)
- * - `isVerified`: Filter by verification status
+ * - `minRating` / `maxRating`: Filter by average rating range (1-5, supports decimals)
+ *
+ * Note: The `accommodation_reviews` table has no `isVerified` column.
+ * The `averageRating` column is `numeric(3,2)` storing decimals like 4.50.
  *
  * @example
  * ```ts
- * // List unverified reviews for a specific accommodation
+ * // List reviews with rating >= 4.0 for a specific accommodation
  * const params = AccommodationReviewAdminSearchSchema.parse({
  *   accommodationId: 'uuid-here',
- *   isVerified: false,
+ *   minRating: 4.0,
  *   sort: 'createdAt:desc'
  * });
  * ```
@@ -69,28 +69,21 @@ export const AccommodationReviewAdminSearchSchema = AdminSearchBaseSchema.extend
         .optional()
         .describe('Filter reviews by user'),
 
-    /** Minimum rating value (inclusive, 1-5) */
+    /** Minimum average rating value (inclusive, 1-5, supports decimals like 3.5) */
     minRating: z.coerce
         .number()
-        .int()
         .min(1, { message: 'zodError.admin.search.accommodationReview.minRating.min' })
         .max(5, { message: 'zodError.admin.search.accommodationReview.minRating.max' })
         .optional()
-        .describe('Minimum rating filter (1-5, inclusive)'),
+        .describe('Minimum average rating filter (1-5, inclusive, supports decimals)'),
 
-    /** Maximum rating value (inclusive, 1-5) */
+    /** Maximum average rating value (inclusive, 1-5, supports decimals like 4.5) */
     maxRating: z.coerce
         .number()
-        .int()
         .min(1, { message: 'zodError.admin.search.accommodationReview.maxRating.min' })
         .max(5, { message: 'zodError.admin.search.accommodationReview.maxRating.max' })
         .optional()
-        .describe('Maximum rating filter (1-5, inclusive)'),
-
-    /** Filter by verification status (true = verified only, false = unverified only) */
-    isVerified: queryBooleanParam().describe(
-        'Filter by verification status (true = verified only, false = unverified only)'
-    )
+        .describe('Maximum average rating filter (1-5, inclusive, supports decimals)')
 });
 
 /**

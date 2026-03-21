@@ -1,20 +1,26 @@
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { queryBooleanParam } from '../../common/query-helpers.js';
 
 /**
  * Admin search schema for event locations.
  * Extends base admin search with location-specific filters.
+ *
+ * Note: The `event_locations` table has no `isVerified` column and no `capacity` column.
+ * Only `city` is a direct filterable column on this table.
+ *
+ * @example
+ * ```ts
+ * const params = EventLocationAdminSearchSchema.parse({
+ *   page: 1,
+ *   city: 'Buenos Aires',
+ *   status: 'ACTIVE'
+ * });
+ * ```
  */
 export const EventLocationAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by city */
-    city: z.string().optional().describe('Filter by city name'),
-    /** Minimum venue capacity */
-    minCapacity: z.coerce.number().int().min(1).optional().describe('Minimum venue capacity'),
-    /** Maximum venue capacity */
-    maxCapacity: z.coerce.number().int().min(1).optional().describe('Maximum venue capacity'),
-    /** Filter by verified status */
-    isVerified: queryBooleanParam().describe('Filter by verified status')
+    city: z.string().optional().describe('Filter by city name')
 });
 
+/** Inferred TypeScript type for event location admin search parameters */
 export type EventLocationAdminSearch = z.infer<typeof EventLocationAdminSearchSchema>;

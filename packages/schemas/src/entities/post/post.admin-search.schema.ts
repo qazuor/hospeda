@@ -40,12 +40,22 @@ export const PostAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter news posts */
     isNews: queryBooleanParam().describe('Filter news posts'),
 
+    /** Filter by related accommodation UUID */
+    relatedAccommodationId: z
+        .string()
+        .uuid({ message: 'zodError.admin.search.post.relatedAccommodationId.uuid' })
+        .optional()
+        .describe('Filter by related accommodation'),
+
     /** Filter by related destination UUID */
     relatedDestinationId: z
         .string()
         .uuid({ message: 'zodError.admin.search.post.relatedDestinationId.uuid' })
         .optional()
-        .describe('Filter by related destination')
+        .describe('Filter by related destination'),
+
+    /** Filter by featured in website status */
+    isFeaturedInWebsite: queryBooleanParam().describe('Filter by featured in website status')
 });
 
 /**

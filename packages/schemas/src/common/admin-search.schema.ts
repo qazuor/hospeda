@@ -9,6 +9,7 @@
  */
 import { z } from 'zod';
 import { LifecycleStatusEnum } from '../enums/lifecycle-state.enum.js';
+import { queryBooleanParam } from './query-helpers.js';
 
 /**
  * Admin status filter values.
@@ -73,25 +74,33 @@ export const AdminSearchBaseSchema = z.object({
     /**
      * Include soft-deleted items in results.
      *
-     * Uses z.preprocess to correctly handle string query parameters.
-     * Only the string "true" or boolean true evaluates to true.
+     * Uses queryBooleanParam() to correctly handle string query parameters.
+     * Only the string "true", boolean true, or "1" evaluates to true.
      * The string "false" correctly evaluates to false (unlike z.coerce.boolean()).
-     *
-     * To disable, omit the parameter or send "false". Do NOT use z.coerce.boolean()
-     * here as it would convert the string "false" to boolean true.
      */
-    includeDeleted: z
-        .preprocess((val) => val === 'true' || val === true, z.boolean())
+    includeDeleted: queryBooleanParam()
         .default(false)
         .describe('Include soft-deleted items in results'),
 
-    /** Filter items created after this ISO datetime */
+    /**
+     * Filter items created after this ISO datetime.
+     *
+     * Note: If createdAfter > createdBefore (inverted range), the query returns
+     * an empty result set by design. No validation error is raised because this
+     * is a valid (albeit nonsensical) filter combination.
+     */
     createdAfter: z.coerce
         .date()
         .optional()
         .describe('Filter items created after this date (ISO 8601)'),
 
-    /** Filter items created before this ISO datetime */
+    /**
+     * Filter items created before this ISO datetime.
+     *
+     * Note: If createdAfter > createdBefore (inverted range), the query returns
+     * an empty result set by design. No validation error is raised because this
+     * is a valid (albeit nonsensical) filter combination.
+     */
     createdBefore: z.coerce
         .date()
         .optional()
@@ -111,10 +120,18 @@ export interface ParsedSort {
 /**
  * Utility to parse the sort string into field and direction.
  *
- * @param sort - Sort string in format "field:direction"
+ * Although AdminSearchBaseSchema already validates the sort format via regex,
+ * this function adds runtime validation as a defense-in-depth measure
+ * for cases where it may be called with unvalidated input.
+ *
+ * @param sort - Sort string in format "field:asc" or "field:desc"
  * @returns Parsed sort object with field and direction
+ * @throws Error if the sort string is not in the expected format
  */
 export function parseAdminSort(sort: string): ParsedSort {
-    const [field, direction] = sort.split(':') as [string, 'asc' | 'desc'];
+    const [field, direction] = sort.split(':');
+    if (!field || (direction !== 'asc' && direction !== 'desc')) {
+        throw new Error(`Invalid sort format: "${sort}". Expected "field:asc" or "field:desc"`);
+    }
     return { field, direction };
 }
