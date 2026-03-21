@@ -37,8 +37,9 @@ const createTestEntityApi = <TData>(endpoint: string, itemSchema: z.ZodSchema<TD
             params.set('search', q);
         }
 
+        // Transform SortConfig[] to "field:direction" string format expected by backend
         if (sort && sort.length > 0) {
-            params.set('sort', JSON.stringify(sort));
+            params.set('sort', `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`);
         }
 
         const response = await fetch(`${endpoint}?${params.toString()}`);
@@ -164,7 +165,7 @@ describe('createEntityApi', () => {
             expect(hasSearch).toBe(false);
         });
 
-        it('should send sort parameter as JSON when provided', async () => {
+        it('should send sort parameter as "field:direction" string when provided', async () => {
             let capturedSort: string | null = null;
 
             server.use(
@@ -189,10 +190,10 @@ describe('createEntityApi', () => {
                 sort: [{ id: 'name', desc: false }]
             });
 
-            expect(capturedSort).toBe(JSON.stringify([{ id: 'name', desc: false }]));
+            expect(capturedSort).toBe('name:asc');
         });
 
-        it('should handle multiple sort columns', async () => {
+        it('should use only the first sort column in "field:direction" format', async () => {
             let capturedSort: string | null = null;
 
             server.use(
@@ -220,11 +221,36 @@ describe('createEntityApi', () => {
                 ]
             });
 
-            const parsedSort = JSON.parse(capturedSort || '[]');
+            // Only first sort column is sent in "field:direction" format
+            expect(capturedSort).toBe('name:asc');
+        });
 
-            expect(parsedSort).toHaveLength(2);
-            expect(parsedSort[0]).toEqual({ id: 'name', desc: false });
-            expect(parsedSort[1]).toEqual({ id: 'createdAt', desc: true });
+        it('should send desc sort direction correctly', async () => {
+            let capturedSort: string | null = null;
+
+            server.use(
+                http.get(`${API_BASE}/public/test-entities`, ({ request }) => {
+                    const url = new URL(request.url);
+                    capturedSort = url.searchParams.get('sort');
+
+                    return HttpResponse.json({
+                        success: true,
+                        data: {
+                            items: [],
+                            pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 }
+                        }
+                    });
+                })
+            );
+
+            const api = createTestEntityApi(`${API_BASE}/public/test-entities`, TestEntitySchema);
+            await api.getEntities({
+                page: 1,
+                pageSize: 20,
+                sort: [{ id: 'createdAt', desc: true }]
+            });
+
+            expect(capturedSort).toBe('createdAt:desc');
         });
     });
 

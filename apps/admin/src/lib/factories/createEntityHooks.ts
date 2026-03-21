@@ -82,8 +82,21 @@ export const createEntityHooks = <
                     searchParams.set('search', params.q);
                 }
 
+                // Transform SortConfig[] to "field:direction" string format expected by backend
                 if (params.sort && params.sort.length > 0) {
-                    searchParams.set('sort', JSON.stringify(params.sort));
+                    searchParams.set(
+                        'sort',
+                        `${params.sort[0].id}:${params.sort[0].desc ? 'desc' : 'asc'}`
+                    );
+                }
+
+                // Apply entity-specific filters
+                if (params.filters) {
+                    for (const [key, value] of Object.entries(params.filters)) {
+                        if (value !== undefined && value !== null && value !== '') {
+                            searchParams.set(key, String(value));
+                        }
+                    }
                 }
 
                 const response = await fetchApi<unknown>({

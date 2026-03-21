@@ -25,7 +25,7 @@ export function SponsorshipsTab() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
-        status?: string;
+        sponsorshipStatus?: string;
         targetType?: string;
     }>({});
 
@@ -86,22 +86,22 @@ export function SponsorshipsTab() {
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
-                    value: 'PENDING',
+                    value: 'pending',
                     label: t('admin-billing.sponsorships.statuses.pending'),
                     color: BadgeColor.YELLOW
                 },
                 {
-                    value: 'ACTIVE',
+                    value: 'active',
                     label: t('admin-billing.sponsorships.statuses.active'),
                     color: BadgeColor.GREEN
                 },
                 {
-                    value: 'EXPIRED',
+                    value: 'expired',
                     label: t('admin-billing.sponsorships.statuses.expired'),
                     color: BadgeColor.GRAY
                 },
                 {
-                    value: 'CANCELLED',
+                    value: 'cancelled',
                     label: t('admin-billing.sponsorships.statuses.cancelled'),
                     color: BadgeColor.RED
                 }
@@ -191,11 +191,12 @@ export function SponsorshipsTab() {
                 <div className="flex gap-2">
                     <select
                         className="rounded-md border px-3 py-2 text-sm"
-                        value={filters.status || 'all'}
+                        value={filters.sponsorshipStatus || 'all'}
                         onChange={(e) =>
                             setFilters((prev) => ({
                                 ...prev,
-                                status: e.target.value === 'all' ? undefined : e.target.value
+                                sponsorshipStatus:
+                                    e.target.value === 'all' ? undefined : e.target.value
                             }))
                         }
                     >

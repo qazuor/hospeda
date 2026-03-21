@@ -34,7 +34,7 @@ function SponsorSponsorshipsPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
-        status?: string;
+        sponsorshipStatus?: string;
         targetType?: string;
     }>({});
     const [selectedSponsorship, setSelectedSponsorship] = useState<SponsorSponsorship | null>(null);
@@ -86,17 +86,17 @@ function SponsorSponsorshipsPage() {
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
-                    value: 'BRONZE',
+                    value: 'bronze',
                     label: t('admin-pages.sponsor.sponsorships.levelBronze'),
                     color: BadgeColor.ORANGE
                 },
                 {
-                    value: 'SILVER',
+                    value: 'silver',
                     label: t('admin-pages.sponsor.sponsorships.levelSilver'),
                     color: BadgeColor.GRAY
                 },
                 {
-                    value: 'GOLD',
+                    value: 'gold',
                     label: t('admin-pages.sponsor.sponsorships.levelGold'),
                     color: BadgeColor.YELLOW
                 }
@@ -110,22 +110,22 @@ function SponsorSponsorshipsPage() {
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
-                    value: 'PENDING',
+                    value: 'pending',
                     label: t('admin-pages.sponsor.sponsorships.statusPending'),
                     color: BadgeColor.YELLOW
                 },
                 {
-                    value: 'ACTIVE',
+                    value: 'active',
                     label: t('admin-pages.sponsor.sponsorships.statusActive'),
                     color: BadgeColor.GREEN
                 },
                 {
-                    value: 'EXPIRED',
+                    value: 'expired',
                     label: t('admin-pages.sponsor.sponsorships.statusExpired'),
                     color: BadgeColor.GRAY
                 },
                 {
-                    value: 'CANCELLED',
+                    value: 'cancelled',
                     label: t('admin-pages.sponsor.sponsorships.statusCancelled'),
                     color: BadgeColor.RED
                 }
@@ -213,27 +213,28 @@ function SponsorSponsorshipsPage() {
                 <div className="flex gap-2">
                     <select
                         className="rounded-md border px-3 py-2 text-sm"
-                        value={filters.status || 'all'}
+                        value={filters.sponsorshipStatus || 'all'}
                         onChange={(e) =>
                             setFilters((prev) => ({
                                 ...prev,
-                                status: e.target.value === 'all' ? undefined : e.target.value
+                                sponsorshipStatus:
+                                    e.target.value === 'all' ? undefined : e.target.value
                             }))
                         }
                     >
                         <option value="all">
                             {t('admin-pages.sponsor.sponsorships.filterAllStatuses')}
                         </option>
-                        <option value="PENDING">
+                        <option value="pending">
                             {t('admin-pages.sponsor.sponsorships.statusPending')}
                         </option>
-                        <option value="ACTIVE">
+                        <option value="active">
                             {t('admin-pages.sponsor.sponsorships.statusActive')}
                         </option>
-                        <option value="EXPIRED">
+                        <option value="expired">
                             {t('admin-pages.sponsor.sponsorships.statusExpired')}
                         </option>
-                        <option value="CANCELLED">
+                        <option value="cancelled">
                             {t('admin-pages.sponsor.sponsorships.statusCancelled')}
                         </option>
                     </select>
@@ -323,7 +324,7 @@ function SponsorshipDetailDialog({
                                 {t('admin-pages.sponsor.sponsorships.dialog.status')}
                             </span>
                             <Badge
-                                variant={sponsorship.status === 'ACTIVE' ? 'success' : 'secondary'}
+                                variant={sponsorship.status === 'active' ? 'success' : 'secondary'}
                             >
                                 {sponsorship.status}
                             </Badge>

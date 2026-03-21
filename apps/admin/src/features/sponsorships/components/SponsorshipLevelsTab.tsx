@@ -72,27 +72,27 @@ export function SponsorshipLevelsTab() {
             columnType: ColumnType.BADGE,
             badgeOptions: [
                 {
-                    value: 'BRONZE',
+                    value: 'bronze',
                     label: t('admin-billing.sponsorships.tiers.bronze'),
                     color: BadgeColor.ORANGE
                 },
                 {
-                    value: 'SILVER',
+                    value: 'silver',
                     label: t('admin-billing.sponsorships.tiers.silver'),
                     color: BadgeColor.GRAY
                 },
                 {
-                    value: 'GOLD',
+                    value: 'gold',
                     label: t('admin-billing.sponsorships.tiers.gold'),
                     color: BadgeColor.YELLOW
                 },
                 {
-                    value: 'STANDARD',
+                    value: 'standard',
                     label: t('admin-billing.sponsorships.tiers.standard'),
                     color: BadgeColor.BLUE
                 },
                 {
-                    value: 'PREMIUM',
+                    value: 'premium',
                     label: t('admin-billing.sponsorships.tiers.premium'),
                     color: BadgeColor.PURPLE
                 }

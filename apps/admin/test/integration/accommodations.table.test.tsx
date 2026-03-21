@@ -370,14 +370,14 @@ describe('Accommodations table interactions', () => {
             expect(sortArg).toHaveLength(0);
         });
 
-        it('sort params are serialized in DataTableSort format for API requests', () => {
-            // Arrange - verify the JSON format that EntityListPage uses for URL params
-            // EntityListPage does: JSON.stringify(sort) -> ?sort=[{"id":"name","desc":false}]
+        it('sort params are serialized in "field:direction" format for API requests', () => {
+            // Arrange - verify the format that EntityListPage uses for URL params
+            // EntityListPage uses: `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`
             const sort: DataTableSort = [{ id: 'name', desc: false }];
-            const serialized = JSON.stringify(sort);
+            const serialized = `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`;
 
             // Assert - matches the expected URL param format
-            expect(serialized).toBe('[{"id":"name","desc":false}]');
+            expect(serialized).toBe('name:asc');
         });
 
         it('MSW handler receives sort param when API is called with sorted query', async () => {
@@ -396,14 +396,14 @@ describe('Accommodations table interactions', () => {
             const params = new URLSearchParams();
             params.set('page', '1');
             params.set('pageSize', '20');
-            params.set('sort', JSON.stringify(sort));
+            params.set('sort', `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`);
 
             await fetch(`http://localhost:3001/api/v1/admin/accommodations?${params.toString()}`);
 
-            // Assert - captured URL contains the sort parameter in DataTableSort format
+            // Assert - captured URL contains the sort parameter in "field:direction" format
             const url = new URL(capturedUrl);
             const sortParam = url.searchParams.get('sort');
-            expect(sortParam).toBe('[{"id":"name","desc":false}]');
+            expect(sortParam).toBe('name:asc');
         });
 
         it('shows ascending indicator on sorted column', () => {
@@ -757,13 +757,13 @@ describe('Accommodations table interactions', () => {
             const params = new URLSearchParams();
             params.set('page', '1');
             params.set('pageSize', '20');
-            params.set('sort', JSON.stringify([{ id: 'createdAt', desc: true }]));
+            params.set('sort', 'createdAt:desc');
 
             await fetch(`http://localhost:3001/api/v1/admin/accommodations?${params.toString()}`);
 
             // Assert
             const url = new URL(capturedUrl);
-            expect(url.searchParams.get('sort')).toBe('[{"id":"createdAt","desc":true}]');
+            expect(url.searchParams.get('sort')).toBe('createdAt:desc');
         });
 
         it('serializes search query as "search" param (not "q")', async () => {

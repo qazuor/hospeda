@@ -45,7 +45,8 @@ export const createEntityApi = <TData>(
         page,
         pageSize,
         q,
-        sort
+        sort,
+        filters
     }: EntityQueryParams): Promise<EntityQueryResponse<TData>> => {
         const params = new URLSearchParams();
         params.set('page', String(page));
@@ -55,14 +56,24 @@ export const createEntityApi = <TData>(
             params.set('search', q); // API uses 'search' instead of 'q'
         }
 
+        // Transform SortConfig[] to "field:direction" string format expected by backend
         if (sort && sort.length > 0) {
-            params.set('sort', JSON.stringify(sort));
+            params.set('sort', `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`);
         }
 
         // Apply default filters
         if (defaultFilters) {
             for (const [key, value] of Object.entries(defaultFilters)) {
                 params.set(key, value);
+            }
+        }
+
+        // Apply entity-specific filters
+        if (filters) {
+            for (const [key, value] of Object.entries(filters)) {
+                if (value !== undefined && value !== null && value !== '') {
+                    params.set(key, String(value));
+                }
             }
         }
 
@@ -76,7 +87,9 @@ export const createEntityApi = <TData>(
         if (!parseResult.success) {
             adminLogger.error(
                 `[createEntityApi] Zod validation failed for ${endpoint}:`,
-                parseResult.error.issues
+                parseResult.error.issues,
+                'Response data:',
+                data
             );
             throw new Error(
                 `API response validation failed for ${endpoint}: ${parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join(', ')}`

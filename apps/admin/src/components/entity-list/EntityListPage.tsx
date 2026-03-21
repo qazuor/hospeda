@@ -62,6 +62,38 @@ const DEFAULT_PAGINATION_CONFIG = {
 } as const;
 
 /**
+ * Static Tailwind grid column class map.
+ * Dynamic class construction (e.g. \`grid-cols-${n}\`) does not work because
+ * Tailwind purges classes it cannot find in source at build time.
+ */
+const gridColsMap: Readonly<Record<number, string>> = {
+    1: 'grid-cols-1',
+    2: 'grid-cols-2',
+    3: 'grid-cols-3',
+    4: 'grid-cols-4',
+    5: 'grid-cols-5',
+    6: 'grid-cols-6'
+} as const;
+
+/**
+ * Returns static Tailwind grid-cols classes for mobile, tablet, and desktop breakpoints.
+ */
+const getGridColsClass = ({
+    mobile,
+    tablet,
+    desktop
+}: {
+    readonly mobile: number;
+    readonly tablet: number;
+    readonly desktop: number;
+}): string => {
+    const mobileClass = gridColsMap[mobile] ?? 'grid-cols-1';
+    const tabletClass = gridColsMap[tablet] ?? 'grid-cols-2';
+    const desktopClass = gridColsMap[desktop] ?? 'grid-cols-3';
+    return `${mobileClass} md:${tabletClass} lg:${desktopClass}`;
+};
+
+/**
  * Creates a complete entity list page with all functionality
  */
 export const createEntityListPage = <TData extends { id: string }>(
@@ -183,12 +215,15 @@ export const createEntityListPage = <TData extends { id: string }>(
             setLocalQuery(search.q || '');
         }, [search.q]);
 
-        // Parse sort from URL
+        // Parse sort from URL ("field:direction" format)
         const parsedSort: DataTableSort = useMemo(() => {
             if (!search.sort) return [];
             try {
-                const s = JSON.parse(search.sort) as DataTableSort;
-                return Array.isArray(s) ? s : [];
+                const parts = search.sort.split(':');
+                if (parts.length === 2 && parts[0]) {
+                    return [{ id: parts[0], desc: parts[1] === 'desc' }];
+                }
+                return [];
             } catch {
                 return [];
             }
@@ -304,7 +339,11 @@ export const createEntityListPage = <TData extends { id: string }>(
         );
 
         const handleSortChange = useCallback(
-            (s: DataTableSort) => updateSearch((prev) => ({ ...prev, sort: JSON.stringify(s) })),
+            (s: DataTableSort) =>
+                updateSearch((prev) => ({
+                    ...prev,
+                    sort: s.length > 0 ? `${s[0].id}:${s[0].desc ? 'desc' : 'asc'}` : undefined
+                })),
             [updateSearch]
         );
 
@@ -381,7 +420,11 @@ export const createEntityListPage = <TData extends { id: string }>(
                         />
                     ) : (
                         <div
-                            className={`grid grid-cols-${viewConfig.gridConfig?.columns.mobile || 1} gap-4 md:grid-cols-${viewConfig.gridConfig?.columns.tablet || 2}lg:grid-cols-${viewConfig.gridConfig?.columns.desktop || 3}`}
+                            className={`grid gap-4 ${getGridColsClass({
+                                mobile: viewConfig.gridConfig?.columns.mobile ?? 1,
+                                tablet: viewConfig.gridConfig?.columns.tablet ?? 2,
+                                desktop: viewConfig.gridConfig?.columns.desktop ?? 3
+                            })}`}
                         >
                             {isLoading ? (
                                 <div className="text-muted-foreground text-sm">

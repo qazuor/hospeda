@@ -44,7 +44,9 @@ export const getDestinations = async ({
     params.set('page', String(page));
     params.set('pageSize', String(pageSize)); // API uses consistent pageSize
     if (q) params.set('search', q); // API uses 'search' instead of 'q'
-    if (sort && sort.length > 0) params.set('sort', JSON.stringify(sort));
+    // Transform SortConfig[] to "field:direction" string format expected by backend
+    if (sort && sort.length > 0)
+        params.set('sort', `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`);
 
     const { data } = await fetchApi<unknown>({
         path: `/api/v1/admin/destinations?${params.toString()}`

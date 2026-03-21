@@ -152,6 +152,7 @@ export type EntityQueryParams = {
     readonly pageSize: number;
     readonly q?: string;
     readonly sort?: readonly SortConfig[];
+    readonly filters?: Readonly<Record<string, string | number | boolean | undefined>>;
 };
 
 /**

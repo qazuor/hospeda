@@ -101,5 +101,11 @@ export const fetchApi = async <T>({
             method
         });
     }
+    // Guard against empty/null response body on successful responses
+    if (parsed === undefined || parsed === null) {
+        adminLogger.warn(`[fetchApi] Empty response body from ${method} ${url} (status ${status})`);
+        return { data: {} as T, status };
+    }
+
     return { data: parsed as T, status };
 };

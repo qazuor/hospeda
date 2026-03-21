@@ -33,7 +33,7 @@ function BillingOwnerPromotionsPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(20);
     const [filters, setFilters] = useState<{
-        status?: string;
+        isActive?: string;
         discountType?: string;
     }>({});
     const [selectedPromotion, setSelectedPromotion] = useState<OwnerPromotion | null>(null);
@@ -252,21 +252,21 @@ function BillingOwnerPromotionsPage() {
                     <div className="flex gap-2">
                         <select
                             className="rounded-md border px-3 py-2 text-sm"
-                            value={filters.status || 'all'}
+                            value={filters.isActive ?? 'all'}
                             onChange={(e) =>
                                 setFilters((prev) => ({
                                     ...prev,
-                                    status: e.target.value === 'all' ? undefined : e.target.value
+                                    isActive: e.target.value === 'all' ? undefined : e.target.value
                                 }))
                             }
                         >
                             <option value="all">
                                 {t('admin-billing.ownerPromotions.filters.allStatuses')}
                             </option>
-                            <option value="active">
+                            <option value="true">
                                 {t('admin-billing.ownerPromotions.filters.active')}
                             </option>
-                            <option value="inactive">
+                            <option value="false">
                                 {t('admin-billing.ownerPromotions.filters.inactive')}
                             </option>
                         </select>
