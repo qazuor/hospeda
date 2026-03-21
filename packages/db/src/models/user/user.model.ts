@@ -24,12 +24,20 @@ export class UserModel extends BaseModel<User> {
     }
 
     /**
-     * Override findAll to handle text search with 'q' parameter
+     * Override findAll to handle text search with 'q' parameter.
+     * Merges additionalConditions (e.g. from adminList search filters) into the WHERE clause
+     * for both the main query and the count query to keep pagination consistent.
+     *
+     * @param where - Filter object, may include a 'q' key for text search
+     * @param options - Optional pagination and sorting parameters
+     * @param additionalConditions - Optional extra SQL conditions to combine with the where clause
+     * @param tx - Optional transaction client
+     * @returns Paginated result with items and total count
      */
     async findAll(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
-        _additionalConditions?: SQL[],
+        additionalConditions?: SQL[],
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: User[]; total: number }> {
         const db = this.getClient(tx);
@@ -52,15 +60,18 @@ export class UserModel extends BaseModel<User> {
             );
         }
 
-        // Combine base and search clauses
-        let finalWhereClause: SQL | undefined;
-        if (baseWhereClause && searchClause) {
-            finalWhereClause = and(baseWhereClause, searchClause);
-        } else if (baseWhereClause) {
-            finalWhereClause = baseWhereClause;
-        } else if (searchClause) {
-            finalWhereClause = searchClause;
-        }
+        // Combine base where, search clause, and additionalConditions
+        const allConditions: SQL[] = [];
+        if (baseWhereClause) allConditions.push(baseWhereClause);
+        if (searchClause) allConditions.push(searchClause);
+        if (additionalConditions) allConditions.push(...additionalConditions);
+
+        const finalWhereClause =
+            allConditions.length === 0
+                ? undefined
+                : allConditions.length === 1
+                  ? allConditions[0]
+                  : and(...allConditions);
 
         if (isPaginated) {
             const offset = (page - 1) * pageSize;
@@ -74,23 +85,33 @@ export class UserModel extends BaseModel<User> {
             return { items: items as unknown as User[], total };
         }
 
-        const items = (await db.select().from(this.table).where(finalWhereClause)) || [];
+        // Safety cap: even when pagination is not explicitly requested, limit results
+        // to prevent unbounded queries returning all users
+        const SAFETY_LIMIT = 100;
+        const items =
+            (await db.select().from(this.table).where(finalWhereClause).limit(SAFETY_LIMIT)) || [];
         return { items: items as unknown as User[], total: items.length };
     }
 
     /**
-     * Override count to handle text search with 'q' parameter
+     * Override count to handle text search with 'q' parameter.
+     * Merges additionalConditions into the WHERE clause so that counts remain
+     * consistent with findAll results when admin search filters are applied.
+     *
+     * @param where - Filter object, may include a 'q' key for text search
+     * @param options - Optional config: additionalConditions for extra SQL, tx for transaction
+     * @returns Promise resolving to the count
      */
     async count(
         where: Record<string, unknown>,
         options?: { additionalConditions?: SQL[]; tx?: NodePgDatabase<typeof schema> }
     ): Promise<number> {
-        // If no 'q' parameter, use parent implementation
+        // If no 'q' parameter, use parent implementation (which already handles additionalConditions)
         if (!where.q) {
             return super.count(where, options);
         }
 
-        const { tx } = options ?? {};
+        const { additionalConditions = [], tx } = options ?? {};
         const db = this.getClient(tx);
         const { q, ...otherFilters } = where;
 
@@ -108,26 +129,38 @@ export class UserModel extends BaseModel<User> {
             );
         }
 
-        // Combine base and search clauses
-        let finalWhereClause: SQL | undefined;
-        if (baseWhereClause && searchClause) {
-            finalWhereClause = and(baseWhereClause, searchClause);
-        } else if (baseWhereClause) {
-            finalWhereClause = baseWhereClause;
-        } else if (searchClause) {
-            finalWhereClause = searchClause;
-        }
+        // Combine base where, search clause, and additionalConditions
+        const allConditions: SQL[] = [];
+        if (baseWhereClause) allConditions.push(baseWhereClause);
+        if (searchClause) allConditions.push(searchClause);
+        if (additionalConditions.length > 0) allConditions.push(...additionalConditions);
+
+        const finalWhereClause =
+            allConditions.length === 0
+                ? undefined
+                : allConditions.length === 1
+                  ? allConditions[0]
+                  : and(...allConditions);
 
         const result = await db.select({ count: count() }).from(this.table).where(finalWhereClause);
         return result[0]?.count || 0;
     }
 
     /**
-     * Find all users with relationship counts
+     * Find all users with relationship counts (accommodations, events, posts).
+     * Merges additionalConditions into the WHERE clause for both the main query
+     * and the count query to keep pagination consistent with admin search filters.
+     *
+     * @param where - Filter object, may include a 'q' key for text search
+     * @param options - Optional pagination parameters
+     * @param additionalConditions - Optional extra SQL conditions to combine with the where clause
+     * @param tx - Optional transaction client
+     * @returns Paginated result with items (including relationship counts) and total count
      */
     async findAllWithCounts(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
+        additionalConditions?: SQL[],
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: UserWithCounts[]; total: number }> {
         const db = this.getClient(tx);
@@ -150,15 +183,18 @@ export class UserModel extends BaseModel<User> {
             );
         }
 
-        // Combine base and search clauses
-        let finalWhereClause: SQL | undefined;
-        if (baseWhereClause && searchClause) {
-            finalWhereClause = and(baseWhereClause, searchClause);
-        } else if (baseWhereClause) {
-            finalWhereClause = baseWhereClause;
-        } else if (searchClause) {
-            finalWhereClause = searchClause;
-        }
+        // Combine base where, search clause, and additionalConditions
+        const allConditions: SQL[] = [];
+        if (baseWhereClause) allConditions.push(baseWhereClause);
+        if (searchClause) allConditions.push(searchClause);
+        if (additionalConditions) allConditions.push(...additionalConditions);
+
+        const finalWhereClause =
+            allConditions.length === 0
+                ? undefined
+                : allConditions.length === 1
+                  ? allConditions[0]
+                  : and(...allConditions);
 
         // Use correlated subqueries to get counts in a single query instead of N+1
         const accommodationsCountSq = sql<number>`(
@@ -194,11 +230,14 @@ export class UserModel extends BaseModel<User> {
             postsCount: number;
         }>;
 
+        // Safety cap for non-paginated path to prevent unbounded queries
+        const SAFETY_LIMIT = 100;
         if (isPaginated) {
-            const offset = (page - 1) * pageSize;
-            rows = await baseQuery.limit(pageSize).offset(offset);
+            const safePageSize = Math.min(pageSize, SAFETY_LIMIT);
+            const offset = (page - 1) * safePageSize;
+            rows = await baseQuery.limit(safePageSize).offset(offset);
         } else {
-            rows = await baseQuery;
+            rows = await baseQuery.limit(SAFETY_LIMIT);
         }
 
         const itemsWithCounts: UserWithCounts[] = rows.map((row) => ({

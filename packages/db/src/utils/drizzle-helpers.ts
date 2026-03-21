@@ -12,6 +12,7 @@ import {
     or
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
+import { dbLogger } from './logger.ts';
 
 /**
  * Operator suffix convention for where clause values.
@@ -42,6 +43,8 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
 export function buildWhereClause(where: Record<string, unknown>, table: unknown): SQL | undefined {
     if (typeof table !== 'object' || table === null) return undefined;
     const tableRecord = table as Record<string, unknown>;
+    const unknownKeys: string[] = [];
+
     const clauses = Object.entries(where)
         .filter(([_, value]) => value !== undefined)
         .map(([key, value]) => {
@@ -52,6 +55,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
                     const column = tableRecord[columnName] as SQLWrapper;
                     return ilike(column as PgColumn, `%${value}%`);
                 }
+                unknownKeys.push(key);
                 return undefined;
             }
 
@@ -62,6 +66,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
                     const column = tableRecord[columnName] as PgColumn;
                     return gte(column, value);
                 }
+                unknownKeys.push(key);
                 return undefined;
             }
 
@@ -72,6 +77,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
                     const column = tableRecord[columnName] as PgColumn;
                     return lte(column, value);
                 }
+                unknownKeys.push(key);
                 return undefined;
             }
 
@@ -82,9 +88,22 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
                 }
                 return eq(column, value);
             }
+            unknownKeys.push(key);
             return undefined;
         })
         .filter(Boolean);
+
+    if (unknownKeys.length > 0) {
+        const tableName =
+            (table as Record<symbol, string>)[Symbol.for('drizzle:Name')] ?? 'unknown';
+        for (const key of unknownKeys) {
+            dbLogger.warn(
+                { key, tableName },
+                'buildWhereClause: key does not match any table column, skipping'
+            );
+        }
+    }
+
     if (clauses.length === 0) return undefined;
     if (clauses.length === 1) return clauses[0];
     return and(...clauses);

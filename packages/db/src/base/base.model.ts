@@ -261,10 +261,11 @@ export abstract class BaseModel<T> {
         try {
             const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
 
-            const finalWhereClause =
-                additionalConditions.length > 0
-                    ? and(baseWhereClause, ...additionalConditions)
-                    : baseWhereClause;
+            const allConditions: SQL[] = [];
+            if (baseWhereClause) allConditions.push(baseWhereClause);
+            if (additionalConditions.length > 0) allConditions.push(...additionalConditions);
+
+            const finalWhereClause = allConditions.length > 0 ? and(...allConditions) : undefined;
 
             const result = await db
                 .select({ count: count() })

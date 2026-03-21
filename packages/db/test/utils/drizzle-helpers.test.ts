@@ -77,6 +77,62 @@ describe('buildWhereClause', () => {
         expect(clause).toBeDefined();
     });
 
+    it('returns undefined when table is null', () => {
+        const clause = buildWhereClause({ id: 1 }, null);
+        expect(clause).toBeUndefined();
+    });
+
+    it('returns undefined when table is a non-object primitive', () => {
+        const clause = buildWhereClause({ id: 1 }, 42);
+        expect(clause).toBeUndefined();
+    });
+
+    it('returns undefined when all keys are unknown (skipped and logged)', () => {
+        // Arrange -- keys that don't exist in testTable
+        const filters = { unknownField: 'value', anotherMissing: 123 };
+
+        // Act
+        const clause = buildWhereClause(filters, testTable);
+
+        // Assert -- all keys skipped, no clause produced
+        expect(clause).toBeUndefined();
+    });
+
+    describe('_like suffix (ILIKE comparison)', () => {
+        it('produces a clause for a string value on a varchar column', () => {
+            // Arrange
+            const filters = { name_like: 'hotel' };
+
+            // Act
+            const clause = buildWhereClause(filters, testTable);
+
+            // Assert
+            expect(clause).toBeDefined();
+        });
+
+        it('silently skips when the base column does not exist in the table', () => {
+            // Arrange
+            const filters = { nonExistent_like: 'test' };
+
+            // Act
+            const clause = buildWhereClause(filters, testTable);
+
+            // Assert
+            expect(clause).toBeUndefined();
+        });
+
+        it('is not applied when value is not a string', () => {
+            // Arrange -- _like requires typeof value === 'string'
+            const filters = { name_like: 123 };
+
+            // Act -- falls through _like check, tries as regular key 'name_like'
+            const clause = buildWhereClause(filters, testTable);
+
+            // Assert -- 'name_like' is not a real column, so undefined
+            expect(clause).toBeUndefined();
+        });
+    });
+
     describe('_gte suffix (>= comparison)', () => {
         it('produces a clause for a Date value on a timestamp column', () => {
             // Arrange
