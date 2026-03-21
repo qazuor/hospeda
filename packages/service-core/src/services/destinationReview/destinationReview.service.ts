@@ -16,7 +16,13 @@ import {
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    AdminSearchExecuteParams,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews, computeReviewAverageRating } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
@@ -49,6 +55,14 @@ export class DestinationReviewService extends BaseCrudService<
 
     protected getDefaultListRelations() {
         return { user: true, destination: true };
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Destination reviews are searched by title and content.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'content'];
     }
     protected normalizers = {
         create: normalizeCreateInput,
@@ -137,15 +151,9 @@ export class DestinationReviewService extends BaseCrudService<
      * @param params - The admin search parameters assembled by `adminList()`.
      * @returns A paginated list of destination reviews matching the filters.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<DestinationReview>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<DestinationReview>> {
         const { entityFilters, ...rest } = params;
         const { minRating, maxRating, ...simpleFilters } = entityFilters as {
             minRating?: number;

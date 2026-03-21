@@ -34,7 +34,12 @@ import type { SQL } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import type {
+    AdminSearchExecuteParams,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { type Actor, ServiceError } from '../../types';
 import { generateEventSlug } from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
@@ -71,6 +76,14 @@ export class EventService extends BaseCrudService<
 
     protected getDefaultListRelations() {
         return { organizer: true, location: true };
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Events are searched by name and description.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['name', 'description'];
     }
 
     constructor(ctx: ServiceContext & { model?: EventModel }) {
@@ -175,11 +188,10 @@ export class EventService extends BaseCrudService<
                 normalized.name,
                 normalized.date.start
             );
-            return { slug };
+            return { ...normalized, slug };
         }
 
-        // If slug is provided, return empty object to avoid overwriting
-        return {};
+        return normalized;
     }
 
     /**
@@ -358,15 +370,9 @@ export class EventService extends BaseCrudService<
      * @param params - The assembled admin search parameters from the base class.
      * @returns A paginated list of events matching the criteria.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<Event>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Event>> {
         const { entityFilters, ...rest } = params;
         const { startDateAfter, startDateBefore, endDateAfter, endDateBefore, ...simpleFilters } =
             entityFilters as {

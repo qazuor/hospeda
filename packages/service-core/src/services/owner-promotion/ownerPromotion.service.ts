@@ -52,9 +52,18 @@ export class OwnerPromotionService extends BaseCrudService<
         return { owner: true, accommodation: true };
     }
 
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Owner promotions are searched by title and description.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'description'];
+    }
+
     constructor(ctx: ServiceContext & { model?: OwnerPromotionModel }) {
         super(ctx, OwnerPromotionService.ENTITY_NAME);
         this.model = ctx.model ?? new OwnerPromotionModel();
+        /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = OwnerPromotionAdminSearchSchema;
     }
 
@@ -108,7 +117,7 @@ export class OwnerPromotionService extends BaseCrudService<
     }
 
     protected async _executeCount(params: OwnerPromotionSearchInput, _actor: Actor) {
-        const { page, limit, ...filterParams } = params;
+        const { page: _page, limit: _limit, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }

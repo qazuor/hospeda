@@ -61,7 +61,13 @@ import {
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import type {
+    Actor,
+    AdminSearchExecuteParams,
+    PaginatedListOutput,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { hasPermission } from '../../utils/permission';
@@ -129,6 +135,14 @@ export class AccommodationService extends BaseCrudService<
             destination: true,
             owner: true
         };
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Accommodations are searched by name and description.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['name', 'description'];
     }
 
     /**
@@ -248,15 +262,9 @@ export class AccommodationService extends BaseCrudService<
      * @param params - The assembled admin search parameters from `adminList`.
      * @returns A paginated list of matching accommodations.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<Accommodation>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Accommodation>> {
         const { entityFilters, ...rest } = params;
         const { minPrice, maxPrice, ...simpleFilters } = entityFilters as {
             minPrice?: number;

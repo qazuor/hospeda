@@ -41,6 +41,15 @@ export class EventLocationService extends BaseCrudService<
     protected getDefaultListRelations() {
         return undefined;
     }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Event locations are searched by place name and city.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['placeName', 'city'];
+    }
+
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput
@@ -49,6 +58,7 @@ export class EventLocationService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: EventLocationModel) {
         super(ctx, EventLocationService.ENTITY_NAME);
         this.model = model ?? new EventLocationModel();
+        /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = EventLocationAdminSearchSchema;
     }
 

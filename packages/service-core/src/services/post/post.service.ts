@@ -85,6 +85,14 @@ export class PostService extends BaseCrudService<
     }
 
     /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Posts are searched by title and content.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'content'];
+    }
+
+    /**
      * Private property to temporarily store the id for update operations.
      */
     private _updateId: string | undefined;
@@ -97,6 +105,7 @@ export class PostService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: PostModel) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
+        /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = PostAdminSearchSchema;
     }
 

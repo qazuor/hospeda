@@ -64,6 +64,7 @@ export class EventOrganizerService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: EventOrganizerModel) {
         super(ctx, EventOrganizerService.ENTITY_NAME);
         this.model = model ?? new EventOrganizerModel();
+        /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = EventOrganizerAdminSearchSchema;
     }
 

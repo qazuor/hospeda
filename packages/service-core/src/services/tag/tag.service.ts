@@ -78,6 +78,11 @@ export class TagService extends BaseCrudRelatedService<
      * Zod schema for tag search/filtering.
      */
     protected readonly searchSchema = TagSearchInputSchema;
+    /**
+     * Admin search schema for tag list filtering.
+     * Uses default _executeAdminSearch() because all entity-specific filter fields
+     * map directly to table column names (no JSONB extraction, field renames, or range filters needed).
+     */
     protected readonly adminSearchSchema = TagAdminSearchSchema;
 
     protected getDefaultListRelations() {

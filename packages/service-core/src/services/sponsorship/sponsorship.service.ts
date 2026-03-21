@@ -6,9 +6,13 @@ import {
     SponsorshipSearchSchema,
     SponsorshipUpdateInputSchema
 } from '@repo/schemas';
-import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import type {
+    Actor,
+    AdminSearchExecuteParams,
+    PaginatedListOutput,
+    ServiceContext
+} from '../../types';
 import {
     checkCanCount,
     checkCanCreate,
@@ -44,6 +48,14 @@ export class SponsorshipService extends BaseCrudService<
 
     protected getDefaultListRelations() {
         return { sponsorUser: true, level: true, package: true };
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Sponsorships are searched by slug and coupon code.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['slug', 'couponCode'];
     }
 
     constructor(ctx: ServiceContext & { model?: SponsorshipModel }) {
@@ -153,15 +165,9 @@ export class SponsorshipService extends BaseCrudService<
      * @param params - The assembled admin search parameters.
      * @returns A paginated list of matching sponsorships.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<Sponsorship>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<Sponsorship>> {
         const { entityFilters, ...rest } = params;
 
         const { sponsorshipStatus, ...otherFilters } = entityFilters as {
@@ -189,7 +195,7 @@ export class SponsorshipService extends BaseCrudService<
      * Executes the count for sponsorships.
      */
     protected async _executeCount(params: SponsorshipSearchInput, _actor: Actor) {
-        const { page, limit, ...filterParams } = params;
+        const { page: _page, limit: _limit, ...filterParams } = params;
         const count = await this.model.count(filterParams);
         return { count };
     }

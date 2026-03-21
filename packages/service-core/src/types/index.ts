@@ -171,7 +171,7 @@ export interface BaseModel<T> {
     hardDelete(where: Record<string, unknown>): Promise<number>;
     count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: unknown }
+        options?: { additionalConditions?: SQL[] }
     ): Promise<number>;
     findAll(
         where: Record<string, unknown>,
@@ -192,3 +192,24 @@ export interface BaseModel<T> {
 export type SortingType = z.infer<typeof HttpSortingSchema>;
 export type PaginationType = z.infer<typeof HttpPaginationSchema>;
 export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
+
+/**
+ * Parameter type for `_executeAdminSearch()` in BaseCrudRead and service overrides.
+ * Contains the assembled query parameters for admin list endpoints.
+ */
+export type AdminSearchExecuteParams = {
+    /** Base where clause (status, soft-delete, date range filters) */
+    readonly where: Record<string, unknown>;
+    /** Entity-specific filters extracted from the admin search schema */
+    readonly entityFilters: Record<string, unknown>;
+    /** Pagination parameters */
+    readonly pagination: { readonly page: number; readonly pageSize: number };
+    /** Sort parameters */
+    readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
+    /** Optional SQL condition for text search */
+    readonly search?: SQL;
+    /** Optional additional SQL conditions */
+    readonly extraConditions?: SQL[];
+    /** The actor performing the action */
+    readonly actor: Actor;
+};

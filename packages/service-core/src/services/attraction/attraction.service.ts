@@ -68,10 +68,23 @@ export class AttractionService extends BaseCrudRelatedService<
     public readonly createSchema = AttractionCreateInputSchema;
     public readonly updateSchema = AttractionUpdateInputSchema;
     public readonly searchSchema = AttractionSearchInputSchema;
+    /**
+     * Admin search schema for attraction list filtering.
+     * Uses default _executeAdminSearch() because all entity-specific filter fields
+     * map directly to table column names (no JSONB extraction, field renames, or range filters needed).
+     */
     protected readonly adminSearchSchema = AttractionAdminSearchSchema;
 
     protected getDefaultListRelations() {
         return undefined;
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Attractions are searched by name and description.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['name', 'description'];
     }
 
     protected readonly destinationModel: DestinationModel;

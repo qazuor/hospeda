@@ -26,6 +26,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
+    AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceContext,
     ServiceLogger,
@@ -76,6 +77,14 @@ export class UserService extends BaseCrudService<
 
     protected getDefaultListRelations() {
         return undefined;
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Users are searched by display name, first name, last name, and email.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['displayName', 'firstName', 'lastName', 'email'];
     }
 
     constructor(ctx: ServiceContext, model?: UserModel) {
@@ -393,15 +402,9 @@ export class UserService extends BaseCrudService<
      * @param params - The assembled admin search parameters.
      * @returns A paginated list of users matching the criteria.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<User>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<User>> {
         const { where, entityFilters, pagination, sort, search, extraConditions } = params;
         const { email, ...simpleFilters } = entityFilters as {
             email?: string;

@@ -48,6 +48,7 @@ export class PostSponsorService extends BaseCrudService<
     constructor(ctx: ServiceContext, model?: PostSponsorModel) {
         super(ctx, PostSponsorService.ENTITY_NAME);
         this.model = model ?? new RealPostSponsorModel();
+        /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */
         this.adminSearchSchema = PostSponsorAdminSearchSchema;
     }
 

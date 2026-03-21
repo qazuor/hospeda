@@ -95,6 +95,15 @@ export class DestinationService extends BaseCrudService<
     protected getDefaultListRelations() {
         return undefined;
     }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Destinations are searched by name and description.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['name', 'description'];
+    }
+
     protected normalizers = {
         create: normalizeCreateInput,
         update: normalizeUpdateInput,
@@ -107,6 +116,10 @@ export class DestinationService extends BaseCrudService<
         super(ctx, DestinationService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new DestinationModel();
+        /**
+         * Uses default _executeAdminSearch() because all entity-specific filter fields
+         * (e.g. destinationType) map directly to table column names.
+         */
         this.adminSearchSchema = DestinationAdminSearchSchema;
     }
 

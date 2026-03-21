@@ -52,6 +52,11 @@ export class FeatureService extends BaseCrudRelatedService<
     public readonly createSchema = CreateFeatureSchema;
     public readonly updateSchema = UpdateFeatureSchema;
     public readonly searchSchema = SearchFeatureSchema;
+    /**
+     * Admin search schema for feature list filtering.
+     * Uses default _executeAdminSearch() because all entity-specific filter fields
+     * map directly to table column names (no JSONB extraction, field renames, or range filters needed).
+     */
     protected readonly adminSearchSchema = FeatureAdminSearchSchema;
 
     protected getDefaultListRelations() {

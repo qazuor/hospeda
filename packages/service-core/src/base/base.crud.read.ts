@@ -6,6 +6,7 @@ import type { ZodObject } from 'zod';
 import { z } from 'zod';
 import {
     type Actor,
+    type AdminSearchExecuteParams,
     type BaseModel,
     type PaginatedListOutput,
     ServiceError,
@@ -301,7 +302,7 @@ export abstract class BaseCrudRead<
             methodName: 'adminList',
             input: { actor, ...params },
             schema: z.record(z.string(), z.unknown()),
-            execute: async (_passthrough, validatedActor) => {
+            execute: async (validatedPassthrough, validatedActor) => {
                 if (!this.adminSearchSchema) {
                     throw new ServiceError(
                         ServiceErrorCode.CONFIGURATION_ERROR,
@@ -309,7 +310,7 @@ export abstract class BaseCrudRead<
                     );
                 }
 
-                const parseResult = this.adminSearchSchema.safeParse(params);
+                const parseResult = this.adminSearchSchema.safeParse(validatedPassthrough);
                 if (!parseResult.success) {
                     throw new ServiceError(
                         ServiceErrorCode.VALIDATION_ERROR,
@@ -347,8 +348,7 @@ export abstract class BaseCrudRead<
                 const { field: sortBy, direction: sortOrder } = parseAdminSort(sort);
 
                 // Validate sort field against actual table columns
-                // biome-ignore lint/suspicious/noExplicitAny: getTable() is not in BaseModel interface but exists on concrete models
-                const table = (this.model as any).getTable();
+                const table = this.model.getTable();
                 const tableRecord = table as unknown as Record<string, unknown>;
                 if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
                     throw new ServiceError(
@@ -364,7 +364,7 @@ export abstract class BaseCrudRead<
                     where.lifecycleState = status;
                 }
 
-                if (!includeDeleted) {
+                if (!includeDeleted && 'deletedAt' in tableRecord) {
                     where.deletedAt = null;
                 }
 
@@ -418,15 +418,9 @@ export abstract class BaseCrudRead<
      * @param params.actor - The actor performing the action.
      * @returns A paginated list of matching entities.
      */
-    protected async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<TEntity>> {
+    protected async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<TEntity>> {
         const { where, entityFilters, pagination, sort, search, extraConditions } = params;
 
         const mergedWhere: Record<string, unknown> = { ...where, ...entityFilters };

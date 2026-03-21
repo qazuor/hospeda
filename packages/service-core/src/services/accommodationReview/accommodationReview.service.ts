@@ -30,6 +30,7 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import {
     type Actor,
+    type AdminSearchExecuteParams,
     type PaginatedListOutput,
     type ServiceContext,
     ServiceError,
@@ -70,6 +71,14 @@ export class AccommodationReviewService extends BaseCrudService<
             user: true,
             accommodation: true
         };
+    }
+
+    /**
+     * Returns the columns to search against when the `search` query param is provided.
+     * Accommodation reviews are searched by title and content.
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'content'];
     }
 
     protected normalizers = {
@@ -159,15 +168,9 @@ export class AccommodationReviewService extends BaseCrudService<
      * @param params - The admin search parameters assembled by `adminList()`.
      * @returns A paginated list of accommodation reviews matching the filters.
      */
-    protected override async _executeAdminSearch(params: {
-        readonly where: Record<string, unknown>;
-        readonly entityFilters: Record<string, unknown>;
-        readonly pagination: { readonly page: number; readonly pageSize: number };
-        readonly sort: { readonly sortBy: string; readonly sortOrder: 'asc' | 'desc' };
-        readonly search?: SQL;
-        readonly extraConditions?: SQL[];
-        readonly actor: Actor;
-    }): Promise<PaginatedListOutput<AccommodationReview>> {
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<AccommodationReview>> {
         const { entityFilters, ...rest } = params;
         const { minRating, maxRating, ...simpleFilters } = entityFilters as {
             minRating?: number;

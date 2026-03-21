@@ -66,6 +66,11 @@ export class AmenityService extends BaseCrudRelatedService<
     protected readonly createSchema = AmenityCreateInputSchema;
     protected readonly updateSchema = AmenityUpdateInputSchema;
     protected readonly searchSchema = AmenitySearchInputSchema;
+    /**
+     * Admin search schema for amenity list filtering.
+     * Uses default _executeAdminSearch() because all entity-specific filter fields
+     * map directly to table column names (no JSONB extraction, field renames, or range filters needed).
+     */
     protected readonly adminSearchSchema = AmenityAdminSearchSchema;
 
     protected getDefaultListRelations() {
