@@ -67,6 +67,10 @@ export class AccommodationService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async searchForList(
         _actor: unknown,
         _opts: {
@@ -372,6 +376,10 @@ export class AmenityService {
         return { data: { id } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
         return {
             data: {
@@ -491,6 +499,10 @@ export class AccommodationReviewService {
                 content: (body as Record<string, unknown>).content ?? 'Review content'
             }
         };
+    }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
     }
 
     async listByAccommodation(

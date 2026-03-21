@@ -73,6 +73,10 @@ export class PostService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async getById(_actor: unknown, id: string) {
         if (id === '87654321-4321-4321-8765-876543218765') return { data: null };
         return {
@@ -187,6 +191,10 @@ export class TagService {
         };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async findById(_actor: unknown, params: { id: string }) {
         return {
             data: {
@@ -287,6 +295,10 @@ export class PostSponsorService {
     }
 
     async list(_actor: unknown, _opts?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
         return { data: { items: [], total: 0 } };
     }
 

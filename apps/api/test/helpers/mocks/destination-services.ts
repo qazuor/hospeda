@@ -47,6 +47,10 @@ export class DestinationService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async searchForList(
         _actor: unknown,
         _opts: { pagination: { page: number; pageSize: number }; filters?: { q?: string } }
@@ -144,6 +148,10 @@ export class DestinationReviewService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async listByUser(
         _actor: unknown,
         _input: {
@@ -202,6 +210,10 @@ export class AttractionService {
     async hardDelete(_actor: unknown, id: string) {
         if (id === NOT_FOUND_UUID) return { data: null };
         return { data: { id, deleted: true, count: 1 } };
+    }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
     }
 
     async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {
@@ -373,6 +385,10 @@ export class FeatureService {
     async hardDelete(_actor: unknown, id: string) {
         if (id === NOT_FOUND_UUID) return { data: null };
         return { data: { id, deleted: true, count: 1 } };
+    }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
     }
 
     async list(_actor: unknown, _opts?: { page?: number; pageSize?: number }) {

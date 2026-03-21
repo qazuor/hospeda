@@ -20,6 +20,10 @@ export class UserService {
             }
         };
     }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
 }
 
 /**

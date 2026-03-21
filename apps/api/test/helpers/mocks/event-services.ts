@@ -46,6 +46,10 @@ export class EventService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async getById(_actor: unknown, id: string) {
         if (id === NOT_FOUND_UUID) {
             return { data: null };
@@ -208,6 +212,10 @@ export class EventLocationService {
         return { data: { items: [], total: 0 } };
     }
 
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async getById(_actor: unknown, id: string) {
         if (id === NOT_FOUND_UUID) {
             return { data: null };
@@ -284,6 +292,10 @@ export class EventOrganizerService {
     }
 
     async list(_actor: unknown, _opts: { page?: number; pageSize?: number }) {
+        return { data: { items: [], total: 0 } };
+    }
+
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
         return { data: { items: [], total: 0 } };
     }
 

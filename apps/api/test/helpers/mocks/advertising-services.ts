@@ -333,6 +333,10 @@ export class CampaignService {
  * Mock SponsorshipService - returns predictable happy-path data.
  */
 export class SponsorshipService {
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         const b = body as Record<string, unknown>;
         return {
@@ -508,6 +512,10 @@ export class SponsorshipPackageService {
  * Mock OwnerPromotionService - returns predictable happy-path data.
  */
 export class OwnerPromotionService {
+    async adminList(_actor: unknown, _query?: Record<string, unknown>) {
+        return { data: { items: [], total: 0 } };
+    }
+
     async create(_actor: unknown, body: Record<string, unknown>) {
         const b = body as Record<string, unknown>;
         return {
