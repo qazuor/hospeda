@@ -192,7 +192,7 @@ describe('AccommodationModel', () => {
 
             const result = await model.findAllWithRelations({});
 
-            expect(mockFindAll).toHaveBeenCalledWith({}, {}, undefined);
+            expect(mockFindAll).toHaveBeenCalledWith({}, {}, undefined, undefined);
             expect(result.items).toHaveLength(1);
             expect(logQuery).toHaveBeenCalledWith(
                 'accommodations',
