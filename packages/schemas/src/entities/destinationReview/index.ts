@@ -12,3 +12,6 @@ export * from './destinationReview.http.schema.js'; // HTTP-compatible schemas w
 
 // Query operations
 export * from './destinationReview.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
+
+// Access level schemas (public, protected, admin)
+export * from './destinationReview.access.schema.js';

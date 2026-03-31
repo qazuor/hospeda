@@ -19,3 +19,6 @@ export * from './accommodationReview.admin-search.schema.js'; // Admin-specific 
 
 // HTTP operations
 export * from './accommodationReview.http.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './accommodationReview.access.schema.js';

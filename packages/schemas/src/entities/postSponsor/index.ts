@@ -9,3 +9,6 @@ export * from './postSponsor.http.schema.js'; // HTTP-compatible schemas with qu
 
 // Admin search
 export * from './postSponsor.admin-search.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './postSponsor.access.schema.js';

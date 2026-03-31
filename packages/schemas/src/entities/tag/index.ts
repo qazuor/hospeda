@@ -16,3 +16,6 @@ export * from './tag.relations.schema.js'; // Schemas with related entities
 
 // Admin search schemas
 export * from './tag.admin-search.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './tag.access.schema.js';

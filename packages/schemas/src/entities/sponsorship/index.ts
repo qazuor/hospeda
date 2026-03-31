@@ -3,3 +3,6 @@ export * from './sponsorship.crud.schema.js';
 export * from './sponsorship.admin-search.schema.js';
 export * from './sponsorship-level.schema.js';
 export * from './sponsorship-package.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './sponsorship.access.schema.js';
