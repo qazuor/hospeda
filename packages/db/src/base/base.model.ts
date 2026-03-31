@@ -479,15 +479,18 @@ export abstract class BaseModel<T> {
      * @param where Filter conditions
      * @param options Pagination and other options
      * @param additionalConditions Optional extra SQL conditions to combine with the where clause.
+     * @param tx - Optional transaction client for atomic operations. When provided, all queries execute
+     *   within this transaction. When omitted, the global database connection is used.
      * @returns Promise resolving to paginated list with relations
      */
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
         options: PaginatedListOptions = {},
-        additionalConditions?: SQL[]
+        additionalConditions?: SQL[],
+        tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: T[]; total: number }> {
-        const db = this.getClient();
+        const db = this.getClient(tx);
         // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
         const page = options.page ?? 1;
         // Cap pageSize at MAX_PAGE_SIZE to prevent memory issues
@@ -520,7 +523,7 @@ export abstract class BaseModel<T> {
                     { where: safeWhere, options, relations },
                     'Falling back to findAll - no relations requested'
                 );
-                return this.findAll(safeWhere, options, additionalConditions);
+                return this.findAll(safeWhere, options, additionalConditions, tx);
             }
 
             // Get table name for dynamic query
@@ -607,7 +610,7 @@ export abstract class BaseModel<T> {
             // Execute query with relations and get total count
             const [items, totalCount] = await Promise.all([
                 typedQueryTable.findMany(queryOptions),
-                this.count(safeWhere, { additionalConditions })
+                this.count(safeWhere, { additionalConditions, tx })
             ]);
 
             const result = { items: items as T[], total: totalCount };

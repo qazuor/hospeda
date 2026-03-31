@@ -1,3 +1,4 @@
+import type { schema } from '@repo/db';
 import type {
     BaseSearchSchema,
     EntityPermissionReasonEnum,
@@ -8,6 +9,7 @@ import type {
     ServiceErrorCode
 } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
 
@@ -178,11 +180,20 @@ export interface BaseModel<T> {
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
         additionalConditions?: SQL[]
     ): Promise<PaginatedListOutput<T>>;
+    /**
+     * Finds all entities with specified relations populated.
+     * @param relations - Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
+     * @param where - Filter conditions
+     * @param options - Pagination and sort options
+     * @param additionalConditions - Optional extra SQL conditions
+     * @param tx - Optional transaction client for atomic operations
+     */
     findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where?: Record<string, unknown>,
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
-        additionalConditions?: SQL[]
+        additionalConditions?: SQL[],
+        tx?: NodePgDatabase<typeof schema>
     ): Promise<PaginatedListOutput<T>>;
     /** Returns the Drizzle table schema for this model */
     getTable(): Table;
