@@ -3,8 +3,8 @@
  * Returns all destination reviews with full admin access
  */
 import {
+    DestinationReviewAdminSchema,
     DestinationReviewAdminSearchSchema,
-    DestinationReviewSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
@@ -26,7 +26,7 @@ export const adminListDestinationReviewsRoute = createAdminListRoute({
     description: 'Returns a paginated list of all destination reviews with full admin details',
     tags: ['Destinations', 'Reviews'],
     requestQuery: DestinationReviewAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: DestinationReviewSchema,
+    responseSchema: DestinationReviewAdminSchema,
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_VIEW],
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

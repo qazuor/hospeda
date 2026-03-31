@@ -2,7 +2,11 @@
  * Admin sponsorship list endpoint
  * Returns all sponsorships with full admin access
  */
-import { PermissionEnum, SponsorshipAdminSearchSchema, SponsorshipSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    SponsorshipAdminSchema,
+    SponsorshipAdminSearchSchema
+} from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -24,7 +28,7 @@ export const adminListSponsorshipsRoute = createAdminListRoute({
     tags: ['Sponsorships'],
     requiredPermissions: [PermissionEnum.SPONSORSHIP_VIEW],
     requestQuery: SponsorshipAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: SponsorshipSchema,
+    responseSchema: SponsorshipAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

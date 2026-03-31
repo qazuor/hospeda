@@ -3,8 +3,8 @@
  * Returns all owner promotions with full admin access
  */
 import {
+    OwnerPromotionAdminSchema,
     OwnerPromotionAdminSearchSchema,
-    OwnerPromotionSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
@@ -28,7 +28,7 @@ export const adminListOwnerPromotionsRoute = createAdminListRoute({
     tags: ['Owner Promotions'],
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_VIEW],
     requestQuery: OwnerPromotionAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

@@ -2,7 +2,7 @@
  * Admin tag list endpoint
  * Returns all tags with full admin access
  */
-import { PermissionEnum, TagAdminSearchSchema, TagSchema } from '@repo/schemas';
+import { PermissionEnum, TagAdminSchema, TagAdminSearchSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -24,7 +24,7 @@ export const adminListTagsRoute = createAdminListRoute({
     tags: ['Tags'],
     requiredPermissions: [PermissionEnum.TAG_VIEW],
     requestQuery: TagAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: TagSchema,
+    responseSchema: TagAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

@@ -2,7 +2,11 @@
  * Admin post sponsor list endpoint
  * Returns all post sponsors with full admin access
  */
-import { PermissionEnum, PostSponsorAdminSearchSchema, PostSponsorSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    PostSponsorAdminSchema,
+    PostSponsorAdminSearchSchema
+} from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -24,7 +28,7 @@ export const adminListPostSponsorsRoute = createAdminListRoute({
     tags: ['Post Sponsors'],
     requiredPermissions: [PermissionEnum.POST_SPONSOR_VIEW],
     requestQuery: PostSponsorAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: PostSponsorSchema,
+    responseSchema: PostSponsorAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

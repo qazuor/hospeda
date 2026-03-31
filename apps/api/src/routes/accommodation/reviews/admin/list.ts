@@ -3,8 +3,8 @@
  * Returns all reviews with full admin access
  */
 import {
+    AccommodationReviewAdminSchema,
     AccommodationReviewAdminSearchSchema,
-    AccommodationReviewSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
@@ -27,7 +27,7 @@ export const adminListAccommodationReviewsRoute = createAdminListRoute({
     tags: ['Accommodation Reviews', 'Admin'],
     requiredPermissions: [PermissionEnum.ACCOMMODATION_REVIEW_VIEW],
     requestQuery: AccommodationReviewAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: AccommodationReviewSchema,
+    responseSchema: AccommodationReviewAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
