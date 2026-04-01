@@ -1,9 +1,6 @@
 // Core schemas
 export * from './eventOrganizer.schema.js'; // Main entity schema
 
-// Access schemas
-export * from './eventOrganizer.access.schema.js'; // Public, Protected, Admin access schemas
-
 // CRUD operations
 export * from './eventOrganizer.crud.schema.js'; // Create, Update, Delete, Restore schemas
 
@@ -18,3 +15,6 @@ export * from './eventOrganizer.batch.schema.js'; // Batch retrieval schemas
 
 // Admin search
 export * from './eventOrganizer.admin-search.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './eventOrganizer.access.schema.js';

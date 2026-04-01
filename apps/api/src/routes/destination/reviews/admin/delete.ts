@@ -20,7 +20,7 @@ export const adminDeleteDestinationReviewRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Soft delete destination review (admin)',
     description: 'Soft deletes a destination review. Admin only.',
-    tags: ['Destinations', 'Reviews'],
+    tags: ['Destination Reviews', 'Admin'],
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_DELETE],
     requestParams: {
         id: DestinationReviewIdSchema

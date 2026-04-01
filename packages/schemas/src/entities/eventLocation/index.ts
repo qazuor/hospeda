@@ -1,15 +1,3 @@
-/**
- * EventLocation Schemas
- *
- * This module exports all schemas related to event locations:
- * - Base schema (eventLocation.schema.ts)
- * - CRUD operations
- * - Query operations
- * - HTTP operations
- * - Batch operations
- * - Access schemas (public, protected, admin)
- */
-
 // Base schema
 export * from './eventLocation.schema.js';
 
@@ -25,8 +13,8 @@ export * from './eventLocation.query.schema.js';
 // Batch operations
 export * from './eventLocation.batch.schema.js';
 
-// Access schemas
-export * from './eventLocation.access.schema.js';
-
 // Admin search
 export * from './eventLocation.admin-search.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './eventLocation.access.schema.js';

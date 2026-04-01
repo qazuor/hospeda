@@ -19,8 +19,8 @@ export * from './post.batch.schema.js'; // Batch request/response schemas
 // Relations
 export * from './post.relations.schema.js'; // Schemas with related entities
 
-// Access level schemas (public, protected, admin)
-export * from './post.access.schema.js';
-
 // Subtypes - all subschemas are now organized in subtypes folder
 export * from './subtypes/index.js';
+
+// Access level schemas (public, protected, admin)
+export * from './post.access.schema.js';

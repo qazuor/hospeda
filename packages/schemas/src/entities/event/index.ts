@@ -19,8 +19,8 @@ export * from './event.batch.schema.js'; // Batch retrieval schemas
 // Relations
 export * from './event.relations.schema.js'; // Schemas with related entities
 
-// Access control schemas
-export * from './event.access.schema.js'; // Public, Protected, Admin access schemas
-
 // Subtypes - all subschemas are now organized in subtypes folder
 export * from './subtypes/index.js';
+
+// Access level schemas (public, protected, admin)
+export * from './event.access.schema.js';

@@ -1,9 +1,6 @@
 // Core schemas
 export * from './user.schema.js'; // Main entity schema
 
-// Access schemas (public, protected, admin)
-export * from './user.access.schema.js'; // Access-level schemas
-
 // CRUD operations
 export * from './user.crud.schema.js'; // Create, Update, Delete, Restore schemas
 
@@ -28,3 +25,6 @@ export * from './role.schema.js';
 export * from './user.identity.schema.js';
 export * from './user.profile.schema.js';
 export * from './user.settings.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './user.access.schema.js';

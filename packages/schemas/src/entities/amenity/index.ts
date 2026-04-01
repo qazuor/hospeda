@@ -16,10 +16,8 @@ export * from './amenity.http.schema.js'; // HTTP-compatible schemas with coerci
 // Relations
 export * from './amenity.relations.schema.js'; // Schemas with related entities
 
-// Access level schemas (public, protected, admin)
-export * from './amenity.access.schema.js';
-
 // Admin search schemas
 export * from './amenity.admin-search.schema.js';
 
-// Types are exported inline from their schema files
+// Access level schemas (public, protected, admin)
+export * from './amenity.access.schema.js';

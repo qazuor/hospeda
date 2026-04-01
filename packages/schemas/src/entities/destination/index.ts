@@ -19,11 +19,11 @@ export * from './destination.batch.schema.js'; // Batch retrieval schemas
 // Hierarchy operations
 export * from './destination.hierarchy.schema.js'; // Children, Descendants, Ancestors, Breadcrumb schemas
 
-// Access control schemas
-export * from './destination.access.schema.js'; // Public, Protected, Admin schemas
-
 // Relations
 export * from './destination.relations.schema.js'; // Schemas with related entities
 
 // Subtypes - all subschemas are now organized in subtypes folder
 export * from './subtypes/index.js';
+
+// Access level schemas (public, protected, admin)
+export * from './destination.access.schema.js';

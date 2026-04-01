@@ -24,7 +24,7 @@ export const adminListDestinationReviewsRoute = createAdminListRoute({
     path: '/',
     summary: 'List all destination reviews (admin)',
     description: 'Returns a paginated list of all destination reviews with full admin details',
-    tags: ['Destinations', 'Reviews'],
+    tags: ['Destination Reviews', 'Admin'],
     requestQuery: DestinationReviewAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: DestinationReviewAdminSchema,
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_VIEW],

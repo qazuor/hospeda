@@ -1,9 +1,6 @@
 // Core schemas
 export * from './feature.schema.js'; // Main entity schema
 
-// Access schemas
-export * from './feature.access.schema.js'; // Public, Protected, Admin access schemas
-
 // CRUD operations
 export * from './feature.crud.schema.js'; // Create, Update, Delete, Restore schemas
 
@@ -21,3 +18,6 @@ export * from './feature.batch.schema.js'; // Batch request and response schemas
 
 // Admin search schemas
 export * from './feature.admin-search.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './feature.access.schema.js';
