@@ -92,6 +92,50 @@ describe('AccommodationReview CRUD Schemas', () => {
                 expect(result.data).not.toHaveProperty('createdAt');
             }
         });
+
+        it('should omit averageRating (computed field, not user-settable)', () => {
+            const inputWithAvgRating = {
+                userId: '123e4567-e89b-12d3-a456-426614174000',
+                accommodationId: '123e4567-e89b-12d3-a456-426614174001',
+                averageRating: 4.5, // Should be ignored
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 4,
+                    communication: 5,
+                    location: 4
+                }
+            };
+
+            const result = AccommodationReviewCreateInputSchema.safeParse(inputWithAvgRating);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data).not.toHaveProperty('averageRating');
+            }
+        });
+
+        it('should allow lifecycleState in create input', () => {
+            const inputWithLifecycle = {
+                userId: '123e4567-e89b-12d3-a456-426614174000',
+                accommodationId: '123e4567-e89b-12d3-a456-426614174001',
+                lifecycleState: 'ARCHIVED',
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 4,
+                    communication: 5,
+                    location: 4
+                }
+            };
+
+            const result = AccommodationReviewCreateInputSchema.safeParse(inputWithLifecycle);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ARCHIVED');
+            }
+        });
     });
 
     describe('AccommodationReviewUpdateInputSchema', () => {
@@ -248,6 +292,8 @@ describe('AccommodationReview CRUD Schemas', () => {
                     communication: 5,
                     location: 4
                 },
+                averageRating: 4.5,
+                lifecycleState: 'ACTIVE',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -278,6 +324,8 @@ describe('AccommodationReview CRUD Schemas', () => {
                     communication: 4,
                     location: 5
                 },
+                averageRating: 4.5,
+                lifecycleState: 'ACTIVE',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -308,6 +356,8 @@ describe('AccommodationReview CRUD Schemas', () => {
                     communication: 5,
                     location: 4
                 },
+                averageRating: 4.5,
+                lifecycleState: 'ACTIVE',
                 createdAt: new Date(),
                 updatedAt: new Date(),
                 createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -321,6 +371,34 @@ describe('AccommodationReview CRUD Schemas', () => {
 
             const result = AccommodationReviewRestoreOutputSchema.safeParse(validOutput);
             expect(result.success).toBe(true);
+        });
+
+        it('should validate create output with averageRating defaulting to 0', () => {
+            const validOutput = {
+                id: '123e4567-e89b-12d3-a456-426614174002',
+                userId: '123e4567-e89b-12d3-a456-426614174000',
+                accommodationId: '123e4567-e89b-12d3-a456-426614174001',
+                rating: {
+                    cleanliness: 5,
+                    hospitality: 4,
+                    services: 5,
+                    accuracy: 4,
+                    communication: 5,
+                    location: 4
+                },
+                lifecycleState: 'ACTIVE',
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                createdById: '123e4567-e89b-12d3-a456-426614174003',
+                updatedById: '123e4567-e89b-12d3-a456-426614174003',
+                deletedAt: null
+            };
+
+            const result = AccommodationReviewCreateOutputSchema.safeParse(validOutput);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.averageRating).toBe(0);
+            }
         });
     });
 });

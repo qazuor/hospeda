@@ -28,7 +28,8 @@ export const AccommodationReviewCreateInputSchema = AccommodationReviewSchema.om
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    averageRating: true
 });
 
 /**
@@ -52,7 +53,8 @@ export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.om
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    averageRating: true
 }).partial();
 
 /**

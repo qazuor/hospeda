@@ -7,6 +7,7 @@
  */
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
+import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 
 /**
  * HTTP-compatible accommodation review search schema with automatic coercion
@@ -208,7 +209,8 @@ export const httpToDomainAccommodationReviewCreate = (
         userId: httpData.userId,
         rating: complexRating,
         title: httpData.title,
-        content: httpData.content
+        content: httpData.content,
+        lifecycleState: LifecycleStatusEnum.ACTIVE
         // Note: stayDate, guestType, isBusinessTravel, language are HTTP-only fields
     };
 };

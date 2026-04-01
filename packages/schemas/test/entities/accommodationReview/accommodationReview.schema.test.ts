@@ -17,6 +17,8 @@ describe('AccommodationReview Schemas', () => {
             communication: 5,
             location: 4
         },
+        averageRating: 4.5,
+        lifecycleState: 'ACTIVE',
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -105,6 +107,73 @@ describe('AccommodationReview Schemas', () => {
 
             const result = AccommodationReviewSchema.safeParse(minimalData);
             expect(result.success).toBe(true);
+        });
+
+        it('should default averageRating to 0 when not provided', () => {
+            const dataWithoutAvgRating = {
+                ...validReviewData,
+                averageRating: undefined
+            };
+
+            const result = AccommodationReviewSchema.safeParse(dataWithoutAvgRating);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.averageRating).toBe(0);
+            }
+        });
+
+        it('should reject averageRating outside 0-5 range', () => {
+            const invalidAvgRating = {
+                ...validReviewData,
+                averageRating: 6
+            };
+
+            const result = AccommodationReviewSchema.safeParse(invalidAvgRating);
+            expect(result.success).toBe(false);
+        });
+
+        it('should coerce averageRating from string to number', () => {
+            const dataWithStringRating = {
+                ...validReviewData,
+                averageRating: '3.5'
+            };
+
+            const result = AccommodationReviewSchema.safeParse(dataWithStringRating);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.averageRating).toBe(3.5);
+            }
+        });
+
+        it('should default lifecycleState to ACTIVE when not provided', () => {
+            const dataWithoutLifecycle = {
+                ...validReviewData,
+                lifecycleState: undefined
+            };
+
+            const result = AccommodationReviewSchema.safeParse(dataWithoutLifecycle);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.lifecycleState).toBe('ACTIVE');
+            }
+        });
+
+        it('should accept valid lifecycleState values', () => {
+            for (const state of ['DRAFT', 'ACTIVE', 'ARCHIVED'] as const) {
+                const data = { ...validReviewData, lifecycleState: state };
+                const result = AccommodationReviewSchema.safeParse(data);
+                expect(result.success).toBe(true);
+            }
+        });
+
+        it('should reject invalid lifecycleState values', () => {
+            const invalidState = {
+                ...validReviewData,
+                lifecycleState: 'UNKNOWN'
+            };
+
+            const result = AccommodationReviewSchema.safeParse(invalidState);
+            expect(result.success).toBe(false);
         });
     });
 });

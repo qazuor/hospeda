@@ -6,6 +6,7 @@ import {
     AccommodationReviewIdSchema,
     UserIdSchema
 } from '../../common/id.schema.js';
+import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { AccommodationRatingSchema } from '../accommodation/subtypes/accommodation.rating.schema.js';
 
 /**
@@ -16,6 +17,7 @@ export const AccommodationReviewSchema = z.object({
     // Base fields
     id: AccommodationReviewIdSchema,
     ...BaseAuditFields,
+    ...BaseLifecycleFields,
     ...BaseAdminFields,
     userId: UserIdSchema,
     accommodationId: AccommodationIdSchema,
@@ -29,6 +31,11 @@ export const AccommodationReviewSchema = z.object({
         .min(10, { message: 'error:accommodation.review.content.min_length' })
         .max(2000, { message: 'error:accommodation.review.content.max_length' })
         .optional(),
-    rating: AccommodationRatingSchema
+    rating: AccommodationRatingSchema,
+    /**
+     * Computed average of all rating sub-fields (cleanliness, hospitality, services,
+     * accuracy, communication, location). Stored by the DB trigger; not user-settable.
+     */
+    averageRating: z.coerce.number().min(0).max(5).default(0)
 });
 export type AccommodationReview = z.infer<typeof AccommodationReviewSchema>;

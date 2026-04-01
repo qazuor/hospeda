@@ -21,6 +21,7 @@ export const AccommodationReviewPublicSchema = AccommodationReviewSchema.pick({
     title: true,
     content: true,
     rating: true,
+    averageRating: true,
 
     // Timestamp (when the review was posted)
     createdAt: true
@@ -45,6 +46,7 @@ export const AccommodationReviewProtectedSchema = AccommodationReviewSchema.pick
     title: true,
     content: true,
     rating: true,
+    averageRating: true,
     createdAt: true,
 
     // Audit timestamps (for authenticated users)
