@@ -1,21 +1,40 @@
 /**
- * Integration tests for the 16 admin list routes that use adminList()
+ * Integration tests for all 16 admin list routes that use adminList()
  *
  * Tests the common behavior shared by all admin list endpoints,
  * using a table-driven approach to avoid duplication.
  *
- * NOTE: AccommodationReview and DestinationReview routes are tested separately
- * because they are nested under parent entity routers (/accommodations/reviews,
- * /destinations/reviews) where the parent's /{id} parametric route takes
- * priority over the /reviews subrouter in Hono's OpenAPI routing.
- * This is a known routing issue tracked separately.
+ * AccommodationReview and DestinationReview routes are nested under parent
+ * entity routers (/accommodations/reviews, /destinations/reviews).
+ * The /reviews subrouter is registered BEFORE the /{id} parametric routes
+ * in both parent routers to prevent routing conflicts.
  *
  * @module test/routes/admin/admin-list-routes
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    AccommodationAdminSchema,
+    AccommodationReviewAdminSchema,
+    AmenityAdminSchema,
+    AttractionAdminSchema,
+    DestinationAdminSchema,
+    DestinationReviewAdminSchema,
+    EventAdminSchema,
+    EventLocationAdminSchema,
+    EventOrganizerAdminSchema,
+    FeatureAdminSchema,
+    OwnerPromotionAdminSchema,
+    PermissionEnum,
+    PostAdminSchema,
+    PostSponsorAdminSchema,
+    RoleEnum,
+    SponsorshipAdminSchema,
+    TagAdminSchema,
+    UserAdminSchema
+} from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { beforeAll, describe, expect, it } from 'vitest';
+import type { ZodSchema } from 'zod';
 import { initApp } from '../../../src/app';
 import { createAuthenticatedRequest } from '../../helpers/auth';
 
@@ -71,11 +90,11 @@ function createFullAdminActor(extraPermissions: readonly PermissionEnum[] = []):
 }
 
 /**
- * 14 admin list routes at top-level paths (direct routing, no nesting conflicts).
+ * All 16 admin list routes.
  *
- * AccommodationReview and DestinationReview are excluded because they are
- * nested under parent entity routers where Hono's OpenAPI /{id} parametric
- * route takes priority over the /reviews subrouter prefix.
+ * AccommodationReview and DestinationReview are nested under parent entity
+ * routers. Their /reviews subrouters are registered BEFORE the /{id}
+ * parametric routes so Hono resolves /reviews as a static path, not a param.
  */
 const ADMIN_LIST_ROUTES: readonly AdminListRouteEntry[] = [
     {
@@ -147,6 +166,16 @@ const ADMIN_LIST_ROUTES: readonly AdminListRouteEntry[] = [
         entity: 'Sponsorship',
         path: '/api/v1/admin/sponsorships',
         permission: PermissionEnum.SPONSORSHIP_VIEW
+    },
+    {
+        entity: 'AccommodationReview',
+        path: '/api/v1/admin/accommodations/reviews',
+        permission: PermissionEnum.ACCOMMODATION_REVIEW_VIEW
+    },
+    {
+        entity: 'DestinationReview',
+        path: '/api/v1/admin/destinations/reviews',
+        permission: PermissionEnum.DESTINATION_REVIEW_VIEW
     }
 ] as const;
 
@@ -160,7 +189,7 @@ describe('Admin List Routes (adminList)', () => {
     // =========================================================================
     // Table-driven: verify every route returns 200 with paginated structure
     // =========================================================================
-    describe('returns paginated list for all top-level entities', () => {
+    describe('returns paginated list for all 16 admin list routes', () => {
         for (const route of ADMIN_LIST_ROUTES) {
             it(`${route.entity}: GET ${route.path} returns paginated response`, async () => {
                 // Arrange
@@ -190,12 +219,17 @@ describe('Admin List Routes (adminList)', () => {
     // Common behavior tests (use first route as representative)
     // =========================================================================
     describe('common behavior', () => {
-        const representativeRoute = ADMIN_LIST_ROUTES[0];
+        // Use accommodations as the representative route for common behavior tests
+        const representativeRoute = {
+            entity: 'Accommodation',
+            path: '/api/v1/admin/accommodations',
+            permission: PermissionEnum.ACCOMMODATION_VIEW_ALL
+        } as const;
 
         /**
          * Helper to make an authenticated admin request to the representative route
          */
-        function makeRequest(queryString = ''): Promise<Response> {
+        async function makeRequest(queryString = ''): Promise<Response> {
             const actor = createFullAdminActor();
             const reqOpts = createAuthenticatedRequest(actor);
             const url = queryString
@@ -349,35 +383,70 @@ describe('Admin List Routes (adminList)', () => {
     });
 
     // =========================================================================
-    // Nested review routes (accommodation reviews, destination reviews)
-    // These are mounted as subrouters under parent entity admin routers.
-    // Due to Hono OpenAPI routing priority (/{id} matches before /reviews),
-    // these cannot be tested via the full app request path.
-    // We verify the route handler pattern is consistent by checking the
-    // route modules are properly configured.
+    // AdminSchema shape validation: verify response items conform to AdminSchema
     // =========================================================================
-    describe('nested review route configuration', () => {
-        it('AccommodationReview admin list route exists and uses adminList', async () => {
-            // Verify the route is reachable at the parent path
-            // (the parent route will intercept, but the route module IS registered)
-            const actor = createFullAdminActor();
-            const reqOpts = createAuthenticatedRequest(actor);
+    describe('AdminSchema shape validation', () => {
+        /**
+         * Maps each route path segment (entity key) to its corresponding AdminSchema.
+         * Used to validate that response items match the expected admin-level field shape,
+         * including audit fields (createdById, updatedById, deletedAt, deletedById).
+         */
+        const adminSchemaMap: Record<string, ZodSchema> = {
+            Accommodation: AccommodationAdminSchema,
+            User: UserAdminSchema,
+            Destination: DestinationAdminSchema,
+            Event: EventAdminSchema,
+            Post: PostAdminSchema,
+            Amenity: AmenityAdminSchema,
+            Feature: FeatureAdminSchema,
+            Attraction: AttractionAdminSchema,
+            Tag: TagAdminSchema,
+            EventLocation: EventLocationAdminSchema,
+            EventOrganizer: EventOrganizerAdminSchema,
+            PostSponsor: PostSponsorAdminSchema,
+            OwnerPromotion: OwnerPromotionAdminSchema,
+            Sponsorship: SponsorshipAdminSchema,
+            AccommodationReview: AccommodationReviewAdminSchema,
+            DestinationReview: DestinationReviewAdminSchema
+        } as const;
 
-            // The parent accommodations admin route returns a response
-            // (even if it's the getById handler matching /reviews as {id})
-            const res = await app.request('/api/v1/admin/accommodations/reviews', reqOpts);
-            // Due to Hono routing conflict, this may return 400 (invalid UUID)
-            // or 403 (insufficient perms for getById route).
-            // We just verify the route is reachable (not 404).
-            expect(res.status).not.toBe(404);
-        });
+        for (const route of ADMIN_LIST_ROUTES) {
+            it(`${route.entity}: response items conform to ${route.entity}AdminSchema`, async () => {
+                // Arrange
+                const schema = adminSchemaMap[route.entity];
+                const actor = createFullAdminActor();
+                const reqOpts = createAuthenticatedRequest(actor);
 
-        it('DestinationReview admin list route exists and uses adminList', async () => {
-            const actor = createFullAdminActor();
-            const reqOpts = createAuthenticatedRequest(actor);
+                // Act
+                const res = await app.request(route.path, reqOpts);
+                expect(res.status).toBe(200);
 
-            const res = await app.request('/api/v1/admin/destinations/reviews', reqOpts);
-            expect(res.status).not.toBe(404);
-        });
+                const body = await res.json();
+                const items: unknown[] = body.data.items;
+
+                // Skip schema validation if no seed data returned — the route itself
+                // already passed the 200 + paginated structure assertion above.
+                if (items.length === 0) {
+                    return;
+                }
+
+                // Assert — every item must parse cleanly against its AdminSchema
+                for (const item of items) {
+                    const result = schema.safeParse(item);
+                    expect(
+                        result.success,
+                        `Item failed ${route.entity}AdminSchema validation: ${
+                            result.success
+                                ? ''
+                                : JSON.stringify(
+                                      (result as { error: { issues: unknown[] } }).error.issues,
+                                      null,
+                                      2
+                                  )
+                        }`
+                    ).toBe(true);
+                }
+            });
+        }
     });
 });
