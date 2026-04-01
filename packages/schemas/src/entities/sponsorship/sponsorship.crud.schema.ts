@@ -44,6 +44,13 @@ export { SponsorshipUpdateInputSchema };
 export type { SponsorshipUpdateInput } from './sponsorship.schema.js';
 
 /**
+ * Schema for partial sponsorship updates (PATCH).
+ * Same as update but explicitly named for clarity.
+ */
+export const SponsorshipPatchInputSchema = SponsorshipUpdateInputSchema;
+export type SponsorshipPatchInput = z.infer<typeof SponsorshipPatchInputSchema>;
+
+/**
  * Schema for sponsorship update response.
  * Returns the complete updated sponsorship object.
  */

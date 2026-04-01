@@ -53,6 +53,12 @@ export const PostSponsorCreateOutputSchema = z.object({
 export const PostSponsorUpdateInputSchema = PostSponsorCreateInputSchema.partial();
 
 /**
+ * Schema for partial post sponsor updates (PATCH)
+ * Same as update but explicitly named for clarity
+ */
+export const PostSponsorPatchInputSchema = PostSponsorUpdateInputSchema;
+
+/**
  * Schema for post sponsor update response
  * Returns the complete updated post sponsor object
  */
@@ -186,6 +192,7 @@ export const PostSponsorCountOutputSchema = z.object({
 export type PostSponsorCreateInput = z.infer<typeof PostSponsorCreateInputSchema>;
 export type PostSponsorCreateOutput = z.infer<typeof PostSponsorCreateOutputSchema>;
 export type PostSponsorUpdateInput = z.infer<typeof PostSponsorUpdateInputSchema>;
+export type PostSponsorPatchInput = z.infer<typeof PostSponsorPatchInputSchema>;
 export type PostSponsorUpdateOutput = z.infer<typeof PostSponsorUpdateOutputSchema>;
 export type PostSponsorSearchInput = z.infer<typeof PostSponsorSearchInputSchema>;
 export type PostSponsorSearchOutput = z.infer<typeof PostSponsorSearchOutputSchema>;
