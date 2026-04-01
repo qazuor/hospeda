@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
-import { ExchangeRateConfigSchema } from '../../../src/entities/exchange-rate/exchange-rate-config.schema.js';
+import { ExchangeRateConfigSchema } from '../../../src/entities/exchangeRate/exchange-rate-config.schema.js';
 import { ExchangeRateTypeEnum } from '../../../src/enums/exchange-rate-type.enum.js';
 
 describe('ExchangeRateConfigSchema', () => {

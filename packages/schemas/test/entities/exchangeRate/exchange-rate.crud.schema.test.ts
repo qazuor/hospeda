@@ -12,7 +12,7 @@ import {
     ExchangeRateSearchInputSchema,
     ExchangeRateUpdateInputSchema,
     ExchangeRateUpdateOutputSchema
-} from '../../../src/entities/exchange-rate/exchange-rate.crud.schema.js';
+} from '../../../src/entities/exchangeRate/exchange-rate.crud.schema.js';
 import { PriceCurrencyEnum } from '../../../src/enums/currency.enum.js';
 import { ExchangeRateSourceEnum } from '../../../src/enums/exchange-rate-source.enum.js';
 import { ExchangeRateTypeEnum } from '../../../src/enums/exchange-rate-type.enum.js';

@@ -4,7 +4,7 @@ import {
     ExchangeRateConfigGetOutputSchema,
     ExchangeRateConfigUpdateInputSchema,
     ExchangeRateConfigUpdateOutputSchema
-} from '../../../src/entities/exchange-rate/exchange-rate-config.crud.schema.js';
+} from '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js';
 import { ExchangeRateTypeEnum } from '../../../src/enums/exchange-rate-type.enum.js';
 
 describe('ExchangeRateConfig CRUD Schemas', () => {
@@ -248,7 +248,7 @@ describe('ExchangeRateConfig CRUD Schemas', () => {
     describe('Type Inference', () => {
         it('should correctly infer update input type', () => {
             const input: import(
-                '../../../src/entities/exchange-rate/exchange-rate-config.crud.schema.js'
+                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
             ).ExchangeRateConfigUpdateInput = {
                 defaultRateType: ExchangeRateTypeEnum.BLUE,
                 dolarApiFetchIntervalMinutes: 20
@@ -259,7 +259,7 @@ describe('ExchangeRateConfig CRUD Schemas', () => {
 
         it('should correctly infer get output type', () => {
             const output: import(
-                '../../../src/entities/exchange-rate/exchange-rate-config.crud.schema.js'
+                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
             ).ExchangeRateConfigGetOutput = {
                 id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
                 defaultRateType: ExchangeRateTypeEnum.OFICIAL,
@@ -277,7 +277,7 @@ describe('ExchangeRateConfig CRUD Schemas', () => {
 
         it('should correctly infer update output type', () => {
             const output: import(
-                '../../../src/entities/exchange-rate/exchange-rate-config.crud.schema.js'
+                '../../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js'
             ).ExchangeRateConfigUpdateOutput = {
                 id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
                 defaultRateType: ExchangeRateTypeEnum.BLUE,

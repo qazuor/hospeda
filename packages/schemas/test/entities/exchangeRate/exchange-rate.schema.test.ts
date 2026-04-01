@@ -3,7 +3,7 @@ import { ZodError } from 'zod';
 import {
     ExchangeRateSchema,
     ExchangeRatesArraySchema
-} from '../../../src/entities/exchange-rate/exchange-rate.schema.js';
+} from '../../../src/entities/exchangeRate/exchange-rate.schema.js';
 import { PriceCurrencyEnum } from '../../../src/enums/currency.enum.js';
 import { ExchangeRateSourceEnum } from '../../../src/enums/exchange-rate-source.enum.js';
 import { ExchangeRateTypeEnum } from '../../../src/enums/exchange-rate-type.enum.js';
