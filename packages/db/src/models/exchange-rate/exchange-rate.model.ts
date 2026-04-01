@@ -4,7 +4,7 @@ import type {
     ExchangeRateTypeEnum,
     PriceCurrencyEnum
 } from '@repo/schemas';
-import { and, count, desc, eq, gte, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lte, max } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
@@ -91,7 +91,7 @@ export class ExchangeRateModel extends BaseModel<ExchangeRate> {
                 fromCurrency: exchangeRates.fromCurrency,
                 toCurrency: exchangeRates.toCurrency,
                 rateType: exchangeRates.rateType,
-                maxFetchedAt: desc(exchangeRates.fetchedAt)
+                maxFetchedAt: max(exchangeRates.fetchedAt)
             })
             .from(exchangeRates)
             .groupBy(exchangeRates.fromCurrency, exchangeRates.toCurrency, exchangeRates.rateType)
