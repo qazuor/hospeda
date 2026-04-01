@@ -36,6 +36,14 @@ export const DestinationReviewSchema = z.object({
         .optional(),
     rating: DestinationRatingSchema,
 
+    /**
+     * Denormalized average of all rating sub-fields for this review.
+     * Computed by the database from the individual rating dimensions.
+     * PostgreSQL returns numeric as string, so z.coerce.number() handles the conversion.
+     * Range: 0.00 – 5.00 (numeric 3,2 in the DB).
+     */
+    averageRating: z.coerce.number().min(0).max(5).default(0),
+
     // Visit context fields
     /**
      * Date when the reviewer visited the destination.

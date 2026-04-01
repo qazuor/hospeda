@@ -29,6 +29,7 @@ describe('DestinationReview Schemas', () => {
             localEvents: 4,
             weatherSatisfaction: 4
         },
+        averageRating: 4.0,
         createdAt: new Date(),
         updatedAt: new Date(),
         createdById: '123e4567-e89b-12d3-a456-426614174003',
@@ -138,6 +139,42 @@ describe('DestinationReview Schemas', () => {
 
             const result = DestinationReviewSchema.safeParse(invalidRatingNegative);
             expect(result.success).toBe(false);
+        });
+
+        it('should accept averageRating as a number within range', () => {
+            const withValidAvgRating = { ...validReviewData, averageRating: 3.75 };
+            const result = DestinationReviewSchema.safeParse(withValidAvgRating);
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject averageRating above 5', () => {
+            const withHighAvgRating = { ...validReviewData, averageRating: 5.01 };
+            const result = DestinationReviewSchema.safeParse(withHighAvgRating);
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject averageRating below 0', () => {
+            const withNegativeAvgRating = { ...validReviewData, averageRating: -0.01 };
+            const result = DestinationReviewSchema.safeParse(withNegativeAvgRating);
+            expect(result.success).toBe(false);
+        });
+
+        it('should coerce averageRating from string (PostgreSQL numeric type)', () => {
+            const withStringAvgRating = { ...validReviewData, averageRating: '4.25' };
+            const result = DestinationReviewSchema.safeParse(withStringAvgRating);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.averageRating).toBe(4.25);
+            }
+        });
+
+        it('should default averageRating to 0 when not provided', () => {
+            const { averageRating, ...withoutAvgRating } = validReviewData;
+            const result = DestinationReviewSchema.safeParse(withoutAvgRating);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.averageRating).toBe(0);
+            }
         });
 
         it('should require userId and destinationId', () => {

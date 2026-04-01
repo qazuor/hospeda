@@ -21,6 +21,7 @@ export const DestinationReviewPublicSchema = DestinationReviewSchema.pick({
     title: true,
     content: true,
     rating: true,
+    averageRating: true,
 
     // Visit context (public safe)
     visitDate: true,
@@ -62,6 +63,7 @@ export const DestinationReviewProtectedSchema = DestinationReviewSchema.pick({
     title: true,
     content: true,
     rating: true,
+    averageRating: true,
     visitDate: true,
     tripType: true,
     travelSeason: true,

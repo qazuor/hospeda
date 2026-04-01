@@ -28,7 +28,8 @@ export const DestinationReviewCreateInputSchema = DestinationReviewSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+    averageRating: true // Computed/denormalized field, not user-settable
 }).strict();
 
 /**
@@ -54,7 +55,8 @@ export const DestinationReviewUpdateInputSchema = DestinationReviewSchema.omit({
     deletedAt: true,
     deletedById: true,
     userId: true, // Cannot change the user who wrote the review
-    destinationId: true // Cannot change the destination being reviewed
+    destinationId: true, // Cannot change the destination being reviewed
+    averageRating: true // Computed/denormalized field, not user-settable
 })
     .partial()
     .strict();
