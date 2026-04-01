@@ -100,9 +100,7 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
 
     // Basic audit (created/updated dates)
     createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true
+    updatedAt: true
 });
 
 export type DestinationProtected = z.infer<typeof DestinationProtectedSchema>;

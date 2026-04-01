@@ -23,10 +23,7 @@ export const EventOrganizerPublicSchema = EventOrganizerSchema.pick({
     contactInfo: true,
 
     // Social networks (nested object with facebook, instagram, twitter, etc.)
-    socialNetworks: true,
-
-    // Lifecycle state (to show if active/archived)
-    lifecycleState: true
+    socialNetworks: true
 });
 
 export type EventOrganizerPublic = z.infer<typeof EventOrganizerPublicSchema>;

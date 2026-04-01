@@ -64,9 +64,7 @@ export const EventLocationProtectedSchema = EventLocationSchema.pick({
 
     // Basic audit (created/updated dates)
     createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true
+    updatedAt: true
 });
 
 export type EventLocationProtected = z.infer<typeof EventLocationProtectedSchema>;
