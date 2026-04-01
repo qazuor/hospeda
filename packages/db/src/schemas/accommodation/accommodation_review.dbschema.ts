@@ -27,7 +27,10 @@ export const accommodationReviews = pgTable(
         title: text('title'),
         content: text('content'),
         rating: jsonb('rating').$type<AccommodationRatingInput>().notNull(),
-        averageRating: numeric('average_rating', { precision: 3, scale: 2 }).notNull().default('0'),
+        /** Computed average of all rating categories (0.00-5.00). Drizzle mode:'number' ensures runtime JS number type. */
+        averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
+            .notNull()
+            .default(0),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
