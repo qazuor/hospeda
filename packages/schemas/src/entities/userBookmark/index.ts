@@ -9,3 +9,6 @@ export * from './userBookmark.query.schema.js'; // List, Search, Count schemas
 
 // HTTP schemas
 export * from './userBookmark.http.schema.js'; // HTTP-compatible schemas
+
+// Access level schemas (public, protected, admin)
+export * from './userBookmark.access.schema.js';

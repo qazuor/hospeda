@@ -11,3 +11,6 @@ export {
 } from '../user/permission.schema.js';
 
 export { RolePermissionAssignmentSchema } from '../user/role.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './permission.access.schema.js';

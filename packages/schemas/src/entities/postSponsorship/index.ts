@@ -9,3 +9,6 @@ export * from './postSponsorship.query.schema.js'; // List, Search, Summary, Sta
 
 // HTTP-compatible schemas
 export * from './postSponsorship.http.schema.js'; // HTTP-compatible schemas with query coercion
+
+// Access level schemas (public, protected, admin)
+export * from './postSponsorship.access.schema.js';

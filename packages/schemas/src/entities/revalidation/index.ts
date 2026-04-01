@@ -10,3 +10,6 @@ export * from './revalidation-log.query.schema.js';
 
 // HTTP request/response schemas
 export * from './revalidation.http.schema.js';
+
+// Access level schemas (public, protected, admin)
+export * from './revalidation.access.schema.js';
