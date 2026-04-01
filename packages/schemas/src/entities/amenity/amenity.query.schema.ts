@@ -4,6 +4,7 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
@@ -399,7 +400,7 @@ export const AmenityAccommodationListWrapperSchema = z.object({
             summary: z.string().optional(),
             // Basic accommodation info for amenity context
             isFeatured: z.boolean().optional(),
-            averageRating: z.number().min(0).max(5).optional()
+            averageRating: createAverageRatingField({ optional: true })
         })
     )
 });

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { DestinationSummarySchema } from '../destination/destination.query.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
@@ -115,7 +116,7 @@ export type AccommodationWithOwner = z.infer<typeof AccommodationWithOwnerSchema
 export const AccommodationWithReviewsSchema = AccommodationSchema.extend({
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional()
+    averageRating: createAverageRatingField({ optional: true })
 });
 export type AccommodationWithReviews = z.infer<typeof AccommodationWithReviewsSchema>;
 
@@ -210,7 +211,7 @@ export const AccommodationWithContentRelationsSchema = AccommodationSchema.exten
         .optional(),
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional()
+    averageRating: createAverageRatingField({ optional: true })
 });
 export type AccommodationWithContentRelations = z.infer<
     typeof AccommodationWithContentRelationsSchema
@@ -258,7 +259,7 @@ export const AccommodationWithFullRelationsSchema = AccommodationSchema.extend({
     // Review relations
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional()
+    averageRating: createAverageRatingField({ optional: true })
 });
 export type AccommodationWithFullRelations = z.infer<typeof AccommodationWithFullRelationsSchema>;
 

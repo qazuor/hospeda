@@ -4,6 +4,7 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
@@ -257,7 +258,7 @@ export const AccommodationReviewSummarySchema = AccommodationReviewSchema.pick({
 export const AccommodationReviewStatsResponseSchema = z.object({
     accommodationId: z.string().uuid(),
     totalReviews: z.number().int().min(0).default(0),
-    averageRating: z.number().min(0).max(5).default(0),
+    averageRating: createAverageRatingField({ default: 0 }),
 
     // Rating distribution
     ratingDistribution: z.object({

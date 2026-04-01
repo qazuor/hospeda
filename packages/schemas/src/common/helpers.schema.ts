@@ -20,12 +20,6 @@ export const WithAuditSchema = z.object({
 });
 export type WithAudit = z.infer<typeof WithAuditSchema>;
 
-export const WithReviewStateSchema = z.object({
-    reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional()
-});
-export type WithReviewState = z.infer<typeof WithReviewStateSchema>;
-
 /**
  * Helper function to create averageRating field that handles both string and number inputs
  * PostgreSQL numeric fields are returned as strings by the driver
@@ -46,6 +40,12 @@ export const createAverageRatingField = (
 
     return options.optional ? baseSchema.optional() : baseSchema;
 };
+
+export const WithReviewStateSchema = z.object({
+    reviewsCount: z.number().int().min(0).optional(),
+    averageRating: createAverageRatingField({ optional: true })
+});
+export type WithReviewState = z.infer<typeof WithReviewStateSchema>;
 
 export const WithModerationStateSchema = z.object({
     moderationState: ModerationStatusEnumSchema

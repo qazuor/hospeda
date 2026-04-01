@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import {
     AccommodationIdSchema,
     AttractionIdSchema,
@@ -185,7 +186,7 @@ export const DestinationWithAttractionsSchema = DestinationSchema.extend({
 export const DestinationWithReviewsSchema = DestinationSchema.extend({
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional(),
+    averageRating: createAverageRatingField({ optional: true }),
     ratingDistribution: z
         .object({
             oneStar: z.number().int().min(0),
@@ -236,7 +237,7 @@ export const DestinationWithContentRelationsSchema = DestinationSchema.extend({
     // Reviews
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional()
+    averageRating: createAverageRatingField({ optional: true })
 });
 
 /**
@@ -274,7 +275,7 @@ export const DestinationWithFullRelationsSchema = DestinationSchema.extend({
     // Reviews
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRating: z.number().min(0).max(5).optional(),
+    averageRating: createAverageRatingField({ optional: true }),
     ratingDistribution: z
         .object({
             oneStar: z.number().int().min(0),

@@ -4,6 +4,7 @@ import {
     HttpQueryFields,
     HttpSortingSchema
 } from '../../api/http/base-http.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
 import { type OpenApiSchemaMetadata, applyOpenApiMetadata } from '../../utils/openapi.utils.js';
@@ -137,12 +138,7 @@ export const DestinationListItemSchema = DestinationSchema.pick({
 }).extend({
     // Explicitly make review fields optional since they might not be present in list responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
-    averageRating: z
-        .union([z.string(), z.number()]) // Accept both string and number from DB
-        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
-        .pipe(z.number().min(0).max(5))
-        .default(0)
-        .optional()
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 });
 export type DestinationListItem = z.infer<typeof DestinationListItemSchema>;
 
@@ -202,12 +198,7 @@ export const DestinationSummarySchema = DestinationSchema.pick({
 }).extend({
     // Explicitly make review fields optional since they might not be present in summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
-    averageRating: z
-        .union([z.string(), z.number()]) // Accept both string and number from DB
-        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
-        .pipe(z.number().min(0).max(5))
-        .default(0)
-        .optional()
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 });
 export type DestinationSummary = z.infer<typeof DestinationSummarySchema>;
 
@@ -217,11 +208,7 @@ export type DestinationSummary = z.infer<typeof DestinationSummarySchema>;
 export const DestinationStatsSchema = z.object({
     accommodationsCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
-    averageRating: z
-        .union([z.string(), z.number()]) // Accept both string and number from DB
-        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
-        .pipe(z.number().min(0).max(5))
-        .default(0),
+    averageRating: createAverageRatingField({ default: 0 }),
     attractionsCount: z.number().int().min(0).default(0),
     eventsCount: z.number().int().min(0).nullable().default(null)
 });
@@ -294,12 +281,7 @@ export const DestinationSummaryExtendedSchema = DestinationSchema.pick({
     climate: z.string().optional(),
     // Explicitly make review fields optional since they might not be present in extended summary responses
     reviewsCount: z.number().int().min(0).default(0).optional(),
-    averageRating: z
-        .union([z.string(), z.number()]) // Accept both string and number from DB
-        .transform((val) => (typeof val === 'string' ? Number.parseFloat(val) : val)) // Convert string to number
-        .pipe(z.number().min(0).max(5))
-        .default(0)
-        .optional()
+    averageRating: createAverageRatingField({ optional: true, default: 0 })
 });
 
 // ============================================================================

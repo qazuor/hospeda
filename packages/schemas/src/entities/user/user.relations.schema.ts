@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -166,7 +167,7 @@ export const UserWithPermissionsSchema = UserSchema.extend({
 export const UserWithReviewsSchema = UserSchema.extend({
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRatingGiven: z.number().min(0).max(5).optional()
+    averageRatingGiven: createAverageRatingField({ optional: true })
 });
 
 /**
@@ -209,7 +210,7 @@ export const UserWithActivityRelationsSchema = UserSchema.extend({
     // Reviews
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRatingGiven: z.number().min(0).max(5).optional(),
+    averageRatingGiven: createAverageRatingField({ optional: true }),
 
     // Permissions
     permissions: z.array(PermissionAssignmentSummarySchema).optional(),
@@ -237,7 +238,7 @@ export const UserWithFullRelationsSchema = UserSchema.extend({
     // Reviews
     reviews: z.array(ReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
-    averageRatingGiven: z.number().min(0).max(5).optional(),
+    averageRatingGiven: createAverageRatingField({ optional: true }),
 
     // Payments
     payments: z.array(PaymentSummarySchema).optional(),

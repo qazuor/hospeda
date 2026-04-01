@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { PriceCurrencyEnumSchema } from '../../enums/currency.schema.js';
 import { ExchangeRateSourceEnumSchema } from '../../enums/exchange-rate-source.schema.js';
 import { ExchangeRateTypeEnumSchema } from '../../enums/exchange-rate-type.schema.js';
+import { numericField } from '../../utils/utils.js';
 
 /**
  * Exchange Rate Schema - Main Entity Schema
@@ -20,21 +21,25 @@ export const ExchangeRateSchema = z.object({
     toCurrency: PriceCurrencyEnumSchema,
 
     // Rate values
-    rate: z
-        .number({
-            message: 'zodError.exchangeRate.rate.required'
-        })
-        .positive({
-            message: 'zodError.exchangeRate.rate.positive'
-        }),
+    rate: numericField(
+        z
+            .number({
+                message: 'zodError.exchangeRate.rate.required'
+            })
+            .positive({
+                message: 'zodError.exchangeRate.rate.positive'
+            })
+    ),
 
-    inverseRate: z
-        .number({
-            message: 'zodError.exchangeRate.inverseRate.required'
-        })
-        .positive({
-            message: 'zodError.exchangeRate.inverseRate.positive'
-        }),
+    inverseRate: numericField(
+        z
+            .number({
+                message: 'zodError.exchangeRate.inverseRate.required'
+            })
+            .positive({
+                message: 'zodError.exchangeRate.inverseRate.positive'
+            })
+    ),
 
     // Rate metadata
     rateType: ExchangeRateTypeEnumSchema,
