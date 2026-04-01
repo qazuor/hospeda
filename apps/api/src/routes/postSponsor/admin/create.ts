@@ -4,9 +4,9 @@
  */
 import {
     PermissionEnum,
+    PostSponsorAdminSchema,
     type PostSponsorCreateInput,
-    PostSponsorCreateInputSchema,
-    PostSponsorSchema
+    PostSponsorCreateInputSchema
 } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -28,7 +28,7 @@ export const adminCreatePostSponsorRoute = createAdminRoute({
     tags: ['Post Sponsors'],
     requiredPermissions: [PermissionEnum.POST_SPONSOR_CREATE],
     requestBody: PostSponsorCreateInputSchema,
-    responseSchema: PostSponsorSchema,
+    responseSchema: PostSponsorAdminSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

@@ -5,8 +5,8 @@
  */
 import {
     PermissionEnum,
+    PostSponsorAdminSchema,
     PostSponsorIdSchema,
-    PostSponsorSchema,
     PostSponsorUpdateInputSchema
 } from '@repo/schemas';
 import { PostSponsorService, ServiceError } from '@repo/service-core';
@@ -31,7 +31,7 @@ export const adminPatchPostSponsorRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.POST_SPONSOR_UPDATE],
     requestParams: { id: PostSponsorIdSchema },
     requestBody: PostSponsorUpdateInputSchema,
-    responseSchema: PostSponsorSchema,
+    responseSchema: PostSponsorAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

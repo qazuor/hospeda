@@ -2,7 +2,7 @@
  * Admin restore owner promotion endpoint
  * Restores a soft-deleted owner promotion
  */
-import { OwnerPromotionIdSchema, OwnerPromotionSchema, PermissionEnum } from '@repo/schemas';
+import { OwnerPromotionAdminSchema, OwnerPromotionIdSchema, PermissionEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -26,7 +26,7 @@ export const adminRestoreOwnerPromotionRoute = createAdminRoute({
     requestParams: {
         id: OwnerPromotionIdSchema
     },
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await ownerPromotionService.restore(actor, params.id as string);

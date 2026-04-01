@@ -2,7 +2,11 @@
  * Admin restore destination review endpoint
  * Restores a soft-deleted destination review - Admin only
  */
-import { DestinationReviewIdSchema, PermissionEnum } from '@repo/schemas';
+import {
+    DestinationReviewAdminSchema,
+    DestinationReviewIdSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -20,15 +24,15 @@ export const adminRestoreDestinationReviewRoute = createAdminRoute({
     path: '/{id}/restore',
     summary: 'Restore destination review',
     description: 'Restores a soft-deleted destination review. Admin only.',
-    tags: ['Destinations', 'Reviews'],
+    tags: ['Destination Reviews', 'Admin'],
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_RESTORE],
     requestParams: { id: DestinationReviewIdSchema },
-    responseSchema: DestinationReviewIdSchema,
+    responseSchema: DestinationReviewAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationReviewService.restore(actor, id);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return { id };
+        return result.data;
     }
 });

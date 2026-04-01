@@ -4,8 +4,8 @@
  * NOTE: OwnerPromotion has no PatchInputSchema. Uses OwnerPromotionUpdateInputSchema (already partial).
  */
 import {
+    OwnerPromotionAdminSchema,
     OwnerPromotionIdSchema,
-    OwnerPromotionSchema,
     OwnerPromotionUpdateInputSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -31,7 +31,7 @@ export const adminPatchOwnerPromotionRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_UPDATE],
     requestParams: { id: OwnerPromotionIdSchema },
     requestBody: OwnerPromotionUpdateInputSchema,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

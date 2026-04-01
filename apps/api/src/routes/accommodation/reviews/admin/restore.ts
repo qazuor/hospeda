@@ -3,8 +3,8 @@
  * Restores a soft-deleted accommodation review
  */
 import {
+    AccommodationReviewAdminSchema,
     AccommodationReviewIdSchema,
-    AccommodationReviewSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
@@ -30,7 +30,7 @@ export const adminRestoreAccommodationReviewRoute = createAdminRoute({
     requestParams: {
         id: AccommodationReviewIdSchema
     },
-    responseSchema: AccommodationReviewSchema,
+    responseSchema: AccommodationReviewAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await accommodationReviewService.restore(actor, params.id as string);

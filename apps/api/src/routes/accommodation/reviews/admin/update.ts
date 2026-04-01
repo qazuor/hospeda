@@ -4,8 +4,8 @@
  */
 import type { z } from '@hono/zod-openapi';
 import {
+    AccommodationReviewAdminSchema,
     AccommodationReviewIdSchema,
-    AccommodationReviewSchema,
     AccommodationReviewUpdateInputSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -33,7 +33,7 @@ export const adminUpdateAccommodationReviewRoute = createAdminRoute({
         id: AccommodationReviewIdSchema
     },
     requestBody: AccommodationReviewUpdateInputSchema,
-    responseSchema: AccommodationReviewSchema,
+    responseSchema: AccommodationReviewAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof AccommodationReviewUpdateInputSchema>;

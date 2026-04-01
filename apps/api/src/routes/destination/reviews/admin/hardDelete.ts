@@ -5,6 +5,7 @@
 import { DestinationReviewIdSchema, PermissionEnum } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
@@ -20,15 +21,21 @@ export const adminHardDeleteDestinationReviewRoute = createAdminRoute({
     path: '/{id}/hard',
     summary: 'Hard delete destination review',
     description: 'Permanently deletes a destination review by ID. Admin only.',
-    tags: ['Destinations', 'Reviews'],
+    tags: ['Destination Reviews', 'Admin'],
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_HARD_DELETE],
     requestParams: { id: DestinationReviewIdSchema },
-    responseSchema: DestinationReviewIdSchema,
+    responseSchema: z.object({
+        success: z.boolean(),
+        message: z.string()
+    }),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const result = await destinationReviewService.hardDelete(actor, id);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
-        return { id };
+        return {
+            success: true,
+            message: 'Destination review permanently deleted'
+        };
     }
 });

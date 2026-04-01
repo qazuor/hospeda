@@ -3,8 +3,8 @@
  * Allows admins to update any destination review
  */
 import {
+    DestinationReviewAdminSchema,
     DestinationReviewIdSchema,
-    DestinationReviewSchema,
     type DestinationReviewUpdateInput,
     DestinationReviewUpdateInputSchema,
     PermissionEnum
@@ -26,13 +26,13 @@ export const adminUpdateDestinationReviewRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Update destination review (admin)',
     description: 'Updates any destination review. Admin only.',
-    tags: ['Destinations', 'Reviews'],
+    tags: ['Destination Reviews', 'Admin'],
     requiredPermissions: [PermissionEnum.DESTINATION_REVIEW_UPDATE],
     requestParams: {
         id: DestinationReviewIdSchema
     },
     requestBody: DestinationReviewUpdateInputSchema,
-    responseSchema: DestinationReviewSchema,
+    responseSchema: DestinationReviewAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

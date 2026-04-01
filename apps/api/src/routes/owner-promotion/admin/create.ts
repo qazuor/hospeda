@@ -3,9 +3,9 @@
  * Allows admins to create new owner promotions
  */
 import {
+    OwnerPromotionAdminSchema,
     type OwnerPromotionCreateInput,
     OwnerPromotionCreateInputSchema,
-    OwnerPromotionSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
@@ -28,7 +28,7 @@ export const adminCreateOwnerPromotionRoute = createAdminRoute({
     tags: ['Owner Promotions'],
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_CREATE],
     requestBody: OwnerPromotionCreateInputSchema,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionAdminSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

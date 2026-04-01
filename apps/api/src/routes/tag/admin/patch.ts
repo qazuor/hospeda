@@ -2,13 +2,13 @@
  * Admin patch tag endpoint
  * Allows admins to partially update any tag
  */
-import { PermissionEnum, TagIdSchema, TagPatchInputSchema, TagSchema } from '@repo/schemas';
+import { PermissionEnum, TagAdminSchema, TagIdSchema, TagPatchInputSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
-import { transformApiInputToDomain } from '../../../utils/openapi-schema.js';
-import { createAdminRoute } from '../../../utils/route-factory.js';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { transformApiInputToDomain } from '../../../utils/openapi-schema';
+import { createAdminRoute } from '../../../utils/route-factory';
 
 const tagService = new TagService({ logger: apiLogger });
 
@@ -27,7 +27,7 @@ export const adminPatchTagRoute = createAdminRoute({
         id: TagIdSchema
     },
     requestBody: TagPatchInputSchema,
-    responseSchema: TagSchema,
+    responseSchema: TagAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

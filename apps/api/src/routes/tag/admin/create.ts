@@ -4,15 +4,15 @@
  */
 import {
     PermissionEnum,
+    TagAdminSchema,
     type TagCreateInput,
-    TagCreateInputSchema,
-    TagSchema
+    TagCreateInputSchema
 } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
-import { createAdminRoute } from '../../../utils/route-factory.js';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createAdminRoute } from '../../../utils/route-factory';
 
 const tagService = new TagService({ logger: apiLogger });
 
@@ -28,7 +28,7 @@ export const adminCreateTagRoute = createAdminRoute({
     tags: ['Tags'],
     requiredPermissions: [PermissionEnum.TAG_CREATE],
     requestBody: TagCreateInputSchema,
-    responseSchema: TagSchema,
+    responseSchema: TagAdminSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

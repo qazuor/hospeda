@@ -2,12 +2,12 @@
  * Admin restore tag endpoint
  * Restores a soft-deleted tag
  */
-import { PermissionEnum, TagIdSchema, TagSchema } from '@repo/schemas';
+import { PermissionEnum, TagAdminSchema, TagIdSchema } from '@repo/schemas';
 import { ServiceError, TagService } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
-import { createAdminRoute } from '../../../utils/route-factory.js';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createAdminRoute } from '../../../utils/route-factory';
 
 const tagService = new TagService({ logger: apiLogger });
 
@@ -25,7 +25,7 @@ export const adminRestoreTagRoute = createAdminRoute({
     requestParams: {
         id: TagIdSchema
     },
-    responseSchema: TagSchema,
+    responseSchema: TagAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await tagService.restore(actor, params.id as string);

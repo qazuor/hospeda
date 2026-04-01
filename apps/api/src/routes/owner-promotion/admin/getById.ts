@@ -2,7 +2,7 @@
  * Admin get owner promotion by ID endpoint
  * Returns full owner promotion information including admin fields
  */
-import { OwnerPromotionIdSchema, OwnerPromotionSchema, PermissionEnum } from '@repo/schemas';
+import { OwnerPromotionAdminSchema, OwnerPromotionIdSchema, PermissionEnum } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -25,7 +25,7 @@ export const adminGetOwnerPromotionByIdRoute = createAdminRoute({
     requestParams: {
         id: OwnerPromotionIdSchema
     },
-    responseSchema: OwnerPromotionSchema.nullable(),
+    responseSchema: OwnerPromotionAdminSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await ownerPromotionService.getById(actor, params.id as string);

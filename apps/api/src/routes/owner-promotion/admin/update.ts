@@ -3,8 +3,8 @@
  * Allows admins to update any owner promotion
  */
 import {
+    OwnerPromotionAdminSchema,
     OwnerPromotionIdSchema,
-    OwnerPromotionSchema,
     OwnerPromotionUpdateInputSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -31,7 +31,7 @@ export const adminUpdateOwnerPromotionRoute = createAdminRoute({
         id: OwnerPromotionIdSchema
     },
     requestBody: OwnerPromotionUpdateInputSchema,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionAdminSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

@@ -3,8 +3,8 @@
  * Returns full review information including admin fields
  */
 import {
+    AccommodationReviewAdminSchema,
     AccommodationReviewIdSchema,
-    AccommodationReviewSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
@@ -29,7 +29,7 @@ export const adminGetAccommodationReviewByIdRoute = createAdminRoute({
     requestParams: {
         id: AccommodationReviewIdSchema
     },
-    responseSchema: AccommodationReviewSchema.nullable(),
+    responseSchema: AccommodationReviewAdminSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await accommodationReviewService.getById(actor, params.id as string);
