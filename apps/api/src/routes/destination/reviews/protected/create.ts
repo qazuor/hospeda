@@ -6,7 +6,7 @@ import type { z } from '@hono/zod-openapi';
 import {
     DestinationIdSchema,
     DestinationReviewCreateInputSchema,
-    DestinationReviewSchema,
+    DestinationReviewProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
@@ -31,7 +31,7 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         destinationId: DestinationIdSchema
     },
     requestBody: DestinationReviewCreateInputSchema,
-    responseSchema: DestinationReviewSchema,
+    responseSchema: DestinationReviewProtectedSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof DestinationReviewCreateInputSchema>;

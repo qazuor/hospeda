@@ -5,7 +5,7 @@
 import {
     PermissionEnum,
     SponsorshipIdSchema,
-    SponsorshipSchema,
+    SponsorshipProtectedSchema,
     SponsorshipUpdateInputSchema
 } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
@@ -29,7 +29,7 @@ export const protectedUpdateSponsorshipRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.SPONSORSHIP_UPDATE],
     requestParams: { id: SponsorshipIdSchema },
     requestBody: SponsorshipUpdateInputSchema,
-    responseSchema: SponsorshipSchema,
+    responseSchema: SponsorshipProtectedSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

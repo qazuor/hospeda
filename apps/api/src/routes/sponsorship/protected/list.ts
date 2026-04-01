@@ -2,7 +2,7 @@
  * Protected sponsorship list endpoint
  * Returns paginated list of sponsorships (authenticated users only)
  */
-import { SponsorshipSchema, SponsorshipSearchSchema } from '@repo/schemas';
+import { SponsorshipProtectedSchema, SponsorshipSearchSchema } from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,7 +22,7 @@ export const protectedSponsorshipListRoute = createProtectedListRoute({
     description: 'Returns a paginated list of sponsorships. Requires authentication.',
     tags: ['Sponsorships'],
     requestQuery: SponsorshipSearchSchema.omit({ page: true, limit: true }).shape,
-    responseSchema: SponsorshipSchema,
+    responseSchema: SponsorshipProtectedSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

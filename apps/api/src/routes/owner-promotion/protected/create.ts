@@ -4,7 +4,7 @@
  */
 import {
     OwnerPromotionCreateInputSchema,
-    OwnerPromotionSchema,
+    OwnerPromotionProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
@@ -28,7 +28,7 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
     tags: ['Owner Promotions'],
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_CREATE],
     requestBody: OwnerPromotionCreateInputSchema,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionProtectedSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

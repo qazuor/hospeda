@@ -4,7 +4,7 @@
  */
 import {
     DestinationIdSchema,
-    DestinationReviewSchema,
+    DestinationReviewPublicSchema,
     DestinationReviewsByDestinationHttpSchema
 } from '@repo/schemas';
 import { DestinationReviewService, ServiceError } from '@repo/service-core';
@@ -28,7 +28,7 @@ export const publicListDestinationReviewsRoute = createPublicListRoute({
         destinationId: DestinationIdSchema
     },
     requestQuery: DestinationReviewsByDestinationHttpSchema.shape,
-    responseSchema: DestinationReviewSchema,
+    responseSchema: DestinationReviewPublicSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

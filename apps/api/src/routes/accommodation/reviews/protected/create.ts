@@ -6,7 +6,7 @@ import type { z } from '@hono/zod-openapi';
 import {
     AccommodationIdSchema,
     AccommodationReviewCreateInputSchema,
-    AccommodationReviewSchema,
+    AccommodationReviewProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
@@ -31,7 +31,7 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         accommodationId: AccommodationIdSchema
     },
     requestBody: AccommodationReviewCreateInputSchema,
-    responseSchema: AccommodationReviewSchema,
+    responseSchema: AccommodationReviewProtectedSchema,
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof AccommodationReviewCreateInputSchema>;

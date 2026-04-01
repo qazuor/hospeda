@@ -4,7 +4,7 @@
  */
 import {
     OwnerPromotionIdSchema,
-    OwnerPromotionSchema,
+    OwnerPromotionProtectedSchema,
     OwnerPromotionUpdateInputSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -30,7 +30,7 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_UPDATE],
     requestParams: { id: OwnerPromotionIdSchema },
     requestBody: OwnerPromotionUpdateInputSchema,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionProtectedSchema,
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

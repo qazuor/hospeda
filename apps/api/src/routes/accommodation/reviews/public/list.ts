@@ -4,7 +4,7 @@
  */
 import {
     AccommodationIdSchema,
-    AccommodationReviewSchema,
+    AccommodationReviewPublicSchema,
     AccommodationReviewsByAccommodationHttpSchema
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
@@ -28,7 +28,7 @@ export const publicListAccommodationReviewsRoute = createPublicListRoute({
         accommodationId: AccommodationIdSchema
     },
     requestQuery: AccommodationReviewsByAccommodationHttpSchema.shape,
-    responseSchema: AccommodationReviewSchema,
+    responseSchema: AccommodationReviewPublicSchema,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

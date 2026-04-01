@@ -2,7 +2,11 @@
  * Protected create sponsorship endpoint
  * Requires authentication and SPONSORSHIP_CREATE permission
  */
-import { PermissionEnum, SponsorshipCreateInputSchema, SponsorshipSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    SponsorshipCreateInputSchema,
+    SponsorshipProtectedSchema
+} from '@repo/schemas';
 import { ServiceError, SponsorshipService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -23,7 +27,7 @@ export const protectedCreateSponsorshipRoute = createProtectedRoute({
     tags: ['Sponsorships'],
     requiredPermissions: [PermissionEnum.SPONSORSHIP_CREATE],
     requestBody: SponsorshipCreateInputSchema,
-    responseSchema: SponsorshipSchema,
+    responseSchema: SponsorshipProtectedSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

@@ -2,7 +2,7 @@
  * Public owner promotion list endpoint
  * Returns paginated list of public owner promotions
  */
-import { OwnerPromotionSchema, OwnerPromotionSearchSchema } from '@repo/schemas';
+import { OwnerPromotionPublicSchema, OwnerPromotionSearchSchema } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,7 +22,7 @@ export const publicListOwnerPromotionsRoute = createPublicListRoute({
     description: 'Returns a paginated list of owner promotions',
     tags: ['Owner Promotions'],
     requestQuery: OwnerPromotionSearchSchema.omit({ page: true, limit: true }).shape,
-    responseSchema: OwnerPromotionSchema,
+    responseSchema: OwnerPromotionPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

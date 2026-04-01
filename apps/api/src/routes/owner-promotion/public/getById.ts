@@ -2,7 +2,7 @@
  * Public get owner promotion by ID endpoint
  * Returns a single owner promotion by its ID
  */
-import { OwnerPromotionIdSchema, OwnerPromotionSchema } from '@repo/schemas';
+import { OwnerPromotionIdSchema, OwnerPromotionPublicSchema } from '@repo/schemas';
 import { OwnerPromotionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -22,7 +22,7 @@ export const publicGetOwnerPromotionByIdRoute = createPublicRoute({
     description: 'Retrieves an owner promotion by its ID',
     tags: ['Owner Promotions'],
     requestParams: { id: OwnerPromotionIdSchema },
-    responseSchema: OwnerPromotionSchema.nullable(),
+    responseSchema: OwnerPromotionPublicSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await ownerPromotionService.getById(actor, params.id as string);
