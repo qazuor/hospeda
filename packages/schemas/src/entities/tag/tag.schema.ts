@@ -20,8 +20,8 @@ export const TagSchema = z.object({
     updatedAt: z.coerce.date({
         message: 'zodError.common.updatedAt.required'
     }),
-    createdById: UserIdSchema,
-    updatedById: UserIdSchema,
+    createdById: UserIdSchema.nullable(),
+    updatedById: UserIdSchema.nullable(),
     deletedAt: z.coerce
         .date({
             message: 'zodError.common.deletedAt.required'

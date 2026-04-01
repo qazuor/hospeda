@@ -119,6 +119,20 @@ describe('TagSchema', () => {
                 ).not.toThrow();
             }
         });
+
+        it('should accept null for createdById and updatedById (nullable audit fields)', () => {
+            const tagWithNullAuditUsers = {
+                ...createMinimalTag(),
+                createdById: null,
+                updatedById: null
+            };
+
+            expect(() => TagSchema.parse(tagWithNullAuditUsers)).not.toThrow();
+
+            const result = TagSchema.parse(tagWithNullAuditUsers);
+            expect(result.createdById).toBeNull();
+            expect(result.updatedById).toBeNull();
+        });
     });
 
     describe('Invalid Data', () => {
