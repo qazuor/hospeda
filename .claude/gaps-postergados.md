@@ -158,6 +158,20 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 
 ## SPEC-036 Gaps Postergados (sesión 2026-03-10)
 
+---
+
+## SPEC-057 Gaps Postergados (sesión 2026-03-31)
+
+### GAP-057-006: Sponsorship Has No Non-List Admin Routes
+
+- **Severidad:** MEDIUM (P3)
+- **Origen:** GAP-057-006 de SPEC-057
+- **Problema:** Sponsorship es la única entidad de las 16 con admin list route pero sin otras rutas admin CRUD (getById, create, update, delete, etc.).
+- **Razón de postergación:** Requiere decisión de producto sobre si admins necesitan gestionar sponsorships directamente o si el flujo protected es suficiente.
+- **Fecha:** 2026-03-31
+
+---
+
 ### GAP-036-021: EN/PT translations son 100% placeholders
 
 - **Severidad:** HIGH

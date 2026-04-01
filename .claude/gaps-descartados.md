@@ -94,3 +94,19 @@ Decisiones tomadas en sesión de revisión del 2026-03-08.
 - **Severidad:** MEDIUM
 - **Razón de descarte:** Se resuelve automáticamente con GAP-042-03 (deshabilitar experimental.csp). Sin meta tag, CSP es 100% HTTP header, no hay dual-policy.
 - **Fecha:** 2026-03-17
+
+---
+
+## SPEC-057 Gaps Descartados (sesión 2026-03-31)
+
+### GAP-057-017: userId Exposed in PublicSchema for Review Entities
+
+- **Severidad:** MEDIUM
+- **Razón de descarte:** Decisión de producto intencional. Reviewer attribution es un feature, no un bug. Exponer userId en PublicSchema de reviews es consistente con el patrón de Post (authorId). Las plataformas de reviews muestran quién escribió la review.
+- **Fecha:** 2026-03-31
+
+### GAP-057-031: Review Entities Missing Admin CREATE Routes
+
+- **Severidad:** LOW
+- **Razón de descarte:** Intencional. Reviews son user-generated content; admins moderan (update/delete) pero no crean reviews en nombre de usuarios. Consistente con el modelo de datos del dominio.
+- **Fecha:** 2026-03-31
