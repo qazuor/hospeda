@@ -245,16 +245,13 @@ export abstract class BaseCrudWrite<
             input: { actor },
             schema: z.object({}),
             execute: async (_, validActor) => {
-                const entity = await this._getAndValidateEntity(
+                await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
                     this.entityName,
                     this._canHardDelete.bind(this)
                 );
-                if ((entity as TEntity).deletedAt) {
-                    return { count: 0 };
-                }
                 const processedId = await this._beforeHardDelete(id, validActor);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
@@ -369,11 +366,7 @@ export abstract class BaseCrudWrite<
                 validateEntity(entity, this.entityName);
 
                 try {
-                    await this._canUpdateVisibility(
-                        validActor,
-                        { id: '' } as TEntity,
-                        validData.visibility
-                    );
+                    await this._canUpdateVisibility(validActor, entity, validData.visibility);
                 } catch (err) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
@@ -385,7 +378,7 @@ export abstract class BaseCrudWrite<
                 let processedVisibility: VisibilityEnum;
                 try {
                     processedVisibility = await this._beforeUpdateVisibility(
-                        { id: '' } as TEntity,
+                        entity,
                         validData.visibility,
                         validActor
                     );
