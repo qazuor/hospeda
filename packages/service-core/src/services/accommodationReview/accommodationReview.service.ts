@@ -181,10 +181,10 @@ export class AccommodationReviewService extends BaseCrudService<
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 
         if (minRating !== undefined) {
-            extraConditions.push(gte(accommodationReviews.averageRating, minRating.toString()));
+            extraConditions.push(gte(accommodationReviews.averageRating, minRating));
         }
         if (maxRating !== undefined) {
-            extraConditions.push(lte(accommodationReviews.averageRating, maxRating.toString()));
+            extraConditions.push(lte(accommodationReviews.averageRating, maxRating));
         }
 
         return super._executeAdminSearch({

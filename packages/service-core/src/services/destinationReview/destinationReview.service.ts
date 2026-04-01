@@ -164,10 +164,10 @@ export class DestinationReviewService extends BaseCrudService<
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 
         if (minRating !== undefined) {
-            extraConditions.push(gte(destinationReviews.averageRating, minRating.toString()));
+            extraConditions.push(gte(destinationReviews.averageRating, minRating));
         }
         if (maxRating !== undefined) {
-            extraConditions.push(lte(destinationReviews.averageRating, maxRating.toString()));
+            extraConditions.push(lte(destinationReviews.averageRating, maxRating));
         }
 
         return super._executeAdminSearch({
@@ -195,7 +195,7 @@ export class DestinationReviewService extends BaseCrudService<
         // Compute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
         await this.model.update({ id: entity.id }, {
-            averageRating: reviewAvg.toString()
+            averageRating: reviewAvg
         } as Partial<DestinationReview>);
 
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);
@@ -218,7 +218,7 @@ export class DestinationReviewService extends BaseCrudService<
         // Recompute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
         await this.model.update({ id: entity.id }, {
-            averageRating: reviewAvg.toString()
+            averageRating: reviewAvg
         } as Partial<DestinationReview>);
 
         // Recalculate parent destination stats after rating change
