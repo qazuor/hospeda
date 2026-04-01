@@ -2,16 +2,16 @@
  * Admin tag routes
  * Requires admin role
  */
-import { createRouter } from '../../../utils/create-app.js';
-import { adminBatchTagsRoute } from './batch.js';
-import { adminCreateTagRoute } from './create.js';
-import { adminDeleteTagRoute } from './delete.js';
-import { adminGetTagByIdRoute } from './getById.js';
-import { adminHardDeleteTagRoute } from './hardDelete.js';
-import { adminListTagsRoute } from './list.js';
-import { adminPatchTagRoute } from './patch.js';
-import { adminRestoreTagRoute } from './restore.js';
-import { adminUpdateTagRoute } from './update.js';
+import { createRouter } from '../../../utils/create-app';
+import { adminBatchTagsRoute } from './batch';
+import { adminCreateTagRoute } from './create';
+import { adminDeleteTagRoute } from './delete';
+import { adminGetTagByIdRoute } from './getById';
+import { adminHardDeleteTagRoute } from './hardDelete';
+import { adminListTagsRoute } from './list';
+import { adminPatchTagRoute } from './patch';
+import { adminRestoreTagRoute } from './restore';
+import { adminUpdateTagRoute } from './update';
 
 const router = createRouter();
 

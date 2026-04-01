@@ -6,9 +6,9 @@ import { AmenityIdSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
-import { createAdminRoute } from '../../../utils/route-factory.js';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createAdminRoute } from '../../../utils/route-factory';
 
 const amenityService = new AmenityService({ logger: apiLogger });
 

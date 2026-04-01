@@ -4,10 +4,10 @@
  */
 import { AmenityAdminSchema, AmenityAdminSearchSchema, PermissionEnum } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor.js';
-import { apiLogger } from '../../../utils/logger.js';
-import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination.js';
-import { createAdminListRoute } from '../../../utils/route-factory.js';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { createAdminListRoute } from '../../../utils/route-factory';
 
 const amenityService = new AmenityService({ logger: apiLogger });
 

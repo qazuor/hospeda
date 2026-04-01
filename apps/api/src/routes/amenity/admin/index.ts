@@ -2,16 +2,16 @@
  * Admin amenity routes
  * Requires admin role
  */
-import { createRouter } from '../../../utils/create-app.js';
-import { adminBatchAmenitiesRoute } from './batch.js';
-import { adminCreateAmenityRoute } from './create.js';
-import { adminDeleteAmenityRoute } from './delete.js';
-import { adminGetAmenityByIdRoute } from './getById.js';
-import { adminHardDeleteAmenityRoute } from './hardDelete.js';
-import { adminListAmenitiesRoute } from './list.js';
-import { adminPatchAmenityRoute } from './patch.js';
-import { adminRestoreAmenityRoute } from './restore.js';
-import { adminUpdateAmenityRoute } from './update.js';
+import { createRouter } from '../../../utils/create-app';
+import { adminBatchAmenitiesRoute } from './batch';
+import { adminCreateAmenityRoute } from './create';
+import { adminDeleteAmenityRoute } from './delete';
+import { adminGetAmenityByIdRoute } from './getById';
+import { adminHardDeleteAmenityRoute } from './hardDelete';
+import { adminListAmenitiesRoute } from './list';
+import { adminPatchAmenityRoute } from './patch';
+import { adminRestoreAmenityRoute } from './restore';
+import { adminUpdateAmenityRoute } from './update';
 
 const router = createRouter();
 
