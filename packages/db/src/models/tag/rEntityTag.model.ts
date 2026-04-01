@@ -3,6 +3,7 @@ import { type and, count, desc, eq } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema.ts';
+import { tags } from '../../schemas/tag/tag.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -124,7 +125,7 @@ export class REntityTagModel extends BaseModel<EntityTag> {
      */
     async findPopularTags(limit = 10): Promise<Array<{ tag: unknown; usageCount: number }>> {
         const db = getDb();
-        const { rEntityTag, tags } = require('../../schemas/tag');
+
         const results = await db
             .select({
                 tag: tags,
