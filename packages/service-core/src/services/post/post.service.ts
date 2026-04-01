@@ -789,7 +789,7 @@ export class PostService extends BaseCrudService<
                 if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
-                await this.model.update({ id: validated.postId }, { likes: (post.likes ?? 0) + 1 });
+                await this.model.incrementLikes({ id: validated.postId });
                 return { success: true };
             }
         });
@@ -815,8 +815,7 @@ export class PostService extends BaseCrudService<
                 if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
                 }
-                const newLikes = Math.max((post.likes ?? 0) - 1, 0);
-                await this.model.update({ id: validated.postId }, { likes: newLikes });
+                await this.model.decrementLikes({ id: validated.postId });
                 return { success: true };
             }
         });
