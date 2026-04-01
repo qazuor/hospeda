@@ -1,4 +1,4 @@
-import { PostSponsorSchema } from '@repo/schemas';
+import { PostSponsorAdminSchema } from '@repo/schemas';
 import type { z } from 'zod';
 
 /**
@@ -11,7 +11,7 @@ import type { z } from 'zod';
  * - Phone: sponsor.contactInfo?.mobilePhone, sponsor.contactInfo?.homePhone, sponsor.contactInfo?.workPhone
  * - Website: sponsor.contactInfo?.website
  */
-export const SponsorListItemSchema = PostSponsorSchema.pick({
+export const SponsorListItemSchema = PostSponsorAdminSchema.pick({
     id: true,
     name: true,
     type: true,

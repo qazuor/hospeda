@@ -7,13 +7,13 @@
  * - Audit fields (createdAt, updatedAt, etc.)
  */
 
-import { TagSchema } from '@repo/schemas';
+import { TagAdminSchema } from '@repo/schemas';
 import type { z } from 'zod';
 
 /**
  * Admin Tag List Item Schema
  */
-export const TagListItemSchema = TagSchema.pick({
+export const TagListItemSchema = TagAdminSchema.pick({
     id: true,
     name: true,
     slug: true,

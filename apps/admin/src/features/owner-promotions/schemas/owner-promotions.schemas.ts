@@ -1,4 +1,4 @@
-import { OwnerPromotionSchema } from '@repo/schemas';
+import { OwnerPromotionAdminSchema } from '@repo/schemas';
 import type { z } from 'zod';
 
 /**
@@ -6,7 +6,7 @@ import type { z } from 'zod';
  *
  * Creates a list item schema from the base OwnerPromotionSchema
  */
-export const OwnerPromotionListItemSchema = OwnerPromotionSchema.pick({
+export const OwnerPromotionListItemSchema = OwnerPromotionAdminSchema.pick({
     id: true,
     slug: true,
     ownerId: true,
