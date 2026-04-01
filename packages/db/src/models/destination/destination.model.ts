@@ -12,10 +12,12 @@ import {
     isNull,
     like,
     lte,
-    or
+    or,
+    sql
 } from 'drizzle-orm';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModel } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
+import { getDb, type schema } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
@@ -526,51 +528,32 @@ export class DestinationModel extends BaseModel<Destination> {
     }
 
     /**
-     * Updates the path and pathIds of all descendants when a destination is reparented.
-     * Replaces the old path prefix with the new path prefix in all descendant paths.
+     * Updates the path of all descendants when a destination is reparented or its slug changes.
+     * Uses a single batch UPDATE with SQL REPLACE to atomically update all descendant paths.
      * @param parentId - The ID of the parent whose descendants need updating
      * @param oldPath - The old path prefix to replace
      * @param newPath - The new path prefix
+     * @param tx - Optional transaction client for transactional consistency
      */
-    async updateDescendantPaths(parentId: string, oldPath: string, newPath: string): Promise<void> {
-        const db = getDb();
+    async updateDescendantPaths(
+        parentId: string,
+        oldPath: string,
+        newPath: string,
+        tx?: NodePgDatabase<typeof schema>
+    ): Promise<void> {
+        const db = this.getClient(tx);
         try {
-            const parent = await this.findOne({ id: parentId });
-            if (!parent) {
-                return;
-            }
+            // Single batch UPDATE: replace the old path prefix with the new one
+            // for all descendants whose path starts with the old path followed by '/'
+            const oldPrefix = `${oldPath}/`;
+            const newPrefix = `${newPath}/`;
 
-            const descendantPathPrefix = parent.pathIds
-                ? `${parent.pathIds}/${parent.id}`
-                : parent.id;
-
-            const allDescendants = await db
-                .select()
-                .from(destinations)
-                .where(like(destinations.pathIds, `${descendantPathPrefix}%`));
-
-            for (const descendant of allDescendants) {
-                const updatedPath = descendant.path.replace(oldPath, newPath);
-                const oldPathIdsPrefix = parent.pathIds
-                    ? `${parent.pathIds}/${parent.id}`
-                    : parent.id;
-                const newPathIdsPrefix = parent.pathIds
-                    ? `${parent.pathIds}/${parent.id}`
-                    : parent.id;
-                const updatedPathIds = descendant.pathIds.replace(
-                    oldPathIdsPrefix,
-                    newPathIdsPrefix
-                );
-
-                await db
-                    .update(destinations)
-                    .set({
-                        path: updatedPath,
-                        pathIds: updatedPathIds,
-                        updatedAt: new Date()
-                    })
-                    .where(eq(destinations.id, descendant.id));
-            }
+            await db.execute(
+                sql`UPDATE destinations
+                    SET path = ${newPrefix} || SUBSTRING(path FROM ${oldPrefix.length + 1}),
+                        updated_at = NOW()
+                    WHERE path LIKE ${`${oldPrefix}%`}`
+            );
 
             logQuery(
                 this.entityName,

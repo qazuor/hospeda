@@ -1,4 +1,4 @@
-import { AccommodationModel, DestinationModel } from '@repo/db';
+import { AccommodationModel, DestinationModel, withTransaction } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type {
     AccommodationListItem,
@@ -88,6 +88,7 @@ export class DestinationService extends BaseCrudService<
      * so _beforeUpdate can access the current entity for reparenting logic.
      */
     private _updateId: string | undefined;
+    private _pendingPathUpdate: { parentId: string; oldPath: string; newPath: string } | undefined;
     protected readonly createSchema = DestinationCreateInputSchema;
     protected readonly updateSchema = DestinationUpdateInputSchema;
     protected readonly searchSchema = DestinationSearchSchema;
@@ -493,7 +494,9 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Overrides update to store the entity ID for the _beforeUpdate hook.
+     * Overrides update to wrap hierarchy path changes and the parent entity update
+     * in a single transaction, preventing descendant path corruption if the parent
+     * update fails.
      */
     public async update(
         actor: Actor,
@@ -501,10 +504,24 @@ export class DestinationService extends BaseCrudService<
         data: DestinationUpdateInput
     ): Promise<ServiceOutput<Destination>> {
         this._updateId = id;
+        this._pendingPathUpdate = undefined;
         try {
-            return await super.update(actor, id, data);
+            // _beforeUpdate stores pending path change instead of executing it
+            const result = await super.update(actor, id, data);
+
+            // If there is a pending descendant path update, run it inside a transaction
+            // together with re-applying the parent update to guarantee atomicity.
+            if (this._pendingPathUpdate) {
+                const { parentId, oldPath, newPath } = this._pendingPathUpdate;
+                await withTransaction(async (tx) => {
+                    await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);
+                });
+            }
+
+            return result;
         } finally {
             this._updateId = undefined;
+            this._pendingPathUpdate = undefined;
         }
     }
 
@@ -591,7 +608,7 @@ export class DestinationService extends BaseCrudService<
 
             // Update descendants if path changed
             if (current.path !== newPath) {
-                await this.model.updateDescendantPaths(id, current.path, newPath);
+                this._pendingPathUpdate = { parentId: id, oldPath: current.path, newPath };
             }
         } else if (hasParentChange && newParentId === null) {
             // Moving to top-level
@@ -600,7 +617,11 @@ export class DestinationService extends BaseCrudService<
             result.pathIds = '';
 
             if (current.path !== result.path) {
-                await this.model.updateDescendantPaths(id, current.path, result.path);
+                this._pendingPathUpdate = {
+                    parentId: id,
+                    oldPath: current.path,
+                    newPath: result.path
+                };
             }
         } else if (hasSlugChange && !hasParentChange) {
             // Only slug changed, update path
@@ -610,7 +631,11 @@ export class DestinationService extends BaseCrudService<
             result.path = computeHierarchyPath({ parentPath, slug: newSlug });
 
             if (current.path !== result.path) {
-                await this.model.updateDescendantPaths(id, current.path, result.path);
+                this._pendingPathUpdate = {
+                    parentId: id,
+                    oldPath: current.path,
+                    newPath: result.path
+                };
             }
         }
 
@@ -771,9 +796,11 @@ export class DestinationService extends BaseCrudService<
      * Actualiza accommodationsCount del destino contando los accommodations activos.
      */
     public async updateAccommodationsCount(destinationId: string): Promise<void> {
-        const { items } = await this.accommodationModel.findAll({ destinationId, deletedAt: null });
-        const count = items.length;
-        await this.model.updateById(destinationId, { accommodationsCount: count });
+        const accommodationCount = await this.accommodationModel.count({
+            destinationId,
+            deletedAt: null
+        });
+        await this.model.updateById(destinationId, { accommodationsCount: accommodationCount });
     }
 
     // ========================================================================
