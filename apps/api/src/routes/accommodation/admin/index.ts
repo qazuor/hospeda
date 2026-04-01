@@ -26,6 +26,14 @@ app.route('/', adminListAccommodationsRoute);
 // POST / - Create accommodation
 app.route('/', adminCreateAccommodationRoute);
 
+// POST /batch - Batch operations
+// Registered before /{id} routes to prevent "batch" matching as a UUID param
+app.route('/', adminBatchAccommodationsRoute);
+
+// Review admin routes (list, getById, update, delete, restore, hardDelete)
+// Registered before /{id} routes to prevent "reviews" matching as a UUID param
+app.route('/reviews', adminAccommodationReviewRoutes);
+
 // GET /:id - Get by ID
 app.route('/', adminGetAccommodationByIdRoute);
 
@@ -44,9 +52,6 @@ app.route('/', adminHardDeleteAccommodationRoute);
 // POST /:id/restore - Restore accommodation
 app.route('/', adminRestoreAccommodationRoute);
 
-// POST /batch - Batch operations
-app.route('/', adminBatchAccommodationsRoute);
-
 // GET /:id/faqs - Get accommodation FAQs
 app.route('/', adminGetFaqsRoute);
 
@@ -58,8 +63,5 @@ app.route('/', adminUpdateFaqRoute);
 
 // DELETE /:id/faqs/:faqId - Remove FAQ from accommodation
 app.route('/', adminRemoveFaqRoute);
-
-// Review admin routes (list, getById, update, delete, restore, hardDelete)
-app.route('/reviews', adminAccommodationReviewRoutes);
 
 export { app as adminAccommodationRoutes };

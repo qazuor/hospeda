@@ -25,6 +25,14 @@ app.route('/', adminListDestinationsRoute);
 // POST / - Create destination
 app.route('/', adminCreateDestinationRoute);
 
+// POST /batch - Batch operations
+// Registered before /{id} routes to prevent "batch" matching as a UUID param
+app.route('/', adminBatchDestinationsRoute);
+
+// Review admin routes (list, getById, update, delete, restore, hardDelete)
+// Registered before /{id} routes to prevent "reviews" matching as a UUID param
+app.route('/reviews', adminDestinationReviewRoutes);
+
 // GET /:id - Get by ID
 app.route('/', adminGetDestinationByIdRoute);
 
@@ -36,9 +44,6 @@ app.route('/', adminPatchDestinationRoute);
 
 // DELETE /:id - Soft delete destination
 app.route('/', adminDeleteDestinationRoute);
-
-// POST /batch - Batch operations
-app.route('/', adminBatchDestinationsRoute);
 
 // DELETE /:id/hard - Hard delete destination
 app.route('/', adminHardDeleteDestinationRoute);
@@ -54,8 +59,5 @@ app.route('/', adminGetDestinationDescendantsRoute);
 
 // GET /:id/ancestors - Get ancestor chain (admin)
 app.route('/', adminGetDestinationAncestorsRoute);
-
-// Review admin routes (list, getById, update, delete, restore, hardDelete)
-app.route('/reviews', adminDestinationReviewRoutes);
 
 export { app as adminDestinationRoutes };
