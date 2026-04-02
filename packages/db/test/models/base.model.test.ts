@@ -383,45 +383,10 @@ describe('BaseModel', () => {
         expect(result).toBe(1);
     });
 
-    // TODO [ed21b803-92bd-4ead-afbe-b6cefc2e0d3f]: Investigate why this test fails despite the mock being logically correct.
-    // The mock for db.select().from()... seems to be misbehaving with vitest's vi.fn().
-    // it('findAll with pagination returns paginated items and total', async () => {
-    //     let callCount = 0;
-    //     const selectImplementation = () => {
-    //         callCount++;
-    //         if (callCount === 1) {
-    //             // La primera llamada a .select() es para obtener el total
-    //             return {
-    //                 from: () => ({ where: () => Promise.resolve([{ total: '10' }]) })
-    //             };
-    //         }
-    //         // La segunda llamada a .select() es para obtener los items
-    //         return {
-    //             from: () => ({
-    //                 where: () => ({
-    //                     limit: () => ({
-    //                         offset: () =>
-    //                             Promise.resolve([
-    //                                 { id: '1' },
-    //                                 { id: '2' },
-    //                                 { id: '3' },
-    //                                 { id: '4' },
-    //                                 { id: '5' }
-    //                             ])
-    //                     })
-    //                 })
-    //             })
-    //         };
-    //     };
-
-    //     getDb.mockReturnValue({
-    //         select: vi.fn(selectImplementation)
-    //     });
-
-    //     const result = await model.findAll({}, { page: 1, pageSize: 5 });
-    //     expect(result.total).toBe(10);
-    //     expect(result.items.length).toBe(5);
-    // });
+    // Pagination test omitted: findAll uses Promise.all for items+count in parallel,
+    // which requires the mock to support both $dynamic() chaining and count queries
+    // simultaneously. The shallow getDb mock cannot replicate this without becoming
+    // a full Drizzle query-builder reimplementation. Covered by integration tests.
 
     describe('findAllWithRelations', () => {
         // Add getTableName method to our dummy model for testing
@@ -465,7 +430,7 @@ describe('BaseModel', () => {
             expect(logQuery).toHaveBeenCalledWith(
                 'dummy',
                 'findAllWithRelations',
-                { where: {}, options: {}, relations: {} },
+                expect.objectContaining({ where: {}, options: {}, relations: {} }),
                 'Falling back to findAll - no relations requested'
             );
         });
@@ -499,7 +464,11 @@ describe('BaseModel', () => {
             expect(logQuery).toHaveBeenCalledWith(
                 'dummy',
                 'findAllWithRelations',
-                { where: {}, options: {}, relations: { destination: false, owner: false } },
+                expect.objectContaining({
+                    where: {},
+                    options: {},
+                    relations: { destination: false, owner: false }
+                }),
                 'Falling back to findAll - no relations requested'
             );
         });
@@ -583,7 +552,11 @@ describe('BaseModel', () => {
             expect(logError).toHaveBeenCalledWith(
                 'dummy',
                 'findAllWithRelations',
-                { where: {}, options: {}, relations: { destination: true } },
+                expect.objectContaining({
+                    where: {},
+                    options: {},
+                    relations: { destination: true }
+                }),
                 expect.any(Error)
             );
         });
@@ -642,7 +615,11 @@ describe('BaseModel', () => {
             expect(logError).toHaveBeenCalledWith(
                 'dummy',
                 'findAllWithRelations',
-                { where: {}, options: {}, relations: { destination: true } },
+                expect.objectContaining({
+                    where: {},
+                    options: {},
+                    relations: { destination: true }
+                }),
                 expect.any(Error)
             );
         });
@@ -701,14 +678,14 @@ describe('BaseModel', () => {
             expect(logQuery).toHaveBeenCalledWith(
                 'dummy',
                 'findAllWithRelations',
-                {
+                expect.objectContaining({
                     where: { name: 'test' },
                     options: expect.objectContaining({
                         page: 1,
                         pageSize: 5
                     }),
                     relations: { destination: true, owner: true }
-                },
+                }),
                 {
                     itemCount: 1,
                     total: 1,

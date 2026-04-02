@@ -7,6 +7,8 @@
  * @module services/revalidation-stats
  */
 
+// Uses getDb() directly because RevalidationLogModel does not expose aggregation methods
+// needed for statistics computation (count with groupBy, avg, max, etc.)
 import { getDb, revalidationLog } from '@repo/db';
 import type { RevalidationStats } from '@repo/schemas';
 import { avg, count, gt, max, sql } from 'drizzle-orm';

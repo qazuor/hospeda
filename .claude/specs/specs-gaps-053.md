@@ -245,7 +245,7 @@ Across four audit passes with 17 independent expert analyses, we uncovered **79 
 - **Decision**: 📋 NUEVA SPEC (SPEC-059 "Service-Layer Transaction Support & Concurrency Safety")
 - **Decision Date**: 2026-03-31
 - **Bundled gaps**: GAP-014, GAP-029, GAP-034, GAP-055, GAP-057, GAP-058, GAP-064, GAP-065
-- **Dependencies**: SPEC-058 (interface alignment), SPEC-063 (tx architecture ADR)
+- **Dependencies**: SPEC-058 (interface alignment), ADR-018 (tx architecture ADR)
 
 **Description**: No service method in `BaseCrudService` accepts or propagates `tx`.
 
@@ -1782,8 +1782,8 @@ When `tx` is a `NodePgTransaction` (from `db.transaction()` callback), `getClien
 | 2 | 010, 013, 014, 025, 029, 034, 055, 057, 058, 063, 064, 065 | SPEC-059: Service-Layer Transaction Support | **P1** | High |
 | 3 | 023, 024, 067, 068 | SPEC-060: Model Subclass Transaction Propagation | **P1** | High |
 | 4 | 012, 050 | SPEC-061: DB Integration Testing | P2 | High |
-| 5 | 066, 069 | SPEC-062: Billing Transaction Safety | **P1** | High |
-| 6 | 060 | SPEC-063: Transaction Architecture ADR | **P1** | Medium |
+| 5 | 066, 069 | SPEC-064: Billing Transaction Safety | **P1** | High |
+| 6 | 060 | ADR-018: Transaction Architecture ADR | **P1** | Medium |
 | 7 | 052 | SPEC-064: Relation Query Depth Handling | P3 | Medium |
 
 ### Pre-existing / Document Only .. 3 items
@@ -1826,10 +1826,10 @@ When `tx` is a `NodePgTransaction` (from `db.transaction()` callback), `getClien
 5. **Priority ordering for SPEC work?** Updated:
    1. GAP-053-026, 061, 076 (urgent fixes .. 30 min total, fix NOW)
    2. GAP-053-050 investigation (verify `tx.query.*` works .. blocks all other tx work)
-   3. SPEC-063 for tx architecture ADR (blocks service-layer tx)
+   3. ADR-018 for tx architecture ADR (blocks service-layer tx)
    4. SPEC-059 for service-layer tx + concurrency (highest production impact)
    5. SPEC-060 for model-layer tx sweep (foundation for service tx)
-   6. SPEC-062 for billing tx safety (financial impact)
+   6. SPEC-064 for billing tx safety (financial impact)
    7. SPEC-058 for interface alignment (enables type safety for all above)
 
 ---

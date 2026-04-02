@@ -518,6 +518,8 @@ export abstract class BaseModel<T> {
      * @param where Filter conditions
      * @param options Pagination and other options
      * @param additionalConditions Optional extra SQL conditions to combine with the where clause.
+     *   Must reference base table columns only. Conditions on related table columns will fail
+     *   silently because the parallel count() query has no joins.
      * @param tx - Optional transaction client for atomic operations. When provided, all queries execute
      *   within this transaction. When omitted, the global database connection is used.
      * @returns Promise resolving to paginated list with relations
@@ -558,7 +560,7 @@ export abstract class BaseModel<T> {
                 logQuery(
                     this.entityName,
                     'findAllWithRelations',
-                    { where, options, relations },
+                    { where, options, relations, inTransaction: !!tx },
                     'Falling back to findAll - no relations requested'
                 );
                 return this.findAll(where, options, additionalConditions, tx);
@@ -577,6 +579,8 @@ export abstract class BaseModel<T> {
             if (baseWhereClause) allConditions.push(baseWhereClause);
             if (additionalConditions) allConditions.push(...additionalConditions);
 
+            // allConditions[0] is typed as SQL | undefined, but the length === 1 guard
+            // guarantees it is defined. Drizzle's .where() accepts SQL | undefined anyway.
             const whereClause =
                 allConditions.length === 0
                     ? undefined
@@ -636,7 +640,12 @@ export abstract class BaseModel<T> {
                 logQuery(
                     this.entityName,
                     'findAllWithRelations',
-                    { where, options: { page, pageSize, requestedPageSize }, relations },
+                    {
+                        where,
+                        options: { page, pageSize, requestedPageSize },
+                        relations,
+                        inTransaction: !!tx
+                    },
                     {
                         itemCount: items.length,
                         total: totalCount,
@@ -652,7 +661,7 @@ export abstract class BaseModel<T> {
                 logError(
                     this.entityName,
                     'findAllWithRelations',
-                    { where, options, relations },
+                    { where, options, relations, inTransaction: !!tx },
                     err
                 );
             } catch {}
