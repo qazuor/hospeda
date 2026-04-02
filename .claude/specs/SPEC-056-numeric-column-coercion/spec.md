@@ -1,6 +1,6 @@
 # SPEC-056: Numeric Column String Coercion
 
-> **Status**: in-progress
+> **Status**: completed
 > **Priority**: P2
 > **Complexity**: Low-Medium
 > **Origin**: SPEC-049 GAP-049-050

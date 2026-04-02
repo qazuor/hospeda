@@ -100,7 +100,7 @@
         "title": "Numeric Column String Coercion",
         "type": "bugfix",
         "complexity": "medium",
-        "status": "in-progress",
+        "status": "completed",
         "path": "SPEC-056-numeric-column-coercion"
     },
     {
