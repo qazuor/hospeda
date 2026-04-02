@@ -808,70 +808,22 @@ describe('DestinationModel.updateDescendantPaths', () => {
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
-        model.findOne = mockFindOne;
     });
 
-    it('updates path for all descendants', async () => {
+    it('executes batch UPDATE for all descendants and logs success', async () => {
         // Arrange
         const parentId = 'parent-1';
         const oldPath = '/argentina/litoral';
         const newPath = '/argentina/region-litoral';
+        const mockExecute = vi.fn().mockResolvedValue(undefined);
 
-        const mockParent: Partial<Destination> = {
-            id: 'parent-1',
-            name: 'Litoral',
-            path: '/argentina/region-litoral',
-            pathIds: 'root-1',
-            level: 1,
-            destinationType: 'REGION'
-        };
-
-        const mockDescendants: Partial<Destination>[] = [
-            {
-                id: 'child-1',
-                name: 'Entre Rios',
-                path: '/argentina/litoral/entre-rios',
-                pathIds: 'root-1/parent-1',
-                level: 2,
-                destinationType: 'PROVINCE'
-            },
-            {
-                id: 'child-2',
-                name: 'Concepcion',
-                path: '/argentina/litoral/entre-rios/concepcion',
-                pathIds: 'root-1/parent-1/child-1',
-                level: 3,
-                destinationType: 'CITY'
-            }
-        ];
-
-        mockFindOne.mockResolvedValue(mockParent);
-
-        const mockSelect = vi.fn();
-        const mockFrom = vi.fn();
-        const mockWhere = vi.fn();
-        const mockUpdate = vi.fn();
-        const mockSet = vi.fn();
-
-        mockSelect.mockReturnValue({ from: mockFrom });
-        mockFrom.mockReturnValue({ where: mockWhere });
-        mockWhere.mockResolvedValue(mockDescendants);
-
-        mockUpdate.mockReturnValue({ set: mockSet });
-        mockSet.mockReturnValue({ where: vi.fn().mockResolvedValue(undefined) });
-
-        getDb.mockReturnValue({
-            select: mockSelect,
-            update: mockUpdate
-        });
+        getDb.mockReturnValue({ execute: mockExecute });
 
         // Act
         await model.updateDescendantPaths(parentId, oldPath, newPath);
 
         // Assert
-        expect(mockFindOne).toHaveBeenCalledWith({ id: parentId });
-        expect(mockSelect).toHaveBeenCalled();
-        expect(mockUpdate).toHaveBeenCalledTimes(mockDescendants.length);
+        expect(mockExecute).toHaveBeenCalledTimes(1);
         expect(logQuery).toHaveBeenCalledWith(
             'destinations',
             'updateDescendantPaths',
@@ -880,39 +832,31 @@ describe('DestinationModel.updateDescendantPaths', () => {
         );
     });
 
-    it('returns early when parent not found', async () => {
+    it('uses tx client when tx is provided instead of getDb', async () => {
         // Arrange
-        const parentId = 'non-existent';
+        const parentId = 'parent-1';
         const oldPath = '/argentina/litoral';
         const newPath = '/argentina/region-litoral';
-
-        mockFindOne.mockResolvedValue(null);
-
-        const mockSelect = vi.fn();
-        const mockUpdate = vi.fn();
-
-        getDb.mockReturnValue({
-            select: mockSelect,
-            update: mockUpdate
-        });
+        const mockExecute = vi.fn().mockResolvedValue(undefined);
+        const mockTx = { execute: mockExecute } as any;
+        vi.spyOn(model as any, 'getClient').mockReturnValue(mockTx);
 
         // Act
-        await model.updateDescendantPaths(parentId, oldPath, newPath);
+        await model.updateDescendantPaths(parentId, oldPath, newPath, mockTx);
 
         // Assert
-        expect(mockFindOne).toHaveBeenCalledWith({ id: parentId });
-        expect(mockSelect).not.toHaveBeenCalled();
-        expect(mockUpdate).not.toHaveBeenCalled();
+        expect(mockExecute).toHaveBeenCalledTimes(1);
+        expect(getDb).not.toHaveBeenCalled();
     });
 
-    it('throws and logs error on DB failure', async () => {
+    it('throws DbError and logs error on DB failure', async () => {
         // Arrange
         const parentId = 'parent-error';
         const oldPath = '/argentina/litoral';
         const newPath = '/argentina/region-litoral';
         const error = new Error('Database connection failed');
 
-        mockFindOne.mockRejectedValue(error);
+        getDb.mockReturnValue({ execute: vi.fn().mockRejectedValue(error) });
 
         // Act & Assert
         await expect(model.updateDescendantPaths(parentId, oldPath, newPath)).rejects.toThrow(

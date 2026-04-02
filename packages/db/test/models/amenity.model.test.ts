@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
-import { AmenityModel } from '../../src/models/amenity.model';
+import { AmenityModel } from '../../src/models/accommodation/amenity.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
