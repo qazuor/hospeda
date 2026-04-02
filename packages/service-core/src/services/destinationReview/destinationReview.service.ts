@@ -194,9 +194,12 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterCreate(entity: DestinationReview): Promise<DestinationReview> {
         // Compute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
-        await this.model.update({ id: entity.id }, {
-            averageRating: reviewAvg
-        } as Partial<DestinationReview>);
+        await this.model.update(
+            { id: entity.id },
+            {
+                averageRating: reviewAvg
+            }
+        );
 
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);
         const destinationSlug = await this._resolveDestinationSlug(entity.destinationId);
@@ -217,9 +220,12 @@ export class DestinationReviewService extends BaseCrudService<
     protected async _afterUpdate(entity: DestinationReview): Promise<DestinationReview> {
         // Recompute per-review average from JSONB rating dimensions and persist it
         const reviewAvg = computeReviewAverageRating(entity.rating as Record<string, unknown>);
-        await this.model.update({ id: entity.id }, {
-            averageRating: reviewAvg
-        } as Partial<DestinationReview>);
+        await this.model.update(
+            { id: entity.id },
+            {
+                averageRating: reviewAvg
+            }
+        );
 
         // Recalculate parent destination stats after rating change
         await this.recalculateAndUpdateDestinationStats(entity.destinationId);

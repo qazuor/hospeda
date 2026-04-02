@@ -221,14 +221,14 @@ export class AccommodationReviewService extends BaseCrudService<
             userId: data.userId,
             accommodationId: data.accommodationId,
             deletedAt: null
-        } as Partial<AccommodationReview>);
+        });
         if (existing) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'You have already submitted a review for this accommodation.'
             );
         }
-        return data as Partial<AccommodationReview>;
+        return data;
     }
 
     /**
@@ -243,7 +243,7 @@ export class AccommodationReviewService extends BaseCrudService<
         const roundedAvg = Math.round(avg * 100) / 100;
         await this.model.updateById(entity.id, {
             averageRating: roundedAvg
-        } as Partial<AccommodationReview>);
+        });
     }
 
     protected async _afterCreate(entity: AccommodationReview): Promise<AccommodationReview> {
