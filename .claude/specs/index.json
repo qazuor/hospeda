@@ -54,5 +54,61 @@
         "complexity": "high",
         "status": "draft",
         "path": "SPEC-029-web-homepage-redesign"
+    },
+    {
+        "specId": "SPEC-047",
+        "title": "CSP unsafe-inline Removal (Pre-Phase 2 Hardening)",
+        "type": "security",
+        "complexity": "medium",
+        "status": "draft",
+        "path": "SPEC-047-csp-unsafe-inline-removal"
+    },
+    {
+        "specId": "SPEC-048",
+        "title": "Web2 Homepage Componentization & Tokenization",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-048-web2-homepage-componentization"
+    },
+    {
+        "specId": "SPEC-049",
+        "title": "Admin List Filtering: adminList() Method for BaseCrudService",
+        "type": "bugfix",
+        "complexity": "high",
+        "status": "approved",
+        "path": "SPEC-049-admin-list-filtering"
+    },
+    {
+        "specId": "SPEC-062",
+        "title": "Runtime Response Schema Enforcement",
+        "type": "security",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-062-runtime-response-validation"
+    },
+    {
+        "specId": "SPEC-063",
+        "title": "Lifecycle State Standardization",
+        "type": "architectural-consistency",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-063-lifecycle-state-standardization"
+    },
+    {
+        "specId": "SPEC-056",
+        "title": "Numeric Column String Coercion",
+        "type": "bugfix",
+        "complexity": "medium",
+        "status": "in-progress",
+        "path": "SPEC-056-numeric-column-coercion"
+    },
+    {
+        "specId": "SPEC-065",
+        "title": "Figma to Code: Homepage Production Migration",
+        "type": "feature",
+        "complexity": "high",
+        "status": "draft",
+        "path": "SPEC-065-figma-to-code-homepage"
     }
 ]

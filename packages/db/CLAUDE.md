@@ -585,7 +585,7 @@ For full details, constraint definitions, and verification queries see:
 - `billing_subscription_addons` has no `livemode` or `deleted_at` columns
 - `billing_plans.id` is UUID but `billing_subscriptions.plan_id` is varchar
 - `billing_customers` uses `segment` column, not `category`
-- PostgreSQL `numeric()` returns strings in JS - use integer for monetary values (see ADR-006)
+- `numeric()` columns use `mode: 'number'` for runtime JS number coercion (SPEC-056). For monetary values, prefer `integer` storage in centavos (see ADR-006)
 - Always use soft delete (deletedAt timestamp) by default
 - **`drizzle-kit push` alone is not enough** .. triggers, materialized views, and JSONB CHECK
   constraints are invisible to Drizzle. Always run `apply-postgres-extras.sh` afterward.

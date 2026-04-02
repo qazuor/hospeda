@@ -90,7 +90,7 @@ export const accommodationSchema = z.object({
   email: z.string().email().optional(),
   website: z.string().url().optional(),
   priceRange: z.enum(['$', '$$', '$$$', '$$$$']),
-  rating: z.number().min(0).max(5).default(0),
+  rating: createAverageRatingField({ default: 0 }), // numeric() DB column — use helper (SPEC-056)
   isActive: z.boolean().default(true),
   ...auditFieldsSchema.shape,
 });
