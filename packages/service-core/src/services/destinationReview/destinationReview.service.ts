@@ -307,6 +307,9 @@ export class DestinationReviewService extends BaseCrudService<
     ): Promise<{ count: number }> {
         const deletedDestinationId = this._lastDeletedDestinationId;
         this._lastDeletedDestinationId = undefined;
+        if (deletedDestinationId) {
+            await this.recalculateAndUpdateDestinationStats(deletedDestinationId);
+        }
         const destinationSlug = deletedDestinationId
             ? await this._resolveDestinationSlug(deletedDestinationId)
             : undefined;

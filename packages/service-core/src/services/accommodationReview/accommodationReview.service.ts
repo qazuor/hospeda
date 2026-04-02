@@ -350,6 +350,9 @@ export class AccommodationReviewService extends BaseCrudService<
     ): Promise<CountResponse> {
         const deletedAccommodationId = this._lastDeletedAccommodationId;
         this._lastDeletedAccommodationId = undefined;
+        if (deletedAccommodationId) {
+            await this.recalculateAndUpdateAccommodationStats(deletedAccommodationId);
+        }
         const accommodationSlug = deletedAccommodationId
             ? await this._resolveAccommodationSlug(deletedAccommodationId)
             : undefined;
