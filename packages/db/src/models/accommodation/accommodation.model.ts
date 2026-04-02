@@ -10,6 +10,8 @@ import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
 import { BaseModel } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
+import { DbError } from '../../utils/error.ts';
+import { logError, logQuery } from '../../utils/logger.ts';
 
 export class AccommodationModel extends BaseModel<Accommodation> {
     protected table = accommodations;
@@ -274,5 +276,39 @@ export class AccommodationModel extends BaseModel<Accommodation> {
                 rating: stats.rating
             }
         );
+    }
+
+    /**
+     * Finds an accommodation with specified relations populated.
+     * @param where - The filter object
+     * @param relations - The relations to include (e.g., { destination: true })
+     * @returns Promise resolving to the accommodation with relations or null if not found
+     */
+    async findWithRelations(
+        where: Record<string, unknown>,
+        relations: Record<string, boolean>
+    ): Promise<Accommodation | null> {
+        const db = getDb();
+        try {
+            if (relations.destination) {
+                const result = await db.query.accommodations.findFirst({
+                    where: (fields, { eq }) => eq(fields.id, where.id as string),
+                    with: { destination: true }
+                });
+                logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+                return result as unknown as Accommodation | null;
+            }
+            const result = await this.findOne(where);
+            logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
+            return result;
+        } catch (error) {
+            logError(this.entityName, 'findWithRelations', { where, relations }, error as Error);
+            throw new DbError(
+                this.entityName,
+                'findWithRelations',
+                { where, relations },
+                (error as Error).message
+            );
+        }
     }
 }
