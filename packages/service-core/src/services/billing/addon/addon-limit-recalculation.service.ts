@@ -15,6 +15,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
+import type { schema } from '@repo/db';
 import { and, eq, isNull } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
@@ -61,13 +62,8 @@ export interface RecalculateAddonLimitsInput {
     limitKey: string;
     /** Initialized QZPay billing instance for subscriptions and limits APIs. */
     billing: QZPayBilling;
-    /**
-     * Drizzle database instance for querying `billing_addon_purchases`.
-     * Typed with an open schema record to remain compatible with both the Hospeda
-     * combined schema (hospeda + qzpay) and test injections, without creating a
-     * hard dependency on a specific schema bundle from this service file.
-     */
-    db: NodePgDatabase<Record<string, unknown>>;
+    /** Drizzle database instance for querying `billing_addon_purchases`. */
+    db: NodePgDatabase<typeof schema>;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────

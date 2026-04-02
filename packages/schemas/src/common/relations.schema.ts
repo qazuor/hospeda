@@ -19,18 +19,6 @@ export type PaginatedListOptions = {
 };
 
 /**
- * Base interface for models that support relations
- * Uses the existing PaginatedListOutput format from BaseModel
- */
-export interface SupportsRelations<T> {
-    findAllWithRelations(
-        where: Record<string, unknown>,
-        options: PaginatedListOptions,
-        relations: Record<string, boolean>
-    ): Promise<{ items: T[]; total: number }>;
-}
-
-/**
  * Standard paginated list output (matches BaseModel.findAll return type)
  */
 export type PaginatedListOutput<T> = {

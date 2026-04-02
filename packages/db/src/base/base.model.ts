@@ -18,6 +18,37 @@ const MAX_PAGE_SIZE = 100;
 const DEFAULT_PAGE_SIZE = 20;
 
 /**
+ * Transforms relations config to Drizzle ORM syntax.
+ * Converts { sponsorship: { sponsor: true } } to { sponsorship: { with: { sponsor: true } } }
+ */
+function transformRelationsForDrizzle(
+    relations: Record<string, boolean | Record<string, unknown>>,
+    depth = 0
+): Record<string, boolean | { with: Record<string, unknown> }> {
+    const MAX_DEPTH = 5;
+    if (depth >= MAX_DEPTH) {
+        return relations as Record<string, boolean | { with: Record<string, unknown> }>;
+    }
+
+    const transformed: Record<string, boolean | { with: Record<string, unknown> }> = {};
+
+    for (const [key, value] of Object.entries(relations)) {
+        if (typeof value === 'boolean') {
+            transformed[key] = value;
+        } else if (typeof value === 'object' && value !== null) {
+            transformed[key] = {
+                with: transformRelationsForDrizzle(
+                    value as Record<string, boolean | Record<string, unknown>>,
+                    depth + 1
+                )
+            };
+        }
+    }
+
+    return transformed;
+}
+
+/**
  * Abstract base class for all database models.
  * Provides standardized CRUD, soft/hard delete, restore, and relation methods with logging and error handling.
  * Extend this class for each domain model and provide the required schema/table and entity name.
@@ -88,7 +119,7 @@ export abstract class BaseModel<T> {
         const logContext = { where: safeWhere, page, pageSize, requestedPageSize };
 
         try {
-            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const baseWhereClause = buildWhereClause(safeWhere, this.table);
             const offset = (page - 1) * pageSize;
 
             // Combine base where clause with any additional SQL conditions
@@ -105,11 +136,7 @@ export abstract class BaseModel<T> {
 
             // Build orderBy clause if sorting is requested
             const orderClause = options?.sortBy
-                ? buildOrderByClause(
-                      options.sortBy,
-                      this.table as unknown,
-                      options.sortOrder ?? 'asc'
-                  )
+                ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
                 : undefined;
 
             // Build query - use $dynamic() to allow conditional chaining
@@ -144,7 +171,7 @@ export abstract class BaseModel<T> {
     async findById(id: string, tx?: NodePgDatabase<typeof schema>): Promise<T | null> {
         const db = this.getClient(tx);
         try {
-            const whereClause = buildWhereClause({ id }, this.table as unknown);
+            const whereClause = buildWhereClause({ id }, this.table);
             const result = await db.select().from(this.table).where(whereClause).limit(1);
             try {
                 logQuery(this.entityName, 'findById', { id }, result);
@@ -172,7 +199,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
             const result = await db.select().from(this.table).where(whereClause).limit(1);
             try {
                 logQuery(this.entityName, 'findOne', safeWhere, result);
@@ -197,12 +224,17 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         try {
             const result = await db.insert(this.table).values(data).returning();
-            logQuery(this.entityName, 'create', data, result);
+            try {
+                logQuery(this.entityName, 'create', data, result);
+            } catch {}
             if (!result[0]) throw new Error('Insert failed');
             return result[0] as T;
         } catch (error) {
-            logError(this.entityName, 'create', data, error as Error);
-            throw new DbError(this.entityName, 'create', data, (error as Error).message);
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'create', data, err);
+            } catch {}
+            throw new DbError(this.entityName, 'create', data, err.message);
         }
     }
 
@@ -223,7 +255,7 @@ export abstract class BaseModel<T> {
         const safeData = data ?? {};
 
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
 
             const result = await db.update(this.table).set(safeData).where(whereClause).returning();
             try {
@@ -259,7 +291,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const baseWhereClause = buildWhereClause(safeWhere, this.table);
 
             const allConditions: SQL[] = [];
             if (baseWhereClause) allConditions.push(baseWhereClause);
@@ -275,6 +307,8 @@ export abstract class BaseModel<T> {
             try {
                 logQuery(this.entityName, 'count', safeWhere, result);
             } catch {}
+            // Drizzle types count() as SQL<number> but pg driver returns bigint as string.
+            // The explicit Number() coercion is required — do not remove.
             return Number(result[0]?.count ?? 0);
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -321,7 +355,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
             const result = await db.delete(this.table).where(whereClause).returning();
             try {
                 logQuery(this.entityName, 'hardDelete', safeWhere, result);
@@ -351,7 +385,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
             const now = new Date();
             const result = await db
                 .update(this.table)
@@ -389,7 +423,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
             const result = await db
                 .update(this.table)
                 .set({ deletedAt: null, updatedAt: new Date() })
@@ -410,8 +444,13 @@ export abstract class BaseModel<T> {
 
     /**
      * Finds an entity with its relations.
+     *
+     * NOTE: This base implementation is a STUB that ignores the `relations` parameter.
+     * It only performs a simple `select().from().where().limit(1)` without any joins.
+     * Subclasses MUST override this method to actually load relations.
+     *
      * @param where - The filter object
-     * @param relations - The relations to include (supports nested relations)
+     * @param relations - The relations to include (ignored in base implementation)
      * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
@@ -423,7 +462,7 @@ export abstract class BaseModel<T> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
             const result = await db.select().from(this.table).where(whereClause).limit(1);
             try {
                 logQuery(
@@ -486,7 +525,7 @@ export abstract class BaseModel<T> {
     async findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
         where: Record<string, unknown> = {},
-        options: PaginatedListOptions = {},
+        options: Omit<PaginatedListOptions, 'relations'> = {},
         additionalConditions?: SQL[],
         tx?: NodePgDatabase<typeof schema>
     ): Promise<{ items: T[]; total: number }> {
@@ -497,7 +536,6 @@ export abstract class BaseModel<T> {
         const requestedPageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
         const pageSize = Math.min(requestedPageSize, MAX_PAGE_SIZE);
         const offset = (page - 1) * pageSize;
-        const safeWhere = where ?? {};
 
         try {
             // Validate relations object
@@ -520,10 +558,10 @@ export abstract class BaseModel<T> {
                 logQuery(
                     this.entityName,
                     'findAllWithRelations',
-                    { where: safeWhere, options, relations },
+                    { where, options, relations },
                     'Falling back to findAll - no relations requested'
                 );
-                return this.findAll(safeWhere, options, additionalConditions, tx);
+                return this.findAll(where, options, additionalConditions, tx);
             }
 
             // Get table name for dynamic query
@@ -533,7 +571,7 @@ export abstract class BaseModel<T> {
             }
 
             // Build WHERE clause using existing helper and combine with additional conditions
-            const baseWhereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const baseWhereClause = buildWhereClause(where, this.table);
 
             const allConditions: SQL[] = [];
             if (baseWhereClause) allConditions.push(baseWhereClause);
@@ -546,8 +584,9 @@ export abstract class BaseModel<T> {
                       ? allConditions[0]
                       : and(...allConditions);
 
-            // Build the query with relations using dynamic table access
-            // Dynamic access to db.query[tableName] - type safety verified at runtime
+            // Known limitation: db.query is cast to Record<string, unknown> because BaseModel
+            // is not generic over the table type. Query results are cast to T[] without type guards.
+            // Future fix: make BaseModel generic over table type for correct Drizzle inference.
             const queryTable = (db.query as Record<string, unknown>)[tableName];
             if (!queryTable || typeof queryTable !== 'object' || !('findMany' in queryTable)) {
                 throw new Error(`Invalid table configuration for: ${tableName}`);
@@ -565,38 +604,12 @@ export abstract class BaseModel<T> {
             }
             const typedQueryTable = queryTable as QueryableTable;
 
-            /**
-             * Transforms relations config to Drizzle ORM syntax
-             * Converts { sponsorship: { sponsor: true } } to { sponsorship: { with: { sponsor: true } } }
-             */
-            const transformRelationsForDrizzle = (
-                relations: Record<string, boolean | Record<string, unknown>>
-            ) => {
-                const transformed: Record<string, boolean | { with: Record<string, unknown> }> = {};
-
-                for (const [key, value] of Object.entries(relations)) {
-                    if (typeof value === 'boolean') {
-                        // Simple relation: { author: true }
-                        transformed[key] = value;
-                    } else if (typeof value === 'object' && value !== null) {
-                        // Nested relation: { sponsorship: { sponsor: true } } -> { sponsorship: { with: { sponsor: true } } }
-                        transformed[key] = { with: value };
-                    }
-                }
-
-                return transformed;
-            };
-
             // Pagination is always applied to prevent unbounded queries
             const transformedRelations = transformRelationsForDrizzle(relations);
 
             // Build optional orderBy clause
             const orderByClause = options.sortBy
-                ? buildOrderByClause(
-                      options.sortBy,
-                      this.table as unknown,
-                      options.sortOrder ?? 'asc'
-                  )
+                ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
                 : undefined;
 
             const queryOptions = {
@@ -607,38 +620,46 @@ export abstract class BaseModel<T> {
                 offset: offset
             };
 
-            // Execute query with relations and get total count
+            // Execute query with relations and get total count.
+            // Known limitation: under READ COMMITTED, findMany and count may see different
+            // committed data if concurrent writes occur between the two queries.
+            // Also: additionalConditions must reference base table columns only — count()
+            // has no joins, so conditions on related table columns will fail silently.
             const [items, totalCount] = await Promise.all([
                 typedQueryTable.findMany(queryOptions),
-                this.count(safeWhere, { additionalConditions, tx })
+                this.count(where, { additionalConditions, tx })
             ]);
 
             const result = { items: items as T[], total: totalCount };
 
-            logQuery(
-                this.entityName,
-                'findAllWithRelations',
-                { where: safeWhere, options: { page, pageSize, requestedPageSize }, relations },
-                {
-                    itemCount: items.length,
-                    total: totalCount,
-                    hasRelations: true
-                }
-            );
+            try {
+                logQuery(
+                    this.entityName,
+                    'findAllWithRelations',
+                    { where, options: { page, pageSize, requestedPageSize }, relations },
+                    {
+                        itemCount: items.length,
+                        total: totalCount,
+                        hasRelations: true
+                    }
+                );
+            } catch {}
 
             return result;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
-            logError(
-                this.entityName,
-                'findAllWithRelations',
-                { where: safeWhere, options, relations },
-                err
-            );
+            try {
+                logError(
+                    this.entityName,
+                    'findAllWithRelations',
+                    { where, options, relations },
+                    err
+                );
+            } catch {}
             throw new DbError(
                 this.entityName,
                 'findAllWithRelations',
-                { where: safeWhere, options, relations },
+                { where, options, relations },
                 err.message
             );
         }

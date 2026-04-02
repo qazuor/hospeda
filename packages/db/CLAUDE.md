@@ -216,20 +216,18 @@ const results = await accommodationModel.findAll({
 ## Transactions
 
 ```ts
-import { getDb } from '@repo/db';
+import { withTransaction } from '@repo/db';
 
-const db = getDb();
-
-await db.transaction(async (trx) => {
-  // All operations within this transaction
-  const accommodation = await trx.insert(accommodationTable).values({
+await withTransaction(async (tx) => {
+  // All operations within this transaction use model methods with tx
+  const accommodation = await accommodationModel.create({
     name: 'Hotel',
-  }).returning();
+  }, tx);
 
-  await trx.insert(reviewTable).values({
+  await reviewModel.create({
     accommodationId: accommodation.id,
     rating: 5,
-  });
+  }, tx);
 
   // If any operation fails, entire transaction rolls back
 });

@@ -1,6 +1,7 @@
 import {
     type SQL,
     type SQLWrapper,
+    type Table,
     and,
     asc,
     desc,
@@ -40,9 +41,9 @@ import { dbLogger } from './logger.ts';
  * @param table - Drizzle table schema object
  * @returns SQL clause for Drizzle .where(), or undefined if no filters
  */
-export function buildWhereClause(where: Record<string, unknown>, table: unknown): SQL | undefined {
+export function buildWhereClause(where: Record<string, unknown>, table: Table): SQL | undefined {
     if (typeof table !== 'object' || table === null) return undefined;
-    const tableRecord = table as Record<string, unknown>;
+    const tableRecord = table as unknown as Record<string, unknown>;
     const unknownKeys: string[] = [];
 
     const clauses = Object.entries(where)
@@ -95,7 +96,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
 
     if (unknownKeys.length > 0) {
         const tableName =
-            (table as Record<symbol, string>)[Symbol.for('drizzle:Name')] ?? 'unknown';
+            (table as unknown as Record<symbol, string>)[Symbol.for('drizzle:Name')] ?? 'unknown';
         for (const key of unknownKeys) {
             dbLogger.warn(
                 { key, tableName },
@@ -119,11 +120,11 @@ export function buildWhereClause(where: Record<string, unknown>, table: unknown)
  */
 export function buildOrderByClause(
     sortBy: string,
-    table: unknown,
+    table: Table,
     sortOrder: 'asc' | 'desc' = 'asc'
 ): SQL | undefined {
     if (typeof table !== 'object' || table === null) return undefined;
-    const tableRecord = table as Record<string, unknown>;
+    const tableRecord = table as unknown as Record<string, unknown>;
 
     if (!Object.prototype.hasOwnProperty.call(tableRecord, sortBy)) {
         return undefined;
@@ -144,12 +145,12 @@ export function buildOrderByClause(
 export function buildSearchCondition(
     term: string,
     columns: readonly string[],
-    table: unknown
+    table: Table
 ): SQL | undefined {
     if (!term || term.trim().length === 0) return undefined;
     if (typeof table !== 'object' || table === null) return undefined;
 
-    const tableRecord = table as Record<string, unknown>;
+    const tableRecord = table as unknown as Record<string, unknown>;
     const trimmedTerm = term.trim();
 
     const conditions = columns

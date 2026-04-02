@@ -330,6 +330,17 @@ export async function applyPromoCode(
                 };
             }
 
+            // Defense-in-depth: re-validate expiration inside the lock
+            if (lockedPromoCode.expiresAt && new Date(lockedPromoCode.expiresAt) < new Date()) {
+                return {
+                    success: false as const,
+                    error: {
+                        code: 'PROMO_CODE_EXPIRED' as string,
+                        message: 'This promo code has expired'
+                    }
+                };
+            }
+
             await tx
                 .update(billingPromoCodes)
                 .set({ usedCount: sql`${billingPromoCodes.usedCount} + 1` })

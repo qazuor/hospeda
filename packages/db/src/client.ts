@@ -99,8 +99,8 @@ export function getDb(): NodePgDatabase<typeof schema> {
  * @example
  * ```typescript
  * const result = await withTransaction(async (tx) => {
- *   const user = await userModel.create(tx, userData);
- *   await profileModel.create(tx, { userId: user.id, ...profileData });
+ *   const user = await userModel.create(userData, tx);
+ *   await profileModel.create({ userId: user.id, ...profileData }, tx);
  *   return user;
  * });
  * ```

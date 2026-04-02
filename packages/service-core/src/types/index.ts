@@ -156,10 +156,7 @@ export class ServiceError extends Error {
     }
 }
 
-export type PaginatedListOutput<T> = {
-    items: T[];
-    total: number;
-};
+export type { PaginatedListOutput } from '@repo/schemas';
 
 // --- Model Interface ---
 

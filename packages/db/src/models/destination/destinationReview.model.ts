@@ -46,7 +46,7 @@ export class DestinationReviewModel extends BaseModel<DestinationReview> {
         const logContext = { where: safeWhere, page, pageSize };
 
         try {
-            const whereClause = buildWhereClause(safeWhere, this.table as unknown);
+            const whereClause = buildWhereClause(safeWhere, this.table);
 
             if (isPaginated) {
                 const offset = (page - 1) * pageSize;

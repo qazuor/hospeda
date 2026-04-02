@@ -47,7 +47,7 @@ export class UserModel extends BaseModel<User> {
         const isPaginated = page !== undefined && pageSize !== undefined;
 
         // Build base where clause for non-search filters
-        const baseWhereClause = buildWhereClause(otherFilters, this.table as unknown);
+        const baseWhereClause = buildWhereClause(otherFilters, this.table);
 
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
@@ -80,7 +80,7 @@ export class UserModel extends BaseModel<User> {
                 db.select({ count: count() }).from(this.table).where(finalWhereClause)
             ]);
 
-            const total = totalResult[0]?.count || 0;
+            const total = totalResult[0]?.count ?? 0;
 
             return { items: items as unknown as User[], total };
         }
@@ -116,7 +116,7 @@ export class UserModel extends BaseModel<User> {
         const { q, ...otherFilters } = where;
 
         // Build base where clause for non-search filters
-        const baseWhereClause = buildWhereClause(otherFilters, this.table as unknown);
+        const baseWhereClause = buildWhereClause(otherFilters, this.table);
 
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
@@ -143,7 +143,7 @@ export class UserModel extends BaseModel<User> {
                   : and(...allConditions);
 
         const result = await db.select({ count: count() }).from(this.table).where(finalWhereClause);
-        return result[0]?.count || 0;
+        return result[0]?.count ?? 0;
     }
 
     /**
@@ -170,7 +170,7 @@ export class UserModel extends BaseModel<User> {
         const isPaginated = page !== undefined && pageSize !== undefined;
 
         // Build base where clause for non-search filters
-        const baseWhereClause = buildWhereClause(otherFilters, this.table as unknown);
+        const baseWhereClause = buildWhereClause(otherFilters, this.table);
 
         // Build search clause for text search
         let searchClause: SQL | undefined;
@@ -255,7 +255,7 @@ export class UserModel extends BaseModel<User> {
                 .from(users)
                 .where(finalWhereClause);
 
-            total = countResult[0]?.count || 0;
+            total = countResult[0]?.count ?? 0;
         }
 
         return { items: itemsWithCounts, total };
