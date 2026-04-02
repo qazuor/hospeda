@@ -338,4 +338,28 @@ describe('createAverageRatingField()', () => {
         const undefinedResult = schema.safeParse(undefined);
         expect(undefinedResult.success).toBe(false);
     });
+
+    it('rejects NaN', () => {
+        const schema = createAverageRatingField();
+
+        const result = schema.safeParse(Number.NaN);
+
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects Infinity', () => {
+        const schema = createAverageRatingField();
+
+        const result = schema.safeParse(Number.POSITIVE_INFINITY);
+
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects -Infinity', () => {
+        const schema = createAverageRatingField();
+
+        const result = schema.safeParse(Number.NEGATIVE_INFINITY);
+
+        expect(result.success).toBe(false);
+    });
 });

@@ -165,6 +165,7 @@ describe('DestinationReview Schemas', () => {
             expect(result.success).toBe(true);
             if (result.success) {
                 expect(result.data.averageRating).toBe(4.25);
+                expect(typeof result.data.averageRating).toBe('number');
             }
         });
 

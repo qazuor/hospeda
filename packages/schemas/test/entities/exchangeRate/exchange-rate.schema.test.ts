@@ -249,6 +249,89 @@ describe('ExchangeRateSchema', () => {
             expect(result.createdAt).toBeInstanceOf(Date);
             expect(result.updatedAt).toBeInstanceOf(Date);
         });
+
+        it('should coerce string rate to number', () => {
+            // Arrange
+            const data = {
+                id: '550e8400-e29b-41d4-a716-446655440011',
+                fromCurrency: PriceCurrencyEnum.USD,
+                toCurrency: PriceCurrencyEnum.ARS,
+                rate: '1050.50',
+                inverseRate: 0.000952,
+                rateType: ExchangeRateTypeEnum.OFICIAL,
+                source: ExchangeRateSourceEnum.DOLARAPI,
+                isManualOverride: false,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            // Act
+            const result = ExchangeRateSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.rate).toBe(1050.5);
+                expect(typeof result.data.rate).toBe('number');
+            }
+        });
+
+        it('should coerce string inverseRate to number', () => {
+            // Arrange
+            const data = {
+                id: '550e8400-e29b-41d4-a716-446655440012',
+                fromCurrency: PriceCurrencyEnum.USD,
+                toCurrency: PriceCurrencyEnum.ARS,
+                rate: 1050.5,
+                inverseRate: '0.000952',
+                rateType: ExchangeRateTypeEnum.OFICIAL,
+                source: ExchangeRateSourceEnum.DOLARAPI,
+                isManualOverride: false,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            // Act
+            const result = ExchangeRateSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.inverseRate).toBe(0.000952);
+                expect(typeof result.data.inverseRate).toBe('number');
+            }
+        });
+
+        it('should coerce both rate and inverseRate from strings simultaneously', () => {
+            // Arrange
+            const data = {
+                id: '550e8400-e29b-41d4-a716-446655440013',
+                fromCurrency: PriceCurrencyEnum.USD,
+                toCurrency: PriceCurrencyEnum.ARS,
+                rate: '1050.50',
+                inverseRate: '0.000952',
+                rateType: ExchangeRateTypeEnum.OFICIAL,
+                source: ExchangeRateSourceEnum.DOLARAPI,
+                isManualOverride: false,
+                fetchedAt: new Date(),
+                createdAt: new Date(),
+                updatedAt: new Date()
+            };
+
+            // Act
+            const result = ExchangeRateSchema.safeParse(data);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.rate).toBe(1050.5);
+                expect(typeof result.data.rate).toBe('number');
+                expect(result.data.inverseRate).toBe(0.000952);
+                expect(typeof result.data.inverseRate).toBe('number');
+            }
+        });
     });
 
     describe('Invalid Data', () => {
