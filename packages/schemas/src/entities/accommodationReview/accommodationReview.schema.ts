@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import {
     AccommodationIdSchema,
     AccommodationReviewIdSchema,
@@ -35,7 +36,9 @@ export const AccommodationReviewSchema = z.object({
     /**
      * Computed average of all rating sub-fields (cleanliness, hospitality, services,
      * accuracy, communication, location). Stored by the DB trigger; not user-settable.
+     * Drizzle mode:'number' on the DB column ensures JS number type at runtime.
+     * createAverageRatingField() provides a defensive string-to-number transform for edge cases.
      */
-    averageRating: z.coerce.number().min(0).max(5).default(0)
+    averageRating: createAverageRatingField({ default: 0 })
 });
 export type AccommodationReview = z.infer<typeof AccommodationReviewSchema>;

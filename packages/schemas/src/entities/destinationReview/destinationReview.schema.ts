@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { createAverageRatingField } from '../../common/helpers.schema.js';
 import {
     DestinationIdSchema,
     DestinationReviewIdSchema,
@@ -39,10 +40,11 @@ export const DestinationReviewSchema = z.object({
     /**
      * Denormalized average of all rating sub-fields for this review.
      * Computed by the database from the individual rating dimensions.
-     * PostgreSQL returns numeric as string, so z.coerce.number() handles the conversion.
+     * Drizzle mode:'number' on the DB column ensures JS number type at runtime.
+     * createAverageRatingField() provides a defensive string-to-number transform for edge cases.
      * Range: 0.00 – 5.00 (numeric 3,2 in the DB).
      */
-    averageRating: z.coerce.number().min(0).max(5).default(0),
+    averageRating: createAverageRatingField({ default: 0 }),
 
     // Visit context fields
     /**
