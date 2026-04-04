@@ -51,6 +51,7 @@ export const namespaces = [
     'admin-tables',
     'admin-common',
     'admin-entities',
+    'admin-filters',
     'admin-tabs',
     'validation',
     'revalidation'
@@ -106,6 +107,7 @@ import adminBillingEs from './locales/es/admin-billing.json';
 import adminCommonEs from './locales/es/admin-common.json';
 import adminDashboardEs from './locales/es/admin-dashboard.json';
 import adminEntitiesEs from './locales/es/admin-entities.json';
+import adminFiltersEs from './locales/es/admin-filters.json';
 import adminMenuEs from './locales/es/admin-menu.json';
 import adminNavEs from './locales/es/admin-nav.json';
 import adminPagesEs from './locales/es/admin-pages.json';
@@ -144,6 +146,7 @@ import adminBillingEn from './locales/en/admin-billing.json';
 import adminCommonEn from './locales/en/admin-common.json';
 import adminDashboardEn from './locales/en/admin-dashboard.json';
 import adminEntitiesEn from './locales/en/admin-entities.json';
+import adminFiltersEn from './locales/en/admin-filters.json';
 import adminMenuEn from './locales/en/admin-menu.json';
 import adminNavEn from './locales/en/admin-nav.json';
 import adminPagesEn from './locales/en/admin-pages.json';
@@ -182,6 +185,7 @@ import adminBillingPt from './locales/pt/admin-billing.json';
 import adminCommonPt from './locales/pt/admin-common.json';
 import adminDashboardPt from './locales/pt/admin-dashboard.json';
 import adminEntitiesPt from './locales/pt/admin-entities.json';
+import adminFiltersPt from './locales/pt/admin-filters.json';
 import adminMenuPt from './locales/pt/admin-menu.json';
 import adminNavPt from './locales/pt/admin-nav.json';
 import adminPagesPt from './locales/pt/admin-pages.json';
@@ -250,6 +254,7 @@ const rawTranslations = {
         'admin-tables': adminTablesEs,
         'admin-common': adminCommonEs,
         'admin-entities': adminEntitiesEs,
+        'admin-filters': adminFiltersEs,
         'admin-tabs': adminTabsEs,
         validation: validationEs,
         revalidation: revalidationEs
@@ -288,6 +293,7 @@ const rawTranslations = {
         'admin-tables': adminTablesEn,
         'admin-common': adminCommonEn,
         'admin-entities': adminEntitiesEn,
+        'admin-filters': adminFiltersEn,
         'admin-tabs': adminTabsEn,
         validation: validationEn,
         revalidation: revalidationEn
@@ -326,6 +332,7 @@ const rawTranslations = {
         'admin-tables': adminTablesPt,
         'admin-common': adminCommonPt,
         'admin-entities': adminEntitiesPt,
+        'admin-filters': adminFiltersPt,
         'admin-tabs': adminTabsPt,
         validation: validationPt,
         revalidation: revalidationPt

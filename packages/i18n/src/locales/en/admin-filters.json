@@ -1,0 +1,92 @@
+{
+    "allOption": "All",
+    "booleanYes": "Yes",
+    "booleanNo": "No",
+    "defaultBadge": "default",
+    "clearAll": "Clear all",
+    "resetDefaults": "Reset to defaults",
+    "activeFilters": "Active filters",
+    "noResults": "No results match the current filters",
+    "status": {
+        "label": "Status",
+        "draft": "Draft",
+        "active": "Active",
+        "archived": "Archived"
+    },
+    "destinationType": {
+        "label": "Destination type",
+        "country": "Country",
+        "region": "Region",
+        "province": "Province",
+        "department": "Department",
+        "city": "City",
+        "town": "Town",
+        "neighborhood": "Neighborhood"
+    },
+    "accommodationType": {
+        "label": "Type",
+        "apartment": "Apartment",
+        "house": "House",
+        "countryHouse": "Country house",
+        "cabin": "Cabin",
+        "hotel": "Hotel",
+        "hostel": "Hostel",
+        "camping": "Camping",
+        "room": "Room",
+        "motel": "Motel",
+        "resort": "Resort"
+    },
+    "eventCategory": {
+        "label": "Category",
+        "music": "Music",
+        "culture": "Culture",
+        "sports": "Sports",
+        "gastronomy": "Gastronomy",
+        "festival": "Festival",
+        "nature": "Nature",
+        "theater": "Theater",
+        "workshop": "Workshop",
+        "other": "Other"
+    },
+    "postCategory": {
+        "label": "Category",
+        "events": "Events",
+        "culture": "Culture",
+        "gastronomy": "Gastronomy",
+        "nature": "Nature",
+        "tourism": "Tourism",
+        "general": "General",
+        "sport": "Sport",
+        "carnival": "Carnival",
+        "nightlife": "Nightlife",
+        "history": "History",
+        "traditions": "Traditions",
+        "wellness": "Wellness",
+        "family": "Family",
+        "tips": "Tips",
+        "art": "Art",
+        "beach": "Beach",
+        "rural": "Rural",
+        "festivals": "Festivals"
+    },
+    "role": {
+        "label": "Role",
+        "superAdmin": "Super Admin",
+        "admin": "Admin",
+        "clientManager": "Client Manager",
+        "editor": "Editor",
+        "host": "Host",
+        "sponsor": "Sponsor",
+        "user": "User",
+        "guest": "Guest"
+    },
+    "isFeatured": {
+        "label": "Featured"
+    },
+    "isNews": {
+        "label": "News"
+    },
+    "includeDeleted": {
+        "label": "Show deleted"
+    }
+}

@@ -1,0 +1,92 @@
+{
+    "allOption": "Todos",
+    "booleanYes": "Sí",
+    "booleanNo": "No",
+    "defaultBadge": "predeterminado",
+    "clearAll": "Limpiar todo",
+    "resetDefaults": "Restablecer predeterminados",
+    "activeFilters": "Filtros activos",
+    "noResults": "No hay resultados con los filtros actuales",
+    "status": {
+        "label": "Estado",
+        "draft": "Borrador",
+        "active": "Activo",
+        "archived": "Archivado"
+    },
+    "destinationType": {
+        "label": "Tipo de destino",
+        "country": "País",
+        "region": "Región",
+        "province": "Provincia",
+        "department": "Departamento",
+        "city": "Ciudad",
+        "town": "Pueblo",
+        "neighborhood": "Barrio"
+    },
+    "accommodationType": {
+        "label": "Tipo",
+        "apartment": "Departamento",
+        "house": "Casa",
+        "countryHouse": "Casa de campo",
+        "cabin": "Cabaña",
+        "hotel": "Hotel",
+        "hostel": "Hostel",
+        "camping": "Camping",
+        "room": "Habitación",
+        "motel": "Motel",
+        "resort": "Resort"
+    },
+    "eventCategory": {
+        "label": "Categoría",
+        "music": "Música",
+        "culture": "Cultura",
+        "sports": "Deportes",
+        "gastronomy": "Gastronomía",
+        "festival": "Festival",
+        "nature": "Naturaleza",
+        "theater": "Teatro",
+        "workshop": "Taller",
+        "other": "Otro"
+    },
+    "postCategory": {
+        "label": "Categoría",
+        "events": "Eventos",
+        "culture": "Cultura",
+        "gastronomy": "Gastronomía",
+        "nature": "Naturaleza",
+        "tourism": "Turismo",
+        "general": "General",
+        "sport": "Deporte",
+        "carnival": "Carnaval",
+        "nightlife": "Vida nocturna",
+        "history": "Historia",
+        "traditions": "Tradiciones",
+        "wellness": "Bienestar",
+        "family": "Familia",
+        "tips": "Consejos",
+        "art": "Arte",
+        "beach": "Playa",
+        "rural": "Rural",
+        "festivals": "Festivales"
+    },
+    "role": {
+        "label": "Rol",
+        "superAdmin": "Super Admin",
+        "admin": "Admin",
+        "clientManager": "Gestor de clientes",
+        "editor": "Editor",
+        "host": "Anfitrión",
+        "sponsor": "Patrocinador",
+        "user": "Usuario",
+        "guest": "Invitado"
+    },
+    "isFeatured": {
+        "label": "Destacado"
+    },
+    "isNews": {
+        "label": "Noticia"
+    },
+    "includeDeleted": {
+        "label": "Mostrar eliminados"
+    }
+}

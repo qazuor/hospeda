@@ -1,0 +1,92 @@
+{
+    "allOption": "Todos",
+    "booleanYes": "Sim",
+    "booleanNo": "Não",
+    "defaultBadge": "padrão",
+    "clearAll": "Limpar tudo",
+    "resetDefaults": "Restaurar padrões",
+    "activeFilters": "Filtros ativos",
+    "noResults": "Nenhum resultado com os filtros atuais",
+    "status": {
+        "label": "Estado",
+        "draft": "Rascunho",
+        "active": "Ativo",
+        "archived": "Arquivado"
+    },
+    "destinationType": {
+        "label": "Tipo de destino",
+        "country": "País",
+        "region": "Região",
+        "province": "Província",
+        "department": "Departamento",
+        "city": "Cidade",
+        "town": "Vila",
+        "neighborhood": "Bairro"
+    },
+    "accommodationType": {
+        "label": "Tipo",
+        "apartment": "Apartamento",
+        "house": "Casa",
+        "countryHouse": "Casa de campo",
+        "cabin": "Cabana",
+        "hotel": "Hotel",
+        "hostel": "Hostel",
+        "camping": "Camping",
+        "room": "Quarto",
+        "motel": "Motel",
+        "resort": "Resort"
+    },
+    "eventCategory": {
+        "label": "Categoria",
+        "music": "Música",
+        "culture": "Cultura",
+        "sports": "Esportes",
+        "gastronomy": "Gastronomia",
+        "festival": "Festival",
+        "nature": "Natureza",
+        "theater": "Teatro",
+        "workshop": "Oficina",
+        "other": "Outro"
+    },
+    "postCategory": {
+        "label": "Categoria",
+        "events": "Eventos",
+        "culture": "Cultura",
+        "gastronomy": "Gastronomia",
+        "nature": "Natureza",
+        "tourism": "Turismo",
+        "general": "Geral",
+        "sport": "Esporte",
+        "carnival": "Carnaval",
+        "nightlife": "Vida noturna",
+        "history": "História",
+        "traditions": "Tradições",
+        "wellness": "Bem-estar",
+        "family": "Família",
+        "tips": "Dicas",
+        "art": "Arte",
+        "beach": "Praia",
+        "rural": "Rural",
+        "festivals": "Festivais"
+    },
+    "role": {
+        "label": "Função",
+        "superAdmin": "Super Admin",
+        "admin": "Admin",
+        "clientManager": "Gestor de clientes",
+        "editor": "Editor",
+        "host": "Anfitrião",
+        "sponsor": "Patrocinador",
+        "user": "Usuário",
+        "guest": "Convidado"
+    },
+    "isFeatured": {
+        "label": "Destaque"
+    },
+    "isNews": {
+        "label": "Notícia"
+    },
+    "includeDeleted": {
+        "label": "Mostrar excluídos"
+    }
+}
