@@ -1,7 +1,14 @@
-import type { VisibilityEnum } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
 import type { ZodObject, ZodType } from 'zod';
 import type { z } from 'zod';
-import type { Actor, BaseModel, PaginatedListOutput, ServiceContext } from '../types';
+import {
+    type Actor,
+    type BaseModel,
+    type PaginatedListOutput,
+    type ServiceContext,
+    ServiceError
+} from '../types';
+import { hasPermission } from '../utils/permission';
 import type { CrudNormalizersFromSchemas } from './base.crud.types';
 import { BaseService } from './base.service';
 
@@ -170,6 +177,31 @@ export abstract class BaseCrudPermissions<
         entity: TEntity,
         newVisibility: VisibilityEnum
     ): Promise<void> | void;
+
+    /**
+     * Checks if the actor has permission to use admin list operations.
+     * Default implementation verifies admin access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN)
+     * and then delegates to _canList() for entity-specific checks.
+     *
+     * Override this method in concrete services to add entity-specific admin list permissions.
+     *
+     * @param actor - The user or system performing the action.
+     * @throws {ServiceError} If the permission check fails (FORBIDDEN).
+     */
+    protected _canAdminList(actor: Actor): Promise<void> | void {
+        const hasAdmin =
+            hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) ||
+            hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN);
+
+        if (!hasAdmin) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Admin access required for admin list operations'
+            );
+        }
+
+        return this._canList(actor);
+    }
 
     // --- Abstract Core Logic Methods ---
 

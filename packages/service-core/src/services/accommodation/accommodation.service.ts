@@ -81,6 +81,7 @@ import {
     normalizeViewInput
 } from './accommodation.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
@@ -217,6 +218,14 @@ export class AccommodationService extends BaseCrudService<
      */
     protected _canList(actor: Actor): void {
         checkCanList(actor);
+    }
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks ACCOMMODATION_VIEW_ALL.
+     */
+    protected _canAdminList(actor: Actor): void {
+        super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
     /**
      * @inheritdoc

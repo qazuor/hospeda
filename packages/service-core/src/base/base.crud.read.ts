@@ -284,7 +284,7 @@ export abstract class BaseCrudRead<
      * Lifecycle steps:
      * 1. **Configuration check**: Ensures `adminSearchSchema` is defined.
      * 2. **Validation**: Validates params against `adminSearchSchema`.
-     * 3. **Permissions**: Calls `_canList` to verify the actor may list entities.
+     * 3. **Permissions**: Calls `_canAdminList` to verify the actor has admin access and may list entities.
      * 4. **Sort parsing**: Parses and validates sort field against table columns.
      * 5. **Where clause**: Builds where from status, includeDeleted, and date range.
      * 6. **Search condition**: Builds ILIKE search across searchable columns.
@@ -321,7 +321,7 @@ export abstract class BaseCrudRead<
 
                 const validParams = parseResult.data as Record<string, unknown>;
 
-                await this._canList(validatedActor);
+                await this._canAdminList(validatedActor);
 
                 const {
                     page,

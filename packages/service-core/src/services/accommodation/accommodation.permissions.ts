@@ -149,3 +149,20 @@ export function checkCanList(_actor: Actor): void {
     // If a global block is needed, it would be implemented here.
     return;
 }
+
+/**
+ * Checks if the actor has permission to use admin list for accommodations.
+ * Requires ACCOMMODATION_VIEW_ALL permission in addition to admin access
+ * (admin access is verified by the base class default).
+ *
+ * @param actor - The user or system performing the action.
+ * @throws {ServiceError} If the actor lacks ACCOMMODATION_VIEW_ALL permission.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: ACCOMMODATION_VIEW_ALL required for admin list'
+        );
+    }
+}
