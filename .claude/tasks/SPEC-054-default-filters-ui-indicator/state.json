@@ -1,0 +1,927 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-054",
+    "title": "Admin Entity List Filter Bar & Default Filters Indicator",
+    "created": "2026-04-04T14:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create filter-types.ts with core type definitions",
+            "description": "Create `apps/admin/src/components/entity-list/filters/filter-types.ts` with:\n- `FilterControlType` = 'select' | 'boolean'\n- `FilterControlConfig` type with paramKey, labelKey, type, options?, allLabelKey?, defaultValue?, order?\n- `FilterBarConfig` type with filters array\n- `ActiveFilters` type (Record<string, string>)\n- `FilterChipData` type with paramKey, labelKey, value, displayValue, isDefault\n\nAll types must be readonly. Use `export type` for all exports. Follow spec section 5.1 and 5.3 exactly.\n\nTest: typecheck passes (`pnpm typecheck --filter admin`)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Create filter-types.ts file",
+                    "completed": true
+                },
+                {
+                    "title": "Define FilterControlType union",
+                    "completed": true
+                },
+                {
+                    "title": "Define FilterControlConfig type",
+                    "completed": true
+                },
+                {
+                    "title": "Define FilterBarConfig type",
+                    "completed": true
+                },
+                {
+                    "title": "Define ActiveFilters type",
+                    "completed": true
+                },
+                {
+                    "title": "Define FilterChipData type",
+                    "completed": true
+                }
+            ],
+            "tags": ["types", "foundation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add filterBarConfig property to EntityConfig in types.ts",
+            "description": "Modify `apps/admin/src/components/entity-list/types.ts`:\n- Import `FilterBarConfig` from `./filters/filter-types`\n- Add `readonly filterBarConfig?: FilterBarConfig` to `EntityConfig<TData>` type\n- Keep existing `defaultFilters` property (backward compat)\n- Add JSDoc explaining precedence: filterBarConfig > defaultFilters\n\nTest: typecheck passes. Existing entity configs still compile without filterBarConfig.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018", "T-019", "T-020", "T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Import FilterBarConfig from filter-types",
+                    "completed": true
+                },
+                {
+                    "title": "Add filterBarConfig property to EntityConfig",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc documentation",
+                    "completed": true
+                }
+            ],
+            "tags": ["types", "foundation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create filter-utils.ts with extractActiveFilters and computeDefaultFilters",
+            "description": "Create `apps/admin/src/components/entity-list/filters/filter-utils.ts` with:\n- `FILTER_CLEARED_SENTINEL = '__cleared__'` constant\n- `extractActiveFilters({ searchParams, filterBarConfig })` - implements three-state semantics (spec section 6.10)\n- `computeDefaultFilters({ filterBarConfig })` - extracts only filters with defaultValue\n- `filtersEqual(a, b)` - deep equality check for ActiveFilters\n\nAll functions use RO-RO pattern. Follow spec section 6.10 algorithms exactly.\n\nTest: Unit tests in next task.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Create file with FILTER_CLEARED_SENTINEL constant",
+                    "completed": true
+                },
+                {
+                    "title": "Implement extractActiveFilters with three-state semantics",
+                    "completed": true
+                },
+                {
+                    "title": "Implement computeDefaultFilters",
+                    "completed": true
+                },
+                {
+                    "title": "Implement filtersEqual",
+                    "completed": true
+                }
+            ],
+            "tags": ["utils", "core-logic"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add buildFilterChips and buildFilterParamUpdate to filter-utils.ts",
+            "description": "Add to `apps/admin/src/components/entity-list/filters/filter-utils.ts`:\n- `buildFilterChips({ activeFilters, filterBarConfig, defaultFilters, t })` - builds FilterChipData[] sorted by order (spec section 6.10 algorithm)\n- `buildFilterParamUpdate({ paramKey, value, hasDefault })` - returns param update object with sentinel logic\n\nAlgorithm for buildFilterChips:\n1. For each activeFilter entry, find matching config by paramKey\n2. Resolve displayValue based on type (select -> option labelKey, boolean -> Yes/No)\n3. Determine isDefault by comparing to defaultFilters\n4. Sort by config.order ascending\n\nTest: Unit tests in next task.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Implement buildFilterChips with sort by order",
+                    "completed": true
+                },
+                {
+                    "title": "Implement buildFilterParamUpdate with sentinel logic",
+                    "completed": true
+                }
+            ],
+            "tags": ["utils", "core-logic"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write unit tests for filter-utils.ts",
+            "description": "Create `apps/admin/src/components/entity-list/filters/__tests__/filter-utils.test.ts` with tests from spec section 13.1:\n\nextractActiveFilters tests:\n- No URL params + no defaults -> {}\n- No URL params + config defaults -> { destinationType: 'CITY' }\n- URL param overriding default -> { destinationType: 'TOWN' }\n- Sentinel clears default -> {}\n- Ignores params not in config\n- Handles multiple filters\n\ncomputeDefaultFilters tests:\n- undefined config -> {}\n- Extracts only filters with defaultValue\n\nfiltersEqual tests:\n- Identical objects -> true\n- Different values -> false\n- Different keys -> false\n- Both empty -> true\n\nbuildFilterChips tests:\n- Marks default-origin chips (isDefault: true)\n- Marks user-applied chips (isDefault: false)\n- Sorts by order\n- Skips unknown filters\n\nbuildFilterParamUpdate tests:\n- Sets value: { status: 'ACTIVE' }\n- Clears with sentinel when hasDefault: { destinationType: '__cleared__' }\n- Removes when no default: { status: undefined }\n\nTarget: 100% line coverage on filter-utils.ts",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Write extractActiveFilters tests (6 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write computeDefaultFilters tests (2 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write filtersEqual tests (4 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write buildFilterChips tests (4 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write buildFilterParamUpdate tests (3 cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "unit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create useFilterState hook",
+            "description": "Create `apps/admin/src/components/entity-list/filters/useFilterState.ts`:\n- Accepts { filterBarConfig, searchParams, onUpdateSearch }\n- Returns { activeFilters, computedDefaults, hasActiveFilters, hasNonDefaultFilters, chips, handleFilterChange, handleClearAll, handleResetDefaults }\n- Uses useTranslations() internally for t function\n- Memoization strategy per spec section 6.9:\n  - computedDefaults: useMemo([filterBarConfig])\n  - activeFilters: useMemo([searchParams, filterBarConfig, computedDefaults])\n  - chips: useMemo([activeFilters, filterBarConfig, computedDefaults, t])\n  - hasNonDefaultFilters: useMemo([activeFilters, computedDefaults])\n  - handlers: useCallback([filterBarConfig, computedDefaults, onUpdateSearch])\n- handleFilterChange ALWAYS resets page to 1\n- handleClearAll sets sentinel for defaults, removes non-defaults\n- handleResetDefaults restores config defaultValues\n\nUses extractActiveFilters, computeDefaultFilters, buildFilterChips, buildFilterParamUpdate from filter-utils.ts.\n\nTest: Unit tests in next task.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004", "T-005"],
+            "blocks": ["T-007", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Create hook with type definitions",
+                    "completed": true
+                },
+                {
+                    "title": "Implement computedDefaults and activeFilters memoization",
+                    "completed": true
+                },
+                {
+                    "title": "Implement chips computation",
+                    "completed": true
+                },
+                {
+                    "title": "Implement handleFilterChange with page reset",
+                    "completed": true
+                },
+                {
+                    "title": "Implement handleClearAll with sentinel logic",
+                    "completed": true
+                },
+                {
+                    "title": "Implement handleResetDefaults",
+                    "completed": true
+                }
+            ],
+            "tags": ["hook", "state-management"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write unit tests for useFilterState hook",
+            "description": "Create `apps/admin/src/components/entity-list/filters/__tests__/useFilterState.test.ts` using renderHook from @testing-library/react.\n\nTests from spec section 13.2:\n- Returns defaults when no URL filters\n- Returns URL filters when present\n- Returns empty when all defaults cleared (sentinel)\n- handleFilterChange adds filter -> onUpdateSearch called with page: 1\n- handleFilterChange removes filter -> onUpdateSearch called without that key\n- handleClearAll clears everything -> sentinel for defaults, undefined for non-defaults, page: 1\n- handleResetDefaults restores defaults -> onUpdateSearch with default values, page: 1\n- hasActiveFilters true when filters exist\n- hasActiveFilters false when empty\n- hasNonDefaultFilters true when user changed from defaults\n- hasNonDefaultFilters false when at defaults\n\nMock useTranslations hook. Target: >= 90% coverage.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Set up renderHook with mocked useTranslations",
+                    "completed": true
+                },
+                {
+                    "title": "Write default/URL/sentinel state tests (3 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write handler tests (4 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write computed property tests (4 cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "unit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create FilterChip component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/FilterChip.tsx`:\n- Props: { chip: FilterChipData, onRemove: () => void }\n- Uses existing Badge component from `@/components/ui-wrapped/Badge`\n- Default-origin: variant='secondary' with '(default)' text from t('admin-filters.defaultBadge')\n- User-applied: variant='outline' without default text\n- X button using CloseIcon from @repo/icons (14px)\n- Accessibility: role='status' on container, aria-label='Remove filter: {label} {value}' on X, tabIndex={0}, onKeyDown Enter/Space\n\nTest: Component tests in T-024.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Create component with Badge composition",
+                    "completed": true
+                },
+                {
+                    "title": "Implement default vs user-applied styling",
+                    "completed": true
+                },
+                {
+                    "title": "Add CloseIcon remove button",
+                    "completed": true
+                },
+                {
+                    "title": "Add accessibility attributes",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create ActiveFilterChips component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/ActiveFilterChips.tsx`:\n- Props: { chips: readonly FilterChipData[], onRemove: (paramKey: string) => void }\n- Renders horizontal row of FilterChip components\n- Container: flex flex-wrap items-center gap-1.5\n- aria-live='polite' and role='status' on container\n- Focus management: after removing a chip, focus next chip or 'Clear all' button\n\nTest: Component tests in T-024.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Create component rendering FilterChip array",
+                    "completed": true
+                },
+                {
+                    "title": "Add aria-live and role attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Implement focus management on chip removal",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create FilterSelect component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/FilterSelect.tsx`:\n- Props: { config: FilterControlConfig, value: string | undefined, onChange: (value: string | undefined) => void }\n- Composes over existing shadcn Select from `@/components/ui/select.tsx`\n- Trigger shows translated label when no value, translated selected value when active\n- First option is 'All' using allLabelKey or fallback 'admin-filters.allOption'\n- 'All' selection calls onChange(undefined)\n- Trigger styling: h-8 border-dashed (compact). When active: border-solid border-primary\n- Size: h-8 text-sm matching DataTableToolbar\n\nTest: Component tests in T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Create component wrapping shadcn Select",
+                    "completed": true
+                },
+                {
+                    "title": "Implement 'All' option with onChange(undefined)",
+                    "completed": true
+                },
+                {
+                    "title": "Add conditional trigger styling for active state",
+                    "completed": true
+                },
+                {
+                    "title": "Use i18n for all labels",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create FilterBoolean component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/FilterBoolean.tsx`:\n- Props: { config: FilterControlConfig, value: string | undefined, onChange: (value: string | undefined) => void }\n- Composes over existing shadcn Select (same pattern as FilterSelect)\n- Three fixed options: 'All' -> onChange(undefined), 'Yes' -> onChange('true'), 'No' -> onChange('false')\n- i18n keys: admin-filters.booleanYes, admin-filters.booleanNo, admin-filters.allOption\n- Same trigger styling as FilterSelect (h-8 border-dashed, active: border-solid border-primary)\n\nTest: Component tests in T-023.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013", "T-023"],
+            "subtasks": [
+                {
+                    "title": "Create component wrapping shadcn Select",
+                    "completed": true
+                },
+                {
+                    "title": "Implement three-option Yes/No/All",
+                    "completed": true
+                },
+                {
+                    "title": "Add i18n translations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create FilterActions component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/FilterActions.tsx`:\n- Props: { hasActiveFilters, hasNonDefaultFilters, onClearAll, onResetDefaults }\n- 'Clear all' button: variant='ghost', size='sm', CloseIcon from @repo/icons. Visible when hasActiveFilters\n- 'Reset to defaults' button: variant='ghost', size='sm', RotateCcwIcon from @repo/icons. Visible when hasNonDefaultFilters\n- i18n keys: admin-filters.clearAll, admin-filters.resetDefaults\n- Both buttons use translated text\n\nTest: Component tests in T-024.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Create component with conditional button rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Add icons and i18n text",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create FilterBar container component",
+            "description": "Create `apps/admin/src/components/entity-list/filters/FilterBar.tsx`:\n- Props: FilterBarProps per spec section 6.3\n- Renders FilterControls section: one control per config.filters entry (sorted by order)\n- Only renders select and boolean types. Silently skips unknown types.\n- Below controls: ActiveFilterChips when hasActiveFilters\n- FilterActions with conditional buttons\n- Layout: Controls row (flex flex-wrap items-center gap-2), Chips row (flex flex-wrap items-center gap-1.5 pt-2)\n- Wrapped in div with subtle border-bottom and padding\n- Mobile: flex-wrap handles responsive layout\n\nTest: Component tests in T-024.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010", "T-011", "T-012"],
+            "blocks": ["T-014", "T-016", "T-024"],
+            "subtasks": [
+                {
+                    "title": "Create FilterBar with FilterBarProps",
+                    "completed": true
+                },
+                {
+                    "title": "Render filter controls sorted by order",
+                    "completed": true
+                },
+                {
+                    "title": "Route select/boolean types to correct components",
+                    "completed": true
+                },
+                {
+                    "title": "Render ActiveFilterChips conditionally",
+                    "completed": true
+                },
+                {
+                    "title": "Render FilterActions",
+                    "completed": true
+                },
+                {
+                    "title": "Apply layout styles",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "ui"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create filters/index.ts barrel exports",
+            "description": "Create `apps/admin/src/components/entity-list/filters/index.ts`:\n- Export FilterBar component\n- Export useFilterState hook\n- Export all types from filter-types.ts (FilterControlConfig, FilterBarConfig, ActiveFilters, FilterChipData)\n- Export FILTER_CLEARED_SENTINEL from filter-utils.ts\n- Use named exports only (no default exports)\n\nAlso update `apps/admin/src/components/entity-list/index.ts` to re-export filter types if needed.\n\nTest: typecheck passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Create barrel export file",
+                    "completed": true
+                },
+                {
+                    "title": "Update entity-list index.ts if needed",
+                    "completed": true
+                }
+            ],
+            "tags": ["exports", "setup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Refactor createEntityApi to RO-RO pattern with filterBarConfig support",
+            "description": "Modify `apps/admin/src/components/entity-list/api/createEntityApi.ts`:\n- Change signature from positional args to RO-RO: createEntityApi({ endpoint, itemSchema, defaultFilters, filterBarConfig })\n- Add CreateEntityApiParams<TData> type\n- Update filter logic per spec section 7.3:\n  - When filterBarConfig present: use only filters from useFilterState (ignore defaultFilters)\n  - When filterBarConfig absent: legacy path (apply defaultFilters then filters)\n- Sentinel value '__cleared__' is NEVER sent to API (only actual values)\n- Update the single call site in EntityListPage.tsx to use new signature\n\nTest: typecheck passes. Existing behavior preserved for entities without filterBarConfig.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Create CreateEntityApiParams type",
+                    "completed": true
+                },
+                {
+                    "title": "Refactor createEntityApi to RO-RO",
+                    "completed": true
+                },
+                {
+                    "title": "Implement filterBarConfig-based filter logic",
+                    "completed": true
+                },
+                {
+                    "title": "Preserve legacy defaultFilters path",
+                    "completed": true
+                },
+                {
+                    "title": "Update call site in EntityListPage.tsx",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "refactor"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Integrate FilterBar into EntityListPage",
+            "description": "Modify `apps/admin/src/components/entity-list/EntityListPage.tsx`:\n1. Update validateSearch: destructure known params, spread remaining as filterParams (spec section 7.1)\n2. Import and call useFilterState({ filterBarConfig: config.filterBarConfig, searchParams: search, onUpdateSearch: updateSearch })\n3. Pass filterState.activeFilters to queryParams.filters\n4. Render FilterBar between DataTableToolbar and DataTable/GridView (spec section 7.2 JSX)\n5. Only render FilterBar when config.filterBarConfig is defined\n6. Pass all filterState props to FilterBar component\n7. Add 'no results with filters' message when hasActiveFilters && empty results using t('admin-filters.noResults')\n\nTest: typecheck passes. Integration tests in T-025.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-013", "T-014", "T-015"],
+            "blocks": ["T-018", "T-019", "T-020", "T-021", "T-022", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Update validateSearch to pass through filter params",
+                    "completed": true
+                },
+                {
+                    "title": "Wire useFilterState hook",
+                    "completed": true
+                },
+                {
+                    "title": "Pass activeFilters to queryParams",
+                    "completed": true
+                },
+                {
+                    "title": "Render FilterBar in JSX",
+                    "completed": true
+                },
+                {
+                    "title": "Add filtered empty state message",
+                    "completed": true
+                }
+            ],
+            "tags": ["integration", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create i18n admin-filters translation files and register namespace",
+            "description": "Create 3 new JSON files and register the namespace:\n1. `packages/i18n/src/locales/en/admin-filters.json` - English translations (spec section 9.1)\n2. `packages/i18n/src/locales/es/admin-filters.json` - Spanish translations (spec section 9.1)\n3. `packages/i18n/src/locales/pt/admin-filters.json` - Portuguese translations (spec section 9.1)\n4. Update `packages/i18n/src/config.ts`:\n   - Add 'admin-filters' to namespaces array\n   - Add static imports for all 3 locale files\n   - Add to rawTranslations object for es, en, pt\n5. Run `pnpm generate-types` to regenerate TranslationKey union type\n\nKeys include: allOption, booleanYes, booleanNo, defaultBadge, clearAll, resetDefaults, activeFilters, noResults, status.*, destinationType.*, accommodationType.*, eventCategory.*, postCategory.*, role.*, isFeatured.*, isNews.*, includeDeleted.*\n\nTest: typecheck passes after generate-types. All keys accessible via t().",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-018", "T-019", "T-020", "T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Create en/admin-filters.json",
+                    "completed": true
+                },
+                {
+                    "title": "Create es/admin-filters.json",
+                    "completed": true
+                },
+                {
+                    "title": "Create pt/admin-filters.json",
+                    "completed": true
+                },
+                {
+                    "title": "Register namespace in config.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Run generate-types",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "translations"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add filterBarConfig to destinations.config.ts",
+            "description": "Modify `apps/admin/src/features/destinations/config/destinations.config.ts`:\n- Add filterBarConfig per spec section 8.1\n- Filters: destinationType (select, defaultValue: 'CITY', order: 1), status (select, order: 2), isFeatured (boolean, order: 3), includeDeleted (boolean, order: 99)\n- destinationType options: COUNTRY, REGION, PROVINCE, DEPARTMENT, CITY, TOWN, NEIGHBORHOOD\n- status options: DRAFT, ACTIVE, ARCHIVED\n- Keep existing defaultFilters property for now (backward compat during migration)\n- All labelKeys use admin-filters.* namespace\n\nTest: typecheck passes. Destinations page should show filter bar with CITY as default.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-016", "T-017"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig with destinationType filter (defaultValue: CITY)",
+                    "completed": true
+                },
+                {
+                    "title": "Add status filter",
+                    "completed": true
+                },
+                {
+                    "title": "Add isFeatured and includeDeleted boolean filters",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "entity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add filterBarConfig to accommodations.config.ts",
+            "description": "Modify `apps/admin/src/features/accommodations/config/accommodations.config.ts`:\n- Add filterBarConfig per spec section 8.2\n- Filters: status (select, order: 1), type (select, order: 2), isFeatured (boolean, order: 3), includeDeleted (boolean, order: 99)\n- type options: APARTMENT, HOUSE, COUNTRY_HOUSE, CABIN, HOTEL, HOSTEL, CAMPING, ROOM, MOTEL, RESORT\n- status options: DRAFT, ACTIVE, ARCHIVED\n- No defaultValue on any filter\n\nTest: typecheck passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-016", "T-017"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig with status, type, isFeatured, includeDeleted",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "entity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add filterBarConfig to events.config.ts",
+            "description": "Modify `apps/admin/src/features/events/config/events.config.ts`:\n- Add filterBarConfig per spec section 8.3\n- Filters: status (select, order: 1), category (select, order: 2), isFeatured (boolean, order: 3), includeDeleted (boolean, order: 99)\n- category options: MUSIC, CULTURE, SPORTS, GASTRONOMY, FESTIVAL, NATURE, THEATER, WORKSHOP, OTHER\n- No defaultValue\n\nTest: typecheck passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-016", "T-017"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig with status, category, isFeatured, includeDeleted",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "entity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add filterBarConfig to posts.config.ts",
+            "description": "Modify `apps/admin/src/features/posts/config/posts.config.ts`:\n- Add filterBarConfig per spec section 8.4\n- Filters: status (select, order: 1), category (select, order: 2), isFeatured (boolean, order: 3), isNews (boolean, order: 4), includeDeleted (boolean, order: 99)\n- category options: EVENTS, CULTURE, GASTRONOMY, NATURE, TOURISM, GENERAL, SPORT, CARNIVAL, NIGHTLIFE, HISTORY, TRADITIONS, WELLNESS, FAMILY, TIPS, ART, BEACH, RURAL, FESTIVALS\n- No defaultValue\n\nTest: typecheck passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-016", "T-017"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig with status, category, isFeatured, isNews, includeDeleted",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "entity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Add filterBarConfig to users.config.ts",
+            "description": "Modify `apps/admin/src/features/users/config/users.config.ts`:\n- Add filterBarConfig per spec section 8.5\n- Filters: role (select, order: 1), includeDeleted (boolean, order: 99)\n- role options: SUPER_ADMIN, ADMIN, CLIENT_MANAGER, EDITOR, HOST, SPONSOR, USER, GUEST\n- No defaultValue\n\nTest: typecheck passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-016", "T-017"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Add filterBarConfig with role and includeDeleted",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "entity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Write component tests for FilterSelect and FilterBoolean",
+            "description": "Create `apps/admin/src/components/entity-list/filters/__tests__/FilterSelect.test.tsx` and `FilterBoolean.test.tsx`.\n\nFilterSelect tests (spec section 13.4):\n- Shows label when no value selected\n- Shows selected translated value when active\n- 'All' option clears filter (onChange(undefined))\n- Selecting value sets filter (onChange('DRAFT'))\n- All options from config rendered (N + 'All' = N+1 items)\n\nFilterBoolean tests (spec section 13.5):\n- Shows label when no value\n- Shows 'Yes' when value='true'\n- Shows 'No' when value='false'\n- 'All' clears (onChange(undefined))\n- 'Yes' sets true (onChange('true'))\n- 'No' sets false (onChange('false'))\n\nMock useTranslations. Use @testing-library/react for rendering.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write FilterSelect tests (5 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write FilterBoolean tests (6 cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "component"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write component tests for FilterBar, FilterChip, FilterActions, ActiveFilterChips",
+            "description": "Create test files:\n- `apps/admin/src/components/entity-list/filters/__tests__/FilterBar.test.tsx`\n- `apps/admin/src/components/entity-list/filters/__tests__/FilterChip.test.tsx`\n\nFilterBar tests (spec section 13.3):\n- Renders select filters from config (2 Select triggers)\n- Renders boolean filters (1 Select with Yes/No/All)\n- Skips unknown filter types (no crash)\n- Shows chips when filters active\n- Chip shows '(default)' badge for default-origin\n- 'Clear all' visible when hasActiveFilters\n- 'Clear all' hidden when no filters\n- 'Reset to defaults' visible when hasNonDefaultFilters\n- Sort order respected\n\nFilterChip tests:\n- Renders label and value\n- Shows '(default)' badge when isDefault\n- Click X calls onRemove\n- Keyboard Enter/Space on X calls onRemove\n- Has correct aria-label\n\nMock useTranslations. Use @testing-library/react.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write FilterBar tests (9 cases)",
+                    "completed": true
+                },
+                {
+                    "title": "Write FilterChip tests (5 cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "component"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": "2026-04-04T15:15:00.000Z",
+                "completed": "2026-04-04T15:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write integration tests for EntityListPage with FilterBar (12 tests)",
+            "description": "Create `apps/admin/src/components/entity-list/filters/__tests__/integration.test.tsx`.\n\nTests from spec section 13.6:\n- FilterBar renders when config has filterBarConfig\n- FilterBar absent when no filterBarConfig\n- Selecting filter updates URL (status=ACTIVE as individual param)\n- URL filter state restores on mount (?status=ACTIVE -> select shows Active, chip visible)\n- Filter change resets page to 1 (on page 3, change filter -> page=1)\n- Default filters applied on first visit (destinations: destinationType=CITY chip with '(default)')\n- Clear default filter sends unfiltered request (no destinationType param)\n- Legacy entities unaffected (only defaultFilters, no filterBarConfig -> no FilterBar, defaults still silently applied)\n\nAccessibility tests (spec section 13.7):\n- All filter controls reachable via Tab\n- Chip removal via keyboard (Enter on X)\n- aria-live container present\n- X button has descriptive aria-label\n\nUse @testing-library/react with TanStack Router test utilities.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-018", "T-019", "T-020", "T-021", "T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write FilterBar render/absence tests (2 cases)",
+                    "completed": false
+                },
+                {
+                    "title": "Write URL persistence tests (3 cases)",
+                    "completed": false
+                },
+                {
+                    "title": "Write default filter tests (3 cases)",
+                    "completed": false
+                },
+                {
+                    "title": "Write accessibility tests (4 cases)",
+                    "completed": false
+                }
+            ],
+            "tags": ["tests", "integration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-04T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 25,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 25,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}

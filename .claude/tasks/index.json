@@ -133,6 +133,34 @@
             "status": "pending",
             "progress": "0/29",
             "path": "SPEC-041-admin-integration-tests"
+        },
+        {
+            "specId": "SPEC-048",
+            "title": "Web2 Homepage Componentization & Tokenization",
+            "status": "in-progress",
+            "progress": "82/82",
+            "path": "SPEC-048-web2-homepage-componentization"
+        },
+        {
+            "specId": "SPEC-049",
+            "title": "Admin List Filtering: adminList() Method for BaseCrudService",
+            "status": "pending",
+            "progress": "0/64",
+            "path": "SPEC-049-admin-list-filtering"
+        },
+        {
+            "specId": "SPEC-065",
+            "title": "Figma to Code: Homepage Production Migration",
+            "status": "completed",
+            "progress": "66/66",
+            "path": "SPEC-065-figma-to-code-homepage"
+        },
+        {
+            "specId": "SPEC-054",
+            "title": "Admin Entity List Filter Bar & Default Filters Indicator",
+            "status": "completed",
+            "progress": "25/25",
+            "path": "SPEC-054-default-filters-ui-indicator"
         }
     ],
     "standalone": {
