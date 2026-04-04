@@ -9,6 +9,7 @@ import type {
 } from '@/components/table/DataTable';
 import type { ReactNode } from 'react';
 import type { z } from 'zod';
+import type { FilterBarConfig } from './filters/filter-types';
 
 /**
  * Configuration for search functionality
@@ -188,8 +189,10 @@ export type EntityConfig<TData = unknown> = {
 
     // API
     readonly apiEndpoint: string;
-    /** Default query parameters to always include in API requests */
+    /** Default query parameters to always include in API requests (LEGACY - prefer filterBarConfig.filters[].defaultValue) */
     readonly defaultFilters?: Readonly<Record<string, string>>;
+    /** Filter bar configuration. If undefined, no filter bar is shown. When defined, defaultFilters is ignored. */
+    readonly filterBarConfig?: FilterBarConfig;
 
     // Routes
     readonly basePath: string;
