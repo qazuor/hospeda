@@ -2,19 +2,40 @@ import { fetchApi } from '@/lib/api/client';
 import { adminLogger } from '@/utils/logger';
 import { createPaginatedResponseSchema } from '@repo/schemas';
 import type { z } from 'zod';
+import type { FilterBarConfig } from '../filters/filter-types';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
+
+/**
+ * Parameters for creating an entity API client.
+ * When filterBarConfig is provided, UI manages all filter state and defaultFilters is ignored.
+ */
+export type CreateEntityApiParams<TData> = {
+    readonly endpoint: string;
+    readonly itemSchema: z.ZodSchema<TData>;
+    /** Legacy: static filters always applied. Ignored when filterBarConfig is provided. */
+    readonly defaultFilters?: Readonly<Record<string, string>>;
+    /** When provided, UI manages all filter state via useFilterState. defaultFilters is ignored. */
+    readonly filterBarConfig?: FilterBarConfig;
+};
 
 /**
  * Creates a generic API client for entity lists
  *
+ * Supports two filter modes:
+ * - Legacy mode: `defaultFilters` are applied as static base filters.
+ * - Filter bar mode: when `filterBarConfig` is provided, all filter state is managed
+ *   by the UI (useFilterState). `defaultFilters` is ignored in this mode.
+ *   An empty `filters` object means the user cleared all filters — no fallback to defaults.
+ *
  * ✅ Now using createPaginatedResponseSchema from @repo/schemas
  * after Zod v4 compatibility has been resolved
  */
-export const createEntityApi = <TData>(
-    endpoint: string,
-    itemSchema: z.ZodSchema<TData>,
-    defaultFilters?: Readonly<Record<string, string>>
-) => {
+export const createEntityApi = <TData>({
+    endpoint,
+    itemSchema,
+    defaultFilters,
+    filterBarConfig
+}: CreateEntityApiParams<TData>) => {
     // Use centralized schema from @repo/schemas
     const PaginatedResponseSchema = createPaginatedResponseSchema(itemSchema);
 
@@ -61,18 +82,27 @@ export const createEntityApi = <TData>(
             params.set('sort', `${sort[0].id}:${sort[0].desc ? 'desc' : 'asc'}`);
         }
 
-        // Apply default filters
-        if (defaultFilters) {
+        if (filterBarConfig) {
+            // UI-managed mode: filter state comes exclusively from useFilterState.
+            // An empty filters object means "user cleared all" - do NOT fall back to defaultFilters.
+            if (filters) {
+                for (const [key, value] of Object.entries(filters)) {
+                    if (value !== undefined && value !== null && value !== '') {
+                        params.set(key, String(value));
+                    }
+                }
+            }
+        } else if (defaultFilters) {
+            // Legacy path: no filter UI, apply static defaults
             for (const [key, value] of Object.entries(defaultFilters)) {
                 params.set(key, value);
             }
-        }
-
-        // Apply entity-specific filters
-        if (filters) {
-            for (const [key, value] of Object.entries(filters)) {
-                if (value !== undefined && value !== null && value !== '') {
-                    params.set(key, String(value));
+            // Also apply any programmatic filters passed through
+            if (filters) {
+                for (const [key, value] of Object.entries(filters)) {
+                    if (value !== undefined && value !== null && value !== '') {
+                        params.set(key, String(value));
+                    }
                 }
             }
         }

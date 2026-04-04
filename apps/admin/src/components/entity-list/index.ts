@@ -49,3 +49,6 @@ export {
 } from './examples/VirtualizedEntityListExample';
 
 export type * from './types';
+
+// Filter components and utilities
+export * from './filters';

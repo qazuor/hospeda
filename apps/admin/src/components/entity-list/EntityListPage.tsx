@@ -13,6 +13,8 @@ import type { NavigateOptions, RegisteredRouter } from '@tanstack/react-router';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createEntityApi } from './api/createEntityApi';
+import { FilterBar } from './filters/FilterBar';
+import { useFilterState } from './filters/useFilterState';
 import { useEntityQuery } from './hooks/useEntityQuery';
 import type { EntityConfig, EntityListComponents, GenerateRowType } from './types';
 
@@ -105,7 +107,12 @@ export const createEntityListPage = <TData extends { id: string }>(
     const paginationConfig = { ...DEFAULT_PAGINATION_CONFIG, ...config.paginationConfig };
 
     // Create API client
-    const api = createEntityApi(config.apiEndpoint, config.listItemSchema, config.defaultFilters);
+    const api = createEntityApi({
+        endpoint: config.apiEndpoint,
+        itemSchema: config.listItemSchema,
+        defaultFilters: config.defaultFilters,
+        filterBarConfig: config.filterBarConfig
+    });
 
     // Generate row type from columns
     type Row = GenerateRowType<ReturnType<typeof config.createColumns>> & TData;
@@ -128,7 +135,18 @@ export const createEntityListPage = <TData extends { id: string }>(
         const sort = typeof search.sort === 'string' ? search.sort : undefined;
         const cols = typeof search.cols === 'string' ? search.cols : undefined;
 
-        return { page, pageSize, view, q, sort, cols } as const;
+        // Pass through remaining params for filter state (extracted by useFilterState)
+        const {
+            page: _p,
+            pageSize: _ps,
+            view: _v,
+            q: _q,
+            sort: _s,
+            cols: _c,
+            ...filterParams
+        } = search;
+
+        return { page, pageSize, view, q, sort, cols, ...filterParams } as const;
     };
 
     /**
@@ -229,12 +247,30 @@ export const createEntityListPage = <TData extends { id: string }>(
             }
         }, [search.sort]);
 
+        // updateSearch must be defined before useFilterState (which stores it in callbacks)
+        const updateSearch = useCallback(
+            (updater: (prev: EntityListSearchParams) => EntityListSearchParams) => {
+                navigate({ search: updater } as DynamicNavigateOptions);
+            },
+            [navigate]
+        );
+
+        // Filter state management
+        const filterState = useFilterState({
+            filterBarConfig: config.filterBarConfig,
+            searchParams: search as Record<string, unknown>,
+            onUpdateSearch: updateSearch as unknown as (
+                updater: (prev: Record<string, unknown>) => Record<string, unknown>
+            ) => void
+        });
+
         // Query data
         const { data, isLoading, error } = useEntityQuery(config.name, api.getEntities, {
             page: search.page,
             pageSize: search.pageSize,
             q: search.q,
-            sort: parsedSort
+            sort: parsedSort,
+            filters: filterState.activeFilters
         });
 
         // Handle errors
@@ -310,13 +346,6 @@ export const createEntityListPage = <TData extends { id: string }>(
         );
 
         // Handlers
-        const updateSearch = useCallback(
-            (updater: (prev: EntityListSearchParams) => EntityListSearchParams) => {
-                navigate({ search: updater } as DynamicNavigateOptions);
-            },
-            [navigate]
-        );
-
         const handleViewChange = useCallback(
             (next: 'table' | 'grid') => updateSearch((prev) => ({ ...prev, view: next })),
             [updateSearch]
@@ -401,6 +430,20 @@ export const createEntityListPage = <TData extends { id: string }>(
                         onColumnVisibilityChange={handleColsChange}
                         availableColumns={availableColumns}
                     />
+
+                    {config.filterBarConfig && (
+                        <FilterBar
+                            config={config.filterBarConfig}
+                            activeFilters={filterState.activeFilters}
+                            computedDefaults={filterState.computedDefaults}
+                            onFilterChange={filterState.handleFilterChange}
+                            onClearAll={filterState.handleClearAll}
+                            onResetDefaults={filterState.handleResetDefaults}
+                            hasActiveFilters={filterState.hasActiveFilters}
+                            hasNonDefaultFilters={filterState.hasNonDefaultFilters}
+                            chips={filterState.chips}
+                        />
+                    )}
 
                     {search.view === 'table' ? (
                         <DataTable<Row>
