@@ -2,6 +2,7 @@ import type { Accommodation, UserIdType } from '@repo/schemas';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    checkCanAdminList,
     checkCanCreate,
     checkCanHardDelete,
     checkCanList,
@@ -246,5 +247,20 @@ describe('Accommodation Permissions', () => {
 
     it('checkCanList always allows', () => {
         expect(() => checkCanList(createActor([]))).not.toThrow();
+    });
+
+    describe('checkCanAdminList', () => {
+        it('should throw FORBIDDEN when actor lacks ACCOMMODATION_VIEW_ALL permission', () => {
+            expectForbidden(
+                () => checkCanAdminList(createActor([])),
+                'ACCOMMODATION_VIEW_ALL required for admin list'
+            );
+        });
+
+        it('should allow when actor has ACCOMMODATION_VIEW_ALL permission', () => {
+            expect(() =>
+                checkCanAdminList(createActor([PermissionEnum.ACCOMMODATION_VIEW_ALL]))
+            ).not.toThrow();
+        });
     });
 });

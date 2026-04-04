@@ -52,7 +52,11 @@ export const mockActor: Actor = new ActorFactoryBuilder()
 export const mockAdminActor: Actor = new ActorFactoryBuilder()
     .superAdmin()
     .withId('admin-user-1')
-    .withPermissions([PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.ACCOMMODATION_UPDATE_ANY])
+    .withPermissions([
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.ACCOMMODATION_CREATE,
+        PermissionEnum.ACCOMMODATION_UPDATE_ANY
+    ])
     .build();
 
 export const mockEntity = {

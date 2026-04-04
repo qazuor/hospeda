@@ -11,7 +11,7 @@
  * - Date range filters (createdAfter, createdBefore)
  * - Entity-specific filters
  * - Search condition building
- * - Permission checks (_canList)
+ * - Permission checks (_canAdminList)
  * - _executeAdminSearch delegation (with/without relations)
  */
 import type { BaseModel as BaseModelDB } from '@repo/db';
@@ -512,29 +512,29 @@ describe('BaseCrudRead: adminList', () => {
     // --- Permissions ---
 
     describe('Permissions', () => {
-        it('should call _canList for permission check', async () => {
+        it('should call _canAdminList for permission check', async () => {
             // Arrange
-            const canListSpy = vi.spyOn(
-                service as unknown as { _canList: (...args: unknown[]) => unknown },
-                '_canList'
+            const canAdminListSpy = vi.spyOn(
+                service as unknown as { _canAdminList: (...args: unknown[]) => unknown },
+                '_canAdminList'
             );
 
             // Act
             await service.adminList(mockAdminActor, {});
 
             // Assert
-            expect(canListSpy).toHaveBeenCalledWith(mockAdminActor);
+            expect(canAdminListSpy).toHaveBeenCalledWith(mockAdminActor);
         });
 
-        it('should return error when _canList denies permission', async () => {
+        it('should return error when _canAdminList denies permission', async () => {
             // Arrange
             const forbiddenError = new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied'
+                'Admin access required for admin list operations'
             );
             vi.spyOn(
-                service as unknown as { _canList: (...args: unknown[]) => unknown },
-                '_canList'
+                service as unknown as { _canAdminList: (...args: unknown[]) => unknown },
+                '_canAdminList'
             ).mockImplementation(() => {
                 throw forbiddenError;
             });
