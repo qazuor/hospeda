@@ -18,6 +18,54 @@ export const destinationsConfig: EntityConfig<Destination> = {
     apiEndpoint: '/api/v1/admin/destinations',
     defaultFilters: { destinationType: 'CITY' },
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'destinationType',
+                labelKey: 'admin-filters.destinationType.label',
+                type: 'select',
+                defaultValue: 'CITY',
+                order: 1,
+                options: [
+                    { value: 'COUNTRY', labelKey: 'admin-filters.destinationType.country' },
+                    { value: 'REGION', labelKey: 'admin-filters.destinationType.region' },
+                    { value: 'PROVINCE', labelKey: 'admin-filters.destinationType.province' },
+                    { value: 'DEPARTMENT', labelKey: 'admin-filters.destinationType.department' },
+                    { value: 'CITY', labelKey: 'admin-filters.destinationType.city' },
+                    { value: 'TOWN', labelKey: 'admin-filters.destinationType.town' },
+                    {
+                        value: 'NEIGHBORHOOD',
+                        labelKey: 'admin-filters.destinationType.neighborhood'
+                    }
+                ]
+            },
+            {
+                paramKey: 'status',
+                labelKey: 'admin-filters.status.label',
+                type: 'select',
+                order: 2,
+                options: [
+                    { value: 'DRAFT', labelKey: 'admin-filters.status.draft' },
+                    { value: 'ACTIVE', labelKey: 'admin-filters.status.active' },
+                    { value: 'ARCHIVED', labelKey: 'admin-filters.status.archived' }
+                ]
+            },
+            {
+                paramKey: 'isFeatured',
+                labelKey: 'admin-filters.isFeatured.label',
+                type: 'boolean',
+                order: 3
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/destinations',
     detailPath: '/destinations/[id]',

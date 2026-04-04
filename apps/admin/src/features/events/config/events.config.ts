@@ -10,6 +10,50 @@ export const eventsConfig: EntityConfig<Event> = {
     entityKey: 'event',
     entityType: EntityType.EVENT,
     apiEndpoint: '/api/v1/admin/events',
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'status',
+                labelKey: 'admin-filters.status.label',
+                type: 'select',
+                order: 1,
+                options: [
+                    { value: 'DRAFT', labelKey: 'admin-filters.status.draft' },
+                    { value: 'ACTIVE', labelKey: 'admin-filters.status.active' },
+                    { value: 'ARCHIVED', labelKey: 'admin-filters.status.archived' }
+                ]
+            },
+            {
+                paramKey: 'category',
+                labelKey: 'admin-filters.eventCategory.label',
+                type: 'select',
+                order: 2,
+                options: [
+                    { value: 'MUSIC', labelKey: 'admin-filters.eventCategory.music' },
+                    { value: 'CULTURE', labelKey: 'admin-filters.eventCategory.culture' },
+                    { value: 'SPORTS', labelKey: 'admin-filters.eventCategory.sports' },
+                    { value: 'GASTRONOMY', labelKey: 'admin-filters.eventCategory.gastronomy' },
+                    { value: 'FESTIVAL', labelKey: 'admin-filters.eventCategory.festival' },
+                    { value: 'NATURE', labelKey: 'admin-filters.eventCategory.nature' },
+                    { value: 'THEATER', labelKey: 'admin-filters.eventCategory.theater' },
+                    { value: 'WORKSHOP', labelKey: 'admin-filters.eventCategory.workshop' },
+                    { value: 'OTHER', labelKey: 'admin-filters.eventCategory.other' }
+                ]
+            },
+            {
+                paramKey: 'isFeatured',
+                labelKey: 'admin-filters.isFeatured.label',
+                type: 'boolean',
+                order: 3
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
     basePath: '/events',
     detailPath: '/events/[id]',
     // Schemas - Use type assertion for Zod version compatibility

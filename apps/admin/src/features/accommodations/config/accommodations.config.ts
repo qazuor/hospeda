@@ -17,6 +17,56 @@ export const accommodationsConfig: EntityConfig<Accommodation> = {
     // API
     apiEndpoint: '/api/v1/admin/accommodations',
 
+    // Filter bar configuration
+    filterBarConfig: {
+        filters: [
+            {
+                paramKey: 'status',
+                labelKey: 'admin-filters.status.label',
+                type: 'select',
+                order: 1,
+                options: [
+                    { value: 'DRAFT', labelKey: 'admin-filters.status.draft' },
+                    { value: 'ACTIVE', labelKey: 'admin-filters.status.active' },
+                    { value: 'ARCHIVED', labelKey: 'admin-filters.status.archived' }
+                ]
+            },
+            {
+                paramKey: 'type',
+                labelKey: 'admin-filters.accommodationType.label',
+                type: 'select',
+                order: 2,
+                options: [
+                    { value: 'APARTMENT', labelKey: 'admin-filters.accommodationType.apartment' },
+                    { value: 'HOUSE', labelKey: 'admin-filters.accommodationType.house' },
+                    {
+                        value: 'COUNTRY_HOUSE',
+                        labelKey: 'admin-filters.accommodationType.countryHouse'
+                    },
+                    { value: 'CABIN', labelKey: 'admin-filters.accommodationType.cabin' },
+                    { value: 'HOTEL', labelKey: 'admin-filters.accommodationType.hotel' },
+                    { value: 'HOSTEL', labelKey: 'admin-filters.accommodationType.hostel' },
+                    { value: 'CAMPING', labelKey: 'admin-filters.accommodationType.camping' },
+                    { value: 'ROOM', labelKey: 'admin-filters.accommodationType.room' },
+                    { value: 'MOTEL', labelKey: 'admin-filters.accommodationType.motel' },
+                    { value: 'RESORT', labelKey: 'admin-filters.accommodationType.resort' }
+                ]
+            },
+            {
+                paramKey: 'isFeatured',
+                labelKey: 'admin-filters.isFeatured.label',
+                type: 'boolean',
+                order: 3
+            },
+            {
+                paramKey: 'includeDeleted',
+                labelKey: 'admin-filters.includeDeleted.label',
+                type: 'boolean',
+                order: 99
+            }
+        ]
+    },
+
     // Routes
     basePath: '/accommodations',
     detailPath: '/accommodations/[id]',
