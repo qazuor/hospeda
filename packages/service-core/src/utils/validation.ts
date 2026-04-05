@@ -39,8 +39,15 @@ export const validateInput = <T>(schema: z.ZodType<T>, input: unknown, context: 
  * @throws {ServiceError} Throws an `UNAUTHORIZED` error if the actor is null or undefined.
  */
 export const validateActor = (actor: unknown): void => {
-    if (!actor) {
+    if (!actor || typeof actor !== 'object') {
         throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor is required');
+    }
+    const a = actor as Record<string, unknown>;
+    if (!a.id || typeof a.id !== 'string') {
+        throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor id is required');
+    }
+    if (!Array.isArray(a.permissions)) {
+        throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Actor permissions must be an array');
     }
 };
 

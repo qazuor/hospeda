@@ -35,9 +35,9 @@ describe('EventOrganizerService.create', () => {
     });
 
     it('returns error if actor lacks permission', async () => {
-        actor.permissions = [];
+        const actorNoPerms = createActor({ permissions: [] });
         const input = createMockEventOrganizerCreateInput();
-        const result = await service.create(actor, input);
+        const result = await service.create(actorNoPerms, input);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('FORBIDDEN');
         expect(modelMock.create).not.toHaveBeenCalled();

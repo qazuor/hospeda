@@ -36,9 +36,9 @@ describe('EventOrganizerService.update', () => {
     });
 
     it('returns error if actor lacks permission', async () => {
-        actor.permissions = [];
+        const actorNoPerms = createActor({ permissions: [] });
         const patch = { name: 'Updated Name' };
-        const result = await service.update(actor, entity.id, patch);
+        const result = await service.update(actorNoPerms, entity.id, patch);
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe('FORBIDDEN');
         expect(modelMock.update).not.toHaveBeenCalled();

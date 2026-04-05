@@ -5,6 +5,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
  */
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
+import { HTTPException } from 'hono/http-exception';
 import { apiLogger } from './logger';
 
 /**
@@ -46,25 +47,20 @@ export const isGuestActor = (actor: Actor): boolean => {
 };
 
 /**
- * Get actor from Hono context
- * This helper ensures we always have an actor available
+ * Get actor from Hono context.
+ * Throws if actor is not available (indicates middleware misconfiguration).
  *
  * @param c - Hono context
- * @returns {Actor} The actor from context or guest actor as fallback
+ * @returns {Actor} The actor from context
+ * @throws {HTTPException} 500 if actor is not in context
  */
 export const getActorFromContext = (c: Context): Actor => {
     const actor = c.get('actor');
     if (!actor) {
-        apiLogger.warn('No actor found in context, using guest actor as fallback');
-        return createGuestActor();
-    }
-
-    // Ensure permissions array is always defined
-    if (!actor.permissions || !Array.isArray(actor.permissions)) {
-        apiLogger.warn(
-            `Actor has invalid permissions, initializing as empty array (actorId: ${actor.id})`
-        );
-        actor.permissions = [];
+        apiLogger.error('Actor not found in context - actorMiddleware may not be running');
+        throw new HTTPException(500, {
+            message: 'Internal server error: Actor not available'
+        });
     }
 
     return actor;

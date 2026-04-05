@@ -49,7 +49,7 @@ export interface EntityPermissionActor {
     /** The role of the actor. Kept for compatibility; permission checks use only `permissions`. */
     role: string;
     /** A list of specific permissions assigned to the actor. */
-    permissions: PermissionEnum[];
+    permissions: readonly PermissionEnum[];
 }
 
 /**

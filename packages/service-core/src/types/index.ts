@@ -33,7 +33,7 @@ export type Actor = {
     /** Role of the actor in the system */
     role: RoleEnum;
     /** Permissions assigned to the actor (direct + by role) */
-    permissions: PermissionEnum[];
+    permissions: readonly PermissionEnum[];
     /** Entitlements granted to the actor (VIP access, premium features, etc.) */
     entitlements?: Set<string>;
     /** Flag indicating this is a system actor, not a real user */

@@ -167,7 +167,9 @@ export const actorMiddleware = (): MiddlewareHandler => {
                     'Error building user actor:',
                     error instanceof Error ? error.message : String(error)
                 );
-                actor = createGuestActor();
+                throw new HTTPException(503, {
+                    message: 'Service temporarily unavailable'
+                });
             }
         } else {
             // Unauthenticated request .. use GUEST actor
