@@ -33,7 +33,7 @@ describe('UserService - setAdminInfo', () => {
         service = new UserService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
             role: RoleEnum.SUPER_ADMIN,
-            permissions: [PermissionEnum.USER_UPDATE_PROFILE]
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.USER_UPDATE_PROFILE]
         });
         entity = createUser();
         asMock(modelMock.findById).mockResolvedValue(entity);

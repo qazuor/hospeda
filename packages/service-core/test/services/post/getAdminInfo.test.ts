@@ -27,7 +27,7 @@ describe('PostService - getAdminInfo', () => {
         service = new PostService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
             role: RoleEnum.SUPER_ADMIN,
-            permissions: [PermissionEnum.POST_UPDATE]
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.POST_UPDATE]
         });
         asMock(modelMock.findById).mockResolvedValue(
             createMockPost({ id: getMockPostId('post-entity-id') })

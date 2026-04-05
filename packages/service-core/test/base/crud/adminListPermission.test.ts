@@ -8,6 +8,7 @@
  * - Acceptance of actors with both admin permissions
  * - Delegation to _canList() after admin check passes
  * - Error propagation when _canList() throws
+ * - Async _canList() delegation works correctly
  */
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
@@ -41,15 +42,14 @@ describe('BaseCrudPermissions._canAdminList()', () => {
             (service as unknown as CanAdminListAccessor)._canAdminList(actor);
         }).toThrow(ServiceError);
 
-        try {
+        expect(() => {
             (service as unknown as CanAdminListAccessor)._canAdminList(actor);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            if (err instanceof ServiceError) {
-                expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                expect(err.message).toMatch('Admin access required for admin list operations');
-            }
-        }
+        }).toThrow(
+            expect.objectContaining({
+                code: ServiceErrorCode.FORBIDDEN,
+                message: 'Admin access required for admin list operations'
+            })
+        );
     });
 
     it('allows actor with ACCESS_PANEL_ADMIN', () => {
@@ -116,17 +116,40 @@ describe('BaseCrudPermissions._canAdminList()', () => {
 
         expect(() => {
             (service as unknown as CanAdminListAccessor)._canAdminList(actor);
-        }).toThrow(ServiceError);
+        }).toThrow(
+            expect.objectContaining({
+                code: ServiceErrorCode.FORBIDDEN,
+                message: 'Entity-specific list check failed'
+            })
+        );
 
-        try {
-            (service as unknown as CanAdminListAccessor)._canAdminList(actor);
-        } catch (err) {
-            expect(err).toBeInstanceOf(ServiceError);
-            if (err instanceof ServiceError) {
-                expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
-                expect(err.message).toMatch('Entity-specific list check failed');
-            }
-        }
+        canListSpy.mockRestore();
+    });
+
+    it('correctly awaits async _canList() delegation', async () => {
+        const actor = new ActorFactoryBuilder()
+            .withId('panel-admin-1')
+            .withPermissions([PermissionEnum.ACCESS_PANEL_ADMIN])
+            .build();
+
+        const canListSpy = vi
+            .spyOn(Object.getPrototypeOf(service), '_canList')
+            .mockImplementation(async () => {
+                await Promise.resolve();
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Async entity-specific list check failed'
+                );
+            });
+
+        await expect(
+            (service as unknown as CanAdminListAccessor)._canAdminList(actor)
+        ).rejects.toThrow(
+            expect.objectContaining({
+                code: ServiceErrorCode.FORBIDDEN,
+                message: 'Async entity-specific list check failed'
+            })
+        );
 
         canListSpy.mockRestore();
     });

@@ -31,7 +31,7 @@ describe('DestinationService - setAdminInfo', () => {
         service = new DestinationService({ logger: loggerMock }, modelMock);
         superAdmin = createActor({
             role: RoleEnum.SUPER_ADMIN,
-            permissions: [PermissionEnum.DESTINATION_UPDATE]
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.DESTINATION_UPDATE]
         });
         entity = createDestination() as any;
         asMock(modelMock.findById).mockResolvedValue(entity);

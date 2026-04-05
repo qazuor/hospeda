@@ -27,7 +27,7 @@ describe('EventService - getAdminInfo', () => {
         service = new EventService({ model: modelMock, logger: loggerMock });
         superAdmin = createActor({
             role: RoleEnum.SUPER_ADMIN,
-            permissions: [PermissionEnum.EVENT_UPDATE]
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.EVENT_UPDATE]
         });
         asMock(modelMock.findById).mockResolvedValue(
             getMockEvent({ id: getMockEventId('event-entity-id') })

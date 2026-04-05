@@ -26,7 +26,9 @@ describe('AmenityService.setAdminInfo', () => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
         service = new AmenityService({ logger: loggerMock }, amenityModelMock);
-        actor = createActor({ permissions: [PermissionEnum.AMENITY_UPDATE] });
+        actor = createActor({
+            permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.AMENITY_UPDATE]
+        });
     });
 
     it('should set admin info for an amenity (success)', async () => {

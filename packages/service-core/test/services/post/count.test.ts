@@ -3,7 +3,7 @@ import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -26,14 +26,15 @@ describe('PostService.count', () => {
         expect(result.data?.count).toBe(42);
     });
 
-    it('should return FORBIDDEN if actor is not authenticated', async () => {
-        const forbiddenActor = createActor({
+    it('should return UNAUTHORIZED if actor has no id', async () => {
+        const invalidActor = createActor({
             permissions: [],
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const result = await service.count(forbiddenActor, { page: 1, pageSize: 10 });
-        expectForbiddenError(result);
+        const result = await service.count(invalidActor, { page: 1, pageSize: 10 });
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe('UNAUTHORIZED');
         expect(modelMock.count as Mock).not.toHaveBeenCalled();
     });
 

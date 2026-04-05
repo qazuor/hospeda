@@ -26,7 +26,10 @@ describe('AccommodationService - getAdminInfo', () => {
         service = new AccommodationService({ logger: loggerMock }, modelMock);
         admin = createActor({
             role: RoleEnum.ADMIN,
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            ]
         });
         accommodation = createAccommodation();
         asMock(modelMock.findById).mockResolvedValue(accommodation);

@@ -50,12 +50,14 @@ export const mockActor: Actor = new ActorFactoryBuilder()
     .build();
 
 export const mockAdminActor: Actor = new ActorFactoryBuilder()
-    .superAdmin()
     .withId('admin-user-1')
+    .withRole(RoleEnum.SUPER_ADMIN)
     .withPermissions([
         PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.ACCESS_API_ADMIN,
         PermissionEnum.ACCOMMODATION_CREATE,
-        PermissionEnum.ACCOMMODATION_UPDATE_ANY
+        PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+        PermissionEnum.ACCOMMODATION_VIEW_ALL
     ])
     .build();
 
