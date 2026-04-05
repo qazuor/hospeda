@@ -6,6 +6,7 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils/permission';
 
 /**
  * Checks if the actor has permission to create an event location.
@@ -66,6 +67,19 @@ export function checkCanDeleteEventLocation(actor: Actor): void {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied to delete event location'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to admin-list this entity type.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.EVENT_LOCATION_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: EVENT_LOCATION_VIEW required for admin list'
         );
     }
 }

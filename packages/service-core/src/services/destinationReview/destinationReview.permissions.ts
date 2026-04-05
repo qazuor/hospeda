@@ -1,6 +1,7 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { hasPermission } from '../../utils/permission';
 
 export function checkCanCreateDestinationReview(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
@@ -45,4 +46,17 @@ export function checkCanViewDestinationReview(actor: Actor): void {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
     // Allow any actor to view destination reviews; visibility filtering happens elsewhere
     return;
+}
+
+/**
+ * Checks if an actor has permission to admin-list this entity type.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.DESTINATION_REVIEW_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: DESTINATION_REVIEW_VIEW required for admin list'
+        );
+    }
 }

@@ -161,3 +161,16 @@ export function checkCanUpdateDestinationVisibility(actor: Actor, _entity: Desti
         );
     }
 }
+
+/**
+ * Checks if an actor has permission to admin-list this entity type.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.DESTINATION_VIEW_ALL)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: DESTINATION_VIEW_ALL required for admin list'
+        );
+    }
+}

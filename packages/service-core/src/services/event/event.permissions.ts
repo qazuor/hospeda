@@ -6,6 +6,7 @@
 import type { Event } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Actor, ServiceError } from '../../types';
+import { hasPermission } from '../../utils/permission';
 
 /**
  * Checks if the actor can create an event.
@@ -89,6 +90,19 @@ export function checkCanHardDeleteEvent(actor: Actor): void {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied to hard delete event'
+        );
+    }
+}
+
+/**
+ * Checks if an actor has permission to admin-list this entity type.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.EVENT_VIEW_ALL)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: EVENT_VIEW_ALL required for admin list'
         );
     }
 }

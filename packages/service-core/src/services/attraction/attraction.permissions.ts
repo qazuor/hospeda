@@ -82,3 +82,16 @@ export function checkCanDeleteAttraction(actor: Actor): void {
         );
     }
 }
+
+/**
+ * Checks if an actor has permission to admin-list this entity type.
+ * @throws {ServiceError} If the permission check fails.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!actor || !actor.id || !hasPermission(actor, PermissionEnum.ATTRACTION_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: ATTRACTION_VIEW required for admin list'
+        );
+    }
+}

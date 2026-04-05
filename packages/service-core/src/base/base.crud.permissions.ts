@@ -203,6 +203,58 @@ export abstract class BaseCrudPermissions<
         return this._canList(actor);
     }
 
+    /**
+     * Permission check for retrieving admin metadata (adminInfo) of an entity.
+     * Default checks admin access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN), then delegates to _canUpdate().
+     *
+     * Override this method in concrete services to add entity-specific admin info read permissions.
+     * Override MUST call super._canAdminGetInfo() first to preserve the admin access check.
+     *
+     * @param actor - The user or system performing the action.
+     * @param entity - The entity whose admin info is being retrieved.
+     * @throws {ServiceError} If the permission check fails (FORBIDDEN).
+     */
+    protected _canAdminGetInfo(actor: Actor, entity: TEntity): Promise<void> | void {
+        const hasAdmin =
+            hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) ||
+            hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN);
+
+        if (!hasAdmin) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Admin access required for admin get info operations'
+            );
+        }
+
+        return this._canUpdate(actor, entity);
+    }
+
+    /**
+     * Permission check for setting admin metadata (adminInfo) on an entity.
+     * Default checks admin access (ACCESS_PANEL_ADMIN or ACCESS_API_ADMIN), then delegates to _canUpdate().
+     *
+     * Override this method in concrete services to add entity-specific admin info write permissions.
+     * Override MUST call super._canAdminSetInfo() first to preserve the admin access check.
+     *
+     * @param actor - The user or system performing the action.
+     * @param entity - The entity whose admin info is being set.
+     * @throws {ServiceError} If the permission check fails (FORBIDDEN).
+     */
+    protected _canAdminSetInfo(actor: Actor, entity: TEntity): Promise<void> | void {
+        const hasAdmin =
+            hasPermission(actor, PermissionEnum.ACCESS_PANEL_ADMIN) ||
+            hasPermission(actor, PermissionEnum.ACCESS_API_ADMIN);
+
+        if (!hasAdmin) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Admin access required for admin set info operations'
+            );
+        }
+
+        return this._canUpdate(actor, entity);
+    }
+
     // --- Abstract Core Logic Methods ---
 
     /**
