@@ -33,18 +33,26 @@ src/
 ├── services/          # Entity services
 │   ├── accommodation/
 │   │   ├── accommodation.service.ts
+│   │   ├── accommodation.permissions.ts
 │   │   └── index.ts
 │   ├── destination/
 │   ├── event/
 │   ├── post/
 │   ├── user/
 │   └── index.ts
-├── base/              # Base classes
-│   └── BaseCrudService.ts
+├── base/              # Base classes (split by concern)
+│   ├── base.crud.service.ts      # Main service class, orchestration
+│   ├── base.crud.permissions.ts  # Permission hooks (_can* methods)
+│   ├── base.crud.read.ts         # Read operations (list, search, adminList, count)
+│   ├── base.crud.write.ts        # Write operations (create, update, delete)
+│   ├── base.crud.admin.ts        # Admin operations (getAdminInfo, setAdminInfo)
+│   └── base.crud.related.ts      # Related entity service base
 ├── types/             # Service-specific types
-│   └── service-context.ts
+│   └── index.ts
 ├── utils/             # Service utilities
-│   └── validation.ts
+│   ├── validation.ts
+│   ├── permission.ts
+│   └── service-logger.ts
 └── index.ts           # Main exports
 ```
 
@@ -469,7 +477,7 @@ export function checkCanCreate(actor: Actor, _data: unknown): void {
 
 ### Standard Permission Mapping
 
-Each service has 11 standard permission hooks that map to permissions:
+Each service has 12 standard permission hooks that map to permissions:
 
 | Hook | Permission Pattern | Example |
 |------|-------------------|---------|
@@ -484,6 +492,30 @@ Each service has 11 standard permission hooks that map to permissions:
 | `_canList` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
 | `_canSearch` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
 | `_canCount` | `ENTITY_VIEW` | `ACCOMMODATION_LISTING_VIEW` |
+| `_canAdminList` | `ACCESS_PANEL_ADMIN` or `ACCESS_API_ADMIN` + entity-specific | `ACCOMMODATION_VIEW_ALL` |
+
+### Admin-Specific Permission Hooks
+
+`_canAdminList()` is the ONLY concrete (non-abstract) permission hook in the hierarchy. It provides defense-in-depth for admin list operations:
+
+- **Default behavior**: Checks `ACCESS_PANEL_ADMIN` or `ACCESS_API_ADMIN`, then delegates to `_canList()` for entity-specific checks
+- **Override pattern**: Services override `_canAdminList()` to add entity-specific admin permission (e.g., `ACCOMMODATION_VIEW_ALL`)
+- **Override MUST call super**: `await super._canAdminList(actor)` must be called first to preserve the admin access check
+- **Always use async/await**: Override signature must be `protected async _canAdminList(actor: Actor): Promise<void>` with `await` on super call
+
+### Permission Error Message Convention
+
+All permission error messages must follow these standardized patterns:
+
+| Context | Pattern | Example |
+|---------|---------|---------|
+| Base admin access checks | `"Admin access required for [operation]"` | `"Admin access required for admin list operations"` |
+| Entity-specific permission (after admin) | `"Permission denied: [PERMISSION_ENUM] required for [operation]"` | `"Permission denied: ACCOMMODATION_VIEW_ALL required for admin list"` |
+| Standard CRUD checks | `"Permission denied: Insufficient permissions to [verb] [entity]"` | `"Permission denied: Insufficient permissions to create accommodation"` |
+
+### Known Limitations
+
+- **No `@MustCallSuper` enforcement**: TypeScript has no mechanism to enforce that overrides call `super._canAdminList()`. Mitigation: every service with a `_canAdminList` override MUST have a call-order test verifying `super._canAdminList` is called before entity-specific checks. See `accommodation.adminListPermission.test.ts` for the reference pattern.
 
 ### Complete Permission File Template
 
