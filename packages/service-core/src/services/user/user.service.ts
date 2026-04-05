@@ -107,18 +107,6 @@ export class UserService extends BaseCrudService<
     }
 
     /**
-     * Permission: Requires USER_DELETE permission to delete users.
-     */
-    protected _canDelete(actor: Actor): void {
-        if (!hasPermission(actor, PermissionEnum.USER_DELETE)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Requires USER_DELETE permission to delete users'
-            );
-        }
-    }
-
-    /**
      * Permission: Requires USER_RESTORE permission to restore users.
      */
     protected _canRestore(actor: Actor): void {
@@ -296,7 +284,7 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserAddPermissionInputSchema,
             execute: async ({ userId, permission }, actor) => {
-                this._canManagePermissions(actor);
+                await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
@@ -335,7 +323,7 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserRemovePermissionInputSchema,
             execute: async ({ userId, permission }, actor) => {
-                this._canManagePermissions(actor);
+                await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
@@ -374,7 +362,7 @@ export class UserService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserSetPermissionsInputSchema,
             execute: async ({ userId, permissions }, actor) => {
-                this._canManagePermissions(actor);
+                await this._canManagePermissions(actor);
                 const user = await this.model.findById(userId);
                 if (!user) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found');
@@ -489,30 +477,39 @@ export class UserService extends BaseCrudService<
      * @param params - The search parameters
      * @returns Users with counts
      */
-    public async searchForList(actor: Actor, params: UserSearch): Promise<UserSearchResult> {
-        this._canSearch(actor);
-        const { page, pageSize } = params;
+    public async searchForList(
+        actor: Actor,
+        params: UserSearch
+    ): Promise<ServiceOutput<UserSearchResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'searchForList',
+            input: { ...params, actor },
+            schema: UserSearchSchema,
+            execute: async (validated, validatedActor) => {
+                await this._canSearch(validatedActor);
+                const { page, pageSize } = validated;
 
-        // Use findAllWithCounts which fetches users + counts in a single query
-        const result = await this.model.findAllWithCounts(params, { page, pageSize });
+                const result = await this.model.findAllWithCounts(validated, { page, pageSize });
 
-        const itemsWithCounts = result.items.map((user) => ({
-            ...user,
-            accommodationCount: user.accommodationsCount,
-            eventsCount: user.eventsCount,
-            postsCount: user.postsCount
-        }));
+                const itemsWithCounts = result.items.map((user) => ({
+                    ...user,
+                    accommodationCount: user.accommodationsCount,
+                    eventsCount: user.eventsCount,
+                    postsCount: user.postsCount
+                }));
 
-        return {
-            data: itemsWithCounts,
-            pagination: {
-                page,
-                pageSize,
-                total: result.total,
-                totalPages: Math.ceil(result.total / pageSize),
-                hasNextPage: page * pageSize < result.total,
-                hasPreviousPage: page > 1
+                return {
+                    data: itemsWithCounts,
+                    pagination: {
+                        page,
+                        pageSize,
+                        total: result.total,
+                        totalPages: Math.ceil(result.total / pageSize),
+                        hasNextPage: page * pageSize < result.total,
+                        hasPreviousPage: page > 1
+                    }
+                };
             }
-        };
+        });
     }
 }

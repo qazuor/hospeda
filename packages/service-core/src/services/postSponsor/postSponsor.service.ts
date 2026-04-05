@@ -139,7 +139,7 @@ export class PostSponsorService extends BaseCrudService<
         actor: Actor,
         params: PostSponsorSearchInput
     ): Promise<PostSponsorListOutput> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { name, type, q, page = 1, pageSize = 10 } = params;
 
         const where: Record<string, unknown> = {};

@@ -54,6 +54,7 @@ import {
     normalizeViewInput
 } from './destination.normalizers';
 import {
+    checkCanAdminList,
     checkCanCountDestinations,
     checkCanCreateDestination,
     checkCanHardDeleteDestination,
@@ -159,7 +160,14 @@ export class DestinationService extends BaseCrudService<
     ): void {
         checkCanUpdateDestinationVisibility(actor, entity);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     // --- Abstract methods required by BaseService ---
     /**
      * Executes a paginated search for destinations using provided filters and pagination options.
@@ -260,7 +268,7 @@ export class DestinationService extends BaseCrudService<
         params: DestinationSearchInput
     ): Promise<DestinationSearchForListOutput> {
         // Check permissions
-        this._canSearch(actor);
+        await this._canSearch(actor);
 
         // Extract parameters
         const {
@@ -774,8 +782,10 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Updates the stats (reviewsCount, averageRating, rating) for a destination.
+     * Internal system operation called from review services during cascading updates.
      * @param destinationId - The ID of the destination to update
      * @param stats - Object with reviewsCount, averageRating, and rating
+     * @internal
      */
     public async updateStatsFromReview(
         destinationId: string,
@@ -793,7 +803,9 @@ export class DestinationService extends BaseCrudService<
     }
 
     /**
-     * Actualiza accommodationsCount del destino contando los accommodations activos.
+     * Updates accommodationsCount for a destination by counting active accommodations.
+     * Internal system operation called from accommodation services during cascading updates.
+     * @internal
      */
     public async updateAccommodationsCount(destinationId: string): Promise<void> {
         const accommodationCount = await this.accommodationModel.count({
@@ -805,6 +817,10 @@ export class DestinationService extends BaseCrudService<
 
     // ========================================================================
     // HIERARCHY QUERY METHODS
+    // These methods are intentionally permissive (no permission checks) because
+    // they serve public-tier endpoints (/public/destinations/...). Admin-tier
+    // routes reuse these methods with HTTP-level permission enforcement via
+    // middleware. Actor is passed for logging/audit purposes only.
     // ========================================================================
 
     /**

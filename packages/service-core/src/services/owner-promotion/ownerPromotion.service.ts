@@ -13,6 +13,7 @@ import {
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceContext } from '../../types';
 import {
+    checkCanAdminList,
     checkCanCount,
     checkCanCreate,
     checkCanHardDelete,
@@ -110,7 +111,14 @@ export class OwnerPromotionService extends BaseCrudService<
     ): void {
         checkCanUpdateVisibility(actor, entity, newVisibility);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected async _executeSearch(params: OwnerPromotionSearchInput, _actor: Actor) {
         const { page = 1, limit = 20, ...filterParams } = params;
         return this.model.findAll(filterParams, { page, pageSize: limit });

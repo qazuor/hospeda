@@ -202,7 +202,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkListByEntityInputSchema,
             execute: async (validated) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const { page, pageSize } = validated;
                 const filter: Record<string, unknown> = {
                     entityId: validated.entityId,
@@ -231,7 +231,7 @@ export class UserBookmarkService extends BaseCrudService<
             input: { ...params, actor },
             schema: UserBookmarkCountByEntityInputSchema,
             execute: async (validated) => {
-                this._canCount(actor);
+                await this._canCount(actor);
                 const count = await this.model.count({
                     entityId: validated.entityId,
                     entityType: validated.entityType,

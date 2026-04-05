@@ -223,8 +223,8 @@ export class AccommodationService extends BaseCrudService<
      * @inheritdoc
      * Verifies admin access via base class, then checks ACCOMMODATION_VIEW_ALL.
      */
-    protected _canAdminList(actor: Actor): void {
-        super._canAdminList(actor);
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
         checkCanAdminList(actor);
     }
     /**
@@ -654,7 +654,7 @@ export class AccommodationService extends BaseCrudService<
             input: { ...params, actor },
             schema: AccommodationTopRatedParamsSchema,
             execute: async (validated, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
 
                 const hasVipAccess =
                     actor.entitlements?.has('vip_promotions_access') ||
@@ -707,7 +707,7 @@ export class AccommodationService extends BaseCrudService<
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
                 const entity = entityResult.data;
-                this._canView(actor, entity);
+                await this._canView(actor, entity);
                 if (!entity.location) {
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
                     return { accommodation: null };
@@ -798,7 +798,7 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationByDestinationParamsSchema,
             execute: async (validated, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const result = await this.model.findAll(
                     {
                         destinationId: validated.destinationId
@@ -836,7 +836,7 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationTopRatedParamsSchema,
             execute: async (validated, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
 
                 // For this method, destinationId is required
                 if (!validated.destinationId) {
@@ -886,7 +886,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
                 const faqToCreate = {
                     ...validated.faq,
@@ -917,7 +917,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
                 const faq = await faqModel.findById(validated.faqId);
                 if (!faq || faq.accommodationId !== validated.accommodationId) {
@@ -951,7 +951,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const faqModel = new AccommodationFaqModel();
                 const faq = await faqModel.findById(validated.faqId);
                 if (!faq || faq.accommodationId !== validated.accommodationId) {
@@ -999,7 +999,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canView(actor, accommodation);
+                await this._canView(actor, accommodation);
                 // FAQs are already loaded via the relation
                 const faqs = (accommodation as unknown as { faqs?: unknown[] }).faqs ?? [];
                 return { faqs: faqs as AccommodationFaq[] };
@@ -1026,7 +1026,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
                 const iaDataToCreate = {
                     ...validated.iaData,
@@ -1057,7 +1057,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
                 const iaData = await iaDataModel.findById(validated.iaDataId);
                 if (!iaData || iaData.accommodationId !== validated.accommodationId) {
@@ -1091,7 +1091,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canUpdate(actor, accommodation);
+                await this._canUpdate(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
                 const iaData = await iaDataModel.findById(validated.iaDataId);
                 if (!iaData || iaData.accommodationId !== validated.accommodationId) {
@@ -1137,7 +1137,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
-                this._canView(actor, accommodation);
+                await this._canView(actor, accommodation);
                 const iaDataModel = new AccommodationIaDataModel();
                 const { items: iaData } = await iaDataModel.findAll({
                     accommodationId: validated.accommodationId
@@ -1162,7 +1162,7 @@ export class AccommodationService extends BaseCrudService<
             input: { actor: actor, ...input },
             schema: WithOwnerIdParamsSchema,
             execute: async (validated, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
 
                 const result = await this.model.findAll({
                     ownerId: validated.ownerId

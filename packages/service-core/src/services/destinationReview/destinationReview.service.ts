@@ -27,6 +27,7 @@ import { DestinationService } from '../destination/destination.service';
 import { calculateStatsFromReviews, computeReviewAverageRating } from './destinationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './destinationReview.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateDestinationReview,
     checkCanDeleteDestinationReview,
     checkCanUpdateDestinationReview,
@@ -125,7 +126,14 @@ export class DestinationReviewService extends BaseCrudService<
     ): void {
         checkCanUpdateDestinationReview(actor);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected async _executeSearch(
         params: DestinationReviewSearchInput,
         _actor: Actor

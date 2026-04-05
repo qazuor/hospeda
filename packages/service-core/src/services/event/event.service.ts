@@ -44,6 +44,7 @@ import { type Actor, ServiceError } from '../../types';
 import { generateEventSlug } from './event.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './event.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateEvent,
     checkCanDeleteEvent,
     checkCanHardDeleteEvent,
@@ -168,7 +169,14 @@ export class EventService extends BaseCrudService<
     ): void {
         checkCanUpdateEvent(actor);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     /**
      * Lifecycle hook: normalizes input before creating an event and generates slug.
      */
@@ -643,7 +651,7 @@ export class EventService extends BaseCrudService<
                 if (!event) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Event not found');
                 }
-                this._canView(validatedActor, event);
+                await this._canView(validatedActor, event);
                 const summary = {
                     id: event.id,
                     slug: event.slug,

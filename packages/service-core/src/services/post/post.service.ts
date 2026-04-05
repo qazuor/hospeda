@@ -43,6 +43,7 @@ import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
+    checkCanAdminList,
     checkCanCommentPost,
     checkCanCreatePost,
     checkCanDeletePost,
@@ -373,7 +374,14 @@ export class PostService extends BaseCrudService<
             );
         }
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected async _afterCreate(entity: Post): Promise<Post> {
         const tagSlugs = entity.tags?.map((t) => t.slug);
         try {
@@ -559,7 +567,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostNewsInputSchema.strict(),
             execute: async (validated: GetPostNewsInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
 
                 // If no visibility is specified, default to PUBLIC for guest users
@@ -595,7 +603,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostFeaturedInputSchema.strict(),
             execute: async (validated: GetPostFeaturedInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
 
                 // If no visibility is specified, default to PUBLIC for guest users
@@ -631,7 +639,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostByCategoryInputSchema.strict(),
             execute: async (validated: GetPostByCategoryInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
 
                 // If no visibility is specified, default to PUBLIC for guest users
@@ -672,7 +680,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostByRelatedAccommodationInputSchema.strict(),
             execute: async (validated: GetPostByRelatedAccommodationInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = {
                     relatedAccommodationId: validated.accommodationId
                 };
@@ -710,7 +718,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostByRelatedDestinationInputSchema.strict(),
             execute: async (validated: GetPostByRelatedDestinationInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = {
                     relatedDestinationId: validated.destinationId
                 };
@@ -748,7 +756,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: GetPostByRelatedEventInputSchema.strict(),
             execute: async (validated: GetPostByRelatedEventInput, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
 
                 // If no visibility is specified, default to PUBLIC for guest users
@@ -784,7 +792,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: LikePostInputSchema,
             execute: async (validated, actor) => {
-                this._canLike(actor);
+                await this._canLike(actor);
                 const post = await this.model.findOne({ id: validated.postId });
                 if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
@@ -810,7 +818,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: LikePostInputSchema,
             execute: async (validated, actor) => {
-                this._canList(actor);
+                await this._canLike(actor);
                 const post = await this.model.findOne({ id: validated.postId });
                 if (!post) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Post not found');
@@ -836,7 +844,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: z.object({ postId: z.string(), comment: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
-                this._canComment(actor);
+                await this._canComment(actor);
                 throw new ServiceError(
                     ServiceErrorCode.NOT_IMPLEMENTED,
                     'addComment is not implemented yet'
@@ -860,7 +868,7 @@ export class PostService extends BaseCrudService<
             input: { ...params, actor },
             schema: z.object({ postId: z.string(), commentId: z.string() }).strict(),
             execute: async (_validated: unknown, actor: Actor): Promise<{ success: boolean }> => {
-                this._canComment(actor);
+                await this._canComment(actor);
                 throw new ServiceError(
                     ServiceErrorCode.NOT_IMPLEMENTED,
                     'removeComment is not implemented yet'

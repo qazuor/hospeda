@@ -40,6 +40,7 @@ import { AccommodationService } from '../accommodation/accommodation.service';
 import { calculateStatsFromReviews } from './accommodationReview.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './accommodationReview.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateAccommodationReview,
     checkCanDeleteAccommodationReview,
     checkCanUpdateAccommodationReview,
@@ -142,7 +143,14 @@ export class AccommodationReviewService extends BaseCrudService<
     ): void {
         checkCanUpdateAccommodationReview(actor);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected async _executeSearch(
         params: AccommodationReviewSearchParams,
         _actor: Actor

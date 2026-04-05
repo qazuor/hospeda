@@ -24,6 +24,7 @@ import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
 import {
     checkCanAddFeatureToAccommodation,
+    checkCanAdminList,
     checkCanCountFeatures,
     checkCanCreateFeature,
     checkCanDeleteFeature,
@@ -165,7 +166,14 @@ export class FeatureService extends BaseCrudRelatedService<
     protected _canRemoveFeatureFromAccommodation(actor: Actor): void {
         checkCanRemoveFeatureFromAccommodation(actor);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected async _executeSearch(
         params: z.infer<typeof SearchFeatureSchema>,
         _actor: Actor
@@ -211,7 +219,7 @@ export class FeatureService extends BaseCrudRelatedService<
         items: Array<Feature & { accommodationCount?: number }>;
         total: number;
     }> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { pagination, filters = {} } = params;
         const { name, slug, isFeatured, isBuiltin } = filters;
         const page = pagination?.page ?? 1;
@@ -256,7 +264,7 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: AddFeatureToAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canAddFeatureToAccommodation(actor);
+                await this._canAddFeatureToAccommodation(actor);
                 const { accommodationId, featureId, comments } = validatedParams;
                 // Verify feature exists
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
@@ -304,7 +312,7 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: RemoveFeatureFromAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canRemoveFeatureFromAccommodation(actor);
+                await this._canRemoveFeatureFromAccommodation(actor);
                 const { accommodationId, featureId } = validatedParams;
                 // Verify relation exists (implies feature exists, no separate check needed)
                 const existing = await this.relatedModel.findOne({
@@ -350,7 +358,7 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: GetFeaturesForAccommodationSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const { accommodationId } = validatedParams;
                 // Single query with JOIN instead of 2 sequential queries
                 const { items: relationsWithFeature } =
@@ -382,7 +390,7 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: GetAccommodationsByFeatureSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const { featureId } = validatedParams;
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {

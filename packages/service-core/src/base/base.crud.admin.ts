@@ -49,7 +49,7 @@ export abstract class BaseCrudAdmin<
                         `${this.entityName} not found`
                     );
                 }
-                this._canUpdate(actor, entity);
+                await this._canAdminGetInfo(actor, entity);
                 return { adminInfo: (entity as Record<string, unknown>).adminInfo };
             }
         });
@@ -78,7 +78,7 @@ export abstract class BaseCrudAdmin<
                         `${this.entityName} not found`
                     );
                 }
-                this._canUpdate(actor, entity);
+                await this._canAdminSetInfo(actor, entity);
                 const normalized = normalizeAdminInfo(adminInfo);
                 if (!normalized) {
                     throw new ServiceError(ServiceErrorCode.VALIDATION_ERROR, 'Invalid adminInfo');

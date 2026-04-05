@@ -12,6 +12,7 @@ import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateEventLocation,
     checkCanDeleteEventLocation,
     checkCanUpdateEventLocation
@@ -110,6 +111,14 @@ export class EventLocationService extends BaseCrudService<
     protected _canUpdateVisibility(actor: Actor): void {
         if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden: no actor');
     }
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
 
     protected async _executeSearch(
         params: EventLocationSearchInput,
@@ -186,7 +195,7 @@ export class EventLocationService extends BaseCrudService<
         actor: Actor,
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { page = 1, pageSize = 10, q, city, state, country, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
@@ -231,7 +240,7 @@ export class EventLocationService extends BaseCrudService<
         options?: { page?: number; pageSize?: number }
     ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
         // Check permissions
-        this._canList(actor);
+        await this._canList(actor);
 
         try {
             const { page = 1, pageSize = 20 } = options || {};
@@ -268,7 +277,7 @@ export class EventLocationService extends BaseCrudService<
         options?: { page?: number; pageSize?: number }
     ): Promise<ServiceOutput<PaginatedListOutput<EventLocation>>> {
         // Check permissions
-        this._canList(actor);
+        await this._canList(actor);
 
         try {
             const { page = 1, pageSize = 20 } = options || {};
@@ -314,7 +323,7 @@ export class EventLocationService extends BaseCrudService<
         }>
     > {
         // Check permissions
-        this._canView(actor);
+        await this._canView(actor);
 
         try {
             // Find the location

@@ -30,6 +30,7 @@ import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
+    checkCanAdminList,
     checkCanCountTags,
     checkCanCreateTag,
     checkCanDeleteTag,
@@ -159,6 +160,14 @@ export class TagService extends BaseCrudRelatedService<
      */
     protected _canUpdateVisibility(actor: Actor, entity: Tag, _newVisibility: unknown): void {
         checkCanUpdateVisibilityTag(actor, entity);
+    }
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     protected async _afterCreate(entity: Tag): Promise<Tag> {
@@ -292,7 +301,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagGetPopularInputSchema,
             execute: async (validated) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const results = await this.relatedModel.findPopularTags(validated.limit ?? 10);
                 const tagsList: Tag[] = results.map((row) => row.tag as Tag);
                 return { tags: tagsList };
@@ -315,7 +324,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagAddToEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as Tag);
+                await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const tag = await this.model.findById(validated.tagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');
@@ -357,7 +366,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagRemoveFromEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as Tag);
+                await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const existing = await this.relatedModel.findOne({
                     tagId: validated.tagId,
                     entityId: validated.entityId,
@@ -395,7 +404,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagGetForEntityInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, {} as Tag);
+                await this._canUpdate(actor, {} as Tag);
                 const relations = await this.relatedModel.findAllWithTags(
                     validated.entityId,
                     validated.entityType
@@ -426,7 +435,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: TagGetEntitiesByTagInputSchema.strict(),
             execute: async (validated) => {
-                this._canUpdate(actor, { id: validated.tagId } as Tag);
+                await this._canUpdate(actor, { id: validated.tagId } as Tag);
                 const tag = await this.model.findById(validated.tagId);
                 if (!tag) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Tag not found');

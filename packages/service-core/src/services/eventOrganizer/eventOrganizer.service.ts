@@ -22,6 +22,7 @@ import { hasPermission } from '../../utils';
 import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateEventOrganizer,
     checkCanDeleteEventOrganizer,
     checkCanUpdateEventOrganizer
@@ -112,7 +113,14 @@ export class EventOrganizerService extends BaseCrudService<
             );
         }
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     // --- Core Logic ---
     protected async _executeSearch(
         params: EventOrganizerSearchInput,
@@ -149,7 +157,7 @@ export class EventOrganizerService extends BaseCrudService<
         actor: Actor,
         params: EventOrganizerListInput
     ): Promise<{ items: EventOrganizer[]; total: number }> {
-        this._canList(actor);
+        await this._canList(actor);
         const { page = 1, pageSize = 10, q, name, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };

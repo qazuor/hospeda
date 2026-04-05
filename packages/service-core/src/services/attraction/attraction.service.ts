@@ -42,6 +42,7 @@ import {
     normalizeViewInput
 } from './attraction.normalizers';
 import {
+    checkCanAdminList,
     checkCanCreateAttraction,
     checkCanDeleteAttraction,
     checkCanListAttractions,
@@ -186,7 +187,14 @@ export class AttractionService extends BaseCrudRelatedService<
     protected _canRemoveAttractionFromDestination(actor: Actor): void {
         checkCanDeleteAttraction(actor);
     }
-
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
+    }
     protected createDefaultRelatedModel(): RDestinationAttractionModel {
         return new RDestinationAttractionModel();
     }
@@ -204,7 +212,7 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionAddToDestinationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canAddAttractionToDestination(actor);
+                await this._canAddAttractionToDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
 
                 // Run all existence checks in parallel for better performance
@@ -268,7 +276,7 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionRemoveFromDestinationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canRemoveAttractionFromDestination(actor);
+                await this._canRemoveAttractionFromDestination(actor);
                 const { destinationId, attractionId } = validatedParams;
                 // Verify attraction exists
                 const attraction = await this.model.findOne({
@@ -336,7 +344,7 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AttractionsByDestinationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const { destinationId } = validatedParams;
 
                 // Run existence check and data fetch in parallel
@@ -385,7 +393,7 @@ export class AttractionService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: DestinationsByAttractionInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canList(actor);
+                await this._canList(actor);
                 const { attractionId } = validatedParams;
 
                 // Run existence check and data fetch in parallel
@@ -461,7 +469,7 @@ export class AttractionService extends BaseCrudRelatedService<
         actor: Actor,
         params: AttractionSearchInput
     ): Promise<AttractionListWithCountsResponse> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { name, slug, isFeatured, isBuiltin, destinationId } = params;
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;

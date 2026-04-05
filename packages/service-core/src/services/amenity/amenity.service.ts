@@ -34,6 +34,7 @@ import { type Actor, type ServiceContext, ServiceError } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
 import {
     checkCanAddAmenityToAccommodation,
+    checkCanAdminList,
     checkCanCountAmenities,
     checkCanCreateAmenity,
     checkCanDeleteAmenity,
@@ -134,6 +135,14 @@ export class AmenityService extends BaseCrudRelatedService<
     }
     protected _canRemoveAmenityFromAccommodation(actor: Actor): void {
         checkCanRemoveAmenityFromAccommodation(actor);
+    }
+    /**
+     * @inheritdoc
+     * Verifies admin access via base class, then checks entity-specific permission.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     protected async _afterCreate(entity: Amenity): Promise<Amenity> {
@@ -341,7 +350,7 @@ export class AmenityService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AmenityAddToAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canAddAmenityToAccommodation(actor);
+                await this._canAddAmenityToAccommodation(actor);
                 const {
                     accommodationId,
                     amenityId,
@@ -399,7 +408,7 @@ export class AmenityService extends BaseCrudRelatedService<
             input: { ...params, actor },
             schema: AmenityRemoveFromAccommodationInputSchema,
             execute: async (validatedParams, actor) => {
-                this._canRemoveAmenityFromAccommodation(actor);
+                await this._canRemoveAmenityFromAccommodation(actor);
                 const { accommodationId, amenityId } = validatedParams;
                 // Verify relation exists (implies amenity exists, no separate check needed)
                 const existing = await this.relatedModel.findOne({
@@ -456,7 +465,7 @@ export class AmenityService extends BaseCrudRelatedService<
         actor: Actor,
         params: AmenitySearchInput
     ): Promise<AmenitySearchForListOutput> {
-        this._canSearch(actor);
+        await this._canSearch(actor);
         const { page = 1, pageSize = 10, ...filterParams } = params;
 
         const result = await this.model.findAll(filterParams, { page, pageSize });
