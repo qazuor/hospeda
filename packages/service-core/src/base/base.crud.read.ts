@@ -303,6 +303,8 @@ export abstract class BaseCrudRead<
             input: { actor, ...params },
             schema: z.record(z.string(), z.unknown()),
             execute: async (validatedPassthrough, validatedActor) => {
+                await this._canAdminList(validatedActor);
+
                 if (!this.adminSearchSchema) {
                     throw new ServiceError(
                         ServiceErrorCode.CONFIGURATION_ERROR,
@@ -320,8 +322,6 @@ export abstract class BaseCrudRead<
                 }
 
                 const validParams = parseResult.data as Record<string, unknown>;
-
-                await this._canAdminList(validatedActor);
 
                 const {
                     page,

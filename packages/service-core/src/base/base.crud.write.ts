@@ -365,15 +365,7 @@ export abstract class BaseCrudWrite<
                 }
                 validateEntity(entity, this.entityName);
 
-                try {
-                    await this._canUpdateVisibility(validActor, entity, validData.visibility);
-                } catch (err) {
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'Permission denied to update visibility',
-                        err
-                    );
-                }
+                await this._canUpdateVisibility(validActor, entity, validData.visibility);
 
                 let processedVisibility: VisibilityEnum;
                 try {
