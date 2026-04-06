@@ -17,7 +17,10 @@ const app = createRouter();
 // GET / - List events
 app.route('/', publicListEventsRoute);
 
-// GET /:id - Get by ID
+// GET /upcoming - List upcoming events (MUST come BEFORE /:id)
+app.route('/', publicGetUpcomingEventsRoute);
+
+// GET /:id - Get by ID (MUST come AFTER specific paths like /upcoming)
 app.route('/', publicGetEventByIdRoute);
 
 // GET /slug/:slug - Get by slug
@@ -25,9 +28,6 @@ app.route('/', publicGetEventBySlugRoute);
 
 // GET /:id/summary - Get event summary
 app.route('/', publicGetEventSummaryRoute);
-
-// GET /upcoming - List upcoming events
-app.route('/', publicGetUpcomingEventsRoute);
 
 // GET /author/:authorId - Get events by author
 app.route('/', publicGetEventsByAuthorRoute);

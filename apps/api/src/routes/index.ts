@@ -72,6 +72,7 @@ import {
     adminSponsorshipPackageRoutes,
     publicSponsorshipPackageRoutes
 } from './sponsorship-package';
+import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes } from './user-bookmark';
 import { createMercadoPagoWebhookRoutes, webhookHealthRoutes } from './webhooks';
@@ -152,6 +153,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
+
+        // Testimonials
+        app.route('/api/v1/public/testimonials', publicTestimonialRoutes);
 
         apiLogger.debug('✅ Public routes registered successfully');
 
