@@ -1,0 +1,68 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "012-destination-santa-ana",
+    "slug": "santa-ana",
+    "name": "Santa Ana",
+    "summary": "Tranquila localidad rural con costas fluviales y vida campestre entrerriana",
+    "description": "Santa Ana es una pequeña localidad ubicada en el departamento Federación de Entre Ríos, emplazada sobre las costas del río Uruguay. Con un ritmo de vida tranquilo y apacible, Santa Ana ofrece a sus visitantes la experiencia auténtica del campo entrerriano, con actividades de pesca, contacto con la naturaleza y la calidez de su gente. Sus costas fluviales y sus paisajes rurales la convierten en un refugio ideal para quienes buscan descanso y tranquilidad lejos del bullicio urbano.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3206",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "100",
+        "city": "Santa Ana",
+        "coordinates": {
+            "lat": "-31.6833",
+            "long": "-58.0833"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "caption": "Paisajes rurales de Santa Ana",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo entrerriano en Santa Ana",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Costa fluvial de Santa Ana",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Santa Ana - Tranquilidad Rural y Costa Fluvial | Entre Ríos",
+        "description": "Descubre Santa Ana, localidad rural con costas fluviales y vida campestre en Entre Ríos.",
+        "keywords": ["Santa Ana", "Entre Ríos", "Rural", "Pesca", "Naturaleza", "Tranquilidad"]
+    },
+    "tagIds": [
+        "027-tag-naturaleza",
+        "030-tag-pesca",
+        "015-tag-ecoturismo",
+        "017-tag-familia",
+        "016-tag-entre-rios",
+        "007-tag-camping"
+    ],
+    "attractionIds": [
+        "062-attraction-parque_municipal",
+        "065-attraction-pesca_deportiva",
+        "069-attraction-playa_fluvial",
+        "072-attraction-plaza_principal",
+        "081-attraction-sendero_ecologico"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,69 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "015-destination-villa-elisa",
+    "slug": "villa-elisa",
+    "name": "Villa Elisa",
+    "summary": "Ciudad entrerriana con termas y naturaleza exuberante sobre el río Uruguay",
+    "description": "Villa Elisa es una encantadora ciudad ubicada en el departamento Colón de Entre Ríos, famosa por sus complejos termales y su cercanía al río Uruguay. Rodeada de una naturaleza exuberante, la ciudad ofrece una experiencia de relax y bienestar a sus visitantes. Sus termas de aguas minerales, sus playas fluviales y la tranquilidad de su entorno la convierten en un destino ideal para el turismo de salud y bienestar. También cuenta con una oferta gastronómica regional y artesanal que encanta a los viajeros.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2843",
+        "country": "Argentina",
+        "street": "Av. Termas",
+        "number": "400",
+        "city": "Villa Elisa",
+        "coordinates": {
+            "lat": "-32.1625",
+            "long": "-58.4028"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
+            "caption": "Termas de Villa Elisa",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1571501679680-de32f1e7aad4?w=800&h=600&fit=crop",
+                "caption": "Complejo termal de Villa Elisa",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en Villa Elisa",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Villa Elisa - Termas y Naturaleza | Entre Ríos",
+        "description": "Descubre Villa Elisa, ciudad con termas y naturaleza exuberante en Entre Ríos.",
+        "keywords": ["Villa Elisa", "Entre Ríos", "Termas", "Naturaleza", "Relax", "Bienestar"]
+    },
+    "tagIds": [
+        "038-tag-termas",
+        "001-tag-aguas-termales",
+        "032-tag-relax",
+        "036-tag-spa",
+        "027-tag-naturaleza",
+        "016-tag-entre-rios",
+        "017-tag-familia"
+    ],
+    "attractionIds": [
+        "028-attraction-complejo_termal_principal",
+        "066-attraction-piscinas_termales",
+        "085-attraction-termas_familiares",
+        "022-attraction-centro_spa_termal",
+        "069-attraction-playa_fluvial"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

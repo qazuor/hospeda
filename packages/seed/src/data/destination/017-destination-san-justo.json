@@ -1,0 +1,68 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "017-destination-san-justo",
+    "slug": "san-justo",
+    "name": "San Justo",
+    "summary": "Tranquila localidad rural con paisajes naturales y tradición agropecuaria",
+    "description": "San Justo es una localidad ubicada en el centro de la provincia de Entre Ríos, caracterizada por su actividad agropecuaria y sus tranquilos paisajes rurales. Rodeada de campos y arroyos, la localidad ofrece una experiencia auténtica del interior entrerriano. Sus habitantes conservan las tradiciones del campo y la ganadería, y reciben a los visitantes con la hospitalidad característica de los pueblos pequeños de la mesopotamia argentina. La pesca y el contacto con la naturaleza son las principales actividades turísticas.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2827",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "100",
+        "city": "San Justo",
+        "coordinates": {
+            "lat": "-32.3833",
+            "long": "-58.7500"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "caption": "Paisajes rurales de San Justo",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo entrerriano en San Justo",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Naturaleza alrededor de San Justo",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "San Justo - Vida Rural y Naturaleza | Entre Ríos",
+        "description": "Descubre San Justo, tranquila localidad rural con naturaleza y tradición agropecuaria en Entre Ríos.",
+        "keywords": ["San Justo", "Entre Ríos", "Rural", "Naturaleza", "Ganadería", "Tranquilidad"]
+    },
+    "tagIds": [
+        "027-tag-naturaleza",
+        "030-tag-pesca",
+        "015-tag-ecoturismo",
+        "016-tag-entre-rios",
+        "017-tag-familia",
+        "007-tag-camping"
+    ],
+    "attractionIds": [
+        "065-attraction-pesca_deportiva",
+        "062-attraction-parque_municipal",
+        "072-attraction-plaza_principal",
+        "081-attraction-sendero_ecologico",
+        "013-attraction-centro_agropecuario"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

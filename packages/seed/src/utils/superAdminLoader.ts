@@ -104,6 +104,15 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
     try {
         const userModel = new UserModel();
 
+        // Resolve email: env override takes precedence over JSON default
+        const envEmail = process.env.HOSPEDA_SEED_SUPER_ADMIN_EMAIL;
+        const superAdminEmail = envEmail || superAdminInput.email;
+        if (envEmail) {
+            logger.info(
+                `${STATUS_ICONS.Success} Using HOSPEDA_SEED_SUPER_ADMIN_EMAIL override: ${envEmail[0]}***@${envEmail.split('@')[1]}`
+            );
+        }
+
         // Check if super admin already exists
         const existingSuperAdmin = await userModel.findOne({
             role: RoleEnum.SUPER_ADMIN
@@ -120,7 +129,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
             // Ensure credential account exists for Better Auth login
             const email =
                 ((existingSuperAdmin as Record<string, unknown>).email as string) ||
-                superAdminInput.email;
+                superAdminEmail;
             await ensureCredentialAccount(existingSuperAdmin.id, email);
 
             return {
@@ -134,6 +143,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         const normalizedSuperAdminInput = normalizeUserData(superAdminInput);
         const createdUser = await userModel.create({
             ...(normalizedSuperAdminInput as Record<string, unknown>),
+            email: superAdminEmail,
             adminInfo: {
                 notes: undefined,
                 favorite: false,
@@ -152,7 +162,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
         });
 
         // Create credential account for Better Auth email/password login
-        await ensureCredentialAccount(realSuperAdminId, superAdminInput.email);
+        await ensureCredentialAccount(realSuperAdminId, superAdminEmail);
 
         logger.info(`${subSeparator}`);
 

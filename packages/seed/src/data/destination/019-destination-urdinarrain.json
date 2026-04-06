@@ -1,0 +1,68 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "019-destination-urdinarrain",
+    "slug": "urdinarrain",
+    "name": "Urdinarrain",
+    "summary": "Ciudad rural con tradición agropecuaria y vida comunitaria en el corazón entrerriano",
+    "description": "Urdinarrain es una ciudad ubicada en el departamento Gualeguaychú de Entre Ríos, conocida por su fuerte tradición agropecuaria y su vida comunitaria activa. La ciudad es un ejemplo del espíritu entrerriano, con una comunidad unida que celebra festividades locales y mantiene vivas las tradiciones del campo. Sus calles tranquilas, plazas arboladas y la hospitalidad de su gente hacen de Urdinarrain un destino auténtico para quienes quieren conocer el interior de Entre Ríos. Actividades como la pesca, el turismo rural y las cabalgatas son las favoritas de los visitantes.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2826",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "300",
+        "city": "Urdinarrain",
+        "coordinates": {
+            "lat": "-32.6833",
+            "long": "-58.8833"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "caption": "Paisajes rurales de Urdinarrain",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo entrerriano en Urdinarrain",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en los alrededores de Urdinarrain",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Urdinarrain - Tradición Agropecuaria | Hospeda",
+        "description": "Descubre Urdinarrain, ciudad rural con tradición agropecuaria en el corazón de Entre Ríos.",
+        "keywords": ["Urdinarrain", "Entre Ríos", "Rural", "Agropecuario", "Tradición", "Campo"]
+    },
+    "tagIds": [
+        "027-tag-naturaleza",
+        "011-tag-cultura",
+        "018-tag-festivales",
+        "030-tag-pesca",
+        "016-tag-entre-rios",
+        "017-tag-familia"
+    ],
+    "attractionIds": [
+        "037-attraction-estancia_turistica",
+        "013-attraction-centro_agropecuario",
+        "072-attraction-plaza_principal",
+        "065-attraction-pesca_deportiva",
+        "062-attraction-parque_municipal"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

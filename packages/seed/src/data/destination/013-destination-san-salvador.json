@@ -1,0 +1,75 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "013-destination-san-salvador",
+    "slug": "san-salvador",
+    "name": "San Salvador",
+    "summary": "Ciudad agrícola con tradición citrícola y hospitalidad entrerriana",
+    "description": "San Salvador es una ciudad ubicada en el departamento Federación de Entre Ríos, reconocida por su fuerte actividad agrícola y producción citrícola. Con una comunidad activa y tradicional, San Salvador ofrece la experiencia genuina del interior entrerriano. Sus festivales locales, su gastronomía regional y los paisajes rurales que la rodean la convierten en un destino interesante para quienes quieren conocer la cultura y las tradiciones del campo entrerriano.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3232",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "200",
+        "city": "San Salvador",
+        "coordinates": {
+            "lat": "-31.6250",
+            "long": "-58.5083"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+            "caption": "Paisajes agrícolas de San Salvador",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Producción citrícola en San Salvador",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo entrerriano cerca de San Salvador",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "San Salvador - Tradición y Citricultura | Hospeda",
+        "description": "Descubre San Salvador, ciudad agrícola con tradición citrícola en Entre Ríos.",
+        "keywords": [
+            "San Salvador",
+            "Entre Ríos",
+            "Citricultura",
+            "Agricultura",
+            "Rural",
+            "Tradición"
+        ]
+    },
+    "tagIds": [
+        "009-tag-citricultura",
+        "027-tag-naturaleza",
+        "011-tag-cultura",
+        "018-tag-festivales",
+        "016-tag-entre-rios",
+        "017-tag-familia"
+    ],
+    "attractionIds": [
+        "013-attraction-centro_agropecuario",
+        "049-attraction-mercado_agricola",
+        "068-attraction-plantacion_citricos",
+        "072-attraction-plaza_principal",
+        "062-attraction-parque_municipal"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

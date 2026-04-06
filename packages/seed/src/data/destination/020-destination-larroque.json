@@ -1,0 +1,70 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "020-destination-larroque",
+    "slug": "larroque",
+    "name": "Larroque",
+    "summary": "Ciudad sur entrerriana con playas fluviales y pesca deportiva sobre el Gualeguaychú",
+    "description": "Larroque es una ciudad ubicada en el sur de Entre Ríos, en el departamento Gualeguaychú, emplazada sobre las costas del río Gualeguaychú. La ciudad es conocida por sus playas fluviales de arenas blancas, la pesca deportiva y los deportes náuticos. Con infraestructura turística en crecimiento, Larroque ofrece a los visitantes un destino de verano ideal, con balnearios, camping y actividades acuáticas. Su tranquilidad y la belleza natural de su entorno fluvial la convierten en una opción perfecta para el turismo familiar y de aventura.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2823",
+        "country": "Argentina",
+        "street": "Av. Costanera",
+        "number": "100",
+        "city": "Larroque",
+        "coordinates": {
+            "lat": "-33.0333",
+            "long": "-59.0000"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+            "caption": "Playas fluviales de Larroque",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Río Gualeguaychú en Larroque",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Balneario de Larroque",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Larroque - Playas Fluviales y Pesca Deportiva | Entre Ríos",
+        "description": "Descubre Larroque, ciudad con playas fluviales y pesca deportiva sobre el río Gualeguaychú.",
+        "keywords": ["Larroque", "Entre Ríos", "Playas", "Pesca", "Deportes Acuáticos", "Verano"]
+    },
+    "tagIds": [
+        "031-tag-playas",
+        "030-tag-pesca",
+        "014-tag-deportes-acuaticos",
+        "005-tag-aventura",
+        "027-tag-naturaleza",
+        "016-tag-entre-rios",
+        "017-tag-familia",
+        "040-tag-verano"
+    ],
+    "attractionIds": [
+        "069-attraction-playa_fluvial",
+        "005-attraction-balneario_municipal",
+        "065-attraction-pesca_deportiva",
+        "046-attraction-kayak_rio",
+        "072-attraction-plaza_principal"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

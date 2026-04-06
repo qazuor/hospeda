@@ -1,0 +1,69 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "016-destination-rosario-del-tala",
+    "slug": "rosario-del-tala",
+    "name": "Rosario del Tala",
+    "summary": "Ciudad histórica del interior entrerriano con tradición gaucha y vida rural",
+    "description": "Rosario del Tala es la ciudad cabecera del departamento Tala en Entre Ríos, conocida por su rica historia y sus tradiciones gauchas. Con un pasado de estancias y producción agropecuaria, la ciudad conserva el espíritu del campo entrerriano. Sus festivales folklóricos, sus artesanías regionales y los paisajes rurales que la rodean la convierten en un destino auténtico para los amantes de la cultura gaucha y la vida del campo. La pesca en los arroyos cercanos y las cabalgatas son actividades muy apreciadas por los visitantes.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2756",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "500",
+        "city": "Rosario del Tala",
+        "coordinates": {
+            "lat": "-32.3000",
+            "long": "-59.1500"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+            "caption": "Paisajes rurales de Rosario del Tala",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Campo gaucho en Rosario del Tala",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Estancias cerca de Rosario del Tala",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Rosario del Tala - Tradición Gaucha | Hospeda",
+        "description": "Descubre Rosario del Tala, ciudad con tradición gaucha y vida rural auténtica en Entre Ríos.",
+        "keywords": ["Rosario del Tala", "Entre Ríos", "Gaucho", "Rural", "Folklore", "Tradición"]
+    },
+    "tagIds": [
+        "011-tag-cultura",
+        "027-tag-naturaleza",
+        "018-tag-festivales",
+        "030-tag-pesca",
+        "016-tag-entre-rios",
+        "017-tag-familia",
+        "003-tag-artesanias"
+    ],
+    "attractionIds": [
+        "037-attraction-estancia_turistica",
+        "013-attraction-centro_agropecuario",
+        "072-attraction-plaza_principal",
+        "040-attraction-feria_artesanal",
+        "065-attraction-pesca_deportiva"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

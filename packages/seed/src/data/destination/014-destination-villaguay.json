@@ -1,0 +1,68 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "014-destination-villaguay",
+    "slug": "villaguay",
+    "name": "Villaguay",
+    "summary": "Ciudad cabecera con rica historia regional y entorno natural privilegiado",
+    "description": "Villaguay es la ciudad cabecera del departamento homónimo en Entre Ríos, reconocida por su historia regional y su entorno natural privilegiado. Bañada por el río Villaguay y rodeada de campos entrerrianos, la ciudad combina historia, cultura y naturaleza. Sus museos regionales, monumentos históricos y la calidez de su gente hacen de Villaguay un destino auténtico del interior entrerriano, ideal para quienes buscan conocer la verdadera identidad cultural de la provincia.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "3240",
+        "country": "Argentina",
+        "street": "Av. Almafuerte",
+        "number": "300",
+        "city": "Villaguay",
+        "coordinates": {
+            "lat": "-31.8667",
+            "long": "-59.0167"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+            "caption": "Centro de Villaguay",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+                "caption": "Plaza principal de Villaguay",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1440778303588-435521a205b1?w=800&h=600&fit=crop",
+                "caption": "Naturaleza en los alrededores de Villaguay",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Villaguay - Historia Regional y Naturaleza | Entre Ríos",
+        "description": "Descubre Villaguay, ciudad cabecera con rica historia regional y entorno natural en Entre Ríos.",
+        "keywords": ["Villaguay", "Entre Ríos", "Historia", "Cultura", "Naturaleza", "Regional"]
+    },
+    "tagIds": [
+        "022-tag-historia",
+        "011-tag-cultura",
+        "027-tag-naturaleza",
+        "025-tag-museos",
+        "016-tag-entre-rios",
+        "017-tag-familia"
+    ],
+    "attractionIds": [
+        "055-attraction-museo_historico",
+        "056-attraction-museo_regional",
+        "072-attraction-plaza_principal",
+        "018-attraction-centro_historico",
+        "062-attraction-parque_municipal"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

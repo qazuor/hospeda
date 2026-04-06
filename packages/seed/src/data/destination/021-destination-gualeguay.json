@@ -1,0 +1,70 @@
+{
+    "$schema": "../../schemas/destination.schema.json",
+    "id": "021-destination-gualeguay",
+    "slug": "gualeguay",
+    "name": "Gualeguay",
+    "summary": "Ciudad histórica con tradición artesanal, gastronomía regional y costas del río Gualeguay",
+    "description": "Gualeguay es una de las ciudades más antiguas e importantes de Entre Ríos, ubicada en el departamento homónimo y bañada por el río Gualeguay. Con una rica historia colonial y una tradición artesanal reconocida en toda la provincia, la ciudad ofrece una experiencia cultural profunda. Su centro histórico, museos, artesanías y gastronomía regional son los principales atractivos. La pesca deportiva, las playas fluviales y los deportes náuticos completan la oferta turística de esta vibrante ciudad entrerriana.",
+    "isFeatured": false,
+    "moderationState": "PENDING",
+    "destinationType": "CITY",
+    "parentDestinationId": "103-destination-departamento-uruguay",
+    "reviewsCount": 0,
+    "averageRating": 0,
+    "location": {
+        "state": "Entre Ríos",
+        "zipCode": "2840",
+        "country": "Argentina",
+        "street": "Av. San Martín",
+        "number": "500",
+        "city": "Gualeguay",
+        "coordinates": {
+            "lat": "-33.1417",
+            "long": "-59.3083"
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+            "caption": "Centro histórico de Gualeguay",
+            "moderationState": "PENDING"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1583422409516-2895a77efded?w=800&h=600&fit=crop",
+                "caption": "Arquitectura histórica de Gualeguay",
+                "moderationState": "PENDING"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&h=600&fit=crop",
+                "caption": "Costas del río Gualeguay",
+                "moderationState": "PENDING"
+            }
+        ]
+    },
+    "seo": {
+        "title": "Gualeguay - Historia, Artesanías y Río | Entre Ríos",
+        "description": "Descubre Gualeguay, ciudad histórica con artesanías y gastronomía regional en Entre Ríos.",
+        "keywords": ["Gualeguay", "Entre Ríos", "Historia", "Artesanías", "Gastronomía", "Pesca"]
+    },
+    "tagIds": [
+        "022-tag-historia",
+        "003-tag-artesanias",
+        "020-tag-gastronomia",
+        "011-tag-cultura",
+        "030-tag-pesca",
+        "027-tag-naturaleza",
+        "016-tag-entre-rios",
+        "025-tag-museos"
+    ],
+    "attractionIds": [
+        "018-attraction-centro_historico",
+        "055-attraction-museo_historico",
+        "040-attraction-feria_artesanal",
+        "069-attraction-playa_fluvial",
+        "065-attraction-pesca_deportiva"
+    ],
+    "visibility": "PUBLIC",
+    "accommodationsCount": 0,
+    "lifecycleState": "ACTIVE"
+}

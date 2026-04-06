@@ -105,7 +105,18 @@
         "008-destination-paranacito.json",
         "009-destination-san-jose.json",
         "010-destination-ubajay.json",
-        "011-destination-concepcion-del-uruguay.json"
+        "011-destination-concepcion-del-uruguay.json",
+        "012-destination-santa-ana.json",
+        "013-destination-san-salvador.json",
+        "014-destination-villaguay.json",
+        "015-destination-villa-elisa.json",
+        "016-destination-rosario-del-tala.json",
+        "017-destination-san-justo.json",
+        "018-destination-caseros.json",
+        "019-destination-urdinarrain.json",
+        "020-destination-larroque.json",
+        "021-destination-gualeguay.json",
+        "022-destination-ceibas.json"
     ],
     "amenities": [
         "001-amenity-connectivity-wifi.json",
