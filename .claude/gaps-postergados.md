@@ -179,3 +179,23 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 - **Problema:** ~2,732 líneas en EN y PT validation.json son texto en español con prefijos `[EN]`/`[PT]`. 1,134 claves sin traducir en cada locale.
 - **Razón de postergación:** Mercado actual es Argentina (español). Fue non-goal intencional del Phase 1 de SPEC-036. Traducir cuando se expanda a mercados no-hispanos.
 - **Fecha:** 2026-03-10
+
+---
+
+## SPEC-054 Gaps Postergados (sesión 2026-04-05)
+
+### GAP-054-019: activeFilters memo depends on entire searchParams object
+
+- **Severidad:** Very Low (P4)
+- **Origen:** GAP-054-019 de SPEC-054
+- **Problema:** `useFilterState.ts:112-115` memoiza activeFilters con `[searchParams, filterBarConfig]`. Cualquier cambio a cualquier param invalida y recalcula.
+- **Razón de postergación:** Impacto negligible con 3-5 filtros por entidad. Optimización prematura.
+- **Fecha:** 2026-04-05
+
+### GAP-054-038: Props types use `interface` instead of spec's `type` keyword
+
+- **Severidad:** Very Low (P4)
+- **Origen:** GAP-054-038 de SPEC-054
+- **Problema:** Spec define props como `type` pero implementación usa `export interface`. Sin impacto funcional.
+- **Razón de postergación:** Nit cosmético, no vale el churn.
+- **Fecha:** 2026-04-05

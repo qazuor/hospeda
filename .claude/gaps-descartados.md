@@ -110,3 +110,55 @@ Decisiones tomadas en sesión de revisión del 2026-03-08.
 - **Severidad:** LOW
 - **Razón de descarte:** Intencional. Reviews son user-generated content; admins moderan (update/delete) pero no crean reviews en nombre de usuarios. Consistente con el modelo de datos del dominio.
 - **Fecha:** 2026-03-31
+
+---
+
+## SPEC-054 Gaps Descartados (sesión 2026-04-05)
+
+### GAP-054-018: Implicit reliance on backend 'all' default for status filter
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Informacional puro. Patrón REST estándar (no enviar param = no filtrar). No hay bug, acción, ni deuda técnica.
+- **Fecha:** 2026-04-05
+
+### GAP-054-024: filtersEqual function doesn't use RO-RO pattern
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Firma posicional es más natural y legible para un comparador puro de 2 argumentos. Excepción justificada a la convención RO-RO.
+- **Fecha:** 2026-04-05
+
+### GAP-054-025: Chips row layout classes split between FilterBar and ActiveFilterChips
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Resultado visual idéntico. Split de clases entre componentes es razonable.
+- **Fecha:** 2026-04-05
+
+### GAP-054-026: Barrel exports incomplete (internal components not exported)
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Encapsulación correcta. No exportar componentes internos desde el barrel es buen diseño y previene uso fuera de contexto.
+- **Fecha:** 2026-04-05
+
+### GAP-054-051: buildFilterParamUpdate not re-exported from barrel
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Encapsulación correcta. Solo se usa internamente por useFilterState, no hay consumidor externo. Mismo criterio que GAP-054-026.
+- **Fecha:** 2026-04-05
+
+### GAP-054-054: FilterBoolean ignores allLabelKey from config
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Se resuelve por diseño con GAP-054-032 (discriminated union). allLabelKey no aplica a BooleanFilterConfig. Ninguna config actual necesita un label distinto de "All" para boolean.
+- **Fecha:** 2026-04-05
+
+### GAP-054-055: requestAnimationFrame in ActiveFilterChips untestable in jsdom
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Informacional puro, no es un bug de producción. Tests de focus se pueden resolver con vi.spyOn(window, 'requestAnimationFrame') o vi.runAllTimersAsync().
+- **Fecha:** 2026-04-05
+
+### GAP-054-031: buildFilterChips O(n*m) sort complexity
+
+- **Severidad:** Very Low (P4)
+- **Razón de descarte:** Impacto negligible con 3-5 filtros por entidad. Optimización prematura.
+- **Fecha:** 2026-04-05
