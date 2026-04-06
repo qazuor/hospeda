@@ -109,12 +109,31 @@ describe('FilterChip', () => {
             />
         );
 
-        // Act
-        const button = screen.getByRole('button', { name: /remove filter/i });
-        button.focus();
+        // Act — use tab to reach the button (GAP-054-066)
+        await userEvent.tab();
         await userEvent.keyboard('{Enter}');
 
         // Assert
+        expect(onRemove).toHaveBeenCalledOnce();
+    });
+
+    // GAP-054-039: Regression test for Space key after handleKeyDown removal
+    it('calls onRemove when Space key is pressed on the X button', async () => {
+        // Arrange
+        const onRemove = vi.fn();
+        render(
+            <FilterChip
+                chip={userChip}
+                onRemove={onRemove}
+            />
+        );
+
+        // Act — native button fires click on Space keyup
+        const button = screen.getByRole('button', { name: /remove filter/i });
+        button.focus();
+        await userEvent.keyboard(' ');
+
+        // Assert — should fire exactly once (no double-fire)
         expect(onRemove).toHaveBeenCalledOnce();
     });
 });

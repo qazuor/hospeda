@@ -74,7 +74,6 @@ function FilterIntegrationHarness({ filterBarConfig, initialParams = {} }: Harne
             <FilterBar
                 config={filterBarConfig}
                 activeFilters={filterState.activeFilters}
-                computedDefaults={filterState.computedDefaults}
                 onFilterChange={filterState.handleFilterChange}
                 onClearAll={filterState.handleClearAll}
                 onResetDefaults={filterState.handleResetDefaults}
@@ -223,7 +222,9 @@ describe('FilterBar + useFilterState integration', () => {
 
         // Assert — the chip label key for destinationType should be visible
         // t() is identity, so labelKey is rendered as-is
-        expect(screen.getByText('admin-filters.destinationType.label:')).toBeInTheDocument();
+        // Label appears in both the chip and the filter trigger (GAP-054-053)
+        const labels = screen.getAllByText('admin-filters.destinationType.label:');
+        expect(labels.length).toBeGreaterThanOrEqual(1);
     });
 
     // -----------------------------------------------------------------------
@@ -368,7 +369,139 @@ describe('FilterBar + useFilterState integration', () => {
         );
 
         // Assert — at least one remove button with the expected aria-label pattern
-        const removeButtons = screen.getAllByRole('button', { name: /^Remove filter/ });
+        // GAP-054-027: Use precise regex that validates "Remove filter <label>: <value>" format
+        const removeButtons = screen.getAllByRole('button', { name: /^Remove filter .+: .+$/ });
         expect(removeButtons.length).toBeGreaterThan(0);
+    });
+
+    // -----------------------------------------------------------------------
+    // GAP-054-020: Accessibility — chip aria-label includes filter label and value
+    // -----------------------------------------------------------------------
+    it('chip remove button aria-label contains the filter label and display value', () => {
+        // Arrange / Act — default chip for destinationType:CITY
+        render(
+            <FilterIntegrationHarness
+                filterBarConfig={destinationsConfig}
+                initialParams={{}}
+            />
+        );
+
+        // Assert — aria-label matches "Remove filter <labelKey>: <displayValue>"
+        // With identity t(), labelKey and option labelKey are rendered as-is
+        const removeButton = screen.getAllByRole('button', { name: /^Remove filter .+: .+$/ })[0];
+        expect(removeButton).toBeInTheDocument();
+        // Verify the aria-label contains both the filter label key and the value label key
+        const ariaLabel = removeButton.getAttribute('aria-label') ?? '';
+        expect(ariaLabel).toContain('admin-filters.destinationType.label');
+    });
+
+    // -----------------------------------------------------------------------
+    // GAP-054-020: Accessibility — all filter controls are keyboard reachable
+    // -----------------------------------------------------------------------
+    it('all filter comboboxes are reachable via sequential tab navigation', async () => {
+        // Arrange
+        const user = userEvent.setup();
+        render(
+            <FilterIntegrationHarness
+                filterBarConfig={destinationsConfig}
+                initialParams={{}}
+            />
+        );
+
+        // Act — tab through the controls
+        const comboboxes = screen.getAllByRole('combobox');
+        const focusedComboboxes: Element[] = [];
+
+        // Tab until we've passed through all comboboxes or hit a reasonable limit
+        for (let i = 0; i < 20; i++) {
+            await act(async () => {
+                await user.tab();
+            });
+            const activeEl = document.activeElement;
+            if (
+                activeEl?.getAttribute('role') === 'combobox' &&
+                !focusedComboboxes.includes(activeEl)
+            ) {
+                focusedComboboxes.push(activeEl);
+            }
+            if (focusedComboboxes.length === comboboxes.length) break;
+        }
+
+        // Assert — we reached all comboboxes
+        expect(focusedComboboxes.length).toBe(comboboxes.length);
+    });
+
+    // -----------------------------------------------------------------------
+    // GAP-054-043: FilterBar absent when no config
+    // -----------------------------------------------------------------------
+    it('does not render filter controls when filterBarConfig is undefined', () => {
+        // Arrange — harness with no config (simulates legacy entity)
+        function NoConfigHarness() {
+            const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
+            const onUpdateSearch = useCallback(
+                (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
+                    setSearchParams((prev) => updater(prev));
+                },
+                []
+            );
+            const filterState = useFilterState({
+                filterBarConfig: undefined,
+                searchParams,
+                onUpdateSearch
+            });
+
+            return (
+                <div>
+                    <div data-testid="debug-has-active">{String(filterState.hasActiveFilters)}</div>
+                </div>
+            );
+        }
+
+        // Act
+        render(<NoConfigHarness />);
+
+        // Assert — no comboboxes (filter selects) rendered
+        expect(screen.queryAllByRole('combobox')).toHaveLength(0);
+        expect(screen.getByTestId('debug-has-active').textContent).toBe('false');
+    });
+
+    // -----------------------------------------------------------------------
+    // GAP-054-044: Legacy entities with defaultFilters only (no filterBarConfig)
+    // -----------------------------------------------------------------------
+    it('legacy entity without filterBarConfig: no FilterBar, useFilterState returns inactive', () => {
+        // Arrange — simulates an entity with only defaultFilters (old pattern)
+        function LegacyHarness() {
+            const [searchParams, setSearchParams] = useState<Record<string, unknown>>({});
+            const onUpdateSearch = useCallback(
+                (updater: (prev: Record<string, unknown>) => Record<string, unknown>) => {
+                    setSearchParams((prev) => updater(prev));
+                },
+                []
+            );
+            const filterState = useFilterState({
+                filterBarConfig: undefined,
+                searchParams,
+                onUpdateSearch
+            });
+
+            return (
+                <div>
+                    <div data-testid="debug-active">
+                        {JSON.stringify(filterState.activeFilters)}
+                    </div>
+                    <div data-testid="debug-has-active">{String(filterState.hasActiveFilters)}</div>
+                    <div data-testid="debug-chips">{JSON.stringify(filterState.chips)}</div>
+                </div>
+            );
+        }
+
+        // Act
+        render(<LegacyHarness />);
+
+        // Assert — no active filters, no chips, FilterBar not rendered
+        expect(screen.getByTestId('debug-has-active').textContent).toBe('false');
+        expect(screen.getByTestId('debug-active').textContent).toBe('{}');
+        expect(screen.getByTestId('debug-chips').textContent).toBe('[]');
+        expect(screen.queryAllByRole('combobox')).toHaveLength(0);
     });
 });

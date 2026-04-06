@@ -8,8 +8,9 @@
  * - Error handling
  */
 
+import type { FilterBarConfig } from '@/components/entity-list/filters/filter-types';
 import { http, HttpResponse } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { server } from '../../mocks/server';
 
@@ -456,5 +457,173 @@ describe('createEntityApi', () => {
 
             expect(receivedSearch).toBe('Hotel "La Paz" & Spa');
         });
+    });
+});
+
+/**
+ * Tests for the REAL createEntityApi filter mode-switching logic (GAP-054-045).
+ *
+ * These tests mock fetchApi to capture the URL params constructed by the real
+ * createEntityApi implementation, verifying the filterBarConfig vs defaultFilters
+ * branching logic.
+ */
+vi.mock('@/lib/api/client', () => ({
+    fetchApi: vi.fn()
+}));
+
+vi.mock('@/utils/logger', () => ({
+    adminLogger: {
+        error: vi.fn(),
+        warn: vi.fn(),
+        info: vi.fn(),
+        debug: vi.fn()
+    }
+}));
+
+describe('Real createEntityApi - filter mode-switching (GAP-054-045)', () => {
+    const mockPaginatedResponse = {
+        success: true,
+        data: {
+            items: [{ id: '1', name: 'Test', slug: 'test', createdAt: '2024-01-01' }],
+            pagination: {
+                page: 1,
+                pageSize: 20,
+                total: 1,
+                totalPages: 1,
+                hasNextPage: false,
+                hasPreviousPage: false
+            }
+        }
+    };
+
+    const filterBarConfig: FilterBarConfig = {
+        filters: [
+            {
+                paramKey: 'status',
+                labelKey: 'common.status',
+                type: 'select',
+                options: [
+                    { value: 'ACTIVE', labelKey: 'status.active' },
+                    { value: 'DRAFT', labelKey: 'status.draft' }
+                ],
+                defaultValue: 'ACTIVE',
+                order: 1
+            },
+            {
+                paramKey: 'isFeatured',
+                labelKey: 'common.featured',
+                type: 'boolean',
+                order: 2
+            }
+        ]
+    };
+
+    let capturedPath: string;
+
+    beforeEach(async () => {
+        capturedPath = '';
+        const { fetchApi } = await import('@/lib/api/client');
+        (fetchApi as ReturnType<typeof vi.fn>).mockImplementation(({ path }: { path: string }) => {
+            capturedPath = path;
+            return Promise.resolve({ data: mockPaginatedResponse });
+        });
+    });
+
+    it('with filterBarConfig: applies filters from params, ignores defaultFilters', async () => {
+        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
+        const api = createEntityApi({
+            endpoint: '/api/v1/admin/test',
+            itemSchema: TestEntitySchema,
+            defaultFilters: { status: 'SHOULD_BE_IGNORED' },
+            filterBarConfig
+        });
+
+        await api.getEntities({
+            page: 1,
+            pageSize: 20,
+            filters: { status: 'DRAFT' }
+        });
+
+        const url = new URL(`http://localhost${capturedPath}`);
+        expect(url.searchParams.get('status')).toBe('DRAFT');
+        expect(url.searchParams.get('status')).not.toBe('SHOULD_BE_IGNORED');
+    });
+
+    it('with filterBarConfig and empty filters: sends no filter params (user cleared all)', async () => {
+        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
+        const api = createEntityApi({
+            endpoint: '/api/v1/admin/test',
+            itemSchema: TestEntitySchema,
+            defaultFilters: { status: 'ACTIVE' },
+            filterBarConfig
+        });
+
+        await api.getEntities({
+            page: 1,
+            pageSize: 20,
+            filters: {}
+        });
+
+        const url = new URL(`http://localhost${capturedPath}`);
+        expect(url.searchParams.has('status')).toBe(false);
+        expect(url.searchParams.has('isFeatured')).toBe(false);
+    });
+
+    it('with filterBarConfig: skips undefined/null/empty filter values', async () => {
+        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
+        const api = createEntityApi({
+            endpoint: '/api/v1/admin/test',
+            itemSchema: TestEntitySchema,
+            filterBarConfig
+        });
+
+        await api.getEntities({
+            page: 1,
+            pageSize: 20,
+            filters: { status: 'ACTIVE', isFeatured: '', empty: undefined as unknown as string }
+        });
+
+        const url = new URL(`http://localhost${capturedPath}`);
+        expect(url.searchParams.get('status')).toBe('ACTIVE');
+        expect(url.searchParams.has('isFeatured')).toBe(false);
+        expect(url.searchParams.has('empty')).toBe(false);
+    });
+
+    it('without filterBarConfig: applies defaultFilters as static params', async () => {
+        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
+        const api = createEntityApi({
+            endpoint: '/api/v1/admin/test',
+            itemSchema: TestEntitySchema,
+            defaultFilters: { status: 'ACTIVE', category: 'hotel' }
+        });
+
+        await api.getEntities({
+            page: 1,
+            pageSize: 20
+        });
+
+        const url = new URL(`http://localhost${capturedPath}`);
+        expect(url.searchParams.get('status')).toBe('ACTIVE');
+        expect(url.searchParams.get('category')).toBe('hotel');
+    });
+
+    it('without filterBarConfig or defaultFilters: only pagination params', async () => {
+        const { createEntityApi } = await import('@/components/entity-list/api/createEntityApi');
+        const api = createEntityApi({
+            endpoint: '/api/v1/admin/test',
+            itemSchema: TestEntitySchema
+        });
+
+        await api.getEntities({
+            page: 2,
+            pageSize: 10
+        });
+
+        const url = new URL(`http://localhost${capturedPath}`);
+        expect(url.searchParams.get('page')).toBe('2');
+        expect(url.searchParams.get('pageSize')).toBe('10');
+        // Only pagination params, no filters
+        const allKeys = [...url.searchParams.keys()];
+        expect(allKeys).toEqual(['page', 'pageSize']);
     });
 });

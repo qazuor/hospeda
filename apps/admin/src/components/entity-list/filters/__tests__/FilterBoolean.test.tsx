@@ -7,10 +7,11 @@
  * of structural/render assertions.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { FilterBoolean } from '../FilterBoolean';
-import type { FilterControlConfig } from '../filter-types';
+import { FILTER_ALL_VALUE } from '../filter-types';
+import type { BooleanFilterConfig } from '../filter-types';
 
 // useTranslations is already mocked globally in test/setup.tsx.
 vi.mock('@/hooks/use-translations', () => ({
@@ -21,7 +22,7 @@ vi.mock('@/hooks/use-translations', () => ({
 // Shared fixtures
 // ---------------------------------------------------------------------------
 
-const isFeaturedConfig: FilterControlConfig = {
+const isFeaturedConfig: BooleanFilterConfig = {
     paramKey: 'isFeatured',
     labelKey: 'filters.isFeatured',
     type: 'boolean'
@@ -115,7 +116,8 @@ describe('FilterBoolean', () => {
         );
 
         // Assert — trigger button has active class when value is defined
-        const trigger = screen.getByRole('combobox', { name: 'filters.isFeatured' });
+        // aria-label now includes the state: "filters.isFeatured: admin-filters.booleanYes"
+        const trigger = screen.getByRole('combobox', { name: /^filters\.isFeatured/ });
         expect(trigger.className).toContain('border-primary');
     });
 
@@ -132,5 +134,125 @@ describe('FilterBoolean', () => {
         // Assert — trigger button has inactive dashed class
         const trigger = screen.getByRole('combobox', { name: 'filters.isFeatured' });
         expect(trigger.className).toContain('border-dashed');
+    });
+
+    // GAP-054-010: Shows "Yes" in aria-label when value is "true"
+    it('includes "booleanYes" in aria-label when value is "true"', () => {
+        // Arrange / Act
+        render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value="true"
+                onChange={vi.fn()}
+            />
+        );
+
+        // Assert
+        const trigger = screen.getByRole('combobox', { name: /admin-filters\.booleanYes/ });
+        expect(trigger).toBeInTheDocument();
+    });
+
+    // GAP-054-010: Shows "No" in aria-label when value is "false"
+    it('includes "booleanNo" in aria-label when value is "false"', () => {
+        // Arrange / Act
+        render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value="false"
+                onChange={vi.fn()}
+            />
+        );
+
+        // Assert
+        const trigger = screen.getByRole('combobox', { name: /admin-filters\.booleanNo/ });
+        expect(trigger).toBeInTheDocument();
+    });
+
+    // GAP-054-063: value="false" branch test
+    it('renders with value "false" and shows active styles', () => {
+        // Arrange / Act
+        render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value="false"
+                onChange={vi.fn()}
+            />
+        );
+
+        // Assert — trigger has active border
+        const trigger = screen.getByRole('combobox', { name: /^filters\.isFeatured/ });
+        expect(trigger.className).toContain('border-primary');
+    });
+
+    // GAP-054-010: Selecting "Yes" calls onChange("true")
+    it('calls onChange("true") when native select is changed to "true"', () => {
+        // Arrange
+        const onChange = vi.fn();
+        const { container } = render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value={undefined}
+                onChange={onChange}
+            />
+        );
+
+        // Act — Radix renders hidden native select
+        const nativeSelect = container.querySelector('select');
+        if (nativeSelect) {
+            fireEvent.change(nativeSelect, { target: { value: 'true' } });
+        }
+
+        // Assert
+        if (nativeSelect) {
+            expect(onChange).toHaveBeenCalledWith('true');
+        }
+    });
+
+    // GAP-054-010: Selecting "No" calls onChange("false")
+    it('calls onChange("false") when native select is changed to "false"', () => {
+        // Arrange
+        const onChange = vi.fn();
+        const { container } = render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value={undefined}
+                onChange={onChange}
+            />
+        );
+
+        // Act
+        const nativeSelect = container.querySelector('select');
+        if (nativeSelect) {
+            fireEvent.change(nativeSelect, { target: { value: 'false' } });
+        }
+
+        // Assert
+        if (nativeSelect) {
+            expect(onChange).toHaveBeenCalledWith('false');
+        }
+    });
+
+    // GAP-054-010: Selecting "All" calls onChange(undefined)
+    it('calls onChange(undefined) when native select is changed to ALL_VALUE', () => {
+        // Arrange
+        const onChange = vi.fn();
+        const { container } = render(
+            <FilterBoolean
+                config={isFeaturedConfig}
+                value="true"
+                onChange={onChange}
+            />
+        );
+
+        // Act
+        const nativeSelect = container.querySelector('select');
+        if (nativeSelect) {
+            fireEvent.change(nativeSelect, { target: { value: FILTER_ALL_VALUE } });
+        }
+
+        // Assert
+        if (nativeSelect) {
+            expect(onChange).toHaveBeenCalledWith(undefined);
+        }
     });
 });

@@ -10,7 +10,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import type { FilterBarConfig } from '../filter-types';
+import type { FilterBarConfig, FilterControlConfig } from '../filter-types';
 import {
     FILTER_CLEARED_SENTINEL,
     buildFilterChips,
@@ -470,9 +470,9 @@ describe('buildFilterChips', () => {
                 {
                     paramKey: 'custom',
                     labelKey: 'filters.custom',
-                    type: 'unknown-type' as unknown as 'select',
+                    type: 'unknown-type',
                     order: 1
-                }
+                } as unknown as FilterControlConfig
             ]
         };
         const activeFilters = { custom: 'raw-value' };
@@ -487,6 +487,33 @@ describe('buildFilterChips', () => {
 
         // Assert
         expect(chips[0]?.displayValue).toBe('raw-value');
+    });
+
+    // GAP-054-035: Select fallback to raw value when option not found
+    it('falls back to raw value when select option value is not found in config', () => {
+        // Arrange
+        const selectConfig: FilterBarConfig = {
+            filters: [
+                {
+                    paramKey: 'status',
+                    labelKey: 'filters.status',
+                    type: 'select',
+                    options: [{ value: 'ACTIVE', labelKey: 'status.active' }],
+                    order: 1
+                }
+            ]
+        };
+
+        // Act — 'UNKNOWN_VALUE' is not in the options array
+        const chips = buildFilterChips({
+            activeFilters: { status: 'UNKNOWN_VALUE' },
+            filterBarConfig: selectConfig,
+            defaultFilters: {},
+            t
+        });
+
+        // Assert — raw value used as displayValue
+        expect(chips[0]?.displayValue).toBe('UNKNOWN_VALUE');
     });
 });
 
