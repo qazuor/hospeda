@@ -202,6 +202,8 @@
         "title": "{entities} - List",
         "new": "New {entity}",
         "noResults": "No results found",
+        "noResultsFiltered": "No results found with the applied filters",
+        "createButton": "Create {entity}",
         "searchPlaceholder": "Search {entities}...",
         "pagination": {
             "showing": "Showing {start} to {end} of {total}",
