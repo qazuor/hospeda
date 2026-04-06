@@ -219,3 +219,19 @@ export type EntityListComponents = {
     // biome-ignore lint/suspicious/noExplicitAny: TanStack Router type compatibility
     readonly route: any;
 };
+
+/**
+ * Search params type for entity list pages.
+ * Index signature allows dynamic filter params (e.g., status, destinationType)
+ * to coexist with known pagination/view params.
+ */
+export type EntityListSearchParams = {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+    sort?: string;
+    view?: 'table' | 'grid';
+    cols?: string;
+    /** Dynamic filter params from filterBarConfig */
+    [filterParamKey: string]: string | number | boolean | undefined;
+};

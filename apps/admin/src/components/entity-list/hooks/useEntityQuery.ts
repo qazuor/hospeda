@@ -1,5 +1,6 @@
 import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import type { EntityQueryParams, EntityQueryResponse } from '../types';
 
 /**
@@ -11,7 +12,7 @@ export const useEntityQuery = <TData>(
     queryFn: (params: EntityQueryParams) => Promise<EntityQueryResponse<TData>>,
     params: EntityQueryParams
 ) => {
-    const queryKeys = createEntityQueryKeys(entityName);
+    const queryKeys = useMemo(() => createEntityQueryKeys(entityName), [entityName]);
 
     return useQuery<EntityQueryResponse<TData>, Error>({
         queryKey: queryKeys.list(params),
@@ -30,7 +31,6 @@ export const useEntityQuery = <TData>(
         },
         retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
         refetchOnWindowFocus: false, // Lists don't need to refetch on focus
-        refetchOnReconnect: true,
-        select: (data) => data
+        refetchOnReconnect: true
     });
 };

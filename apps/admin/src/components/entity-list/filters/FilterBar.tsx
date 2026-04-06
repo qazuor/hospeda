@@ -15,7 +15,6 @@ import type { ActiveFilters, FilterBarConfig, FilterChipData } from './filter-ty
 type FilterBarProps = {
     readonly config: FilterBarConfig;
     readonly activeFilters: ActiveFilters;
-    readonly computedDefaults: ActiveFilters;
     readonly onFilterChange: (paramKey: string, value: string | undefined) => void;
     readonly onClearAll: () => void;
     readonly onResetDefaults: () => void;
@@ -39,7 +38,6 @@ type FilterBarProps = {
  *
  * @param config - FilterBarConfig describing which controls to render
  * @param activeFilters - Current filter values keyed by paramKey
- * @param computedDefaults - Resolved default values keyed by paramKey
  * @param onFilterChange - Callback to set or clear a single filter value
  * @param onClearAll - Callback to remove all active filters
  * @param onResetDefaults - Callback to restore all filters to their defaults
@@ -52,7 +50,6 @@ type FilterBarProps = {
  * <FilterBar
  *   config={filterBarConfig}
  *   activeFilters={activeFilters}
- *   computedDefaults={computedDefaults}
  *   onFilterChange={handleFilterChange}
  *   onClearAll={handleClearAll}
  *   onResetDefaults={handleResetDefaults}
@@ -65,7 +62,6 @@ type FilterBarProps = {
 export function FilterBar({
     config,
     activeFilters,
-    computedDefaults: _computedDefaults,
     onFilterChange,
     onClearAll,
     onResetDefaults,
@@ -117,7 +113,7 @@ export function FilterBar({
                 />
             </div>
 
-            {chips.length > 0 && (
+            {hasActiveFilters && (
                 <div className="pt-2">
                     <ActiveFilterChips
                         chips={chips}

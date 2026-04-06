@@ -4,34 +4,55 @@
  * Additional types ('relation', 'number-range', 'date-range') will be
  * defined in future specs when implemented.
  */
-type FilterControlType = 'select' | 'boolean';
+export type FilterControlType = 'select' | 'boolean';
 
 /**
- * Configuration for a single filter control in the filter bar.
- * Uses a flat type with optional fields per filter type,
- * discriminated by the `type` field.
+ * Base configuration shared by all filter control types.
  */
-export type FilterControlConfig = {
+type BaseFilterConfig = {
     /** Unique key matching the API query parameter name (e.g., 'destinationType', 'status') */
     readonly paramKey: string;
     /** i18n key for the filter label */
     readonly labelKey: string;
-    /** Type of filter control to render */
-    readonly type: FilterControlType;
-    /** For select type: list of available options. Required when type is 'select'. */
-    readonly options?: ReadonlyArray<{
-        readonly value: string;
-        readonly labelKey: string;
-        /** Optional icon identifier for the option */
-        readonly icon?: string;
-    }>;
-    /** For select type: i18n key for the "all" option. Defaults to "admin-filters.allOption" */
-    readonly allLabelKey?: string;
     /** Default value applied when no user selection exists. If set, this filter is a "default filter". */
     readonly defaultValue?: string;
     /** Display order (lower = first). Defaults to 0. */
     readonly order?: number;
 };
+
+/**
+ * Configuration for a select filter control with enumerable options.
+ */
+export type SelectFilterConfig = BaseFilterConfig & {
+    /** Discriminant: select filter type */
+    readonly type: 'select';
+    /** List of available options. Required for select filters. */
+    readonly options: ReadonlyArray<{
+        readonly value: string;
+        readonly labelKey: string;
+        /** Optional icon identifier for the option */
+        readonly icon?: string;
+    }>;
+    /** i18n key for the "all" option. Defaults to "admin-filters.allOption" */
+    readonly allLabelKey?: string;
+};
+
+/**
+ * Configuration for a boolean filter control (Yes/No/All).
+ */
+export type BooleanFilterConfig = BaseFilterConfig & {
+    /** Discriminant: boolean filter type */
+    readonly type: 'boolean';
+};
+
+/**
+ * Configuration for a single filter control in the filter bar.
+ * Discriminated union on the `type` field.
+ */
+export type FilterControlConfig = SelectFilterConfig | BooleanFilterConfig;
+
+/** Sentinel value used for the "All" option in Radix Select, which does not support empty strings. */
+export const FILTER_ALL_VALUE = '__all__' as const;
 
 /**
  * Configuration for the entire filter bar of an entity.

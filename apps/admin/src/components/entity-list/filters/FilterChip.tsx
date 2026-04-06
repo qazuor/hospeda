@@ -30,13 +30,6 @@ type FilterChipProps = {
 export const FilterChip = ({ chip, onRemove }: FilterChipProps) => {
     const { t } = useTranslations();
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            onRemove();
-        }
-    };
-
     const label = t(chip.labelKey as TranslationKey);
     const ariaLabel = `Remove filter ${label}: ${chip.displayValue}`;
 
@@ -48,9 +41,7 @@ export const FilterChip = ({ chip, onRemove }: FilterChipProps) => {
                 <button
                     type="button"
                     onClick={onRemove}
-                    onKeyDown={handleKeyDown}
                     aria-label={ariaLabel}
-                    tabIndex={0}
                     className="ml-0.5 rounded-sm hover:bg-muted-foreground/20 focus:outline-none focus:ring-1 focus:ring-ring"
                 >
                     <CloseIcon size={14} />

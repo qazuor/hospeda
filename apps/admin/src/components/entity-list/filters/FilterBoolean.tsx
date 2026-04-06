@@ -14,17 +14,15 @@ import {
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
-import type { FilterControlConfig } from './filter-types';
-
-/** Sentinel value used for the "All" option, since Radix Select does not support empty strings. */
-const ALL_VALUE = '__all__';
+import { FILTER_ALL_VALUE } from './filter-types';
+import type { BooleanFilterConfig } from './filter-types';
 
 /**
  * Props for the FilterBoolean component.
  */
 export interface FilterBooleanProps {
-    /** Configuration for this filter control (label key, paramKey, etc.) */
-    readonly config: FilterControlConfig;
+    /** Configuration for this boolean filter control (label key, paramKey, etc.) */
+    readonly config: BooleanFilterConfig;
     /** Current filter value ('true' | 'false'), or undefined when no filter is active */
     readonly value: string | undefined;
     /** Called with 'true', 'false', or undefined to clear the filter */
@@ -54,12 +52,12 @@ export function FilterBoolean({ config, value, onChange }: FilterBooleanProps) {
     const isActive = value !== undefined;
 
     const handleChange = (selected: string) => {
-        onChange(selected === ALL_VALUE ? undefined : selected);
+        onChange(selected === FILTER_ALL_VALUE ? undefined : selected);
     };
 
     return (
         <Select
-            value={value ?? ALL_VALUE}
+            value={value ?? FILTER_ALL_VALUE}
             onValueChange={handleChange}
         >
             <SelectTrigger
@@ -68,12 +66,25 @@ export function FilterBoolean({ config, value, onChange }: FilterBooleanProps) {
                         ? 'h-8 border-primary border-solid text-sm'
                         : 'h-8 border-dashed text-sm'
                 }
-                aria-label={t(config.labelKey as TranslationKey)}
+                aria-label={
+                    isActive
+                        ? `${t(config.labelKey as TranslationKey)}: ${value === 'true' ? t('admin-filters.booleanYes') : t('admin-filters.booleanNo')}`
+                        : t(config.labelKey as TranslationKey)
+                }
             >
-                <SelectValue placeholder={t('admin-filters.allOption')} />
+                {isActive ? (
+                    <span>
+                        <span className="text-muted-foreground">
+                            {t(config.labelKey as TranslationKey)}:
+                        </span>{' '}
+                        <SelectValue placeholder={t('admin-filters.allOption')} />
+                    </span>
+                ) : (
+                    <SelectValue placeholder={t('admin-filters.allOption')} />
+                )}
             </SelectTrigger>
             <SelectContent>
-                <SelectItem value={ALL_VALUE}>{t('admin-filters.allOption')}</SelectItem>
+                <SelectItem value={FILTER_ALL_VALUE}>{t('admin-filters.allOption')}</SelectItem>
                 <SelectItem value="true">{t('admin-filters.booleanYes')}</SelectItem>
                 <SelectItem value="false">{t('admin-filters.booleanNo')}</SelectItem>
             </SelectContent>

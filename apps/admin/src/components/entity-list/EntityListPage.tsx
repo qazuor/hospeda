@@ -16,18 +16,12 @@ import { createEntityApi } from './api/createEntityApi';
 import { FilterBar } from './filters/FilterBar';
 import { useFilterState } from './filters/useFilterState';
 import { useEntityQuery } from './hooks/useEntityQuery';
-import type { EntityConfig, EntityListComponents, GenerateRowType } from './types';
-
-/**
- * Search params type for entity list pages
- */
-interface EntityListSearchParams {
-    page?: number;
-    pageSize?: number;
-    q?: string;
-    sort?: string;
-    view?: 'table' | 'grid';
-}
+import type {
+    EntityConfig,
+    EntityListComponents,
+    EntityListSearchParams,
+    GenerateRowType
+} from './types';
 
 /**
  * Type helper for dynamic navigation options.
@@ -143,10 +137,18 @@ export const createEntityListPage = <TData extends { id: string }>(
             q: _q,
             sort: _s,
             cols: _c,
-            ...filterParams
+            ...rawFilterParams
         } = search;
 
-        return { page, pageSize, view, q, sort, cols, ...filterParams } as const;
+        // Sanitize filter params to strings only (defend against crafted URLs like ?status[]=foo)
+        const filterParams: Record<string, string> = {};
+        for (const [key, value] of Object.entries(rawFilterParams)) {
+            if (typeof value === 'string') {
+                filterParams[key] = value;
+            }
+        }
+
+        return { page, pageSize, view, q, sort, cols, ...filterParams };
     };
 
     /**
@@ -259,7 +261,7 @@ export const createEntityListPage = <TData extends { id: string }>(
         const filterState = useFilterState({
             filterBarConfig: config.filterBarConfig,
             searchParams: search as Record<string, unknown>,
-            onUpdateSearch: updateSearch as unknown as (
+            onUpdateSearch: updateSearch as (
                 updater: (prev: Record<string, unknown>) => Record<string, unknown>
             ) => void
         });
@@ -393,7 +395,9 @@ export const createEntityListPage = <TData extends { id: string }>(
             const entitySingular =
                 t(`admin-entities.entities.${config.entityKey}.singular` as TranslationKey) ||
                 config.name;
-            const buttonText = config.layoutConfig.createButtonText || `Crear ${entitySingular}`;
+            const buttonText =
+                config.layoutConfig.createButtonText ||
+                t('admin-entities.list.createButton' as TranslationKey, { entity: entitySingular });
             const buttonPath = config.layoutConfig.createButtonPath;
             return (
                 <Button
@@ -435,7 +439,6 @@ export const createEntityListPage = <TData extends { id: string }>(
                         <FilterBar
                             config={config.filterBarConfig}
                             activeFilters={filterState.activeFilters}
-                            computedDefaults={filterState.computedDefaults}
                             onFilterChange={filterState.handleFilterChange}
                             onClearAll={filterState.handleClearAll}
                             onResetDefaults={filterState.handleResetDefaults}
@@ -475,7 +478,11 @@ export const createEntityListPage = <TData extends { id: string }>(
                                 </div>
                             ) : rows.length === 0 ? (
                                 <div className="text-muted-foreground text-sm">
-                                    {t('admin-entities.list.noResults' as TranslationKey)}
+                                    {filterState.hasActiveFilters
+                                        ? t(
+                                              'admin-entities.list.noResultsFiltered' as TranslationKey
+                                          )
+                                        : t('admin-entities.list.noResults' as TranslationKey)}
                                 </div>
                             ) : (
                                 rows.map((r) => (

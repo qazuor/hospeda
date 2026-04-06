@@ -16,9 +16,8 @@ export const destinationsConfig: EntityConfig<Destination> = {
 
     // API
     apiEndpoint: '/api/v1/admin/destinations',
-    defaultFilters: { destinationType: 'CITY' },
 
-    // Filter bar configuration
+    // Filter bar configuration (defaultValue: 'CITY' on destinationType replaces legacy defaultFilters)
     filterBarConfig: {
         filters: [
             {

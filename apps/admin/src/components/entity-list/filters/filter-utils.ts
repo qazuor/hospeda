@@ -176,10 +176,13 @@ export const buildFilterChips = ({
             const option = config.options?.find((o) => o.value === activeValue);
             displayValue = option ? t(option.labelKey) : activeValue;
         } else if (config.type === 'boolean') {
-            displayValue =
-                activeValue === 'true'
-                    ? t('admin-filters.booleanYes')
-                    : t('admin-filters.booleanNo');
+            if (activeValue === 'true') {
+                displayValue = t('admin-filters.booleanYes');
+            } else if (activeValue === 'false') {
+                displayValue = t('admin-filters.booleanNo');
+            } else {
+                displayValue = activeValue; // raw fallback for unexpected values
+            }
         } else {
             displayValue = activeValue;
         }

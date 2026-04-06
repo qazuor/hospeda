@@ -53,7 +53,10 @@ export function FilterActions({
     const { t } = useTranslations();
 
     return (
-        <div className="flex items-center gap-1">
+        <div
+            data-filter-actions
+            className="flex items-center gap-1"
+        >
             {hasActiveFilters && (
                 <Button
                     variant="ghost"

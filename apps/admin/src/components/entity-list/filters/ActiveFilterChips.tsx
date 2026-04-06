@@ -5,6 +5,8 @@
  * Uses aria-live="polite" so screen readers announce changes.
  */
 
+import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { useCallback, useRef } from 'react';
 import { FilterChip } from './FilterChip';
 import type { FilterChipData } from './filter-types';
@@ -23,6 +25,7 @@ type ActiveFilterChipsProps = {
  * @param onRemove - Callback invoked with the paramKey of the chip to remove
  */
 export const ActiveFilterChips = ({ chips, onRemove }: ActiveFilterChipsProps) => {
+    const { t } = useTranslations();
     const containerRef = useRef<HTMLOutputElement>(null);
 
     const handleRemove = useCallback(
@@ -30,7 +33,7 @@ export const ActiveFilterChips = ({ chips, onRemove }: ActiveFilterChipsProps) =
             onRemove(paramKey);
 
             // Focus management: after removal, focus next chip's remove button,
-            // or previous if last, or container if none remain
+            // or previous if last. If none remain, focus fallback targets.
             requestAnimationFrame(() => {
                 const container = containerRef.current;
                 if (!container) return;
@@ -38,7 +41,21 @@ export const ActiveFilterChips = ({ chips, onRemove }: ActiveFilterChipsProps) =
                 const buttons = container.querySelectorAll<HTMLButtonElement>(
                     'button[aria-label^="Remove filter"]'
                 );
-                if (buttons.length === 0) return;
+
+                if (buttons.length === 0) {
+                    // No chips left — focus Clear all button, or first filter control
+                    const clearBtn = document.querySelector<HTMLButtonElement>(
+                        '[data-filter-actions] button'
+                    );
+                    if (clearBtn) {
+                        clearBtn.focus();
+                        return;
+                    }
+                    const firstControl =
+                        document.querySelector<HTMLButtonElement>('[role="combobox"]');
+                    firstControl?.focus();
+                    return;
+                }
 
                 const nextIndex = index < buttons.length ? index : buttons.length - 1;
                 buttons[nextIndex]?.focus();
@@ -54,7 +71,7 @@ export const ActiveFilterChips = ({ chips, onRemove }: ActiveFilterChipsProps) =
             ref={containerRef}
             className="flex flex-wrap items-center gap-1.5"
             aria-live="polite"
-            aria-label="Active filters"
+            aria-label={t('admin-filters.activeFilters' as TranslationKey)}
         >
             {chips.map((chip, index) => (
                 <FilterChip
