@@ -5,6 +5,9 @@ import type { z } from 'zod';
 import { type Event, EventListItemSchema } from '../schemas/events.schemas';
 import { createEventsColumns } from './events.columns';
 
+/**
+ * Configuration for events entity list
+ */
 export const eventsConfig: EntityConfig<Event> = {
     name: 'events',
     entityKey: 'event',

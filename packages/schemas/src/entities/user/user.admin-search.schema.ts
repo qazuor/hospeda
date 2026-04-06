@@ -1,3 +1,9 @@
+/**
+ * Admin Search Schema for Users
+ *
+ * Extends the base admin search schema with user-specific filters
+ * for use in admin list endpoints.
+ */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { RoleEnumSchema } from '../../enums/index.js';
@@ -10,7 +16,7 @@ import { RoleEnumSchema } from '../../enums/index.js';
  * ```ts
  * const params = UserAdminSearchSchema.parse({
  *   page: 1,
- *   role: 'admin',
+ *   role: 'ADMIN',
  *   search: 'john'
  * });
  * ```

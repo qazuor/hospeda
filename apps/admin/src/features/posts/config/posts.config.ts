@@ -5,6 +5,9 @@ import type { z } from 'zod';
 import { type Post, PostListItemWithComputedFieldsSchema } from '../schemas/posts.schemas';
 import { createPostsColumns } from './posts.columns';
 
+/**
+ * Configuration for posts entity list
+ */
 export const postsConfig: EntityConfig<Post> = {
     name: 'posts',
     entityKey: 'post',
