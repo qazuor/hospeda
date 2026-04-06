@@ -122,3 +122,4 @@ scripts/ralph/snapshots/
 # CLI Tool (local history)
 # =========================
 .cli-history.json
+node_modules
