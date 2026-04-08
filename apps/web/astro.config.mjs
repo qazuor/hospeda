@@ -78,6 +78,10 @@ export default defineConfig({
         imageService: true
     }),
 
+    prefetch: {
+        defaultStrategy: 'hover'
+    },
+
     server: {
         port: 4321
     },

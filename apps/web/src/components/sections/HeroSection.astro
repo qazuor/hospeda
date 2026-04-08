@@ -6,9 +6,10 @@
  * CSS adapted from design-cloner output.
  */
 
-import heroAtardecer from '@/assets/images/hero/hero-atardecer.jpg';
-import heroIsla from '@/assets/images/hero/hero-isla.jpg';
-import heroPlaya from '@/assets/images/hero/hero-playa.jpg';
+import { getImage } from 'astro:assets';
+import heroAtardecerRaw from '@/assets/images/hero/hero-atardecer.jpg';
+import heroIslaRaw from '@/assets/images/hero/hero-isla.jpg';
+import heroPlayaRaw from '@/assets/images/hero/hero-playa.jpg';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
 import { SearchBar } from '@/components/sections/SearchBar.client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -37,6 +38,13 @@ interface Props {
 
 const { locale, socialProof, destinations } = Astro.props;
 const { t } = createTranslations(locale);
+
+// Process hero images through Astro's optimization pipeline
+const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
+	getImage({ src: heroPlayaRaw, width: 800, format: 'webp' }),
+	getImage({ src: heroAtardecerRaw, width: 800, format: 'webp' }),
+	getImage({ src: heroIslaRaw, width: 800, format: 'webp' }),
+]);
 ---
 
 <section class="hero" aria-label={t('home.hero.title')}>
@@ -72,7 +80,7 @@ const { t } = createTranslations(locale);
 				<div class="hero__blob-bg" aria-hidden="true"></div>
 				<div class="hero__blob-image">
 					<HeroImageRotator
-						client:visible
+						client:load
 						images={[
 							{ src: heroPlaya.src, alt: t('home.hero.imageAlt', 'Playa del Litoral') },
 							{ src: heroAtardecer.src, alt: t('home.hero.imageAlt', 'Atardecer') },
