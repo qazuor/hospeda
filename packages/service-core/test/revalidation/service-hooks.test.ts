@@ -31,7 +31,7 @@ import { EventService } from '../../src/services/event/event.service';
 import { TagService } from '../../src/services/tag/tag.service';
 import {
     createMockAccommodation,
-    createMockAccommodationCreateInput,
+    createMockAccommodationCreateInput
 } from '../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../factories/actorFactory';
 import { createMockBaseModel } from '../factories/baseServiceFactory';
@@ -52,7 +52,7 @@ import { asMock } from '../utils/test-utils';
 vi.mock('../../src/revalidation/revalidation-init.js', () => ({
     getRevalidationService: vi.fn(),
     initializeRevalidationService: vi.fn(),
-    _resetRevalidationService: vi.fn(),
+    _resetRevalidationService: vi.fn()
 }));
 
 import { getRevalidationService } from '../../src/revalidation/revalidation-init.js';
@@ -74,7 +74,7 @@ function resetMocks(): void {
     vi.clearAllMocks();
     mockScheduleRevalidation = vi.fn();
     asMock(getRevalidationService).mockReturnValue({
-        scheduleRevalidation: mockScheduleRevalidation,
+        scheduleRevalidation: mockScheduleRevalidation
     });
 }
 
@@ -95,12 +95,12 @@ describe('AccommodationService — revalidation hooks', () => {
         // in _afterCreate and _afterSoftDelete.
         // @ts-expect-error: private field override for test isolation
         service.destinationService = {
-            updateAccommodationsCount: vi.fn().mockResolvedValue(undefined),
+            updateAccommodationsCount: vi.fn().mockResolvedValue(undefined)
         };
         // Prevent _destinationModel from calling the real DB in _resolveDestinationSlug.
         // @ts-expect-error: private field override for test isolation
         service._destinationModel = {
-            findById: vi.fn().mockResolvedValue({ slug: 'mock-destination' }),
+            findById: vi.fn().mockResolvedValue({ slug: 'mock-destination' })
         };
     });
 
@@ -124,7 +124,7 @@ describe('AccommodationService — revalidation hooks', () => {
         const actor = createAdminActor();
         const mockAccommodation = createMockAccommodation({
             slug: 'hotel-test',
-            type: 'HOTEL' as import('@repo/schemas').AccommodationTypeEnum,
+            type: 'HOTEL' as import('@repo/schemas').AccommodationTypeEnum
         });
         const createInput = createMockAccommodationCreateInput({ slug: 'hotel-test' });
         asMock(model.create).mockResolvedValue(mockAccommodation);
@@ -135,7 +135,7 @@ describe('AccommodationService — revalidation hooks', () => {
             expect.objectContaining({
                 entityType: 'accommodation',
                 slug: 'hotel-test',
-                accommodationType: 'hotel',
+                accommodationType: 'hotel'
             })
         );
     });
@@ -158,7 +158,9 @@ describe('AccommodationService — revalidation hooks', () => {
     it('calls scheduleRevalidation with entityType "accommodation" after _afterSoftDelete', async () => {
         const actor = createAdminActor();
         const id = 'acc-softdelete-id';
-        asMock(model.findById).mockResolvedValue(createMockAccommodation({ id, deletedAt: undefined }));
+        asMock(model.findById).mockResolvedValue(
+            createMockAccommodation({ id, deletedAt: undefined })
+        );
         asMock(model.softDelete).mockResolvedValue(1);
 
         const result = await service.softDelete(actor, id);
@@ -219,7 +221,7 @@ describe('DestinationService — revalidation hooks', () => {
     it('calls scheduleRevalidation with entityType "destination" after _afterCreate', async () => {
         // Arrange
         const actor = createActor({
-            permissions: [PermissionEnum.DESTINATION_CREATE],
+            permissions: [PermissionEnum.DESTINATION_CREATE]
         });
         const mockDestination = createMockDestination({ slug: 'test-city' });
         // _beforeCreate calls model.findById to resolve parent — null means no parent
@@ -243,8 +245,8 @@ describe('DestinationService — revalidation hooks', () => {
                 state: 'Buenos Aires',
                 country: 'Argentina',
                 zipCode: 'C1000',
-                coordinates: { lat: '-34', long: '-58' },
-            },
+                coordinates: { lat: '-34', long: '-58' }
+            }
         });
 
         // Assert
@@ -257,7 +259,7 @@ describe('DestinationService — revalidation hooks', () => {
     it('calls scheduleRevalidation with entityType "destination" after _afterUpdate', async () => {
         // Arrange
         const actor = createActor({
-            permissions: [PermissionEnum.DESTINATION_UPDATE],
+            permissions: [PermissionEnum.DESTINATION_UPDATE]
         });
         const id = 'dest-update-id';
         const existing = createMockDestination({ id, slug: 'test-city', deletedAt: undefined });
@@ -278,7 +280,7 @@ describe('DestinationService — revalidation hooks', () => {
     it('calls scheduleRevalidation with entityType "destination" after _afterSoftDelete', async () => {
         // Arrange
         const actor = createActor({
-            permissions: [PermissionEnum.DESTINATION_DELETE],
+            permissions: [PermissionEnum.DESTINATION_DELETE]
         });
         const id = 'dest-softdelete-id';
         const existing = createMockDestination({ id, deletedAt: undefined });
@@ -298,7 +300,7 @@ describe('DestinationService — revalidation hooks', () => {
     it('calls scheduleRevalidation with entityType "destination" and slug after restore', async () => {
         // Arrange
         const actor = createActor({
-            permissions: [PermissionEnum.DESTINATION_RESTORE],
+            permissions: [PermissionEnum.DESTINATION_RESTORE]
         });
         const id = 'dest-restore-id';
         const existing = createMockDestination({ id, slug: 'test-city', deletedAt: new Date() });
@@ -319,7 +321,7 @@ describe('DestinationService — revalidation hooks', () => {
         // Arrange
         asMock(getRevalidationService).mockReturnValue(undefined);
         const actor = createActor({
-            permissions: [PermissionEnum.DESTINATION_UPDATE],
+            permissions: [PermissionEnum.DESTINATION_UPDATE]
         });
         const id = 'dest-no-revalidation-id';
         const existing = createMockDestination({ id, slug: 'test-city', deletedAt: undefined });
@@ -351,7 +353,7 @@ describe('EventService — revalidation hooks', () => {
             'findOne',
             'update',
             'softDelete',
-            'restore',
+            'restore'
         ]);
         service = new EventService({ model: modelMock, logger: mockLogger });
     });
@@ -377,7 +379,7 @@ describe('EventService — revalidation hooks', () => {
             visibility: mockEvent.visibility,
             lifecycleState: mockEvent.lifecycleState,
             moderationState: mockEvent.moderationState,
-            isFeatured: false,
+            isFeatured: false
         });
 
         // Assert
@@ -429,7 +431,10 @@ describe('EventService — revalidation hooks', () => {
     it('passes category to scheduleRevalidation after _afterCreate', async () => {
         // Arrange
         const actor = createActor({ permissions: [PermissionEnum.EVENT_CREATE] });
-        const mockEvent = createMockEvent({ slug: 'festival-test', category: 'FESTIVAL' as import('@repo/schemas').EventCategoryEnum });
+        const mockEvent = createMockEvent({
+            slug: 'festival-test',
+            category: 'FESTIVAL' as import('@repo/schemas').EventCategoryEnum
+        });
         asMock(modelMock.findOne).mockResolvedValue(null);
         asMock(modelMock.create).mockResolvedValue(mockEvent);
 
@@ -447,7 +452,7 @@ describe('EventService — revalidation hooks', () => {
             visibility: mockEvent.visibility,
             lifecycleState: mockEvent.lifecycleState,
             moderationState: mockEvent.moderationState,
-            isFeatured: false,
+            isFeatured: false
         });
 
         // Assert
@@ -456,7 +461,7 @@ describe('EventService — revalidation hooks', () => {
             expect.objectContaining({
                 entityType: 'event',
                 slug: 'festival-test',
-                category: 'festival',
+                category: 'festival'
             })
         );
     });
@@ -514,7 +519,7 @@ describe('TagService — revalidation hooks', () => {
             'update',
             'softDelete',
             'hardDelete',
-            'restore',
+            'restore'
         ]);
         service = new TagService({ logger: mockLogger }, tagModelMock, new REntityTagModel());
     });
@@ -531,7 +536,7 @@ describe('TagService — revalidation hooks', () => {
             name: mockTag.name,
             slug: mockTag.slug,
             color: mockTag.color,
-            lifecycleState: mockTag.lifecycleState,
+            lifecycleState: mockTag.lifecycleState
         });
 
         // Assert

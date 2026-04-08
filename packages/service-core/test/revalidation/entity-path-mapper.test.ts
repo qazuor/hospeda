@@ -20,7 +20,7 @@ import { describe, expect, it } from 'vitest';
 import {
     ACCOMMODATION_TYPE_SLUGS,
     EVENT_CATEGORY_SLUGS,
-    getAffectedPaths,
+    getAffectedPaths
 } from '../../src/revalidation/entity-path-mapper.js';
 
 // ---------------------------------------------------------------------------
@@ -47,7 +47,9 @@ describe('getAffectedPaths — accommodation', () => {
         expect(paths).toContain('/alojamientos/');
         // Detail page would be /alojamientos/<slug>/ (NOT under /tipo/)
         expect(
-            paths.some((p) => /^(\/[a-z]{2})?\/alojamientos\/[^/]+\/$/.test(p) && !p.includes('/tipo/'))
+            paths.some(
+                (p) => /^(\/[a-z]{2})?\/alojamientos\/[^/]+\/$/.test(p) && !p.includes('/tipo/')
+            )
         ).toBe(false);
     });
 
@@ -62,7 +64,7 @@ describe('getAffectedPaths — accommodation', () => {
         const paths = getAffectedPaths({
             entityType: 'accommodation',
             slug: 'cabana-del-rio',
-            accommodationType: 'cabin',
+            accommodationType: 'cabin'
         });
         expect(paths).toContain('/alojamientos/tipo/cabin/');
         // Should NOT include other type pages
@@ -81,7 +83,7 @@ describe('getAffectedPaths — accommodation', () => {
         const paths = getAffectedPaths({
             entityType: 'accommodation',
             slug: 'cabana-del-rio',
-            destinationSlug: 'concordia',
+            destinationSlug: 'concordia'
         });
         expect(paths).toContain('/destinos/concordia/');
         expect(paths).toContain('/en/destinos/concordia/');
@@ -98,7 +100,7 @@ describe('getAffectedPaths — accommodation', () => {
             entityType: 'accommodation',
             slug: 'posada-sol',
             accommodationType: 'posada',
-            destinationSlug: 'gualeguaychu',
+            destinationSlug: 'gualeguaychu'
         });
         expect(paths).toContain('/alojamientos/');
         expect(paths).toContain('/alojamientos/posada-sol/');
@@ -173,7 +175,9 @@ describe('getAffectedPaths — event', () => {
 
     it('does not include detail page when slug not provided', () => {
         const paths = getAffectedPaths({ entityType: 'event' });
-        expect(paths.some((p) => /\/eventos\/[a-z]/.test(p) && !p.includes('/categoria/'))).toBe(false);
+        expect(paths.some((p) => /\/eventos\/[a-z]/.test(p) && !p.includes('/categoria/'))).toBe(
+            false
+        );
     });
 
     it('includes ALL category pages when no category provided', () => {
@@ -246,7 +250,7 @@ describe('getAffectedPaths — post', () => {
         const paths = getAffectedPaths({
             entityType: 'post',
             slug: 'mi-articulo',
-            tagSlugs: ['turismo', 'gastronomia'],
+            tagSlugs: ['turismo', 'gastronomia']
         });
         expect(paths).toContain('/publicaciones/etiqueta/turismo/');
         expect(paths).toContain('/publicaciones/etiqueta/gastronomia/');
@@ -257,7 +261,7 @@ describe('getAffectedPaths — post', () => {
     it('includes one tag filter page per tagSlug provided', () => {
         const paths = getAffectedPaths({
             entityType: 'post',
-            tagSlugs: ['alpha', 'beta', 'gamma'],
+            tagSlugs: ['alpha', 'beta', 'gamma']
         });
         expect(paths).toContain('/publicaciones/etiqueta/alpha/');
         expect(paths).toContain('/publicaciones/etiqueta/beta/');
@@ -278,7 +282,7 @@ describe('getAffectedPaths — accommodation_review', () => {
     it('includes parent accommodation detail page when accommodationSlug provided', () => {
         const paths = getAffectedPaths({
             entityType: 'accommodation_review',
-            accommodationSlug: 'hotel-bar',
+            accommodationSlug: 'hotel-bar'
         });
         expect(paths).toContain('/alojamientos/hotel-bar/');
         expect(paths).toContain('/en/alojamientos/hotel-bar/');
@@ -288,7 +292,7 @@ describe('getAffectedPaths — accommodation_review', () => {
     it('always includes /alojamientos/ listing (aggregate ratings affect listing)', () => {
         const paths = getAffectedPaths({
             entityType: 'accommodation_review',
-            accommodationSlug: 'hotel-bar',
+            accommodationSlug: 'hotel-bar'
         });
         expect(paths).toContain('/alojamientos/');
     });
@@ -312,7 +316,7 @@ describe('getAffectedPaths — destination_review', () => {
     it('includes parent destination detail page when destinationSlug provided', () => {
         const paths = getAffectedPaths({
             entityType: 'destination_review',
-            destinationSlug: 'concepcion',
+            destinationSlug: 'concepcion'
         });
         expect(paths).toContain('/destinos/concepcion/');
         expect(paths).toContain('/en/destinos/concepcion/');
@@ -400,7 +404,7 @@ describe('getAffectedPaths — deduplication', () => {
             entityType: 'accommodation',
             slug: 'hotel-test',
             accommodationType: 'hotel',
-            destinationSlug: 'gualeguaychu',
+            destinationSlug: 'gualeguaychu'
         });
         const unique = new Set(paths);
         expect(unique.size).toBe(paths.length);
@@ -410,7 +414,7 @@ describe('getAffectedPaths — deduplication', () => {
         const paths = getAffectedPaths({
             entityType: 'post',
             slug: 'mi-post',
-            tagSlugs: ['tag-a', 'tag-b'],
+            tagSlugs: ['tag-a', 'tag-b']
         });
         const unique = new Set(paths);
         expect(unique.size).toBe(paths.length);
