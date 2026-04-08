@@ -8,7 +8,7 @@
  * Tasks: T-072
  */
 
-import { resolveIcon } from '@repo/icons';
+import { resolveWebIcon } from '@/lib/icon-map';
 import { useEffect, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
@@ -161,7 +161,7 @@ export function AnimatedCounter({
     }
 
     // counter variant
-    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
 
     return (
         <div

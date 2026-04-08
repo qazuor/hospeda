@@ -11,7 +11,7 @@
  *   Use when placed on dark/surface-dark section backgrounds.
  */
 
-import { resolveIcon } from '@repo/icons';
+import { resolveWebIcon } from '@/lib/icon-map';
 
 interface Props {
   /**
@@ -33,7 +33,7 @@ interface Props {
 
 const { icon, title, description, variant = 'light' } = Astro.props;
 
-const IconComponent = resolveIcon({ iconName: icon });
+const IconComponent = resolveWebIcon({ iconName: icon });
 
 const isDark = variant === 'dark';
 const iconColor = isDark ? 'var(--accent-foreground)' : 'var(--brand-accent)';
