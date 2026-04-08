@@ -110,6 +110,36 @@ export const AdminSearchBaseSchema = z.object({
 export type AdminSearchBase = z.infer<typeof AdminSearchBaseSchema>;
 
 /**
+ * Union type of all base admin search field names.
+ * Auto-derived from AdminSearchBaseSchema to stay in sync automatically.
+ */
+export type AdminSearchBaseKeys = keyof z.infer<typeof AdminSearchBaseSchema>;
+
+/**
+ * Runtime array of base admin search keys.
+ * Derived from AdminSearchBaseSchema.shape to stay in sync with the type.
+ */
+export const ADMIN_SEARCH_BASE_KEYS: readonly AdminSearchBaseKeys[] = Object.keys(
+    AdminSearchBaseSchema.shape
+) as AdminSearchBaseKeys[];
+
+/**
+ * Extracts entity-specific filter fields from a full AdminSearchSchema.
+ * Strips out base fields (page, pageSize, search, sort, status, includeDeleted, createdAfter, createdBefore)
+ * leaving only the entity-specific filter fields with their inferred types.
+ *
+ * @example
+ * ```ts
+ * type AccommodationFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
+ * // => { type?: AccommodationType; destinationId?: string; ownerId?: string; isFeatured?: boolean; minPrice?: number; maxPrice?: number }
+ * ```
+ */
+export type EntityFilters<TSchema extends z.ZodObject<z.ZodRawShape>> = Omit<
+    z.infer<TSchema>,
+    AdminSearchBaseKeys
+>;
+
+/**
  * Parsed sort result from the sort string
  */
 export interface ParsedSort {
