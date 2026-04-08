@@ -1,5 +1,5 @@
 import { PermissionEnum, ServiceErrorCode, type VisibilityEnum } from '@repo/schemas';
-import type { ZodObject, ZodType } from 'zod';
+import type { ZodObject, ZodRawShape } from 'zod';
 import type { z } from 'zod';
 import {
     type Actor,
@@ -46,7 +46,7 @@ export abstract class BaseCrudPermissions<
     protected abstract readonly searchSchema: TSearchSchema;
 
     /** Optional Zod schema for validating admin list search input. Required for adminList(). */
-    protected adminSearchSchema?: ZodType;
+    protected adminSearchSchema?: ZodObject<ZodRawShape>;
 
     /**
      * Default relations configuration for list operations.

@@ -205,11 +205,11 @@ export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
  * Parameter type for `_executeAdminSearch()` in BaseCrudRead and service overrides.
  * Contains the assembled query parameters for admin list endpoints.
  */
-export type AdminSearchExecuteParams = {
+export type AdminSearchExecuteParams<TEntityFilters = Record<string, unknown>> = {
     /** Base where clause (status, soft-delete, date range filters) */
     readonly where: Record<string, unknown>;
     /** Entity-specific filters extracted from the admin search schema */
-    readonly entityFilters: Record<string, unknown>;
+    readonly entityFilters: TEntityFilters;
     /** Pagination parameters */
     readonly pagination: { readonly page: number; readonly pageSize: number };
     /** Sort parameters */
