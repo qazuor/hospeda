@@ -1,0 +1,409 @@
+{
+    "specId": "SPEC-022",
+    "title": "Frontend Quality: Theming, i18n, Performance & Code Quality",
+    "status": "in-progress",
+    "lastRevised": "2026-03-16T00:00:00.000Z",
+    "note": "Re-audited 2026-03-16. Original 62 tasks (T-001 to T-062) all completed by other teams. New task set created for the 7 remaining user stories identified in the exhaustive re-audit.",
+    "phases": [
+        "phase-1-dark-mode-bugs",
+        "phase-2-accessibility",
+        "phase-3-typescript-quality",
+        "phase-4-technical-debt",
+        "phase-5-composite-indexes",
+        "phase-6-verification"
+    ],
+    "tasks": [
+        {
+            "id": "T-101",
+            "title": "Fix LitoralMap.astro — replace 5 undefined CSS variable references",
+            "description": "Replace 3 undefined CSS variable references (5 occurrences) in `apps/web/src/components/destination/LitoralMap.astro`.\n\nBroken → Correct mapping:\n- Line 98–99: `var(--color-surface)` → `var(--color-card)` (2 occurrences in SVG gradient)\n- Line 110: `var(--color-text-secondary)` → `var(--color-muted-foreground)` (river label text)\n- Lines 194, 222: `var(--color-bg)` → `var(--color-background)` (2 occurrences, marker strokes and tooltip backgrounds)\n\nBefore changing, search the full codebase for each variable name to confirm no other component accidentally relied on these broken references.\n\nAcceptance: `grep -r '--color-surface\\|--color-text-secondary\\|--color-bg' apps/web/src/components/destination/LitoralMap.astro` returns no matches.",
+            "phase": "phase-1-dark-mode-bugs",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-106"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-102",
+            "title": "Fix LitoralMap.astro — remove !important from opacity rule",
+            "description": "Remove the `opacity: 0 !important` at `apps/web/src/components/destination/LitoralMap.astro:290`. This is used to hide river SVG paths before scroll animation.\n\nReplace with one of these alternatives:\n1. Use a CSS class toggle via JavaScript (add/remove a class that sets `opacity: 0` without `!important`)\n2. Use a data-attribute selector: `[data-hidden] { opacity: 0; }` applied via JS\n3. Increase specificity of the selector to beat whatever rule is winning the cascade\n\nVerify the scroll animation still works after removing `!important`.\n\nAcceptance: `grep -n '!important' apps/web/src/components/destination/LitoralMap.astro` returns no matches.",
+            "phase": "phase-1-dark-mode-bugs",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-106"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-103",
+            "title": "Fix ShareButtons.client.tsx — add dark mode variant to Twitter/X button",
+            "description": "The Twitter/X button at `apps/web/src/components/shared/ShareButtons.client.tsx:191` uses `bg-black text-white`. In dark mode, `bg-black` on a dark page background makes the button invisible (fails WCAG AA 3:1 contrast for UI components).\n\nFix: Add `dark:bg-gray-700` (or `dark:bg-zinc-700`) to the button's class list, keeping `bg-black` for light mode.\n\nAlso verify WhatsApp (`bg-green-500`) and Facebook (`bg-blue-600`) buttons in dark mode — if they already pass 3:1 contrast ratio against `--color-background` in dark mode, no change needed for those.\n\nAcceptance:\n- Twitter/X button has a `dark:` Tailwind variant that provides sufficient background contrast in dark mode\n- Light mode appearance unchanged\n- Visual verification in both modes",
+            "phase": "phase-1-dark-mode-bugs",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-106"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-104",
+            "title": "Add aria-label to ReviewForm submit and cancel buttons",
+            "description": "The submit and cancel buttons in `apps/web/src/components/review/ReviewForm.client.tsx` at lines 382–396 have no `aria-label`. Screen readers announce them as generic \"button\" with no context.\n\nNote: the star rating buttons (around line 262) are ALREADY fixed with `aria-label={tUi('accessibility.rateStars', ...)}` — do not touch those.\n\nFix: Add descriptive `aria-label` attributes to the submit and cancel buttons. Use the existing `tUi()` translation function — add keys to the i18n files if they don't already exist:\n- Submit button: `aria-label={tUi('accessibility.submitReview')}` (or similar existing key)\n- Cancel button: `aria-label={tUi('accessibility.cancelReview')}`\n\nAcceptance:\n- Both buttons have `aria-label` attributes\n- `pnpm typecheck` passes\n- axe-core reports no `button-name` violation on the review form page",
+            "phase": "phase-2-accessibility",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-106"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-105",
+            "title": "Enforce label or aria-label at the TypeScript level in Input.tsx",
+            "description": "The generic input wrapper at `apps/admin/src/components/ui-wrapped/Input.tsx` (lines 102–122) accepts an optional `label` prop but does NOT enforce at the TypeScript level that either `label` or `aria-label` is provided.\n\nNote: PriceRangeFilter inputs already use proper `<label>` elements with `htmlFor` — this task is about the admin Input.tsx wrapper only.\n\nFix: Update the component's props type to require either `label` or `aria-label` using a discriminated union or conditional type:\n```typescript\ntype InputProps =\n  | { label: string; 'aria-label'?: string }\n  | { label?: never; 'aria-label': string }\n```\n\nThis is a compile-time enforcement only — runtime behavior unchanged.\n\nAcceptance:\n- TypeScript prevents instantiating `<Input />` without either `label` or `aria-label`\n- Existing usages of `<Input label=\"...\">` still compile\n- `pnpm typecheck` passes across the full admin app",
+            "phase": "phase-2-accessibility",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-106"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-106",
+            "title": "Fix `any` types in EntityViewSection.tsx",
+            "description": "Replace `any` types in `apps/admin/src/components/entity-form/EntityViewSection.tsx` at lines 123 and 211.\n\nThe function `getNestedValue(obj: any, path: string): any` should be typed as:\n- `obj: Record<string, unknown>`\n- return type: `unknown` (caller is responsible for narrowing)\n\nUpdate all call sites within the file to handle the `unknown` return type safely (type narrowing or type assertion with comment explaining why it's safe).\n\nAcceptance:\n- Zero `any` in this file\n- `pnpm typecheck` passes",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-101", "T-102", "T-103", "T-104", "T-105"],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-107",
+            "title": "Fix `any` types in EntitlementGatedSection.tsx",
+            "description": "Replace `any` types in `apps/admin/src/components/entity-form/sections/EntitlementGatedSection.tsx` at lines 16 and 19.\n\n- `children: any` → `children: React.ReactNode`\n- `fallback?: any` → `fallback?: React.ReactNode`\n\nThese are standard React prop types — no complex type reasoning needed.\n\nAcceptance:\n- Zero `any` in this file\n- `pnpm typecheck` passes",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 1,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-108",
+            "title": "Fix `any` types in unflatten-values.utils.ts",
+            "description": "Replace `any` types in `apps/admin/src/components/entity-form/utils/unflatten-values.utils.ts` at lines 12 and 82.\n\n`let current: any = obj` should be typed as `let current: Record<string, unknown>` or use a recursive type alias if the shape is self-referential.\n\nRun existing tests for this utility after the change to confirm behavior is preserved.\n\nAcceptance:\n- Zero `any` in this file\n- `pnpm typecheck` passes\n- Existing unit tests pass",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-109",
+            "title": "Fix `any` type for `route` property in entity-list/types.ts",
+            "description": "Replace `readonly route: any` at `apps/admin/src/components/entity-list/types.ts:216` with a proper TanStack Router type.\n\nUse `AnyRoute` from `@tanstack/react-router` or the appropriate generic constraint. If `AnyRoute` causes import issues, use `import type { AnyRoute } from '@tanstack/react-router'`.\n\nAcceptance:\n- Zero `any` in this file for the `route` property\n- `pnpm typecheck` passes across all entity-list usages",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-110",
+            "title": "Fix `any` types in lib/cache/strategies/memoryOptimization.ts",
+            "description": "Replace `any` at `apps/admin/src/lib/cache/strategies/memoryOptimization.ts:325`.\n\nThe function `estimateQuerySize(query: any)` should accept `unknown` or a specific cache query shape type. If the function operates on arbitrary query objects, `unknown` with internal type narrowing is the correct pattern.\n\nAcceptance:\n- Zero `any` in this file\n- `pnpm typecheck` passes",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-111",
+            "title": "Fix `any` types in lib/api/client.ts",
+            "description": "Replace `(globalThis as any).import` at `apps/admin/src/lib/api/client.ts:23,26`.\n\nThe `globalThis as any` cast is used to access dynamic import in a specific environment. Replace with a typed global augmentation:\n\n```typescript\n// In a .d.ts file or inline\ndeclare global {\n  interface Window {\n    // add the specific property being accessed\n  }\n}\n```\n\nOr use a type predicate to narrow the type safely without `any`.\n\nAcceptance:\n- Zero `any` / `as any` in this file\n- `pnpm typecheck` passes",
+            "phase": "phase-3-typescript-quality",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": [],
+            "blocks": ["T-112"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-112",
+            "title": "Implement error toasts in GalleryField.tsx and ImageField.tsx",
+            "description": "Implement the 4 missing error toast calls that are currently TODO comments:\n\n- `apps/admin/src/components/entity-form/fields/GalleryField.tsx:168` — `// TODO: Show error toast` on gallery upload failure\n- `apps/admin/src/components/entity-form/fields/ImageField.tsx:107` — `// TODO: Show error toast` on failure path 1\n- `apps/admin/src/components/entity-form/fields/ImageField.tsx:114` — `// TODO: Show error toast` on failure path 2\n- `apps/admin/src/components/entity-form/fields/ImageField.tsx:141` — `// TODO: Show error toast` on failure path 3\n\nUse the existing toast/notification system already present in the admin app (check what other components use for error toasts and follow the same pattern).\n\nAcceptance:\n- All 4 TODO comments replaced with working toast calls\n- Upload failures show an error message to the user\n- `grep -n 'TODO: Show error toast' apps/admin/src/components/entity-form/fields/` returns no matches",
+            "phase": "phase-4-technical-debt",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": ["T-106", "T-107", "T-108", "T-109", "T-110", "T-111"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-113",
+            "title": "Resolve or file accommodations config TODOs (5 items)",
+            "description": "Review and action the 5 TODO comments in `apps/admin/src/features/accommodations/config/sections/`:\n\n1. `amenities.consolidated.ts:15` — Category options for amenities not implemented\n2. `basic-info.consolidated.ts:60` — RICH_TEXT field type missing\n3. `gallery.consolidated.ts:15, 29` — Image/video type options missing (2 items)\n4. `states-moderation.consolidated.ts:88` — DATE field type not implemented\n5. `statistics.consolidated.ts:207, 221` — DATE fields not implemented (2 items)\n\nDecision tree for each item:\n- **Small fix (< 2h)**: Implement it here\n- **Medium/large (> 1 day)**: Create a new task in the task system with clear description, add a comment referencing the task ID, remove the TODO\n- **Obsolete**: Remove the TODO and add a comment explaining why it's no longer needed\n\nAcceptance:\n- Zero untracked TODO comments in these 5 files\n- Each item is either implemented, has a new filed task, or the TODO is removed with explanation",
+            "phase": "phase-4-technical-debt",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-112"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-114",
+            "title": "Resolve or file entity form placeholder TODOs (9 items)",
+            "description": "Review and action the 9 TODO/placeholder comments in `apps/admin/src/components/entity-form/`:\n\n1. `EntityViewSection.tsx:137` — \"Check field visibility\" not implemented\n2. `EntityViewSection.tsx:415` — \"Implement tabs layout\" not implemented\n3. `EntityFormSection.tsx:102` — Visibility check not implemented\n4. `EntityFormSection.tsx:431, 435` — Layout variants not implemented\n5. `fields/entity-selects/index.ts:15` — \"Add more entity select fields\" placeholder\n6. `views/index.ts:34` — \"Implement additional view field types\"\n7. `sections/index.ts:21` — \"Add specialized section components\"\n8. `layouts/index.ts:20` — \"Implement additional layout types\"\n9. `navigation/index.ts:16` — \"Add more navigation components\"\n\nDecision tree (same as T-113):\n- **Small fix (< 2h)**: Implement it here\n- **Medium/large**: Create new task, add reference comment, remove TODO\n- **Obsolete or placeholder-is-sufficient**: Remove comment, add explanation\n\nAcceptance:\n- Zero untracked TODO/placeholder comments in these files\n- `grep -rn 'TODO\\|FIXME' apps/admin/src/components/entity-form/` returns no untracked items",
+            "phase": "phase-4-technical-debt",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-112"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-115",
+            "title": "Create composite index migration for billing tables",
+            "description": "Create a Drizzle migration adding 2 composite indexes for high-frequency billing query patterns:\n\n1. **`billing_dunning_attempt`**: New index `(customer_id, result, created_at DESC)`\n   - Note: an existing `(customer_id, result)` index is in migration 0015_bent_nekra.sql. DO NOT drop it — add the new composite separately.\n   - Use `CREATE INDEX CONCURRENTLY` to avoid table locks\n\n2. **`billing_notification_log`**: New index `(customer_id, type, created_at DESC)`\n   - No existing index on this pattern\n   - Use `CREATE INDEX CONCURRENTLY`\n\nGenerate the migration via: `pnpm db:generate`\n\nVerify with `EXPLAIN ANALYZE` on a filtered+sorted query:\n```sql\nEXPLAIN ANALYZE SELECT * FROM billing_dunning_attempts\nWHERE customer_id = '...' AND result = 'failed'\nORDER BY created_at DESC LIMIT 20;\n```\nExpect: \"Index Scan\" not \"Seq Scan\".\n\nAcceptance:\n- Migration file created and applied\n- `EXPLAIN ANALYZE` shows index scan for both target query patterns",
+            "phase": "phase-5-composite-indexes",
+            "complexity": 3,
+            "status": "pending",
+            "blockedBy": ["T-114"],
+            "blocks": ["T-117"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-116",
+            "title": "Create composite index migration for entity tables (deleted_at, created_at)",
+            "description": "Create a Drizzle migration adding composite indexes `(deleted_at, created_at DESC)` for the 4 main entity tables:\n\n- `accommodations`\n- `destinations`\n- `events`\n- `posts`\n\nThese tables are frequently queried with `WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT N` — a pattern used in every admin list page. The composite index allows PostgreSQL to use an index scan for both the null filter and the sort.\n\nUse `CREATE INDEX CONCURRENTLY` for each index.\n\nAcceptance:\n- 4 new composite indexes created via migration\n- Migration applied without errors\n- `EXPLAIN ANALYZE` on `WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT 20` shows index scan",
+            "phase": "phase-5-composite-indexes",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": ["T-114"],
+            "blocks": ["T-117"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-117",
+            "title": "Full dark mode visual verification",
+            "description": "Manual visual verification pass in dark mode for all components changed in this spec plus spot-check of 10 other web components:\n\n**Components changed in this spec:**\n- `LitoralMap.astro` — province shapes, river labels, markers, tooltips (light + dark)\n- `ShareButtons.client.tsx` — all 3 social buttons visible in dark mode\n\n**Spot-check (10 other components):**\n- Hero section\n- Accommodation card\n- Destination card\n- Search/filter bar\n- Navigation header\n- Footer\n- Review card\n- Event card\n- Error pages (404, 500)\n- Price range filter\n\nFor each: toggle `data-theme=\"dark\"` on `<html>` and visually confirm no transparent, invisible, or unreadable elements.\n\nAcceptance:\n- Manual verification checklist in spec.md is fully checked\n- No new dark mode regressions found",
+            "phase": "phase-6-verification",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": ["T-101", "T-102", "T-103", "T-115", "T-116"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-118",
+            "title": "Accessibility audit with axe-core on affected pages",
+            "description": "Run axe-core accessibility audit on the pages affected by US-A01 changes:\n\n1. Accommodation detail page (contains ReviewForm and ShareButtons)\n2. Search results page (contains PriceRangeFilter)\n\nMethod: Use the browser axe DevTools extension or run `@axe-core/playwright` if E2E tests exist.\n\nFocus on:\n- `button-name` violations (ReviewForm buttons)\n- `label` violations (form inputs)\n- `color-contrast` violations (ShareButtons in dark mode)\n\nAcceptance:\n- Zero `button-name` violations on review form\n- Zero `label` violations on search filters\n- Zero `color-contrast` violations on ShareButtons (both modes)",
+            "phase": "phase-6-verification",
+            "complexity": 2,
+            "status": "pending",
+            "blockedBy": ["T-104", "T-105"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-119",
+            "title": "Final quality gate — typecheck, lint, test",
+            "description": "Run the full quality gate before closing SPEC-022:\n\n```bash\npnpm typecheck   # must pass with zero errors\npnpm lint        # must pass with zero errors\npnpm test        # must pass with ≥90% coverage\n```\n\nFix any failures before marking the spec as completed.\n\nAcceptance:\n- All three commands exit with code 0\n- Coverage report shows ≥90% across modified files",
+            "phase": "phase-6-verification",
+            "complexity": 1,
+            "status": "pending",
+            "blockedBy": [
+                "T-106",
+                "T-107",
+                "T-108",
+                "T-109",
+                "T-110",
+                "T-111",
+                "T-112",
+                "T-113",
+                "T-114",
+                "T-115",
+                "T-116"
+            ],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

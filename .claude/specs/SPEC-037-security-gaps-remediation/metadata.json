@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-037",
+    "title": "Security Gaps Remediation (SPEC-019 Post-Audit)",
+    "type": "security",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-03-07T00:00:00.000Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "security",
+        "remediation",
+        "permissions",
+        "crypto",
+        "information-leak",
+        "rate-limiting",
+        "xss",
+        "csp",
+        "ci-cd",
+        "route-architecture",
+        "three-tier",
+        "billing",
+        "webhooks",
+        "code-quality"
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "id": "SPEC-027",
+    "title": "Webhook Subscription Sync",
+    "status": "completed",
+    "priority": "medium",
+    "created": "2026-03-03",
+    "category": "billing",
+    "dependencies": ["SPEC-021"]
+}

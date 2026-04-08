@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-045",
+    "title": "Vite 7 Migration for TanStack Start",
+    "status": "draft",
+    "created": "2026-03-16",
+    "revised": "2026-03-17",
+    "priority": "HIGH",
+    "complexity": "medium",
+    "type": "infrastructure",
+    "tags": [
+        "vite",
+        "tanstack-start",
+        "admin",
+        "migration",
+        "breaking-changes",
+        "csp",
+        "nonce",
+        "gap-042"
+    ],
+    "origin": "SPEC-042",
+    "dependants": ["SPEC-042"],
+    "notes": "Required before SPEC-042 can enable ssr.nonce for CSP enforcement"
+}

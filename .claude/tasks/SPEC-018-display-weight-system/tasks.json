@@ -1,0 +1,321 @@
+{
+    "specId": "SPEC-018",
+    "title": "Display Weight System for Amenities, Features, and Attractions",
+    "version": "1.0",
+    "created": "2026-02-23T12:00:00.000Z",
+    "parallelTracks": [
+        {
+            "id": "track-db-schema",
+            "label": "Database + Schema Foundation",
+            "tasks": ["T-001", "T-002"]
+        },
+        {
+            "id": "track-seed",
+            "label": "Seed Data",
+            "tasks": ["T-003", "T-004", "T-005"]
+        },
+        {
+            "id": "track-service",
+            "label": "Service + API",
+            "tasks": ["T-006", "T-007"]
+        },
+        {
+            "id": "track-admin",
+            "label": "Admin Panel",
+            "tasks": ["T-008", "T-009", "T-010"]
+        },
+        {
+            "id": "track-web",
+            "label": "Web App",
+            "tasks": ["T-011", "T-012"]
+        }
+    ],
+    "criticalPath": ["T-001", "T-002", "T-006", "T-008", "T-011"],
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add display_weight column to amenities, features, attractions Drizzle schemas",
+            "description": "Add `displayWeight: integer('display_weight').notNull().default(50)` to three Drizzle table definitions and generate the migration.\n\nFiles affected:\n- `packages/db/src/schemas/accommodation/amenity.dbschema.ts` - add `displayWeight` column after `isFeatured`\n- `packages/db/src/schemas/accommodation/feature.dbschema.ts` - add `displayWeight` column after `isFeatured`\n- `packages/db/src/schemas/destination/attraction.dbschema.ts` - add `displayWeight` column after `isFeatured`\n- Run `pnpm db:generate` to produce the migration file\n- Run `pnpm db:migrate` to apply it\n\nColumn definition for all three tables:\n```typescript\ndisplayWeight: integer('display_weight').notNull().default(50),\n```\n\nAlso add an index on `display_weight` in the `amenities`, `features`, and `attractions` table options (alongside existing indexes) to support ORDER BY queries.\n\nAcceptance criteria:\n- Migration file generated in `packages/db/drizzle/migrations/` with ALTER TABLE statements for all three tables\n- `pnpm db:migrate` applies without errors\n- `pnpm typecheck` passes in `packages/db`",
+            "status": "done",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-006"],
+            "subtasks": [],
+            "tags": ["backend", "database", "drizzle", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add displayWeight field to Amenity, Feature, and Attraction Zod schemas",
+            "description": "Add `displayWeight` to the base entity schemas, create/update input schemas, and HTTP response schemas for all three entities. The CRUD schemas already derive from the base schema via `.omit()` and `.partial()`, so adding to the base propagates automatically - but verify each schema file for correctness.\n\nFiles affected:\n- `packages/schemas/src/entities/amenity/amenity.schema.ts` - add `displayWeight: z.number().int().min(1).max(100).default(50)` to `AmenitySchema`\n- `packages/schemas/src/entities/feature/feature.schema.ts` - same addition to `FeatureSchema`\n- `packages/schemas/src/entities/attraction/attraction.schema.ts` - same addition to `AttractionSchema`\n- `packages/schemas/src/entities/amenity/amenity.crud.schema.ts` - verify `AmenityCreateInputSchema` omits correct fields and `displayWeight` defaults to 50 in create\n- `packages/schemas/src/entities/feature/feature.crud.schema.ts` - same verification\n- `packages/schemas/src/entities/attraction/attraction.crud.schema.ts` - same verification\n- `packages/schemas/src/entities/amenity/amenity.http.schema.ts` - verify response schema includes `displayWeight`\n- `packages/schemas/src/entities/feature/feature.http.schema.ts` - same\n- `packages/schemas/src/entities/attraction/attraction.http.schema.ts` - same\n\nWrite unit tests in `packages/schemas/test/entities/` (follow existing test patterns):\n- `displayWeight` accepts 1 (min boundary)\n- `displayWeight` accepts 100 (max boundary)\n- `displayWeight` rejects 0\n- `displayWeight` rejects 101\n- `displayWeight` rejects 4.5 (non-integer)\n- Create input without `displayWeight` defaults to 50\n\nTests should be in:\n- `packages/schemas/test/entities/admin-search/amenity-display-weight.test.ts` (or equivalent path following existing patterns)\n\nAcceptance criteria:\n- All three base schemas include `displayWeight: z.number().int().min(1).max(100).default(50)`\n- Create input schemas accept `displayWeight` as optional (defaulting to 50)\n- Update/patch input schemas accept `displayWeight` as optional\n- Unit tests pass for boundary validation\n- `pnpm typecheck` passes in `packages/schemas`",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007", "T-008", "T-011"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "zod", "validation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add displayWeight values to all 90 amenity seed JSON files",
+            "description": "Add a `displayWeight` integer field (1-100) to all 90 amenity seed files in `packages/seed/src/data/amenity/`. Values must be curated by domain relevance according to the spec strategy:\n\n- **80-100** (Core connectivity and comfort): Wi-Fi (001), Air conditioning (002), Heating (003), Full kitchen (004), Pool (015), Heated pool (016)\n- **70-79** (High-value guest comforts): Refrigerator (005), Parking (017), Smart TV (013), Cable TV (012), Barbecue grill (014), Jacuzzi (025), Towels (011), Bed linens (010), Washer (018)\n- **60-69** (Standard amenities): Microwave (006), Coffee maker (007), Electric kettle (008), Kitchen utensils (009), Dryer (019), Iron (020), Hair dryer (021), Sauna (026), Terrace (027), Balcony (028), Restaurant (084), Bar (083), Breakfast (045)\n- **50-59** (Common conveniences): Fan (022), Fireplace (023), Wood stove (024), Private garden (029), Patio (030), Outdoor furniture (031), Umbrella/Gazebo (032), Quincho (033), Solarium (034), River access (035), River view (036), 24h reception (049), Room service (050)\n- **30-49** (Specialized or niche amenities): Wheelchair accessible (037), Elevator (038), Safe (039), Smoke detector (040), Carbon monoxide detector (041), First aid kit (042), Fire extinguisher (043), Water heater (044), Mini bar (046), Daily cleaning (047), Laundry service (048), Grocery service (051), Board games (052), Books/magazines (053), Children games (054), Playground (055), Bicycles (056), Kayaks (057), Fishing equipment (058), Beach chairs (059), Beach equipment (060), Outdoor lighting (061), Covered parking (062), Motorhome parking (063), Coworking space (064), Relaxation area (065), Spa (066), Gym (067), Organic garden (068), Panoramic view (069), Full board (089), Half board (090)\n- **10-29** (Very specific/ancillary items): Blackout curtains (070), Double-glazed windows (071), Crib (072), High chair (073), Baby monitor (074), International adapters (075), Water dispenser (076), Gas/electric stove (077), TV per room (078), Luggage storage (079), Electric blankets (080), Soap dispensers (081), Security parking (082), Shared kitchen (085), Outdoor kitchen (086), Shared patio (087), Pet-friendly (088)\n\nEach file already has a JSON structure. Add `\"displayWeight\": <value>` as a field (place it after `\"isFeatured\"` for consistency).\n\nAcceptance criteria:\n- All 90 files have a `displayWeight` integer field\n- No value is 0 or above 100\n- `pnpm db:fresh` applies seed without errors\n- Values reflect the curated priority tiers described above",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "seed", "data"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add displayWeight values to all 80 feature seed JSON files",
+            "description": "Add a `displayWeight` integer field (1-100) to all 80 feature seed files in `packages/seed/src/data/feature/`. Values must be curated by domain relevance according to the spec strategy:\n\n- **80-100** (Landmark characteristics): River front (001), Spa front (002), Panoramic view extended (003), Natural environment (004), Panoramic view amenity (069)\n- **70-79** (High-impact location/access): Rural area (005), Silent environment (008), Paved access (010), River view (036), Private viewpoint (069), Dock access (070)\n- **60-79** (Guest type compatibility): Family suitable (012), Couple suitable (013), Pet suitable (014), Ideal for groups (015), LGBTQ friendly (074), Ecological construction (021), Renewable energy (022)\n- **50-59** (Style and environment descriptors): Central area (006), Residential area (007), Isolated/no neighbors (009), Gravel access (011), Modern style (018), Rustic style (019), Minimalist style (020), Smart home (023), Themed rooms (024), WiFi full property (025), Ideal for seniors (016), Disability accessible (017)\n- **30-49** (Operational and facility features): Exclusive kids area (026), Adults only area (027), Autonomous check-in (028), Full rental (030), Room rental (031), Camping area (032), Fire pit area (033), Covered gallery (034), Private grill (035), Shared space (036), 24h security (037), Perimeter lighting (038), Perimeter fence (039), Quiet zone (040), Smoking area (041), Pet friendly area (042), Internal parking (043), Tourist info available (044), Organized activities (045), Transfer service (046), Laundry service (047), Luggage storage (048), Event suitable (059), Wedding suitable (060)\n- **10-29** (Niche or operational details): Minimum stay required (029), Local artisan decor (049), Own production (050), Animal activities (051), Educational farm (052), Digital detox zone (053), No TV area (054), Satellite WiFi (055), Vehicle rental (056), Sustainable accommodation (057), Tourism certification (058), Spiritual retreat suitable (061), Remote coworking suitable (062), Rural activities stay (063), Camping sector (064), Dairy farm production (065), Animal corral (066), Yoga/meditation area (067), Walking circuit (068), Covered barbecue area (071), Bilingual services (072), Permanent professional staff (073), Waste recycling (075), Rainwater harvesting (076), Plastic-free policy (077), No cell signal (078), Solar showers (079), Workshop/training space (080)\n\nAcceptance criteria:\n- All 80 files have a `displayWeight` integer field\n- No value is 0 or above 100\n- `pnpm db:fresh` applies seed without errors",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "seed", "data"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add displayWeight values to all 88 attraction seed JSON files",
+            "description": "Add a `displayWeight` integer field (1-100) to all 88 attraction seed files in `packages/seed/src/data/attraction/`. Values must be curated by domain relevance according to the spec strategy:\n\n- **80-100**: Iconic regional landmarks (the most prominent attractions in Concepción del Uruguay and the Litoral region - typically the first ~15-20 files representing major historical and natural sites)\n- **60-79**: Well-known venues and significant points of interest (the next tier of recognized attractions)\n- **40-59**: General points of interest with moderate regional significance\n- **1-39**: Minor, niche, or very specific attractions\n\nInspect each file's `name` field to determine domain-appropriate priority. Attractions representing historical monuments, major natural features, and prominent cultural sites receive higher weights.\n\nAcceptance criteria:\n- All 88 files have a `displayWeight` integer field\n- No value is 0 or above 100\n- `pnpm db:fresh` applies seed without errors\n- Values reflect a meaningful landmark-based prioritization",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "seed", "data"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Update service-core queries to ORDER BY displayWeight DESC for accommodations and destinations",
+            "description": "Update the service-core methods that return amenities/features for accommodations and attractions for destinations to use ORDER BY `display_weight` DESC at the query level.\n\nFiles affected:\n- `packages/service-core/src/services/accommodation/accommodation.service.ts` - Find the method(s) that query amenities and features for a given accommodation (likely via joins through junction tables `r_accommodation_amenity` and `r_accommodation_feature`). Add `.orderBy(desc(amenities.displayWeight))` and `.orderBy(desc(features.displayWeight))` or equivalent Drizzle ordering on the base table join.\n- `packages/service-core/src/services/destination/destination.service.ts` - Find the method that queries attractions for a destination (via `r_destination_attraction` junction). Add `.orderBy(desc(attractions.displayWeight))`.\n\nImport `desc` from `drizzle-orm` where needed.\n\nWrite service unit tests verifying:\n- Accommodation amenities returned in `displayWeight` DESC order\n- Accommodation features returned in `displayWeight` DESC order\n- Destination attractions returned in `displayWeight` DESC order\n- Items with equal `displayWeight` are returned in a deterministic secondary order (name ASC)\n\nAcceptance criteria:\n- Service queries include ORDER BY `display_weight` DESC\n- `pnpm typecheck` passes in `packages/service-core`\n- Unit tests verify ordering behavior",
+            "status": "done",
+            "complexity": 5,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "ordering"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Verify and test API passthrough of displayWeight for amenity, feature, and attraction routes",
+            "description": "Verify that the existing admin API routes for amenity, feature, and attraction correctly accept and return `displayWeight` in create/update/get operations. The schema propagation from T-002 should handle most of this automatically, but explicit verification and integration tests are required.\n\nFiles to inspect/update:\n- `apps/api/src/routes/amenity/admin/create.ts` - verify `displayWeight` passes through in create body schema\n- `apps/api/src/routes/amenity/admin/update.ts` - verify `displayWeight` in update body schema\n- `apps/api/src/routes/amenity/admin/getById.ts` - verify response includes `displayWeight`\n- Same pattern for `apps/api/src/routes/feature/admin/` create, update, getById\n- Same pattern for `apps/api/src/routes/attraction/admin/` create, update, getById\n\nWrite API integration tests (follow existing test patterns in `apps/api/`):\n- `POST /api/v1/admin/amenities` with valid `displayWeight: 75` returns it in response\n- `POST /api/v1/admin/amenities` without `displayWeight` returns `displayWeight: 50` in response\n- `POST /api/v1/admin/amenities` with `displayWeight: 0` returns 400\n- `POST /api/v1/admin/amenities` with `displayWeight: 101` returns 400\n- Same three tests for features and attractions\n\nAcceptance criteria:\n- All admin create/update routes accept `displayWeight`\n- GET responses include `displayWeight`\n- Integration tests pass for all three entities\n- `pnpm typecheck` passes in `apps/api`",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "hono", "integration-tests"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add displayWeight column and field to amenity admin list, form, and detail",
+            "description": "Update the admin panel amenity configuration to expose `displayWeight` in the list table, create/edit forms, and detail view.\n\nFiles affected:\n- `apps/admin/src/features/amenities/config/amenities.columns.ts` - add a `displayWeight` column definition:\n```typescript\n{\n    id: 'displayWeight',\n    header: 'Display Weight',\n    accessorKey: 'displayWeight',\n    enableSorting: true,\n    columnType: ColumnType.NUMBER\n}\n```\n- `apps/admin/src/features/amenities/schemas/amenities.schemas.ts` (or equivalent schema file) - ensure `displayWeight` is included in `AmenityListItemSchema` and form schema\n- Amenity create/edit form config - add field:\n```typescript\n{\n    name: 'displayWeight',\n    label: 'Display Weight',\n    type: 'number',\n    min: 1,\n    max: 100,\n    defaultValue: 50,\n    required: true,\n    description: 'Higher values appear first on cards (1-100)',\n}\n```\n- Amenity detail view - render `displayWeight` as a labeled read-only field\n\nWrite validation tests:\n- Form accepts value 1 (minimum)\n- Form accepts value 100 (maximum)\n- Form rejects value 0\n- Form rejects value 101\n- Form rejects empty value\n\nAcceptance criteria:\n- `displayWeight` column visible in amenity list table with correct numeric value\n- `displayWeight` field present in create and edit forms, pre-populated with 50 for new, current value for edit\n- `displayWeight` shown in amenity detail view\n- Form validation blocks out-of-range values\n- `pnpm typecheck` passes in `apps/admin`",
+            "status": "done",
+            "complexity": 4,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "amenity"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add displayWeight column and field to feature admin list, form, and detail",
+            "description": "Mirror the changes from T-008 for the feature entity in the admin panel.\n\nFiles affected:\n- `apps/admin/src/features/features/config/features.config.ts` - add `displayWeight` column definition with `ColumnType.NUMBER` and `enableSorting: true`\n- Feature form config - add field with `name: 'displayWeight'`, `label: 'Display Weight'`, `type: 'number'`, `min: 1`, `max: 100`, `defaultValue: 50`, `required: true`, `description: 'Higher values appear first on cards (1-100)'`\n- Feature detail view - render `displayWeight` as a labeled read-only field\n- Feature schema in admin (if separate from `@repo/schemas`) - include `displayWeight`\n\nLocate the columns config file for features (likely `apps/admin/src/features/features/config/`) following the same pattern as `amenities.columns.ts`.\n\nWrite the same validation tests as T-008 for the feature entity.\n\nAcceptance criteria:\n- `displayWeight` column visible in feature list table\n- `displayWeight` field in create and edit forms with default 50\n- `displayWeight` shown in feature detail view\n- Form validation blocks out-of-range values\n- `pnpm typecheck` passes in `apps/admin`",
+            "status": "done",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "feature"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add displayWeight column and field to attraction admin list, form, and detail",
+            "description": "Mirror the changes from T-008 for the attraction entity in the admin panel.\n\nFiles affected:\n- `apps/admin/src/features/attractions/config/` - add `displayWeight` column definition with `ColumnType.NUMBER` and `enableSorting: true` to the columns config file\n- Attraction form config - add field with `name: 'displayWeight'`, `label: 'Display Weight'`, `type: 'number'`, `min: 1`, `max: 100`, `defaultValue: 50`, `required: true`, `description: 'Higher values appear first on destination cards (1-100)'`\n- Attraction detail view - render `displayWeight` as a labeled read-only field\n- Attraction schema in admin (if separate) - include `displayWeight`\n\nWrite the same validation tests as T-008 for the attraction entity.\n\nAcceptance criteria:\n- `displayWeight` column visible in attraction list table\n- `displayWeight` field in create and edit forms with default 50\n- `displayWeight` shown in attraction detail view\n- Form validation blocks out-of-range values\n- `pnpm typecheck` passes in `apps/admin`",
+            "status": "done",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "attraction"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update AccommodationCard to sort combined amenities and features by displayWeight DESC before slice",
+            "description": "Update the `AccommodationCard` component to sort the combined amenities + features array by `displayWeight` DESC before slicing to 6 items.\n\nFiles affected:\n- `apps/web/src/components/accommodation/AccommodationCard.astro`\n  - Update the `AccommodationCardData` interface to include `displayWeight?: number` in the amenity and feature array item types\n  - Replace the current naive combine-and-slice:\n    ```typescript\n    // Current (line ~127-132)\n    const allBadgeItems = [...(accommodation.amenities ?? []), ...(accommodation.features ?? [])];\n    const badgeItems = allBadgeItems.slice(0, 6);\n    ```\n  - With display-weight-sorted combine-and-slice:\n    ```typescript\n    const allBadgeItems = [...(accommodation.amenities ?? []), ...(accommodation.features ?? [])]\n        .sort((a, b) => (b.displayWeight ?? 50) - (a.displayWeight ?? 50));\n    const badgeItems = allBadgeItems.slice(0, 6);\n    ```\n\nWrite unit tests in `apps/web/test/components/accommodation/`:\n- Card with 10 items (mixed weights): top 6 by weight are rendered, items 7-10 are not\n- Card with 4 items: all 4 rendered in descending weight order\n- Card with 0 items: empty/hidden section renders correctly\n- Card with all items at the same weight (50): 6 items rendered, deterministic order preserved\n\nAcceptance criteria:\n- `AccommodationCard` renders the 6 highest-`displayWeight` items when more than 6 are provided\n- Items without `displayWeight` fall back to 50 (default weight)\n- Unit tests pass\n- `pnpm typecheck` passes in `apps/web`",
+            "status": "done",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "web", "accommodation-card", "sorting"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update destination card components to render API-ordered attractions by displayWeight",
+            "description": "Update destination card components in the web app to rely on the API-ordered attractions list (already sorted by `displayWeight` DESC from T-006 at the service level) rather than any client-side arbitrary ordering.\n\nFiles to inspect and update:\n- `apps/web/src/components/destination/DestinationCard.astro` - inspect the attractions rendering logic. If any client-side re-ordering or arbitrary slicing exists (not weight-based), replace with trust-the-API-order approach. If no reordering exists, add a comment documenting that attractions arrive pre-sorted by displayWeight DESC.\n- `apps/web/src/components/destination/DestinationCardHero.astro` - same inspection\n- `apps/web/src/components/destination/DestinationCardBase.astro` - same inspection\n- `apps/web/src/components/destination/DestinationPreview.astro` - same inspection\n- Any destination card type that renders attractions - add `displayWeight?: number` to the attraction item type in the props interface if not already present\n\nWrite unit tests in `apps/web/test/components/destination/`:\n- Destination card renders attractions in the order received (no client-side reordering)\n- Destination card with no attractions renders empty state correctly (no change from current behavior)\n\nAcceptance criteria:\n- All destination card variants render attractions in received (API-pre-sorted) order\n- No client-side arbitrary reordering of attractions\n- Code comment documents that ordering is delegated to the service layer\n- `pnpm typecheck` passes in `apps/web`\n- Unit tests pass",
+            "status": "done",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["frontend", "web", "destination-card", "sorting"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-23T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 12,
+        "byPhase": {
+            "setup": 0,
+            "core": 6,
+            "integration": 6,
+            "testing": 0,
+            "docs": 0,
+            "cleanup": 0
+        },
+        "byStatus": {
+            "pending": 0,
+            "in-progress": 0,
+            "completed": 12,
+            "blocked": 0
+        },
+        "completed": 12,
+        "inProgress": 0,
+        "pending": 0,
+        "blocked": 0
+    }
+}

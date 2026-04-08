@@ -1,0 +1,26 @@
+{
+    "specId": "SPEC-018",
+    "title": "Display Weight System for Amenities, Features, and Attractions",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "completed",
+    "created": "2026-02-23T12:00:00.000Z",
+    "approved": "2026-02-23T12:00:00.000Z",
+    "completed": "2026-03-02T23:40:00.000Z",
+    "planFileRef": null,
+    "tags": [
+        "db",
+        "migration",
+        "schemas",
+        "seed",
+        "service-core",
+        "api",
+        "admin",
+        "web",
+        "amenities",
+        "features",
+        "attractions",
+        "ordering",
+        "display-weight"
+    ]
+}

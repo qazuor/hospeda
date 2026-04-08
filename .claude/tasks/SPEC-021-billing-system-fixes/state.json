@@ -1,0 +1,796 @@
+{
+    "specId": "SPEC-021",
+    "title": "Billing System Fixes & Production Readiness",
+    "status": "completed",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Implement webhook retry logic in retryWebhookEvent function",
+            "description": "Replace the TODO stub in `apps/api/src/cron/jobs/webhook-retry.job.ts` (lines 63-78) with actual webhook processing logic. The current `retryWebhookEvent` function (line 43-96) logs a simulated success and always returns true. It must instead:\n\n1. Import the MercadoPago webhook handler from `apps/api/src/routes/billing/` or the appropriate webhook processing module\n2. Reconstruct the webhook event from `event.payload` (the stored dead letter payload)\n3. Call the actual webhook processing pipeline (same code path that processes live MercadoPago webhooks)\n4. Return `true` only if processing genuinely succeeded, `false` otherwise\n5. Preserve the existing error handling in the catch block (lines 81-95)\n\nThe surrounding cron job infrastructure (batch fetching, markAsResolved, incrementAttempts, MAX_RETRY_ATTEMPTS=5, BATCH_SIZE=50) is already correctly implemented in lines 98-356. Only the `retryWebhookEvent` function body needs replacement.\n\nKey constraints:\n- The webhook handler must be idempotent (QZPay should deduplicate by providerEventId)\n- Use the `event.provider` field to route to the correct handler (currently only 'mercadopago')\n- Do NOT change the function signature or return type\n\nFiles to modify:\n- `apps/api/src/cron/jobs/webhook-retry.job.ts` (lines 63-78: replace TODO stub)\n\nFiles to reference:\n- `apps/api/src/routes/billing/index.ts` (webhook handling setup)\n- QZPay webhook handler module (find via `@qazuor/qzpay-hono` or `@qazuor/qzpay-mercadopago`)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Write unit tests for webhook retry logic",
+            "description": "Create comprehensive unit tests for the webhook retry logic implemented in T-001. Tests should cover the `retryWebhookEvent` function and the overall cron job handler.\n\nTest file: `apps/api/src/cron/jobs/webhook-retry.job.test.ts` (or `apps/api/test/cron/webhook-retry.job.test.ts`)\n\nTest cases (AAA pattern):\n1. **Happy path - successful retry**: Mock dead letter entry, mock webhook handler to succeed, verify `retryWebhookEvent` returns true\n2. **Failed retry - handler throws**: Mock webhook handler to throw, verify returns false, verify error is logged\n3. **Max retries guard**: Entry with `attempts = 4` (one below MAX_RETRY_ATTEMPTS=5), verify after failure it is marked as permanently failed with `resolvedAt` set\n4. **Batch limit**: Insert >50 entries, verify only 50 are processed per run\n5. **Error isolation**: 5 entries where entry #3 throws, verify entries #4 and #5 still process\n6. **Dry run mode**: Verify no entries are actually retried when `dryRun: true`\n7. **Empty queue**: No unresolved entries, verify job returns early with `processed: 0`\n8. **Resolved entry skipped**: Entry with `resolvedAt` set is NOT returned by the query\n\nMock dependencies:\n- `@repo/db` (getDb, billingWebhookDeadLetter table)\n- Webhook handler module (whatever was imported in T-001)\n- `apiLogger`\n\nFiles to create:\n- `apps/api/src/cron/jobs/webhook-retry.job.test.ts`\n\nFiles to reference:\n- `apps/api/src/cron/jobs/webhook-retry.job.ts`\n- Existing test patterns in `apps/api/test/` or `apps/api/src/**/*.test.ts`",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create past-due grace period middleware",
+            "description": "Create a new middleware file `apps/api/src/middlewares/past-due-grace.middleware.ts` that implements the grace period logic for `past_due` subscriptions as specified in BILL-02.\n\nBehavior:\n1. Read the subscription from billing context (set by `billingAuthMiddleware` in `apps/api/src/routes/billing/index.ts` line 46-56)\n2. If subscription status is NOT `past_due`, call `next()` immediately\n3. If subscription status IS `past_due`:\n   a. Calculate `daysPastDue` from `subscription.statusChangedAt` (or derive from payment failure timestamp)\n   b. Import `PAYMENT_GRACE_PERIOD_DAYS` from `@repo/billing` (currently = 3, defined in `packages/billing/src/constants/billing.constants.ts` line 12)\n   c. If `daysPastDue < PAYMENT_GRACE_PERIOD_DAYS`: allow request, set response header `X-Grace-Period-Days-Remaining` with remaining days\n   d. If `daysPastDue >= PAYMENT_GRACE_PERIOD_DAYS`: return 402 with JSON body `{ error: 'GRACE_PERIOD_EXPIRED', message: 'Tu periodo de gracia ha expirado. Actualiza tu metodo de pago para continuar.', daysOverdue: N }`\n4. If subscription transitions back to `active`, middleware passes through normally (no banner)\n\nIMPORTANT: First check if `billing_subscriptions` table has a `status_changed_at` column. If not, either:\n- Option A: Derive grace period start from the most recent payment failure timestamp in `billing_payment_failures` table\n- Option B: Create a migration to add `status_changed_at` (coordinate with T-008)\nDocument which approach was chosen.\n\nExport: `export function pastDueGraceMiddleware(): AppMiddleware`\n\nFiles to create:\n- `apps/api/src/middlewares/past-due-grace.middleware.ts`\n\nFiles to reference:\n- `packages/billing/src/constants/billing.constants.ts` (line 12: PAYMENT_GRACE_PERIOD_DAYS)\n- `apps/api/src/routes/billing/index.ts` (line 46-56: billingAuthMiddleware pattern)\n- `apps/api/src/middlewares/limit-enforcement.ts` (middleware pattern reference)\n- `apps/api/src/types.ts` (AppMiddleware type)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-004", "T-005"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Register grace period middleware in protected billing routes",
+            "description": "Wire the `pastDueGraceMiddleware` from T-003 into the billing route stack. The middleware must be applied AFTER authentication (billingAuthMiddleware) but BEFORE route handlers.\n\nIn `apps/api/src/routes/billing/index.ts`:\n1. Import `pastDueGraceMiddleware` from `../../middlewares/past-due-grace.middleware`\n2. Apply it in the `createBillingRoutesHandler()` function (line 148-190) after `requireBilling` and `sentryBillingMiddleware` but before the QZPay routes mount\n3. The middleware should apply to protected billing routes that require active subscription access (customer dashboard, subscription management) but NOT to webhook endpoints or checkout endpoints\n\nConsider which routes need the grace period check:\n- YES: GET/PUT /customers/:id, GET /subscriptions/:id, GET /invoices, custom routes (trial, plan-change, addons, usage)\n- NO: POST /webhooks (must always be accessible), POST /checkout, POST /billing/trial/reactivate (user needs this to re-subscribe)\n\nFiles to modify:\n- `apps/api/src/routes/billing/index.ts` (add middleware registration)\n\nFiles to reference:\n- `apps/api/src/middlewares/past-due-grace.middleware.ts` (created in T-003)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write unit tests for grace period middleware",
+            "description": "Create unit tests for `pastDueGraceMiddleware` covering all boundary conditions.\n\nTest file: `apps/api/src/middlewares/past-due-grace.middleware.test.ts`\n\nTest cases (AAA pattern):\n1. **Active subscription**: status='active', verify `next()` called, no 402\n2. **Trialing subscription**: status='trialing', verify `next()` called, no 402\n3. **Past due - day 0 (same day)**: statusChangedAt = today, verify `next()` called, X-Grace-Period-Days-Remaining=3\n4. **Past due - day 2 (within grace)**: statusChangedAt = 2 days ago, verify `next()` called, X-Grace-Period-Days-Remaining=1\n5. **Past due - day 3 (boundary - expired)**: statusChangedAt = exactly 3 days ago, verify 402 returned with GRACE_PERIOD_EXPIRED\n6. **Past due - day 4+ (well past grace)**: statusChangedAt = 4 days ago, verify 402 returned\n7. **Resolved payment**: subscription was past_due but is now active, verify `next()` called with no banner\n8. **No subscription in context**: billing context not set, verify graceful handling (allow or 401)\n9. **Uses PAYMENT_GRACE_PERIOD_DAYS constant**: verify the constant from @repo/billing is used (not hardcoded 3)\n\nMock dependencies:\n- Hono context with billing context variables\n- `@repo/billing` constants\n- `@repo/db` if grace period derives from payment failure table\n\nFiles to create:\n- `apps/api/src/middlewares/past-due-grace.middleware.test.ts`\n\nFiles to reference:\n- `apps/api/src/middlewares/past-due-grace.middleware.ts` (from T-003)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix trial extend to update actual trialEnd field on subscription",
+            "description": "Fix the `extendTrial` method in `apps/api/src/services/trial.service.ts` (lines 429-500). Currently, the method only updates subscription metadata (lines 465-473) with the new trial end date but does NOT update the actual `trialEnd` field on the subscription record. The `blockExpiredTrials` method (line 342) reads `subscription.trialEnd` to determine if a trial has expired, so the extension has no effect on actual trial expiry.\n\nRequired changes:\n1. In `extendTrial()` at line 465, the call to `this.billing.subscriptions.update()` must also pass `trialEnd: newTrialEnd` (or equivalent field name accepted by QZPay's subscription update API)\n2. Check QZPay's `subscriptions.update()` method signature to determine if it accepts `trialEnd` directly. If it does: pass it. If it doesn't: investigate if there's a separate method like `subscriptions.extendTrial()` or if the update needs to go through a different mechanism\n3. Verify that `trial-expiry.job.ts` (the cron that calls `blockExpiredTrials`) reads the updated `trialEnd` value\n4. The response (line 485) should return both `previousTrialEnd` and `newTrialEnd` for audit purposes\n\nThe metadata update should be KEPT (for audit trail) in addition to the actual trialEnd update.\n\nFiles to modify:\n- `apps/api/src/services/trial.service.ts` (lines 465-473: add trialEnd to update call)\n\nFiles to reference:\n- QZPay subscriptions.update() type definition (check @qazuor/qzpay-core types)\n- `apps/api/src/cron/jobs/trial-expiry.job.ts` (verify it reads subscription.trialEnd)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write unit tests for trial extend fix",
+            "description": "Create unit tests verifying that `extendTrial()` now updates the actual `trialEnd` field, not just metadata.\n\nTest file: `apps/api/src/services/trial.service.test.ts` (add to existing or create)\n\nTest cases:\n1. **Extension updates trialEnd**: Mock subscription with trialEnd='2026-03-10', extend by 7 days, verify `billing.subscriptions.update()` was called with trialEnd='2026-03-17' (in addition to metadata)\n2. **Extension preserves metadata audit trail**: Verify metadata contains `originalTrialEnd`, `newTrialEnd`, `trialExtendedAt`, `trialExtendedBy`\n3. **Extension returns both dates**: Verify response includes `previousTrialEnd` and `newTrialEnd`\n4. **Non-trialing subscription rejected**: subscription.status='active', verify Error thrown with message containing 'expected trialing'\n5. **Subscription not found**: billing.subscriptions.get returns null, verify Error thrown\n6. **Billing not enabled**: billing is null, verify Error thrown 'Billing not enabled'\n\nMock dependencies:\n- `QZPayBilling` (mock plans, subscriptions modules)\n- `apiLogger`\n\nFiles to create/modify:\n- `apps/api/src/services/trial.service.test.ts`\n\nFiles to reference:\n- `apps/api/src/services/trial.service.ts` (extendTrial method, lines 429-500)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create billing_dunning_attempts table migration",
+            "description": "Create a new Drizzle migration for the `billing_dunning_attempts` table needed by the dunning cron job (BILL-04).\n\nTable schema:\n```\nbilling_dunning_attempts\n  id               uuid PK default gen_random_uuid()\n  subscription_id  varchar NOT NULL (FK to billing_subscriptions.id)\n  attempt_number   integer NOT NULL\n  attempted_at     timestamp NOT NULL default now()\n  result           varchar NOT NULL ('success' | 'failed' | 'pending')\n  error_message    text nullable\n  created_at       timestamp NOT NULL default now()\n```\n\nSteps:\n1. Add the table definition in `packages/db/src/schema/` (find the billing schema file, likely `packages/db/src/schema/billing/` or similar)\n2. Add appropriate indexes: `subscription_id` + `attempt_number` composite unique, `subscription_id` for FK lookups\n3. Run `pnpm db:generate` to create the migration SQL\n4. Verify migration with `pnpm db:migrate` against local dev DB\n5. Export the table from the `@repo/db` package barrel\n\nAlso check if `billing_subscriptions` has a `status_changed_at` column. If not, add it in this migration (needed by T-003 grace period middleware). Document the decision.\n\nFiles to create:\n- `packages/db/src/schema/billing/dunning-attempts.model.ts` (or add to existing billing schema file)\n- Migration file (auto-generated by `pnpm db:generate`)\n\nFiles to reference:\n- `packages/db/src/schema/` (existing table definitions for pattern reference)\n- `packages/db/CLAUDE.md` (Drizzle conventions)",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "Migration created: 0015_bent_nekra.sql adds billing_dunning_attempts table (id, subscription_id, customer_id, attempt_number, result, amount, currency, payment_id, failure_code, error_message, provider, metadata, attempted_at, created_at). Indexes on subscription_id, customer_id, result, composite (subscription+attempt), and partial index on attempted_at WHERE result='failed'. The dunning job's onEvent handler records retry_succeeded and retry_failed events in this table (best-effort, non-blocking). QZPay still manages retry logic internally; the table provides local audit trail for admin reporting."
+        },
+        {
+            "id": "T-009",
+            "title": "Create dunning cron job with configurable retry schedule",
+            "description": "Create a new cron job file `apps/api/src/cron/jobs/dunning.job.ts` that implements BILL-04 automatic failed payment retries.\n\nBehavior:\n1. Run daily at 6AM (schedule: '0 6 * * *')\n2. Query subscriptions with status='past_due' from QZPay billing\n3. For each past_due subscription:\n   a. Check `billing_dunning_attempts` table for existing retry history\n   b. Apply retry schedule: Day 1, Day 3, Day 7 after initial failure\n   c. If today matches a retry day AND no attempt has been made for this day: attempt charge via MercadoPago\n   d. Record attempt in `billing_dunning_attempts` table\n4. On successful retry:\n   a. Update subscription status to 'active'\n   b. Send PAYMENT_SUCCESS notification\n   c. Record attempt with result='success'\n5. On failed retry:\n   a. Record attempt with result='failed' and error_message\n   b. If this was the final attempt (Day 7): cancel subscription, send SUBSCRIPTION_CANCELLED notification\n6. Process each subscription independently (one failure doesn't block others)\n\nConstants to define:\n- `DUNNING_RETRY_SCHEDULE_DAYS = [1, 3, 7] as const`\n- `DUNNING_MAX_ATTEMPTS = 3`\n\nExport: `export const dunningJob: CronJobDefinition`\n\nFiles to create:\n- `apps/api/src/cron/jobs/dunning.job.ts`\n\nFiles to reference:\n- `apps/api/src/cron/jobs/webhook-retry.job.ts` (cron job pattern)\n- `apps/api/src/cron/types.ts` (CronJobDefinition type)\n- `packages/billing/src/constants/billing.constants.ts` (MAX_PAYMENT_RETRY_ATTEMPTS=3)\n\nAlso register the new cron job in the cron registry (likely `apps/api/src/cron/index.ts` or similar).",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "Implementation complete. Dunning cron job delegates to QZPay's createSubscriptionLifecycle(). Retry schedule: [1, 3, 5, 7] days, 7-day grace period, max 4 attempts. Registered in cron registry. Vercel cron entry added to vercel.json (0 6 * * * = 6 AM UTC daily). Audit logging of retry attempts added to billing_dunning_attempts table via onEvent handler."
+        },
+        {
+            "id": "T-010",
+            "title": "Write unit tests for dunning cron job",
+            "description": "Create unit tests for the dunning cron job created in T-009.\n\nTest file: `apps/api/src/cron/jobs/dunning.job.test.ts`\n\nTest cases:\n1. **No past_due subscriptions**: Verify job returns early with processed=0\n2. **Day 1 retry - success**: Subscription past_due since yesterday, verify charge attempted, subscription updated to active, success notification sent\n3. **Day 1 retry - failure**: Charge fails, verify attempt recorded with result='failed', subscription remains past_due\n4. **Day 2 - no retry (not in schedule)**: Subscription past_due since 2 days ago, verify no charge attempted\n5. **Day 3 retry**: Subscription past_due since 3 days ago with 1 previous attempt, verify second retry\n6. **Day 7 final retry - failure**: 2 previous failed attempts, third attempt fails, verify subscription cancelled and cancellation notification sent\n7. **Day 7 final retry - success**: 2 previous failed attempts, third attempt succeeds, verify subscription restored to active\n8. **Already attempted today**: Attempt already recorded for today's date, verify no duplicate attempt\n9. **Dry run mode**: Verify no charges attempted, only counts reported\n10. **Error isolation**: Multiple subscriptions, one throws, others still process\n\nMock dependencies:\n- QZPay billing (subscriptions, payments)\n- `@repo/db` (billing_dunning_attempts table)\n- Notification sender\n- `apiLogger`\n\nFiles to create:\n- `apps/api/src/cron/jobs/dunning.job.test.ts`",
+            "phase": "phase-1-critical-fixes",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create billing ownership verification middleware",
+            "description": "Create a middleware that verifies the authenticated user owns the billing resource they are accessing (BILL-06). This prevents user A from accessing user B's customer record, subscriptions, or invoices.\n\nCreate file: `apps/api/src/middlewares/billing-ownership.middleware.ts`\n\nBehavior:\n1. Extract the resource ID from URL params (`:id` or `:customerId`)\n2. Determine the resource type from the route path (customer, subscription, invoice, payment)\n3. Fetch the resource and get its `customerId`\n4. Compare with the authenticated user's billing customer ID (from `c.get('billingCustomerId')` set by billingAuthMiddleware)\n5. If match: call `next()`\n6. If no match: check if user has `PermissionEnum.BILLING_MANAGE_ALL` permission (admin bypass). If yes: `next()`. If no: return 403 Forbidden.\n7. For list endpoints (GET /invoices, GET /payments): automatically inject `customerId` filter to scope results to the authenticated user\n\nResource ownership mapping:\n- `customers/:id` -> `customer.userId === authUser.id` OR `customer.id === authUser.billingCustomerId`\n- `subscriptions/:id` -> `subscription.customerId === authUser.billingCustomerId`\n- `invoices/:id` -> `invoice.customerId === authUser.billingCustomerId`\n- `payments/:id/refund` -> require `PermissionEnum.BILLING_MANAGE_ALL` (admin only)\n- `DELETE customers/:id` -> require `PermissionEnum.BILLING_MANAGE_ALL` (admin only)\n\nExport: `export function billingOwnershipMiddleware(): AppMiddleware`\n\nFiles to create:\n- `apps/api/src/middlewares/billing-ownership.middleware.ts`\n\nFiles to reference:\n- `apps/api/src/routes/billing/index.ts` (line 46-56: billingAuthMiddleware, line 103-132: QZPay routes)\n- `apps/api/src/middlewares/limit-enforcement.ts` (middleware pattern)\n- `@repo/schemas` (PermissionEnum)",
+            "phase": "phase-2-billing-security",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-012", "T-013", "T-014", "T-015"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Apply ownership middleware to billing customer routes",
+            "description": "Wire the `billingOwnershipMiddleware` to customer-related billing routes.\n\nIn `apps/api/src/routes/billing/index.ts`, the QZPay routes are mounted at line 159 via `router.route('/', qzpayRoutes)`. The ownership middleware needs to be applied to:\n- `GET /customers/:id` -> ownership check (customer.userId === user.id)\n- `PUT /customers/:id` -> ownership check\n- `DELETE /customers/:id` -> admin only (PermissionEnum.BILLING_MANAGE_ALL)\n\nApproach options:\n1. Apply the middleware globally via `router.use('/customers/:id/*', billingOwnershipMiddleware())` before mounting QZPay routes\n2. Create a wrapping router that intercepts customer routes before passing to QZPay\n3. If QZPay createBillingRoutes supports middleware injection per route, use that\n\nChoose the cleanest approach that doesn't duplicate route definitions.\n\nFiles to modify:\n- `apps/api/src/routes/billing/index.ts`\n\nFiles to reference:\n- `apps/api/src/middlewares/billing-ownership.middleware.ts` (from T-011)",
+            "phase": "phase-2-billing-security",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Apply ownership middleware to subscription routes",
+            "description": "Wire the `billingOwnershipMiddleware` to subscription-related billing routes.\n\nRoutes to protect:\n- `GET /subscriptions/:id` -> subscription.customerId === user.billingCustomerId\n- `PUT /subscriptions/:id` -> subscription.customerId === user.billingCustomerId\n- `DELETE /subscriptions/:id` (cancel) -> subscription.customerId === user.billingCustomerId\n\nApply middleware in `apps/api/src/routes/billing/index.ts` using the same approach chosen in T-012.\n\nFiles to modify:\n- `apps/api/src/routes/billing/index.ts`\n\nFiles to reference:\n- `apps/api/src/middlewares/billing-ownership.middleware.ts` (from T-011)",
+            "phase": "phase-2-billing-security",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Apply ownership middleware to invoice and payment routes",
+            "description": "Wire the `billingOwnershipMiddleware` to invoice and payment billing routes.\n\nRoutes to protect:\n- `GET /invoices` -> auto-filter by user's customerId (list scope)\n- `GET /invoices/:id` -> invoice.customerId === user.billingCustomerId\n- `POST /invoices/:id/void` -> admin only (PermissionEnum.BILLING_MANAGE_ALL)\n- `GET /payments` -> auto-filter by user's customerId\n- `GET /payments/:id` -> payment.customerId === user.billingCustomerId\n- `POST /payments/:id/refund` -> admin only (PermissionEnum.BILLING_MANAGE_ALL)\n\nApply middleware in `apps/api/src/routes/billing/index.ts` using the same approach chosen in T-012.\n\nFiles to modify:\n- `apps/api/src/routes/billing/index.ts`\n\nFiles to reference:\n- `apps/api/src/middlewares/billing-ownership.middleware.ts` (from T-011)",
+            "phase": "phase-2-billing-security",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write integration tests for billing ownership verification",
+            "description": "Create integration tests that verify the complete ownership verification flow across all billing routes.\n\nTest file: `apps/api/src/middlewares/billing-ownership.middleware.test.ts`\n\nTest cases:\n1. **User A accesses own customer**: GET /billing/customers/A-customer-id -> 200 OK\n2. **User A accesses User B's customer**: GET /billing/customers/B-customer-id -> 403 Forbidden\n3. **User A accesses own subscription**: GET /billing/subscriptions/A-sub-id -> 200 OK\n4. **User A accesses User B's subscription**: GET /billing/subscriptions/B-sub-id -> 403 Forbidden\n5. **User A lists invoices (scoped)**: GET /billing/invoices -> only returns A's invoices\n6. **Admin accesses any customer**: Admin with BILLING_MANAGE_ALL -> 200 OK on any resource\n7. **Non-admin attempts refund**: POST /billing/payments/123/refund -> 403 Forbidden\n8. **Admin performs refund**: POST /billing/payments/123/refund -> 200 OK (admin bypass)\n9. **Non-admin attempts customer delete**: DELETE /billing/customers/123 -> 403 Forbidden\n10. **Unauthenticated request**: No auth token -> 401 (not 403)\n\nMock dependencies:\n- QZPay billing (customers, subscriptions, invoices, payments)\n- Hono app with billing routes mounted\n- Mock user contexts (user A, user B, admin)\n\nFiles to create:\n- `apps/api/src/middlewares/billing-ownership.middleware.test.ts`",
+            "phase": "phase-2-billing-security",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": ["T-011", "T-012", "T-013", "T-014"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Migrate admin-only billing operations to /admin/billing/ tier",
+            "description": "Identify billing operations that should be admin-only and move them to the `/api/v1/admin/billing/` route tier, following the three-tier route architecture documented in `apps/api/CLAUDE.md`.\n\nOperations that should be admin-only:\n- `POST /billing/customers` (create customer) -> `/admin/billing/customers`\n- `DELETE /billing/customers/:id` (delete customer) -> `/admin/billing/customers/:id`\n- `POST /billing/plans` (create plan) -> `/admin/billing/plans`\n- `PUT /billing/plans/:id` (update plan) -> `/admin/billing/plans/:id`\n- `DELETE /billing/plans/:id` (delete plan) -> `/admin/billing/plans/:id`\n- `POST /billing/invoices/:id/void` (void invoice) -> `/admin/billing/invoices/:id/void`\n- `POST /billing/payments/:id/refund` (refund payment) -> `/admin/billing/payments/:id/refund`\n- `POST /billing/entitlements` (grant entitlement) -> `/admin/billing/entitlements`\n- `DELETE /billing/entitlements/:id` (revoke entitlement) -> `/admin/billing/entitlements/:id`\n\nThis may require creating separate QZPay route configurations or wrapping specific routes with admin permission checks. The approach depends on QZPay's route customization capabilities.\n\nFiles to modify:\n- `apps/api/src/routes/billing/index.ts`\n- Potentially `apps/api/src/routes/index.ts` (route registration)\n\nFiles to reference:\n- `apps/api/CLAUDE.md` (three-tier architecture)\n- `apps/api/docs/route-architecture.md`",
+            "phase": "phase-2-billing-security",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create POST /api/v1/billing/trial/reactivate endpoint",
+            "description": "Create the trial reactivation endpoint as specified in BILL-09 / US-09.\n\nThe route handler should be added to the trial routes file. The `TrialService.reactivateFromTrial()` method already exists in `apps/api/src/services/trial.service.ts` (lines 509-580) but has issues:\n1. It allows reactivation even when trial is still active (should return 422)\n2. It doesn't accept `billingInterval` or `paymentMethodId` from the request\n3. It doesn't validate that the subscription was a trial (not a regular cancelled sub)\n\nSteps:\n1. Create Zod schemas in `@repo/schemas` for the request/response:\n   - Request: `{ planId: string, billingInterval: BillingIntervalEnum, paymentMethodId?: string }`\n   - Response: `{ subscriptionId: string, planId: string, status: 'active', currentPeriodEnd: string }`\n2. Create route handler in `apps/api/src/routes/billing/trial.ts`:\n   - Path: POST `/reactivate`\n   - Auth: required\n   - Validate request body\n   - Check subscription status: must be 'canceled' with metadata.convertedFromTrial or similar trial indicator\n   - If trial is still active (status='trialing'): return 422 TRIAL_STILL_ACTIVE\n   - If subscription is cancelled but was NOT a trial: return 422 NOT_FROM_TRIAL\n   - Call billing service to create new paid subscription\n   - Return new subscription details\n3. Register route in trial router\n\nFiles to create:\n- Schema definitions in `packages/schemas/src/entities/billing/` (trial-reactivate schemas)\n\nFiles to modify:\n- `apps/api/src/routes/billing/trial.ts` (add reactivate route)\n- `apps/api/src/services/trial.service.ts` (fix reactivateFromTrial method validation)\n- `packages/schemas/src/entities/billing/index.ts` (export new schemas)",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-018"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Write tests for trial reactivation endpoint",
+            "description": "Create tests for the trial reactivation endpoint (POST /billing/trial/reactivate) and the updated TrialService.reactivateFromTrial().\n\nTest file: `apps/api/src/routes/billing/trial.test.ts` (or `apps/api/src/services/trial.service.test.ts`)\n\nTest cases:\n1. **Expired trial -> reactivate success**: User with cancelled trial subscription, valid planId, verify new subscription created with status='active'\n2. **Active trial -> 422 rejection**: User with status='trialing', verify 422 with TRIAL_STILL_ACTIVE error\n3. **Non-trial cancelled subscription -> 422 rejection**: User whose subscription was cancelled normally (not from trial), verify 422 with NOT_FROM_TRIAL\n4. **Payment fails during reactivation**: Mock payment to fail, verify subscription remains cancelled, error returned with payment failure reason\n5. **Invalid planId -> 404/422**: Plan does not exist, verify appropriate error\n6. **Missing required fields -> 400**: Request body missing planId, verify validation error\n7. **Unauthenticated -> 401**: No auth token, verify 401\n8. **No billing customer -> 400**: User has no billing customer record, verify appropriate error\n\nMock dependencies:\n- QZPay billing (subscriptions, plans)\n- Hono context\n- `apiLogger`\n\nFiles to create:\n- Test file for trial reactivation",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Remove userType from trial auto-start and simplify to single plan",
+            "description": "Modify the Better Auth `after` hook for user creation in `apps/api/src/lib/auth.ts` (lines 315-350) to also start trials for COMPLEX role users.\n\nCurrent code (line 331): `if (customerId && user.role === 'HOST')` only triggers trial for HOST users.\n\nRequired changes:\n1. Change the condition at line 331 to: `if (customerId && (user.role === 'HOST' || user.role === 'COMPLEX'))`\n2. Determine the userType to pass to `trialService.startTrial()`: 'owner' for HOST, 'complex' for COMPLEX\n3. The TrialService.startTrial() (line 100-195 in trial.service.ts) already supports both user types (line 110: `planSlug = userType === 'owner' ? 'owner-basico' : 'complex-basico'`), so no service changes needed\n4. Update the log message at line 338 to reflect the user's actual role\n5. **Product decision required**: Confirm which plan COMPLEX users should auto-start on. Currently coded as 'complex-basico' in trial.service.ts. Verify this plan exists in the seed data.\n\nFiles to modify:\n- `apps/api/src/lib/auth.ts` (lines 331-341: extend condition to include COMPLEX role)\n\nFiles to reference:\n- `apps/api/src/services/trial.service.ts` (line 110: plan slug mapping)\n- `packages/seed/` (verify 'complex-basico' plan exists in seed data)",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "SCOPE CHANGE: Original task was to add COMPLEX role support. Decision changed: no COMPLEX role exists. All accommodation owners register as HOST and start on owner-basico trial. Complex features are handled via billing plan category (complex-basico/pro/premium), not user role. The userType parameter was removed from startTrial() entirely. All HOST users get the same 14-day trial on owner-basico. Decision documented in docs/billing/trial-host-only-decision.md."
+        },
+        {
+            "id": "T-020",
+            "title": "Write tests for simplified trial auto-start (no userType)",
+            "description": "Create tests verifying that COMPLEX role users get automatic trial creation on registration.\n\nTest file: `apps/api/src/lib/auth.test.ts` (or appropriate test location)\n\nTest cases:\n1. **HOST user registration -> trial started**: Existing behavior preserved, verify trialService.startTrial called with userType='owner'\n2. **COMPLEX user registration -> trial started**: New behavior, verify trialService.startTrial called with userType='complex'\n3. **GUEST user registration -> no trial**: user.role='GUEST', verify trialService.startTrial NOT called\n4. **ADMIN user registration -> no trial**: user.role='ADMIN', verify trialService.startTrial NOT called\n5. **Trial start failure -> registration succeeds**: Mock trialService.startTrial to throw, verify user creation is not rolled back, error is logged\n6. **Billing sync failure -> registration succeeds**: Mock syncService.ensureCustomerExists to throw, verify user creation is not rolled back\n\nMock dependencies:\n- `TrialService`\n- `BillingCustomerSyncService`\n- `getQZPayBilling()`\n- Better Auth user creation context\n\nFiles to create:\n- Test file for auth hooks",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "SCOPE CHANGE: Tests updated to verify trial starts without userType parameter. Removed all userType: 'owner' and userType: 'complex' from test payloads. Verified startTrial accepts empty body."
+        },
+        {
+            "id": "T-021",
+            "title": "Fix quarterly/semi_annual interval mapping in plan-change.ts",
+            "description": "Fix the `mapBillingIntervalToQZPay` function in `apps/api/src/routes/billing/plan-change.ts` (lines 25-48). Currently, the function maps `quarterly` and `semi_annual` to 'month' (lines 35-40) but the comment says 'handled elsewhere'. The interval count is never actually set.\n\nThe function returns only the interval base ('month' | 'year' | 'week' | 'day') but QZPay also needs `intervalCount` to correctly represent quarterly (month x3) and semi-annual (month x6).\n\nRequired changes:\n1. Change `mapBillingIntervalToQZPay` return type to `{ interval: 'month' | 'year' | 'week' | 'day'; intervalCount: number }`\n2. Update mappings:\n   - `monthly` -> `{ interval: 'month', intervalCount: 1 }`\n   - `quarterly` -> `{ interval: 'month', intervalCount: 3 }`\n   - `semi_annual` -> `{ interval: 'month', intervalCount: 6 }`\n   - `annual` -> `{ interval: 'year', intervalCount: 1 }`\n   - `one_time` -> keep as special case or reject with 422\n3. For unknown intervals: throw HTTPException 422 with supported intervals list\n4. Update the call site in `handlePlanChange` (line 139) to destructure both interval and intervalCount\n5. Pass `intervalCount` to QZPay's `changePlan()` call at line 164-169 (check if the API accepts it)\n6. Update `targetPrice` lookup at line 141 to consider intervalCount when finding matching price\n\nFiles to modify:\n- `apps/api/src/routes/billing/plan-change.ts` (lines 25-48: mapBillingIntervalToQZPay, line 139: call site, line 164: changePlan call)\n\nFiles to reference:\n- QZPay `subscriptions.changePlan()` type definition\n- `@repo/schemas` BillingIntervalEnum definition",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Write tests for interval mapping fixes",
+            "description": "Create unit tests for the fixed `mapBillingIntervalToQZPay` function and the plan change handler's interval handling.\n\nTest file: `apps/api/src/routes/billing/plan-change.test.ts`\n\nTest cases:\n1. **Monthly mapping**: input='monthly' -> `{ interval: 'month', intervalCount: 1 }`\n2. **Quarterly mapping**: input='quarterly' -> `{ interval: 'month', intervalCount: 3 }`\n3. **Semi-annual mapping**: input='semi_annual' -> `{ interval: 'month', intervalCount: 6 }`\n4. **Annual mapping**: input='annual' -> `{ interval: 'year', intervalCount: 1 }`\n5. **Unknown interval -> 422**: input='biweekly' (not supported) -> HTTPException 422 with supported intervals in message\n6. **Plan change with quarterly interval**: Full handler test, mock subscription + plans, verify QZPay receives `interval='month'` and `intervalCount=3`\n7. **Plan change with semi_annual interval**: Full handler test, verify QZPay receives `interval='month'` and `intervalCount=6`\n8. **Price lookup uses interval + count**: Verify the correct price is found when a plan has multiple prices (monthly, quarterly, annual)\n\nMock dependencies:\n- QZPay billing (subscriptions, plans with multiple prices)\n- Hono context with billing context variables\n\nFiles to create:\n- `apps/api/src/routes/billing/plan-change.test.ts`",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-021"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Implement actual count queries for properties limit enforcement",
+            "description": "Replace the hardcoded `currentPropertyCount = 0` stub in `apps/api/src/middlewares/limit-enforcement.ts` (line 550) with actual database count queries.\n\nCurrent code at line 546-550:\n```typescript\n// BLOCKED: No complex/properties table or service exists yet.\n// When the complex feature is implemented, replace with:\n//   const complexService = new ComplexService({ logger: apiLogger });\n//   const countResult = await complexService.countProperties(actor, { complexId });\nconst currentPropertyCount = 0;\n```\n\nRequired changes:\n1. Determine if the complex/properties table/service now exists. Check `packages/db/src/schema/` and `packages/service-core/src/` for complex-related models and services\n2. If the table/service exists: replace stub with actual count query filtering by `complexId` and excluding soft-deleted records (`deleted_at IS NULL`)\n3. If the table/service does NOT exist yet: document this as a blocker and create a placeholder that queries the accommodations table (properties may be represented as accommodations linked to a complex)\n4. Ensure soft-deleted records are excluded from the count (important for accuracy per spec US-11)\n\nFiles to modify:\n- `apps/api/src/middlewares/limit-enforcement.ts` (lines 546-550: replace stub)\n\nFiles to reference:\n- `packages/db/src/schema/` (check for complex/properties tables)\n- `packages/service-core/src/` (check for ComplexService or similar)\n- `apps/api/src/middlewares/limit-enforcement.ts` lines 55-141 (enforceAccommodationLimit as working example)",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "DEFERRED: Middleware scaffolding exists with hardcoded count=0. No complex/properties table or service exists yet in v1. The enforcePropertiesLimit() middleware is ready to be wired when the multi-property feature (complex accommodations with rooms/units) is implemented. Other limits (MAX_ACCOMMODATIONS, MAX_PHOTOS, MAX_PROMOTIONS, MAX_FAVORITES) have real count queries. Implementation plan documented in docs/billing/deferred-limit-enforcement.md."
+        },
+        {
+            "id": "T-024",
+            "title": "Implement actual count queries for staff accounts limit enforcement",
+            "description": "Replace the hardcoded `currentCount = 0` stub in `apps/api/src/middlewares/limit-enforcement.ts` (line 652) with actual database count queries.\n\nCurrent code at lines 648-652:\n```typescript\n// BLOCKED: No staff accounts table or service exists yet.\n// When the staff management feature is implemented, replace with:\n//   const staffService = new StaffService({ logger: apiLogger });\n//   const countResult = await staffService.countStaffForUser(actor, { userId: actor.id });\nconst currentCount = 0;\n```\n\nRequired changes:\n1. Determine if the staff accounts table/service now exists. Check `packages/db/src/schema/` for staff-related models and `packages/service-core/src/` for StaffService\n2. If exists: replace stub with actual count query filtering by owner userId and excluding soft-deleted records\n3. If does NOT exist: check if Better Auth's organization/team features handle staff accounts. The staff count might come from the `user` table filtered by organization membership\n4. Alternatively, check if `better-auth` has an organization plugin that tracks members. Count organization members where `organizationId` matches the authenticated user's organization\n5. Ensure soft-deleted records are excluded from the count\n\nFiles to modify:\n- `apps/api/src/middlewares/limit-enforcement.ts` (lines 648-652: replace stub)\n\nFiles to reference:\n- `packages/db/src/schema/` (check for staff/team/organization tables)\n- `packages/service-core/src/` (check for StaffService)\n- Better Auth organization plugin documentation",
+            "phase": "phase-3-trial-subscription",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "notes": "DEFERRED: Middleware scaffolding exists with hardcoded count=0. No staff accounts table or service exists yet in v1. Each accommodation is managed by a single owner. The enforceStaffAccountsLimit() middleware is ready to be wired when staff management is implemented. Other limits have real count queries. Implementation plan documented in docs/billing/deferred-limit-enforcement.md."
+        },
+        {
+            "id": "T-025",
+            "title": "Initialize Redis client using HOSPEDA_REDIS_URL env var",
+            "description": "Create or update the Redis client initialization to use `HOSPEDA_REDIS_URL` environment variable (BILL-07).\n\nSteps:\n1. Check if `apps/api/src/lib/redis.ts` already exists. If not, create it.\n2. Create a singleton Redis client using `ioredis` (already a peer dep of QZPay packages)\n3. Initialize from `process.env.HOSPEDA_REDIS_URL`\n4. If `HOSPEDA_REDIS_URL` is not set: log a warning and export `null` (graceful degradation for development)\n5. Handle connection errors gracefully (log error, don't crash the API)\n6. Follow the same singleton pattern used for database initialization in `apps/api/src/index.ts`\n7. Add `HOSPEDA_REDIS_URL` to `.env.example` with a comment\n8. Export: `export function getRedisClient(): Redis | null` and `export function initializeRedis(): void`\n\nThe Redis client should be initialized once at API startup (in `apps/api/src/index.ts`) before cron jobs and routes are registered.\n\nFiles to create/modify:\n- `apps/api/src/lib/redis.ts` (create or update)\n- `apps/api/src/index.ts` (add Redis initialization at startup)\n- `.env.example` (add HOSPEDA_REDIS_URL)\n\nFiles to reference:\n- `apps/api/src/index.ts` (startup sequence, database init pattern)\n- `apps/api/src/lib/auth.ts` (singleton pattern reference)",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-026", "T-029"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Wire Redis client into notification retry service",
+            "description": "Replace the `null` Redis client placeholder in `apps/api/src/cron/jobs/notification-schedule.job.ts` (line 438) with the actual Redis client from T-025.\n\nCurrent code at lines 437-439:\n```typescript\n// TODO: When Redis is configured, pass actual Redis client here\nconst redisClient = null; // Replace with actual Redis client when available\nconst retryService = new RetryService(redisClient);\n```\n\nRequired changes:\n1. Import `getRedisClient` from `../../lib/redis`\n2. Replace `const redisClient = null` with `const redisClient = getRedisClient()`\n3. The existing code already handles the `null` case (line 441: `if (redisClient)` for Redis-based retries, else falls back to DB-based retries), so no additional null handling needed\n4. Verify the `RetryService` constructor accepts the Redis client type from `ioredis`\n5. Log which mode is being used ('Redis-based retry' vs 'fallback DB-based retry') for operational visibility\n\nFiles to modify:\n- `apps/api/src/cron/jobs/notification-schedule.job.ts` (lines 437-439: replace null with real Redis client)\n\nFiles to reference:\n- `apps/api/src/lib/redis.ts` (from T-025)\n- `packages/notifications/src/services/retry.service.ts` (RetryService constructor signature)",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Fetch actual plan price for renewal reminder notifications",
+            "description": "Replace the hardcoded `amount = 0` in `apps/api/src/cron/jobs/notification-schedule.job.ts` (line 364) with the actual plan price.\n\nCurrent code at lines 362-365:\n```typescript\n// TODO: Get actual amount from subscription metadata or payment history\n// For now, use placeholder values (notification template will work without them)\nconst amount = 0;\nconst currency = 'ARS';\n```\n\nRequired changes:\n1. After fetching the plan at line 354 (`const plan = await billing.plans.get(subscription.planId)`), look up the plan's price for the subscription's current billing interval\n2. Get the subscription's interval from `subscription.interval` (e.g., 'month', 'year')\n3. Find the matching price from `plan.prices` array: `plan.prices.find(p => p.billingInterval === subscription.interval)`\n4. Set `amount = matchedPrice?.unitAmount || 0` (unitAmount is in ARS centavos)\n5. If price cannot be found: log an error and omit amount from notification (set to `undefined` or `null` instead of 0)\n6. The currency should come from the price object or default to 'ARS'\n\nPer US-08 acceptance criteria:\n- Monthly plan -> monthlyPriceArs\n- Annual plan -> annualPriceArs\n- If price retrieval fails -> omit amount, log error\n\nFiles to modify:\n- `apps/api/src/cron/jobs/notification-schedule.job.ts` (lines 362-365: replace amount=0 with real price lookup)\n\nFiles to reference:\n- QZPay plan.prices type definition (price object structure)\n- `@repo/notifications` (verify NotificationType.RENEWAL_REMINDER payload supports optional amount)",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-028"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Write tests for renewal reminder with real prices",
+            "description": "Create tests verifying that renewal reminder notifications include the actual plan price.\n\nTest file: `apps/api/src/cron/jobs/notification-schedule.job.test.ts` (add to existing or create)\n\nTest cases:\n1. **Monthly plan renewal reminder**: Subscription with interval='month', plan has monthly price=5000 ARS centavos, verify notification payload has amount=5000\n2. **Annual plan renewal reminder**: Subscription with interval='year', plan has annual price=50000 ARS centavos, verify notification payload has amount=50000\n3. **Plan price not found**: Plan has no matching price for subscription interval, verify amount is omitted (not 0) and error is logged\n4. **Plan fetch failure**: billing.plans.get throws, verify fallback behavior (amount omitted, notification still sent)\n5. **Currency from price object**: Verify currency comes from the price object (not hardcoded 'ARS')\n\nMock dependencies:\n- QZPay billing (plans with prices, subscriptions)\n- `sendNotification` function\n- `apiLogger`\n\nFiles to create:\n- Test file for notification schedule job (renewal reminders section)",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Persist notification idempotency keys in Redis/DB instead of memory",
+            "description": "Replace the in-memory idempotency key tracking in the notification scheduler with Redis-backed persistence (BILL-07/BILL-16).\n\nThe current implementation likely uses a `Set` or `Map` in memory for idempotency keys. When the API process restarts, all keys are lost, potentially causing duplicate notifications.\n\nSteps:\n1. Find where idempotency keys are currently stored. Check:\n   - `apps/api/src/cron/jobs/notification-schedule.job.ts` (look for `markNotificationSent` at line 392 and related `Set` or `Map`)\n   - `packages/notifications/src/services/notification.service.ts`\n2. Replace the in-memory store with Redis SET operations:\n   - `SADD notification:sent:<key>` to mark as sent\n   - `SISMEMBER notification:sent:<key>` to check before sending\n   - Set TTL on keys (e.g., 30 days) to prevent unbounded growth: `EXPIRE`\n3. If Redis is not available (from T-025 getRedisClient() returning null): fall back to in-memory tracking (preserve existing behavior for dev)\n4. Use the `generateIdempotencyKey` function already used at line 378-380 to generate consistent keys\n\nFiles to modify:\n- `apps/api/src/cron/jobs/notification-schedule.job.ts` (replace in-memory tracking)\n- Possibly `packages/notifications/src/services/notification.service.ts`\n\nFiles to reference:\n- `apps/api/src/lib/redis.ts` (from T-025)\n- Current idempotency key implementation (find via grep for `markNotificationSent` or `idempotencyKey`)",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-025"],
+            "blocks": ["T-030"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Write tests for idempotency key persistence",
+            "description": "Create tests for the Redis-backed idempotency key persistence implemented in T-029.\n\nTest file: `apps/api/src/cron/jobs/notification-idempotency.test.ts` (or add to notification-schedule tests)\n\nTest cases:\n1. **Key stored in Redis**: Send notification, verify idempotency key is written to Redis\n2. **Duplicate prevented via Redis**: Key already in Redis, verify notification is NOT sent again\n3. **Redis unavailable - fallback to memory**: Redis client is null, verify in-memory tracking works\n4. **Redis connection failure during check**: Redis throws on SISMEMBER, verify graceful fallback\n5. **Key TTL set**: Verify idempotency keys have a TTL (30 days or similar)\n6. **Process restart simulation**: Store key in Redis mock, create new in-memory store (simulating restart), verify key is still found via Redis check\n\nMock dependencies:\n- Redis client (mock ioredis)\n- Notification sender\n- `apiLogger`\n\nFiles to create:\n- Test file for idempotency key persistence",
+            "phase": "phase-4-notifications-redis",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Research and document AFIP electronic invoicing requirements",
+            "description": "Research task for BILL-05. This is a documentation/decision task, not a code task.\n\nResearch the following:\n1. AFIP electronic invoicing (Facturacion Electronica) requirements for SaaS/subscription businesses in Argentina\n2. Which invoice types apply: Factura B (to consumidores finales with DNI/CUIL) or Factura C (monotributista to consumidor final)\n3. Required fields: CUIT/CUIL validation, CAE (Codigo de Autorizacion Electronico), punto de venta\n4. Technical integration options:\n   a. AFIP WSFE (Web Service de Factura Electronica) direct SOAP integration\n   b. Third-party services (e.g., TusFacturas.app, FacturAPI, Colppy)\n   c. Manual invoicing through an accountant (interim solution)\n5. Estimated effort for each option\n6. Legal deadline considerations\n\nDeliverable: Create a markdown document `docs/billing/afip-research.md` with:\n- Summary of requirements\n- 3 options with pros/cons/effort estimates\n- Recommended approach for v1 launch\n- Timeline for full AFIP integration post-launch\n\nFiles to create:\n- `docs/billing/afip-research.md`",
+            "phase": "phase-5-afip-decision",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": [],
+            "blocks": ["T-032"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Create AFIP integration decision document",
+            "description": "Based on T-031 research, create a formal decision document that records the chosen approach for AFIP compliance.\n\nDeliverable: `docs/billing/afip-decision.md` containing:\n1. Decision: Which of the 3 options from T-031 was selected and why\n2. If integration is deferred: latest date for implementation, interim invoicing process, who handles manual invoices\n3. If integration is selected for v1: create a separate SPEC document (SPEC-022) with full requirements\n4. Impact on launch timeline\n5. Legal risk assessment\n\nThis is a decision gate. The product owner must approve the decision before moving forward.\n\nFiles to create:\n- `docs/billing/afip-decision.md`\n- Optionally: `.claude/specs/SPEC-022-afip-integration/spec.md` (if integration path chosen)",
+            "phase": "phase-5-afip-decision",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-031"],
+            "blocks": ["T-033"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Define v1 launch strategy with or without direct charges",
+            "description": "Based on the AFIP decision (T-032), define the v1 launch strategy for billing.\n\nIf AFIP is deferred:\n1. Document the interim business model (e.g., free trial only, manual invoicing, third-party accountant)\n2. Update the billing UI to reflect what users see (no auto-charge? contact for payment?)\n3. Disable or hide payment collection features that require AFIP compliance\n4. Set a hard deadline for AFIP integration in the product roadmap\n\nIf AFIP is included in v1:\n1. Create detailed SPEC-022 with implementation tasks\n2. Add CUIT/CUIL validation to customer registration\n3. Define the invoice generation pipeline\n\nDeliverable: Update `docs/billing/afip-decision.md` with the v1 strategy section.\n\nThis task requires product owner approval.\n\nFiles to modify:\n- `docs/billing/afip-decision.md` (add v1 strategy section)",
+            "phase": "phase-5-afip-decision",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": ["T-032"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Write integration test for complete trial lifecycle",
+            "description": "Create an end-to-end integration test that exercises the complete trial lifecycle: register -> trial auto-start -> trial extend -> trial expire -> block -> reactivate.\n\nTest file: `apps/api/test/integration/trial-lifecycle.test.ts`\n\nTest scenario:\n1. **Register HOST user**: Trigger user.create hook, verify billing customer created, trial subscription started on 'owner-basico' plan\n2. **Verify trial status**: Call getTrialStatus, verify isOnTrial=true, daysRemaining=14\n3. **Extend trial by 7 days**: Call extendTrial, verify new trialEnd is original + 7 days, verify subscription.trialEnd field updated (not just metadata)\n4. **Simulate trial expiry**: Set trialEnd to past date, run trial-expiry cron, verify subscription cancelled\n5. **Verify blocked state**: Attempt to access protected resource, verify 402 response\n6. **Reactivate to paid**: Call POST /billing/trial/reactivate with plan, verify new active subscription\n7. **Verify restored access**: Access protected resource, verify 200\n\nThis test validates the interaction between TrialService, trial-expiry cron, auth hooks, and the reactivation endpoint.\n\nMock dependencies:\n- QZPay billing (full mock with state persistence across calls)\n- Better Auth user creation\n- Database (use test DB or in-memory)\n\nFiles to create:\n- `apps/api/test/integration/trial-lifecycle.test.ts`",
+            "phase": "phase-6-testing",
+            "complexity": 4,
+            "status": "done",
+            "blockedBy": ["T-006", "T-017", "T-019"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Write integration test for webhook retry -> subscription update flow",
+            "description": "Create an integration test that exercises the webhook retry pipeline from dead letter to subscription state update.\n\nTest file: `apps/api/test/integration/webhook-retry-flow.test.ts`\n\nTest scenario:\n1. **Insert dead letter entry**: Create a dead letter record simulating a failed MercadoPago webhook for subscription.updated event\n2. **Run webhook retry cron**: Execute webhookRetryJob.handler\n3. **Verify processing**: Check that the webhook was re-processed through the actual handler\n4. **Verify subscription updated**: Check that the subscription state reflects the webhook payload (e.g., status changed)\n5. **Verify dead letter resolved**: Check that resolvedAt is set on the dead letter entry\n6. **Failure scenario**: Insert a dead letter with a corrupted payload, verify it increments attempts and does NOT resolve\n7. **Max retries exhausted**: Insert entry with attempts=4, run cron, verify it's marked as permanently failed with admin alert logged\n\nMock dependencies:\n- QZPay billing (subscriptions, webhook handler)\n- Database with billing_webhook_dead_letter table\n\nFiles to create:\n- `apps/api/test/integration/webhook-retry-flow.test.ts`",
+            "phase": "phase-6-testing",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Write integration test for grace period -> block flow",
+            "description": "Create an integration test that exercises the grace period lifecycle from payment failure to access block.\n\nTest file: `apps/api/test/integration/grace-period-flow.test.ts`\n\nTest scenario:\n1. **Active subscription**: User has active subscription, access protected resource -> 200 OK\n2. **Payment fails - enter grace**: Simulate subscription status change to 'past_due', set statusChangedAt to now\n3. **Day 1 - grace active**: Access protected resource -> 200 OK with X-Grace-Period-Days-Remaining=2\n4. **Day 3 - grace expired**: Advance time to 3 days after status change, access protected resource -> 402 with GRACE_PERIOD_EXPIRED\n5. **Payment resolved**: Simulate subscription back to 'active', access protected resource -> 200 OK without grace headers\n6. **Webhook/checkout still accessible during grace**: Verify webhook endpoint is NOT blocked by grace period middleware\n7. **Reactivation accessible during block**: Verify /billing/trial/reactivate is accessible even when grace period expired\n\nMock dependencies:\n- QZPay billing (subscriptions)\n- Hono app with billing routes and grace middleware\n- Time manipulation (mock Date.now or use vitest fake timers)\n\nFiles to create:\n- `apps/api/test/integration/grace-period-flow.test.ts`",
+            "phase": "phase-6-testing",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Run full billing test suite and verify coverage >80%",
+            "description": "Execute the complete billing test suite after all implementation tasks are done and verify coverage meets the >80% threshold.\n\nSteps:\n1. Run `pnpm test:coverage` in `apps/api` (or the relevant test command)\n2. Check coverage report for billing-related files:\n   - `apps/api/src/cron/jobs/webhook-retry.job.ts`\n   - `apps/api/src/cron/jobs/dunning.job.ts`\n   - `apps/api/src/cron/jobs/notification-schedule.job.ts`\n   - `apps/api/src/middlewares/past-due-grace.middleware.ts`\n   - `apps/api/src/middlewares/billing-ownership.middleware.ts`\n   - `apps/api/src/middlewares/limit-enforcement.ts`\n   - `apps/api/src/services/trial.service.ts`\n   - `apps/api/src/routes/billing/plan-change.ts`\n   - `apps/api/src/routes/billing/trial.ts`\n   - `apps/api/src/lib/redis.ts`\n3. If any file is below 80%, identify untested paths and add tests\n4. Run `pnpm typecheck` to ensure no type errors\n5. Run `pnpm lint` to ensure no lint errors\n6. Document coverage results\n\nThis is a verification task that depends on all implementation and test tasks being completed.",
+            "phase": "phase-6-testing",
+            "complexity": 2,
+            "status": "done",
+            "blockedBy": [
+                "T-002",
+                "T-005",
+                "T-007",
+                "T-010",
+                "T-015",
+                "T-018",
+                "T-020",
+                "T-022",
+                "T-028",
+                "T-030",
+                "T-034",
+                "T-035",
+                "T-036"
+            ],
+            "blocks": ["T-038"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Manual QA of billing flows on staging",
+            "description": "Manual QA checklist to verify all billing flows work end-to-end on staging environment.\n\nChecklist:\n- [ ] Let payment fail in MercadoPago sandbox. Verify subscription moves to `past_due` status\n- [ ] Log in as the affected user. Verify grace period banner appears with correct remaining days\n- [ ] Wait for grace period to expire (or manipulate date). Verify 402 blocking page shown\n- [ ] Resolve payment in MercadoPago sandbox. Verify banner disappears and access is restored\n- [ ] Extend a trial via admin API call. Verify `trialEnd` in DB is updated (not just metadata)\n- [ ] Wait for trial-expiry cron. Verify trial does NOT expire at the original date\n- [ ] As User A, attempt to GET User B's subscription endpoint. Verify 403 Forbidden\n- [ ] As Admin, access any user's subscription. Verify 200 OK (admin bypass)\n- [ ] Change plan with quarterly interval. Verify MercadoPago receives correct intervalCount=3\n- [ ] Verify renewal reminder email shows actual plan price (not $0)\n- [ ] Create properties up to plan limit. Verify 402 on next creation attempt\n- [ ] Register a new COMPLEX user. Verify trial auto-started on 'complex-basico' plan\n- [ ] Let trial expire, then reactivate via POST /billing/trial/reactivate. Verify new active subscription\n- [ ] Verify Redis is connected (check API startup logs for Redis mode indicator)\n\nThis is a manual verification task. Document results with screenshots or API response logs.\n\nFiles to reference:\n- `docs/billing/` (QA results documentation location)\n- `docs/billing/manual-qa-checklist.md` (detailed QA checklist with step-by-step instructions)",
+            "phase": "phase-6-testing",
+            "complexity": 3,
+            "status": "done",
+            "blockedBy": ["T-037"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            },
+            "notes": "Manual QA checklist documented in docs/billing/manual-qa-checklist.md with 10 detailed test scenarios, prerequisites, MercadoPago sandbox setup, SQL queries for verification, and results template. Execution deferred to staging deployment (SPEC-025)."
+        }
+    ],
+    "summary": {
+        "total": 38,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 38,
+        "blocked": 0,
+        "averageComplexity": 2.8
+    }
+}

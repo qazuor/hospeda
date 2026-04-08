@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-065",
+    "title": "Figma to Code: Homepage Production Migration",
+    "type": "feature",
+    "complexity": "high",
+    "status": "completed",
+    "created": "2026-04-01T00:00:00-03:00",
+    "approved": "2026-04-01T00:00:00-03:00",
+    "completed": "2026-04-04T00:00:00-03:00",
+    "planFileRef": null,
+    "dependsOn": ["SPEC-048"],
+    "figmaFile": "ZBq2Rv2Dj0NaQfwbeoZgLB",
+    "figmaNode": "20:3",
+    "tags": [
+        "web2",
+        "homepage",
+        "figma",
+        "astro",
+        "design-to-code",
+        "tailwind",
+        "i18n",
+        "accessibility",
+        "responsive",
+        "embla-carousel",
+        "react-islands"
+    ]
+}

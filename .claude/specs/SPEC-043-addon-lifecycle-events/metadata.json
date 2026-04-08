@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-043",
+    "title": "Addon Lifecycle Events",
+    "status": "completed",
+    "testCount": 356,
+    "complexity": "medium-high",
+    "type": "feature",
+    "tags": [
+        "billing",
+        "addon",
+        "lifecycle",
+        "webhook",
+        "entitlements",
+        "subscription",
+        "mercadopago"
+    ],
+    "created": "2026-03-16",
+    "updated": "2026-03-17 (gaps-audit-pass-5)",
+    "origin": "SPEC-038 gaps GAP-038-01 and GAP-038-04",
+    "auditPasses": 7,
+    "auditNotes": "Audit v2-v5: See previous notes. Audit v6 (2026-03-16): Post-review corrections after exhaustive cross-verification. CRITICAL FIX: (1) sourceId='recalc' is NOT a valid UUID — QZPay DB column is PgUUID type, PostgreSQL rejects non-UUID strings at runtime; replaced with ADDON_RECALC_SOURCE_ID sentinel UUID constant and added 'Recalculation sourceId Strategy' section to Technical Context; (2) subscriptions.getByCustomerId() returns Promise<QZPaySubscriptionWithHelpers[]> (array), not Promise<...| null> (nullable single); (3) changePlan() returns Promise<QZPayChangePlanResult> (wrapper with subscription + proration), not Promise<QZPaySubscriptionWithHelpers>. MEDIUM FIX: (4) MercadoPago retry schedule replaced with official documentation ('~15min for first 3, then extended intervals') — the granular schedule (22s/5min/45min/6h/2d/4d+) came from a devsite-docs file that now returns 404. MINOR FIXES: (5) BaseNotificationPayload does NOT have baseUrl (comes from NotificationServiceDeps.siteUrl); corrected to list actual fields (type, recipientName, recipientEmail, userId, customerId?, idempotencyKey?); (6) activeUnique index condition corrected to include 'AND deleted_at IS NULL'; (7) PlanDowngradeLimitWarningPayload now documents that BaseNotificationPayload requires userId field. Audit v7 (2026-03-16): Exhaustive cross-verification with 3 parallel analyses (code verification, MercadoPago API research, completeness audit). CRITICAL FIXES: (1) Clarified plan change is synchronous via QZPay (not webhook-driven) - webhook planId check is safety net only; (2) Added SPEC-044 as explicit dependency with deletedAt filter requirements; (3) Added concurrency strategy for webhook+admin race condition; (4) Explicit transaction boundaries for admin Phase 2; (5) Added 22-second webhook timeout constraint. IMPORTANT FIXES: (6) Spelling disambiguation table; (7) Customer-not-found edge case; (8) Flow A does NOT re-recalculate (uses direct remove); (9) oldMaxValue formula; (10) Notification payload reconciliation; (11) subscriptionId NULL handling; (12) MercadoPago auto-cancellation after 3 failed payments. MINOR: 7 additional clarifications."
+}

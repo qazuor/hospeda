@@ -1,0 +1,28 @@
+{
+    "specId": "SPEC-021",
+    "title": "Billing System Fixes & Production Readiness",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "completed",
+    "created": "2026-02-27T00:00:00.000Z",
+    "approved": "2026-02-27T00:00:00.000Z",
+    "completed": "2026-03-02T00:00:00.000Z",
+    "planFileRef": null,
+    "tags": [
+        "billing",
+        "production-readiness",
+        "mercadopago",
+        "qzpay",
+        "webhooks",
+        "dunning",
+        "grace-period",
+        "trial",
+        "afip",
+        "security",
+        "ownership",
+        "redis",
+        "notifications",
+        "limits",
+        "subscriptions"
+    ]
+}

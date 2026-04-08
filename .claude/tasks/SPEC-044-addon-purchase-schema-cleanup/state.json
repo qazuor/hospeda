@@ -1,0 +1,674 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-044",
+    "title": "Addon Purchase Schema Cleanup",
+    "created": "2026-03-16T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Update Drizzle schema: rename cancelledAt, add deletedAt, update index WHERE clauses",
+            "description": "Edit `packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts`:\n1. Rename property `cancelledAt` to `canceledAt` (line ~42): `canceledAt: timestamp('canceled_at', { withTimezone: true }),`\n2. Add new column after `updatedAt`: `deletedAt: timestamp('deleted_at', { withTimezone: true }),` (nullable, no default)\n3. Update partial index WHERE clause on `addonPurchases_active_customer_idx` (line ~67): `sql\\`status = 'active' AND deleted_at IS NULL\\``\n4. Update partial index WHERE clause on `idx_addon_purchases_active_unique` (line ~70): `sql\\`status = 'active' AND deleted_at IS NULL\\``\n\nTest: Run `pnpm typecheck` from packages/db. Expect compile errors in downstream consumers (expected at this stage).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-002",
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010"
+            ],
+            "subtasks": [
+                {
+                    "title": "Rename cancelledAt → canceledAt (column name becomes canceled_at)",
+                    "completed": true
+                },
+                {
+                    "title": "Add deletedAt column (nullable timestamptz, no default)",
+                    "completed": true
+                },
+                {
+                    "title": "Update addonPurchases_active_customer_idx WHERE to include AND deleted_at IS NULL",
+                    "completed": true
+                },
+                {
+                    "title": "Update idx_addon_purchases_active_unique WHERE to include AND deleted_at IS NULL",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema", "drizzle"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate Drizzle migration, review SQL, and hand-edit as needed",
+            "description": "Run `pnpm db:generate` from the project root.\n\nCRITICAL INTERACTIVE STEP: When drizzle-kit prompts 'Is column renamed?', answer YES for cancelled_at → canceled_at. Answering NO causes DROP+ADD which PERMANENTLY LOSES DATA.\n\nAfter generation, review the migration SQL file in `packages/db/src/migrations/`:\n1. Verify `RENAME COLUMN cancelled_at TO canceled_at` (NOT DROP + ADD)\n2. Verify both partial indexes are DROPped and reCREATEd with `AND deleted_at IS NULL`\n3. Check index WHERE clauses for literal values (not `$1` placeholders). Known drizzle-kit bugs #461, #4790 may produce broken SQL. Hand-edit using reference SQL from spec if needed.\n4. Manually append at the end of the migration file:\n   ```sql\n   UPDATE billing_addon_purchases SET status = 'canceled' WHERE status = 'cancelled';\n   ```\n\nReview checklist:\n- [ ] ADD COLUMN deleted_at TIMESTAMPTZ present\n- [ ] RENAME COLUMN (not DROP+ADD) present\n- [ ] Both indexes DROP+CREATE with AND deleted_at IS NULL\n- [ ] Index WHERE uses literal values, not $1\n- [ ] Status data migration UPDATE appended at end",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm db:generate and answer YES to rename prompt",
+                    "completed": true
+                },
+                {
+                    "title": "Verify RENAME COLUMN (not DROP+ADD) in generated SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Verify partial index WHERE clauses use literal values (hand-edit if $1 placeholders)",
+                    "completed": true
+                },
+                { "title": "Append UPDATE status data migration at end of file", "completed": true }
+            ],
+            "tags": ["database", "migration", "drizzle-kit"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Rename cancelledAt → canceledAt and status 'cancelled' → 'canceled' in addon.user-addons.ts",
+            "description": "Edit `apps/api/src/services/addon.user-addons.ts`:\n1. Line ~109: `purchase.cancelledAt` → `purchase.canceledAt` (property access in mapping)\n2. Line ~292-293: In the UPDATE .set() clause:\n   - `status: 'cancelled'` → `status: 'canceled'`\n   - `cancelledAt: new Date()` → `canceledAt: new Date()`\n3. Line ~213: JSDoc comment `status to 'cancelled'` → `status to 'canceled'`\n\nAlso edit `apps/api/src/services/addon.service.ts`:\n4. Line ~162: JSDoc comment `status='cancelled'` → `status='canceled'`\n\nTest: `pnpm typecheck` should resolve the compile errors for these properties. The Drizzle schema now exposes `canceledAt` so the property access must match.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-016", "T-017", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Rename purchase.cancelledAt → purchase.canceledAt in mapping (~line 109)",
+                    "completed": true
+                },
+                {
+                    "title": "Change status: 'cancelled' → 'canceled' in SET clause (~line 292)",
+                    "completed": true
+                },
+                {
+                    "title": "Change cancelledAt: new Date() → canceledAt: new Date() in SET clause (~line 293)",
+                    "completed": true
+                },
+                {
+                    "title": "Update JSDoc comment in addon.user-addons.ts (~line 213)",
+                    "completed": true
+                },
+                {
+                    "title": "Update JSDoc comment in addon.service.ts (~line 162)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "service", "spelling"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add isNull(deletedAt) filter to addon.user-addons.ts queries",
+            "description": "Edit `apps/api/src/services/addon.user-addons.ts`:\n1. getUserAddons() query (~line 55-63): Add `isNull(billingAddonPurchases.deletedAt)` to the WHERE clause alongside existing `eq(status, 'active')` and `eq(customerId, ...)` conditions.\n2. cancelUserAddon() lookup query (~line 247-256): Add `isNull(billingAddonPurchases.deletedAt)` to the WHERE clause alongside existing `eq(id, purchaseId)` condition.\n\nIMPORTANT: Import `isNull` from `drizzle-orm` if not already imported.\n\nTest: Existing tests in addon.service.test.ts should still pass. New soft-delete tests will be added in T-018.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Add isNull(deletedAt) to getUserAddons() WHERE (~line 55)",
+                    "completed": true
+                },
+                {
+                    "title": "Add isNull(deletedAt) to cancelUserAddon() lookup WHERE (~line 247)",
+                    "completed": true
+                },
+                { "title": "Ensure isNull is imported from drizzle-orm", "completed": true }
+            ],
+            "tags": ["api", "service", "soft-delete"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add isNull(deletedAt) filter to addon-expiration.service.ts queries",
+            "description": "Edit `apps/api/src/services/addon-expiration.service.ts`:\n1. findExpiredAddons() query (~line 156-165): Add `isNull(billingAddonPurchases.deletedAt)` to WHERE clause.\n2. findExpiringAddons() query (~line 269-279): Add `isNull(billingAddonPurchases.deletedAt)` to WHERE clause.\n3. Lookup by ID query (~line 366-370): Add `isNull(billingAddonPurchases.deletedAt)` to WHERE clause.\n\nIMPORTANT: Import `isNull` from `drizzle-orm` if not already imported.\n\nTest: Existing tests in addon-expiration.service.test.ts should still pass. New soft-delete tests in T-018.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Add isNull(deletedAt) to findExpiredAddons() WHERE (~line 156)",
+                    "completed": true
+                },
+                {
+                    "title": "Add isNull(deletedAt) to findExpiringAddons() WHERE (~line 269)",
+                    "completed": true
+                },
+                {
+                    "title": "Add isNull(deletedAt) to lookup by ID WHERE (~line 366)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "service", "soft-delete"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add isNull(deletedAt) filter to addon-entitlement.service.ts query",
+            "description": "Edit `apps/api/src/services/addon-entitlement.service.ts`:\n1. getCustomerAddonAdjustments() query (~line 525-533): Add `isNull(billingAddonPurchases.deletedAt)` to the WHERE clause alongside existing `eq(customerId, ...)` and `eq(status, 'active')` conditions.\n\nIMPORTANT: Import `isNull` from `drizzle-orm` if not already imported.\n\nTest: Existing tests should still pass. New soft-delete test for this query in T-018.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Add isNull(deletedAt) to getCustomerAddonAdjustments() WHERE (~line 525)",
+                    "completed": true
+                },
+                { "title": "Ensure isNull is imported from drizzle-orm", "completed": true }
+            ],
+            "tags": ["api", "service", "soft-delete"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update admin customer-addons route: rename cancelledAt, add deletedAt filter",
+            "description": "Edit `apps/api/src/routes/billing/admin/customer-addons.ts`:\n1. Count query (~line 65-69): Add `isNull(billingAddonPurchases.deletedAt)` to WHERE conditions array.\n2. Paginated query (~line 74-99): Add `isNull(billingAddonPurchases.deletedAt)` to WHERE conditions array.\n3. SELECT columns (~line 86): Change `.cancelledAt` → `.canceledAt` in the select object.\n4. Response mapping (~line 122): Change `row.cancelledAt` → `row.canceledAt`.\n\nNote: The admin route may optionally show soft-deleted records when `includeDeleted` query parameter is passed. Add isNull to the default conditions array and skip it only when includeDeleted is explicitly true.\n\nTest: Run `pnpm typecheck` to verify. Existing tests updated in T-016.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Add isNull(deletedAt) to count query WHERE (~line 65)",
+                    "completed": true
+                },
+                {
+                    "title": "Add isNull(deletedAt) to paginated query WHERE (~line 74)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename .cancelledAt → .canceledAt in SELECT columns (~line 86)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename row.cancelledAt → row.canceledAt in response mapping (~line 122)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "route", "admin", "soft-delete", "spelling"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add isNull(deletedAt) filter to addons.ts ownership check query",
+            "description": "Edit `apps/api/src/routes/billing/addons.ts`:\n1. Ownership check query (~line 315-325): Add `isNull(billingAddonPurchases.deletedAt)` to the WHERE clause alongside existing `eq(id, params.id)`, `eq(customerId, billingCustomerId)`, and `eq(status, 'active')` conditions.\n\nIMPORTANT: Import `isNull` from `drizzle-orm` if not already imported. The file uses dynamic imports (`await import('drizzle-orm')`), so add `isNull` to the destructured import on line ~312.\n\nTest: Run `pnpm typecheck` to verify.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Add isNull to drizzle-orm destructured import (~line 312)",
+                    "completed": true
+                },
+                {
+                    "title": "Add isNull(deletedAt) to ownership check WHERE (~line 319)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "route", "soft-delete"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update customer-addons.schema.ts Zod schemas: status enum and field rename",
+            "description": "Edit `apps/api/src/schemas/customer-addons.schema.ts`:\n1. Line 20: In the `ADDON_PURCHASE_STATUSES` array, change `'cancelled'` → `'canceled'`.\n2. Line 74: In `CustomerAddonResponseSchema`, rename `cancelledAt:` → `canceledAt:`.\n\nNote: `apps/api/src/schemas/addon.schema.ts` already uses American spelling ('canceled', canceledAt) and does NOT need changes.\n\nTest: Run `pnpm typecheck` to verify schema types propagate correctly.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-011", "T-012", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Change 'cancelled' → 'canceled' in ADDON_PURCHASE_STATUSES (line 20)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename cancelledAt → canceledAt in CustomerAddonResponseSchema (line 74)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "schema", "zod", "spelling"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Run typecheck to verify all API layer changes compile cleanly",
+            "description": "Run `pnpm typecheck` across the monorepo after completing T-001 through T-009.\n\nExpected: Zero TypeScript errors related to `cancelledAt`, `canceledAt`, `deletedAt`, or status values in API service/route/schema files.\n\nIf errors remain, identify and fix the specific file/line before proceeding to admin frontend tasks.\n\nNote: Admin frontend may still have errors at this point (expected - those are fixed in T-011 through T-014).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008", "T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Run pnpm typecheck", "completed": true },
+                { "title": "Verify zero errors in apps/api and packages/db", "completed": true }
+            ],
+            "tags": ["validation", "typecheck"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update admin frontend types: 'cancelled' → 'canceled' in billing-addons types.ts",
+            "description": "Edit `apps/admin/src/features/billing-addons/types.ts`:\n1. Line ~60: In `PurchasedAddon` interface, change `status` type from `'active' | 'expired' | 'cancelled'` → `'active' | 'expired' | 'canceled'`.\n2. Line ~68: In `PurchasedAddonFilters` interface, change `status?` type from `'all' | 'active' | 'expired' | 'cancelled'` → `'all' | 'active' | 'expired' | 'canceled'`.\n\nTest: Run `pnpm typecheck` on apps/admin. Expect downstream errors in purchased-columns.tsx and PurchasedAddonDetailsDialog.tsx (fixed in T-012, T-013).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-012", "T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Change 'cancelled' → 'canceled' in PurchasedAddon.status (~line 60)",
+                    "completed": true
+                },
+                {
+                    "title": "Change 'cancelled' → 'canceled' in PurchasedAddonFilters.status (~line 68)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "frontend", "types", "spelling"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update purchased-columns.tsx: filter dropdown and status check",
+            "description": "Edit `apps/admin/src/features/billing-addons/purchased-columns.tsx`:\n1. Line ~87: Change filter dropdown option `value: 'cancelled'` → `value: 'canceled'`.\n2. Line ~88: Change i18n label reference to `t('admin-billing.addons.purchasedStatuses.canceled')` (note: this i18n key is renamed in T-015).\n3. Line ~179: Change `row.status === 'cancelled'` → `row.status === 'canceled'` in conditional rendering.\n\nTest: Run `pnpm typecheck` on apps/admin.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Change value: 'cancelled' → 'canceled' in filter dropdown (~line 87)",
+                    "completed": true
+                },
+                {
+                    "title": "Update i18n label key to purchasedStatuses.canceled (~line 88)",
+                    "completed": true
+                },
+                {
+                    "title": "Change row.status === 'cancelled' → 'canceled' (~line 179)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "frontend", "component", "spelling"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Update PurchasedAddonDetailsDialog.tsx: switch case for status badge",
+            "description": "Edit `apps/admin/src/features/billing-addons/components/PurchasedAddonDetailsDialog.tsx`:\n1. Line ~33: In `getStatusVariant()` switch statement, change `case 'cancelled':` → `case 'canceled':`.\n\nTest: Run `pnpm typecheck` on apps/admin.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Change case 'cancelled' → case 'canceled' in getStatusVariant() (~line 33)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "frontend", "component", "spelling"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update addons.tsx route: StatusFilter type, SelectItem value, and i18n key",
+            "description": "Edit `apps/admin/src/routes/_authed/billing/addons.tsx`:\n1. Line ~46: Change `type StatusFilter = 'all' | 'active' | 'expired' | 'cancelled'` → `'all' | 'active' | 'expired' | 'canceled'`.\n2. Line ~261: Change `<SelectItem value=\"cancelled\">` → `<SelectItem value=\"canceled\">`.\n3. Line ~262: Change `t('admin-billing.addons.statusCancelled')` → `t('admin-billing.addons.statusCanceled')` (note: this i18n key is renamed in T-015).\n\nTest: Run `pnpm typecheck` on apps/admin.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Change 'cancelled' → 'canceled' in StatusFilter type (~line 46)",
+                    "completed": true
+                },
+                {
+                    "title": "Change SelectItem value='cancelled' → 'canceled' (~line 261)",
+                    "completed": true
+                },
+                {
+                    "title": "Change i18n key reference to statusCanceled (~line 262)",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "frontend", "route", "spelling"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Rename i18n keys in all 3 locale files (es, en, pt)",
+            "description": "TWO distinct keys must be renamed per locale. Edit all 3 files:\n\n**`packages/i18n/src/locales/es/admin-billing.json`:**\n1. Line ~256: Rename key `\"statusCancelled\": \"Cancelado\"` → `\"statusCanceled\": \"Cancelado\"` under `addons`.\n2. Line ~316: Rename key `\"cancelled\": \"Cancelado\"` → `\"canceled\": \"Cancelado\"` under `addons.purchasedStatuses`.\n\n**`packages/i18n/src/locales/en/admin-billing.json`:**\n3. Line ~256: Rename key `\"statusCancelled\": \"Cancelled\"` → `\"statusCanceled\": \"Cancelled\"` under `addons`.\n4. Line ~316: Rename key `\"cancelled\": \"Cancelled\"` → `\"canceled\": \"Cancelled\"` under `addons.purchasedStatuses`.\n\n**`packages/i18n/src/locales/pt/admin-billing.json`:**\n5. Line ~256: Rename key `\"statusCancelled\": \"Cancelado\"` → `\"statusCanceled\": \"Cancelado\"` under `addons`.\n6. Line ~316: Rename key `\"cancelled\": \"Cancelado\"` → `\"canceled\": \"Cancelado\"` under `addons.purchasedStatuses`.\n\n**CRITICAL: Do NOT change** `sponsorships.statuses.cancelled` or `subscriptions.statuses.cancelled` keys in these same files. Those are out of scope.\n\nTest: Verify the i18n key sync CI job passes (`pnpm run i18n:check` if available), or manually verify keys match across locales.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013", "T-014"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Rename statusCancelled → statusCanceled in es/admin-billing.json (~line 256)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename cancelled → canceled under purchasedStatuses in es/admin-billing.json (~line 316)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename statusCancelled → statusCanceled in en/admin-billing.json (~line 256)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename cancelled → canceled under purchasedStatuses in en/admin-billing.json (~line 316)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename statusCancelled → statusCanceled in pt/admin-billing.json (~line 256)",
+                    "completed": true
+                },
+                {
+                    "title": "Rename cancelled → canceled under purchasedStatuses in pt/admin-billing.json (~line 316)",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "locales", "spelling"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Update test mocks: setup.ts, db-mock.ts, and addon.service.test.ts",
+            "description": "Edit test infrastructure files:\n\n1. `apps/api/test/setup.ts` line ~151: Change `cancelledAt: 'cancelled_at'` → `canceledAt: 'canceled_at'`.\n2. `apps/api/test/helpers/mocks/db-mock.ts` line ~22: Change `cancelledAt: 'cancelled_at'` → `canceledAt: 'canceled_at'`.\n3. `apps/api/test/services/addon.service.test.ts` line ~65: Change `cancelledAt: 'cancelledAt'` → `canceledAt: 'canceled_at'`. NOTE: The original value `'cancelledAt'` (camelCase) is a pre-existing bug. The correct snake_case column name is `'canceled_at'`, matching the convention in setup.ts and db-mock.ts.\n\nNote: `apps/api/test/helpers/mock-factories.ts` line ~98 already uses `canceledAt: null` (American). No change needed.\n\nTest: Run `pnpm test` in apps/api to verify mocks align with updated schema.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-017", "T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Update setup.ts cancelledAt → canceledAt (~line 151)",
+                    "completed": true
+                },
+                {
+                    "title": "Update db-mock.ts cancelledAt → canceledAt (~line 22)",
+                    "completed": true
+                },
+                {
+                    "title": "Fix addon.service.test.ts to canceledAt: 'canceled_at' (~line 65)",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "mock", "spelling"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Update addon-expiration.service.test.ts: rename fields and status values",
+            "description": "Edit `apps/api/test/services/addon-expiration.service.test.ts`:\n1. Line ~32: `cancelledAt: 'cancelled_at'` → `canceledAt: 'canceled_at'` (mock column mapping).\n2. Line ~121: `cancelledAt: overrides.cancelledAt || null` → `canceledAt: overrides.canceledAt || null` (mock factory).\n3. Line ~421: `status: 'cancelled'` → `status: 'canceled'` (test fixture).\n4. Line ~432: Error message expectation `\"Cannot expire add-on with status 'cancelled'\"` → `\"Cannot expire add-on with status 'canceled'\"` (assertion must match updated service error message).\n\nAlso check lines ~93 and ~408 for any additional cancelledAt references and update them.\n\nTest: Run `pnpm test apps/api/test/services/addon-expiration.service.test.ts` to verify all assertions pass.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Update mock column mapping cancelledAt → canceledAt (~line 32)",
+                    "completed": true
+                },
+                {
+                    "title": "Update mock factory cancelledAt → canceledAt (~line 121)",
+                    "completed": true
+                },
+                {
+                    "title": "Update test fixture status 'cancelled' → 'canceled' (~line 421)",
+                    "completed": true
+                },
+                {
+                    "title": "Update error message assertion to match 'canceled' (~line 432)",
+                    "completed": true
+                },
+                {
+                    "title": "Check and fix any remaining cancelledAt refs (~lines 93, 408)",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "spelling", "assertions"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add new unit tests for soft-delete behavior",
+            "description": "Add new test cases (in existing test files or a new focused test file) covering soft-delete filtering:\n\n1. **getUserAddons() excludes soft-deleted**: Create a mock addon purchase with `status: 'active'` AND `deletedAt: new Date()`. Assert that getUserAddons() does NOT return it.\n2. **findExpiredAddons() excludes soft-deleted**: Create a mock expired addon purchase with `deletedAt: new Date()`. Assert findExpiredAddons() does NOT return it.\n3. **getCustomerAddonAdjustments() excludes soft-deleted**: Create a mock active addon purchase with `deletedAt: new Date()`. Assert getCustomerAddonAdjustments() does NOT return it.\n4. **Admin customer-addons list excludes soft-deleted by default**: Mock a soft-deleted record. Assert the admin list endpoint does NOT return it without `includeDeleted`.\n5. **Unique index allows repurchase after soft-delete**: Verify that inserting a new active record for the same (customerId, addonSlug) pair succeeds when the prior active record is soft-deleted (deletedAt IS NOT NULL).\n\nEach test should follow AAA pattern (Arrange, Act, Assert). Use existing mock patterns from mock-factories.ts.\n\nTest: Run `pnpm test` on the relevant test files. Coverage >= 90% on modified service files.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-005", "T-006", "T-007", "T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Test: getUserAddons() excludes soft-deleted active record",
+                    "completed": true
+                },
+                {
+                    "title": "Test: findExpiredAddons() excludes soft-deleted expired record",
+                    "completed": true
+                },
+                {
+                    "title": "Test: getCustomerAddonAdjustments() excludes soft-deleted active record",
+                    "completed": true
+                },
+                {
+                    "title": "Test: admin customer-addons list excludes soft-deleted by default",
+                    "completed": true
+                },
+                {
+                    "title": "Test: unique index allows repurchase after soft-delete",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "soft-delete", "unit-test"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add test for cancelUserAddon status value consistency",
+            "description": "Add a unit test that verifies `cancelUserAddon()` writes `status: 'canceled'` (American, single-L) to the database.\n\nTest case:\n- Arrange: Set up mock for an active addon purchase.\n- Act: Call cancelUserAddon() with the purchase ID.\n- Assert: The Drizzle UPDATE .set() call was invoked with `{ status: 'canceled', canceledAt: expect.any(Date), updatedAt: expect.any(Date) }`.\n\nThis test ensures the British spelling `'cancelled'` is never written to the database again.\n\nTest file: Add to `apps/api/test/services/addon.service.test.ts` or the relevant cancel test section.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-016"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Write test: cancelUserAddon writes status 'canceled' (not 'cancelled')",
+                    "completed": true
+                },
+                {
+                    "title": "Assert canceledAt (not cancelledAt) is set in UPDATE",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "spelling", "unit-test"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Run full validation suite: typecheck + lint + test + grep verification",
+            "description": "Run the complete validation suite:\n\n1. `pnpm typecheck` (entire monorepo) - must pass with zero errors.\n2. `pnpm lint` (entire monorepo) - must pass with zero errors.\n3. `pnpm test` (entire monorepo) - all tests pass, coverage >= 90% on modified files.\n4. Grep verification:\n   - `rg 'cancelledAt|cancelled_at' --type ts` → zero results in service/route/schema/test files (docs are OK).\n   - `rg \"'cancelled'\" apps/api/src apps/admin/src` → zero results for addon-related code (subscription and MercadoPago acceptable).\n   - `rg '\"cancelled\"|\"statusCancelled\"' packages/i18n/src/locales/*/admin-billing.json` → `\"cancelled\"` ONLY under sponsorships.statuses and subscriptions.statuses (not under addons), and zero `\"statusCancelled\"` matches.\n\nIf any check fails, identify and fix the issue before proceeding to T-021.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-008", "T-015", "T-017", "T-018", "T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Run pnpm typecheck - zero errors", "completed": true },
+                { "title": "Run pnpm lint - zero errors", "completed": true },
+                { "title": "Run pnpm test - all pass, coverage OK", "completed": true },
+                {
+                    "title": "Grep: zero cancelledAt/cancelled_at in TS files (except docs)",
+                    "completed": true
+                },
+                {
+                    "title": "Grep: zero 'cancelled' in addon-related API/admin code",
+                    "completed": true
+                },
+                {
+                    "title": "Grep: zero statusCancelled in i18n, cancelled only in sponsorship/subscription keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["validation", "typecheck", "lint", "test", "grep"],
+            "phase": "validation",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T22:00:00.000Z",
+                "completed": "2026-03-16T23:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Apply migration to dev database and verify",
+            "description": "Apply the migration to the development database:\n\n1. Run `pnpm db:migrate`.\n2. Verify columns: `SELECT column_name FROM information_schema.columns WHERE table_name = 'billing_addon_purchases' ORDER BY ordinal_position;`\n   - `deleted_at` must exist (nullable timestamptz)\n   - `canceled_at` must exist (not `cancelled_at`)\n3. Verify no British status remains: `SELECT COUNT(*) FROM billing_addon_purchases WHERE status = 'cancelled';` → must return 0.\n4. Verify existing data preserved: `SELECT COUNT(*) FROM billing_addon_purchases WHERE canceled_at IS NOT NULL;` → should match pre-migration count of rows with cancellation timestamps.\n\nThis is the final step. After verification, update spec status from 'draft' to 'completed'.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm db:migrate", "completed": false },
+                { "title": "Verify deleted_at and canceled_at columns exist", "completed": false },
+                { "title": "Verify zero rows with status = 'cancelled'", "completed": false },
+                { "title": "Verify existing canceled_at timestamps preserved", "completed": false },
+                { "title": "Update spec status to completed", "completed": false }
+            ],
+            "tags": ["database", "migration", "verification"],
+            "phase": "validation",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 21,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 20,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}

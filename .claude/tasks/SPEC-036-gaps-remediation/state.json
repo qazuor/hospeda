@@ -1,0 +1,1167 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-036-gaps",
+    "title": "SPEC-036 Gaps Remediation - Zod Validation i18n System",
+    "created": "2026-03-10T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add 3 missing Zod v4 error codes to transformer maps",
+            "description": "Add `invalid_union`, `invalid_key`, `invalid_element` to `ZOD_ERROR_CODE_MAP` (lines 105-130) and `ZOD_ERROR_MESSAGE_MAP` (lines 135-160) in `apps/api/src/utils/zod-error-transformer.ts`. Add cases to `generateUserFriendlyMessage()` and `generateSuggestion()` switch statements. Add `extractErrorParams()` handling for union errors. Resolves GAP-027.\n\nTests: Add 3 test cases in `apps/api/test/utils/zod-error-transformer.test.ts` — one per new code. Verify correct standardized code, user-friendly message, and suggestion for each.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Add 3 entries to ZOD_ERROR_CODE_MAP",
+                    "completed": false
+                },
+                {
+                    "title": "Add 3 entries to ZOD_ERROR_MESSAGE_MAP",
+                    "completed": false
+                },
+                {
+                    "title": "Add cases to generateUserFriendlyMessage()",
+                    "completed": false
+                },
+                {
+                    "title": "Add cases to generateSuggestion()",
+                    "completed": false
+                },
+                {
+                    "title": "Add extractErrorParams() handling for union errors",
+                    "completed": false
+                },
+                {
+                    "title": "Add 3 test cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "transformer", "zod-v4", "GAP-027"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T12:30:00.000Z",
+                "completed": "2026-03-10T12:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add Zod v4 translation keys to validation.json (3 locales)",
+            "description": "Add translation keys for `invalid_union`, `invalid_key`, `invalid_element` to `packages/i18n/src/locales/{es,en,pt}/validation.json`. Keys: `validationError.field.invalidUnion`, `validationError.field.invalidKey`, `validationError.field.invalidElement`. Spanish with real translations, EN/PT with [EN]/[PT] prefix (consistent with current placeholder pattern). Resolves GAP-027 (translation part).\n\nTests: Verify keys exist and resolve correctly in existing i18n test infrastructure.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add keys to es/validation.json",
+                    "completed": false
+                },
+                {
+                    "title": "Add keys to en/validation.json",
+                    "completed": false
+                },
+                {
+                    "title": "Add keys to pt/validation.json",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "translations", "GAP-027"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T21:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Fix defaultHook response nesting — flatten details",
+            "description": "In `apps/api/src/utils/create-app.ts` line 92, change `details: transformedError` to `details: transformedError.details, summary: transformedError.summary, userFriendlyMessage: transformedError.userFriendlyMessage`. This removes the double nesting (`error.details.details`). Resolves GAP-022.\n\nTests: Update `apps/api/test/utils/create-app.defaulthook.test.ts` — change assertions at line 230+ to expect flat `details` array instead of nested object. Verify `response.error.details` is an array of field errors.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Fix create-app.ts line 92 response structure",
+                    "completed": false
+                },
+                {
+                    "title": "Update defaultHook test assertions for flat structure",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all defaultHook tests pass with new structure",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "response-format", "GAP-022"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T12:50:00.000Z",
+                "completed": "2026-03-10T13:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Standardize validation middleware response format",
+            "description": "Standardize the 3 different response paths in `apps/api/src/middleware/validation.ts` to use the same envelope format as the fixed defaultHook (from T-003). Ensure Path 2 (Zod handler) and Path 3 (ValidationError handler) both produce `{ error: { code, message, details: [...], summary: {...} } }`. Resolves GAP-030.\n\nTests: Add/update tests in validation middleware test file to verify consistent response shape across all 3 paths.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Standardize Path 2 (Zod handler) response format",
+                    "completed": false
+                },
+                {
+                    "title": "Standardize Path 3 (ValidationError handler) response format",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all 3 paths produce identical envelope shape",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "middleware", "response-format", "GAP-030"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T22:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Rename TransformedValidationError message fields + JSDoc",
+            "description": "In `apps/api/src/utils/zod-error-transformer.ts`, rename `message` to `messageKey` and `translatedMessage` to `zodMessage` in the `TransformedValidationError` interface. Add comprehensive JSDoc to the interface explaining what each field contains. Update all references in the transformer file (line 588+), tests, and any admin code that reads these fields. Resolves GAP-029.\n\nTests: Update existing transformer tests to use new field names. Verify no regressions.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Rename fields in TransformedValidationError interface",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc to interface",
+                    "completed": false
+                },
+                {
+                    "title": "Update all references in transformer",
+                    "completed": false
+                },
+                {
+                    "title": "Update test assertions with new field names",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "transformer", "naming", "GAP-029"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T12:50:00.000Z",
+                "completed": "2026-03-10T13:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create ApiValidationErrorSchema + parseApiValidationErrors utility",
+            "description": "Create `apps/admin/src/lib/errors/parse-api-validation-errors.ts`. Define `ApiValidationErrorSchema` Zod schema matching the new flattened API error response (from T-003/T-005). Export `parseApiValidationErrors({ error, t })` that uses `safeParse` to extract field-level errors and returns `Record<string, string>`. Resolves GAP-032 (utility part).\n\nTests: Create `apps/admin/test/lib/errors/parse-api-validation-errors.test.ts` with tests for: valid error response, malformed response, empty details, missing fields.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Define ApiValidationErrorSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Implement parseApiValidationErrors()",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "error-handling", "GAP-032"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T18:52:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update EntityCreateContent to use parseApiValidationErrors",
+            "description": "Replace the `JSON.parse(error.message)` pattern in `apps/admin/src/components/entity-pages/EntityCreateContent.tsx` (lines 191-220) with a call to the new `parseApiValidationErrors()` utility. Remove the try-catch JSON.parse block. Resolves GAP-040 (create part).\n\nTests: Verify existing EntityCreateContent behavior — field errors display correctly, fallback for non-validation errors still works.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Import parseApiValidationErrors",
+                    "completed": false
+                },
+                {
+                    "title": "Replace JSON.parse block with utility call",
+                    "completed": false
+                },
+                {
+                    "title": "Verify error display behavior",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "error-handling", "GAP-040"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update EntityEditContent to use parseApiValidationErrors",
+            "description": "Replace the `JSON.parse(apiError.body.error.message)` pattern in `apps/admin/src/components/entity-pages/EntityEditContent.tsx` (lines 101-149) with a call to `parseApiValidationErrors()`. Remove the try-catch JSON.parse block. Resolves GAP-040 (edit part).\n\nTests: Verify existing EntityEditContent behavior — field errors display correctly, fallback for non-validation errors still works.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Import parseApiValidationErrors",
+                    "completed": false
+                },
+                {
+                    "title": "Replace JSON.parse block with utility call",
+                    "completed": false
+                },
+                {
+                    "title": "Verify error display behavior",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "error-handling", "GAP-040"],
+            "phase": "core-api",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Remove dead code from transformer (functions + v3 cases + guard)",
+            "description": "In `apps/api/src/utils/zod-error-transformer.ts`: (1) Remove exported `groupErrorsByField()` (lines 613-627) and `getSimplifiedErrors()` (lines 632-640). (2) Remove 7 unreachable Zod v3 switch cases: `invalid_date`, `invalid_email`, `invalid_url`, `invalid_uuid` in generateUserFriendlyMessage (lines 342-352) and `invalid_email`, `invalid_url`, `invalid_uuid` in generateSuggestion (lines 481-488). (3) Add guard `if (totalErrors === 0) return 'No validation errors found'` to generateOverallMessage(). Resolves GAP-024, GAP-028, GAP-036.\n\nTests: Remove any tests referencing deleted functions. Add test for empty issues edge case.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Remove groupErrorsByField() and getSimplifiedErrors()",
+                    "completed": false
+                },
+                {
+                    "title": "Remove 4 dead cases in generateUserFriendlyMessage()",
+                    "completed": false
+                },
+                {
+                    "title": "Remove 3 dead cases in generateSuggestion()",
+                    "completed": false
+                },
+                {
+                    "title": "Add totalErrors === 0 guard",
+                    "completed": false
+                },
+                {
+                    "title": "Update/remove related tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cleanup", "dead-code", "GAP-024", "GAP-028", "GAP-036"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T22:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Remove dead code in admin (schema registry + _zodSchema prop)",
+            "description": "In `apps/admin/src/lib/validation/schema-registry.ts`: verify `getEntitySchema()` has zero production imports (grep codebase excluding test files). If confirmed dead, remove function + SCHEMA_REGISTRY + test file. In `apps/admin/src/components/entity-pages/EntityEditContent.tsx`: remove `zodSchema` from `EntityEditContentProps` interface (line 24), remove `zodSchema: _zodSchema` destructuring (line 34), remove unused `ZodSchema` import (line 11). Update any callers that pass zodSchema to EntityEditContent. Resolves GAP-006, GAP-007.\n\nTests: Verify typecheck passes after removals.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep for production imports of getEntitySchema",
+                    "completed": false
+                },
+                {
+                    "title": "Remove dead schema registry if confirmed",
+                    "completed": false
+                },
+                {
+                    "title": "Remove _zodSchema prop from EntityEditContent",
+                    "completed": false
+                },
+                {
+                    "title": "Update callers passing zodSchema to EntityEditContent",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "cleanup", "dead-code", "GAP-006", "GAP-007"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T22:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Split zod-error-transformer.ts into 3 files",
+            "description": "Split `apps/api/src/utils/zod-error-transformer.ts` (640 lines pre-cleanup, ~500 post-cleanup) into 3 files: (1) `zod-error-types.ts` — interfaces (TransformedValidationError, ValidationErrorResponse, ValidationErrorSummary) + ZOD_ERROR_CODE_MAP + ZOD_ERROR_MESSAGE_MAP (~75-100 lines). (2) `zod-error-messages.ts` — generateUserFriendlyMessage() + generateSuggestion() + generateOverallMessage() (~200-260 lines). (3) `zod-error-transformer.ts` — transformZodError() + extractErrorParams() + helpers (~250-305 lines). Update all imports across codebase. Resolves GAP-001.\n\nTests: Verify all existing transformer tests pass with new import paths. Run typecheck.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Create zod-error-types.ts with interfaces + maps",
+                    "completed": false
+                },
+                {
+                    "title": "Create zod-error-messages.ts with message generators",
+                    "completed": false
+                },
+                {
+                    "title": "Reduce main file to transformZodError + helpers",
+                    "completed": false
+                },
+                {
+                    "title": "Update all imports across codebase",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all tests pass",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "refactor", "file-split", "GAP-001"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:12:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add transformer tests: error codes batch 1 (8 codes)",
+            "description": "Add test cases to `apps/api/test/utils/zod-error-transformer.test.ts` for untested error codes batch 1: `required` (missing field), `int` (non-integer number), `uuid` (invalid UUID), `tooHigh` (too_big number), `positive` (non-positive number), `tooLow` (too_small number), `pattern` (regex mismatch), `format` (invalid_format). Each test: create Zod schema triggering the code, validate transformZodError output has correct standardized code + user-friendly message. Resolves GAP-003/016 (part 1).\n\nTests: 8 new test cases, AAA pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test required (missing field)",
+                    "completed": false
+                },
+                {
+                    "title": "Test int (non-integer)",
+                    "completed": false
+                },
+                {
+                    "title": "Test uuid (invalid UUID)",
+                    "completed": false
+                },
+                {
+                    "title": "Test tooHigh (too_big number)",
+                    "completed": false
+                },
+                {
+                    "title": "Test positive (non-positive)",
+                    "completed": false
+                },
+                {
+                    "title": "Test tooLow (too_small number)",
+                    "completed": false
+                },
+                {
+                    "title": "Test pattern (regex mismatch)",
+                    "completed": false
+                },
+                {
+                    "title": "Test format (invalid_format)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "transformer", "GAP-003", "GAP-016"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add transformer tests: error codes batch 2 (7 codes + v4)",
+            "description": "Add test cases to `apps/api/test/utils/zod-error-transformer.test.ts` for untested error codes batch 2: `invalidDate`, `invalidBoolean`, `url`, `length`, `invalidUuid`, plus the 3 new Zod v4 codes (`invalid_union`, `invalid_key`, `invalid_element`). Resolves GAP-003/016 (part 2).\n\nTests: 7 new test cases, AAA pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test invalidDate",
+                    "completed": false
+                },
+                {
+                    "title": "Test invalidBoolean",
+                    "completed": false
+                },
+                {
+                    "title": "Test url",
+                    "completed": false
+                },
+                {
+                    "title": "Test length",
+                    "completed": false
+                },
+                {
+                    "title": "Test invalidUuid",
+                    "completed": false
+                },
+                {
+                    "title": "Test invalid_union (Zod v4)",
+                    "completed": false
+                },
+                {
+                    "title": "Test invalid_key (Zod v4)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "transformer", "zod-v4", "GAP-003", "GAP-016"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add defaultHook query/params tests + presence assertion",
+            "description": "In `apps/api/test/utils/create-app.defaulthook.test.ts`: add 2 tests for query param validation (valid query passes, invalid query returns 400 with field errors) and 1 test for path param validation. In `apps/api/test/utils/create-app.test.ts`: add `defaultHook: expect.any(Function)` assertion alongside existing `strict: false` check. Resolves GAP-023, GAP-004.\n\nTests: 3 new test cases in defaulthook test, 1 assertion in create-app test.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add query param validation test (valid)",
+                    "completed": false
+                },
+                {
+                    "title": "Add query param validation test (invalid)",
+                    "completed": false
+                },
+                {
+                    "title": "Add path param validation test",
+                    "completed": false
+                },
+                {
+                    "title": "Add defaultHook presence assertion",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "defaultHook", "GAP-023", "GAP-004"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create e2e i18n flow integration test",
+            "description": "Create `apps/api/test/integration/zod-i18n-flow.test.ts`. Test the complete pipeline: (1) Create a Zod schema with `zodError.*` message keys. (2) Trigger validation error. (3) Call `transformZodError()`. (4) Verify output contains correct i18n key in messageKey field. (5) Load real `es/validation.json` and verify the key resolves to a real Spanish translation. Test at least 3 different error types (required, min, invalid_type). Resolves GAP-034.\n\nTests: 3+ integration test cases chaining full pipeline.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Setup test with real i18n files",
+                    "completed": false
+                },
+                {
+                    "title": "Test required field -> transform -> i18n resolve",
+                    "completed": false
+                },
+                {
+                    "title": "Test min length -> transform -> i18n resolve",
+                    "completed": false
+                },
+                {
+                    "title": "Test invalid_type -> transform -> i18n resolve",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "integration", "i18n", "GAP-034"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add array/nested field validation tests for admin forms",
+            "description": "Create `apps/admin/test/components/entity-form/field-validation.test.ts`. Test: (1) GalleryField array validation — empty array, array with invalid items, max items exceeded. (2) Nested object validation — location.country missing, price.basePrice negative, nested dot-notation error mapping. Use mock EntityFormProvider context. Resolves GAP-008.\n\nTests: 5+ test cases covering array and nested object scenarios.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Setup test with EntityFormProvider mock",
+                    "completed": false
+                },
+                {
+                    "title": "Test GalleryField empty array validation",
+                    "completed": false
+                },
+                {
+                    "title": "Test GalleryField invalid items",
+                    "completed": false
+                },
+                {
+                    "title": "Test nested location.country validation",
+                    "completed": false
+                },
+                {
+                    "title": "Test nested price.basePrice validation",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "testing", "forms", "GAP-008"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": "2026-03-11T02:10:39.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add verification mode to extract-zod-keys script",
+            "description": "In `scripts/extract-zod-keys.ts`: add `--verify` CLI flag. When set: (1) After key discovery, load `packages/i18n/src/locales/{es,en,pt}/validation.json`. (2) Compare extracted keys with entries in each locale file. (3) Report missing translations per locale as structured output. (4) Exit with code 1 if any gaps found, code 0 if all keys have translations. Update the ZodKeysInventory interface to include verification results. Resolves GAP-033.\n\nTests: Covered by T-018.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Add --verify CLI flag parsing",
+                    "completed": false
+                },
+                {
+                    "title": "Load and parse 3 locale validation.json files",
+                    "completed": false
+                },
+                {
+                    "title": "Compare extracted keys with locale entries",
+                    "completed": false
+                },
+                {
+                    "title": "Report missing translations per locale",
+                    "completed": false
+                },
+                {
+                    "title": "Set exit code based on verification result",
+                    "completed": false
+                }
+            ],
+            "tags": ["tooling", "i18n-sync", "GAP-033"],
+            "phase": "tooling",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": "2026-03-10T21:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add tests for extract-zod-keys script",
+            "description": "Create `scripts/__tests__/extract-zod-keys.test.ts`. Test: (1) Static key extraction from sample schema. (2) Template literal resolution. (3) Factory function key mapping completeness. (4) 2-segment key warning detection. (5) Output format correctness (ZodKeysInventory shape). (6) Verification mode — missing key detection, exit code. Resolves GAP-043, GAP-014.\n\nTests: 6+ test cases.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test static key extraction",
+                    "completed": false
+                },
+                {
+                    "title": "Test template literal resolution",
+                    "completed": false
+                },
+                {
+                    "title": "Test factory function key mapping",
+                    "completed": false
+                },
+                {
+                    "title": "Test 2-segment key warning",
+                    "completed": false
+                },
+                {
+                    "title": "Test output format",
+                    "completed": false
+                },
+                {
+                    "title": "Test verification mode",
+                    "completed": false
+                }
+            ],
+            "tags": ["tooling", "testing", "GAP-043", "GAP-014"],
+            "phase": "tooling",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T19:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add CI job + vitest test for i18n key sync",
+            "description": "Add step to `.github/workflows/ci.yml` after tests: run `npx tsx scripts/extract-zod-keys.ts --verify`, fail CI if exit code non-zero. Also create `packages/i18n/test/validation-key-sync.test.ts` as vitest test that programmatically runs the same verification for local `pnpm test`. Resolves GAP-010.\n\nTests: The vitest test IS the test — verify it catches intentionally missing keys.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add CI step to ci.yml",
+                    "completed": false
+                },
+                {
+                    "title": "Create vitest test for local validation",
+                    "completed": false
+                },
+                {
+                    "title": "Verify test catches missing keys",
+                    "completed": false
+                }
+            ],
+            "tags": ["ci", "tooling", "i18n-sync", "GAP-010"],
+            "phase": "tooling",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-10T20:02:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create shared FormError component with built-in ARIA",
+            "description": "Create `apps/web/src/components/ui/FormError.tsx`. React component that renders error messages with full ARIA compliance: `role='alert'`, `aria-live='polite'`, auto-generated `id` from field name (for `aria-describedby`). Props: `{ fieldName: string; error?: string; className?: string }`. Only renders when error is truthy. Follows ContactForm pattern (A+ compliance). Resolves GAP-009 (component part), GAP-039.\n\nTests: Create `apps/web/test/components/ui/FormError.test.tsx` — test rendering, ARIA attributes, conditional display, id generation.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-023", "T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Create FormError component",
+                    "completed": false
+                },
+                {
+                    "title": "Implement ARIA attributes (role, aria-live, id)",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "accessibility", "GAP-009", "GAP-039"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create validateField helper for web forms",
+            "description": "Create `apps/web/src/lib/validation/validate-field.ts`. Lightweight validation helper (~20-30 lines) supporting: required, minLength, maxLength, email (RFC-aligned regex), pattern. Returns validation.json i18n key or undefined. No Zod dependency. Resolves GAP-009 (validation part).\n\nTests: Create `apps/web/test/lib/validation/validate-field.test.ts` — test each validation rule, edge cases (empty string, whitespace-only, boundary lengths).",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-023", "T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Implement required validation",
+                    "completed": false
+                },
+                {
+                    "title": "Implement minLength/maxLength",
+                    "completed": false
+                },
+                {
+                    "title": "Implement email validation",
+                    "completed": false
+                },
+                {
+                    "title": "Implement pattern validation",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "validation", "helper", "GAP-009"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create contactApi wrapper + migrate ContactForm",
+            "description": "Create `apps/web/src/lib/api/endpoints-public.ts` with `contactApi.sendContactMessage()` using the existing apiClient pattern (like reviewsApi, userApi). Migrate `apps/web/src/components/content/ContactForm.client.tsx`: replace raw `fetch()` at line 134 with contactApi wrapper, replace manual validation (lines 95-123) with validateField helper, replace manual error `<p>` elements with FormError component, fix email regex inconsistency (GAP-011). Resolves GAP-031, GAP-011.\n\nTests: Verify form behavior preserved. Verify apiClient is used instead of raw fetch.",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create endpoints-public.ts with contactApi",
+                    "completed": false
+                },
+                {
+                    "title": "Replace raw fetch with contactApi",
+                    "completed": false
+                },
+                {
+                    "title": "Replace manual validation with validateField",
+                    "completed": false
+                },
+                {
+                    "title": "Replace error elements with FormError component",
+                    "completed": false
+                },
+                {
+                    "title": "Fix email regex to match RFC standard",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "forms", "api-client", "GAP-031", "GAP-011"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-11T03:01:21.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Migrate ReviewForm to standardized validation + ARIA",
+            "description": "Migrate `apps/web/src/components/review/ReviewForm.client.tsx`: replace manual validation with validateField helper, replace manual error elements with FormError component, add `id='ratings-error'` to ratings error element (line 303), add `aria-describedby='ratings-error'` to ratings fieldset (line 293). Resolves GAP-041, GAP-009 (ReviewForm part).\n\nTests: Verify ratings ARIA attributes. Verify validation behavior preserved.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace manual validation with validateField",
+                    "completed": false
+                },
+                {
+                    "title": "Replace error elements with FormError",
+                    "completed": false
+                },
+                {
+                    "title": "Add id='ratings-error' to error element",
+                    "completed": false
+                },
+                {
+                    "title": "Add aria-describedby to ratings fieldset",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "forms", "accessibility", "GAP-041", "GAP-009"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Migrate ReviewEditForm with full ARIA compliance",
+            "description": "Migrate `apps/web/src/components/account/ReviewEditForm.client.tsx` (194 lines, currently 0% ARIA compliance): add validation logic using validateField helper for title (required, minLength) and content (required, minLength), add FormError components for each field, add `aria-required`, `aria-invalid`, `aria-describedby` to title input and content textarea. Resolves GAP-026.\n\nTests: Verify all ARIA attributes present. Verify validation blocks empty submissions.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add validateField validation for title",
+                    "completed": false
+                },
+                {
+                    "title": "Add validateField validation for content",
+                    "completed": false
+                },
+                {
+                    "title": "Add FormError components",
+                    "completed": false
+                },
+                {
+                    "title": "Add aria-required, aria-invalid, aria-describedby to inputs",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "forms", "accessibility", "GAP-026"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Migrate ProfileEditForm to standardized pattern",
+            "description": "Migrate `apps/web/src/components/account/ProfileEditForm.client.tsx`: replace manual validation with validateField helper, replace manual error elements with FormError component (auto-includes aria-live='polite'), fix missing aria-live on name error (line 207-215) and bio error (line 277-285). Resolves GAP-042, GAP-009 (ProfileEditForm part).\n\nTests: Verify aria-live present on all error messages. Verify validation behavior preserved.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": ["T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace manual validation with validateField",
+                    "completed": false
+                },
+                {
+                    "title": "Replace error elements with FormError",
+                    "completed": false
+                },
+                {
+                    "title": "Verify aria-live on name error",
+                    "completed": false
+                },
+                {
+                    "title": "Verify aria-live on bio error",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "forms", "accessibility", "GAP-042", "GAP-009"],
+            "phase": "web-forms",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Fix 11 Spanish translations with English field names",
+            "description": "In `packages/i18n/src/locales/es/validation.json`, fix 11 translations that contain English field names: homePhone -> 'teléfono particular', mobilePhone -> 'teléfono celular', personalEmail -> 'email personal', workEmail -> 'email laboral', workPhone -> 'teléfono laboral', isEmailVerified -> 'verificación de email', linkUrl -> 'URL del enlace', allowEmails -> 'permitir emails', plus 3 in user.settings namespace. Resolves GAP-035.\n\nTests: Verify translations load correctly.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Fix 8 main field name translations",
+                    "completed": false
+                },
+                {
+                    "title": "Fix 3 user.settings namespace translations",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "translations", "quality", "GAP-035"],
+            "phase": "i18n-quality",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T12:50:00.000Z",
+                "completed": "2026-03-10T13:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Document 2-segment zodError key convention",
+            "description": "Add section to `packages/schemas/docs/` (or `packages/i18n/docs/`) documenting the 2-segment zodError key convention: keys like `zodError.dateRange.invalidRange` are intentional shorthand for generic/utility messages that are not entity-specific. 3+ segment keys (zodError.entity.field.rule) are for entity-specific messages. Update extract script warnings to reference this doc. Resolves GAP-037.\n\nTests: N/A (documentation only).",
+            "status": "completed",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write convention documentation",
+                    "completed": false
+                },
+                {
+                    "title": "Update extract script warning message to reference doc",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "convention", "GAP-037"],
+            "phase": "i18n-quality",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": "2026-03-10T21:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create owner-promotion CRUD schema",
+            "description": "Create `packages/schemas/src/entities/owner-promotion.crud.schema.ts` following the pattern of existing 18 entity CRUD schemas. Define createOwnerPromotionSchema and updateOwnerPromotionSchema with appropriate fields from the owner-promotion model. Export from schemas package barrel. Resolves GAP-013 (part 1).\n\nTests: Add basic schema validation tests.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Review existing crud schema pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Create owner-promotion.crud.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Add validation tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "crud", "GAP-013"],
+            "phase": "i18n-quality",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": "2026-03-10T21:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Create sponsorship CRUD schema",
+            "description": "Create `packages/schemas/src/entities/sponsorship.crud.schema.ts` following the pattern of existing 18 entity CRUD schemas. Define createSponsorshipSchema and updateSponsorshipSchema with appropriate fields from the sponsorship model. Export from schemas package barrel. Resolves GAP-013 (part 2).\n\nTests: Add basic schema validation tests.",
+            "status": "completed",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Review existing crud schema pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Create sponsorship.crud.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Add validation tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "crud", "GAP-013"],
+            "phase": "i18n-quality",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-10T12:00:00.000Z",
+                "started": "2026-03-10T13:15:00.000Z",
+                "completed": "2026-03-10T21:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 29,
+        "pending": 4,
+        "inProgress": 3,
+        "completed": 22,
+        "blocked": 0,
+        "averageComplexity": 1.7
+    }
+}

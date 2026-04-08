@@ -1,0 +1,1076 @@
+{
+    "specId": "SPEC-020",
+    "title": "Deployment Readiness & Code Quality",
+    "status": "completed",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Investigate admin SSR build stack overflow root cause",
+            "description": "Investigate the root cause of the stack overflow that occurs when building the admin app for production (SSR mode). The admin app uses TanStack Start with Vite.\n\nSteps:\n1. Run `cd /home/qazuor/projects/WEBS/hospeda && pnpm --filter admin build` and capture the full error output\n2. Check if the stack overflow occurs during the SSR bundle phase (not the client bundle)\n3. Analyze the vite.config.ts aliases at `/home/qazuor/projects/WEBS/hospeda/apps/admin/vite.config.ts` lines 146-154 - these point to package `src/` directories instead of compiled `dist/` directories\n4. Check if circular CSS imports exist between `@repo/schemas/src` or `@repo/service-core/src` that cause infinite recursion during SSR bundling\n5. Document findings: which alias causes the overflow, whether it is CSS resolution or JS resolution, and whether upgrading `@tanstack/react-start` would help\n6. Write findings in a comment or document for T-002 to consume\n\nExpected output: A clear diagnosis of which alias(es) cause the stack overflow and the recommended fix approach (alias to dist, upgrade TanStack, or both).\n\nRelevant files:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/vite.config.ts` (lines 146-154 aliases section)\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/package.json`\n- `/home/qazuor/projects/WEBS/hospeda/packages/schemas/package.json` (check `exports` field)\n- `/home/qazuor/projects/WEBS/hospeda/packages/service-core/package.json` (check `exports` field)",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Fix admin vite.config.ts aliases for SSR build",
+            "description": "Fix the alias resolution in the admin app's Vite config so that SSR builds resolve package imports from compiled `dist/` artifacts instead of raw `src/` directories. This eliminates the recursive resolution that causes stack overflow.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/vite.config.ts`\n\nCurrent aliases (lines 146-154):\n```ts\nalias: {\n    '@': resolve(__dirname, './src'),\n    '@repo/schemas': resolve(__dirname, '../../packages/schemas/src'),\n    '@repo/db': resolve(__dirname, '../../packages/db/src'),\n    '@repo/logger': resolve(__dirname, '../../packages/logger/src'),\n    '@repo/utils': resolve(__dirname, '../../packages/utils/src'),\n    '@repo/config': resolve(__dirname, '../../packages/config/src'),\n    '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),\n    '@repo/icons': resolve(__dirname, '../../packages/icons/src')\n}\n```\n\nFix approach (conditionally point to dist for SSR/production):\n1. For production/SSR builds, change aliases to point to `dist/` (e.g., `../../packages/schemas/dist`)\n2. For development, keep pointing to `src/` for hot-reload\n3. Use Vite's `mode` or `command` to conditionally switch: `({ command, mode }) => { ... }`\n4. Ensure the `defineConfig` export uses the function form to access `command`\n5. For each package, verify that `dist/index.js` exists after `pnpm build` and that the package.json `exports` or `main` field points to `dist/`\n\nAlternative approach (if dist aliases don't work):\n- Remove aliases entirely for production and rely on Node.js module resolution via the packages' `exports` field in package.json\n- Keep aliases only for `@` (local src shortcut)\n\nTest expectations:\n- `pnpm build` in apps/admin completes without stack overflow\n- Both client and SSR bundles are generated\n- `pnpm typecheck` in apps/admin passes with no new errors\n- `pnpm dev` in apps/admin still works (hot-reload via src/ aliases preserved)",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Verify admin build succeeds after alias fix",
+            "description": "After T-002 fix is applied, run a full verification of the admin build to confirm the stack overflow is resolved and no regressions are introduced.\n\nSteps:\n1. Run `pnpm --filter admin build` from monorepo root - must complete without errors\n2. Verify output directory exists: `apps/admin/.tanstack/start/build/` (or `apps/admin/.output/` depending on TanStack Start version)\n3. Run `pnpm --filter admin typecheck` - must pass with zero errors\n4. Run `pnpm --filter admin test` - all existing tests must pass\n5. Run `pnpm dev:admin` and verify the dev server starts and loads the dashboard\n6. Check the SSR bundle size is reasonable (not bloated by unintended source inclusion)\n\nQuality gate: All 4 commands must succeed. If any fails, T-002 needs revision.\n\nRelevant files:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/vite.config.ts` (modified in T-002)\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/package.json`",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-002"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Regenerate apps/api/package.prod.json with current dependencies",
+            "description": "The production manifest at `/home/qazuor/projects/WEBS/hospeda/apps/api/package.prod.json` is completely outdated. It lists `@clerk/backend`, `@hono/zod-validator` (should be `@hono/zod-openapi`), `drizzle-orm@^0.29.5` (current is `^0.44.7`), and `zod@^3.24.4` (current is `^4.0.8`).\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/package.prod.json`\n\nSteps:\n1. Read the current `apps/api/package.json` to get the full list of runtime `dependencies`\n2. Regenerate `package.prod.json` with:\n   - `name`: `hospeda-api`\n   - `version`: match current version from package.json\n   - `main`: `dist/index.js`\n   - `scripts.start`: `node dist/index.js`\n   - `dependencies`: copy ALL runtime dependencies from package.json (NOT devDependencies)\n3. Remove all Clerk-related entries (`@clerk/backend`, `@clerk/clerk-sdk-node`, etc.)\n4. Verify `@hono/zod-openapi` is listed (NOT `@hono/zod-validator`)\n5. Verify `better-auth` is listed if it's a direct dependency\n6. Verify `drizzle-orm` version matches package.json (^0.44.7)\n7. Verify `zod` version matches package.json (^4.0.8)\n8. Remove `chalk` if it's not used in production code (it's a dev formatting tool)\n9. Verify `@sentry/node` is included for production error tracking\n\nTest expectations:\n- Running `npm install --production` with the updated manifest installs all needed deps\n- The API server starts successfully with only production deps installed\n- No Clerk references remain in the file\n- All version numbers match `apps/api/package.json`",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Fix fly.toml PORT consistency to match API_PORT 3001",
+            "description": "The fly.toml at `/home/qazuor/projects/WEBS/hospeda/apps/api/fly.toml` sets `PORT = \"3000\"` and `internal_port = 3000`, but the API default port is 3001 (see `apps/api/src/utils/env.ts` where `API_PORT` defaults to 3001).\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/fly.toml`\n\nChanges:\n1. Change `[env] PORT = \"3000\"` to `PORT = \"3001\"` (or use `API_PORT = \"3001\"` if the app reads API_PORT)\n2. Check `apps/api/src/utils/env.ts` to confirm the env var name the app reads (PORT vs API_PORT)\n3. Update `internal_port` from 3000 to 3001 to match\n4. Remove the Spanish comment `# o el puerto que use tu app (Hono por default usa 3000)` - comments should be in English\n\nAlternative: If Fly.io already has machines configured with port 3000, set `API_PORT=3000` as a Fly.io secret instead. Document the decision.\n\nTest expectations:\n- `fly.toml` port matches the port the API actually listens on\n- No Spanish comments remain in the file",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add [http_service] with health check to fly.toml",
+            "description": "The current fly.toml uses the legacy `[[services]]` block format. Replace it with the modern `[http_service]` format and add health check configuration.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/fly.toml`\n\nReplace the entire `[[services]]` block (lines 11-22) with:\n```toml\n[http_service]\n  internal_port = 3001\n  force_https = true\n  auto_stop_machines = \"stop\"\n  auto_start_machines = true\n  min_machines_running = 1\n\n  [http_service.checks]\n    [http_service.checks.health]\n      interval = \"15s\"\n      timeout = \"5s\"\n      grace_period = \"10s\"\n      method = \"GET\"\n      path = \"/api/v1/public/health\"\n```\n\nVerify the health check endpoint exists by checking `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/health/` for a public health route that returns 200 without authentication.\n\nTest expectations:\n- `fly.toml` validates with `fly config validate` (if available)\n- Health check path matches an actual unauthenticated endpoint\n- No legacy `[[services]]` blocks remain",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add VM resources and deploy strategy to fly.toml",
+            "description": "Add VM resource configuration and deploy strategy to the fly.toml to ensure predictable resource allocation and safe deployments.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/fly.toml`\n\nAdd the following sections:\n```toml\n[[vm]]\n  size = \"shared-cpu-1x\"\n  memory = \"512mb\"\n\n[deploy]\n  strategy = \"rolling\"\n```\n\nAlso add required secrets documentation as comments:\n```toml\n# Required secrets (set via `fly secrets set`):\n# HOSPEDA_DATABASE_URL - PostgreSQL connection string\n# HOSPEDA_BETTER_AUTH_SECRET - Better Auth JWT secret\n# HOSPEDA_BETTER_AUTH_URL - Better Auth base URL\n# HOSPEDA_REDIS_URL - Redis connection URL\n# CRON_SECRET - Secret for cron job authentication\n# SENTRY_DSN - Sentry error tracking DSN\n```\n\nTest expectations:\n- fly.toml has `[[vm]]` section with cpu and memory defined\n- fly.toml has `[deploy]` section with strategy\n- All required secrets are documented as comments",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": ["T-006"],
+            "blocks": ["T-018"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Move @sentry/react from devDependencies to dependencies in admin package.json",
+            "description": "In `/home/qazuor/projects/WEBS/hospeda/apps/admin/package.json`, `@sentry/react` is listed under `devDependencies` (line 77: `\"@sentry/react\": \"^10.36.0\"`). It must be in `dependencies` because it is used at runtime in the production bundle for error tracking.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/package.json`\n\nSteps:\n1. Remove `\"@sentry/react\": \"^10.36.0\"` from the `devDependencies` section\n2. Add `\"@sentry/react\": \"^10.36.0\"` to the `dependencies` section (maintaining alphabetical order)\n3. Run `pnpm install` to update the lockfile\n4. Run `pnpm --filter admin typecheck` to verify no issues\n5. Run `pnpm --filter admin build` to verify the build succeeds (may need T-002 fix first)\n\nTest expectations:\n- `@sentry/react` appears under `dependencies` in package.json\n- `@sentry/react` does NOT appear under `devDependencies`\n- `pnpm install` succeeds without errors",
+            "phase": "phase-1-critical-build-blockers",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-024"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create .env.example for apps/api with all required variables",
+            "description": "Create a `.env.example` file in `/home/qazuor/projects/WEBS/hospeda/apps/api/` documenting all required and optional environment variables.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/.env.example`\n\nSteps:\n1. Read `apps/api/src/utils/env.ts` to find all env var definitions and their Zod schemas\n2. Read `apps/api/src/index.ts` for any additional env vars used directly\n3. Check `apps/api/src/lib/sentry.ts` for Sentry-specific env vars\n4. Check `apps/api/src/cron/` for cron-specific env vars (CRON_SECRET)\n5. Check `apps/api/src/middlewares/rate-limit.ts` for rate limit env vars\n6. Check `apps/api/src/middlewares/cors.ts` for CORS env vars\n\nCreate the file with sections:\n```env\n# ===========================================\n# Hospeda API - Environment Variables\n# ===========================================\n# Copy this file to .env and fill in the values\n\n# --- Server ---\nAPI_PORT=3001\nNODE_ENV=development\n\n# --- Database ---\nHOSPEDA_DATABASE_URL=postgresql://user:password@localhost:5432/hospeda\n\n# --- Authentication (Better Auth) ---\nHOSPEDA_BETTER_AUTH_SECRET=your-secret-key-min-32-chars\nHOSPEDA_BETTER_AUTH_URL=http://localhost:3001/api/auth\n\n# --- CORS ---\nAPI_CORS_ORIGINS=http://localhost:4321,http://localhost:3000\n\n# --- Rate Limiting ---\nRATE_LIMIT_WINDOW_MS=60000\nRATE_LIMIT_MAX_REQUESTS=100\nAPI_RATE_LIMIT_TRUST_PROXY=false  # Set to true when behind a reverse proxy (Fly.io)\n\n# --- Redis (required for production) ---\nHOSPEDA_REDIS_URL=redis://localhost:6379\n\n# --- Cron Jobs ---\nCRON_SECRET=your-cron-secret-key\n\n# --- Sentry Error Tracking ---\nSENTRY_DSN=https://your-dsn@sentry.io/project-id\n\n# --- Super Admin ---\nHOSPEDA_SUPER_ADMIN_PASSWORD=  # Optional, random password generated if not set\n```\n\nTest expectations:\n- File exists at `apps/api/.env.example`\n- All env vars from `env.ts` are documented\n- No real credentials are included\n- Comments are in English\n- `.gitignore` already ignores `.env` (verify)",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-018", "T-022"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create .env.example for apps/admin with all required variables",
+            "description": "Create a `.env.example` file in `/home/qazuor/projects/WEBS/hospeda/apps/admin/` documenting all VITE_* and other env vars.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/.env.example`\n\nSteps:\n1. Read `apps/admin/vite.config.ts` lines 44-53 for the AdminEnvSchema validation\n2. Read lines 117-139 for the `hospeda-env-mapping` plugin define section\n3. Check for any other `import.meta.env.VITE_*` usage across `apps/admin/src/`\n\nCreate the file:\n```env\n# ===========================================\n# Hospeda Admin - Environment Variables\n# ===========================================\n# Copy this file to .env and fill in the values\n# In deployment (Vercel), set these in project settings\n\n# --- API Connection ---\nVITE_API_URL=http://localhost:3001\n\n# --- Locale Configuration ---\nVITE_SUPPORTED_LOCALES=en,es\nVITE_DEFAULT_LOCALE=en\n\n# --- Debug (optional) ---\nVITE_DEBUG_ACTOR_ID=  # Optional, for debugging specific user contexts\n\n# --- Monorepo Alternatives (used when running from monorepo root) ---\n# HOSPEDA_API_URL=http://localhost:3001\n# HOSPEDA_SUPPORTED_LOCALES=en,es\n# HOSPEDA_DEFAULT_LOCALE=en\n```\n\nTest expectations:\n- File exists at `apps/admin/.env.example`\n- All VITE_* vars from vite.config.ts are documented\n- Monorepo alternative vars (HOSPEDA_*) are documented as comments",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create .env.example for apps/web with all required variables",
+            "description": "Create a `.env.example` file in `/home/qazuor/projects/WEBS/hospeda/apps/web/` documenting all PUBLIC_* and server-side env vars.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/.env.example`\n\nSteps:\n1. Read `apps/web/astro.config.mjs` lines 30-33 for HOSPEDA_API_URL/PUBLIC_API_URL and HOSPEDA_SITE_URL/PUBLIC_SITE_URL\n2. Read `apps/web/src/env.ts` (if exists) for Zod schema of env vars\n3. Search for `import.meta.env.PUBLIC_*` usage in `apps/web/src/`\n4. Check for server-side env vars used in Astro frontmatter\n\nCreate the file:\n```env\n# ===========================================\n# Hospeda Web - Environment Variables\n# ===========================================\n# Copy this file to .env and fill in the values\n# In deployment (Vercel), set these in project settings\n\n# --- API Connection ---\nPUBLIC_API_URL=http://localhost:3001\n\n# --- Site URL ---\nPUBLIC_SITE_URL=http://localhost:4321\n\n# --- Monorepo Alternatives (used when running from monorepo root) ---\n# HOSPEDA_API_URL=http://localhost:3001\n# HOSPEDA_SITE_URL=http://localhost:4321\n\n# --- Sentry Error Tracking (optional) ---\n# PUBLIC_SENTRY_DSN=https://your-dsn@sentry.io/project-id\n```\n\nTest expectations:\n- File exists at `apps/web/.env.example`\n- All PUBLIC_* vars are documented\n- Sentry DSN placeholder included for T-024",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update turbo.json globalEnv: remove Clerk, add Better Auth",
+            "description": "The turbo.json at `/home/qazuor/projects/WEBS/hospeda/turbo.json` still references Clerk environment variables that no longer exist. Update to reflect Better Auth.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/turbo.json`\n\nCurrent `globalEnv` (lines 5-19):\n```json\n\"globalEnv\": [\n    \"NODE_ENV\",\n    \"CI\",\n    \"HOSPEDA_DATABASE_URL\",\n    \"HOSPEDA_CLERK_SECRET_KEY\",         // REMOVE\n    \"CLERK_SECRET_KEY\",                  // REMOVE\n    \"HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY\", // REMOVE\n    \"HOSPEDA_API_URL\",\n    \"HOSPEDA_SITE_URL\",\n    \"HOSPEDA_CLERK_WEBHOOK_SECRET\",      // REMOVE\n    \"VITE_API_URL\",\n    \"VITE_CLERK_PUBLISHABLE_KEY\",        // REMOVE\n    \"PUBLIC_API_URL\",\n    \"PUBLIC_SITE_URL\",\n    \"PUBLIC_CLERK_PUBLISHABLE_KEY\"       // REMOVE\n]\n```\n\nReplace with:\n```json\n\"globalEnv\": [\n    \"NODE_ENV\",\n    \"CI\",\n    \"HOSPEDA_DATABASE_URL\",\n    \"HOSPEDA_BETTER_AUTH_SECRET\",\n    \"HOSPEDA_BETTER_AUTH_URL\",\n    \"HOSPEDA_API_URL\",\n    \"HOSPEDA_SITE_URL\",\n    \"HOSPEDA_REDIS_URL\",\n    \"VITE_API_URL\",\n    \"PUBLIC_API_URL\",\n    \"PUBLIC_SITE_URL\",\n    \"SENTRY_DSN\"\n]\n```\n\nTest expectations:\n- No Clerk-related strings appear in turbo.json\n- `pnpm build` from monorepo root succeeds\n- Cache invalidation works correctly (clean build after change)",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Fix turbo.json outputs for admin build (.tanstack/start/build/**)",
+            "description": "The turbo.json build task has `outputs: [\"dist/**\"]` which does not match the actual admin build output directory. TanStack Start outputs to `.tanstack/start/build/` or `.output/`, not `dist/`.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/turbo.json`\n\nSteps:\n1. Check the actual build output directory by running `pnpm --filter admin build` (if it works, or inspect TanStack Start docs)\n2. Check if TanStack Start outputs to `.tanstack/start/build/**`, `.output/**`, or another directory\n3. Update the `build` task `outputs` to include both patterns:\n```json\n\"build\": {\n    \"dependsOn\": [\"^build\"],\n    \"inputs\": [\"$TURBO_DEFAULT$\", \".env*\"],\n    \"outputs\": [\"dist/**\", \".tanstack/start/build/**\", \".output/**\"]\n}\n```\n4. Alternatively, add an admin-specific build task override if turbo.json supports per-package overrides\n\nTest expectations:\n- After building admin, the turbo cache captures the correct output\n- Subsequent `pnpm build` correctly uses cache when no sources changed\n- Other apps' `dist/**` output pattern still works",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update CI workflow: remove Clerk references, add Better Auth",
+            "description": "The CI workflow at `/home/qazuor/projects/WEBS/hospeda/.github/workflows/ci.yml` still references Clerk environment variables and secrets (lines 22-37).\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/.github/workflows/ci.yml`\n\nChanges to `env:` section (lines 17-42):\n1. Remove: `HOSPEDA_CLERK_SECRET_KEY`, `CLERK_SECRET_KEY`, `HOSPEDA_PUBLIC_CLERK_PUBLISHABLE_KEY`, `HOSPEDA_CLERK_WEBHOOK_SECRET`, `VITE_CLERK_PUBLISHABLE_KEY`, `PUBLIC_CLERK_PUBLISHABLE_KEY`\n2. Add: `HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}`, `HOSPEDA_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_BETTER_AUTH_URL }}`\n3. Remove all Spanish comments (line 35: `# Admin app (Vite format) - Reutiliza los mismos secrets`, line 39: `# Web app (Astro PUBLIC_ format) - Reutiliza los mismos secrets`) and replace with English equivalents\n4. Keep: `HOSPEDA_DATABASE_URL`, `HOSPEDA_API_URL`, `HOSPEDA_SITE_URL`, `VITE_API_URL`, `PUBLIC_API_URL`, `PUBLIC_SITE_URL`\n\nUpdated env section:\n```yaml\nenv:\n  HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}\n  HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}\n  HOSPEDA_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_BETTER_AUTH_URL }}\n  HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}\n  HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}\n  # Admin app (Vite format)\n  VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}\n  # Web app (Astro PUBLIC_ format)\n  PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}\n  PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}\n```\n\nTest expectations:\n- No Clerk references remain in ci.yml\n- CI workflow can be triggered and complete (assuming secrets are set in GitHub)\n- All comments are in English",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-018"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Update .github/SECRETS.md with current secret names",
+            "description": "Update the secrets documentation at `/home/qazuor/projects/WEBS/hospeda/.github/SECRETS.md` to reflect the current Better Auth secrets and remove all Clerk references.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/.github/SECRETS.md`\n\nSteps:\n1. Read current SECRETS.md content\n2. Remove all Clerk-related secret entries\n3. Add/update the following secrets:\n   - `HOSPEDA_DATABASE_URL` - PostgreSQL connection string for CI/staging\n   - `HOSPEDA_BETTER_AUTH_SECRET` - Better Auth JWT signing secret (min 32 chars)\n   - `HOSPEDA_BETTER_AUTH_URL` - Better Auth base URL (e.g., https://api.hospeda.com/api/auth)\n   - `HOSPEDA_API_URL` - Production API URL\n   - `HOSPEDA_SITE_URL` - Production site URL\n   - `SENTRY_DSN` - Sentry error tracking DSN\n   - `FLY_API_TOKEN` - Fly.io deployment token (for CD workflows)\n   - `VERCEL_TOKEN` - Vercel deployment token (for CD workflows)\n   - `HOSPEDA_REDIS_URL` - Redis connection URL (production)\n   - `CRON_SECRET` - Cron job authentication secret\n4. Ensure all entries have descriptions explaining purpose and format\n5. Ensure all text is in English\n\nTest expectations:\n- No Clerk references remain\n- All secrets referenced in ci.yml and CD workflows are documented\n- Each secret has a description",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Fix prerender + request.headers conflict in web alojamientos tipo page",
+            "description": "The page at `/home/qazuor/projects/WEBS/hospeda/apps/web/src/pages/[lang]/alojamientos/tipo/[type]/index.astro` may combine `export const prerender = true` with `Astro.request.headers` access, which is invalid (static pages cannot access request-time headers).\n\nFile to check/modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/pages/[lang]/alojamientos/tipo/[type]/index.astro`\n\nSteps:\n1. Read the file and check if `export const prerender = true` is present\n2. If prerender is true, search for any `Astro.request.headers` or `Astro.request` usage\n3. Fix by one of:\n   a. Remove `export const prerender = true` (page becomes SSR, always fresh)\n   b. Remove the `Astro.request.headers` usage and use a different approach (e.g., pass data via props or use client-side detection)\n4. The recommended fix depends on whether the page needs request headers (e.g., for Accept-Language). If it only uses the `[lang]` URL param, just remove the headers access.\n\nTest expectations:\n- `pnpm --filter web build` completes without warnings about this page\n- The page renders correctly when visited at e.g., `/es/alojamientos/tipo/hotel/`\n- No Astro build warnings about prerender + request conflict",
+            "phase": "phase-2-environment-configuration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Review and update Dockerfile.api multi-stage build",
+            "description": "Review the existing Dockerfile at `/home/qazuor/projects/WEBS/hospeda/Dockerfile.api` and ensure it uses `package.prod.json` correctly with the updated dependencies from T-004.\n\nFile to review/modify:\n- `/home/qazuor/projects/WEBS/hospeda/Dockerfile.api`\n\nSteps:\n1. Read the current Dockerfile.api\n2. Verify it uses a multi-stage build pattern (build stage + runtime stage)\n3. Verify the runtime stage copies `package.prod.json` as `package.json` and runs `npm install --production`\n4. Verify the runtime stage copies the built `dist/` from the build stage\n5. Verify the `CMD` or `ENTRYPOINT` matches `node dist/index.js`\n6. Verify the Node.js version is >= 18 (use `node:20-slim` or `node:20-alpine`)\n7. Verify there is a `.dockerignore` that excludes `node_modules`, `.env`, test files\n8. If the Dockerfile is outdated (references Clerk, wrong ports), update it\n\nTest expectations:\n- `docker build -f Dockerfile.api -t hospeda-api .` succeeds\n- The resulting image starts the API server\n- The image does not contain devDependencies or source code (only dist/)",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-004"],
+            "blocks": ["T-018"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create cd-staging.yml GitHub Actions workflow for Fly.io",
+            "description": "Create a GitHub Actions workflow for deploying to a staging environment when code is pushed to a staging branch.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/.github/workflows/cd-staging.yml`\n\nWorkflow specification:\n```yaml\nname: CD - Staging\n\non:\n  push:\n    branches:\n      - staging\n      - develop\n\njobs:\n  deploy-api-staging:\n    name: Deploy API to Fly.io (Staging)\n    runs-on: ubuntu-latest\n    environment: staging\n    steps:\n      - uses: actions/checkout@v4\n      - uses: pnpm/action-setup@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - run: pnpm install --frozen-lockfile\n      - run: pnpm build\n      - run: pnpm test\n      - uses: superfly/flyctl-actions/setup-flyctl@master\n      - run: flyctl deploy --config apps/api/fly.toml --remote-only\n        env:\n          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN_STAGING }}\n```\n\nInclude:\n- pnpm cache setup (copy pattern from ci.yml)\n- Build, typecheck, and test steps before deploy\n- Fly.io deploy using `superfly/flyctl-actions`\n- Environment protection rules documented as comments\n- Fail loudly with descriptive messages if FLY_API_TOKEN is not set\n\nTest expectations:\n- Workflow file is valid YAML\n- Workflow triggers on staging/develop branches\n- Deploy step requires `FLY_API_TOKEN_STAGING` secret",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-007", "T-009", "T-014"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create cd-production.yml GitHub Actions workflow for Fly.io",
+            "description": "Create a GitHub Actions workflow for deploying the API to production on Fly.io when code is merged to main.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/.github/workflows/cd-production.yml`\n\nWorkflow specification:\n- Trigger: push to `main` branch\n- Environment: `production` (with manual approval step via GitHub environment protection rules)\n- Steps: checkout, setup pnpm, install, build, test, deploy to Fly.io\n- Use `superfly/flyctl-actions/setup-flyctl@master`\n- Deploy command: `flyctl deploy --config apps/api/fly.toml --remote-only`\n- Required secret: `FLY_API_TOKEN`\n- Add a `concurrency` group to prevent simultaneous production deploys\n- Add descriptive error messages if required secrets are missing\n- Document that GitHub environment `production` should have a required reviewer\n\nTest expectations:\n- Workflow file is valid YAML\n- Workflow triggers only on main branch\n- Has `concurrency` group to prevent parallel deploys\n- Uses `environment: production` for approval gates",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-007", "T-009", "T-014"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Create Vercel deployment workflow for web app",
+            "description": "Create a GitHub Actions workflow (or document the Vercel Git integration) for deploying the web app to Vercel.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/.github/workflows/cd-web.yml` (if using GitHub Actions)\n- OR document the Vercel Git integration approach in a deployment doc\n\nIf using GitHub Actions:\n- Trigger: push to main branch (with path filter for `apps/web/**` and `packages/**`)\n- Use `amondnet/vercel-action@v25` or Vercel CLI\n- Required secrets: `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`\n- Set env vars: `PUBLIC_API_URL`, `PUBLIC_SITE_URL`\n\nIf using Vercel Git integration:\n- Document the root directory setting (`apps/web`)\n- Document the build command override (`cd ../.. && pnpm install && pnpm --filter web build`)\n- Document the required env vars to set in Vercel project settings\n\nTest expectations:\n- Deployment approach is documented\n- Required secrets/env vars are listed\n- Build command works in the deployment context",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create Vercel deployment workflow for admin app",
+            "description": "Create a GitHub Actions workflow (or document the Vercel Git integration) for deploying the admin app to Vercel.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/.github/workflows/cd-admin.yml` (if using GitHub Actions)\n- OR document the Vercel Git integration approach\n\nSame pattern as T-020 but for the admin app:\n- Root directory: `apps/admin`\n- Required env vars: `VITE_API_URL`\n- Build output: `.tanstack/start/build/` or `.output/`\n- Note: depends on T-002/T-003 (admin build must work first)\n\nTest expectations:\n- Deployment approach is documented\n- Required secrets/env vars are listed\n- Admin build output directory is correctly configured",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Document production CORS configuration requirements",
+            "description": "Document the CORS configuration required for the API to accept cross-origin requests from the production web and admin apps.\n\nSteps:\n1. Read `apps/api/src/middlewares/cors.ts` or wherever CORS is configured\n2. Verify the `API_CORS_ORIGINS` env var is read and used\n3. Ensure `apps/api/.env.example` (from T-009) documents CORS origins clearly\n4. Add documentation to the API's .env.example explaining:\n   - `API_CORS_ORIGINS` must list all production domains (comma-separated)\n   - Example: `API_CORS_ORIGINS=https://hospeda.com,https://admin.hospeda.com`\n   - `API_RATE_LIMIT_TRUST_PROXY=true` must be set when behind Fly.io proxy\n5. If CORS config is hardcoded, refactor to read from env var\n\nRelevant files:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/middlewares/` (search for cors)\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/utils/env.ts`\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/.env.example` (from T-009)\n\nTest expectations:\n- CORS origins are configurable via env var (not hardcoded)\n- .env.example documents the CORS configuration\n- Trust proxy setting is documented",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add production remote image patterns to astro.config.mjs",
+            "description": "The web app's `astro.config.mjs` at `/home/qazuor/projects/WEBS/hospeda/apps/web/astro.config.mjs` only allows images from `localhost` and `*.fly.dev` (line 47). Production images may come from a CDN or other domains.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/astro.config.mjs`\n\nCurrent (line 46-47):\n```js\nimage: {\n    remotePatterns: [{ hostname: 'localhost' }, { hostname: '*.fly.dev' }]\n}\n```\n\nUpdate to include production domains:\n```js\nimage: {\n    remotePatterns: [\n        { hostname: 'localhost' },\n        { hostname: '*.fly.dev' },\n        { hostname: '*.hospeda.com' },\n        { hostname: '*.cloudinary.com' },  // If using Cloudinary for media\n        { hostname: '*.amazonaws.com' },    // If using S3 for media\n    ]\n}\n```\n\nNote: Check the actual production image URLs by looking at seed data or accommodation image URLs in the database models to determine which domains are needed.\n\nTest expectations:\n- `remotePatterns` includes at least the production API domain and any CDN domains\n- `pnpm --filter web build` succeeds\n- No \"Remote Image Not Allowed\" errors when loading images in production",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Configure @sentry/astro for web app error tracking",
+            "description": "Install and configure `@sentry/astro` in the web app so that SSR errors are captured in Sentry.\n\nFiles to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/package.json` - add `@sentry/astro` to dependencies\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/astro.config.mjs` - add Sentry integration\n\nSteps:\n1. Check if `@sentry/astro` is already installed: `grep sentry apps/web/package.json`\n2. If not installed, add it: `pnpm --filter web add @sentry/astro`\n3. Add Sentry integration to astro.config.mjs:\n```js\nimport sentry from '@sentry/astro';\n\nintegrations: [\n    react(),\n    sentry({\n        dsn: process.env.PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN,\n        tracesSampleRate: 0.1,  // Low sample rate to minimize performance impact\n        replaysSessionSampleRate: 0,\n        replaysOnErrorSampleRate: 0,\n    }),\n    sitemap({ ... }),\n]\n```\n4. The Sentry integration should be added BEFORE sitemap in the integrations array\n5. Verify `PUBLIC_SENTRY_DSN` is documented in `apps/web/.env.example` (from T-011)\n6. Measure build time before and after to ensure no regression >20%\n\nTest expectations:\n- `@sentry/astro` is in dependencies (not devDependencies)\n- Sentry integration is configured in astro.config.mjs\n- `pnpm --filter web build` succeeds\n- Build time regression is less than 20%",
+            "phase": "phase-3-cicd-deployment",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Fix @repo/config vitest configuration (minThreads/maxThreads conflict)",
+            "description": "The vitest configuration in `@repo/config` has a `minThreads`/`maxThreads` conflict that causes `pnpm test` to fail with a configuration error.\n\nFile to check/modify:\n- `/home/qazuor/projects/WEBS/hospeda/packages/config/vitest.config.ts`\n\nSteps:\n1. Read the vitest config and find the `minThreads`/`maxThreads` settings\n2. In Vitest 3.x, the thread pool configuration changed. The correct options are:\n   - `pool: 'threads'` (or `'forks'`)\n   - `poolOptions.threads.minThreads` and `poolOptions.threads.maxThreads`\n   - The old top-level `minThreads`/`maxThreads` may be deprecated\n3. Fix the configuration to use the correct Vitest 3.x format\n4. If the config exports a shared base config used by other packages, verify the fix applies everywhere\n5. Run `pnpm --filter @repo/config test` to verify the fix\n\nTest expectations:\n- `pnpm test` in `packages/config` runs without configuration errors\n- The thread pool configuration is valid for Vitest 3.x\n- No `minThreads`/`maxThreads` conflict error appears",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-026", "T-051"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Unify vitest version across monorepo to 3.2.4",
+            "description": "Ensure all packages in the monorepo use the same major version of Vitest (3.x, specifically 3.2.4) to prevent version mismatch issues.\n\nSteps:\n1. Run `grep -r '\"vitest\"' packages/*/package.json apps/*/package.json --include=package.json` to find all vitest version declarations\n2. Update any packages still on Vitest 2.x or mismatched 3.x versions to `^3.2.4`\n3. Run `pnpm install` to update the lockfile\n4. Run `pnpm test` from the monorepo root to verify all test suites pass with the unified version\n5. If any tests fail due to Vitest 3.x behavioral changes, fix them\n\nRelevant files:\n- All `package.json` files in `packages/` and `apps/`\n- `pnpm-workspace.yaml` (for workspace config)\n\nTest expectations:\n- All packages use vitest `^3.2.4` or compatible\n- `pnpm test` passes across all packages\n- No version mismatch warnings during test runs",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-025"],
+            "blocks": ["T-051"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Fix typecheck error in @repo/schemas (null check in postSponsor test)",
+            "description": "There is a TypeScript error in the schemas package test file where `result.logo` is used without a null check, causing `pnpm typecheck` to fail.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/packages/schemas/test/entities/postSponsor/postSponsor.schema.test.ts` (around line 266)\n\nSteps:\n1. Read the test file and find the line where `result.logo` is accessed\n2. The error is: `'result.logo' is possibly 'null'`\n3. Add a null check before accessing `result.logo`, e.g.:\n   ```ts\n   expect(result.logo).not.toBeNull();\n   if (result.logo) {\n       // existing assertions on result.logo properties\n   }\n   ```\n   OR use non-null assertion if the test is specifically testing non-null scenarios:\n   ```ts\n   expect(result.logo).toBeDefined();\n   const logo = result.logo!;\n   // use logo instead of result.logo\n   ```\n4. Run `pnpm --filter @repo/schemas typecheck` to verify the fix\n5. Run `pnpm --filter @repo/schemas test` to verify the test still passes\n\nTest expectations:\n- `pnpm --filter @repo/schemas typecheck` passes with zero errors\n- The test still passes and tests the same behavior\n- No `as any` is used to fix the error",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-052"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Move route examples from apps/api/src/routes/examples/ to docs/",
+            "description": "The directory `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/examples/` contains example route files (`improved-crud-example.ts`, `simple-route-example.ts`) that should not be in the production source tree.\n\nFiles to move:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/examples/improved-crud-example.ts`\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/examples/simple-route-example.ts`\n\nTarget location:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/docs/examples/`\n\nSteps:\n1. Check if any file imports from `routes/examples/`: `grep -r 'routes/examples' apps/api/src/`\n2. Check if the examples are registered in any route index: `grep -r 'examples' apps/api/src/routes/index.ts`\n3. Create `apps/api/docs/examples/` directory\n4. Move the files: `git mv apps/api/src/routes/examples/ apps/api/docs/examples/`\n5. If any imports reference these files, update or remove those imports\n6. Run `pnpm --filter api typecheck` to verify no broken imports\n7. Run `pnpm --filter api test` to verify no test references the example routes\n\nTest expectations:\n- `apps/api/src/routes/examples/` directory no longer exists\n- Files are preserved in `apps/api/docs/examples/`\n- No broken imports anywhere in the codebase\n- All API tests pass",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add userCache.destroy() to graceful shutdown handler",
+            "description": "The graceful shutdown handler in `/home/qazuor/projects/WEBS/hospeda/apps/api/src/index.ts` (lines 69-97) does not call `userCache.destroy()` before exiting. The `userCache` has a `destroy()` method (confirmed in `apps/api/src/utils/user-cache.ts` line 74) that clears the cache and stops the stats interval.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/index.ts`\n\nIn the `gracefulShutdown` function (line 69), add `userCache.destroy()` before closing the database:\n```ts\nimport { userCache } from './utils/user-cache';\n\nconst gracefulShutdown = async (signal: string) => {\n    apiLogger.info(`Received ${signal}, shutting down gracefully...`);\n    try {\n        // Destroy user cache (clear entries and stop stats interval)\n        userCache.destroy();\n\n        // Flush Sentry events\n        await closeSentry(2000);\n\n        // Close database connection\n        await closeDatabase();\n        // ... rest of shutdown\n    }\n};\n```\n\nTest expectations:\n- `userCache` is imported in index.ts\n- `userCache.destroy()` is called in the graceful shutdown handler\n- No memory leak from dangling interval after shutdown\n- Existing tests still pass",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-030"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Implement proper uncaughtException handling (crash-and-restart)",
+            "description": "The current `uncaughtException` handler in `/home/qazuor/projects/WEBS/hospeda/apps/api/src/index.ts` (lines 127-142) logs the error but does NOT exit the process. After an uncaught exception, the process state may be corrupted. The proper behavior is to log, flush Sentry, destroy cache, and exit with a non-zero code so Fly.io restarts the process.\n\nFile to modify:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/index.ts`\n\nReplace the uncaughtException handler (lines 127-142):\n```ts\nprocess.on('uncaughtException', (error) => {\n    apiLogger.error(\n        `UNCAUGHT EXCEPTION - Process will exit: ${error.message}`,\n        error.stack || ''\n    );\n\n    // Attempt to flush Sentry and clean up, then exit\n    Promise.resolve()\n        .then(async () => {\n            try {\n                userCache.destroy();\n                const { Sentry } = await import('./lib/sentry');\n                if (Sentry.isEnabled()) {\n                    Sentry.captureException(error);\n                    await Sentry.flush(2000);\n                }\n            } catch (_cleanupError) {\n                // Ignore cleanup errors during crash\n            }\n        })\n        .finally(() => {\n            process.exit(1);\n        });\n\n    // Force exit after 5 seconds if cleanup hangs\n    setTimeout(() => {\n        process.exit(1);\n    }, 5000).unref();\n});\n```\n\nAlso update the comment block (lines 114-122) to reflect the new behavior:\n```ts\n/**\n * Global error handlers\n *\n * uncaughtException: Process state may be corrupted. Log the error,\n * flush Sentry, and exit. Fly.io will restart the process.\n *\n * unhandledRejection: Less severe, logged but process continues.\n */\n```\n\nTest expectations:\n- After an uncaught exception, the process exits with code 1\n- `userCache.destroy()` is called before exit\n- Sentry captures the exception before exit\n- Exit happens within 5 seconds even if cleanup hangs\n- `unhandledRejection` handler is NOT changed (process continues)",
+            "phase": "phase-4-code-quality-immediate",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Decompose base.crud.service.ts: extract CrudReadMixin (read methods)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/packages/service-core/src/base/base.crud.service.ts` is 1283 lines. Extract all read-related methods into a separate mixin or module.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/packages/service-core/src/base/base.crud.service.ts` (1283 lines)\n\nSteps:\n1. Read the file and identify all read methods (findAll, findById, findBySlug, findOne, count, etc.)\n2. Create a new file: `packages/service-core/src/base/crud-read.mixin.ts`\n3. Extract all read methods into the new file as a mixin class or standalone functions\n4. Import the read mixin in base.crud.service.ts and compose it\n5. Create a barrel re-export in `packages/service-core/src/base/index.ts` (if it exists) so existing imports don't break\n6. Run `pnpm --filter @repo/service-core typecheck` to verify\n7. Run `pnpm --filter @repo/service-core test` to verify all tests pass\n8. Verify that no file in the monorepo that imports from `@repo/service-core` breaks\n\nTarget: `base.crud.service.ts` should be reduced by ~300-400 lines. The new `crud-read.mixin.ts` should be <= 500 lines.\n\nTest expectations:\n- All existing service-core tests pass without modification\n- `pnpm typecheck` passes across the monorepo\n- Both files are <= 500 lines\n- Public API of BaseCrudService is unchanged",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-032"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Decompose base.crud.service.ts: extract CrudWriteMixin (write methods)",
+            "description": "Continue decomposing `base.crud.service.ts` by extracting all write/mutation methods.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/packages/service-core/src/base/base.crud.service.ts`\n\nSteps:\n1. Identify all write methods (create, update, patch, delete, softDelete, hardDelete, restore, batchDelete, etc.)\n2. Create: `packages/service-core/src/base/crud-write.mixin.ts`\n3. Extract write methods into the new file\n4. Import and compose in base.crud.service.ts\n5. Ensure barrel re-exports still work\n6. Run `pnpm --filter @repo/service-core typecheck && pnpm --filter @repo/service-core test`\n\nTarget: `base.crud.service.ts` reduced to <= 500 lines (should mostly be the class definition, constructor, shared utilities, and composition of read + write mixins).\n\nTest expectations:\n- All existing tests pass without modification\n- `pnpm typecheck` passes\n- Each file is <= 500 lines\n- Public API unchanged",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-031"],
+            "blocks": ["T-033"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Decompose base.crud.service.ts: extract CrudPermissionMixin (permission logic)",
+            "description": "Extract permission-checking logic from `base.crud.service.ts` into a dedicated mixin.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/packages/service-core/src/base/base.crud.service.ts`\n\nSteps:\n1. Identify all permission-related methods (checkPermission, requirePermission, hasPermission, etc.)\n2. Create: `packages/service-core/src/base/crud-permission.mixin.ts`\n3. Extract permission methods into the new file\n4. Import and compose in base.crud.service.ts\n5. Run `pnpm --filter @repo/service-core typecheck && pnpm --filter @repo/service-core test`\n6. Verify `base.crud.service.ts` is now <= 500 lines total\n\nTest expectations:\n- All existing tests pass\n- `base.crud.service.ts` is <= 500 lines\n- All extracted files are <= 500 lines\n- No breaking changes to public API",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-032"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Refactor billing/subscriptions.tsx admin page (extract components)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/admin/src/routes/_authed/billing/subscriptions.tsx` is 1288 lines. Extract inline components into separate files.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/src/routes/_authed/billing/subscriptions.tsx` (1288 lines)\n\nSteps:\n1. Read the file and identify distinct UI sections (filter bar, table columns, detail dialog, action buttons, etc.)\n2. Create component files in a new directory: `apps/admin/src/features/billing/components/subscriptions/`\n3. Extract each section into its own component file (e.g., `SubscriptionFilters.tsx`, `SubscriptionColumns.tsx`, `SubscriptionDetailDialog.tsx`)\n4. Keep the route file (`subscriptions.tsx`) as a thin composition of these components\n5. Run `pnpm --filter admin typecheck` to verify\n6. Run `pnpm --filter admin test` to verify\n\nTarget: Route file should be <= 200 lines. Each extracted component <= 500 lines.\n\nTest expectations:\n- All existing admin tests pass\n- The billing subscriptions page renders correctly\n- `subscriptions.tsx` is <= 500 lines\n- Each extracted component is <= 500 lines",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Refactor billing/payments.tsx admin page (extract components)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/admin/src/routes/_authed/billing/payments.tsx` is 893 lines. Extract inline components.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/admin/src/routes/_authed/billing/payments.tsx` (893 lines)\n\nSteps:\n1. Read the file and identify distinct UI sections\n2. Create component files in: `apps/admin/src/features/billing/components/payments/`\n3. Extract sections into separate component files\n4. Keep the route file as a thin composition\n5. Run `pnpm --filter admin typecheck && pnpm --filter admin test`\n\nTarget: Route file <= 200 lines. Each component <= 500 lines.\n\nTest expectations:\n- All existing admin tests pass\n- `payments.tsx` is <= 500 lines\n- Each extracted component <= 500 lines",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Refactor addon.service.ts in apps/api (extract sub-services)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/api/src/services/addon.service.ts` is 1179 lines. Extract logical sub-services.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/services/addon.service.ts` (1179 lines)\n\nSteps:\n1. Read the file and identify logical groups (CRUD operations, entitlement logic, validation, etc.)\n2. Create sub-service files in: `apps/api/src/services/addon/`\n3. Extract groups into separate files (e.g., `addon-crud.service.ts`, `addon-validation.service.ts`)\n4. Create a barrel `apps/api/src/services/addon/index.ts` that re-exports the main AddonService\n5. Update all imports of `addon.service.ts` throughout the codebase\n6. Run `pnpm --filter api typecheck && pnpm --filter api test`\n\nTarget: Each resulting file <= 500 lines.\n\nTest expectations:\n- All existing API tests pass\n- No import paths break\n- Each file <= 500 lines",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Refactor promo-code.service.ts in apps/api (extract sub-services)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/api/src/services/promo-code.service.ts` is 1104 lines. Extract logical sub-services.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/services/promo-code.service.ts` (1104 lines)\n\nSteps:\n1. Read the file and identify logical groups (CRUD, validation, redemption logic, expiration logic)\n2. Create sub-service files in: `apps/api/src/services/promo-code/`\n3. Extract groups into separate files\n4. Create barrel re-export\n5. Update all imports\n6. Run `pnpm --filter api typecheck && pnpm --filter api test`\n\nTarget: Each file <= 500 lines.\n\nTest expectations:\n- All existing tests pass\n- No import paths break\n- Each file <= 500 lines",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Refactor mercadopago webhooks route (extract handlers)",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/webhooks/mercadopago.ts` is 1111 lines. Extract webhook event handlers into separate files.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/routes/webhooks/mercadopago.ts` (1111 lines)\n\nSteps:\n1. Read the file and identify individual webhook event handlers (payment.created, payment.updated, subscription.*, etc.)\n2. Create handler files in: `apps/api/src/routes/webhooks/mercadopago/`\n3. Extract each handler group into its own file (e.g., `payment-handlers.ts`, `subscription-handlers.ts`)\n4. Keep the main route file as a thin dispatcher that routes events to handlers\n5. Create barrel re-export\n6. Run `pnpm --filter api typecheck && pnpm --filter api test`\n\nTarget: Each file <= 500 lines.\n\nTest expectations:\n- All existing webhook tests pass\n- Route still handles all webhook events\n- Each file <= 500 lines",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Decompose apps/api/test/setup.ts into focused modules",
+            "description": "The file `/home/qazuor/projects/WEBS/hospeda/apps/api/test/setup.ts` is 3954 lines. Break it into focused test setup modules.\n\nFile to decompose:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/test/setup.ts` (3954 lines)\n\nSteps:\n1. Read the file and identify logical sections (mock factories, database helpers, auth helpers, fixture data, etc.)\n2. Create focused modules in `apps/api/test/helpers/` or `apps/api/test/setup/`:\n   - `test/setup/database.ts` - DB connection and transaction helpers\n   - `test/setup/auth.ts` - Mock auth and actor factories\n   - `test/setup/fixtures.ts` - Test data fixtures\n   - `test/setup/mocks.ts` - Service and module mocks\n   - `test/setup/factories.ts` - Entity factory functions\n   - `test/setup/index.ts` - Re-exports from all setup modules\n3. Update `apps/api/vitest.config.ts` setupFiles to point to the new entry\n4. Update all test files that import from `../setup` to import from the new paths (or use barrel re-export)\n5. Run `pnpm --filter api test` to verify all tests pass\n\nTarget: Each setup module <= 500 lines. The main setup entry file should be <= 100 lines (just imports and re-exports).\n\nTest expectations:\n- All 3954 lines are distributed across modules\n- Each module <= 500 lines\n- All existing API tests pass without modification (if using barrel re-export)\n- `pnpm --filter api test` passes",
+            "phase": "phase-5-code-quality-decomposition",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Replace console.log with @repo/logger in apps/api (5 occurrences)",
+            "description": "There are 5 `console.log` calls in `apps/api/src/` production code that should use `@repo/logger` instead.\n\nSteps:\n1. Run `grep -rn 'console\\.log' apps/api/src/ --include='*.ts'` to find all occurrences (excluding test files)\n2. For each occurrence:\n   a. Determine the appropriate log level (info, warn, debug, error)\n   b. Import the API logger: `import { apiLogger } from '../utils/logger'` (or appropriate relative path)\n   c. Replace `console.log(...)` with `apiLogger.info(...)` or appropriate level\n   d. Structure the log message with context object if applicable\n3. Run `pnpm --filter api typecheck && pnpm --filter api test`\n4. Verify zero `console.log` calls remain: `grep -rn 'console\\.log' apps/api/src/ --include='*.ts' | grep -v test | wc -l` should be 0\n\nRelevant files:\n- All `.ts` files in `/home/qazuor/projects/WEBS/hospeda/apps/api/src/` (5 occurrences across 5 files)\n\nTest expectations:\n- Zero `console.log` in `apps/api/src/` (excluding test files)\n- All tests pass\n- Log output goes through structured logger",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Replace console.log with @repo/logger in apps/admin (13 occurrences)",
+            "description": "There are 13 `console.log` calls in `apps/admin/src/` that should use a structured logger instead.\n\nSteps:\n1. Run `grep -rn 'console\\.log' apps/admin/src/ --include='*.ts' --include='*.tsx'` to find all occurrences\n2. Check if `apps/admin` already has a logger utility (check `apps/admin/src/utils/logger.ts`)\n3. If no logger exists, create one that wraps `@repo/logger` or uses a simple structured format suitable for client-side\n4. For each occurrence, replace with the appropriate logger call\n5. Note: Some `console.log` in client-side React code may need a browser-compatible logger, not Node.js logger. Consider using `console.info`/`console.warn` with structured format instead.\n6. Run `pnpm --filter admin typecheck && pnpm --filter admin test`\n\nRelevant files:\n- All `.ts` and `.tsx` files in `/home/qazuor/projects/WEBS/hospeda/apps/admin/src/` (13 occurrences)\n\nTest expectations:\n- Zero `console.log` in `apps/admin/src/` (excluding test files)\n- All tests pass\n- Replacement uses appropriate logger for client/server context",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Replace console.log with @repo/logger in apps/web (9 occurrences)",
+            "description": "There are 9 `console.log` calls in `apps/web/src/` that should use structured logging.\n\nSteps:\n1. Run `grep -rn 'console\\.log' apps/web/src/ --include='*.ts' --include='*.tsx' --include='*.astro'` to find all occurrences\n2. For Astro server-side code (frontmatter), use `@repo/logger`\n3. For React client-side code (`.client.tsx`), use a browser-compatible structured logger\n4. Replace each occurrence with the appropriate structured log call\n5. Run `pnpm --filter web typecheck && pnpm --filter web test`\n\nRelevant files:\n- All source files in `/home/qazuor/projects/WEBS/hospeda/apps/web/src/` (9 occurrences)\n\nTest expectations:\n- Zero `console.log` in `apps/web/src/` (excluding test files)\n- All tests pass\n- Server-side logs use @repo/logger\n- Client-side logs use appropriate structured format",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Fix silent catch blocks in web components (add logging)",
+            "description": "Multiple web components have catch blocks that silently swallow errors. These need to log the error via structured logger and optionally report to Sentry.\n\nFiles to modify (13 catch blocks across these files):\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/content/ContactForm.client.tsx` (line 178)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/ui/ShareButtons.client.tsx` (lines 78, 96)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/ui/FavoriteButton.client.tsx` (line 232)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/newsletter/NewsletterCTA.client.tsx` (line 104)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/account/ProfileEditForm.client.tsx` (line 162)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/account/PreferenceToggles.client.tsx` (lines 127, 177)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/account/UserFavoritesList.client.tsx` (lines 149, 185)\n- `/home/qazuor/projects/WEBS/hospeda/apps/web/src/components/account/UserReviewsList.client.tsx` (lines 167, 215, 255)\n\nFor each catch block:\n1. Change `catch (_error)` to `catch (error)`\n2. Add `console.error('[ComponentName] action failed:', error);` (or structured logger)\n3. If Sentry is configured (after T-024), add `Sentry.captureException(error)` where appropriate\n4. Keep existing error state handling (toast notifications, etc.) if present\n\nExample fix:\n```ts\n// Before\n} catch (_error) {\n    setError('Something went wrong');\n}\n\n// After\n} catch (error) {\n    console.error('[ContactForm] submit failed:', error);\n    setError('Something went wrong');\n}\n```\n\nTest expectations:\n- No more `catch (_error)` that silently discards the error\n- Each catch block logs the error with component context\n- All web tests pass",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T16:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Fix export default violations in non-config files (~25 files)",
+            "description": "Multiple component and route files use `export default` instead of named exports, violating the project coding standard.\n\nFiles to fix in `apps/admin/src/` (14 files):\n- `routes/_authed/sponsors/index.tsx` - `export default SponsorsPageComponent`\n- `routes/_authed/posts/index.tsx` - `export default PostsPageComponent`\n- `routes/_authed/content/accommodation-amenities/index.tsx` - `export default AmenitiesPageComponent`\n- `routes/_authed/content/accommodation-features/index.tsx` - `export default FeaturesPageComponent`\n- `routes/_authed/events/locations/index.tsx` - `export default EventLocationsPageComponent`\n- `routes/_authed/events/index.tsx` - `export default EventsPageComponent`\n- `routes/_authed/events/organizers/index.tsx` - `export default EventOrganizersPageComponent`\n- `routes/_authed/settings/tags/index.tsx` - `export default TagsPageComponent`\n- `routes/_authed/access/users/index.tsx` - `export default UsersPageComponent`\n- `routes/_authed/accommodations/index.tsx` - `export default AccommodationsPageComponent`\n- `routes/_authed/destinations/index.tsx` - `export default DestinationsPageComponent`\n- `integrations/clerk/header-user.tsx` - `export default function HeaderUser()`\n- `components/Header.tsx` - `export default function Header()`\n- `server.ts` - `export default defineHandlerCallback(...)` (MAY need to stay as default if required by TanStack Start)\n\nFiles to fix in `apps/api/src/` (10 files):\n- `routes/billing/addons.ts` - `export default addonsRouter`\n- `routes/billing/settings.ts` - `export default settingsRouter`\n- `routes/billing/plan-change.ts` - `export default planChangeRouter`\n- `routes/billing/trial.ts` - `export default trialRouter`\n- `routes/billing/promo-codes.ts` - `export default promoCodesRouter`\n- `routes/billing/notifications.ts` - `export default notificationsRouter`\n- `routes/billing/metrics.ts` - `export default metricsRouter`\n- `routes/billing/usage.ts` - `export default usageRouter`\n- `cron/routes.ts` - `export default router`\n- `utils/configure-open-api.ts` - `export default function configureOpenAPI()`\n\nFor each file:\n1. Change `export default X` to `export { X }` or `export const X = ...`\n2. Find all imports of this file and update from `import X from '...'` to `import { X } from '...'`\n3. EXCEPTION: Files required by frameworks to use default export (e.g., `server.ts` for TanStack Start) should be skipped\n\nIMPORTANT: TanStack Router route files use `createFileRoute` which requires specific export patterns. Check if the route files use a pattern that requires `export default` before changing.\n\nTest expectations:\n- `pnpm typecheck` passes across the monorepo\n- `pnpm lint` passes (no export default violations flagged by biome)\n- All tests pass\n- Framework-required defaults are preserved with a comment explaining why",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Eliminate as any in apps/api/src production code (28 occurrences)",
+            "description": "There are 28 `as any` occurrences across 9 files in `apps/api/src/` production code. The worst offenders are `zod-error-transformer.ts` (11) and `route-factory.ts` (7).\n\nFiles to fix:\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/utils/zod-error-transformer.ts` (11 occurrences)\n- `/home/qazuor/projects/WEBS/hospeda/apps/api/src/utils/route-factory.ts` (7 occurrences)\n- Other files with remaining 10 occurrences (identify via grep)\n\nFor `zod-error-transformer.ts`:\n1. Read the file and understand each `as any` usage\n2. Replace with proper types: use Zod's built-in types (`ZodError`, `ZodIssue`, `ZodIssueCode`), generics, or type guards\n3. For Zod v4, check if the Zod error types have changed\n\nFor `route-factory.ts`:\n1. Read the file and understand each `as any` usage\n2. Replace with properly typed generics (the route factory uses generic types for request/response schemas)\n3. Use Hono's built-in types (`Context`, `Env`, etc.)\n4. If a type assertion is truly needed, use `as unknown as SpecificType` instead of `as any`\n\nFor each file:\n1. Replace `as any` with the correct type\n2. If the correct type is truly unknown, use `as unknown` instead\n3. Run `pnpm --filter api typecheck` after each file to verify\n\nTest expectations:\n- `grep -rn 'as any' apps/api/src/ --include='*.ts' | grep -v test | wc -l` returns 0\n- `pnpm --filter api typecheck` passes\n- All API tests pass\n- No new `// @ts-ignore` or `// @ts-expect-error` comments added as workarounds",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Increase test coverage in packages/notifications to >=80%",
+            "description": "The `packages/notifications` package needs test coverage increased to >= 80%.\n\nRelevant directory:\n- `/home/qazuor/projects/WEBS/hospeda/packages/notifications/`\n\nSteps:\n1. Run `pnpm --filter @repo/notifications test:coverage` to see current coverage\n2. Identify uncovered files and functions\n3. Write tests for the following critical areas:\n   a. `resend-transport.ts` - Test send success, send failure, and retry scenarios\n   b. `subject-builder.ts` - Test all subject templates for all notification types, both ES and EN locales\n   c. Email template files - Test that each template renders without error and contains expected content\n4. Use the AAA pattern (Arrange, Act, Assert)\n5. Mock external services (Resend API) using vitest mocks\n6. Run `pnpm --filter @repo/notifications test:coverage` and verify >= 80% lines coverage\n\nTest expectations:\n- Coverage >= 80% for `packages/notifications`\n- All new tests pass\n- No external API calls are made during tests (all mocked)\n- Both ES and EN locale templates are tested",
+            "phase": "phase-6-code-quality-cleanup",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-02-28T17:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Document production migration strategy (drizzle-kit migrate vs push)",
+            "description": "Create documentation explaining the production database migration workflow, clearly distinguishing `drizzle-kit push` (development) from `drizzle-kit migrate` (production).\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/docs/migration-runbook.md`\n\nContent should include:\n1. Overview of Drizzle migration commands and when to use each\n2. Development workflow: `pnpm db:fresh-dev` (uses `drizzle-kit push`)\n3. Production workflow:\n   a. Generate migration: `pnpm db:generate` (creates SQL file in `drizzle/` directory)\n   b. Review the generated SQL before applying\n   c. Apply migration: `pnpm db:migrate` (uses `drizzle-kit migrate`)\n   d. NEVER use `drizzle-kit push` in production\n4. Pre-migration checklist (backup, read replicas, maintenance window)\n5. Rollback procedure (manual SQL reversal, restore from backup)\n6. Migration file naming convention (standardize format)\n7. How to handle migration failures\n\nTest expectations:\n- File exists at `docs/migration-runbook.md`\n- Clearly distinguishes push (dev) vs migrate (prod)\n- Includes rollback procedure\n- Written in English",
+            "phase": "phase-7-database-migration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-048"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Create production migration script with backup",
+            "description": "Create a shell script that automates the production migration workflow with safety checks.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/scripts/migrate-production.sh`\n\nScript should:\n1. Accept DATABASE_URL as argument or read from env\n2. Create a pg_dump backup before migration\n3. Run `drizzle-kit migrate` against the target database\n4. Verify migration success by checking the drizzle migration table\n5. Print success/failure summary\n6. On failure, provide instructions for rollback\n\nExample:\n```bash\n#!/usr/bin/env bash\nset -euo pipefail\n\n# Usage: ./scripts/migrate-production.sh [--dry-run]\n\nDATABASE_URL=\"${HOSPEDA_DATABASE_URL:?DATABASE_URL is required}\"\nDRY_RUN=${1:-}\n\necho \"Creating backup...\"\npg_dump \"$DATABASE_URL\" > backup-$(date +%Y%m%d-%H%M%S).sql\n\nif [ \"$DRY_RUN\" = \"--dry-run\" ]; then\n    echo \"Dry run: would execute drizzle-kit migrate\"\n    exit 0\nfi\n\necho \"Running migrations...\"\npnpm drizzle-kit migrate\n\necho \"Migration complete.\"\n```\n\nTest expectations:\n- Script is executable (`chmod +x`)\n- Script fails safely if DATABASE_URL is not set\n- Script creates a backup before migrating\n- `--dry-run` flag shows what would happen without executing",
+            "phase": "phase-7-database-migration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-047"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Standardize migration file naming format",
+            "description": "Review existing migration files in the drizzle migrations directory and ensure consistent naming.\n\nSteps:\n1. List all files in `/home/qazuor/projects/WEBS/hospeda/packages/db/drizzle/` (or wherever migrations live)\n2. Check the current naming convention (timestamp-based? sequential? descriptive?)\n3. If mixed formats exist, document the standard format to use going forward\n4. Update `drizzle.config.ts` if it has migration naming configuration\n5. Add the naming convention to the migration runbook (T-047)\n\nRelevant files:\n- `/home/qazuor/projects/WEBS/hospeda/packages/db/drizzle/` (migration directory)\n- `/home/qazuor/projects/WEBS/hospeda/packages/db/drizzle.config.ts`\n\nTest expectations:\n- Migration naming convention is documented\n- Existing migrations are not renamed (would break migration tracking)\n- New migrations will follow the standardized format",
+            "phase": "phase-7-database-migration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Verify pnpm build succeeds for all apps",
+            "description": "Run a full monorepo build and verify all three apps (api, admin, web) build successfully.\n\nSteps:\n1. Clean all build artifacts: `pnpm clean` or manually remove dist/ directories\n2. Run `pnpm build` from monorepo root\n3. Verify each app built:\n   - `apps/api/dist/index.js` exists\n   - `apps/admin/.tanstack/start/build/` (or equivalent) exists\n   - `apps/web/dist/` exists\n4. Check build output for warnings (especially deprecation warnings or missing module warnings)\n5. Capture total build time for baseline\n\nDependencies: This task validates that T-002 (admin SSR fix), T-012 (turbo.json), T-013 (turbo outputs), and T-016 (web prerender fix) all work together.\n\nTest expectations:\n- `pnpm build` exits with code 0\n- All three apps produce build output\n- No error-level warnings in build output",
+            "phase": "phase-8-verification",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-003", "T-012", "T-013", "T-016"],
+            "blocks": ["T-053"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Verify pnpm test passes across all packages",
+            "description": "Run the full test suite and verify all tests pass across all packages.\n\nSteps:\n1. Run `pnpm test` from the monorepo root\n2. Verify zero test failures across all packages\n3. Run `pnpm test:coverage` and check coverage thresholds\n4. Document any packages below 90% coverage for future work\n\nDependencies: This task validates T-025 (vitest config fix) and T-026 (vitest version unification).\n\nTest expectations:\n- `pnpm test` exits with code 0\n- Zero test failures\n- Coverage reports are generated for all packages with tests",
+            "phase": "phase-8-verification",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-025", "T-026"],
+            "blocks": ["T-053"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Verify pnpm typecheck and lint pass",
+            "description": "Run typecheck and lint across the entire monorepo and verify zero errors.\n\nSteps:\n1. Run `pnpm typecheck` from the monorepo root\n2. Verify zero TypeScript errors across all packages and apps\n3. Run `pnpm lint` from the monorepo root\n4. Verify zero linting errors\n5. If errors exist, document them for the responsible task to fix\n\nDependencies: This task validates T-027 (schemas null check fix).\n\nTest expectations:\n- `pnpm typecheck` exits with code 0\n- `pnpm lint` exits with code 0\n- Zero errors in both commands",
+            "phase": "phase-8-verification",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-027"],
+            "blocks": ["T-053"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Manual deployment verification on staging",
+            "description": "Perform a manual end-to-end deployment verification on staging environment to confirm all deployment infrastructure works.\n\nSteps:\n1. Verify `fly.toml` is correct by running `flyctl deploy --dry-run` (if available) or `flyctl config validate`\n2. Verify the Dockerfile builds successfully: `docker build -f Dockerfile.api -t hospeda-api-staging .`\n3. Verify the Docker image starts: `docker run --rm -p 3001:3001 hospeda-api-staging` (will fail without DB but should show startup logs)\n4. Verify the CI workflow runs on a test PR\n5. Document any issues found and create follow-up tasks\n\nThis is a manual verification step. Not all sub-steps may be automated.\n\nTest expectations:\n- Docker image builds successfully\n- CI workflow template is valid\n- fly.toml validates\n- Any issues are documented",
+            "phase": "phase-8-verification",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-050", "T-051", "T-052"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "note": "Covered by SPEC-025 (Staging Environment Setup)"
+        }
+    ],
+    "summary": {
+        "total": 53,
+        "pending": 53,
+        "inProgress": 0,
+        "completed": 53,
+        "blocked": 0,
+        "averageComplexity": 2.7
+    }
+}

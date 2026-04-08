@@ -1,0 +1,8 @@
+{
+    "specId": "SPEC-041",
+    "title": "Admin Integration Tests",
+    "status": "draft",
+    "complexity": "very-large",
+    "type": "testing",
+    "tags": ["admin", "testing", "integration", "msw", "vitest"]
+}

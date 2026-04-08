@@ -1,0 +1,19 @@
+{
+    "specId": "SPEC-024",
+    "title": "Credential Rotation & Git History Purge",
+    "type": "security",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-03-01T00:00:00.000Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "security",
+        "credentials",
+        "secrets",
+        "git-history",
+        "rotation",
+        "production-readiness"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "specId": "SPEC-038",
+    "title": "Addon Entitlements Architecture Fix",
+    "status": "completed",
+    "complexity": "high",
+    "type": "bugfix",
+    "tags": ["billing", "entitlements", "addon", "critical", "architecture"],
+    "created": "2026-03-08",
+    "updated": "2026-03-10"
+}

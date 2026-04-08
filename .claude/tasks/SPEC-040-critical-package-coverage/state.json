@@ -1,0 +1,944 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-040",
+    "title": "Critical Package Coverage - auth-ui, billing, logger, email",
+    "created": "2026-03-18T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Install @testing-library/user-event in auth-ui",
+            "description": "Run `cd packages/auth-ui && pnpm add -D @testing-library/user-event`. Verify it appears in package.json devDependencies. Run `pnpm install` from root to update lockfile.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013"
+            ],
+            "subtasks": [
+                {
+                    "title": "Install @testing-library/user-event as devDependency",
+                    "completed": false
+                },
+                { "title": "Verify package.json updated", "completed": false },
+                { "title": "Run pnpm install from root", "completed": false }
+            ],
+            "tags": ["auth-ui", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Install @react-email/render in email package",
+            "description": "Run `cd packages/email && pnpm add -D @react-email/render`. Verify it appears in package.json devDependencies. Run `pnpm install` from root to update lockfile.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-029", "T-030", "T-031", "T-032"],
+            "subtasks": [
+                { "title": "Install @react-email/render as devDependency", "completed": false },
+                { "title": "Verify package.json updated", "completed": false },
+                { "title": "Run pnpm install from root", "completed": false }
+            ],
+            "tags": ["email", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Export shouldUseWhiteText and redactSensitiveData from logger formatter",
+            "description": "In `packages/logger/src/formatter.ts`, add `export` keyword to `function redactSensitiveData` (~line 130) and `function shouldUseWhiteText` (~line 239). Then add re-exports in `packages/logger/src/index.ts` if not already re-exported. This is the ONLY source code modification allowed in the entire spec. Verify with `pnpm typecheck` that no type errors are introduced.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Add export to redactSensitiveData in formatter.ts",
+                    "completed": false
+                },
+                { "title": "Add export to shouldUseWhiteText in formatter.ts", "completed": false },
+                { "title": "Add re-exports in index.ts if needed", "completed": false },
+                { "title": "Run pnpm typecheck on logger package", "completed": false }
+            ],
+            "tags": ["logger", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create vitest.config.ts for email package",
+            "description": "Create `packages/email/vitest.config.ts` with environment: 'node', include: ['test/**/*.test.ts', 'test/**/*.test.tsx'], coverage provider v8, thresholds at 90% (lines, functions, branches, statements), include: ['src/**/*.ts', 'src/**/*.tsx'], exclude test files. Use packages/auth-ui/vitest.config.ts as reference. Template is provided in spec section 'packages/email test strategy'.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-029", "T-030", "T-031", "T-032"],
+            "subtasks": [
+                { "title": "Create vitest.config.ts with correct structure", "completed": false },
+                { "title": "Set coverage thresholds to 90%", "completed": false },
+                {
+                    "title": "Verify config is valid by running pnpm vitest --config packages/email/vitest.config.ts --passWithNoTests",
+                    "completed": false
+                }
+            ],
+            "tags": ["email", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Remove basic.test.tsx and write SignInForm render + hydration tests",
+            "description": "Delete `packages/auth-ui/test/basic.test.tsx` (it tests fake components). Create `packages/auth-ui/test/sign-in-form.test.tsx`. Test scenarios: (1) shows skeleton/loading before isClientReady, (2) after hydration renders email + password fields, (3) shows OAuth buttons when showOAuth=true (default), (4) hides OAuth buttons when showOAuth=false. Mock `@repo/i18n` with `vi.mock('@repo/i18n', () => ({ useTranslations: () => (key: string) => key }))`. Use `waitFor` for hydration. Import types from `../src/types`.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Delete basic.test.tsx", "completed": false },
+                {
+                    "title": "Create sign-in-form.test.tsx with imports and mock setup",
+                    "completed": false
+                },
+                { "title": "Test: skeleton before hydration", "completed": false },
+                { "title": "Test: renders email + password after hydration", "completed": false },
+                { "title": "Test: OAuth buttons shown by default", "completed": false },
+                { "title": "Test: OAuth buttons hidden with showOAuth=false", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Write SignInForm submit, error handling, and redirect tests",
+            "description": "Add tests to `packages/auth-ui/test/sign-in-form.test.tsx`. Scenarios: (1) calls signIn.email({email, password}) on submit, (2) shows loading state during submit, (3) shows error when result.error is present, (4) calls onSuccess on successful login, (5) redirects via window.location.replace(redirectTo) on success, (6) does NOT redirect when redirectTo is undefined, (7) does not crash when onSuccess is undefined, (8) handles signIn.email throwing exception gracefully (try/catch path, logs via authLogger). Use userEvent.setup() for form interactions. Mock window.location with `{ replace: vi.fn(), href: '', pathname: '/' }`.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Test: calls signIn.email with correct params", "completed": false },
+                { "title": "Test: loading state during submit", "completed": false },
+                { "title": "Test: shows error message from result.error", "completed": false },
+                { "title": "Test: calls onSuccess callback", "completed": false },
+                { "title": "Test: redirects via window.location.replace", "completed": false },
+                { "title": "Test: no redirect without redirectTo", "completed": false },
+                { "title": "Test: graceful handling of thrown exception", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write SignInForm OAuth tests",
+            "description": "Add tests to `packages/auth-ui/test/sign-in-form.test.tsx`. Scenarios: (1) calls signIn.social({ provider: 'google', callbackURL }) on Google button click, (2) calls signIn.social({ provider: 'facebook', callbackURL }) on Facebook button click, (3) callbackURL is calculated as `redirectTo ?? window.location.pathname ?? '/'`. Verify exact params passed to signIn.social.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Test: Google OAuth calls signIn.social correctly", "completed": false },
+                {
+                    "title": "Test: Facebook OAuth calls signIn.social correctly",
+                    "completed": false
+                },
+                { "title": "Test: callbackURL fallback chain", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Write SignUpForm tests",
+            "description": "Create `packages/auth-ui/test/sign-up-form.test.tsx`. Scenarios: (1) skeleton before hydration, (2) renders name, email, password fields after hydration, (3) calls signUp.email({name, email, password}) on submit, (4) shows error on failure, (5) loading state during submit, (6) OAuth buttons shown/hidden, (7) calls signIn.social for Google/Facebook (uses signIn prop, not signUp), (8) calls onSuccess on success, (9) redirects via window.location.replace(redirectTo), (10) graceful handling of signUp.email exception. Same mock patterns as SignInForm tests. IMPORTANT: SignUpForm needs BOTH signUp AND signIn props.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create sign-up-form.test.tsx with setup", "completed": false },
+                { "title": "Test: hydration guard + field rendering", "completed": false },
+                { "title": "Test: submit calls signUp.email", "completed": false },
+                { "title": "Test: error display + loading state", "completed": false },
+                { "title": "Test: OAuth uses signIn.social (not signUp)", "completed": false },
+                { "title": "Test: onSuccess + redirect + exception handling", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Write ForgotPasswordForm tests",
+            "description": "Create `packages/auth-ui/test/forgot-password-form.test.tsx`. ALL text is hardcoded ENGLISH. Scenarios: (1) renders email field with placeholder 'you@example.com', (2) renders heading 'Reset your password', (3) renders 'Back to sign in' link using signInUrl prop (default '/auth/signin'), (4) calls onForgotPassword({email, redirectTo}) on submit with redirectTo default '/auth/reset-password', (5) shows 'Check your email' + success message on success, (6) shows error from result.error.message, (7) loading state shows 'Sending...' instead of 'Send reset link', (8) validates empty email shows 'Please enter your email address', (9) graceful handling of thrown exception shows 'An unexpected error...' (NO authLogger). No i18n mock needed.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create forgot-password-form.test.tsx", "completed": false },
+                { "title": "Test: render elements + placeholders", "completed": false },
+                { "title": "Test: submit + redirectTo params", "completed": false },
+                { "title": "Test: success state", "completed": false },
+                { "title": "Test: error state + validation", "completed": false },
+                { "title": "Test: loading state + exception handling", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Write ResetPasswordForm tests",
+            "description": "Create `packages/auth-ui/test/reset-password-form.test.tsx`. ALL text hardcoded ENGLISH. Token is a PROP (do NOT mock URLSearchParams). Scenarios: (1) renders heading 'Set new password', (2) renders password fields with placeholders 'At least 8 characters' / 'Repeat your password', (3) validates passwords match ('Passwords do not match'), (4) validates min length ('Password must be at least 8 characters'), (5) no token shows 'Invalid or missing reset token' + no form, (6) calls onResetPassword({newPassword, token}) on submit, (7) success shows 'Password reset successful' + message + 'Sign in' link, (8) error from result.error.message, (9) loading 'Resetting...' instead of 'Reset password', (10) calls onSuccess, (11) signInUrl prop renders link, (12) exception handling shows 'An unexpected error...' (NO authLogger).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create reset-password-form.test.tsx", "completed": false },
+                { "title": "Test: render + placeholders", "completed": false },
+                { "title": "Test: password validation (match + length)", "completed": false },
+                { "title": "Test: no token error state", "completed": false },
+                { "title": "Test: submit + success + error states", "completed": false },
+                { "title": "Test: loading + onSuccess + exception", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write VerifyEmail tests",
+            "description": "Create `packages/auth-ui/test/verify-email.test.tsx`. ALL text hardcoded ENGLISH. Token is PROP. Scenarios: (1) no token shows 'Invalid or missing verification token' + no verification attempt, (2) calls onVerifyEmail({token}) automatically on mount, (3) loading state 'Verifying your email...' + 'Please wait...', (4) success 'Email verified' + 'Your email has been verified successfully.' + appends ' Redirecting...' if redirectDelay>0, (5) shows 'Continue' button in success, (6) error with result.error.message: heading 'Verification failed', body shows error.message, (7) error without message: body shows 'Verification failed', (8) exception: body shows 'An unexpected error occurred during verification.', (9) all errors show 'Please try signing in again...' text, (10) calls onSuccess, (11) redirects to redirectTo (default '/') via window.location.href after redirectDelay ms, (12) no redirect when redirectDelay=0. Use vi.useFakeTimers for redirect delay.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create verify-email.test.tsx", "completed": false },
+                { "title": "Test: no token error + auto-call on mount", "completed": false },
+                { "title": "Test: loading state", "completed": false },
+                { "title": "Test: success state + Redirecting text", "completed": false },
+                {
+                    "title": "Test: 3 error scenarios (with msg, without msg, exception)",
+                    "completed": false
+                },
+                { "title": "Test: redirect timing with fakeTimers", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write SignOutButton tests",
+            "description": "Create `packages/auth-ui/test/sign-out-button.test.tsx`. Text hardcoded SPANISH. Scenarios: (1) returns null when isAuthenticated=false, (2) renders button when isAuthenticated=true, (3) button text is 'Cerrar sesion' (hardcoded Spanish, no accent), (4) calls onSignOut on click, (5) calls onComplete after onSignOut resolves, (6) navigates to redirectTo via window.location.href after sign out, (7) handles onSignOut error gracefully (logs via authLogger, no crash), (8) accepts className and applies to button, (9) default style includes red background.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create sign-out-button.test.tsx", "completed": false },
+                { "title": "Test: null when not authenticated", "completed": false },
+                { "title": "Test: render + text + className", "completed": false },
+                { "title": "Test: onSignOut + onComplete + redirect", "completed": false },
+                { "title": "Test: error handling", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write UserMenu tests",
+            "description": "Create `packages/auth-ui/test/user-menu.test.tsx`. Mixed hardcoded text: 'Dashboard' (EN), 'Mi Perfil' (ES), 'Cerrar Sesion' (ES). Scenarios: (1) loading skeleton when isPending=true, (2) returns null when session is null, (3) shows avatar with initial when no image, (4) shows user image when session.user.image exists, (5) displayName fallback: user.name -> user.email -> 'User', (6) dropdown opens on avatar click, (7) dropdown closes on backdrop click, (8) dropdown closes on Escape, (9) dropdown has Dashboard (dashboardUrl default '/dashboard/') and Mi Perfil (profileUrl default '/profile/') links, (10) 'Cerrar Sesion' calls onSignOut, (11) after sign out navigates to '/' via window.location.href ONLY if !pathname.includes('/auth'), (12) does NOT redirect if on /auth/* page, (13) aria-expanded reflects dropdown state, (14) aria-haspopup='true' on trigger.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create user-menu.test.tsx", "completed": false },
+                { "title": "Test: loading + null states", "completed": false },
+                { "title": "Test: avatar rendering + displayName fallback", "completed": false },
+                { "title": "Test: dropdown open/close mechanics", "completed": false },
+                { "title": "Test: navigation links + sign out", "completed": false },
+                { "title": "Test: conditional redirect logic + accessibility", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Write SimpleUserMenu tests",
+            "description": "Create `packages/auth-ui/test/simple-user-menu.test.tsx`. Hardcoded SPANISH: 'Iniciar sesion', 'Registrarse', 'Cerrar sesion'. Scenarios: (1) loading skeleton when isPending=true, (2) shows sign-in + sign-up links when session is null, (3) sign-up button has gradient background, (4) sign-in URL: '/auth/signin/' (trailing slash), (5) sign-up URL: '/auth/signup/' (trailing slash), (6) shows user info (avatar, name, email) when authenticated, (7) uses session.user.image for avatar if available, gradient+initial if not, (8) 'Cerrar sesion' calls onSignOut, (9) navigates to redirectTo (default '/') after sign out, (10) handles onSignOut error gracefully.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create simple-user-menu.test.tsx", "completed": false },
+                { "title": "Test: loading + unauthenticated states", "completed": false },
+                { "title": "Test: URLs with trailing slashes", "completed": false },
+                { "title": "Test: authenticated user display", "completed": false },
+                { "title": "Test: sign out + redirect + error handling", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write useAuthTranslations hook tests",
+            "description": "Create `packages/auth-ui/test/hooks/use-auth-translations.test.ts`. Scenarios: (1) with @repo/i18n mocked to work: returns {t, isI18nAvailable: true} and t() returns translations, (2) with @repo/i18n mocked to throw: returns {t: getFallbackText, isI18nAvailable: false}, (3) fallback returns Spanish text for known keys, (4) fallback returns the key itself for unknown keys, (5) parameter replacement: t('signUp.passwordMinLength', {min: 8}) replaces {min} correctly, (6) DOCUMENT the inconsistency: keys used by SignUpForm (auth-ui.signUp.name, namePlaceholder, emailPlaceholder, passwordPlaceholder) do NOT have fallbacks in the map. Use renderHook from @testing-library/react.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Create hooks/use-auth-translations.test.ts", "completed": false },
+                { "title": "Test: i18n available path", "completed": false },
+                { "title": "Test: i18n unavailable fallback path", "completed": false },
+                { "title": "Test: parameter replacement", "completed": false },
+                { "title": "Test: document key inconsistency", "completed": false }
+            ],
+            "tags": ["auth-ui", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write limits.config.ts tests for billing",
+            "description": "Create `packages/billing/test/limits.test.ts`. Import with .js extension: `import { LIMIT_METADATA } from '../src/config/limits.config.js'`. Scenarios: (1) LIMIT_METADATA has entries for all 6 LimitKeys: MAX_ACCOMMODATIONS, MAX_PHOTOS_PER_ACCOMMODATION, MAX_ACTIVE_PROMOTIONS, MAX_FAVORITES, MAX_PROPERTIES, MAX_STAFF_ACCOUNTS, (2) every entry has non-empty name string, (3) every entry has non-empty description string, (4) no duplicate keys, (5) keys match LimitKey enum values exactly.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-036"],
+            "subtasks": [
+                { "title": "Create limits.test.ts with ESM imports (.js)", "completed": false },
+                { "title": "Test: all 6 limits have metadata", "completed": false },
+                { "title": "Test: names and descriptions non-empty", "completed": false },
+                { "title": "Test: keys match LimitKey enum", "completed": false }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add entitlements.config cross-validation tests",
+            "description": "Add tests to `packages/billing/test/entitlements.test.ts` (or create new file if cleaner). Import with .js extension. Scenarios: (1) all EntitlementKey enum values have a definition in ENTITLEMENT_DEFINITIONS, (2) no duplicate keys in ENTITLEMENT_DEFINITIONS, (3) all categories exist (owner, accommodation, complex, tourist), (4) category counts: 12 owner, 7 accommodation, 6 complex, 15 tourist. Follow existing test patterns in the 9 existing test files.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-036"],
+            "subtasks": [
+                { "title": "Add cross-validation tests for entitlements", "completed": false },
+                { "title": "Test: all enum keys have definitions", "completed": false },
+                { "title": "Test: no duplicates + category counts", "completed": false }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add config-validator edge case tests for billing",
+            "description": "Add edge case tests to `packages/billing/test/validation/config-validator.test.ts`. Review existing 36 test cases and add any missing branches from the source code. Potential gaps: (1) validateBillingConfigOrThrow throws when errors exist, (2) validateBillingConfigOrThrow does not throw when config is valid, (3) any uncovered branch in the validation logic. Follow existing patterns in the file (621 lines). Use .js imports.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Review existing 36 test cases against source branches",
+                    "completed": false
+                },
+                { "title": "Add missing edge case tests", "completed": false },
+                { "title": "Verify all validation branches covered", "completed": false }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Write formatter.ts formatValue tests",
+            "description": "Create `packages/logger/test/formatter.test.ts`. Test `formatValue` function. Scenarios: (1) null -> 'null', (2) undefined -> 'undefined', (3) short string returns unchanged, (4) long string with truncateText=true truncates with '...[TRUNCATED]' (no space), (5) long string with truncateText=false does not truncate, (6) object with expandLevels=2 returns expanded JSON, (7) object with expandLevels=0 returns '[Object]', (8) object with expandLevels=-1 returns full JSON, (9) array of objects expanded correctly, (10) circular reference contains '[Circular]', (11) object with 'password' key -> value '[REDACTED]', (12) email in string -> '[REDACTED]', (13) JWT in string -> '[REDACTED]', (14) Bearer token -> '[REDACTED]', (15) credit card number -> '[REDACTED]', (16) IPv4 -> '[REDACTED]', (17) CUIT/CUIL -> '[REDACTED]', (18) Argentine phone -> '[REDACTED]', (19) API key with sk_ prefix -> '[REDACTED]', (20) non-sensitive data not redacted.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Create formatter.test.ts with imports", "completed": false },
+                { "title": "Test: null/undefined/string handling", "completed": false },
+                { "title": "Test: truncation behavior", "completed": false },
+                { "title": "Test: object expansion levels", "completed": false },
+                { "title": "Test: circular references", "completed": false },
+                { "title": "Test: PII redaction (keys + patterns)", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write formatter.ts formatLogMessage and formatLogArgs tests",
+            "description": "Add to `packages/logger/test/formatter.test.ts`. Test `formatLogMessage`: (1) without category no category prefix, (2) with registered category includes name in uppercase, (3) with INCLUDE_TIMESTAMPS=true includes [YYYY-MM-DD HH:MM:SS], (4) with INCLUDE_LEVEL=true includes [INFO]/[ERROR] etc, (5) with label includes [label], (6) ERROR level with TRUNCATE_LONG_TEXT_ON_ERROR=false doesn't truncate, (7) DEBUG level never truncates. Test `formatLogArgs`: (1) returns array with single formatted string. Test `formatTimestamp`: (1) returns [YYYY-MM-DD HH:MM:SS] with brackets, (2) zero-pads single digits.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Test: formatLogMessage without category", "completed": false },
+                {
+                    "title": "Test: formatLogMessage with category/timestamps/level/label",
+                    "completed": false
+                },
+                { "title": "Test: truncation behavior per level", "completed": false },
+                { "title": "Test: formatLogArgs returns single string array", "completed": false },
+                { "title": "Test: formatTimestamp format + zero padding", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write formatter.ts color and utility function tests",
+            "description": "Add to `packages/logger/test/formatter.test.ts`. Test `getColorFunction`: (1) returns a function for each LoggerColors value, (2) function returns a string. Test `getCategoryBackgroundFunction(color)`: (1) returns chalk function with background, (2) text uses contrasting color. Test `shouldUseWhiteText`: (1) returns true for dark colors: BLACK, RED, BLUE, MAGENTA, (2) returns false for light colors: GREEN, YELLOW, CYAN, WHITE, GRAY + bright variants. Test smoke: `levelIcons` has icon for all levels, `levelColors` has color for all levels, `levelBgColors` has bg color for all levels.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Test: getColorFunction for each color", "completed": false },
+                { "title": "Test: getCategoryBackgroundFunction", "completed": false },
+                { "title": "Test: shouldUseWhiteText dark vs light", "completed": false },
+                {
+                    "title": "Test: levelIcons/levelColors/levelBgColors smoke tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Write redactSensitiveData isolated tests",
+            "description": "Add to `packages/logger/test/formatter.test.ts`. Test `redactSensitiveData` function directly (now exported). Scenarios: (1) key='password' + value='secret123' -> '[REDACTED]', (2) key='name' + value='John' -> 'John' (no redaction), (3) string containing JWT -> '[REDACTED]', (4) array of objects -> recursive redaction, (5) nested object -> redacts keys at all levels, (6) case-insensitive: key='PASSWORD' + value='secret' -> '[REDACTED]', (7) non-string non-object values pass through unchanged.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Test: key-based redaction", "completed": false },
+                { "title": "Test: pattern-based redaction on strings", "completed": false },
+                { "title": "Test: recursive array/object redaction", "completed": false },
+                { "title": "Test: case insensitivity", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Write categories.ts tests",
+            "description": "Create `packages/logger/test/categories.test.ts`. Scenarios: (1) registerCategoryInternal registers a new category, (2) getCategoryByKey returns DEFAULT for unknown keys, (3) getCategoryByKey returns correct category for registered keys, (4) getMaxCategoryNameLength returns length of longest registered category name, (5) clearCategories clears all except DEFAULT. Import from `../src/categories` (or index). Use beforeEach to clearCategories for isolation.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Create categories.test.ts", "completed": false },
+                { "title": "Test: register + get + default fallback", "completed": false },
+                { "title": "Test: max name length + clear", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write config.ts tests",
+            "description": "Create `packages/logger/test/config.test.ts`. Scenarios: (1) configureLogger updates config with partial merge, (2) getConfig returns current config, (3) resetLoggerConfig restores defaults, (4) partial update preserves unmodified fields. Use beforeEach to resetLoggerConfig for isolation.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Create config.test.ts", "completed": false },
+                { "title": "Test: configure + get + reset", "completed": false },
+                { "title": "Test: partial merge preserves fields", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write environment.ts tests",
+            "description": "Create `packages/logger/test/environment.test.ts`. Use vi.stubEnv for env vars. Scenarios: getBooleanEnv: (1) null if var not set, (2) true for 'true', (3) false for 'false'/'0'/'yes'. getNumberEnv: (4) parsed int, (5) null if NaN, (6) null if not set. getLogLevelEnv: (7) valid LogLevel, (8) null for invalid. getConfigFromEnv: (9) without categoryKey uses LOG_ prefix, (10) with categoryKey uses LOG_{CATEGORY}_ prefix with LOG_ fallback, (11) returns Partial<BaseLoggerConfig>, (12) reads LOG_LEVEL, LOG_SAVE, LOG_TRUNCATE_LONG_TEXT as correct types, (13) returns defaults when vars undefined. IMPORTANT: NO LOG_FORMAT variable exists.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Create environment.test.ts", "completed": false },
+                { "title": "Test: getBooleanEnv all cases", "completed": false },
+                { "title": "Test: getNumberEnv all cases", "completed": false },
+                { "title": "Test: getLogLevelEnv valid/invalid", "completed": false },
+                { "title": "Test: getConfigFromEnv with/without category", "completed": false }
+            ],
+            "tags": ["logger", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Write createEmailClient tests",
+            "description": "Create `packages/email/test/client.test.ts`. Scenarios: (1) createEmailClient({apiKey: 'test-key'}) returns instance with emails.send available, (2) createEmailClient without apiKey and without RESEND_API_KEY env var throws 'Missing API key...' error. Use vi.stubEnv to control RESEND_API_KEY. Note: Resend constructor does NOT validate key against server (only on first request).",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Create client.test.ts", "completed": false },
+                { "title": "Test: happy path returns instance", "completed": false },
+                { "title": "Test: missing API key throws", "completed": false }
+            ],
+            "tags": ["email", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Write BaseLayout template tests",
+            "description": "Create `packages/email/test/templates/base-layout.test.tsx`. Use `import { render } from '@react-email/render'` (ASYNC). Scenarios: (1) renders children correctly (content appears in HTML), (2) with showUnsubscribe=true (default) includes 'Si no deseas recibir estos correos, puedes' + 'darte de baja aquí' with link to https://hospeda.com.ar/unsubscribe, (3) with showUnsubscribe=false does NOT include unsubscribe text, (4) header contains 'Hospeda', (5) footer contains 'Hospeda - Alojamientos turísticos en Concepción del Uruguay y el Litoral'. ALL assertions in SPANISH.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Create base-layout.test.tsx", "completed": false },
+                { "title": "Test: children rendering", "completed": false },
+                { "title": "Test: unsubscribe shown/hidden", "completed": false },
+                { "title": "Test: header + footer text", "completed": false }
+            ],
+            "tags": ["email", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Write VerifyEmailTemplate tests",
+            "description": "Create `packages/email/test/templates/verify-email.test.tsx`. Use `await render(<VerifyEmailTemplate ... />)`. Props: {name: string, verificationUrl: string}. Scenarios: (1) renders 'Hola {name},' with user name, (2) heading 'Verifica tu dirección de correo electrónico', (3) text 'Gracias por registrarte en Hospeda...', (4) text 'Haz clic en el botón de abajo...', (5) button 'Verificar correo electrónico' with verificationUrl as href, (6) expiration 'Este enlace expira en 24 horas', (7) security note 'Si no solicitaste esta verificación...', (8) fallback text 'O copia y pega este enlace en tu navegador:', (9) uses BaseLayout (HTML contains Hospeda structure), (10) name='' doesn't crash, renders 'Hola ,'. ALL text in SPANISH.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Create verify-email.test.tsx", "completed": false },
+                { "title": "Test: greeting + heading", "completed": false },
+                { "title": "Test: body text + button + href", "completed": false },
+                { "title": "Test: expiration + security + fallback", "completed": false },
+                { "title": "Test: empty name edge case", "completed": false }
+            ],
+            "tags": ["email", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Write ResetPasswordTemplate tests",
+            "description": "Create `packages/email/test/templates/reset-password.test.tsx`. Use `await render(<ResetPasswordTemplate ... />)`. Props: {name: string, resetUrl: string} (resetUrl NOT resetPasswordUrl). Scenarios: (1) renders 'Hola {name},' with name, (2) heading 'Restablece tu contraseña', (3) text 'Recibimos una solicitud para restablecer...', (4) button 'Restablecer contraseña' with resetUrl as href, (5) expiration 'Este enlace expira en 1 hora por motivos de seguridad...', (6) bold '¿No solicitaste esto?' + security text, (7) fallback 'O copia y pega este enlace en tu navegador:', (8) uses BaseLayout, (9) name='' doesn't crash. ALL text in SPANISH.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Create reset-password.test.tsx", "completed": false },
+                { "title": "Test: greeting + heading", "completed": false },
+                { "title": "Test: body text + button + href", "completed": false },
+                { "title": "Test: expiration + security + fallback", "completed": false },
+                { "title": "Test: empty name edge case", "completed": false }
+            ],
+            "tags": ["email", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Update auth-ui vitest.config.ts coverage thresholds to 90%",
+            "description": "Edit `packages/auth-ui/vitest.config.ts` and change coverage thresholds from 70/70/60/70 to 90/90/90/90 (lines, functions, branches, statements). Run coverage to verify it passes: `cd packages/auth-ui && pnpm vitest run --coverage`.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015"
+            ],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Update thresholds to 90%", "completed": false },
+                { "title": "Run coverage and verify >=90%", "completed": false }
+            ],
+            "tags": ["auth-ui", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Update billing vitest.config.ts coverage thresholds to 90%",
+            "description": "Edit `packages/billing/vitest.config.ts` and change coverage thresholds from 70/70/60/70 to 90/90/90/90. Run coverage: `cd packages/billing && pnpm vitest run --coverage`.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-016", "T-017", "T-018"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                { "title": "Update thresholds to 90%", "completed": false },
+                { "title": "Run coverage and verify >=90%", "completed": false }
+            ],
+            "tags": ["billing", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Update logger vitest.config.ts coverage thresholds to 90%",
+            "description": "Edit `packages/logger/vitest.config.ts` and change coverage thresholds from 70/70/60/70 to 90/90/90/90. IMPORTANT: Ensure the coverage exclude pattern filters out the compiled .js/.d.ts/.js.map/.d.ts.map files in src/. Run coverage: `cd packages/logger && pnpm vitest run --coverage`.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-019", "T-020", "T-021", "T-022", "T-023", "T-024", "T-025"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                { "title": "Update thresholds to 90%", "completed": false },
+                { "title": "Add exclude for compiled files if needed", "completed": false },
+                { "title": "Run coverage and verify >=90%", "completed": false }
+            ],
+            "tags": ["logger", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Verify email package coverage thresholds at 90%",
+            "description": "The vitest.config.ts created in T-004 already has 90% thresholds. Run coverage: `cd packages/email && pnpm vitest run --coverage`. Verify all 4 metrics (lines, functions, branches, statements) are >=90%.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-026", "T-027", "T-028", "T-029"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Run coverage on email package", "completed": false },
+                { "title": "Verify >=90% on all 4 metrics", "completed": false }
+            ],
+            "tags": ["email", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Run full quality gate on auth-ui package",
+            "description": "Run `pnpm typecheck` and `pnpm lint` on auth-ui. Run `pnpm test` for all auth-ui tests. Verify: (1) 0 type errors, (2) 0 lint errors (biome), (3) all tests pass, (4) no .only() or hardcoded .skip(), (5) all test files use AAA pattern, (6) no `as any` without justification, (7) no URLSearchParams mock for ResetPasswordForm/VerifyEmail.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-030"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                { "title": "Run typecheck", "completed": false },
+                { "title": "Run lint", "completed": false },
+                { "title": "Run tests", "completed": false },
+                { "title": "Verify no .only/.skip/any violations", "completed": false }
+            ],
+            "tags": ["auth-ui", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Run full quality gate on billing package",
+            "description": "Run `pnpm typecheck` and `pnpm lint` on billing. Run `pnpm test` for all billing tests. Verify: (1) 0 type errors, (2) 0 lint errors, (3) all tests pass, (4) imports use .js extension, (5) no .only/.skip.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-031"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                { "title": "Run typecheck", "completed": false },
+                { "title": "Run lint", "completed": false },
+                { "title": "Run tests", "completed": false }
+            ],
+            "tags": ["billing", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Run full quality gate on logger package",
+            "description": "Run `pnpm typecheck` and `pnpm lint` on logger. Run `pnpm test` for all logger tests. Verify: (1) 0 type errors, (2) 0 lint errors, (3) all tests pass, (4) no test mocks @repo/logger inside logger's own tests, (5) no .only/.skip.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-032"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                { "title": "Run typecheck", "completed": false },
+                { "title": "Run lint", "completed": false },
+                { "title": "Run tests", "completed": false }
+            ],
+            "tags": ["logger", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Run full quality gate on email package",
+            "description": "Run `pnpm typecheck` and `pnpm lint` on email. Run `pnpm test` for all email tests. Verify: (1) 0 type errors, (2) 0 lint errors, (3) all tests pass, (4) templates assert Spanish text, (5) sendEmail tests never use .toThrow(), (6) no .only/.skip.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                { "title": "Run typecheck", "completed": false },
+                { "title": "Run lint", "completed": false },
+                { "title": "Run tests", "completed": false }
+            ],
+            "tags": ["email", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Run global pnpm test and verify all 4 packages pass together",
+            "description": "Run `pnpm test` from monorepo root. Verify all 4 packages (auth-ui, billing, logger, email) pass without errors. Check that no cross-package test pollution exists. Run `pnpm typecheck` and `pnpm lint` from root. Update SPEC-040 status from 'draft' to 'completed'.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-035", "T-036", "T-037", "T-038"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm test from root", "completed": false },
+                { "title": "Run pnpm typecheck from root", "completed": false },
+                { "title": "Run pnpm lint from root", "completed": false },
+                { "title": "Update spec status to completed", "completed": false }
+            ],
+            "tags": ["all", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-18T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 35,
+        "pending": 35,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}

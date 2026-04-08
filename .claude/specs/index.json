@@ -36,7 +36,7 @@
         "title": "Security Testing Gaps",
         "type": "security",
         "complexity": "medium",
-        "status": "draft",
+        "status": "completed",
         "path": "SPEC-026-security-testing-gaps"
     },
     {
@@ -64,19 +64,11 @@
         "path": "SPEC-047-csp-unsafe-inline-removal"
     },
     {
-        "specId": "SPEC-048",
-        "title": "Web2 Homepage Componentization & Tokenization",
-        "type": "feature",
-        "complexity": "high",
-        "status": "draft",
-        "path": "SPEC-048-web2-homepage-componentization"
-    },
-    {
         "specId": "SPEC-049",
         "title": "Admin List Filtering: adminList() Method for BaseCrudService",
         "type": "bugfix",
         "complexity": "high",
-        "status": "approved",
+        "status": "in-progress",
         "path": "SPEC-049-admin-list-filtering"
     },
     {
@@ -108,7 +100,7 @@
         "title": "Figma to Code: Homepage Production Migration",
         "type": "feature",
         "complexity": "high",
-        "status": "draft",
+        "status": "completed",
         "path": "SPEC-065-figma-to-code-homepage"
     }
 ]

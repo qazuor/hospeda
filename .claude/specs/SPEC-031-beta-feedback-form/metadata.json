@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-031",
+    "title": "Beta Feedback Form with Linear Integration",
+    "type": "feature",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-03-06T00:00:00.000Z",
+    "approved": "2026-03-06T00:00:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "beta",
+        "feedback",
+        "bug-report",
+        "linear",
+        "error-boundary",
+        "shared-package",
+        "floating-widget",
+        "standalone",
+        "web",
+        "admin",
+        "react",
+        "i18n"
+    ]
+}

@@ -28,5 +28,5 @@
         "MD051": true,
         "MD058": true
     },
-    "ignores": ["node_modules/**", "**/node_modules/**", "dist/**", "build/**"]
+    "ignores": ["node_modules/**", "**/node_modules/**", "dist/**", "build/**", ".claude/**"]
 }

@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-033",
+    "title": "Auth UI Package Extraction",
+    "type": "refactor",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-03-06T00:00:00Z",
+    "approved": "2026-03-06T00:00:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["auth", "auth-ui", "react", "components", "theming", "i18n", "package", "refactor"]
+}

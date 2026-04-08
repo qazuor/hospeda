@@ -1,0 +1,9 @@
+{
+    "specId": "SPEC-035",
+    "title": "Environment Variables Cleanup, Validation & Documentation",
+    "complexity": "high",
+    "type": "infrastructure",
+    "tags": ["env-vars", "validation", "documentation", "security", "dx"],
+    "status": "draft",
+    "created": "2026-03-07T00:00:00.000Z"
+}

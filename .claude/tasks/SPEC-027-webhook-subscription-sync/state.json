@@ -1,0 +1,848 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-027",
+    "title": "Webhook Subscription Sync",
+    "created": "2026-03-07T18:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create billing_subscription_events Drizzle schema",
+            "description": "Create `packages/db/src/schemas/billing/billing_subscription_event.dbschema.ts` with the audit trail table schema.\n\nFollow the exact Drizzle schema from spec Section 7:\n- Table: `billing_subscription_events`\n- Columns: id (uuid PK), subscription_id (uuid FK to billingSubscriptions.id ON DELETE CASCADE), previous_status (varchar 50), new_status (varchar 50), trigger_source (varchar 50), provider_event_id (varchar 255 nullable), metadata (jsonb with $type<Record<string, unknown>>() default {}), created_at (timestamptz default now)\n- Indexes: idx_subscription_events_subscription_id on subscriptionId, idx_subscription_events_created_at on createdAt\n- Import billingSubscriptions from '../../billing/index.ts'\n- Use object syntax for indexes: `(table) => ({...})` (NOT array syntax)\n\nUpdate barrel export in `packages/db/src/schemas/billing/index.ts`:\n- Add `export * from './billing_subscription_event.dbschema.ts';`\n\nGenerate and apply migration:\n- Run `pnpm db:generate` from packages/db\n- Run `pnpm db:migrate` from packages/db\n\nTest: Verify the schema compiles with `pnpm typecheck` from packages/db. Verify migration applies cleanly.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-004", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Create billing_subscription_event.dbschema.ts with table definition and indexes",
+                    "completed": true
+                },
+                {
+                    "title": "Update packages/db/src/schemas/billing/index.ts barrel export",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm db:generate to create migration SQL",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm db:migrate to apply migration",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes for packages/db",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create subscription event Zod schema for admin API response",
+            "description": "Create `packages/schemas/src/api/billing/subscription-event.schema.ts` with Zod schemas for the admin events endpoint.\n\nFrom spec Section 8:\n- `subscriptionEventSchema`: z.object with id (uuid), subscriptionId (uuid), previousStatus (string max 50), newStatus (string max 50), triggerSource (string max 50), providerEventId (string max 255 nullable), metadata (record z.unknown default {}), createdAt (string datetime)\n- `subscriptionEventsResponseSchema`: z.object with data (array of subscriptionEventSchema), pagination (object with page, pageSize, totalItems, totalPages)\n- Export type `SubscriptionEvent = z.infer<typeof subscriptionEventSchema>`\n\nUpdate barrel in `packages/schemas/src/api/billing/index.ts`:\n- Add `export * from './subscription-event.schema.js';`\n\nTest: Verify typecheck passes for packages/schemas.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Create subscription-event.schema.ts with both Zod schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Export SubscriptionEvent type",
+                    "completed": true
+                },
+                {
+                    "title": "Update packages/schemas/src/api/billing/index.ts barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod", "api"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create status mapping constant and notification helper functions",
+            "description": "Create the status mapping and transition helper functions in `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` (new file, first part).\n\nFrom spec Section 6:\n- Create `QZPAY_TO_HOSPEDA_STATUS` constant map: Record<string, SubscriptionStatusEnum | null>\n  - active -> ACTIVE, paused -> PAUSED, canceled (1L) -> CANCELLED (2L), finished -> EXPIRED, pending -> null\n- Create 4 helper functions:\n  - `shouldSendReactivationEmail(previousStatus, newStatus)`: returns true when newStatus=ACTIVE and previousStatus is PAUSED, CANCELLED, or PAST_DUE (NOT trialing)\n  - `shouldSendPausedEmail(previousStatus, newStatus)`: returns true when newStatus=PAUSED and previousStatus !== PAUSED\n  - `shouldSendCancelledEmail(previousStatus, newStatus)`: returns true when newStatus=CANCELLED and previousStatus is not CANCELLED or EXPIRED\n  - `shouldSendAdminAlert(previousStatus, newStatus)`: same logic as shouldSendCancelledEmail\n\nImport SubscriptionStatusEnum from @repo/schemas.\n\nTests: Create `apps/api/test/webhooks/subscription-logic.test.ts` (first part). Test all status mappings:\n- 'active' -> ACTIVE, 'paused' -> PAUSED, 'canceled' -> CANCELLED (verify 2L spelling), 'finished' -> EXPIRED, 'pending' -> null\n- Unknown status -> undefined (not in map)\n- Test all shouldSend* helpers with transition rules from spec Section 6 table (22 test cases)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Create subscription-logic.ts file with QZPAY_TO_HOSPEDA_STATUS constant",
+                    "completed": true
+                },
+                {
+                    "title": "Implement shouldSendReactivationEmail helper",
+                    "completed": true
+                },
+                {
+                    "title": "Implement shouldSendPausedEmail helper",
+                    "completed": true
+                },
+                {
+                    "title": "Implement shouldSendCancelledEmail helper",
+                    "completed": true
+                },
+                {
+                    "title": "Implement shouldSendAdminAlert helper",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for status mapping (all 6 cases + unknown)",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all 4 shouldSend helpers (22 transition cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["business-logic", "mapping", "tests"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement processSubscriptionUpdated business logic",
+            "description": "Add the main `processSubscriptionUpdated()` function to `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts`.\n\nFrom spec Section 10.1, implement the 10-step flow:\n1. Extract mpPreapprovalId via extractMPSubscriptionEventData(event)\n2. Fetch subscription from MP API via paymentAdapter.subscriptions.retrieve(mpPreapprovalId)\n3. Extract qzpayStatus from mpSubscription.status\n4. Map to internal status via QZPAY_TO_HOSPEDA_STATUS. Handle null (pending) and unknown cases\n5. Query local subscription via direct Drizzle: SELECT FROM billingSubscriptions WHERE mpSubscriptionId = mpPreapprovalId AND deletedAt IS NULL LIMIT 1\n6. Compare statuses - if same, return early {success:true, statusChanged:false}\n7. Update billingSubscriptions: status, updatedAt=new Date(), canceledAt (if CANCELLED and not set), cancelAtPeriodEnd=false (if reactivating to ACTIVE)\n8. Insert audit log to billingSubscriptionEvents (non-blocking try/catch)\n9. Look up customer/plan for notifications (non-blocking), call notification functions based on shouldSend* helpers\n10. Return {success:true, statusChanged:true, newStatus}\n\nInterfaces: ProcessSubscriptionUpdatedInput (event, billing, paymentAdapter, providerEventId, source?), ProcessSubscriptionUpdatedResult (success, statusChanged, newStatus?, error?)\n\nAll imports per spec Section 10.1 imports block. Notification functions will be wired in T-014.\n\nTests: Extend `apps/api/test/webhooks/subscription-logic.test.ts`:\n- Test cases 1-12 from spec Section 15 (all status transitions, no-ops, unknown status, not found, API failure, audit failure, empty subscriptionId)\n- Mock: paymentAdapter.subscriptions.retrieve, extractMPSubscriptionEventData, getDb (chain: select/from/where/limit, update/set/where, insert/values), billing.customers.get, billing.plans.get, Sentry.captureException, apiLogger",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-006", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Define ProcessSubscriptionUpdatedInput and ProcessSubscriptionUpdatedResult interfaces",
+                    "completed": true
+                },
+                {
+                    "title": "Implement steps 1-4: extract ID, fetch from MP, map status",
+                    "completed": true
+                },
+                {
+                    "title": "Implement step 5: query local subscription via Drizzle",
+                    "completed": true
+                },
+                {
+                    "title": "Implement step 6: status comparison early return",
+                    "completed": true
+                },
+                {
+                    "title": "Implement step 7: update billing_subscriptions with conditional fields",
+                    "completed": true
+                },
+                {
+                    "title": "Implement step 8: non-blocking audit log insert",
+                    "completed": true
+                },
+                {
+                    "title": "Implement step 9: customer/plan lookup + notification dispatch stubs",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for all 12 core test cases",
+                    "completed": true
+                }
+            ],
+            "tags": ["business-logic", "webhook", "drizzle", "tests"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Rewrite subscription-handler.ts to call processSubscriptionUpdated",
+            "description": "Replace the body of `handleSubscriptionUpdated` in `apps/api/src/routes/webhooks/mercadopago/subscription-handler.ts`.\n\nFrom spec Section 10.2:\n- Import processSubscriptionUpdated from './subscription-logic'\n- Import getWebhookDependencies, markEventProcessedByProviderId from './utils'\n- Get deps via getWebhookDependencies(). If null, log warn and mark processed.\n- Call processSubscriptionUpdated({ event, billing: deps.billing, paymentAdapter: deps.paymentAdapter, providerEventId: String(event.id), source: 'webhook' })\n- If result.success, call markEventProcessedByProviderId\n- If !success, let error propagate (event enters dead letter queue)\n- Return undefined\n\nTests: Create `apps/api/test/webhooks/subscription-handler.test.ts`:\n- Test: calls processSubscriptionUpdated and marks event processed on success\n- Test: propagates error on failure (does not mark processed)\n- Test: skips processing when deps is null (billing not configured)\n- Mock: processSubscriptionUpdated, getWebhookDependencies, markEventProcessedByProviderId",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Replace handler body with new implementation",
+                    "completed": true
+                },
+                {
+                    "title": "Update imports (add processSubscriptionUpdated)",
+                    "completed": true
+                },
+                {
+                    "title": "Write handler unit tests (3 cases)",
+                    "completed": true
+                }
+            ],
+            "tags": ["webhook", "handler", "tests"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Update webhook-retry.job.ts to handle subscription events",
+            "description": "Modify `apps/api/src/cron/jobs/webhook-retry.job.ts` to split the combined case block and add subscription retry logic.\n\nFrom spec Section 10.3:\n1. Split lines 165-174: separate `payment.created` (keep auto-resolve) from `subscription_preapproval.updated` (new logic)\n2. Add new imports at top:\n   - `import { processSubscriptionUpdated } from '../routes/webhooks/mercadopago/subscription-logic.js';`\n   - `import { createMercadoPagoAdapter } from '@repo/billing';`\n   - `import type { QZPayWebhookEvent } from '@qazuor/qzpay-core';`\n3. Create `retrySubscriptionUpdated(payload, providerEventId)` function:\n   - Get billing via getQZPayBilling() (already imported)\n   - Create paymentAdapter via createMercadoPagoAdapter()\n   - Reconstruct QZPayWebhookEvent from stored payload (only id, type, data, created)\n   - Call processSubscriptionUpdated with source='dead-letter-retry'\n   - Return result.success\n\nTests: Modify existing `apps/api/test/cron/webhook-retry.job.test.ts`:\n- Test case 14: subscription_preapproval.updated retried with business logic (NOT auto-resolved)\n- Test case 15: payment.created still auto-resolves after case split\n- Mock: processSubscriptionUpdated, createMercadoPagoAdapter, getQZPayBilling",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Split combined case block (payment.created separate from subscription_preapproval.updated)",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 new imports at top of file",
+                    "completed": true
+                },
+                {
+                    "title": "Implement retrySubscriptionUpdated function with event reconstruction",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: subscription events retried with business logic",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: payment.created still auto-resolves",
+                    "completed": true
+                }
+            ],
+            "tags": ["cron", "retry", "dead-letter", "tests"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add NotificationType enum values and SubscriptionLifecyclePayload",
+            "description": "Modify `packages/notifications/src/types/notification.types.ts`.\n\nFrom spec Section 9.1-9.2:\n1. Add 3 new enum values AFTER FEEDBACK_REPORT:\n   - SUBSCRIPTION_CANCELLED = 'subscription_cancelled'\n   - SUBSCRIPTION_PAUSED = 'subscription_paused'\n   - SUBSCRIPTION_REACTIVATED = 'subscription_reactivated'\n\n2. Add SubscriptionLifecyclePayload interface extending BaseNotificationPayload:\n   - type: SUBSCRIPTION_CANCELLED | SUBSCRIPTION_PAUSED | SUBSCRIPTION_REACTIVATED\n   - planName: string\n   - currentPeriodEnd?: string\n   - nextBillingDate?: string\n\n3. Update NotificationPayload union type to include SubscriptionLifecyclePayload (add after SubscriptionEventPayload)\n\nTest: Verify typecheck passes for packages/notifications.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add 3 new NotificationType enum values",
+                    "completed": true
+                },
+                {
+                    "title": "Create SubscriptionLifecyclePayload interface",
+                    "completed": true
+                },
+                {
+                    "title": "Update NotificationPayload union type",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "types"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add subject patterns and category mappings for new notification types",
+            "description": "Modify 2 files in packages/notifications.\n\nFrom spec Section 9.3 - `packages/notifications/src/utils/subject-builder.ts`:\nAdd 3 entries to SUBJECT_PATTERNS:\n- [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripcion ha sido cancelada - {planName}'\n- [NotificationType.SUBSCRIPTION_PAUSED]: 'Tu suscripcion ha sido pausada - Accion requerida'\n- [NotificationType.SUBSCRIPTION_REACTIVATED]: 'Tu suscripcion ha sido reactivada - {planName}'\n\nFrom spec Section 9.4 - `packages/notifications/src/config/notification-categories.ts`:\nAdd 3 entries to NOTIFICATION_CATEGORY_MAP (all TRANSACTIONAL):\n- [NotificationType.SUBSCRIPTION_CANCELLED]: NotificationCategory.TRANSACTIONAL\n- [NotificationType.SUBSCRIPTION_PAUSED]: NotificationCategory.TRANSACTIONAL\n- [NotificationType.SUBSCRIPTION_REACTIVATED]: NotificationCategory.TRANSACTIONAL\n\nTest: Verify typecheck passes. No separate unit tests needed (covered by template tests in T-013).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add 3 subject patterns to subject-builder.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 category mappings to notification-categories.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "config"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create subscription-cancelled email template",
+            "description": "Create `packages/notifications/src/templates/subscription/subscription-cancelled.tsx`.\n\nFrom spec Sections 3, 9.5, 22:\n- Import pattern: individual .js imports (Section 18: Button, EmailLayout, Heading, InfoRow from ../components/*.js, formatDate from ../utils/index.js, Section/Text from @react-email/components)\n- Props interface: SubscriptionCancelledProps with readonly fields (recipientName, planName, currentPeriodEnd?, baseUrl)\n- Named export: SubscriptionCancelled\n- EmailLayout with previewText and showUnsubscribe={false} (TRANSACTIONAL)\n- Spanish text per spec Section 3 (Email: Subscription Cancelled)\n- CTA: 'Reactivar suscripcion' -> {baseUrl}/es/precios/propietarios\n- Use formatDate({ dateString: currentPeriodEnd }) for date formatting (RO-RO pattern)\n- Only show period end line if currentPeriodEnd is provided\n- Inline styles object with project palette (#1e293b, #475569, #0f766e)\n\nNo test yet (covered by T-013).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Create subscription/ directory",
+                    "completed": true
+                },
+                {
+                    "title": "Create subscription-cancelled.tsx with SubscriptionCancelledProps interface",
+                    "completed": true
+                },
+                {
+                    "title": "Implement template body with Spanish text and CTA",
+                    "completed": true
+                },
+                {
+                    "title": "Verify it compiles (typecheck)",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "template", "email"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create subscription-paused and subscription-reactivated email templates",
+            "description": "Create 2 more templates in `packages/notifications/src/templates/subscription/`.\n\nFrom spec Sections 3, 9.5, 22:\n\n**subscription-paused.tsx:**\n- Props: SubscriptionPausedProps (readonly: recipientName, planName, baseUrl)\n- Export: SubscriptionPaused\n- Spanish text per spec Section 3 (Email: Subscription Paused)\n- CTA: 'Actualizar metodo de pago' -> {baseUrl}/es/mi-cuenta/suscripcion\n- showUnsubscribe={false}\n\n**subscription-reactivated.tsx:**\n- Props: SubscriptionReactivatedProps (readonly: recipientName, planName, nextBillingDate?, baseUrl)\n- Export: SubscriptionReactivated\n- Spanish text per spec Section 3 (Email: Subscription Reactivated)\n- CTA: 'Ir al panel' -> {baseUrl}/es/mi-cuenta\n- showUnsubscribe={false}\n- Use formatDate({ dateString: nextBillingDate }) if provided\n\nSame import pattern, styles, and EmailLayout usage as T-009.\n\nNo test yet (covered by T-013).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Create subscription-paused.tsx with props and body",
+                    "completed": true
+                },
+                {
+                    "title": "Create subscription-reactivated.tsx with props and body",
+                    "completed": true
+                },
+                {
+                    "title": "Verify both compile (typecheck)",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "template", "email"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create barrel exports and wire templates into selectTemplate",
+            "description": "Wire the new templates into the notification system.\n\n1. Create `packages/notifications/src/templates/subscription/index.ts`:\n   - export { SubscriptionCancelled } from './subscription-cancelled.js'\n   - export { SubscriptionPaused } from './subscription-paused.js'\n   - export { SubscriptionReactivated } from './subscription-reactivated.js'\n\n2. Update `packages/notifications/src/templates/index.ts`:\n   - Add `export * from './subscription/index.js';`\n\n3. Update `packages/notifications/src/services/notification.service.ts` selectTemplate():\n   - Add 3 new cases using STRING LITERALS (not enum refs), matching existing pattern:\n     - case 'subscription_cancelled': cast to SubscriptionLifecyclePayload, return SubscriptionCancelled({recipientName, planName, currentPeriodEnd, baseUrl: this.deps.siteUrl})\n     - case 'subscription_paused': same cast, return SubscriptionPaused({recipientName, planName, baseUrl})\n     - case 'subscription_reactivated': same cast, return SubscriptionReactivated({recipientName, planName, nextBillingDate, baseUrl})\n   - Add import for SubscriptionLifecyclePayload from types and template components from templates\n\nTest: Verify typecheck passes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Create subscription/index.ts barrel with .js extensions",
+                    "completed": true
+                },
+                {
+                    "title": "Update templates/index.ts to export subscription barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Add 3 cases to selectTemplate() in notification.service.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add imports for SubscriptionLifecyclePayload and template components",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "service", "wiring"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add notification helper functions to webhook notifications.ts",
+            "description": "Add 3 new functions to `apps/api/src/routes/webhooks/mercadopago/notifications.ts`.\n\nFrom spec Section 10.4:\n\n**sendSubscriptionCancelledNotification(params):**\n- RO-RO pattern with readonly params: customerId, customerEmail, customerName, userId (string|null), planName, currentPeriodEnd?, mpSubscriptionId, previousStatus\n- Send user notification (SUBSCRIPTION_CANCELLED) if customerEmail exists\n- Send admin alert (ADMIN_SYSTEM_EVENT, severity 'warning') to all ADMIN_NOTIFICATION_EMAILS with eventDetails: {eventType: 'subscription_involuntary_cancellation', customerEmail, planName, mpSubscriptionId, previousStatus}\n- All sendNotification calls wrapped in .catch()\n\n**sendSubscriptionPausedNotification(params):**\n- Params: customerId, customerEmail, customerName, userId, planName\n- Send SUBSCRIPTION_PAUSED notification, .catch() wrapped\n\n**sendSubscriptionReactivatedNotification(params):**\n- Params: customerId, customerEmail, customerName, userId, planName, nextBillingDate?\n- Send SUBSCRIPTION_REACTIVATED notification, .catch() wrapped\n\nImports: sendNotification from '../../../utils/notification-helper', NotificationType from '@repo/notifications', apiLogger from '../../../utils/logger'\n\nTest: Covered by integration tests in T-015.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Add sendSubscriptionCancelledNotification with user + admin alert",
+                    "completed": true
+                },
+                {
+                    "title": "Add sendSubscriptionPausedNotification",
+                    "completed": true
+                },
+                {
+                    "title": "Add sendSubscriptionReactivatedNotification",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "webhook", "api"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Write notification template tests",
+            "description": "Create `packages/notifications/test/templates/subscription-templates.test.ts`.\n\nTest all 3 templates:\n- SubscriptionCancelled: renders Spanish text, shows plan name, shows period end date when provided, omits period end when undefined, CTA links to /es/precios/propietarios, showUnsubscribe is false\n- SubscriptionPaused: renders Spanish text, shows plan name, CTA links to /es/mi-cuenta/suscripcion, showUnsubscribe is false\n- SubscriptionReactivated: renders Spanish text, shows plan name, shows next billing date when provided, omits billing date when undefined, CTA links to /es/mi-cuenta, showUnsubscribe is false\n\nUse @react-email/components render function to test template output. Follow existing test patterns in packages/notifications/test/.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Write tests for SubscriptionCancelled template (6 assertions)",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for SubscriptionPaused template (4 assertions)",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for SubscriptionReactivated template (6 assertions)",
+                    "completed": true
+                },
+                {
+                    "title": "Run tests and verify all pass",
+                    "completed": true
+                }
+            ],
+            "tags": ["tests", "notifications", "templates"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Wire notification calls into processSubscriptionUpdated",
+            "description": "Update `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` step 9 to call the real notification functions.\n\nFrom spec Section 10.1 step 9:\n- Import sendSubscriptionCancelledNotification, sendSubscriptionPausedNotification, sendSubscriptionReactivatedNotification from './notifications'\n- After status update (step 7) and audit log (step 8):\n  - Look up customer via billing.customers.get(localSubscription.customerId) and plan via billing.plans.get(localSubscription.planId) - non-blocking try/catch\n  - Extract customerName: metadata.name -> customer.email -> 'Usuario'\n  - Extract userId: metadata.userId or null\n  - Get periodEndDate from mpSubscription.currentPeriodEnd, only use if > now()\n  - Call shouldSendCancelledEmail -> sendSubscriptionCancelledNotification (with .catch)\n  - Call shouldSendPausedEmail -> sendSubscriptionPausedNotification (with .catch)\n  - Call shouldSendReactivationEmail -> sendSubscriptionReactivatedNotification (with .catch)\n\nTests: Add test cases 16-22 to subscription-logic.test.ts:\n- soft-deleted subscription not found\n- canceled + canceledAt already set -> no overwrite\n- past_due -> active sends reactivation\n- trialing -> active does NOT send reactivation\n- expired -> cancelled: no email, no admin alert\n- active + cancel_at_period_end=true + active: no-op\n- cancelled + cancel_at_period_end=true + active: resets, sends reactivation",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-011", "T-012"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Import notification functions from ./notifications",
+                    "completed": true
+                },
+                {
+                    "title": "Implement customer/plan lookup with non-blocking error handling",
+                    "completed": true
+                },
+                {
+                    "title": "Implement customerName and userId extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Implement currentPeriodEnd past-date validation",
+                    "completed": true
+                },
+                {
+                    "title": "Wire shouldSend* helpers to notification functions",
+                    "completed": true
+                },
+                {
+                    "title": "Write test cases 16-22",
+                    "completed": true
+                }
+            ],
+            "tags": ["business-logic", "notifications", "wiring", "tests"],
+            "phase": "notifications",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Run full test suite and verify Phase 1+2 quality gate",
+            "description": "Run the complete test suite for all modified packages and verify everything passes.\n\n- `pnpm typecheck` (full monorepo)\n- `pnpm lint` (full monorepo)\n- `pnpm test` in packages/db, packages/schemas, packages/notifications, apps/api\n- Verify all new tests pass:\n  - apps/api/test/webhooks/subscription-logic.test.ts (22+ test cases)\n  - apps/api/test/webhooks/subscription-handler.test.ts (3 test cases)\n  - apps/api/test/cron/webhook-retry.job.test.ts (2 new test cases)\n  - packages/notifications/test/templates/subscription-templates.test.ts (16 assertions)\n- Check coverage meets 90% minimum for new files\n\nThis is a checkpoint before starting Phase 3 (Admin UI).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006", "T-013", "T-014"],
+            "blocks": ["T-016", "T-017", "T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm lint",
+                    "completed": true
+                },
+                {
+                    "title": "Run tests in apps/api",
+                    "completed": true
+                },
+                {
+                    "title": "Run tests in packages/notifications",
+                    "completed": true
+                },
+                {
+                    "title": "Verify coverage >= 90% for new files",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality-gate", "tests", "checkpoint"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create admin API route for subscription events",
+            "description": "Create `apps/api/src/routes/billing/admin/subscription-events.ts` and mount it.\n\nFrom spec Section 11.3:\n- GET /:id/events with zValidator for param (id: uuid) and query (page: coerce number default 1, pageSize: coerce number max 50 default 10)\n- Use createRouter() from ../../../utils/create-app\n- Query billingSubscriptionEvents with Drizzle: select where subscriptionId=id, orderBy desc createdAt, limit+offset pagination\n- Count query in parallel via Promise.all\n- Return c.json({ success: true, data: events (with createdAt.toISOString()), pagination: {page, pageSize, totalItems, totalPages} })\n- Error handling: try/catch, return 500 on failure with apiLogger.error\n- Export as subscriptionEventsRoute\n\nMount in `apps/api/src/routes/billing/admin/index.ts`:\n- Import subscriptionEventsRoute\n- Add `app.route('/subscriptions', subscriptionEventsRoute)` (makes full path /api/v1/admin/billing/subscriptions/:id/events)\n\nNo individual permission check needed (admin auth middleware covers it).\n\nTest: Create admin endpoint integration test verifying pagination, empty results, and sort order.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002", "T-015"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Create subscription-events.ts with GET /:id/events route",
+                    "completed": true
+                },
+                {
+                    "title": "Implement Drizzle query with pagination and count",
+                    "completed": true
+                },
+                {
+                    "title": "Mount route in admin/index.ts under /subscriptions",
+                    "completed": true
+                },
+                {
+                    "title": "Write integration test for the endpoint",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin", "route", "tests"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add paused status to admin SubscriptionStatus type and utils",
+            "description": "Update admin app type and utility functions to support 'paused' status.\n\nFrom spec Section 26:\n\n1. `apps/admin/src/features/billing-subscriptions/types.ts`:\n   - Add `'paused'` to SubscriptionStatus union: `'active' | 'trialing' | 'cancelled' | 'past_due' | 'expired' | 'paused'`\n\n2. `apps/admin/src/features/billing-subscriptions/utils.ts`:\n   - Add `paused: 'secondary'` to getStatusVariant() variantMap\n   - Add `paused: t('admin-billing.subscriptions.statuses.paused')` to getStatusLabel() labels\n\nTest: Verify typecheck passes for apps/admin.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Add 'paused' to SubscriptionStatus type",
+                    "completed": true
+                },
+                {
+                    "title": "Add paused mapping to getStatusVariant()",
+                    "completed": true
+                },
+                {
+                    "title": "Add paused mapping to getStatusLabel()",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "types", "ui"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Add i18n keys for paused status and history tab",
+            "description": "Add translation keys to all 3 locale files.\n\nFrom spec Sections 23, 26.4:\n\n1. `packages/i18n/src/locales/es/admin-billing.json`:\n   - Add under subscriptions.statuses: `\"paused\": \"Pausada\"`\n   - Add under subscriptions.detailsDialog: tabs.details, tabs.history, history.title, history.emptyState, history.columns.date, history.columns.transition, history.columns.source, history.sources.webhook/admin/system/cron/dead-letter-retry, history.pagination.previous/next\n\n2. `packages/i18n/src/locales/en/admin-billing.json`:\n   - Same structure: paused: \"Paused\", history tab labels in English\n\n3. `packages/i18n/src/locales/pt/admin-billing.json`:\n   - Same structure: paused: \"Pausada\", history tab labels in Portuguese\n\nTest: Verify typecheck passes for packages/i18n.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Add paused status + history tab keys to es/admin-billing.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add paused status + history tab keys to en/admin-billing.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add paused status + history tab keys to pt/admin-billing.json",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "admin", "localization"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add useSubscriptionEventsQuery hook and update SubscriptionDetailsDialog",
+            "description": "Add the events query hook and add the Historial tab to the dialog.\n\nFrom spec Section 11.1 - `apps/admin/src/features/billing-subscriptions/hooks.ts`:\n- Add fetchSubscriptionEvents(subscriptionId, page, pageSize) using fetchApi pattern\n- Add useSubscriptionEventsQuery({subscriptionId, page?, pageSize?, enabled?}) using useQuery\n- Query key: ['billing-subscriptions', subscriptionId, 'events', page]\n- staleTime: 60_000, enabled conditional on tab\n\nFrom spec Section 11.2 - `apps/admin/src/features/billing-subscriptions/SubscriptionDetailsDialog.tsx`:\n- Import useState from React (check if already imported)\n- Import Tabs, TabsContent, TabsList, TabsTrigger from @/components/ui-wrapped\n- Import useSubscriptionEventsQuery from ./hooks\n- Import getStatusVariant from ./utils (check if already imported)\n- Add state: activeTab ('detalles'), eventsPage (1)\n- Add eventsQuery with enabled: activeTab === 'historial'\n- Wrap existing dialog body in Tabs/TabsContent('detalles')\n- Add TabsContent('historial') with events timeline:\n  - Loading state, empty state, event cards with Badge for previousStatus->newStatus, triggerSource, formatDate(createdAt)\n  - Pagination with previous/next buttons\n\nTest: Verify typecheck passes for apps/admin. Component test for timeline rendering is optional.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-017", "T-018"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "Add fetchSubscriptionEvents function to hooks.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add useSubscriptionEventsQuery hook to hooks.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add new imports to SubscriptionDetailsDialog.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Add state variables (activeTab, eventsPage)",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap existing content in Tabs with 'Detalles' tab",
+                    "completed": true
+                },
+                {
+                    "title": "Add 'Historial' tab with events timeline and pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Verify typecheck passes for apps/admin",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "ui", "hooks", "dialog"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Final quality gate and full integration verification",
+            "description": "Run the complete quality gate for the entire SPEC-027 implementation.\n\n- `pnpm typecheck` (full monorepo)\n- `pnpm lint` (full monorepo)\n- `pnpm test` (all packages)\n- Verify all new and modified files pass lint/typecheck\n- Verify test coverage >= 90% for all new files\n- Review the complete changeset: 8 new files + 18 modified files\n\nManual QA prep:\n- Document the testing steps from spec Section 15 (Manual QA Checklist)\n- Ensure all acceptance criteria from US-01 through US-07 are covered by tests",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck (full monorepo)",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm lint (full monorepo)",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm test (all packages)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify coverage >= 90% for new files",
+                    "completed": true
+                },
+                {
+                    "title": "Review complete changeset",
+                    "completed": true
+                }
+            ],
+            "tags": ["quality-gate", "final", "verification"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T18:30:00.000Z",
+                "started": "2026-03-07T19:08:04.223Z",
+                "completed": "2026-03-07T19:08:04.223Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 20,
+        "pending": 20,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

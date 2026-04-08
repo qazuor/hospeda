@@ -1,0 +1,11 @@
+{
+    "specId": "SPEC-034",
+    "title": "On-Demand ISR Revalidation System",
+    "type": "feature",
+    "complexity": "high",
+    "status": "approved",
+    "created": "2026-03-06T12:00:00.000Z",
+    "updated": "2026-03-16T14:00:00.000Z",
+    "supersedes": "SPEC-009",
+    "depends-on": []
+}

@@ -1,0 +1,2404 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-034",
+    "title": "On-Demand ISR Revalidation System",
+    "created": "2026-03-16T14:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Update astro.config.mjs with ISR configuration",
+            "description": "Add trailingSlash: 'always', bypassToken (HOSPEDA_REVALIDATION_SECRET), expiration: 86400, and 8 exclude regex patterns to adapter config in apps/web/astro.config.mjs. Replace current isr: true with full ISR object. Tests: verify astro.config.mjs builds without error in dev mode.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036"
+            ],
+            "subtasks": [
+                { "title": "Add trailingSlash: 'always' to defineConfig", "completed": false },
+                {
+                    "title": "Replace isr: true with isr: { expiration: 86400, bypassToken: process.env.HOSPEDA_REVALIDATION_SECRET, exclude: [...] }",
+                    "completed": false
+                },
+                {
+                    "title": "Add all 8 exclude regex patterns (mi-cuenta, auth, busqueda, feedback, alojamientos/, eventos/, tipo, categoria)",
+                    "completed": false
+                },
+                { "title": "Verify dev server starts without errors", "completed": false }
+            ],
+            "tags": ["web", "astro", "config", "isr"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add HOSPEDA_REVALIDATION_SECRET to .env.example files",
+            "description": "Add HOSPEDA_REVALIDATION_SECRET env var with comment to apps/api/.env.example (with generate instructions) and apps/web/.env.example. Also add commented-out HOSPEDA_REVALIDATION_CRON_SCHEDULE to api .env.example. No tests needed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add to apps/api/.env.example with openssl generate instruction",
+                    "completed": false
+                },
+                {
+                    "title": "Add commented HOSPEDA_REVALIDATION_CRON_SCHEDULE to apps/api/.env.example",
+                    "completed": false
+                },
+                { "title": "Add to apps/web/.env.example", "completed": false }
+            ],
+            "tags": ["env", "config", "docs"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add revalidation env vars to ApiEnvSchema",
+            "description": "In apps/api/src/utils/env.ts, add HOSPEDA_REVALIDATION_SECRET (z.string().min(32).optional()) and HOSPEDA_REVALIDATION_CRON_SCHEDULE (z.string().optional().default('0 * * * *')) to the existing ApiEnvSchema. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-021", "T-082"],
+            "subtasks": [
+                {
+                    "title": "Add HOSPEDA_REVALIDATION_SECRET field to ApiEnvSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Add HOSPEDA_REVALIDATION_CRON_SCHEDULE with default '0 * * * *'",
+                    "completed": false
+                },
+                { "title": "Run pnpm typecheck to verify", "completed": false }
+            ],
+            "tags": ["env", "api", "config"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add HOSPEDA_REVALIDATION_SECRET env validation to web app",
+            "description": "In apps/web/src/env.ts, add HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional() to serverEnvSchema. In apps/web/src/lib/env.ts, add getRevalidationSecret() function that returns _env.HOSPEDA_REVALIDATION_SECRET. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add field to serverEnvSchema in apps/web/src/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add getRevalidationSecret() export to apps/web/src/lib/env.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["env", "web", "config"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add REVALIDATION permissions to PermissionEnum",
+            "description": "In packages/schemas/src/enums/permission.enum.ts, add REVALIDATION to PermissionCategoryEnum, and add 4 values to PermissionEnum: REVALIDATION_TRIGGER='revalidation.trigger', REVALIDATION_CONFIG_VIEW='revalidation.config.view', REVALIDATION_CONFIG_EDIT='revalidation.config.edit', REVALIDATION_LOG_VIEW='revalidation.log.view'. Tests: typecheck passes, existing enum tests pass.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-026", "T-066", "T-067", "T-068", "T-069", "T-070", "T-071", "T-074"],
+            "subtasks": [
+                { "title": "Add REVALIDATION to PermissionCategoryEnum", "completed": false },
+                { "title": "Add 4 REVALIDATION_* entries to PermissionEnum", "completed": false }
+            ],
+            "tags": ["schemas", "permissions", "auth"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create revalidation_config DB schema",
+            "description": "Create packages/db/src/schemas/revalidation/revalidation-config.dbschema.ts with the revalidationConfig pgTable definition (id uuid PK, entityType text unique, autoRevalidateOnChange bool, cronIntervalMinutes int, debounceSeconds int, enabled bool, createdAt/updatedAt timestamps). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Create schemas/revalidation/ directory", "completed": false },
+                {
+                    "title": "Implement revalidationConfig pgTable with all columns",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "schema", "drizzle"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create revalidation_log DB schema",
+            "description": "Create packages/db/src/schemas/revalidation/revalidation-log.dbschema.ts with the revalidationLog pgTable (id, path, entityType, entityId, trigger, triggeredBy, status, durationMs, errorMessage, metadata, createdAt) and 4 indexes (entity_type, trigger, created_at, path). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Implement revalidationLog pgTable with all columns",
+                    "completed": false
+                },
+                { "title": "Add 4 index definitions using index()", "completed": false }
+            ],
+            "tags": ["db", "schema", "drizzle"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create DB schemas barrel and update packages/db/src/schemas/index.ts",
+            "description": "Create packages/db/src/schemas/revalidation/index.ts exporting both schema tables. Add 'export * from ./revalidation/index' to packages/db/src/schemas/index.ts following existing pattern. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-009", "T-010", "T-025"],
+            "subtasks": [
+                { "title": "Create schemas/revalidation/index.ts barrel", "completed": false },
+                { "title": "Add export line to schemas/index.ts", "completed": false }
+            ],
+            "tags": ["db", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create RevalidationConfigModel",
+            "description": "Create packages/db/src/models/revalidation/revalidation-config.model.ts extending BaseModel with findByEntityType(entityType: string) and findAllEnabled() methods. Follow existing BaseModel pattern. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011", "T-016"],
+            "subtasks": [
+                { "title": "Create models/revalidation/ directory", "completed": false },
+                {
+                    "title": "Implement RevalidationConfigModel extending BaseModel",
+                    "completed": false
+                },
+                { "title": "Add findByEntityType() using findOne()", "completed": false },
+                {
+                    "title": "Add findAllEnabled() using findAll({ enabled: true })",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create RevalidationLogModel",
+            "description": "Create packages/db/src/models/revalidation/revalidation-log.model.ts extending BaseModel. Add deleteOlderThan(date: Date): Promise<number> using .delete().where(lt()).returning({ id }). Add findLastCronEntry(entityType: string) using raw Drizzle query with .orderBy(desc()).limit(1). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Implement RevalidationLogModel extending BaseModel",
+                    "completed": false
+                },
+                {
+                    "title": "Add deleteOlderThan() with .returning() to count deleted rows",
+                    "completed": false
+                },
+                {
+                    "title": "Add findLastCronEntry() with desc orderBy + limit(1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model", "drizzle"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create DB models barrel and update packages/db/src/models/index.ts",
+            "description": "Create packages/db/src/models/revalidation/index.ts exporting both model classes. Add 'export * from ./revalidation/index' to packages/db/src/models/index.ts. This makes RevalidationConfigModel and RevalidationLogModel available via @repo/db. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-047", "T-052", "T-067", "T-069", "T-070", "T-071"],
+            "subtasks": [
+                { "title": "Create models/revalidation/index.ts barrel", "completed": false },
+                { "title": "Add export line to models/index.ts", "completed": false }
+            ],
+            "tags": ["db", "model"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create Zod schemas: revalidation-config",
+            "description": "Create packages/schemas/src/entities/revalidation/revalidation-config.schema.ts (RevalidationEntityTypeEnum with 8 values, RevalidationConfigSchema) and revalidation-config.crud.schema.ts (UpdateRevalidationConfigInputSchema with 4 optional fields). Tests: schema tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Create entities/revalidation/ directory", "completed": false },
+                {
+                    "title": "Implement RevalidationEntityTypeEnum with 8 entity types",
+                    "completed": false
+                },
+                { "title": "Implement RevalidationConfigSchema", "completed": false },
+                {
+                    "title": "Implement UpdateRevalidationConfigInputSchema (4 optional fields)",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create Zod schemas: revalidation-log",
+            "description": "Create packages/schemas/src/entities/revalidation/revalidation-log.schema.ts (RevalidationTriggerEnum, RevalidationStatusEnum, RevalidationLogSchema) and revalidation-log.query.schema.ts (RevalidationLogFilterSchema with 6 optional filter fields). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Implement RevalidationTriggerEnum and RevalidationStatusEnum",
+                    "completed": false
+                },
+                { "title": "Implement RevalidationLogSchema", "completed": false },
+                {
+                    "title": "Implement RevalidationLogFilterSchema for query filtering",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create Zod schemas: revalidation HTTP request/response",
+            "description": "Create packages/schemas/src/entities/revalidation/revalidation.http.schema.ts with ManualRevalidateRequestSchema, RevalidateEntityRequestSchema, RevalidateTypeRequestSchema, RevalidationResponseSchema, RevalidationStatsSchema. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Implement ManualRevalidateRequestSchema (paths array, reason)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement RevalidateEntityRequestSchema and RevalidateTypeRequestSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Implement RevalidationResponseSchema and RevalidationStatsSchema",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create schemas barrel and update packages/schemas/src/entities/index.ts",
+            "description": "Create packages/schemas/src/entities/revalidation/index.ts exporting all 5 schema files. Add 'export * from ./revalidation/index.js' to packages/schemas/src/entities/index.ts (note .js extension per project convention). Tests: typecheck passes, all types importable from @repo/schemas.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012", "T-013", "T-014"],
+            "blocks": ["T-066", "T-067", "T-068", "T-069", "T-070", "T-071", "T-074", "T-024"],
+            "subtasks": [
+                {
+                    "title": "Create entities/revalidation/index.ts barrel with 5 exports",
+                    "completed": false
+                },
+                {
+                    "title": "Add export line to entities/index.ts with .js extension",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create revalidation_config seed data and seed function",
+            "description": "Create packages/seed/src/data/revalidation-config/defaults.json with 8 entity type configs. Create packages/seed/src/required/revalidation-config.seed.ts with seedRevalidationConfig(context: SeedContext) using upsert pattern (findByEntityType + create if not exists). Tests: seed function runs without error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Create data/revalidation-config/defaults.json with 8 entity configs",
+                    "completed": false
+                },
+                {
+                    "title": "Create seedRevalidationConfig function following SeedContext pattern",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "db"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Register seedRevalidationConfig in required seed manifest",
+            "description": "Find where packages/seed/src/required/ seeds are registered (look for existing seedX calls in a runner/index file). Add import and call for seedRevalidationConfig. Tests: pnpm db:seed runs without error.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Find seed registration file (likely packages/seed/src/index.ts or run.ts)",
+                    "completed": false
+                },
+                { "title": "Import and register seedRevalidationConfig", "completed": false }
+            ],
+            "tags": ["seed"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create RevalidationAdapter interface and RevalidationResult type",
+            "description": "Create packages/service-core/src/revalidation/revalidation-adapter.ts with RevalidationResult interface (path, success, durationMs, error?) and RevalidationAdapter interface (revalidate, revalidateMany). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Create revalidation/ directory in service-core/src/",
+                    "completed": false
+                },
+                {
+                    "title": "Define RevalidationResult interface (readonly fields)",
+                    "completed": false
+                },
+                {
+                    "title": "Define RevalidationAdapter interface with 2 methods",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapter", "typescript"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement VercelRevalidationAdapter",
+            "description": "Create packages/service-core/src/revalidation/adapters/vercel-adapter.ts. Implement revalidate() with GET + x-prerender-revalidate header, timing measurement, error handling. Implement revalidateMany() with chunk processing (chunkSize=10, chunkDelayMs=200). Tests: unit tests in T-023.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                { "title": "Create adapters/ directory", "completed": false },
+                {
+                    "title": "Implement constructor with siteUrl, bypassToken, chunkSize, chunkDelayMs",
+                    "completed": false
+                },
+                {
+                    "title": "Implement revalidate() with GET fetch, header, timing, error handling",
+                    "completed": false
+                },
+                {
+                    "title": "Implement revalidateMany() with chunk loop and delay",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapter", "vercel"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Implement NoOpRevalidationAdapter",
+            "description": "Create packages/service-core/src/revalidation/adapters/noop-adapter.ts. NoOpRevalidationAdapter logs debug but always returns success without HTTP calls. Tests: unit tests in T-024.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-022", "T-024"],
+            "subtasks": [
+                {
+                    "title": "Implement NoOpRevalidationAdapter with debug logging",
+                    "completed": false
+                },
+                {
+                    "title": "revalidate() returns { success: true, durationMs: 0 }",
+                    "completed": false
+                },
+                { "title": "revalidateMany() maps all paths to success", "completed": false }
+            ],
+            "tags": ["service-core", "adapter"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create adapter factory function in apps/api/src/lib/revalidation.ts",
+            "description": "Create apps/api/src/lib/revalidation.ts with createRevalidationAdapter(): RevalidationAdapter. Uses VercelRevalidationAdapter when HOSPEDA_SITE_URL and HOSPEDA_REVALIDATION_SECRET are set, otherwise NoOpRevalidationAdapter with warning log. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020", "T-003"],
+            "blocks": ["T-055"],
+            "subtasks": [
+                { "title": "Create apps/api/src/lib/ directory if not exists", "completed": false },
+                {
+                    "title": "Implement createRevalidationAdapter() with env check",
+                    "completed": false
+                },
+                { "title": "Log warning when falling back to NoOp", "completed": false }
+            ],
+            "tags": ["api", "adapter", "factory"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create revalidation module barrel and update service-core/src/index.ts",
+            "description": "Create packages/service-core/src/revalidation/index.ts exporting adapter types, both adapters, RevalidationService, EntityPathMapper exports, and singleton functions. Add 'export * from ./revalidation' to packages/service-core/src/index.ts. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": ["T-047", "T-055"],
+            "subtasks": [
+                { "title": "Create revalidation/index.ts with all re-exports", "completed": false },
+                { "title": "Add export line to service-core/src/index.ts", "completed": false }
+            ],
+            "tags": ["service-core"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Write unit tests for VercelRevalidationAdapter",
+            "description": "File: packages/service-core/test/revalidation/vercel-adapter.test.ts. Mock fetch. Test: correct URL (siteUrl+path), GET method, x-prerender-revalidate header with token, success/error handling for HTTP 404/500, network error (fetch throws), chunk processing (batches of chunkSize with delay), durationMs measurement.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test correct URL construction and GET method", "completed": false },
+                { "title": "Test x-prerender-revalidate header value", "completed": false },
+                {
+                    "title": "Test error handling: network failure and HTTP 4xx/5xx",
+                    "completed": false
+                },
+                { "title": "Test chunk processing with mock delays", "completed": false },
+                { "title": "Test durationMs is measured correctly", "completed": false }
+            ],
+            "tags": ["test", "service-core", "adapter"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write unit tests for NoOpAdapter and Zod revalidation schemas",
+            "description": "File packages/service-core/test/revalidation/noop-adapter.test.ts: verify always returns success, no fetch calls. File packages/schemas/test/entities/revalidation/schemas.test.ts: test RevalidationEntityTypeEnum values, RevalidationConfigSchema validation, UpdateRevalidationConfigInput constraints (cronIntervalMinutes 5-10080, debounceSeconds 5-300).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020", "T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test NoOpAdapter returns success without HTTP calls",
+                    "completed": false
+                },
+                {
+                    "title": "Test RevalidationEntityTypeEnum accepts 8 valid values, rejects others",
+                    "completed": false
+                },
+                {
+                    "title": "Test UpdateRevalidationConfigInput min/max constraints",
+                    "completed": false
+                }
+            ],
+            "tags": ["test", "schemas", "adapter"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Generate and apply Drizzle migration for revalidation tables",
+            "description": "Run 'pnpm db:generate' to generate migration from revalidation schema files, then 'pnpm db:migrate' to apply. Verify migration SQL creates revalidation_config and revalidation_log tables with all columns and indexes. Tests: migration applies cleanly.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate", "completed": false },
+                { "title": "Review generated SQL for correctness", "completed": false },
+                { "title": "Run pnpm db:migrate", "completed": false }
+            ],
+            "tags": ["db", "migration", "drizzle"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add revalidation permissions to SUPER_ADMIN role in permissions seed",
+            "description": "Find the permissions seed file in packages/seed/src/required/ that assigns permissions to SUPER_ADMIN. Add all 4 REVALIDATION_* permissions (REVALIDATION_TRIGGER, REVALIDATION_CONFIG_VIEW, REVALIDATION_CONFIG_EDIT, REVALIDATION_LOG_VIEW) to SUPER_ADMIN. Tests: seed runs without error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Locate SUPER_ADMIN permissions seed assignment", "completed": false },
+                { "title": "Add 4 revalidation permissions to SUPER_ADMIN", "completed": false }
+            ],
+            "tags": ["seed", "permissions"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Migrate [lang]/alojamientos/[slug].astro to SSR (Pattern A)",
+            "description": "In apps/web/src/pages/[lang]/alojamientos/[slug].astro: remove export const prerender=true, remove getStaticPaths(), add isValidLocale check, add accommodationsApi.getBySlug({ slug }) fetch, add 404 redirect if not found, remove Astro.props usage. Tests: page renders in dev mode for valid slug, redirects for invalid slug.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove export const prerender = true", "completed": false },
+                {
+                    "title": "Remove getStaticPaths() function and fetchAllPages import",
+                    "completed": false
+                },
+                { "title": "Add locale validation with isValidLocale", "completed": false },
+                {
+                    "title": "Add accommodationsApi.getBySlug() fetch with 404 redirect",
+                    "completed": false
+                },
+                {
+                    "title": "Replace Astro.props.item with fetched item variable",
+                    "completed": false
+                },
+                { "title": "Verify page renders correctly in dev mode", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Migrate [lang]/destinos/[...path].astro to SSR (Pattern A, catch-all)",
+            "description": "Remove prerender and getStaticPaths(). Handle catch-all [...path] param (may be string or string[]). Add locale validation. Call destinationsApi.getByPath() with joined path. Add 404 redirect. Remove Astro.props. Tests: valid path renders, invalid path redirects, deep path (3 levels) works.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove prerender and getStaticPaths()", "completed": false },
+                {
+                    "title": "Handle catch-all path param (Array.isArray check + join)",
+                    "completed": false
+                },
+                { "title": "Add locale validation", "completed": false },
+                { "title": "Fetch destination by path with 404 redirect", "completed": false },
+                { "title": "Remove Astro.props usage", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Migrate [lang]/destinos/index.astro to SSR (Pattern B)",
+            "description": "Remove export const prerender=true and getStaticLocalePaths re-export. Add locale validation with isValidLocale. The data fetch (destinationsApi.list) is already in frontmatter and can remain unchanged. Tests: page renders in dev mode.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove prerender = true", "completed": false },
+                { "title": "Remove getStaticLocalePaths re-export", "completed": false },
+                { "title": "Add isValidLocale check and locale cast", "completed": false },
+                {
+                    "title": "Verify data fetch still works without getStaticPaths",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Verify [lang]/destinos/[slug]/alojamientos/index.astro is already SSR",
+            "description": "Check apps/web/src/pages/[lang]/destinos/[slug]/alojamientos/index.astro: confirm it has no prerender=true and no getStaticPaths(). Add isValidLocale check if missing. Confirm ISR will apply (page is not in exclude list). Tests: page renders in dev mode.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Verify no prerender=true or getStaticPaths() exists",
+                    "completed": false
+                },
+                { "title": "Add locale validation if missing", "completed": false },
+                { "title": "Verify page works correctly in dev mode", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Migrate [lang]/eventos/[slug].astro to SSR (Pattern A)",
+            "description": "Remove prerender and getStaticPaths(). Add locale validation. Fetch event by slug via eventsApi.getBySlug(). Add 404 redirect. Remove Astro.props. Tests: valid slug renders, invalid slug redirects.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove prerender and getStaticPaths()", "completed": false },
+                { "title": "Add locale validation", "completed": false },
+                { "title": "Fetch event by slug with 404 redirect", "completed": false },
+                { "title": "Remove Astro.props usage", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Migrate [lang]/publicaciones/[slug].astro to SSR (Pattern A + related posts)",
+            "description": "Remove prerender and getStaticPaths(). Add locale validation. Fetch post by slug. Keep related posts fetch (already in frontmatter). Add 404 redirect. Remove Astro.props. Tests: valid slug renders with related posts, invalid slug redirects.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove prerender and getStaticPaths()", "completed": false },
+                { "title": "Add locale validation", "completed": false },
+                { "title": "Fetch post by slug with 404 redirect", "completed": false },
+                { "title": "Verify related posts fetch still works", "completed": false },
+                { "title": "Remove Astro.props usage", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Verify [lang]/alojamientos/tipo/[type]/index.astro is already SSR",
+            "description": "Check that this page has no prerender=true or getStaticPaths(). According to spec it's already SSR. Verify locale and type param validation exists (VALID_TYPES check). The ISR exclusion is handled by astro.config exclude pattern. Tests: verify in dev mode.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Confirm no prerender or getStaticPaths in file", "completed": false },
+                {
+                    "title": "Verify VALID_TYPES validation exists for type param",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm page is excluded from ISR by astro.config pattern",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Migrate [lang]/eventos/categoria/[category]/index.astro to SSR (ISR-excluded)",
+            "description": "Remove export const prerender=true AND getStaticPaths(). Add locale validation. Add category validation against ALLOWED_CATEGORIES (5 URL slugs: festival, fair, sport, cultural, gastronomy) with 404 redirect. ISR exclusion via astro.config pattern. Tests: valid category renders, invalid category redirects.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove export const prerender = true", "completed": false },
+                { "title": "Remove getStaticPaths() function", "completed": false },
+                { "title": "Add locale validation", "completed": false },
+                {
+                    "title": "Add category validation against ALLOWED_CATEGORIES with 404",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Migrate [lang]/index.astro homepage to SSR (Pattern D - Server Islands)",
+            "description": "Remove export const prerender=true and getStaticLocalePaths re-export. Add isValidLocale check. No data fetching needed - all sections use server:defer. Tests: homepage renders in dev mode, Server Islands still load.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-037", "T-038"],
+            "subtasks": [
+                { "title": "Remove prerender = true", "completed": false },
+                {
+                    "title": "Remove getStaticLocalePaths import and getStaticPaths re-export",
+                    "completed": false
+                },
+                { "title": "Add isValidLocale check with redirect to /es/", "completed": false },
+                { "title": "Verify Server Islands (server:defer) still work", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration", "homepage"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Verify alojamientos/index and eventos/index are already SSR",
+            "description": "Confirm [lang]/alojamientos/index.astro and [lang]/eventos/index.astro have no getStaticPaths() (spec says they're already SSR). Confirm ISR exclusion is covered by astro.config exclude patterns. Tests: both pages load in dev mode.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Verify alojamientos/index.astro has no getStaticPaths",
+                    "completed": false
+                },
+                { "title": "Verify eventos/index.astro has no getStaticPaths", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Update apps/web/CLAUDE.md rendering documentation",
+            "description": "Update apps/web/CLAUDE.md to document the new ISR rendering strategy: which pages are SSR+ISR-cached, which are SSR+ISR-excluded, the exclude patterns, and the bypassToken mechanism. Remove outdated prerender documentation. Tests: no tests needed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-027", "T-028", "T-029", "T-031", "T-032", "T-034", "T-035"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document which pages are ISR-cached vs ISR-excluded",
+                    "completed": false
+                },
+                { "title": "Document the exclude patterns rationale", "completed": false },
+                {
+                    "title": "Remove outdated getStaticPaths/prerender documentation",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "web"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Write SSR smoke tests for migrated pages",
+            "description": "Write/update tests in apps/web/test/ for migrated pages. For each migrated page: verify 200 response for valid params, 302/404 redirect for invalid slug/locale. Focus on: alojamientos/[slug], destinos/[...path], eventos/[slug], publicaciones/[slug], homepage. Tests should confirm SSR behavior.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-027", "T-028", "T-029", "T-031", "T-032", "T-034", "T-035"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test alojamientos/[slug] SSR behavior", "completed": false },
+                { "title": "Test destinos/[...path] with 1 and 3-level paths", "completed": false },
+                { "title": "Test eventos/[slug] and publicaciones/[slug] SSR", "completed": false },
+                {
+                    "title": "Test invalid locale redirects on all migrated pages",
+                    "completed": false
+                }
+            ],
+            "tags": ["test", "web", "astro"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Create EntityType, EntityChangeData, EntityChangeEvent types",
+            "description": "Create packages/service-core/src/revalidation/entity-path-mapper.ts with EntityType (8 values), EntityChangeData discriminated union (8 members with readonly fields for each entity type), EntityChangeEvent interface. No implementation yet. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-040", "T-043", "T-044"],
+            "subtasks": [
+                { "title": "Define EntityType union type (8 entity types)", "completed": false },
+                {
+                    "title": "Define EntityChangeData discriminated union with entityType discriminant",
+                    "completed": false
+                },
+                { "title": "Define EntityChangeEvent interface", "completed": false }
+            ],
+            "tags": ["service-core", "types"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Add ACCOMMODATION_TYPE_TO_URL_SLUG and EVENT_CATEGORY_TO_URL_SLUG constants",
+            "description": "In entity-path-mapper.ts add ACCOMMODATION_TYPE_TO_URL_SLUG (6 DB enum → URL slug mappings: HOTEL→hotel, HOSTEL→hostel, CABIN→cabin, APARTMENT→apartment, CAMPING→camping, COUNTRY_HOUSE→estancia) and EVENT_CATEGORY_TO_URL_SLUG (FESTIVAL→festival, FAIR→fair, SPORTS→sport, CULTURE→cultural, GASTRONOMY→gastronomy). Add JSDoc explaining HOUSE/ROOM/MOTEL/RESORT have no URL slugs. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-041", "T-042"],
+            "subtasks": [
+                {
+                    "title": "Add ACCOMMODATION_TYPE_TO_URL_SLUG const with 6 mappings",
+                    "completed": false
+                },
+                {
+                    "title": "Add EVENT_CATEGORY_TO_URL_SLUG const with 5 mappings",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc noting unmapped values and FAIR/CULTURE caveats",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "constants"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Implement getAccommodationPaths() helper",
+            "description": "In entity-path-mapper.ts implement getAccommodationPaths(data, locales): string[] generating per-locale paths: detail /{lang}/alojamientos/{slug}/, parent destination /{lang}/destinos/{destPath}/ (strip leading slash from DB path), destination accommodations /{lang}/destinos/{destPath}/alojamientos/, type listing /{lang}/alojamientos/tipo/{urlSlug}/ (only if type maps to a URL slug). All paths must have trailing slashes. Tests: see T-046.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                { "title": "Generate detail page paths (x3 locales)", "completed": false },
+                {
+                    "title": "Generate destination detail and accommodations paths (strip leading /)",
+                    "completed": false
+                },
+                {
+                    "title": "Generate tipo/ listing paths (only for mapped types)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "path-mapper"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Implement getDestinationPaths() and getEventPaths() helpers",
+            "description": "getDestinationPaths(): detail /{lang}/destinos/{path}/ (x3, strip leading /) + index /{lang}/destinos/ (x3). getEventPaths(): detail /{lang}/eventos/{slug}/ (x3) + category listing /{lang}/eventos/categoria/{urlSlug}/ (x3, only if category maps). All paths must have trailing slashes. Tests: see T-046.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Implement getDestinationPaths with detail + index paths",
+                    "completed": false
+                },
+                {
+                    "title": "Implement getEventPaths with detail + categoria paths",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "path-mapper"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Implement getPostPaths(), getAccommodationReviewPaths(), getDestinationReviewPaths()",
+            "description": "getPostPaths(): detail /{lang}/publicaciones/{slug}/ (x3) + tag listings /{lang}/publicaciones/etiqueta/{tagSlug}/ (x3 per tag). getAccommodationReviewPaths(): parent accommodation detail (x3). getDestinationReviewPaths(): parent destination detail (x3). Tests: see T-046.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Implement getPostPaths with tag listing iteration",
+                    "completed": false
+                },
+                { "title": "Implement getAccommodationReviewPaths", "completed": false },
+                { "title": "Implement getDestinationReviewPaths", "completed": false }
+            ],
+            "tags": ["service-core", "path-mapper"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Implement getTagPaths() and getAmenityPaths() helpers",
+            "description": "getTagPaths(): accommodation details /{lang}/alojamientos/{slug}/ (x3 per slug) + destination details /{lang}/destinos/{destPath}/ (x3 per path). getAmenityPaths(): same pattern as tags. Both receive pre-resolved arrays from caller. Tests: see T-046.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Implement getTagPaths iterating over accommodationSlugs and destinationPaths",
+                    "completed": false
+                },
+                { "title": "Implement getAmenityPaths (same pattern)", "completed": false }
+            ],
+            "tags": ["service-core", "path-mapper"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Implement getAffectedPaths() main export function",
+            "description": "In entity-path-mapper.ts implement the exported getAffectedPaths({ event, locales }) function. Uses switch on event.data.entityType to dispatch to the appropriate private helper. Returns ReadonlyArray<string>. Add JSDoc. Tests: see T-046.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-041", "T-042", "T-043", "T-044"],
+            "blocks": ["T-046", "T-048", "T-050", "T-051"],
+            "subtasks": [
+                {
+                    "title": "Implement switch dispatch on event.data.entityType",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc explaining the function is pure (no side effects)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify TypeScript exhaustive check on discriminated union",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "path-mapper"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Write comprehensive unit tests for entity-path-mapper",
+            "description": "File: packages/service-core/test/revalidation/entity-path-mapper.test.ts. Test every entity type x create/update/delete operations. Verify: trailing slashes on all paths, locale expansion (3 locales), hierarchical destination path (strip leading /), HOTEL maps to 'hotel' URL slug, HOUSE does NOT generate tipo/ path, FESTIVAL maps to 'festival', MUSIC does NOT generate categoria/ path, reviews generate parent paths, tags/amenities iterate over slugs arrays, empty slug arrays produce no extra paths.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test accommodation paths (detail + destination + tipo) for all 3 locales",
+                    "completed": false
+                },
+                {
+                    "title": "Test destination paths (detail + index), verify path strips leading slash",
+                    "completed": false
+                },
+                {
+                    "title": "Test event paths with and without URL slug mapping",
+                    "completed": false
+                },
+                { "title": "Test post paths with and without tag slugs", "completed": false },
+                { "title": "Test review paths resolve to parent entity paths", "completed": false },
+                {
+                    "title": "Test tag/amenity paths with empty and non-empty slug arrays",
+                    "completed": false
+                },
+                { "title": "Test all paths have trailing slashes", "completed": false }
+            ],
+            "tags": ["test", "service-core", "path-mapper"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Create RevalidationService class skeleton",
+            "description": "Create packages/service-core/src/revalidation/revalidation.service.ts. Define RevalidationServiceConfig interface. Implement RevalidationService constructor initializing all private fields (adapter, defaultDebounceMs, locales, maxCronRevalidations, logRetentionDays, pendingRevalidations Map). Import models from @repo/db. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-011"],
+            "blocks": ["T-048", "T-049", "T-050", "T-051", "T-053", "T-054"],
+            "subtasks": [
+                { "title": "Define RevalidationServiceConfig interface", "completed": false },
+                {
+                    "title": "Implement class with constructor setting all private fields",
+                    "completed": false
+                },
+                {
+                    "title": "Add pendingRevalidations Map<string, NodeJS.Timeout>",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "revalidation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Implement RevalidationService.revalidateEntity() with debouncing",
+            "description": "In revalidation.service.ts implement revalidateEntity({ event }): Promise<void>. Read entity config via getEntityConfig(). Check enabled+autoRevalidateOnChange. Clear existing timeout. Schedule new setTimeout with debounceMs. On timeout: getAffectedPaths(), adapter.revalidateMany(), logResults(). All errors caught - fire-and-forget. Tests: see T-053.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-047", "T-045"],
+            "blocks": ["T-052"],
+            "subtasks": [
+                {
+                    "title": "Read config and check enabled/autoRevalidateOnChange",
+                    "completed": false
+                },
+                {
+                    "title": "Implement debounce: clear existing timeout, schedule new one",
+                    "completed": false
+                },
+                {
+                    "title": "On timeout: compute paths, revalidate, log results",
+                    "completed": false
+                },
+                {
+                    "title": "Wrap in try/catch - fire-and-forget (never throws)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "revalidation", "debounce"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Implement RevalidationService.revalidatePaths()",
+            "description": "Implement revalidatePaths({ paths, reason, triggeredBy }): Promise<ReadonlyArray<RevalidationResult>>. No debouncing - immediate. Call adapter.revalidateMany({ paths }), then logResults with trigger='manual'. Return results. Tests: see T-053.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047"],
+            "blocks": ["T-052"],
+            "subtasks": [
+                {
+                    "title": "Call adapter.revalidateMany immediately (no debounce)",
+                    "completed": false
+                },
+                {
+                    "title": "Call logResults with trigger='manual' and triggeredBy",
+                    "completed": false
+                },
+                { "title": "Return results array", "completed": false }
+            ],
+            "tags": ["service-core", "revalidation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Implement private resolvers: resolveAccommodationPaths, resolveDestinationPaths",
+            "description": "In revalidation.service.ts add private resolveAccommodationPaths(): Promise<ReadonlyArray<string>>. Query AccommodationModel.findAll({}, { pageSize: 9999 }). For each: lookup destination via DestinationModel.findById. Build EntityChangeData. Call getAffectedPaths(). Same for resolveDestinationPaths() querying DestinationModel. Tests: see T-053.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-047", "T-045"],
+            "blocks": ["T-052"],
+            "subtasks": [
+                {
+                    "title": "Implement resolveAccommodationPaths with destination lookup",
+                    "completed": false
+                },
+                { "title": "Implement resolveDestinationPaths", "completed": false }
+            ],
+            "tags": ["service-core", "revalidation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Implement private resolvers: resolveEventPaths, resolvePostPaths",
+            "description": "resolveEventPaths(): query EventModel.findAll, build EntityChangeData per event (no external lookup needed). resolvePostPaths(): query PostModel.findAll, pass empty tagSlugs (acceptable for cron - avoids N+1). Both return paths via getAffectedPaths(). Tests: see T-053.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047", "T-045"],
+            "blocks": ["T-052"],
+            "subtasks": [
+                {
+                    "title": "Implement resolveEventPaths (category from entity)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement resolvePostPaths (empty tagSlugs for cron)",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc explaining tagSlugs is empty for cron performance reasons",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "revalidation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Implement RevalidationService.revalidateByEntityType() and private helpers",
+            "description": "Implement revalidateByEntityType({ entityType }): Promise<ReadonlyArray<RevalidationResult>>. Build entityResolvers map. Get paths from resolver, deduplicate, slice to maxCronRevalidations, call adapter.revalidateMany, logResults with trigger='cron'. Also implement private getEntityConfig() (reads RevalidationConfigModel) and private logResults() (iterates results, creates log entries per result). Tests: see T-053.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-048", "T-049", "T-050", "T-051"],
+            "blocks": ["T-054", "T-055", "T-065", "T-066", "T-068", "T-069", "T-082"],
+            "subtasks": [
+                {
+                    "title": "Implement revalidateByEntityType with entityResolvers dispatch",
+                    "completed": false
+                },
+                {
+                    "title": "Deduplicate paths (Set) and apply maxCronRevalidations limit",
+                    "completed": false
+                },
+                {
+                    "title": "Implement private getEntityConfig() using RevalidationConfigModel",
+                    "completed": false
+                },
+                { "title": "Implement private logResults() iterating results", "completed": false }
+            ],
+            "tags": ["service-core", "revalidation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Write unit tests for RevalidationService",
+            "description": "File: packages/service-core/test/revalidation/revalidation-service.test.ts. Mock adapter, RevalidationConfigModel, RevalidationLogModel. Test: revalidateEntity skips when config disabled, debounce cancels pending timeout, manual revalidation fires immediately, revalidateByEntityType calls resolver and respects maxCronRevalidations, logResults creates log entries, config-not-found returns null gracefully.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-052"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test revalidateEntity respects enabled/autoRevalidateOnChange",
+                    "completed": false
+                },
+                {
+                    "title": "Test debounce cancels previous timeout on rapid calls",
+                    "completed": false
+                },
+                {
+                    "title": "Test revalidatePaths fires immediately (manual trigger)",
+                    "completed": false
+                },
+                { "title": "Test revalidateByEntityType with mocked resolver", "completed": false },
+                { "title": "Test logResults creates entries for each result", "completed": false }
+            ],
+            "tags": ["test", "service-core", "revalidation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Create revalidation singleton module",
+            "description": "Create packages/service-core/src/revalidation/revalidation-singleton.ts with module-level _instance variable, initializeRevalidationService(service: RevalidationService): void, and getRevalidationService(): RevalidationService | undefined. Returns undefined when not initialized (tests, CLI scripts). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-047"],
+            "blocks": [
+                "T-055",
+                "T-056",
+                "T-057",
+                "T-058",
+                "T-059",
+                "T-060",
+                "T-061",
+                "T-062",
+                "T-063",
+                "T-064"
+            ],
+            "subtasks": [
+                { "title": "Create singleton module with _instance variable", "completed": false },
+                {
+                    "title": "Export initializeRevalidationService and getRevalidationService",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "singleton"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Initialize RevalidationService in API app bootstrap",
+            "description": "In apps/api/src/app.ts inside initApp(): import createRevalidationAdapter from './lib/revalidation', import RevalidationService and initializeRevalidationService from @repo/service-core, import locales from @repo/i18n. Create adapter and service, call initializeRevalidationService(). Tests: API starts without error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-054", "T-052", "T-021", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add imports for adapter factory, RevalidationService, initializeRevalidationService, locales",
+                    "completed": false
+                },
+                { "title": "Create adapter with createRevalidationAdapter()", "completed": false },
+                {
+                    "title": "Instantiate RevalidationService with adapter + locales",
+                    "completed": false
+                },
+                {
+                    "title": "Call initializeRevalidationService(revalidationService)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "bootstrap", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Add revalidation hooks to AccommodationService: create/update hooks",
+            "description": "In packages/service-core/src/services/accommodation/accommodation.service.ts: add import for getRevalidationService from singleton. Add private _triggerRevalidation(entity, operation) helper that resolves destinationPath via DestinationModel and calls revalidationService.revalidateEntity() in fire-and-forget async IIFE. Extend existing _afterCreate to call _triggerRevalidation. Add new _afterUpdate override calling _triggerRevalidation. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                { "title": "Add getRevalidationService import", "completed": false },
+                {
+                    "title": "Implement _triggerRevalidation private helper with destination lookup",
+                    "completed": false
+                },
+                {
+                    "title": "Extend _afterCreate to call _triggerRevalidation after super call",
+                    "completed": false
+                },
+                {
+                    "title": "Add new _afterUpdate override calling _triggerRevalidation",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Add revalidation hooks to AccommodationService: delete/restore hooks",
+            "description": "Extend _beforeSoftDelete to capture _lastDeletedRevalidationData (entityId, slug, destinationPath, type) before deletion. Extend _afterSoftDelete to trigger revalidation using captured data. Add _beforeHardDelete + _afterHardDelete with same capture pattern. Add _beforeRestore + _afterRestore (new). Tests: see T-065.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-056"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                { "title": "Add _lastDeletedRevalidationData private field", "completed": false },
+                { "title": "Extend _beforeSoftDelete to capture entity data", "completed": false },
+                { "title": "Extend _afterSoftDelete to trigger revalidation", "completed": false },
+                {
+                    "title": "Add _beforeHardDelete + _afterHardDelete with same pattern",
+                    "completed": false
+                },
+                { "title": "Add _beforeRestore + _afterRestore", "completed": false }
+            ],
+            "tags": ["service-core", "hooks", "accommodation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Add revalidation hooks to DestinationService",
+            "description": "In destination.service.ts: add getRevalidationService import. Add _afterCreate and _afterUpdate overrides (entity has path/slug directly). Add _afterSoftDelete, _afterHardDelete, _afterRestore with _before* capture pattern. CRITICAL: verify that the overridden update() method calls super.update() so _afterUpdate fires. If not, add revalidation call directly in update(). Tests: see T-065.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Check if update() override calls super.update() (verify hook chain)",
+                    "completed": false
+                },
+                { "title": "Add _afterCreate and _afterUpdate overrides", "completed": false },
+                { "title": "Add delete/restore hooks with _before* capture", "completed": false }
+            ],
+            "tags": ["service-core", "hooks", "destination"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Add revalidation hooks to EventService",
+            "description": "In event.service.ts: add 5 hooks (_afterCreate, _afterUpdate, _afterSoftDelete, _afterHardDelete, _afterRestore). Entity has slug, isFeatured, category directly - no external lookup needed. Use _before* capture pattern for delete/restore hooks. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                { "title": "Add _afterCreate and _afterUpdate overrides", "completed": false },
+                { "title": "Add delete/restore hooks with _before* capture", "completed": false }
+            ],
+            "tags": ["service-core", "hooks", "event"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Add revalidation hooks to PostService",
+            "description": "In post.service.ts: add 5 hooks. For _afterCreate/_afterUpdate: query r_entity_tag WHERE entityType='post' AND entityId=entity.id to resolve tag slugs (use getDb() + Drizzle). CRITICAL: verify overridden update() calls super.update() for _afterUpdate to fire. Add _before*/_after* capture pattern for delete/restore. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Check PostService.update() override calls super.update()",
+                    "completed": false
+                },
+                {
+                    "title": "Add _afterCreate/_afterUpdate with r_entity_tag query for tag slugs",
+                    "completed": false
+                },
+                { "title": "Add delete/restore hooks with _before* capture", "completed": false },
+                {
+                    "title": "Verify fire-and-forget wrapping for async tag resolution",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks", "post"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Add revalidation hooks to AccommodationReviewService",
+            "description": "In accommodationReview.service.ts: extend _afterCreate (already exists) to resolve accommodationSlug from entity.accommodationId via AccommodationModel and trigger revalidation. Extend _beforeSoftDelete (already exists) to also capture accommodationId for revalidation. Extend _afterSoftDelete to trigger revalidation using captured id. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Extend _afterCreate to resolve accommodation slug and trigger revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Extend _beforeSoftDelete to capture accommodation id",
+                    "completed": false
+                },
+                { "title": "Extend _afterSoftDelete to trigger revalidation", "completed": false }
+            ],
+            "tags": ["service-core", "hooks", "accommodation-review"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Add revalidation hooks to DestinationReviewService",
+            "description": "Same pattern as AccommodationReviewService but resolves destination path instead of accommodation slug. Extend _afterCreate, _beforeSoftDelete, _afterSoftDelete. Resolve destination path from entity.destinationId via DestinationModel. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Extend _afterCreate to resolve destination path and trigger revalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Extend _beforeSoftDelete + _afterSoftDelete for delete trigger",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks", "destination-review"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Add revalidation hooks to TagService",
+            "description": "In tag.service.ts: add _afterUpdate, _afterSoftDelete, _afterHardDelete. For each: query getDb() on rEntityTag table WHERE tagId=entity.id AND entityType='accommodation'. For each accommodation: lookup slug via AccommodationModel, lookup destination path via DestinationModel. Trigger revalidation with accommodationSlugs + destinationPaths. Fire-and-forget IIFE. Tests: see T-065.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Add _afterUpdate override with batch r_entity_tag query",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve accommodation slugs and destination paths per accommodation",
+                    "completed": false
+                },
+                {
+                    "title": "Trigger revalidation with deduplicated destinationPaths",
+                    "completed": false
+                },
+                {
+                    "title": "Add same pattern for _afterSoftDelete and _afterHardDelete",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks", "tag"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Add revalidation hooks to AmenityService",
+            "description": "In amenity.service.ts: add _afterUpdate, _afterSoftDelete, _afterHardDelete. Query rAccommodationAmenity WHERE amenityId=entity.id. For each relation: lookup accommodation slug and destination path. Same pattern as TagService but simpler query (no entityType filter needed). Tests: see T-065.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-054"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Add _afterUpdate with rAccommodationAmenity query",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve accommodation slugs and destination paths",
+                    "completed": false
+                },
+                {
+                    "title": "Add _afterSoftDelete and _afterHardDelete with same pattern",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks", "amenity"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Write integration tests for service hook revalidation triggers",
+            "description": "File: packages/service-core/test/revalidation/service-hooks.test.ts. Mock getRevalidationService() to return spy. Test: AccommodationService update triggers revalidateEntity with correct entityType/slug, DestinationService create/update fires hooks, EventService fires hooks with category, PostService fires hooks with tagSlugs, AccommodationReviewService triggers parent accommodation path, TagService triggers affected accommodations, AmenityService similar. Verify fire-and-forget (errors don't propagate).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-057", "T-058", "T-059", "T-060", "T-061", "T-062", "T-063", "T-064"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Mock getRevalidationService with jest.spyOn", "completed": false },
+                {
+                    "title": "Test AccommodationService triggers with correct data",
+                    "completed": false
+                },
+                {
+                    "title": "Test DestinationService and EventService triggers",
+                    "completed": false
+                },
+                { "title": "Test PostService triggers with tag resolution", "completed": false },
+                { "title": "Test review services trigger parent entity paths", "completed": false },
+                {
+                    "title": "Test revalidation errors don't fail CRUD operations",
+                    "completed": false
+                }
+            ],
+            "tags": ["test", "service-core", "hooks", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Create POST /admin/revalidation/revalidate endpoint",
+            "description": "Create apps/api/src/routes/revalidation/admin/revalidate.ts using createAdminRoute. Validates body with ManualRevalidateRequestSchema (paths array, reason). Gets actor from context. Calls revalidationService.revalidatePaths(). Returns RevalidationResponseSchema with results and summary. Requires REVALIDATION_TRIGGER permission. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-052", "T-015", "T-005"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                { "title": "Create routes/revalidation/admin/ directory", "completed": false },
+                {
+                    "title": "Implement adminRevalidateRoute using createAdminRoute",
+                    "completed": false
+                },
+                {
+                    "title": "Verify 503 behavior when revalidationService is not initialized",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-067",
+            "title": "Create POST /admin/revalidation/revalidate-entity endpoint",
+            "description": "Create apps/api/src/routes/revalidation/admin/revalidate-entity.ts. Implement resolveEntityData() helper (switch on entityType: accommodation/destination/event/post). Calls revalidatePaths() with paths from getAffectedPaths(). Requires REVALIDATION_TRIGGER permission. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-052", "T-015", "T-011"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                {
+                    "title": "Implement resolveEntityData() with switch for 4 entity types",
+                    "completed": false
+                },
+                {
+                    "title": "Handle accommodation with destination path resolution",
+                    "completed": false
+                },
+                {
+                    "title": "Implement handler calling resolveEntityData + getAffectedPaths + revalidatePaths",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-068",
+            "title": "Create POST /admin/revalidation/revalidate-type endpoint",
+            "description": "Create apps/api/src/routes/revalidation/admin/revalidate-type.ts. Validates body with RevalidateTypeRequestSchema. Delegates entirely to revalidationService.revalidateByEntityType(). Returns RevalidationResponseSchema. Requires REVALIDATION_TRIGGER permission. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-052", "T-015"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                {
+                    "title": "Implement adminRevalidateTypeRoute using createAdminRoute",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc warning about potential hundreds of HTTP requests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-069",
+            "title": "Create GET /admin/revalidation/stats endpoint",
+            "description": "Create apps/api/src/routes/revalidation/admin/get-stats.ts. Fetch up to 1000 recent log entries from RevalidationLogModel. Aggregate in JS: last24h/last7d totals by success/failed, byTrigger counts, byEntityType counts, lastRevalidation, lastCronRun. Returns RevalidationStatsSchema. Requires REVALIDATION_LOG_VIEW. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-052", "T-011"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                {
+                    "title": "Implement stats aggregation from recent log entries",
+                    "completed": false
+                },
+                { "title": "Build byTrigger and byEntityType Record objects", "completed": false },
+                { "title": "Return formatted RevalidationStatsSchema response", "completed": false }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-070",
+            "title": "Create GET /admin/revalidation/log endpoint",
+            "description": "Create apps/api/src/routes/revalidation/admin/get-log.ts using createAdminRoute. Support filters: entityType, trigger, status, path (equality). Build whereConditions object. Call model.findAll() with pagination (page, pageSize), sortBy: 'createdAt', sortOrder: 'desc'. Requires REVALIDATION_LOG_VIEW. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-052", "T-015", "T-011"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                { "title": "Implement adminGetLogRoute with filter params", "completed": false },
+                { "title": "Build equality whereConditions from query params", "completed": false },
+                {
+                    "title": "Return paginated response with items/total/page/pageSize",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-071",
+            "title": "Create GET/PUT /admin/revalidation/config endpoints",
+            "description": "Create get-config.ts: GET /config returns all enabled configs (findAllEnabled). Create update-config.ts: PUT /config/:entityType validates entityType param, validates body with UpdateRevalidationConfigInputSchema, calls model.updateById or model.update, returns updated RevalidationConfigSchema. GET requires REVALIDATION_CONFIG_VIEW, PUT requires REVALIDATION_CONFIG_EDIT. Tests: see T-073.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-011", "T-005"],
+            "blocks": ["T-072"],
+            "subtasks": [
+                { "title": "Implement GET /config with findAllEnabled()", "completed": false },
+                {
+                    "title": "Implement PUT /config/:entityType with validation and update",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-072",
+            "title": "Create route barrel and mount in routes/index.ts",
+            "description": "Create apps/api/src/routes/revalidation/admin/index.ts using createRouter(). Mount all 7 route handlers with app.route('/'. Mount routes in apps/api/src/routes/index.ts: 'import { adminRevalidationRoutes } from ./revalidation/admin/index'; app.route('/api/v1/admin/revalidation', adminRevalidationRoutes). Tests: pnpm typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-066", "T-067", "T-068", "T-069", "T-070", "T-071"],
+            "blocks": ["T-073", "T-075"],
+            "subtasks": [
+                {
+                    "title": "Create admin/index.ts with createRouter() and 7 app.route() calls",
+                    "completed": false
+                },
+                {
+                    "title": "Add import and app.route() mount in routes/index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-073",
+            "title": "Write API endpoint tests for all 7 revalidation endpoints",
+            "description": "File: apps/api/test/routes/revalidation/admin.test.ts. Test each endpoint: 401 without auth, 403 without required permission, 200 with correct permission. For POST /revalidate: mock revalidationService.revalidatePaths, verify paths forwarded. For GET /config: verify array response. For PUT /config: verify update persisted. For GET /log: verify pagination. For GET /stats: verify summary structure.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-072"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test POST /revalidate: auth, permission, success flow",
+                    "completed": false
+                },
+                {
+                    "title": "Test POST /revalidate-entity: 404 when entity not found",
+                    "completed": false
+                },
+                {
+                    "title": "Test POST /revalidate-type: delegates to service correctly",
+                    "completed": false
+                },
+                { "title": "Test GET /stats: correct summary structure", "completed": false },
+                { "title": "Test GET /log: pagination and filter params", "completed": false },
+                { "title": "Test GET/PUT /config: view and update flows", "completed": false }
+            ],
+            "tags": ["test", "api", "revalidation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-074",
+            "title": "Create RevalidateEntityButton component",
+            "description": "Create apps/admin/src/components/revalidation/RevalidateEntityButton.tsx. Uses useMutation to POST to /api/v1/admin/revalidation/revalidate-entity. Shows loading spinner, success toast (count of updated routes), error toast. Returns null if user lacks REVALIDATION_TRIGGER permission (check via useHasAnyPermission). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-005"],
+            "blocks": ["T-075"],
+            "subtasks": [
+                {
+                    "title": "Create component with RevalidateEntityButtonProps interface",
+                    "completed": false
+                },
+                { "title": "Implement useMutation with fetchApi call", "completed": false },
+                { "title": "Add permission guard with useHasAnyPermission", "completed": false },
+                {
+                    "title": "Add loading state with animate-spin, success/error toasts",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "react", "component"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-075",
+            "title": "Add RevalidateEntityButton to entity edit pages",
+            "description": "Add <RevalidateEntityButton entityType=\"accommodation\" entityId={id} /> to accommodation edit page header. Same for destination, event, post edit pages. Button placement: next to Save/Delete buttons. Verify the entityId is the entity's UUID (not slug). Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-074", "T-072"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add button to accommodation edit page", "completed": false },
+                { "title": "Add button to destination edit page", "completed": false },
+                { "title": "Add button to event edit page", "completed": false },
+                { "title": "Add button to post edit page", "completed": false }
+            ],
+            "tags": ["admin", "react", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-076",
+            "title": "Create i18n translation files for admin-revalidation and register namespace",
+            "description": "Create packages/i18n/src/locales/es/admin-revalidation.json, en/admin-revalidation.json, pt/admin-revalidation.json with all keys from spec section 13.1. Register 'admin-revalidation' namespace in packages/i18n/src/config.ts: add to namespaces array, add static imports for all 3 locales, add to locale resource maps. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-077"],
+            "subtasks": [
+                { "title": "Create es/admin-revalidation.json with all keys", "completed": false },
+                { "title": "Create en/admin-revalidation.json", "completed": false },
+                { "title": "Create pt/admin-revalidation.json", "completed": false },
+                {
+                    "title": "Register namespace in config.ts (namespaces array + imports + resource maps)",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-077",
+            "title": "Create revalidation admin page: layout and stats cards",
+            "description": "Create apps/admin/src/routes/_authed/revalidation/index.tsx (TanStack Start file-based route). Use TanStack Query to fetch GET /stats. Render 4 stats cards: Total (24h), Success Rate (24h), Failed (24h), Last Revalidation timestamp. Add page title and description. Auth guard via beforeLoad. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-072", "T-076"],
+            "blocks": ["T-078", "T-079", "T-080", "T-081"],
+            "subtasks": [
+                {
+                    "title": "Create _authed/revalidation/ directory and index.tsx",
+                    "completed": false
+                },
+                { "title": "Setup TanStack Query for stats endpoint", "completed": false },
+                { "title": "Implement 4 stats cards with i18n labels", "completed": false },
+                {
+                    "title": "Add page layout with title from admin-revalidation.title",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "react", "page", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-078",
+            "title": "Add quick actions section to revalidation admin page",
+            "description": "Add 'Regenerar por tipo' section below stats cards: entity type dropdown (RevalidationEntityTypeEnum values), Regenerar button calling POST /revalidate-type, confirmation dialog (AlertDialog) showing entity type name before confirming. Uses useMutation. Shows results summary in toast. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-077"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add entity type Select component", "completed": false },
+                { "title": "Implement AlertDialog for confirmation", "completed": false },
+                { "title": "Add useMutation calling POST /revalidate-type", "completed": false },
+                { "title": "Show success/error toast with summary counts", "completed": false }
+            ],
+            "tags": ["admin", "react", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-079",
+            "title": "Add log tab to revalidation admin page",
+            "description": "Add Tabs component. Log tab: TanStack Table with columns (Fecha, Path, Tipo, Trigger, Estado, Duracion, Acciones). Add filter row: entity type select, trigger select, status select. Add pagination. Use TanStack Query for GET /log with filter params. Re-trigger button on each row calls POST /revalidate with that path. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-077"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Setup Tabs component with Log and Config tabs", "completed": false },
+                { "title": "Define TanStack Table columns for log entries", "completed": false },
+                {
+                    "title": "Add filter row (entity type, trigger, status selects)",
+                    "completed": false
+                },
+                { "title": "Add pagination with useQuery for page/pageSize", "completed": false },
+                { "title": "Add re-trigger action button per row", "completed": false }
+            ],
+            "tags": ["admin", "react", "table", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-080",
+            "title": "Add config tab to revalidation admin page",
+            "description": "Config tab: table of entity types with editable fields (autoRevalidateOnChange toggle, cronIntervalMinutes input, debounceSeconds input, enabled toggle). Fetches GET /config. Each row has Save button calling PUT /config/:entityType. Uses react-hook-form or controlled inputs. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-077"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Render config table from GET /config data", "completed": false },
+                { "title": "Add inline editable fields per row", "completed": false },
+                {
+                    "title": "Implement save mutation calling PUT /config/:entityType",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "react", "table", "config"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-081",
+            "title": "Add revalidation navigation entry to admin sidebar",
+            "description": "In apps/admin/src/config/sections/administration.section.tsx, add sidebar.link('revalidation', 'Revalidacion ISR', '/revalidation', <RotateCcwIcon />, [REVALIDATION_TRIGGER, REVALIDATION_CONFIG_VIEW, REVALIDATION_LOG_VIEW]) using OR permission logic. Tests: typecheck passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-077"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add link to administration.section.tsx with 3 permission OR conditions",
+                    "completed": false
+                },
+                { "title": "Import RotateCcwIcon from @repo/icons", "completed": false }
+            ],
+            "tags": ["admin", "navigation", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-082",
+            "title": "Create page-revalidation.job.ts cron job",
+            "description": "Create apps/api/src/cron/jobs/page-revalidation.job.ts with CronJobDefinition. schedule reads from env.HOSPEDA_REVALIDATION_CRON_SCHEDULE. Handler: 1) get revalidationService (return early if not initialized), 2) read all enabled configs, 3) for each: check if interval elapsed since last cron entry, 4) call revalidateByEntityType if due, 5) delete log entries older than 30 days. Tests: see T-085.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-052", "T-003"],
+            "blocks": ["T-083", "T-084"],
+            "subtasks": [
+                { "title": "Create CronJobDefinition with schedule from env", "completed": false },
+                {
+                    "title": "Implement step 1-3: check interval elapsed per entity type",
+                    "completed": false
+                },
+                {
+                    "title": "Step 4: call revalidateByEntityType for due entity types",
+                    "completed": false
+                },
+                { "title": "Step 5: call logModel.deleteOlderThan(30 days)", "completed": false },
+                { "title": "Handle dryRun mode (log but don't execute)", "completed": false }
+            ],
+            "tags": ["api", "cron", "revalidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-083",
+            "title": "Implement stale detection in page-revalidation.job.ts",
+            "description": "In page-revalidation.job.ts, after interval-based revalidation, add stale detection: for each entity type, query entities updated in last 48h, check if revalidation_log has a newer entry for that entityId, if not (or no entry) schedule revalidation with metadata='stale_detection'. Limit stale detection to 48h window for performance. Tests: see T-085.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-082"],
+            "blocks": ["T-084"],
+            "subtasks": [
+                {
+                    "title": "Query entities updated in last 48 hours per entity type",
+                    "completed": false
+                },
+                {
+                    "title": "For each entity: check most recent log entry via findLastCronEntry",
+                    "completed": false
+                },
+                { "title": "Trigger revalidation for stale entities", "completed": false }
+            ],
+            "tags": ["api", "cron", "stale-detection"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-084",
+            "title": "Register pageRevalidationJob in cron registry",
+            "description": "In apps/api/src/cron/registry.ts: import pageRevalidationJob from './jobs/page-revalidation.job'. Add to cronJobs array. Tests: pnpm typecheck passes, API starts with cron registered.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-083"],
+            "blocks": ["T-085", "T-086"],
+            "subtasks": [
+                { "title": "Add import for pageRevalidationJob", "completed": false },
+                { "title": "Add to cronJobs array", "completed": false }
+            ],
+            "tags": ["api", "cron"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-085",
+            "title": "Write unit tests for page revalidation cron job",
+            "description": "File: apps/api/test/cron/page-revalidation.test.ts. Mock getRevalidationService, RevalidationConfigModel, RevalidationLogModel. Test: skips when service not initialized, calls revalidateByEntityType only for entity types past interval, skips entity types not due, stale detection triggers revalidation, log cleanup calls deleteOlderThan, dryRun mode skips actual revalidation but logs.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-084"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test early return when revalidationService undefined",
+                    "completed": false
+                },
+                {
+                    "title": "Test interval check: skips entity type not yet due",
+                    "completed": false
+                },
+                {
+                    "title": "Test interval check: revalidates entity type past due",
+                    "completed": false
+                },
+                {
+                    "title": "Test stale detection triggers revalidation for stale entity",
+                    "completed": false
+                },
+                {
+                    "title": "Test log cleanup calls deleteOlderThan with 30-day cutoff",
+                    "completed": false
+                },
+                { "title": "Test dryRun=true skips actual revalidation calls", "completed": false }
+            ],
+            "tags": ["test", "api", "cron"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-086",
+            "title": "Verify cron integration with existing cron infrastructure",
+            "description": "Run the cron endpoint manually via admin UI or curl. Verify page-revalidation job appears in cron job list. Test dry run (if supported by cron infrastructure). Confirm the job reads from revalidation_config table. Confirm log entries are created. Tests: manual integration verification.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-084"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Verify job appears in cron job list endpoint", "completed": false },
+                {
+                    "title": "Trigger job manually and verify log entries created",
+                    "completed": false
+                },
+                {
+                    "title": "Verify interval check respects configured cronIntervalMinutes",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-16T14:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 86,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 86,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

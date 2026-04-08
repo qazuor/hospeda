@@ -1,0 +1,1785 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-043-GAPS",
+    "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+    "created": "2026-03-17T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add clearEntitlementCache after cancelAddon in route",
+            "description": "Add `clearEntitlementCache(customerId)` call in the cancelUserAddon route handler immediately after `cancelAddon()` returns successfully.\n\nFiles affected:\n- `apps/api/src/routes/billing/addons.ts` — locate the DELETE /addons/:id or equivalent cancel handler, add cache clear call after the service call\n\nAcceptance criteria:\n- `clearEntitlementCache(customerId)` is called in the route handler after successful cancellation\n- The call is fire-and-forget (no await needed for the route response)\n- Unit test verifies cache clear is called on success and NOT called on error\n\nTest file: `apps/api/test/routes/billing/addons.test.ts` (add assertions).",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Locate cancel route handler in addons.ts", "completed": false },
+                {
+                    "title": "Add clearEntitlementCache call after cancelAddon()",
+                    "completed": false
+                },
+                { "title": "Add/update test assertions for cache clear", "completed": false }
+            ],
+            "tags": ["backend", "cache", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add clearEntitlementCache after confirmAddonPurchase insert",
+            "description": "Add `clearEntitlementCache(customerId)` in `confirmAddonPurchase()` after the successful DB insert of the addon purchase.\n\nFiles affected:\n- `apps/api/src/services/addon.checkout.ts` — in `confirmAddonPurchase()`, after the insert completes, call `clearEntitlementCache(customerId)`\n\nAcceptance criteria:\n- Cache is cleared after every successful addon confirmation\n- Cache is NOT cleared if the insert fails or is rolled back\n- Test asserts cache clear is invoked with correct customerId\n\nTest file: `apps/api/test/services/addon.checkout.test.ts`.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Locate confirmAddonPurchase insert in addon.checkout.ts",
+                    "completed": false
+                },
+                { "title": "Add clearEntitlementCache call post-insert", "completed": false },
+                { "title": "Verify test covers cache-clear-on-success path", "completed": false }
+            ],
+            "tags": ["backend", "cache", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add subscription status re-check guard in confirmAddonPurchase",
+            "description": "Before confirming addon purchase, re-verify that the subscription status is not 'cancelled'. This prevents a race condition where the subscription is cancelled between checkout creation and purchase confirmation.\n\nFiles affected:\n- `apps/api/src/services/addon.checkout.ts` — add guard at the start of `confirmAddonPurchase()`: fetch subscription, check `status !== 'cancelled'`, return error if cancelled\n\nAcceptance criteria:\n- If subscription is cancelled at confirm time, return a typed error (not throw)\n- If subscription is active/trialing, proceed normally\n- Test covers: active subscription proceeds, cancelled subscription returns error, edge case where subscription not found\n\nTest file: `apps/api/test/services/addon.checkout.test.ts`.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add subscription re-fetch at start of confirmAddonPurchase",
+                    "completed": false
+                },
+                {
+                    "title": "Add status guard: return error if status === 'cancelled'",
+                    "completed": false
+                },
+                {
+                    "title": "Add tests for cancelled and active subscription paths",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "safety", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Fix catch-all customer existence check in webhook subscription-logic",
+            "description": "In `subscription-logic.ts` lines 424-450, the current catch-all treats all errors as 'customer not found'. Discriminate between 404 (not found) and other errors (propagate as 500).\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — update catch block to check error type/status code; only treat HTTP 404 or specific not-found error as missing customer; re-throw or return 500 for other error types\n\nAcceptance criteria:\n- 404/not-found error: log warning, return 200 (customer not found is non-fatal)\n- Other errors (network, DB, 5xx): propagate as 500 or log as error\n- Test: mock lookup throwing 404 vs 503 and verify different handling paths\n\nLinked: GAP-043-27 test covers the not-found vs transient error distinction.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Identify current catch-all block in subscription-logic.ts:424-450",
+                    "completed": false
+                },
+                { "title": "Add error type discrimination (404 vs other)", "completed": false },
+                { "title": "Update test for 404 and 503 handling paths", "completed": false }
+            ],
+            "tags": ["backend", "webhook", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update SPEC-043 metadata.json status to completed",
+            "description": "Update `.claude/specs/SPEC-043-addon-lifecycle-events/metadata.json` setting status from 'draft' to 'completed'.\n\nFiles affected:\n- `.claude/specs/SPEC-043-addon-lifecycle-events/metadata.json` — change `status` field to `completed`\n\nAcceptance criteria:\n- `status` field is `completed`\n- No other fields changed unless required for consistency",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Read current metadata.json", "completed": false },
+                { "title": "Update status field to completed", "completed": false }
+            ],
+            "tags": ["metadata", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Update test count in SPEC-043 metadata and state",
+            "description": "Update metadata.json and state.json for SPEC-043 with the actual test count (~356 tests) instead of the placeholder or incorrect count.\n\nFiles affected:\n- `.claude/specs/SPEC-043-addon-lifecycle-events/metadata.json` — update testCount field\n- `.claude/tasks/SPEC-043-addon-lifecycle-events/state.json` — update any test count summary fields\n\nAcceptance criteria:\n- Test count reflects actual passing tests (~356)\n- Run `pnpm test` in apps/api and count test results to get accurate number before updating",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm test and count actual test results", "completed": false },
+                {
+                    "title": "Update metadata.json and state.json with accurate count",
+                    "completed": false
+                }
+            ],
+            "tags": ["metadata", "quick-win"],
+            "phase": "p1-quick-wins",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wrap cancelUserAddon DB update + recalculation in transaction",
+            "description": "Add database transaction wrapping the status update and limit recalculation in `cancelUserAddon()`. If recalculation fails, the transaction rolls back the cancellation. Also add Sentry capture on recalc failure.\n\nFiles affected:\n- `apps/api/src/services/addon.user-addons.ts` — wrap `db.update(status=cancelled)` + `recalculateLimits()` in a `db.transaction()` block; if recalc throws, rollback and capture in Sentry\n\nAcceptance criteria:\n- DB update + recalc are atomic: both succeed or both rollback\n- `Sentry.captureException()` called on recalc failure\n- Test: mock recalc to throw, verify DB status NOT changed (rollback verified)\n- Test: happy path, verify both update and recalc complete\n\nDependency: T-001 (cache clear should happen after the transaction commits, not inside it).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Wrap status update + recalc in db.transaction()", "completed": false },
+                { "title": "Add Sentry.captureException on recalc failure", "completed": false },
+                {
+                    "title": "Test rollback path: recalc throws, verify status unchanged",
+                    "completed": false
+                },
+                {
+                    "title": "Test happy path: both operations complete atomically",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "database", "transaction", "sentry"],
+            "phase": "p1-code-fixes",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add billingLoadFailed flag and 503 response to entitlement middleware",
+            "description": "Add a `billingLoadFailed` boolean flag to the entitlement context. When billing data fails to load, set this flag. The `requireLimit` middleware must return 503 Service Unavailable when `billingLoadFailed` is true, rather than allowing or denying access silently.\n\nFiles affected:\n- `apps/api/src/middlewares/entitlement.ts` — add `billingLoadFailed` to context type; set it on billing load failure; update `requireLimit` to check flag and return 503\n\nAcceptance criteria:\n- Entitlement context type includes `billingLoadFailed: boolean`\n- On billing service failure, context has `billingLoadFailed: true`\n- `requireLimit` returns 503 with appropriate error body when `billingLoadFailed` is true\n- Test: billing service throws -> middleware returns 503\n- Test: billing succeeds -> normal flow\n\nTest file: `apps/api/test/middlewares/entitlement.test.ts`.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Add billingLoadFailed to entitlement context type",
+                    "completed": false
+                },
+                {
+                    "title": "Set billingLoadFailed=true on billing service failure",
+                    "completed": false
+                },
+                {
+                    "title": "Add 503 response in requireLimit when billingLoadFailed",
+                    "completed": false
+                },
+                { "title": "Add tests for 503 path and normal path", "completed": false }
+            ],
+            "tags": ["backend", "middleware", "reliability"],
+            "phase": "p1-code-fixes",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add ADDON_EXPIRED notification dispatch in expiry cron",
+            "description": "In the addon expiry cron job loop, add `sendNotification()` with `ADDON_EXPIRED` type after marking each addon as expired. Use an idempotency key to prevent duplicate notifications.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — after expiry status update in loop, call `sendNotification({ type: 'ADDON_EXPIRED', customerId, payload: {...}, idempotencyKey: 'addon_expired:${customerId}:${addonSlug}:${YYYY-MM-DD}' })`\n\nAcceptance criteria:\n- `sendNotification` is called for each expired addon in the cron loop\n- Idempotency key format: `addon_expired:{customerId}:{addonSlug}:{YYYY-MM-DD}`\n- Notification failure does not stop the cron loop (fire-and-forget with try-catch)\n- Test: cron runs, verify sendNotification called once per expired addon\n- Test: duplicate run same day, verify idempotency key prevents double send\n\nTest file: `apps/api/test/cron/addon-expiry.test.ts`.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add sendNotification call in expiry loop", "completed": false },
+                { "title": "Define idempotency key format with date suffix", "completed": false },
+                {
+                    "title": "Wrap in try-catch so notification failure doesn't break cron",
+                    "completed": false
+                },
+                {
+                    "title": "Add tests for notification dispatch and idempotency",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "cron", "notifications"],
+            "phase": "p1-code-fixes",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add Sentry captures in missing error paths",
+            "description": "Add `Sentry.captureException()` in the two error paths that currently lack it: the catch block in `addon-limit-recalculation.service.ts` and the recalc error path in `cancelUserAddon()`.\n\nFiles affected:\n- `apps/api/src/services/addon-limit-recalculation.service.ts` — add `Sentry.captureException(error)` in the main catch block\n- `apps/api/src/services/addon.user-addons.ts` — add `Sentry.captureException(error)` in the recalc failure catch (if not already added by T-007)\n\nAcceptance criteria:\n- Both catch blocks call `Sentry.captureException` with the error\n- Existing error handling (logging, return value) is preserved\n- Tests mock Sentry and verify it is called on error\n\nNote: Coordinate with T-007 to avoid double-adding Sentry to cancelUserAddon.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add Sentry capture in addon-limit-recalculation.service.ts catch",
+                    "completed": false
+                },
+                {
+                    "title": "Verify addon.user-addons.ts recalc error path has Sentry (sync with T-007)",
+                    "completed": false
+                },
+                {
+                    "title": "Add test assertions for Sentry.captureException calls",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "sentry", "monitoring"],
+            "phase": "p1-code-fixes",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add Promise.race 20s timeout for webhook addon lifecycle calls",
+            "description": "Add a `Promise.race` with a 20-second timeout around the addon lifecycle calls in the webhook handler. If the timeout fires first, return HTTP 200 immediately so MercadoPago does not retry, and let the cron job complete processing.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — wrap the main lifecycle service call in `Promise.race([lifecycleCall, timeout(20_000)])`; on timeout, log warning and return 200 without error\n\nAcceptance criteria:\n- Lifecycle calls that complete within 20s proceed normally\n- Calls exceeding 20s: return 200 to MercadoPago, log a warning, do NOT throw\n- The underlying lifecycle operation may still be running (fire-and-forget after timeout)\n- Test: mock lifecycle to delay 25s (fake timers), verify 200 returned before lifecycle completes\n- Test: mock lifecycle to complete in 5s, verify normal flow\n\nTest file: `apps/api/test/webhooks/mercadopago.test.ts`.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create timeout() helper or inline Promise.race pattern",
+                    "completed": false
+                },
+                {
+                    "title": "Wrap lifecycle call in Promise.race with 20s timeout",
+                    "completed": false
+                },
+                { "title": "On timeout: log warning, return 200", "completed": false },
+                { "title": "Test timeout path with fake timers", "completed": false },
+                { "title": "Test normal path completes under timeout", "completed": false }
+            ],
+            "tags": ["backend", "webhook", "reliability", "timeout"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Add concurrent webhook + admin cancellation integration tests",
+            "description": "Add integration tests using `Promise.all()` to simulate concurrent cancellation from both webhook and admin routes. Verify idempotency: exactly one succeeds, the other detects already-cancelled state. Verify no double-revocation of entitlements.\n\nFiles affected:\n- `apps/api/test/integration/` — new test file `addon-lifecycle-concurrency.test.ts`\n\nTest scenarios:\n1. Two concurrent cancellation calls: verify exactly one returns success, the other returns already-cancelled (idempotent)\n2. Concurrent webhook + admin cancel: no double entitlement revocation\n3. Concurrent cancel + plan change: verify deterministic outcome\n\nAcceptance criteria:\n- All 3 scenarios implemented with Promise.all()\n- No flakiness (use proper test isolation and locks)\n- Tests run in vitest integration suite",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create addon-lifecycle-concurrency.test.ts", "completed": false },
+                { "title": "Test scenario 1: two concurrent cancellations", "completed": false },
+                {
+                    "title": "Test scenario 2: webhook + admin cancel, no double revocation",
+                    "completed": false
+                },
+                { "title": "Test scenario 3: cancel + plan change concurrency", "completed": false }
+            ],
+            "tags": ["testing", "concurrency", "integration"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add partial failure retry tests for addon lifecycle cancellation",
+            "description": "Add tests verifying partial failure behavior: 3 addons processed, #2 fails. Verify #1 is cancelled, #2 and #3 remain active. Then simulate retry: verify #1 is skipped (already cancelled), #2 is retried and processed, #3 is processed.\n\nFiles affected:\n- `apps/api/test/services/addon-lifecycle-cancellation.service.test.ts` — add new describe block for partial failure scenarios\n\nTest scenarios:\n1. Partial failure: 3 addons, #2 throws -> #1 cancelled, #2/#3 active\n2. Retry after partial failure: #1 skipped (idempotent), #2 retried OK, #3 processed OK\n3. All fail: verify rollback state is clean\n\nAcceptance criteria:\n- Tests use mocked DB with selective failure injection\n- Retry logic is verified to be idempotent (double-cancel = no-op)\n- Test assertions check exact status of each addon after each run",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add partial failure test: 3 addons, #2 fails", "completed": false },
+                {
+                    "title": "Add retry test: #1 skipped, #2 retried, #3 processed",
+                    "completed": false
+                },
+                { "title": "Add all-fail test: verify clean rollback state", "completed": false }
+            ],
+            "tags": ["testing", "retry", "idempotency"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add reconciliation cron for DB-QZPay subscription split",
+            "description": "Add a check within the existing cron job (or a new cron phase) to find subscriptions that are cancelled in DB but still active in QZPay. Retry the QZPay cancel call for mismatched subscriptions.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — add a new phase to query for subscriptions where `status=cancelled` in DB but QZPay reports active; call QZPay cancel endpoint for each mismatch\n\nAcceptance criteria:\n- Query identifies subscriptions with DB-QZPay status mismatch\n- QZPay cancel is called for each mismatched subscription\n- Failures are logged and captured in Sentry\n- Max batch size of 50 mismatched subscriptions per run\n- Test: mock QZPay API to return active for cancelled DB subscriptions, verify cancel is called\n\nTest file: `apps/api/test/cron/addon-expiry.test.ts`.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add query to find DB-cancelled but QZPay-active subscriptions",
+                    "completed": false
+                },
+                { "title": "Add retry QZPay cancel for each mismatch", "completed": false },
+                { "title": "Add Sentry capture for retry failures", "completed": false },
+                {
+                    "title": "Test: verify cancel called for mismatched subscriptions",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "cron", "reconciliation"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add PAYMENT_RETRY_WARNING notification infrastructure",
+            "description": "Create the notification infrastructure for payment failure events: add `PAYMENT_RETRY_WARNING` to the NotificationType enum, define the payload interface, create the React Email template, and add the subject line builder.\n\nFiles affected:\n- `packages/notifications/src/types/notification.types.ts` — add `PAYMENT_RETRY_WARNING` to NotificationType enum\n- `packages/notifications/src/templates/billing/payment-retry-warning.tsx` — new React Email template with failure count, retry date, amount\n- `packages/notifications/src/utils/subject-builder.ts` — add case for PAYMENT_RETRY_WARNING\n- `packages/notifications/src/templates/index.ts` — export new template\n\nAcceptance criteria:\n- NotificationType includes PAYMENT_RETRY_WARNING\n- Template renders with: customer name, failure count, next retry date, amount due\n- Subject builder returns localized subject for this type\n- Unit tests for template rendering\n\nBlocks T-016 (webhook handler) and T-017 (wire dispatch).",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": ["T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Add PAYMENT_RETRY_WARNING to NotificationType enum",
+                    "completed": false
+                },
+                { "title": "Define PaymentRetryWarningPayload interface", "completed": false },
+                {
+                    "title": "Create React Email template payment-retry-warning.tsx",
+                    "completed": false
+                },
+                { "title": "Add subject builder case", "completed": false },
+                { "title": "Add template unit test", "completed": false }
+            ],
+            "tags": ["notifications", "email", "billing"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add payment.failed webhook handler with failure count tracking",
+            "description": "Add a webhook handler for `payment.failed` MercadoPago events. Track failure count in subscription metadata. After the 2nd failure, trigger the PAYMENT_RETRY_WARNING notification.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — add handler for `payment.failed` event type; increment failure_count in subscription metadata; if failure_count >= 2, mark for notification\n- `apps/api/src/services/addon.checkout.ts` or a new service — add `handlePaymentFailed()` function\n\nAcceptance criteria:\n- Handler processes `payment.failed` events without throwing\n- failure_count incremented in subscription metadata on each failure\n- After 2nd failure: `shouldSendRetryWarning` flag set in subscription metadata\n- Test: 1st failure -> no notification flag; 2nd failure -> notification flag set\n- Test: idempotent handling (same payment.failed event twice = no double increment)\n\nDepends on T-015 for notification type definition.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Add payment.failed event type handler in subscription-logic.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Implement failure count tracking in subscription metadata",
+                    "completed": false
+                },
+                {
+                    "title": "Set shouldSendRetryWarning flag after 2nd failure",
+                    "completed": false
+                },
+                { "title": "Test: 1st and 2nd failure behavior", "completed": false },
+                { "title": "Test: idempotent processing of same event", "completed": false }
+            ],
+            "tags": ["backend", "webhook", "payments"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Wire PAYMENT_RETRY_WARNING dispatch from payment failure handler",
+            "description": "Connect the payment failure handler to actually dispatch the PAYMENT_RETRY_WARNING notification when the 2nd failure threshold is reached.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` or the payment failure service — add `sendNotification({ type: 'PAYMENT_RETRY_WARNING', ... })` call when `shouldSendRetryWarning` is true\n- Use idempotency key: `payment_retry_warning:{subscriptionId}:{failureCount}`\n\nAcceptance criteria:\n- `sendNotification` is called exactly once when failure_count reaches 2\n- Idempotency key prevents duplicate sends for the same threshold crossing\n- Notification is fire-and-forget (failure does not affect webhook response)\n- Test: mock sendNotification, verify called on 2nd failure with correct payload\n- Test: 3rd failure does not send another notification (idempotency)\n\nDepends on T-016.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Wire sendNotification call on shouldSendRetryWarning=true",
+                    "completed": false
+                },
+                { "title": "Add idempotency key for retry warning", "completed": false },
+                { "title": "Test: 2nd failure dispatches notification", "completed": false },
+                {
+                    "title": "Test: 3rd failure does not re-dispatch (idempotent)",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "notifications", "webhook"],
+            "phase": "p1-timeout-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create emitLifecycleEvent centralized event dispatcher",
+            "description": "Create a new `emitLifecycleEvent()` function with a discriminated union for event types. This function dispatches to notification service, structured logging, and metrics collection.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle-events.ts` (new file) — define `AddonLifecycleEvent` discriminated union type; implement `emitLifecycleEvent(event: AddonLifecycleEvent)` that calls sendNotification, logger.info, and emitMetric\n\nEvent types to cover: ADDON_PURCHASED, ADDON_CANCELLED, ADDON_EXPIRED, ADDON_RENEWED, PLAN_CHANGED, PAYMENT_FAILED\n\nAcceptance criteria:\n- Discriminated union covers all lifecycle event types\n- Each event type has a typed payload\n- `emitLifecycleEvent` dispatches to notification + logger + metrics\n- Failures in notification/metrics do not throw (fire-and-forget with try-catch)\n- Unit tests for each event type dispatch\n\nTest file: `apps/api/test/services/addon-lifecycle-events.test.ts` (new).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-020", "T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Define AddonLifecycleEvent discriminated union with all event types",
+                    "completed": false
+                },
+                { "title": "Implement emitLifecycleEvent dispatcher", "completed": false },
+                { "title": "Wire to sendNotification (fire-and-forget)", "completed": false },
+                { "title": "Wire to structured logger", "completed": false },
+                { "title": "Wire to metrics emitter", "completed": false },
+                { "title": "Add unit tests for each event type", "completed": false }
+            ],
+            "tags": ["backend", "events", "notifications", "metrics"],
+            "phase": "p2-notifications",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Register addon-lifecycle logger category and replace apiLogger in lifecycle files",
+            "description": "Register a new `addon-lifecycle` logger category in the logger package. Create an `addonLogger` instance and replace usages of `apiLogger` in the 6 addon lifecycle service files.\n\nFiles affected:\n- `packages/logger/src/categories.ts` — add 'addon-lifecycle' category\n- `apps/api/src/services/addon-lifecycle.service.ts` — replace apiLogger with addonLogger\n- `apps/api/src/services/addon-lifecycle-cancellation.service.ts` — replace apiLogger\n- `apps/api/src/services/addon-lifecycle-plan-change.service.ts` — replace apiLogger\n- `apps/api/src/services/addon-limit-recalculation.service.ts` — replace apiLogger\n- `apps/api/src/services/addon-expiration.service.ts` — replace apiLogger\n- `apps/api/src/services/addon-plan-change.service.ts` — replace apiLogger\n\nAcceptance criteria:\n- Logger category registered and exported from packages/logger\n- All 6 files use `addonLogger = createLogger('addon-lifecycle')`\n- No remaining `apiLogger` references in the 6 lifecycle files\n- Existing log calls preserved with same messages\n\nDepends on T-018 (emitLifecycleEvent uses addonLogger).",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add 'addon-lifecycle' to logger categories.ts", "completed": false },
+                {
+                    "title": "Create addonLogger = createLogger('addon-lifecycle')",
+                    "completed": false
+                },
+                {
+                    "title": "Replace apiLogger in all 6 lifecycle service files",
+                    "completed": false
+                },
+                {
+                    "title": "Verify no remaining apiLogger references in lifecycle files",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "logger", "refactor"],
+            "phase": "p2-notifications",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add ADDON_CANCELLATION notification type, template, and dispatch",
+            "description": "Add `ADDON_CANCELLATION` to the NotificationType enum. Create the payload interface and React Email template. Add subject builder entry. Wire dispatch from `cancelUserAddon()`.\n\nFiles affected:\n- `packages/notifications/src/types/notification.types.ts` — add ADDON_CANCELLATION\n- `packages/notifications/src/templates/addon/addon-cancellation.tsx` (new) — React Email template\n- `packages/notifications/src/utils/subject-builder.ts` — add case\n- `packages/notifications/src/services/notification.service.ts` — add to selectTemplate()\n- `apps/api/src/services/addon.user-addons.ts` — call sendNotification(ADDON_CANCELLATION) in cancelUserAddon()\n\nAcceptance criteria:\n- NotificationType includes ADDON_CANCELLATION\n- Template renders with: addon name, cancellation date, refund info (if any)\n- selectTemplate() handles ADDON_CANCELLATION\n- sendNotification called in cancelUserAddon after successful cancellation\n- Tests: template renders, dispatch called on cancellation\n\nDepends on T-018 (use emitLifecycleEvent to dispatch).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add ADDON_CANCELLATION to NotificationType", "completed": false },
+                {
+                    "title": "Create addon-cancellation.tsx React Email template",
+                    "completed": false
+                },
+                { "title": "Add subject builder case", "completed": false },
+                { "title": "Wire into selectTemplate()", "completed": false },
+                {
+                    "title": "Dispatch from cancelUserAddon via emitLifecycleEvent",
+                    "completed": false
+                },
+                { "title": "Test template rendering and dispatch", "completed": false }
+            ],
+            "tags": ["notifications", "email", "addon"],
+            "phase": "p2-notifications",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Add ADDON_PURCHASE notification dispatch in confirmAddonPurchase",
+            "description": "The ADDON_PURCHASE notification template already exists. Add the `sendNotification(ADDON_PURCHASE)` dispatch call in `confirmAddonPurchase()`.\n\nFiles affected:\n- `apps/api/src/services/addon.checkout.ts` — in `confirmAddonPurchase()`, after successful insert and cache clear, call `emitLifecycleEvent({ type: 'ADDON_PURCHASED', ... })` or `sendNotification({ type: 'ADDON_PURCHASE', ... })`\n\nAcceptance criteria:\n- Notification sent after successful purchase confirmation\n- Uses existing template (no new template needed)\n- Idempotency key: `addon_purchase:{customerId}:{addonSlug}:{purchaseId}`\n- Test: mock sendNotification, verify called with correct type and payload\n\nDepends on T-018.",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add emitLifecycleEvent/sendNotification call in confirmAddonPurchase",
+                    "completed": false
+                },
+                { "title": "Add idempotency key", "completed": false },
+                {
+                    "title": "Test: verify notification dispatched on successful purchase",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "addon", "checkout"],
+            "phase": "p2-notifications",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Wire ADDON_RENEWAL_CONFIRMATION dispatch for recurring webhook payments",
+            "description": "Identify the renewal trigger in the MercadoPago webhook (recurring authorized_payment event). Add dispatch call for the existing ADDON_RENEWAL_CONFIRMATION template.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — identify the recurring payment success event; add `emitLifecycleEvent({ type: 'ADDON_RENEWED', ... })` or `sendNotification(ADDON_RENEWAL_CONFIRMATION, ...)` call\n\nAcceptance criteria:\n- ADDON_RENEWAL_CONFIRMATION dispatched on each successful recurring payment\n- Uses existing template\n- Idempotency key: `addon_renewal:{subscriptionId}:{paymentId}`\n- Test: mock recurring payment webhook, verify renewal notification dispatched\n\nDepends on T-018.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Identify recurring payment success event in subscription-logic.ts",
+                    "completed": false
+                },
+                { "title": "Add emitLifecycleEvent for ADDON_RENEWED", "completed": false },
+                { "title": "Add idempotency key with paymentId", "completed": false },
+                {
+                    "title": "Test: renewal notification on recurring payment webhook",
+                    "completed": false
+                }
+            ],
+            "tags": ["notifications", "webhook", "addon"],
+            "phase": "p2-notifications",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create validateAddonStatusTransition function",
+            "description": "Create a `validateAddonStatusTransition(current: AddonStatus, target: AddonStatus): boolean` function. Apply it before every status update in lifecycle services.\n\nValid transitions:\n- pending -> active\n- active -> canceled\n- active -> expired\n- pending -> canceled\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle.constants.ts` or new `addon-lifecycle.transitions.ts` — define VALID_TRANSITIONS map and `validateAddonStatusTransition` function\n- All lifecycle services that update addon status — call `validateAddonStatusTransition` before update and return error if invalid\n\nAcceptance criteria:\n- Function returns true for all valid transitions, false for invalid ones\n- All 5 lifecycle service files validate transitions before status updates\n- Invalid transition returns typed error (not throw)\n- Unit tests cover all valid and several invalid transitions",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Define VALID_TRANSITIONS constant map", "completed": false },
+                { "title": "Implement validateAddonStatusTransition function", "completed": false },
+                {
+                    "title": "Apply guard in all lifecycle service update paths",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests: all valid transitions and invalid ones",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "state-machine", "safety"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create typed constants for addon status strings",
+            "description": "Create typed constants to replace string literals throughout addon lifecycle code.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle.constants.ts` — add:\n  - `ADDON_STATUS_CANCELED = 'canceled' as const`\n  - `ADDON_STATUS_ACTIVE = 'active' as const`\n  - `ADDON_STATUS_PENDING = 'pending' as const`\n  - `ADDON_STATUS_EXPIRED = 'expired' as const`\n  - `SUBSCRIPTION_STATUS_CANCELLED = 'cancelled' as const` (note double-l)\n  - `SUBSCRIPTION_STATUS_ACTIVE = 'active' as const`\n- Replace all string literals in addon lifecycle service files (5 files)\n\nAcceptance criteria:\n- All status string literals replaced with constants\n- No remaining hardcoded 'canceled'/'cancelled'/'active'/'pending'/'expired' strings in lifecycle files\n- TypeScript ensures const types propagate correctly\n\nNote: depends on T-023 for full replacement coverage.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Define all status constants in addon-lifecycle.constants.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Replace string literals in 5 lifecycle service files",
+                    "completed": false
+                },
+                {
+                    "title": "Verify no remaining status string literals (rg check)",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "constants", "refactor"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add advisory lock in addon-expiry cron job",
+            "description": "Add `pg_try_advisory_lock(43001)` at the start of the addon-expiry cron job to prevent concurrent runs when multiple API instances are deployed.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — at job start, call `SELECT pg_try_advisory_lock(43001)` via Drizzle raw query; if false, log warning 'Expiry cron already running' and return early\n\nAcceptance criteria:\n- Lock acquired at start, released when job completes (advisory locks auto-release on connection close)\n- If lock fails to acquire, job skips with warning log\n- Use lock key 43001 (matches spec GAP number)\n- Test: mock pg_try_advisory_lock to return false, verify job skips\n- Test: mock returns true, verify job proceeds normally",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add pg_try_advisory_lock(43001) query at cron start",
+                    "completed": false
+                },
+                {
+                    "title": "Add early return with warning log if lock not acquired",
+                    "completed": false
+                },
+                { "title": "Test: lock acquired -> job runs", "completed": false },
+                { "title": "Test: lock not acquired -> job skips", "completed": false }
+            ],
+            "tags": ["backend", "cron", "concurrency", "database"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add HOSPEDA_ADDON_LIFECYCLE_ENABLED feature flag",
+            "description": "Add `HOSPEDA_ADDON_LIFECYCLE_ENABLED` environment variable (default: true) and guard addon lifecycle calls per phase.\n\nFiles affected:\n- `packages/config/` — register HOSPEDA_ADDON_LIFECYCLE_ENABLED in env registry\n- `apps/api/src/env.ts` — parse HOSPEDA_ADDON_LIFECYCLE_ENABLED (boolean, default true)\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — guard: skip if !ADDON_LIFECYCLE_ENABLED\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — guard: skip lifecycle calls if !ADDON_LIFECYCLE_ENABLED\n- `apps/api/.env.example` — add HOSPEDA_ADDON_LIFECYCLE_ENABLED=true\n\nAcceptance criteria:\n- Feature flag parsed from env with default true\n- Cron and webhook lifecycle calls skip when flag is false\n- Test: flag=false -> lifecycle calls not made; flag=true -> normal flow",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Register env var in packages/config", "completed": false },
+                {
+                    "title": "Parse HOSPEDA_ADDON_LIFECYCLE_ENABLED in apps/api/src/env.ts",
+                    "completed": false
+                },
+                { "title": "Add guard in cron job", "completed": false },
+                { "title": "Add guard in webhook subscription-logic", "completed": false },
+                { "title": "Test flag=false skips lifecycle calls", "completed": false }
+            ],
+            "tags": ["backend", "feature-flag", "config"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Add Zod safeParse for limitAdjustments JSONB reads",
+            "description": "Add `Zod.safeParse` when reading `limitAdjustments` and `entitlementAdjustments` JSONB columns from the database. Log a warning and skip/return empty on malformed data.\n\nFiles affected:\n- `apps/api/src/services/addon-limit-recalculation.service.ts` — add LimitAdjustmentsSchema (Zod), safeParse when reading from DB; if invalid, log warning and use {} or skip\n- `apps/api/src/services/addon-entitlement.service.ts` — same pattern for entitlementAdjustments\n\nAcceptance criteria:\n- Both JSONB columns validated with Zod safeParse\n- Malformed data: logs warning with customerId and raw value, uses safe fallback (empty object)\n- Tests with null, malformed object, valid object, and extra fields\n\nTest files: update existing service tests with new data edge cases.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Define LimitAdjustmentsSchema with Zod", "completed": false },
+                {
+                    "title": "Add safeParse in addon-limit-recalculation.service.ts",
+                    "completed": false
+                },
+                { "title": "Add safeParse in addon-entitlement.service.ts", "completed": false },
+                { "title": "Tests: null, malformed, valid, extra fields", "completed": false }
+            ],
+            "tags": ["backend", "validation", "zod", "database"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Add warning log and Sentry when old plan not found in resolvePlanBaseLimit",
+            "description": "In `resolvePlanBaseLimit`, when the old plan is not found in the billing config, add `apiLogger.warn` with context and `Sentry.captureException` or `Sentry.captureMessage`.\n\nFiles affected:\n- `apps/api/src/services/addon-plan-change.service.ts` or `addon-limit-recalculation.service.ts` — locate `resolvePlanBaseLimit` function; add warn log and Sentry capture when plan lookup returns undefined\n\nAcceptance criteria:\n- Warning logged with: planId, customerId, available plan IDs\n- Sentry captures the anomaly\n- Existing fallback behavior (return 0 or default) preserved\n- Test: mock plan config without target plan, verify warn + Sentry called",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Locate resolvePlanBaseLimit and its not-found path",
+                    "completed": false
+                },
+                { "title": "Add apiLogger.warn with context on not-found", "completed": false },
+                { "title": "Add Sentry.captureMessage for anomaly tracking", "completed": false },
+                { "title": "Test: missing plan triggers warn + Sentry", "completed": false }
+            ],
+            "tags": ["backend", "logging", "sentry"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Define unified Result type for lifecycle services",
+            "description": "Define a unified `Result<T, E>` type (or adopt the existing one from service-core) to be used consistently across all 5 addon lifecycle services. Remove throw patterns and always return typed results.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle.types.ts` (new or existing) — define `LifecycleResult<T>` type as `{ success: true; data: T } | { success: false; error: LifecycleError }`; define `LifecycleError` enum/type with error codes\n- Check if `@repo/service-core` already exports a Result type to reuse\n\nAcceptance criteria:\n- LifecycleResult<T> type defined and exported\n- LifecycleError type includes: ALREADY_CANCELLED, INVALID_TRANSITION, DB_FAILURE, EXTERNAL_API_FAILURE, NOT_FOUND\n- Type exported from services index\n- Zero throws remaining in type definitions (throws are in service implementations, handled in T-030)\n\nBlocks T-030.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "Check service-core for existing Result type to reuse",
+                    "completed": false
+                },
+                { "title": "Define LifecycleResult<T> discriminated union", "completed": false },
+                { "title": "Define LifecycleError codes enum", "completed": false },
+                { "title": "Export from types index", "completed": false }
+            ],
+            "tags": ["backend", "types", "result-pattern"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Refactor lifecycle services to use unified Result pattern",
+            "description": "Refactor all 5 addon lifecycle services to use `LifecycleResult<T>` from T-029. Remove throw statements, replace with return `{ success: false, error: ... }`. Update callers to handle Result type.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle.service.ts`\n- `apps/api/src/services/addon-lifecycle-cancellation.service.ts`\n- `apps/api/src/services/addon-lifecycle-plan-change.service.ts`\n- `apps/api/src/services/addon-limit-recalculation.service.ts`\n- `apps/api/src/services/addon-expiration.service.ts`\n- All route handlers and callers of these services — update to check `result.success`\n\nAcceptance criteria:\n- No `throw` statements in the 5 lifecycle services\n- All error paths return `{ success: false, error: LifecycleError.* }`\n- All callers updated to check result.success\n- All existing tests still pass (update mock assertions if needed)\n- No new `any` types introduced\n\nDepends on T-029.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                { "title": "Refactor addon-lifecycle.service.ts", "completed": false },
+                { "title": "Refactor addon-lifecycle-cancellation.service.ts", "completed": false },
+                { "title": "Refactor addon-lifecycle-plan-change.service.ts", "completed": false },
+                { "title": "Refactor addon-limit-recalculation.service.ts", "completed": false },
+                { "title": "Refactor addon-expiration.service.ts", "completed": false },
+                { "title": "Update all callers to handle Result type", "completed": false }
+            ],
+            "tags": ["backend", "refactor", "result-pattern"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Replace Promise.all with Promise.allSettled in admin subscription cancel",
+            "description": "Replace `Promise.all()` with `Promise.allSettled()` in the admin subscription cancel route Phase 1 (parallel addon cancellation). Map settled results to expected format, collecting both successes and failures.\n\nFiles affected:\n- `apps/api/src/routes/billing/admin/subscription-cancel.ts` — locate Phase 1 Promise.all, replace with Promise.allSettled; add result mapping to count successes/failures and collect error details\n\nAcceptance criteria:\n- Promise.allSettled replaces Promise.all in Phase 1\n- Result maps to `{ succeeded: T[], failed: { id: string; error: string }[] }`\n- Partial failures do not throw; response includes partial success details\n- Test: one addon fails, others succeed -> 200 with partial success report\n- Test: all succeed -> same response format with empty failed array",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace Promise.all with Promise.allSettled in subscription-cancel.ts",
+                    "completed": false
+                },
+                { "title": "Map settled results to succeeded/failed arrays", "completed": false },
+                { "title": "Test: partial failure returns 200 with details", "completed": false },
+                { "title": "Test: all succeed returns empty failed array", "completed": false }
+            ],
+            "tags": ["backend", "admin", "reliability"],
+            "phase": "p2-code-quality",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Add cache race condition tests for entitlement cache",
+            "description": "Add tests covering concurrent cache read + clear race conditions. Verify behavior when a read happens between the DB update and the cache clear.\n\nFiles affected:\n- New or existing test file: `apps/api/test/services/addon-entitlement.service.test.ts` or similar — add describe block 'cache race conditions'\n\nTest scenarios:\n1. Concurrent read during cache clear: verify eventual consistency (stale data returned once, fresh on retry)\n2. Multiple cache clears for same customer: verify idempotency\n3. Cache populated from DB when empty: verify no race between populate and clear\n4. Parallel requests race: two parallel reads, verify no corrupted state\n\nAcceptance criteria:\n- Uses fake timers or explicit Promise sequencing to simulate race\n- At least 4 race condition scenarios covered\n- Tests are deterministic (no flakiness)\n\nDepends on T-007 (transaction work stabilizes the sequence).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: concurrent read during clear -> stale once, fresh on retry",
+                    "completed": false
+                },
+                {
+                    "title": "Test: multiple clears for same customer -> idempotent",
+                    "completed": false
+                },
+                { "title": "Test: cache populate vs clear race", "completed": false },
+                { "title": "Test: parallel requests, no corrupted state", "completed": false }
+            ],
+            "tags": ["testing", "cache", "concurrency"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Add graceful degradation tests for billing service failure",
+            "description": "Add 4 tests covering graceful degradation when billing service fails:\n1. Billing fails -> entitlement context uses plan entitlements only (no addons)\n2. Billing fails -> no addon entitlements in context\n3. Billing fails -> shouldCache=false (don't cache failure state)\n4. Billing fails -> request succeeds (degraded mode), retry works on next request\n\nFiles affected:\n- `apps/api/test/middlewares/entitlement.test.ts` — add 'graceful degradation' describe block\n\nAcceptance criteria:\n- All 4 scenarios implemented\n- Uses mocked billing service that throws\n- Verifies context shape for degraded mode\n- Verifies shouldCache=false on failure\n\nDepends on T-008 (billingLoadFailed flag implementation).",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-008"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test 1: billing fails -> plan entitlements only", "completed": false },
+                { "title": "Test 2: billing fails -> no addon entitlements", "completed": false },
+                { "title": "Test 3: billing fails -> shouldCache=false", "completed": false },
+                { "title": "Test 4: degraded request succeeds, retry works", "completed": false }
+            ],
+            "tags": ["testing", "middleware", "graceful-degradation"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Create E2E tests with real PostgreSQL for lifecycle flows",
+            "description": "Create E2E tests using `vitest.config.e2e.ts` with a real PostgreSQL database for the main lifecycle flows.\n\nFiles affected:\n- `apps/api/test/e2e/addon-lifecycle.e2e.test.ts` (new) — cancellation flow, plan change flow, concurrent operations\n\nTest scenarios:\n1. Full cancellation flow: create customer -> buy addon -> cancel -> verify entitlements removed\n2. Full plan change flow: create -> upgrade plan -> verify limits adjusted\n3. Concurrent operations: two parallel cancel requests -> exactly one succeeds\n4. Expiry flow: create -> set expired_at to past -> run cron -> verify expired\n\nAcceptance criteria:\n- Uses real DB (not mocked)\n- Each test resets DB state (transactions or teardown)\n- Uses vitest.config.e2e.ts\n- All 4 scenarios implemented\n\nDepends on T-030 (Result pattern refactor stabilizes service signatures).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-030"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Setup E2E test file with real DB connection", "completed": false },
+                { "title": "Test: full cancellation flow", "completed": false },
+                { "title": "Test: full plan change flow", "completed": false },
+                { "title": "Test: concurrent cancel idempotency", "completed": false },
+                { "title": "Test: expiry cron flow", "completed": false }
+            ],
+            "tags": ["testing", "e2e", "database"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Add transient failure recovery tests for revoke and removeBySource",
+            "description": "Add tests verifying that when the primary operation fails, the fallback path succeeds. Test both `revokeEntitlement` and `removeBySource` fallback flows.\n\nFiles affected:\n- `apps/api/test/services/addon-entitlement.service.test.ts` — add 'transient failure recovery' describe block\n\nTest scenarios:\n1. revokeEntitlement: primary fails -> fallback succeeds -> overall success\n2. removeBySource: primary fails -> fallback succeeds -> overall success\n3. Both fail -> error returned (no infinite retry)\n\nAcceptance criteria:\n- Uses mock that throws on first call, succeeds on second\n- Verifies fallback is attempted after primary failure\n- Verifies no infinite retry loop",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test: revokeEntitlement primary fail -> fallback succeed",
+                    "completed": false
+                },
+                {
+                    "title": "Test: removeBySource primary fail -> fallback succeed",
+                    "completed": false
+                },
+                { "title": "Test: both fail -> error returned", "completed": false }
+            ],
+            "tags": ["testing", "resilience", "entitlements"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Add customer-not-found webhook test with error type discrimination",
+            "description": "Add tests for the webhook when customer lookup returns null vs when it throws a transient error (linked to T-004 fix).\n\nFiles affected:\n- `apps/api/test/webhooks/mercadopago.test.ts` or `apps/api/test/routes/webhooks/` — add tests for customer not-found scenarios\n\nTest scenarios:\n1. Customer lookup returns null (404) -> webhook returns 200, logs warning (non-fatal)\n2. Customer lookup throws 503 (transient) -> webhook returns 500 or logs error differently\n3. Customer lookup throws network error -> different handling from 404\n\nAcceptance criteria:\n- Tests verify distinct handling for 404 vs 5xx errors\n- Test 1 asserts 200 response\n- Tests 2 and 3 assert error logging/Sentry capture\n\nDepends on T-004 (the fix being tested).",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test: customer=null (404) -> 200 + warning log", "completed": false },
+                { "title": "Test: customer lookup 503 -> error handling path", "completed": false },
+                { "title": "Test: network error -> distinct from 404 handling", "completed": false }
+            ],
+            "tags": ["testing", "webhook", "error-handling"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Add AC-5.x audit trail test assertions",
+            "description": "Add assertions for `apiLogger.info`/`addonLogger.info` calls and `Sentry.captureException` in existing lifecycle tests. Add a test for `billingSubscriptionEvents` insert.\n\nFiles affected:\n- `apps/api/test/services/addon-lifecycle.service.test.ts` — add logger and Sentry assertion blocks\n- `apps/api/test/services/addon-lifecycle-cancellation.service.test.ts` — add audit trail assertions\n- `apps/api/test/integration/real-user-scenarios.test.ts` — add billingSubscriptionEvents insert verification\n\nAcceptance criteria:\n- At least 5 existing tests updated with logger.info call assertions\n- At least 3 existing tests updated with Sentry.captureException assertions\n- New test verifies billingSubscriptionEvents row inserted on lifecycle event\n- Mocks for logger and Sentry in place in test setup",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add mock setup for logger and Sentry in test files",
+                    "completed": false
+                },
+                { "title": "Add logger.info assertions to 5 existing tests", "completed": false },
+                {
+                    "title": "Add Sentry.captureException assertions to 3 tests",
+                    "completed": false
+                },
+                {
+                    "title": "Add test: billingSubscriptionEvents insert verified",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "audit-trail", "logging"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Verify and raise coverage thresholds toward 90%",
+            "description": "Check current coverage for addon lifecycle files, identify gaps, then raise coverage thresholds gradually. Add thresholds to the E2E vitest config.\n\nFiles affected:\n- `apps/api/vitest.config.ts` — update coverageThreshold for lifecycle service files\n- `apps/api/vitest.config.e2e.ts` — add coverage thresholds for E2E suite\n\nAcceptance criteria:\n- Run coverage report and document current % per file\n- Raise thresholds to at minimum 80% (with goal of 90%)\n- E2E config has coverage thresholds added\n- Any coverage gaps filled by pointing to missing tests (link to T-032 through T-037)\n\nDepends on T-007, T-008, T-030 (major changes that affect coverage).",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-007", "T-008", "T-030"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run coverage report, document current % per lifecycle file",
+                    "completed": false
+                },
+                {
+                    "title": "Raise thresholds to 80% minimum in vitest.config.ts",
+                    "completed": false
+                },
+                { "title": "Add coverage thresholds to vitest.config.e2e.ts", "completed": false },
+                { "title": "Document remaining gaps as follow-up issues", "completed": false }
+            ],
+            "tags": ["testing", "coverage", "quality"],
+            "phase": "p2-tests",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Add retry backoff and error classification in cron",
+            "description": "Add exponential backoff to the cron retry logic: skip retry if `lastAttempt + (retryCount * 2 days) > now()`. Classify errors into retryable (network, transient DB) vs non-retryable (invalid state, not found).\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — add backoff calculation before retry; add error type classification\n- `apps/api/src/services/addon-expiration.service.ts` — add error classification helper or inline\n\nAcceptance criteria:\n- Backoff formula: skip if `lastAttempt + (retryCount * 2 days) > now()`\n- Retryable: network errors, 5xx, DB connection errors\n- Non-retryable: 404, invalid status transitions, already expired\n- Test: retryCount=1 -> 2-day window; retryCount=2 -> 4-day window\n- Test: non-retryable error -> marked as failed, no further retries",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add error classification (retryable vs non-retryable)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement backoff: skip if lastAttempt + retryCount*2days > now()",
+                    "completed": false
+                },
+                { "title": "Test: retryCount-based window enforcement", "completed": false },
+                { "title": "Test: non-retryable error stops retries", "completed": false }
+            ],
+            "tags": ["backend", "cron", "retry", "resilience"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Add advisory lock per customer in limit recalculation",
+            "description": "Add `pg_advisory_xact_lock(hashtext(customerId))` during limit recalculation to prevent concurrent recalculations for the same customer corrupting the limits.\n\nFiles affected:\n- `apps/api/src/services/addon-limit-recalculation.service.ts` — at the start of the recalculation transaction, call `SELECT pg_advisory_xact_lock(hashtext('${customerId}'))` via Drizzle raw query\n\nAcceptance criteria:\n- Lock acquired inside the transaction (pg_advisory_xact_lock, not pg_try — this one blocks until lock available)\n- Lock auto-released when transaction commits or rolls back\n- Test: two concurrent recalcs for same customer -> second waits, then proceeds; no data corruption\n- Note: uses xact_lock (not try_) because we want to block, not skip",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add pg_advisory_xact_lock in recalculation transaction",
+                    "completed": false
+                },
+                { "title": "Verify lock is inside the existing transaction", "completed": false },
+                {
+                    "title": "Test: concurrent recalculations serialize correctly",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "database", "concurrency", "locking"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Add LIMIT 100 and SKIP LOCKED to cron Phase 4 orphaned addon query",
+            "description": "Add `LIMIT 100` to the orphaned purchase query in cron Phase 4 and add `SELECT ... FOR UPDATE SKIP LOCKED` to prevent multiple workers from processing the same rows.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — locate Phase 4 orphaned addon query; add `.limit(100)` to Drizzle query; add FOR UPDATE SKIP LOCKED via Drizzle raw or `.forUpdate({ skipLocked: true })`\n\nAcceptance criteria:\n- Query has LIMIT 100 (pagination loop for large batches)\n- Query uses SKIP LOCKED to handle multi-worker deployments\n- Tests verify LIMIT 100 applied\n- Test: rows skipped by LOCKED are not processed (verify with concurrent mocks)",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add .limit(100) to Phase 4 orphaned addon query", "completed": false },
+                { "title": "Add FOR UPDATE SKIP LOCKED to query", "completed": false },
+                { "title": "Test: query respects LIMIT 100", "completed": false },
+                { "title": "Test: locked rows skipped correctly", "completed": false }
+            ],
+            "tags": ["backend", "cron", "database", "concurrency"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Verify QZPay subscription status before revoking addons in Phase 4",
+            "description": "Before revoking addons in cron Phase 4, verify the subscription is actually cancelled in QZPay. Skip revocation if QZPay reports subscription as still active.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — before Phase 4 revocation, call QZPay getSubscription; if active in QZPay, skip and log warning\n\nAcceptance criteria:\n- QZPay status checked before each revocation in Phase 4\n- If QZPay reports active: skip revocation, log warning, do NOT mark as error\n- If QZPay check fails (transient): log error, skip with retry flag\n- Test: QZPay=active -> revocation skipped; QZPay=cancelled -> revocation proceeds\n\nDepends on T-004 fix for consistent error handling.",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add QZPay status check before Phase 4 revocation", "completed": false },
+                { "title": "Skip with warning log if QZPay reports active", "completed": false },
+                { "title": "Handle QZPay API failure (transient skip)", "completed": false },
+                {
+                    "title": "Test: QZPay=active -> skipped; QZPay=cancelled -> proceeds",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "cron", "qzpay", "integration"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Add one-time addon revocation flow for account deletion/suspension",
+            "description": "Add a flow to revoke ALL active addon purchases when a customer is suspended or deleted. This differs from subscription cancellation: query by customerId regardless of subscriptionId.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle-cancellation.service.ts` — add `revokeAllAddonsByCustomer(customerId, reason)` function\n- `apps/api/src/routes/billing/admin/` — wire into customer delete/suspend endpoint or add as utility call\n- `packages/db/src/models/` — query all active purchases by customerId\n\nAcceptance criteria:\n- `revokeAllAddonsByCustomer` queries all active purchases for customerId\n- Cancels each addon in a loop (partial failure handled)\n- Logs each revocation and sends ADDON_CANCELLATION notification per addon\n- Test: customer with 3 active addons -> all 3 revoked on account delete\n- Test: partial failure -> revoked ones cancelled, failed ones flagged for retry",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Implement revokeAllAddonsByCustomer function", "completed": false },
+                { "title": "Query all active purchases by customerId", "completed": false },
+                {
+                    "title": "Process revocations with partial failure handling",
+                    "completed": false
+                },
+                { "title": "Wire into customer delete/suspend endpoint", "completed": false },
+                { "title": "Test: 3 addons revoked on account delete", "completed": false },
+                { "title": "Test: partial failure handling", "completed": false }
+            ],
+            "tags": ["backend", "addon", "account-management"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Fix userId resolution in downgrade notification payload",
+            "description": "Verify that `userId` is correctly resolved in the plan downgrade notification payload. If missing, resolve it via `billing.customers.get(customerId).\n\nFiles affected:\n- `apps/api/src/services/addon-plan-change.service.ts` or the downgrade notification dispatch code — check if userId is present in payload; if not, call `billing.customers.get(customerId)` to resolve it\n\nAcceptance criteria:\n- userId present in all downgrade notification payloads\n- If not directly available, fetched from billing.customers\n- Fetch failure: log warning, dispatch notification without userId (graceful degradation)\n- Test: userId=undefined -> fetched and included; fetch fails -> notification sent without userId",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Locate downgrade notification dispatch code", "completed": false },
+                {
+                    "title": "Add userId resolution via billing.customers if missing",
+                    "completed": false
+                },
+                { "title": "Add graceful degradation on fetch failure", "completed": false },
+                {
+                    "title": "Test: missing userId resolved; fetch failure degrades gracefully",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "notifications", "billing"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Add dedup flag for double limit recalculation prevention",
+            "description": "Add a short-lived deduplication mechanism to prevent double limit recalculation triggered within 5 minutes. Use audit log check to detect recent recalculation.\n\nFiles affected:\n- `apps/api/src/services/addon-limit-recalculation.service.ts` — at start of recalculation, query audit log for same customerId within last 5 minutes; if found, skip and log debug\n\nAcceptance criteria:\n- Check audit log for recent recalculation (< 5 min) for same customerId\n- If recent recalculation found: skip with debug log, return early\n- If no recent entry: proceed normally, insert audit log entry\n- Test: two calls within 5 min -> second is skipped\n- Test: two calls 10 min apart -> both proceed",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add audit log check for recent recalculation (< 5 min)",
+                    "completed": false
+                },
+                { "title": "Add early return with debug log on dedup hit", "completed": false },
+                { "title": "Insert audit log entry on recalculation start", "completed": false },
+                {
+                    "title": "Test: within 5 min -> deduped; after 5 min -> proceeds",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "dedup", "cron", "audit"],
+            "phase": "p2-cron-data",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Add 'pending' status to UserAddonResponseSchema",
+            "description": "Add 'pending' to the status enum in `UserAddonResponseSchema` in the schemas package.\n\nFiles affected:\n- `packages/schemas/src/api/billing/customer-addons.schema.ts` — update `status` enum to include `z.enum(['active', 'canceled', 'expired', 'pending'])`\n\nAcceptance criteria:\n- Schema accepts 'pending' as a valid status value\n- Existing tests still pass\n- TypeScript type inference includes 'pending'",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add 'pending' to status enum in UserAddonResponseSchema",
+                    "completed": false
+                },
+                { "title": "Verify TypeScript type includes 'pending'", "completed": false }
+            ],
+            "tags": ["schema", "zod", "quick-win"],
+            "phase": "p2-schema-i18n",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Add canceled and pending i18n keys for addon status",
+            "description": "Add `addons.status.canceled` and `addons.status.pending` keys to the billing.json locale files for es, en, and pt.\n\nFiles affected:\n- `packages/i18n/src/locales/es/billing.json` — add `addons.status.canceled` and `addons.status.pending`\n- `packages/i18n/src/locales/en/billing.json` — same\n- `packages/i18n/src/locales/pt/billing.json` — same\n\nAcceptance criteria:\n- All three locales have both keys\n- ES: 'Cancelado' / 'Pendiente'; EN: 'Canceled' / 'Pending'; PT: 'Cancelado' / 'Pendente'\n- i18n type definitions updated if using typed keys",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add keys to es/billing.json", "completed": false },
+                { "title": "Add keys to en/billing.json", "completed": false },
+                { "title": "Add keys to pt/billing.json", "completed": false }
+            ],
+            "tags": ["i18n", "schema", "quick-win"],
+            "phase": "p2-schema-i18n",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Add lifecycle metrics emission and admin endpoint",
+            "description": "Add structured metrics emission at key lifecycle points (purchase, cancellation, expiry, plan change). Expose aggregated metrics via the admin billing metrics endpoint.\n\nFiles affected:\n- `apps/api/src/services/addon-lifecycle-events.ts` (from T-018) — add `emitMetric()` calls in the event dispatcher\n- `apps/api/src/services/billing-metrics.service.ts` — add lifecycle event counters and time-series data\n- `apps/api/src/routes/billing/admin/` — ensure metrics endpoint returns lifecycle event data\n\nMetrics to track: purchase_count, cancellation_count, expiry_count, plan_change_count per day and per addon type.\n\nAcceptance criteria:\n- Metrics emitted for purchase, cancel, expiry, plan change events\n- Metrics aggregated by day and addon type\n- Admin metrics endpoint returns lifecycle_events object\n- Test: emitLifecycleEvent -> metrics service incremented\n\nDepends on T-018 (emitLifecycleEvent infrastructure).",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add emitMetric calls in emitLifecycleEvent dispatcher",
+                    "completed": false
+                },
+                {
+                    "title": "Add lifecycle event counters in billing-metrics.service.ts",
+                    "completed": false
+                },
+                { "title": "Expose metrics in admin endpoint response", "completed": false },
+                { "title": "Test: event dispatched -> metrics incremented", "completed": false }
+            ],
+            "tags": ["backend", "metrics", "monitoring", "admin"],
+            "phase": "p2-schema-i18n",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Reflect DB CHECK constraint in Drizzle schema for addon status",
+            "description": "The database already has a CHECK constraint for addon status values. Reflect this in the Drizzle schema definition so TypeScript types are accurate.\n\nFiles affected:\n- `packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts` — update status column to use Drizzle enum or check constraint reflecting the DB CHECK\n\nAcceptance criteria:\n- Drizzle schema status column matches the DB CHECK constraint\n- No migration needed (just schema alignment, not a new constraint)\n- TypeScript types derived from Drizzle reflect valid status values",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Read current DB CHECK constraint for status", "completed": false },
+                { "title": "Update Drizzle schema to reflect the constraint", "completed": false },
+                { "title": "Verify TypeScript types align with constraint", "completed": false }
+            ],
+            "tags": ["database", "drizzle", "schema"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Add batch size limit to addon expiry query",
+            "description": "Add a batch size limit of 100 to the main expiry query to prevent memory exhaustion with large datasets. Implement pagination loop to process all expired addons in batches.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` or `apps/api/src/services/addon-expiration.service.ts` — add `.limit(100)` to expiry query; wrap in pagination loop (offset-based or cursor-based)\n\nAcceptance criteria:\n- Expiry query processes max 100 addons per batch\n- All batches processed via loop until no more results\n- Test: 250 expired addons -> processed in 3 batches (100, 100, 50)\n\nBlocks T-051 (load test depends on this limit being in place).",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-051"],
+            "subtasks": [
+                { "title": "Add .limit(100) to expiry query", "completed": false },
+                { "title": "Wrap query in pagination loop", "completed": false },
+                { "title": "Test: 250 addons processed in 3 batches", "completed": false }
+            ],
+            "tags": ["backend", "cron", "pagination", "performance"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Create load test for addon expiry with 1000+ addons",
+            "description": "Create a load test (using vitest or k6) that inserts 1000+ expired addons and runs the expiry cron, verifying performance and correctness.\n\nFiles affected:\n- `apps/api/test/load/addon-expiry-load.test.ts` (new) — seed 1000+ expired addons, run expiry job, verify all processed within acceptable time\n\nAcceptance criteria:\n- 1000 expired addons processed without OOM\n- Completes within 60 seconds\n- All addons marked as expired after run\n- Memory usage stays reasonable (no unbounded array growth)\n\nDepends on T-050 (batch limit must be in place before load testing).",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": ["T-050"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create load test file with 1000 expired addon fixtures",
+                    "completed": false
+                },
+                { "title": "Run expiry cron and measure time/memory", "completed": false },
+                { "title": "Assert all 1000 addons processed correctly", "completed": false },
+                { "title": "Assert completion within 60s", "completed": false }
+            ],
+            "tags": ["testing", "load-test", "performance", "cron"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Add CHECK constraint for limitAdjustments JSONB structure",
+            "description": "Add a database CHECK constraint ensuring `limitAdjustments` and `entitlementAdjustments` JSONB columns have a valid basic structure (e.g., must be an object, not an array or scalar).\n\nFiles affected:\n- `packages/db/src/migrations/` — new migration file adding CHECK constraint\n- `packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts` — update schema to reflect constraint\n\nAcceptance criteria:\n- Migration adds `CHECK (limitAdjustments IS NULL OR jsonb_typeof(limitAdjustments) = 'object')`\n- Same for entitlementAdjustments\n- Migration tested: insert with invalid JSONB type fails, with object succeeds\n- Drizzle schema reflects constraint",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write migration adding CHECK for limitAdjustments",
+                    "completed": false
+                },
+                {
+                    "title": "Write migration adding CHECK for entitlementAdjustments",
+                    "completed": false
+                },
+                { "title": "Update Drizzle schema to reflect constraints", "completed": false },
+                {
+                    "title": "Test: invalid type rejected; valid object accepted",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration", "validation"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Add debug logging to clearEntitlementCache with caller context",
+            "description": "Add `logger.debug` with customerId and caller context (function name or stack hint) to `clearEntitlementCache` so cache clears are traceable in logs.\n\nFiles affected:\n- Wherever `clearEntitlementCache` is defined (likely `apps/api/src/services/addon-entitlement.service.ts` or a cache utility) — add `addonLogger.debug('clearEntitlementCache', { customerId, caller })` at the function entry\n\nAcceptance criteria:\n- Every call to clearEntitlementCache logs at debug level with customerId\n- Caller context included (can be a string parameter defaulting to 'unknown')\n- No performance impact (debug level only logged when DEBUG enabled)",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Locate clearEntitlementCache function", "completed": false },
+                {
+                    "title": "Add logger.debug with customerId and caller param",
+                    "completed": false
+                },
+                { "title": "Update call sites to pass caller context string", "completed": false }
+            ],
+            "tags": ["backend", "logging", "cache", "debug"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Define grace period policy and add CTA to downgrade warning template",
+            "description": "Define the grace period policy for plan downgrades (e.g., 7 days to reduce usage). Add a CTA button to the downgrade warning email template. Add enforcement logic to suspend access after grace period.\n\nFiles affected:\n- `packages/notifications/src/templates/subscription/plan-downgrade-limit-warning.tsx` — add CTA button linking to manage-plan page, add grace period expiry date\n- `apps/api/src/services/addon-plan-change.service.ts` — add grace period tracking (set gracePeriodEndAt on downgrade)\n- `apps/api/src/middlewares/entitlement.ts` — check gracePeriodEndAt, restrict access if expired\n\nAcceptance criteria:\n- Grace period: 7 days from downgrade date\n- Email template shows grace period end date and CTA\n- After grace period: entitlement check returns over-limit error\n- Test: downgrade -> grace period set; after 7 days -> access restricted",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add CTA and grace period date to downgrade warning template",
+                    "completed": false
+                },
+                { "title": "Add gracePeriodEndAt field to downgrade logic", "completed": false },
+                {
+                    "title": "Add grace period enforcement in entitlement middleware",
+                    "completed": false
+                },
+                {
+                    "title": "Test: grace period set on downgrade, enforced after 7 days",
+                    "completed": false
+                }
+            ],
+            "tags": ["backend", "notifications", "billing", "grace-period"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Extract and map webhook cancel reason to internal enum",
+            "description": "Extract the cancellation reason from the MercadoPago webhook payload, map it to an internal `CancelReason` enum, and store in the audit log.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — extract reason from payload\n- `apps/api/src/services/addon-lifecycle.constants.ts` — add CancelReason enum\n- Audit log insert — store mapped CancelReason\n\nCancelReason values: `USER_REQUESTED`, `PAYMENT_FAILED`, `ADMIN_CANCEL`, `EXPIRED`, `UNKNOWN`\n\nAcceptance criteria:\n- Reason extracted from MercadoPago cancellation payload\n- Mapped to CancelReason enum (unmapped values -> UNKNOWN)\n- Stored in audit log with cancellation event\n- Test: known reason maps correctly; unknown reason maps to UNKNOWN",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Define CancelReason enum in addon-lifecycle.constants.ts",
+                    "completed": false
+                },
+                { "title": "Extract reason from webhook payload", "completed": false },
+                { "title": "Map to CancelReason (unknown -> UNKNOWN)", "completed": false },
+                { "title": "Store in audit log on cancel event", "completed": false },
+                { "title": "Test: mapping and storage", "completed": false }
+            ],
+            "tags": ["backend", "webhook", "audit", "billing"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Verify billing_notification_log schema and add to Drizzle if missing",
+            "description": "Verify where the `billing_notification_log` table originates. If it exists in DB but not in Drizzle schema, add it. Document its location.\n\nFiles affected:\n- `packages/db/src/schemas/billing/` — add `billing_notification_log.dbschema.ts` if missing\n- `packages/db/src/models/` — add model if missing\n- DB migrations — check if table exists via migration history\n\nAcceptance criteria:\n- Table existence verified (check migrations + DB)\n- Drizzle schema reflects the table structure\n- Model added if missing\n- Location documented in a brief comment in the schema file",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Check DB/migrations for billing_notification_log existence",
+                    "completed": false
+                },
+                { "title": "Add Drizzle schema if missing", "completed": false },
+                { "title": "Add model if missing", "completed": false },
+                { "title": "Add origin comment in schema file", "completed": false }
+            ],
+            "tags": ["database", "drizzle", "schema", "notifications"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Split addon-plan-change.service.ts into helpers and downgrade detection",
+            "description": "Refactor the oversized `addon-plan-change.service.ts` by extracting helpers and downgrade detection into separate files.\n\nFiles affected:\n- `apps/api/src/services/addon-plan-change.helpers.ts` (new) — extract pure helper functions (limit calculations, plan comparison)\n- `apps/api/src/services/addon-downgrade-detection.service.ts` (new) — extract downgrade detection and grace period logic\n- `apps/api/src/services/addon-plan-change.service.ts` — import from new files, keep orchestration logic only\n\nAcceptance criteria:\n- addon-plan-change.service.ts is under 500 lines\n- Each new file is under 500 lines\n- No circular imports\n- All existing tests pass unchanged\n- Named exports only (no default exports)",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Extract helper functions to addon-plan-change.helpers.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Extract downgrade detection to addon-downgrade-detection.service.ts",
+                    "completed": false
+                },
+                { "title": "Update imports in addon-plan-change.service.ts", "completed": false },
+                { "title": "Verify all tests pass post-refactor", "completed": false },
+                { "title": "Verify all files under 500 lines", "completed": false }
+            ],
+            "tags": ["backend", "refactor", "code-quality"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Add expect.objectContaining assertions in critical test paths",
+            "description": "Add `expect.objectContaining()` assertions (or `toHaveBeenCalledWith(expect.objectContaining(...))`) in critical test paths where mocked functions are called with complex objects.\n\nFiles affected:\n- `apps/api/test/services/addon-lifecycle.service.test.ts`\n- `apps/api/test/services/addon-lifecycle-cancellation.service.test.ts`\n- `apps/api/test/routes/billing/admin/subscription-cancel.test.ts`\n\nAcceptance criteria:\n- At least 10 test assertions upgraded from `toHaveBeenCalled()` to `toHaveBeenCalledWith(expect.objectContaining(...))`\n- All upgraded assertions verify the most critical fields\n- No test coverage regression",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Identify tests with bare toHaveBeenCalled() in lifecycle tests",
+                    "completed": false
+                },
+                {
+                    "title": "Upgrade 10+ assertions to toHaveBeenCalledWith(objectContaining)",
+                    "completed": false
+                },
+                { "title": "Verify no test regressions", "completed": false }
+            ],
+            "tags": ["testing", "assertions", "quality"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Return HTTP 409 for concurrent admin subscription cancel",
+            "description": "In the subscription cancel route, return HTTP 409 Conflict if the subscription is already cancelled when the admin cancel request arrives.\n\nFiles affected:\n- `apps/api/src/routes/billing/admin/subscription-cancel.ts` — in the cancel handler, after fetching subscription, check if already cancelled; return 409 with message 'Subscription already cancelled'\n\nAcceptance criteria:\n- Already-cancelled subscription -> 409 response\n- Response body: `{ error: 'ALREADY_CANCELLED', message: 'Subscription already cancelled' }`\n- Test: cancel already-cancelled subscription -> 409\n- Test: cancel active subscription -> 200",
+            "status": "pending",
+            "complexity": 1.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add already-cancelled check in cancel handler", "completed": false },
+                { "title": "Return 409 with ALREADY_CANCELLED error body", "completed": false },
+                { "title": "Test: already cancelled -> 409; active -> 200", "completed": false }
+            ],
+            "tags": ["backend", "api", "http-status", "idempotency"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Add TRIALING status to webhook safety net condition",
+            "description": "Expand the webhook safety net condition to include `TRIALING` status in addition to the currently handled statuses.\n\nFiles affected:\n- `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts` — locate the safety net condition check; add `|| status === 'trialing'` to the condition\n\nAcceptance criteria:\n- TRIALING subscriptions handled by safety net the same as other active-adjacent statuses\n- Test: webhook with TRIALING subscription -> safety net triggers",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add TRIALING to safety net condition in subscription-logic.ts",
+                    "completed": false
+                },
+                { "title": "Test: TRIALING webhook -> safety net triggers", "completed": false }
+            ],
+            "tags": ["backend", "webhook", "quick-win"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Move promo code usage recording to confirmAddonPurchase",
+            "description": "Move promo code usage recording from `createAddonCheckout` to `confirmAddonPurchase` to prevent recording usage for checkouts that are never confirmed.\n\nFiles affected:\n- `apps/api/src/services/addon.checkout.ts` — remove promo code usage recording from `createAddonCheckout`; add it to `confirmAddonPurchase` after successful insert\n\nAcceptance criteria:\n- Promo code usage NOT recorded at checkout creation\n- Promo code usage recorded at purchase confirmation\n- Abandoned checkouts do not consume promo code uses\n- Test: checkout created but not confirmed -> usage count unchanged\n- Test: checkout confirmed -> usage count incremented",
+            "status": "pending",
+            "complexity": 2.0,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Remove promo code usage recording from createAddonCheckout",
+                    "completed": false
+                },
+                {
+                    "title": "Add promo code usage recording to confirmAddonPurchase",
+                    "completed": false
+                },
+                { "title": "Test: abandoned checkout -> usage unchanged", "completed": false },
+                { "title": "Test: confirmed purchase -> usage incremented", "completed": false }
+            ],
+            "tags": ["backend", "promo-codes", "checkout", "billing"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Wrap fire-and-forget sendNotification calls in try-catch",
+            "description": "Wrap all fire-and-forget `sendNotification` calls in try-catch blocks to prevent unhandled promise rejections from crashing the main flow.\n\nFiles affected:\n- Any file calling `sendNotification` without await and without try-catch — audit all call sites and add try-catch wrapper\n- Common locations: `apps/api/src/cron/jobs/addon-expiry.job.ts`, `apps/api/src/services/addon.user-addons.ts`, `apps/api/src/services/addon.checkout.ts`\n\nAcceptance criteria:\n- All fire-and-forget sendNotification calls wrapped in try-catch\n- Caught errors logged at warn level (not error, since it's non-critical)\n- Test: sendNotification throws -> main flow continues, warn logged",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Audit all sendNotification call sites for missing try-catch",
+                    "completed": false
+                },
+                { "title": "Add try-catch with warn log to each call site", "completed": false },
+                { "title": "Test: notification throws -> flow continues", "completed": false }
+            ],
+            "tags": ["backend", "notifications", "error-handling", "quick-win"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Add idempotency key to downgrade limit warning notification",
+            "description": "Add an idempotency key to the downgrade limit warning notification to prevent duplicate sends.\n\nFiles affected:\n- The code dispatching the downgrade limit warning notification (likely in `addon-plan-change.service.ts` or `addon-downgrade-detection.service.ts`) — add `idempotencyKey: 'downgrade_warning:${customerId}:${limitKey}:${YYYY-MM-DD}'`\n\nAcceptance criteria:\n- Idempotency key format: `downgrade_warning:{customerId}:{limitKey}:{YYYY-MM-DD}`\n- Duplicate dispatch on same day for same customer+limitKey -> deduplicated by notification service\n- Test: two dispatches with same key same day -> only one notification sent",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add idempotencyKey to downgrade warning dispatch call",
+                    "completed": false
+                },
+                { "title": "Test: same key same day -> deduplicated", "completed": false }
+            ],
+            "tags": ["backend", "notifications", "idempotency", "quick-win"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Add Phase 5 entitlement reconciliation to cron job",
+            "description": "Add a Phase 5 to the addon expiry cron job that queries for purchases with `entitlementRemovalPending=true` and retries the entitlement removal.\n\nFiles affected:\n- `apps/api/src/cron/jobs/addon-expiry.job.ts` — add Phase 5: query `billing_addon_purchases WHERE entitlementRemovalPending = true`; retry `removeEntitlement(purchaseId)` for each; clear flag on success\n\nAcceptance criteria:\n- Phase 5 runs after Phases 1-4\n- Queries purchases with pending entitlement removal\n- Retries removal, clears flag on success\n- Logs each retry attempt\n- Test: purchase with entitlementRemovalPending=true -> Phase 5 retries and clears flag",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add entitlementRemovalPending query in Phase 5", "completed": false },
+                {
+                    "title": "Retry removeEntitlement for each pending purchase",
+                    "completed": false
+                },
+                { "title": "Clear entitlementRemovalPending flag on success", "completed": false },
+                { "title": "Add logging for each retry attempt", "completed": false },
+                { "title": "Test: pending flag -> retried and cleared", "completed": false }
+            ],
+            "tags": ["backend", "cron", "entitlements", "reconciliation"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Split addon-expiration.service.ts into queries and batch processing files",
+            "description": "Refactor the oversized `addon-expiration.service.ts` by extracting DB queries to a separate file and batch processing logic to another.\n\nFiles affected:\n- `apps/api/src/services/addon-expiration.queries.ts` (new) — extract all Drizzle queries related to expiration\n- `apps/api/src/services/addon-expiration.batch.ts` (new) — extract batch processing loop and batch-level error handling\n- `apps/api/src/services/addon-expiration.service.ts` — keep service orchestration only; import from new files\n\nAcceptance criteria:\n- addon-expiration.service.ts is under 500 lines\n- Each new file is under 500 lines\n- No circular imports\n- All existing tests pass unchanged\n- Named exports only",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Extract DB queries to addon-expiration.queries.ts",
+                    "completed": false
+                },
+                { "title": "Extract batch loop to addon-expiration.batch.ts", "completed": false },
+                { "title": "Update imports in addon-expiration.service.ts", "completed": false },
+                { "title": "Verify all tests pass post-refactor", "completed": false },
+                { "title": "Verify all files under 500 lines", "completed": false }
+            ],
+            "tags": ["backend", "refactor", "code-quality"],
+            "phase": "p3-cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 65,
+        "pending": 65,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}

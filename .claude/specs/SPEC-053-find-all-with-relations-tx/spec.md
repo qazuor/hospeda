@@ -319,7 +319,7 @@ This approach verifies that `tx` is FORWARDED to the correct internal calls with
 
 This spec has been verified against all sibling specs:
 
-- **SPEC-050** (Lifecycle State Modeling): Modifies `adminList()` WHERE clause construction. No conflict.. different code paths.
+- ~~**SPEC-050**~~ (deleted, superseded by SPEC-063 Lifecycle State Standardization): Originally modified `adminList()` WHERE clause construction. No conflict.. different code paths.
 - **SPEC-051** (Admin Permission Hook): Modifies `adminList()` permission checks. No conflict.. different code paths.
 - **SPEC-052** (Type-Safe Entity Filters): Adds type safety to `_executeAdminSearch` overrides. Those overrides call `this.model.findAll()`, NOT `findAllWithRelations()`. No conflict. **Coordination note**: SPEC-052 also modifies `packages/service-core/src/types/index.ts` (adds generics to `AdminSearchExecuteParams`). Both changes to this file are independent .. SPEC-053 adds a parameter to `findAllWithRelations` in the `BaseModel<T>` interface, while SPEC-052 modifies `AdminSearchExecuteParams`. No merge conflicts expected, but if implementing concurrently, apply both sets of import additions together.
 - **SPEC-054** (Default Filters UI Indicator): Frontend-only changes. No conflict.
@@ -327,9 +327,21 @@ This spec has been verified against all sibling specs:
 - **SPEC-056** (Numeric Column Coercion): Modifies numeric type handling. No conflict.
 - **SPEC-057** (Admin Response Schema Consistency): Modifies response schemas. No conflict.
 
+### Post-SPEC-058 Type Harmonization
+
+> **Added 2026-04-04** (cross-spec conflict resolution)
+
+SPEC-053 typed `tx` as `NodePgDatabase<typeof schema>` (the only available type at the time of implementation). SPEC-058 introduces `DrizzleClient` as the common base type for both regular connections and transaction handles. When SPEC-058 is implemented:
+
+1. The `findAllWithRelations()` method signature in `base.model.ts` must be updated from `tx?: NodePgDatabase<typeof schema>` to `tx?: DrizzleClient`
+2. The `BaseModel<T>` interface entry for `findAllWithRelations` must also be updated
+3. This is a TYPE WIDENING (not a breaking change) .. `NodePgDatabase` is assignable to `DrizzleClient`
+
+**This update is explicitly included in SPEC-058 section 2b.** No separate migration needed. Implementers should verify SPEC-058 section 2b was applied correctly.
+
 ### Implementation Order
 
-This spec has no dependencies and can be implemented in any order relative to SPEC-050 through SPEC-057. It is a purely additive change (adding an optional parameter) that does not affect any code that the sibling specs modify.
+This spec has no dependencies and can be implemented in any order relative to ~~SPEC-050~~ (deleted) through SPEC-057. It is a purely additive change (adding an optional parameter) that does not affect any code that the sibling specs modify.
 
 ## Dependencies
 

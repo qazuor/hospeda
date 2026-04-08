@@ -1,0 +1,2705 @@
+{
+    "version": "1.0",
+    "created": "2026-04-02T18:00:00.000Z",
+    "specId": "SPEC-065",
+    "title": "Figma to Code: Homepage Production Migration",
+    "status": "pending",
+    "summary": {
+        "total": 66,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 66,
+        "blocked": 0,
+        "averageComplexity": 2.7
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Rename CSS tokens in global.css (brand prefix)",
+            "description": "Rename the 6 brand-prefixed tokens in `apps/web2/src/styles/global.css`: `--primary` \u2192 `--brand-primary`, `--secondary` \u2192 `--brand-secondary`, `--tertiary` \u2192 `--brand-tertiary`, `--accent` \u2192 `--brand-accent`, `--secondary-foreground` \u2192 `--brand-secondary-foreground`, `--feature-strip` \u2192 `--brand-feature-strip`. Only modify the token definitions in the `:root` block. Do NOT update references yet (that is T-002). Run a grep to verify all 6 old names are removed from token definitions. Tests: verify file compiles without errors; snapshot the `:root` block to detect regressions.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Rename 6 brand tokens in :root block",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no duplicate token names remain",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "css", "tokens", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Rename CSS tokens in global.css (core prefix)",
+            "description": "Rename the 4 core-prefixed tokens in `apps/web2/src/styles/global.css`: `--foreground` \u2192 `--core-foreground`, `--background` \u2192 `--core-background`, `--card` \u2192 `--core-card`, `--muted-foreground` \u2192 `--core-muted-foreground`. Only modify the token definitions in the `:root` block. Search for any `var(--foreground)` etc. patterns in the same file and update them if they appear within global.css itself. Tests: verify global.css compiles; grep confirms old unprefixed names are gone from `:root`.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Rename 4 core tokens in :root block",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no duplicate token names remain",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "css", "tokens", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Update all CSS token references across web2 codebase",
+            "description": "After T-001 and T-002 rename token definitions, update ALL `var(--primary)`, `var(--secondary)`, `var(--tertiary)`, `var(--accent)`, `var(--secondary-foreground)`, `var(--feature-strip)`, `var(--foreground)`, `var(--background)`, `var(--card)`, `var(--muted-foreground)` references across all files in `apps/web2/src/` (`.astro`, `.tsx`, `.ts`, `.css`). Use search-and-replace carefully: `var(--primary)` \u2192 `var(--brand-primary)` etc. After replacement, run a grep to confirm zero remaining references to old token names. Tests: run typecheck; build must not error; snapshot tests on affected components detect regressions.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Search-replace brand token refs in .astro files",
+                    "completed": true
+                },
+                {
+                    "title": "Search-replace brand token refs in .tsx/.ts files",
+                    "completed": true
+                },
+                {
+                    "title": "Search-replace brand token refs in .css files",
+                    "completed": true
+                },
+                {
+                    "title": "Grep verify zero old token references remain",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "css", "tokens", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:37:05.000Z",
+                "completed": "2026-04-03T15:37:05.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add missing i18n keys to home.json for all locales (part 1: hero + accommodations)",
+            "description": "Add the following missing keys to `packages/i18n/src/locales/{es,en,pt}/home.json`: `home.hero.tagline`, `home.hero.secondaryCta`, `home.hero.imageAlt`, `home.featuredAccommodations.emptyState`, `home.featuredAccommodations.noReviews`. Provide appropriate values in each locale (es: Spanish Argentina, en: English, pt: Portuguese). Follow existing key naming patterns in the file. Tests: verify all 3 locale files parse as valid JSON; write a test that imports and checks each key exists and returns a non-empty string.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Add 5 keys to es/home.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 5 keys to en/home.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 5 keys to pt/home.json",
+                    "completed": true
+                },
+                {
+                    "title": "Verify JSON validity all 3 files",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add missing i18n keys to home.json for all locales (part 2: destinations + events + articles)",
+            "description": "Add the following missing keys to `packages/i18n/src/locales/{es,en,pt}/home.json`: `home.featuredDestinations.ariaLabel`, `home.featuredDestinations.emptyState`, `home.upcomingEvents.emptyState`, `home.latestPosts.emptyState`. Provide appropriate locale-specific values. Tests: verify JSON validity; test that each key exists and returns a non-empty string in all 3 locales.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016", "T-017", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Add 4 keys to es/home.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 4 keys to en/home.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add 4 keys to pt/home.json",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Migrate ownerCta i18n keys from flat to nested structure and add missing keys",
+            "description": "In `packages/i18n/src/locales/{es,en,pt}/home.json`: (1) Remove flat keys `home.ownerCta.feature1`, `home.ownerCta.feature1Description`, `home.ownerCta.feature2`, `home.ownerCta.feature2Description`, `home.ownerCta.feature3`, `home.ownerCta.feature3Description`. (2) Add nested keys: `home.ownerCta.feature1.title`, `home.ownerCta.feature1.description`, `home.ownerCta.feature2.title`, `home.ownerCta.feature2.description`, `home.ownerCta.feature3.title`, `home.ownerCta.feature3.description`. Preserve the content from the flat keys when migrating. Tests: verify JSON validity; check old flat keys are absent; check new nested keys exist.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Remove 6 flat ownerCta keys from all 3 locales",
+                    "completed": true
+                },
+                {
+                    "title": "Add 6 nested ownerCta keys to all 3 locales",
+                    "completed": true
+                },
+                {
+                    "title": "Verify JSON validity all 3 files",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add missing i18n keys to common.json and footer.json for all locales",
+            "description": "Add the following missing keys: In `packages/i18n/src/locales/{es,en,pt}/common.json`: `common.carousel.previousSlide`, `common.carousel.nextSlide`, `common.skipToContent`, `common.scrollToTop`. In `packages/i18n/src/locales/{es,en,pt}/footer.json` (or home.json if footer keys live there): `footer.newsletter.placeholder`, `footer.newsletter.errorMessage`. Tests: verify JSON validity for all files; test key existence and non-empty values in all 3 locales.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-021", "T-022", "T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Add 4 common keys to all 3 locales",
+                    "completed": true
+                },
+                {
+                    "title": "Add 2 footer.newsletter keys to all 3 locales",
+                    "completed": true
+                },
+                {
+                    "title": "Verify JSON validity all affected files",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Upgrade embla-carousel-react and embla-carousel-autoplay to ^8.6.0",
+            "description": "In `apps/web2/package.json`, update `embla-carousel-react` and `embla-carousel-autoplay` from `^8.5.1` to `^8.6.0`. Run `pnpm install` to update the lockfile. Verify no breaking changes in the v8.5\u2192v8.6 changelog. Check that existing carousel usages in `apps/web2/src/` still compile (`pnpm typecheck`). Tests: run existing carousel component tests to confirm they pass after upgrade.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Update package.json version strings",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm install to update lockfile",
+                    "completed": true
+                },
+                {
+                    "title": "Run pnpm typecheck to verify compilation",
+                    "completed": true
+                },
+                {
+                    "title": "Run existing carousel tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "dependency", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create API client types.ts and client.ts",
+            "description": "Create `apps/web2/src/lib/api/types.ts` with: `ApiResult<T>` (discriminated union `{ ok: true; data: T } | { ok: false; error: ApiError }`), `ApiError` interface, `PaginationMeta` interface, `PaginatedResponse<T>` interface. Then create `apps/web2/src/lib/api/client.ts`: typed fetch wrapper function `apiFetch<T>(path, options?)` returning `Promise<ApiResult<T>>`. Base URL from `import.meta.env.PUBLIC_API_URL`. 10s timeout via `AbortController`. On non-OK response or timeout, return `{ ok: false, error }`. Model after `apps/web/src/lib/api/client.ts`. Tests: unit tests for `apiFetch` mocking `fetch` \u2014 test success path, 4xx path, 5xx path, timeout path.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Create types.ts with ApiResult, ApiError, PaginationMeta, PaginatedResponse",
+                    "completed": true
+                },
+                {
+                    "title": "Create client.ts with apiFetch wrapper",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for 4 fetch scenarios",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "api-client", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create API client endpoints.ts",
+            "description": "Create `apps/web2/src/lib/api/endpoints.ts`. Implement typed endpoint methods using `apiFetch` from T-009: `accommodationsApi.list({ isFeatured?, pageSize? })` \u2192 `GET /api/v1/public/accommodations`, `destinationsApi.list({ isFeatured?, pageSize? })` \u2192 `GET /api/v1/public/destinations`, `eventsApi.listUpcoming({ pageSize?, daysAhead? })` \u2192 `GET /api/v1/public/events/upcoming`, `postsApi.list({ sortBy?, sortOrder?, pageSize? })` \u2192 `GET /api/v1/public/posts`. Each method builds query params from options. Return types use `PaginatedResponse<T>` wrapped in `ApiResult`. Tests: unit test each endpoint method mocking `apiFetch` \u2014 test that query params are constructed correctly.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Implement accommodationsApi.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement destinationsApi.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement eventsApi.listUpcoming()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement postsApi.list()",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for query param construction",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "api-client", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create API client transforms.ts",
+            "description": "Create `apps/web2/src/lib/api/transforms.ts`. Implement 4 transform functions that convert raw API response items to component prop shapes: `toAccommodationCardProps(item)`, `toDestinationCardProps(item)`, `toEventCardProps(item)`, `toPostCardProps(item)`. Each transform maps API field names to the prop names expected by card components (cross-reference `src/data/types.ts`). Handle optional fields with fallbacks. Create a barrel `apps/web2/src/lib/api/index.ts` re-exporting all 4 files. Tests: unit test each transform with a realistic fixture \u2014 verify output shape matches expected props interface.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": ["T-014", "T-015", "T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Implement toAccommodationCardProps()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement toDestinationCardProps()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement toEventCardProps()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement toPostCardProps()",
+                    "completed": true
+                },
+                {
+                    "title": "Create barrel index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Write transform unit tests with fixtures",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "api-client", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Rename SPEC-048 section components per mapping table",
+            "description": "In `apps/web2/src/components/sections/`, rename files per the mapping table: `AccommodationsSection.astro` \u2192 `FeaturedAccommodationsSection.astro`, `AboutSection.astro` \u2192 `AboutUsSection.astro`, `EventsSection.astro` \u2192 `NextEventsSection.astro`, `PostsSection.astro` \u2192 `LatestArticlesSection.astro`, `ReviewsSection.astro` \u2192 `TestimonialsSection.astro`, `BestFeaturesBanner.astro` \u2192 `CtaOwnersSection.astro`. Update all import statements in `src/pages/[lang]/index.astro` and any other consumers. Delete `FeaturesCtaSection.astro` if it exists as a duplicate. Tests: pnpm typecheck must pass; grep confirms no orphaned imports to old filenames.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022"
+            ],
+            "subtasks": [
+                {
+                    "title": "Rename 6 section component files",
+                    "completed": true
+                },
+                {
+                    "title": "Update imports in index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Delete FeaturesCtaSection.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Grep verify no orphaned imports",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "refactor", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Rename SPEC-048 React island files per mapping table",
+            "description": "In `apps/web2/src/components/islands/` (or wherever they live), rename: `DestinationCarousel.client.tsx` \u2192 `DestinationsCarousel.client.tsx` (and `.module.css`), `ReviewCarousel.client.tsx` \u2192 `TestimonialsCarousel.client.tsx` (and `.module.css`), `StatCounter.client.tsx` \u2192 `AnimatedCounter.client.tsx` (and `.module.css`). Convert `DestinationCard.tsx` (React) \u2192 `DestinationCard.astro` if it has no client-side state. Delete `PostCarousel.client.tsx` and its CSS module. Delete `PostCard.module.css` and `ReviewCard.module.css`. Update all import statements. Tests: typecheck passes; no orphaned imports.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-020", "T-021", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Rename 3 React island .tsx files",
+                    "completed": true
+                },
+                {
+                    "title": "Rename 3 matching .module.css files",
+                    "completed": true
+                },
+                {
+                    "title": "Delete PostCarousel.client.tsx and CSS module",
+                    "completed": true
+                },
+                {
+                    "title": "Convert DestinationCard.tsx to .astro",
+                    "completed": true
+                },
+                {
+                    "title": "Delete PostCard.module.css and ReviewCard.module.css",
+                    "completed": true
+                },
+                {
+                    "title": "Update all import statements",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "refactor", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:36:06.000Z",
+                "completed": "2026-04-03T15:36:06.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Update src/data/types.ts with complete card prop types",
+            "description": "Review and update `apps/web2/src/data/types.ts`. Verify existing types (`AccommodationCardData`, `DestinationCardData`, `EventCardData`, `BlogPostCardData`, `ReviewCardData`) match actual API response shapes. Add missing fields: `AccommodationCardData` needs `amenities`, `isFeatured`, `type`, `rating`, `reviewCount`; `ReviewCardData` needs `avatarUrl`, `initials`, `entityName`, `entitySlug`, `entityType`. Add `ArticleCardBaseProps` interface with common fields shared by all 3 article card variants. Ensure all types are exported. Tests: unit test type compatibility by creating fixture objects that satisfy each interface.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-016", "T-027", "T-028", "T-029"],
+            "subtasks": [
+                {
+                    "title": "Audit existing types vs API schema",
+                    "completed": true
+                },
+                {
+                    "title": "Add missing fields to existing types",
+                    "completed": true
+                },
+                {
+                    "title": "Add ArticleCardBaseProps interface",
+                    "completed": true
+                },
+                {
+                    "title": "Write type compatibility tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "types", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:37:05.000Z",
+                "completed": "2026-04-03T15:37:05.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement Header.astro sticky scroll-transparency behavior",
+            "description": "Update `apps/web2/src/components/layout/Header.astro`. Add a sentinel `<div id='scroll-sentinel'>` as the first child of `<body>`. In an inline `<script>`, set up `IntersectionObserver` on the sentinel: when sentinel exits viewport, add class `scrolled` to the header; when it enters, remove it. In `<style>`, define `.scrolled` class: `background: oklch(from var(--core-card) l c h / 0.95); backdrop-filter: blur(8px); box-shadow: 0 1px 0 oklch(...)`. At scroll 0, header background is transparent. Header must have `position: sticky; top: 0; z-index: var(--z-nav); max-height: 80px`. Tests: render test verifying sentinel div exists; script behavior test using IntersectionObserver mock.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Add sentinel div to Header.astro markup",
+                    "completed": true
+                },
+                {
+                    "title": "Add IntersectionObserver script logic",
+                    "completed": true
+                },
+                {
+                    "title": "Add scrolled CSS class styles",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests for sentinel and sticky styles",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "header", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T15:53:56.000Z",
+                "completed": "2026-04-03T15:53:56.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Implement Header.astro responsive layout (desktop/tablet/mobile)",
+            "description": "Update `apps/web2/src/components/layout/Header.astro`. Add 3-tier layout: Desktop (>=1024px): Logo + nav links + username/avatar + search icon. Tablet (768-1023px): Logo + nav links + search icon (avatar hidden). Mobile (<768px): Logo + hamburger button + search icon (nav links hidden). Use CSS classes with Tailwind breakpoints or media queries referencing CSS tokens. Each nav link: `<a href={buildUrl(locale, path)} aria-current={isCurrentPage ? 'page' : undefined}`. Search icon links to `/{locale}/busqueda/`. Skip navigation link as first focusable element (`<a class='skip-link' href='#main-content'>`). Tests: snapshot test for each breakpoint class structure.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Implement desktop nav layout",
+                    "completed": true
+                },
+                {
+                    "title": "Implement tablet hide/show logic",
+                    "completed": true
+                },
+                {
+                    "title": "Implement mobile hamburger + hidden nav",
+                    "completed": true
+                },
+                {
+                    "title": "Add skip navigation link",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests per breakpoint",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "header", "responsive", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement Header.astro smooth-scroll for homepage anchors",
+            "description": "In `apps/web2/src/components/layout/Header.astro`, add logic so that nav links pointing to section anchors (#featured-accommodations, #destinations, #events, #blog, #contact) trigger smooth scroll when on the homepage, and navigate to their full-page URL when on any other page. Detect current page via `Astro.url.pathname`. If on homepage, use `href='#section-id'` and add CSS `html { scroll-behavior: smooth }` or JS `scrollIntoView({ behavior: 'smooth' })`. If on other pages, use `href='/{locale}/alojamientos/'` etc. Tests: unit test the URL generation logic for homepage vs other pages.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Detect homepage via Astro.url.pathname",
+                    "completed": true
+                },
+                {
+                    "title": "Set anchor hrefs conditionally",
+                    "completed": true
+                },
+                {
+                    "title": "Add scroll-behavior: smooth to global CSS",
+                    "completed": true
+                },
+                {
+                    "title": "Test URL generation for homepage vs other pages",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "header", "a11y", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:26.000Z",
+                "completed": "2026-04-03T18:59:26.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Implement HeroSection.astro two-column layout and text stack",
+            "description": "Update `apps/web2/src/components/sections/HeroSection.astro`. Build the two-column layout: left 60% (text stack + search bar placeholder) / right 40% (blob image). Min-height `calc(100vh - 80px)`. Left column: tagline (`<p>` with Caveat Bold 64px, `--brand-primary`, text from `t('home.hero.tagline')`), title (`<h1>` Geologica Bold 96px, `--core-foreground`, staggered word animation via CSS + data-word index), description (Roboto 18px, `--core-muted-foreground`). Secondary CTA button below search bar area. Social proof row (3 avatar images + stars + text). All strings via `t()`. Tests: render test verifying tagline, title, description present; a11y test on heading hierarchy.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Build two-column CSS Grid layout",
+                    "completed": true
+                },
+                {
+                    "title": "Add tagline with Caveat font class",
+                    "completed": true
+                },
+                {
+                    "title": "Add h1 title with word-span markup for animation",
+                    "completed": true
+                },
+                {
+                    "title": "Add description and secondary CTA",
+                    "completed": true
+                },
+                {
+                    "title": "Add social proof row (avatars + stars)",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and a11y tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "hero", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement HeroSection.astro blob image with crossfade and parallax",
+            "description": "In `apps/web2/src/components/sections/HeroSection.astro`, implement the right-column blob image: (1) SVG blob mask applied via `clip-path` or `mask-image` using the Figma blob SVG path. (2) Three `<Image>` elements stacked with `position: absolute`, animated with CSS `@keyframes` to crossfade on a 5s cycle (each image shows 4.5s, fades 0.5s overlap). (3) Blob parallax: inline `<script>` with `IntersectionObserver` + `requestAnimationFrame` to apply `transform: translateY()` capped at 30px based on scroll position. (4) Decorative floating icons around blob: CSS `@keyframes` with random `translateX/Y` 5-10px, 3-6s duration per icon. All animations must check `window.matchMedia('(prefers-reduced-motion: reduce)')` and skip motion if active. LCP image uses `fetchpriority='high'`. Tests: render test for 3 image elements; test that `@keyframes` are disabled when reduced-motion.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Apply blob SVG mask to image container",
+                    "completed": true
+                },
+                {
+                    "title": "Stack 3 images with crossfade keyframes",
+                    "completed": true
+                },
+                {
+                    "title": "Add parallax scroll script",
+                    "completed": true
+                },
+                {
+                    "title": "Add floating icon animations",
+                    "completed": true
+                },
+                {
+                    "title": "Add prefers-reduced-motion checks",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "hero", "animation", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Implement HeroSection.astro staggered title animation",
+            "description": "In `apps/web2/src/components/sections/HeroSection.astro`, implement the staggered title animation: wrap each word of `t('home.hero.title')` in a `<span data-word='N'>` element. CSS `@keyframes fadeInUp` animates opacity 0\u21921 and translateY 20px\u21920. Each span has `animation-delay: calc(N * 150ms)`. On page load, the animation plays once. Check `window.matchMedia('(prefers-reduced-motion: reduce)')` \u2014 if true, remove animation classes and show words immediately. Optionally use `astro:page-load` event for view transition compatibility. Tests: unit test that word-wrapping produces correct number of spans; test reduced-motion branch shows final state.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Wrap title words in indexed spans",
+                    "completed": true
+                },
+                {
+                    "title": "Define fadeInUp keyframe with staggered delays",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion JS check",
+                    "completed": true
+                },
+                {
+                    "title": "Write animation tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "hero", "animation", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Implement HeroSection.astro hero mobile layout",
+            "description": "In `apps/web2/src/components/sections/HeroSection.astro`, add mobile responsive styles: below 768px, hero stacks vertically (text column full-width on top, blob image below or hidden on <640px). Title font-size reduces to 64px at md breakpoint. Blob decorative shapes hidden on mobile (`display: none`). Social proof row compresses. Secondary CTA button becomes full-width. Use CSS media queries referencing `--space-*` tokens. Tests: snapshot test at 375px viewport confirms stacked layout; verify shape elements have `display: none` CSS in mobile query.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add mobile media queries for stacked layout",
+                    "completed": true
+                },
+                {
+                    "title": "Hide decorative shapes on mobile",
+                    "completed": true
+                },
+                {
+                    "title": "Reduce title font-size at md breakpoint",
+                    "completed": true
+                },
+                {
+                    "title": "Write mobile snapshot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "hero", "responsive", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Implement AboutUsSection.astro photo collage and text column",
+            "description": "Implement `apps/web2/src/components/sections/AboutUsSection.astro`. Two-column layout. Left: CSS Grid photo collage with 3-4 images using `grid-row`/`grid-column` spans for overlapping effect; `object-fit: cover` on each; no absolute positioning; decorative accent shape behind with `aria-hidden='true'`. Right: accent tagline + `<h2>` title (Geologica Bold 48px) + body paragraphs (Roboto 16px, `--core-muted-foreground`) + secondary CTA linking to `/nosotros/`. All strings via `t('home.about.*')`. Images use Astro `<Image>`. Tests: render test verifying grid structure; a11y test for heading hierarchy; verify decorative images have `aria-hidden`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Build two-column layout",
+                    "completed": true
+                },
+                {
+                    "title": "Implement CSS Grid photo collage",
+                    "completed": true
+                },
+                {
+                    "title": "Add text column with CTA",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and a11y tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "about", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add floating animations to AboutUsSection.astro airplane illustrations",
+            "description": "In `apps/web2/src/components/sections/AboutUsSection.astro`, add the decorative airplane illustrations: small `<img>` elements with `aria-hidden='true'` and `alt=''`. Apply CSS `@keyframes float-airplane` with `translateX/Y` ~5-8px, `rotate` \u00b13\u00b0, randomized duration 3-5s, `infinite alternate`. Each illustration gets slightly different `animation-duration` and `animation-delay` for organic feel. Check `prefers-reduced-motion` in a `<script>` and add `animation: none` overrides if active. Tests: verify images have `aria-hidden`; verify reduced-motion disables animation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add airplane illustration img elements",
+                    "completed": true
+                },
+                {
+                    "title": "Define float-airplane keyframes",
+                    "completed": true
+                },
+                {
+                    "title": "Apply staggered animation-delay per element",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion check",
+                    "completed": true
+                },
+                {
+                    "title": "Test aria-hidden and reduced-motion",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "about", "animation", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Implement CtaOwnersSection.astro layout and feature list",
+            "description": "Implement `apps/web2/src/components/sections/CtaOwnersSection.astro` (renamed from BestFeaturesBanner). Two-column layout: left = decorative image/illustration, right = headline (`t('home.ownerCta.title')`, Geologica Bold 48px) + description + feature list (3 items). Each feature item: icon from `@repo/icons` (semantically matching the feature), `<span aria-label='{feature title}'>` wrapping icon, title (`t('home.ownerCta.feature1.title')`), description (`t('home.ownerCta.feature1.description')`). Primary CTA button (`GradientButton.astro`) linking to `/suscriptores/propietarios/`. Tests: render test for 3 feature items with icons; a11y test for icon aria-labels; verify CTA href.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-006"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Build two-column layout",
+                    "completed": true
+                },
+                {
+                    "title": "Implement 3-item feature list with icons and aria-labels",
+                    "completed": true
+                },
+                {
+                    "title": "Add CTA button with correct href",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and a11y tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "cta-owners", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add floating animation to CtaOwnersSection.astro left image",
+            "description": "In `apps/web2/src/components/sections/CtaOwnersSection.astro`, add subtle floating animation to the left decorative image/illustration. CSS `@keyframes float-cta-image` with `translateX/Y` ~5-8px range, 4-5s duration, `infinite alternate ease-in-out`. Check `prefers-reduced-motion` and disable animation if active. Image must have `aria-hidden='true'` and `alt=''` if purely decorative, OR meaningful `alt` text if it shows a real property. Tests: verify image has appropriate alt/aria-hidden; verify reduced-motion CSS override.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Define float-cta-image keyframe",
+                    "completed": true
+                },
+                {
+                    "title": "Apply animation to left image element",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion check",
+                    "completed": true
+                },
+                {
+                    "title": "Test aria attributes and motion",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "cta-owners", "animation", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Implement StatsSection.astro desktop 5-column grid layout",
+            "description": "Implement `apps/web2/src/components/sections/StatsSection.astro`. Desktop: 5-column CSS Grid with `gap: var(--space-card-gap)`. Each stat card: icon from `@repo/icons` (BuildingIcon, LocationIcon, StarIcon, CompassIcon, UsersIcon) with `aria-hidden='true'`, numeric value slot (renders static value for now \u2014 AnimatedCounter island wired in T-038), label (Roboto 16px, `--core-muted-foreground`). Stats data from `homepage-config.ts`. All text via `t('home.statistics.*')`. Background: if gradient, add semi-opaque scrim for contrast. Tests: render test for 5 stat cards with correct icon components; verify icon has `aria-hidden`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Build 5-column grid layout",
+                    "completed": true
+                },
+                {
+                    "title": "Map 5 icons to stat cards",
+                    "completed": true
+                },
+                {
+                    "title": "Render static numeric values from config",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests for 5 cards",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "stats", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:31:04.000Z",
+                "completed": "2026-04-03T18:31:04.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Add mobile 2x2 layout to StatsSection.astro",
+            "description": "In `apps/web2/src/components/sections/StatsSection.astro`, add responsive styles for mobile: below 1024px, stats use `grid-cols-2` layout (2x2 grid). The 5th card uses `grid-column: 1 / -1; justify-self: center` to center it below the 2x2 grid on a 3rd row. Between 1024px and above: 5-column. Use CSS media queries with `min-width`. Tests: snapshot test at 375px viewport confirming 2x2+1 structure; snapshot at 1440px confirming 5-column.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add mobile grid-cols-2 media query",
+                    "completed": true
+                },
+                {
+                    "title": "Center 5th card with grid-column span",
+                    "completed": true
+                },
+                {
+                    "title": "Write mobile/desktop snapshot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "stats", "responsive", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Implement Footer.astro 4-column grid and navigation",
+            "description": "Implement `apps/web2/src/components/layout/Footer.astro`. Background `--footer-bg`. 4-column CSS Grid: Col 1: Logo + description + social icons (`SocialLinks.astro`). Col 2: 'DESCUBRI' nav links. Col 3: 'PROPIETARIOS' nav links (first link: 'Public\u00e1 tu alojamiento' \u2192 `/suscriptores/propietarios/`). Col 4: 'EMPRESA' nav links. All link text via `t()`. Footer nav links use `--footer-fg-muted` color, hover \u2192 `--footer-fg` with 150ms ease-out. Column headings are `<h3>` elements. Mobile: single column, all sections always visible (no accordion). Tests: render test verifying 4 column structure and all nav links; mobile snapshot test showing stacked layout.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Build 4-column grid with footer-bg",
+                    "completed": true
+                },
+                {
+                    "title": "Implement Logo + social column",
+                    "completed": true
+                },
+                {
+                    "title": "Implement 3 nav columns with correct links",
+                    "completed": true
+                },
+                {
+                    "title": "Add mobile stacked layout media query",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and mobile snapshot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "footer", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:31:04.000Z",
+                "completed": "2026-04-03T18:31:04.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add newsletter strip and copyright bar to Footer.astro",
+            "description": "In `apps/web2/src/components/layout/Footer.astro`, add: (1) Newsletter strip at top of footer (above 4-column grid): full-width strip with heading, description, and `<NewsletterForm client:visible locale={locale} />` island placeholder. (2) Copyright bar at bottom: full-width strip with copyright text including `new Date().getFullYear()` for dynamic year, and legal disclaimer. Both texts via `t('footer.*')`. Tests: render test verifying newsletter strip renders before grid; verify copyright bar contains current year string.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                {
+                    "title": "Add newsletter strip above 4-column grid",
+                    "completed": true
+                },
+                {
+                    "title": "Add copyright bar with dynamic year",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "footer", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Implement FeaturedAccommodationsSection.astro layout and data fetching",
+            "description": "Implement `apps/web2/src/components/sections/FeaturedAccommodationsSection.astro`. Section header (SectionHeader.astro), filter chips slot (FilterChips island placeholder), 3-column accommodation grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[--space-card-gap]`), footer CTA ('Ver todos los alojamientos' \u2192 `/{locale}/alojamientos/`). Data: call `accommodationsApi.list({ isFeatured: true, pageSize: 6 })` via api client; fallback to `homepage-accommodations.ts` on failure; log error via `@repo/logger`. Transform results with `toAccommodationCardProps()`. Pass items array to `FilterChips` island and render `AccommodationCard.astro` per item. Empty state: render `t('home.featuredAccommodations.emptyState')` + CTA if items empty. Tests: render with mock data; render empty state; verify fallback path.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": ["T-031", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Build section layout with header and grid",
+                    "completed": true
+                },
+                {
+                    "title": "Implement API call with fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Add empty state rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Add footer CTA link",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for populated/empty/fallback states",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "accommodations", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Implement AccommodationCard.astro with all visual states",
+            "description": "Update `apps/web2/src/components/shared/AccommodationCard.astro`. Fields: blob-masked image (Astro `<Image>`, aspect-ratio 4/3, `loading='lazy'`), name (Geologica Bold 20px), type badge (color from `colors.ts`), location (city + province), price/night (Roboto Bold, `--brand-accent`), rating stars (`RatingStars.astro`) + review count, featured badge (conditional), amenity strip (up to 3 icons with `aria-label` per icon wrapper, hidden when empty). Handle: no-reviews \u2192 render `t('home.featuredAccommodations.noReviews')` text; no-amenities \u2192 hide strip; featured badge variant. Hover states via CSS: image zoom `scale(1.08)`, badge bg \u2192 `--brand-primary`, name color \u2192 `--brand-primary`. Link wraps to `/{locale}/alojamientos/{slug}/`. Tests: snapshot all 4 variant combinations (featured/not, with/without amenities, with/without rating).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-030"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement card markup with all fields",
+                    "completed": true
+                },
+                {
+                    "title": "Add conditional featured badge",
+                    "completed": true
+                },
+                {
+                    "title": "Add amenity strip with aria-labels (hidden when empty)",
+                    "completed": true
+                },
+                {
+                    "title": "Handle no-reviews fallback text",
+                    "completed": true
+                },
+                {
+                    "title": "Add hover CSS for image, badge, name",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests for 4 variant combinations",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "accommodations", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Add loading skeleton states to FeaturedAccommodationsSection.astro",
+            "description": "In `apps/web2/src/components/sections/FeaturedAccommodationsSection.astro`, add skeleton card placeholders matching AccommodationCard dimensions: same outer size, `border-radius: var(--radius-card)`, image area with same `aspect-ratio: 4/3`, content area rows. Skeleton uses `background: oklch(from var(--core-muted-foreground) l c h / 0.1)` with `@keyframes shimmer` gradient animation. Since this is SSR/build-time data fetching, skeleton shows only during client-side hydration if needed. Create a shared `SkeletonCard.astro` component in `src/components/shared/` reusable by other sections. `prefers-reduced-motion` disables shimmer animation. Tests: render test for skeleton card; verify dimensions match real card.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create SkeletonCard.astro shared component",
+                    "completed": true
+                },
+                {
+                    "title": "Add shimmer keyframe animation",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion disable for shimmer",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate skeleton into section",
+                    "completed": true
+                },
+                {
+                    "title": "Write render test for skeleton",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "accommodations", "skeleton", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:26.000Z",
+                "completed": "2026-04-03T18:59:26.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Implement NextEventsSection.astro layout and data fetching",
+            "description": "Implement `apps/web2/src/components/sections/NextEventsSection.astro`. Section header (SectionHeader.astro), 2-column grid (`grid-cols-1 md:grid-cols-2 gap-[--space-card-gap]`), footer CTA ('Ver todos los eventos' \u2192 `/{locale}/eventos/`). Data: call `eventsApi.listUpcoming({ pageSize: 6, daysAhead: 60 })`; fallback to `homepage-events.ts` on error; log via `@repo/logger`. Transform with `toEventCardProps()`. Empty state: render `t('home.upcomingEvents.emptyState')`. Pass transformed items to `EventCard.astro`. Tests: render with mock data; empty state; error fallback.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012", "T-005"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "Build section layout with 2-column grid",
+                    "completed": true
+                },
+                {
+                    "title": "Implement API call with fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Add empty state rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for 3 states",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "events", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Update EventCard.astro with category icons and destination links",
+            "description": "Update `apps/web2/src/components/shared/EventCard.astro`. Fields: cover image (`<Image>` aspect-ratio 16/9, `loading='lazy'`), category badge (color from `colors.ts`), category icon in date area (icon from `@repo/icons` mapping: music \u2192 MusicIcon, sports \u2192 TrophyIcon, cultural \u2192 PaletteIcon etc.), title (Geologica Bold 20px), date (`<time datetime={isoDate}>` via `formatDate()`), location (city), destination link (`/{locale}/destinos/{destinationSlug}/` as `<a>` with underline-on-hover). Hover states: image zoom `scale(1.06)`, badge brightness 1.15, calendar icon \u2192 `--brand-accent`, title \u2192 `--brand-primary`, destination link underline. Card link via focus ring. Tests: snapshot test for each category type; verify `<time>` element present; a11y test for focus ring.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-033"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add all EventCard fields with Image component",
+                    "completed": true
+                },
+                {
+                    "title": "Implement category-to-icon mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination link with proper href",
+                    "completed": true
+                },
+                {
+                    "title": "Add hover state CSS",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot and a11y tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "events", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:52:55.000Z",
+                "completed": "2026-04-03T18:52:55.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Create article-card-utils.ts with shared article card logic",
+            "description": "Create `apps/web2/src/lib/article-card-utils.ts` with these exported functions: `truncateTags(tags: string[], max: number): { visible: string[]; remainingCount: number }` (returns first `max` tags + count of remainder), `truncateExcerpt(text: string, variant: 'featured' | 'vertical' | 'compact'): string` (different lengths per variant), `resolveRelatedEntity(article: ArticleCardBaseProps): { href: string; label: string } | null` (builds URL from `relatedDestination | relatedAccommodation | relatedEvent`), `isPromoted(article: ArticleCardBaseProps): boolean`, `formatArticleDate(date: Date | string, locale: string): string`. Tests: unit test each function with edge cases (empty tags, no related entity, null date).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-036", "T-037", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Implement truncateTags()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement truncateExcerpt()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement resolveRelatedEntity()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement isPromoted() and formatArticleDate()",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all functions with edge cases",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "articles", "utils", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:46:26.000Z",
+                "completed": "2026-04-03T18:46:26.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Create FeaturedArticleCard.astro (horizontal-large variant)",
+            "description": "Create `apps/web2/src/components/shared/FeaturedArticleCard.astro`. Horizontal layout: image left (aspect-ratio 16/9, Astro `<Image>`, `loading='lazy'`), content right. Content: category badge, title (Geologica Bold 24px, max 2 lines `line-clamp-2`), excerpt (Roboto 14px, max 2 lines, `line-clamp-2` \u2192 `line-clamp-3` on hover via CSS), tags (up to 3 via `truncateTags()` + '+N' badge), author avatar + name, `<time>` date, reading time, related entity link (if exists, shown below excerpt), promoted badge (if `isPromoted()`). Hover states: image zoom `scale(1.06)`, first tag bg \u2192 `--brand-primary`, title \u2192 `--brand-primary`, excerpt reveals 3rd line, avatar gets 2px ring. Card spans 2 grid columns in bento layout. Tests: snapshot test with promoted + related entity; snapshot with no image (gradient fallback).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Build horizontal layout with Image + content",
+                    "completed": true
+                },
+                {
+                    "title": "Add all article card fields using utils",
+                    "completed": true
+                },
+                {
+                    "title": "Add promoted badge and related entity link",
+                    "completed": true
+                },
+                {
+                    "title": "Add hover CSS states",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "articles", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Create VerticalArticleCard.astro (vertical-tall variant)",
+            "description": "Create `apps/web2/src/components/shared/VerticalArticleCard.astro`. Vertical layout: image top (aspect-ratio 4/3, Astro `<Image>`), content below (tall). Content: category badge, title (Geologica Bold 20px, `line-clamp-2`), tags (up to 3 + '+N' badge), `<time>` date, reading time, related entity link (shown below tags as `<a>`), promoted badge. No excerpt. Spans 2 grid rows in bento layout. Hover states: image zoom `scale(1.06)`, first tag bg \u2192 `--brand-primary`, title \u2192 `--brand-primary`, related entity link underline, date/reading-time opacity \u2192 0.7. No image fallback \u2192 gradient background using `--brand-secondary`. Tests: snapshot with and without related entity; snapshot no image fallback.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Build vertical layout with Image top",
+                    "completed": true
+                },
+                {
+                    "title": "Add all article fields using utils",
+                    "completed": true
+                },
+                {
+                    "title": "Add no-image gradient fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Add hover CSS states",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "articles", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Create CompactArticleCard.astro (text-only variant)",
+            "description": "Create `apps/web2/src/components/shared/CompactArticleCard.astro`. Text-only layout (no image). Content: category badge, title (Geologica Bold 20px, `line-clamp-2`), tags (up to 3 + '+N' badge), `<time>` date. No excerpt, no related entity, no author. Hover states: card background tints to `--brand-secondary` (subtle via `color-mix`), title \u2192 `--brand-primary`, first tag bg \u2192 `--brand-primary`, 'Read more' arrow shifts 4px right via `translateX`. Decorative separator line changes to `--brand-accent`. Tests: snapshot with >3 tags showing '+N' badge; snapshot hover styles applied.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Build text-only card markup",
+                    "completed": true
+                },
+                {
+                    "title": "Add tags with truncation badge",
+                    "completed": true
+                },
+                {
+                    "title": "Add hover CSS with background tint and arrow shift",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests including '+N' badge",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "articles", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Implement LatestArticlesSection.astro bento grid and data fetching",
+            "description": "Implement `apps/web2/src/components/sections/LatestArticlesSection.astro`. Section header. Desktop bento grid: CSS Grid 2-column, named areas (card1 spans col 1-2 row 1; card2 spans col 1 row 2-3; card3 col 2 row 2; card4 col 2 row 3). Mobile: single column, all cards standard layout. Data: call `postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 })`; fallback to `homepage-posts.ts` on error. Transform with `toPostCardProps()`. Empty state: `t('home.latestPosts.emptyState')`. Render: slot[0] \u2192 `FeaturedArticleCard`, slot[1] \u2192 `VerticalArticleCard`, slot[2-3] \u2192 `CompactArticleCard`. Footer CTA \u2192 `/{locale}/blog/`. Tests: render test for bento grid areas; mobile single-column test.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-036", "T-037", "T-038", "T-011", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Define CSS Grid named areas for desktop bento",
+                    "completed": true
+                },
+                {
+                    "title": "Implement API call with fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Render correct card variant per slot",
+                    "completed": true
+                },
+                {
+                    "title": "Add mobile single-column layout",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and mobile tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "articles", "bento", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:04.000Z",
+                "completed": "2026-04-03T19:05:04.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Implement PartnersSection.astro with Embla autoplay carousel",
+            "description": "Implement `apps/web2/src/components/sections/PartnersSection.astro`. Section header (`t('home.partners.title')`). Embla Carousel configured for continuous slow scroll (~30px/s). Use `embla-carousel-autoplay` plugin with `{ stopOnMouseEnter: true, stopOnInteraction: false }`. Each logo: `<a href={partner.linkUrl} target={partner.isExternal ? '_blank' : undefined} rel={partner.isExternal ? 'noopener noreferrer' : undefined}>` containing `<img src={partner.logoUrl} alt='Logo de {partner.name}' loading='lazy'>`. Default logo style: `opacity: 0.6; filter: grayscale(1)`. Hover: `opacity: 1; filter: grayscale(0); transition: 150ms ease-out`. Data from `homepage-partners.ts`. Tests: render test for logo links and alt text; verify grayscale CSS class present.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up Embla carousel with autoplay plugin",
+                    "completed": true
+                },
+                {
+                    "title": "Render partner logos with correct alt text",
+                    "completed": true
+                },
+                {
+                    "title": "Add grayscale default + color hover CSS",
+                    "completed": true
+                },
+                {
+                    "title": "Handle external links with noopener",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests for logo links and alt",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "partners", "carousel", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Implement FilterChips.client.tsx React island",
+            "description": "Create `apps/web2/src/components/islands/FilterChips.client.tsx` and `FilterChips.module.css`. Props: `{ items: AccommodationCardData[]; locale: string; types: string[] }`. State: `activeType: string | null`. Render a row of `<button>` chips \u2014 one 'All' chip + one per unique accommodation type. Active chip: `aria-pressed='true'`, filled `--brand-primary` background. Inactive: `--brand-secondary` background. On click: toggle active type, filter items, call `onFilterChange` callback (or manage filtered state internally and render filtered `AccommodationCard` components). Keyboard: Enter/Space activate. Focus ring: 2px solid `--brand-primary`. Hover inactive: `color-mix(in oklch, var(--brand-secondary), black 10%)`. Module CSS for all classes. Tests: toggle chip active state; 'All' chip resets filter; keyboard Enter triggers toggle; aria-pressed state sync.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-031", "T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create FilterChips.client.tsx with chip toggle state",
+                    "completed": true
+                },
+                {
+                    "title": "Create FilterChips.module.css with all visual states",
+                    "completed": true
+                },
+                {
+                    "title": "Implement client-side filtering logic",
+                    "completed": true
+                },
+                {
+                    "title": "Add keyboard Enter/Space handler",
+                    "completed": true
+                },
+                {
+                    "title": "Test toggle, reset, keyboard, aria-pressed",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "filter-chips", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:04.000Z",
+                "completed": "2026-04-03T19:05:04.000Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Implement HeroSearchBar.client.tsx \u2014 type select and destination select fields",
+            "description": "Create `apps/web2/src/components/islands/HeroSearchBar.client.tsx` (and `.module.css`). Build the horizontal pill search bar structure. Implement fields 1 and 2: Accommodation type `<select>` and Destination `<select>`. Both have floating label behavior (label transitions to placeholder behavior on focus via `:has(select:focus)` CSS). No visible border on inputs \u2014 clean style matching Figma. Each field separated by a subtle vertical divider. Module CSS for pill container, field groups, dividers, and label transitions. Tests: render test for select elements; verify label-focus behavior via DOM state.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                {
+                    "title": "Create HeroSearchBar.client.tsx skeleton with pill container",
+                    "completed": true
+                },
+                {
+                    "title": "Implement type select with floating label",
+                    "completed": true
+                },
+                {
+                    "title": "Implement destination select with floating label",
+                    "completed": true
+                },
+                {
+                    "title": "Create .module.css with pill and field styles",
+                    "completed": true
+                },
+                {
+                    "title": "Write render and label-focus tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "search-bar", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Implement HeroSearchBar.client.tsx \u2014 date range field and guest counter dropdown",
+            "description": "In `apps/web2/src/components/islands/HeroSearchBar.client.tsx`, implement fields 3 and 4: (3) Date range \u2014 single range input visually displayed as two date fields (check-in / check-out). Use native `<input type='date'>` pair or a simple controlled state approach. (4) Guest counter \u2014 on click, reveal `popover='auto'` dropdown with two rows: Adults (min 1, default 1) and Children (min 0, default 0). Each row has decrement/increment `<button>` + count display. Min/max validation on buttons. Tests: guest counter increment/decrement; min constraint (adults \u2265 1, children \u2265 0); popover opens on click.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-042"],
+            "blocks": ["T-044"],
+            "subtasks": [
+                {
+                    "title": "Implement date range inputs (check-in/check-out)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement guest counter state (adults, children)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement popover dropdown for guest counter",
+                    "completed": true
+                },
+                {
+                    "title": "Add min validation on decrement buttons",
+                    "completed": true
+                },
+                {
+                    "title": "Test increment/decrement with min constraints",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "search-bar", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Implement HeroSearchBar.client.tsx \u2014 search button and mobile dialog drawer",
+            "description": "In `apps/web2/src/components/islands/HeroSearchBar.client.tsx`, implement: (5) Search button \u2014 `<a>` link to `/{locale}/alojamientos/` styled as primary gradient pill button with search icon. Mobile dialog drawer: on mobile (<768px), the full search bar is replaced by a single 'Buscar alojamiento' trigger button. On click, call `dialogRef.current.showModal()` to open a `<dialog>` covering bottom 70% of viewport. Dialog contains full search form stacked vertically. Close via: swipe-down gesture, close button, or ESC (native dialog behavior). Closing animation: 200ms ease-in slide down. Tests: dialog opens on mobile trigger click; ESC closes dialog; search button renders as `<a>` tag with correct href.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-043"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add search button as <a> link to /alojamientos/",
+                    "completed": true
+                },
+                {
+                    "title": "Implement mobile trigger button",
+                    "completed": true
+                },
+                {
+                    "title": "Implement <dialog> drawer with showModal()",
+                    "completed": true
+                },
+                {
+                    "title": "Add close button and slide-down animation",
+                    "completed": true
+                },
+                {
+                    "title": "Test dialog open/close behavior",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "search-bar", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Implement DestinationsSection.astro layout and SVG map",
+            "description": "Implement `apps/web2/src/components/sections/DestinationsSection.astro`. Two-column desktop layout: map 60% left, carousel 40% right. Mobile: map collapses, carousel full width. Map: single `<svg viewBox='...'>` element with Entre Rios province outline path. Each destination pin is a `<button aria-label='{destinationName}'>` positioned via `x` and `y` attributes (percentage-based within viewBox coordinates). Topographic pattern SVG overlay at 3-5% opacity on section background. Data: call `destinationsApi.list({ isFeatured: true, pageSize: 10 })`; fallback to `homepage-destinations.ts`. Pass destinations to `DestinationsCarousel` island. Tests: verify `<button>` pins with aria-labels; verify SVG has viewBox; mobile layout test.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-011", "T-012", "T-005"],
+            "blocks": ["T-046"],
+            "subtasks": [
+                {
+                    "title": "Build two-column layout with collapse on mobile",
+                    "completed": true
+                },
+                {
+                    "title": "Create SVG map with viewBox and province outline",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination pins as <button> elements with aria-labels",
+                    "completed": true
+                },
+                {
+                    "title": "Add topographic pattern overlay",
+                    "completed": true
+                },
+                {
+                    "title": "Implement API call with fallback",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for pin buttons and aria-labels",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "destinations", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:00:51.000Z",
+                "completed": "2026-04-03T19:00:51.000Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Implement DestinationsCarousel.client.tsx Embla carousel base",
+            "description": "Create `apps/web2/src/components/islands/DestinationsCarousel.client.tsx` and `.module.css`. Props: `{ destinations: DestinationCardData[]; locale: string }`. Set up Embla Carousel (no autoplay). 3 cards visible simultaneously: previous (blurred), active (full focus), next (blurred). Edge cards: `filter: blur(2px)` and `mask-image: linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)`. Navigation arrows with `aria-label` from i18n. Carousel region: `<section aria-label={t('home.featuredDestinations.ariaLabel')}>`; visible slide window: `aria-live='polite'`. If < 3 destinations: show all without blur. If 1: hide arrows. Tests: renders correct number of cards; blur applied to non-active cards; arrows hidden when single card.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-013", "T-045", "T-007"],
+            "blocks": ["T-047"],
+            "subtasks": [
+                {
+                    "title": "Set up Embla with 3-card visible config",
+                    "completed": true
+                },
+                {
+                    "title": "Apply blur + mask to adjacent cards",
+                    "completed": true
+                },
+                {
+                    "title": "Add navigation arrows with aria-labels",
+                    "completed": true
+                },
+                {
+                    "title": "Add aria-live region on slide window",
+                    "completed": true
+                },
+                {
+                    "title": "Handle < 3 destinations edge cases",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for card count, blur, arrow visibility",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "destinations", "carousel", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Implement DestinationsCarousel.client.tsx map-pin bidirectional sync",
+            "description": "In `apps/web2/src/components/islands/DestinationsCarousel.client.tsx`, implement bidirectional synchronization between map pins and carousel: (1) Clicking a map pin calls `emblaApi.scrollTo(destinationIndex)` and marks that card as active. (2) When carousel scrolls (via arrows, swipe), identify the active card index and emit event or call parent callback to highlight the corresponding pin. Active pin state: larger size (scale 1.3), different color (`--brand-primary`), pulse CSS animation. Communication between Astro parent and React island via custom events or callback props. Tests: pin click triggers correct carousel scroll; carousel scroll updates active pin; active pin has distinct visual state.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-046"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement pin-click \u2192 carousel scrollTo(index)",
+                    "completed": true
+                },
+                {
+                    "title": "Implement carousel-scroll \u2192 active pin highlight",
+                    "completed": true
+                },
+                {
+                    "title": "Add active pin CSS (scale, color, pulse)",
+                    "completed": true
+                },
+                {
+                    "title": "Test bidirectional sync",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "destinations", "carousel", "sync", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:04.000Z",
+                "completed": "2026-04-03T19:05:04.000Z"
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Implement TestimonialsSection.astro layout and TestimonialCard.astro",
+            "description": "Create `apps/web2/src/components/sections/TestimonialsSection.astro`. Two-region layout: left sidebar 30% (section title + subtitle + arrows + pagination dots), right area 70% (`TestimonialsCarousel` island). Create `apps/web2/src/components/shared/TestimonialCard.astro`. Fields: reviewer avatar (circular 48px; initials fallback \u2014 first letter of first+last name, uppercase, on `--brand-secondary` bg with `--brand-primary` text when no image), reviewer name (Roboto SemiBold 16px, truncate 1 line), rating stars (`RatingStars.astro`) with `aria-label='N.N de 5 estrellas'` on container + individual stars `aria-hidden`, review excerpt (`line-clamp-3`), entity link (`/{locale}/alojamientos/{slug}/` or `/destinos/{slug}/`). Fixed card height for consistency. Data from `homepage-reviews.ts` (max 10). Tests: snapshot with avatar; snapshot with initials fallback; verify rating aria-label.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-049"],
+            "subtasks": [
+                {
+                    "title": "Build TestimonialsSection two-region layout",
+                    "completed": true
+                },
+                {
+                    "title": "Create TestimonialCard.astro with all fields",
+                    "completed": true
+                },
+                {
+                    "title": "Implement initials fallback for avatar",
+                    "completed": true
+                },
+                {
+                    "title": "Add rating star aria-labels and aria-hidden",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot tests for both avatar variants",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-2", "testimonials", "card", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:02:17.000Z",
+                "completed": "2026-04-03T19:02:17.000Z"
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Implement TestimonialsCarousel.client.tsx with autoplay and pagination dots",
+            "description": "Create `apps/web2/src/components/islands/TestimonialsCarousel.client.tsx` and `.module.css`. Props: `{ testimonials: ReviewCardData[]; locale: string }`. Embla Carousel: 3 cards visible simultaneously. Autoplay plugin: `{ delay: 5000, stopOnInteraction: false, stopOnMouseEnter: true }`. After user interaction (arrow/dot click, swipe), resume autoplay after 8s inactivity via `plugin.reset()` after `setTimeout(8000)`. Pagination dots below carousel: active dot filled `--brand-primary`, inactive outlined; clickable calls `emblaApi.scrollTo(index)`. Dots hover: scale 1.15x. Swipe support via Embla touch. Max 10 testimonials. Render `TestimonialCard.astro` for static content. Tests: autoplay start/pause on hover; resume after 8s; pagination dot sync with active slide.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-048", "T-008", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up Embla with 3-card visible config and autoplay",
+                    "completed": true
+                },
+                {
+                    "title": "Implement pause on hover, resume after 8s inactivity",
+                    "completed": true
+                },
+                {
+                    "title": "Implement pagination dots with scrollTo()",
+                    "completed": true
+                },
+                {
+                    "title": "Limit to max 10 testimonials",
+                    "completed": true
+                },
+                {
+                    "title": "Test autoplay pause/resume and dot sync",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "testimonials", "carousel", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:04.000Z",
+                "completed": "2026-04-03T19:05:04.000Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Implement AnimatedCounter.client.tsx with IntersectionObserver",
+            "description": "Create `apps/web2/src/components/islands/AnimatedCounter.client.tsx` and `.module.css`. Props: `{ target: number; suffix?: string; duration?: number; locale: string }`. Uses `IntersectionObserver` to trigger count-up animation when the component enters the viewport. Animation: `requestAnimationFrame` loop from 0 to `target` over `duration` ms (default 1500) with `cubic-bezier(0.25, 0.46, 0.45, 0.94)` easing. After count reaches `target`, append `suffix` (e.g., '+'). `prefers-reduced-motion`: check via `matchMedia` \u2014 if reduced, show final value immediately without animation. Tests: counts from 0 to target; '+' suffix appears after count; reduced-motion shows final value immediately; IntersectionObserver fires animation.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026", "T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create AnimatedCounter with IntersectionObserver trigger",
+                    "completed": true
+                },
+                {
+                    "title": "Implement rAF count-up with ease-out easing",
+                    "completed": true
+                },
+                {
+                    "title": "Add suffix display after count completes",
+                    "completed": true
+                },
+                {
+                    "title": "Add reduced-motion immediate-display path",
+                    "completed": true
+                },
+                {
+                    "title": "Test all 3 behaviors",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "stats", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:26.000Z",
+                "completed": "2026-04-03T18:59:26.000Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Wire AnimatedCounter into StatsSection.astro",
+            "description": "In `apps/web2/src/components/sections/StatsSection.astro`, replace the static numeric value slots with `<AnimatedCounter client:visible target={stat.value} suffix={stat.suffix} locale={locale} />`. Ensure `locale` prop is passed. Each stat card passes its `target` from `homepage-config.ts`. Verify the island renders correctly within the 5-column grid. Tests: render test verifying AnimatedCounter island is mounted per stat card; verify locale prop is passed.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-050"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace static values with AnimatedCounter islands",
+                    "completed": true
+                },
+                {
+                    "title": "Pass target, suffix, locale props",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests for island mounting",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "stats", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:39.000Z",
+                "completed": "2026-04-03T18:59:39.000Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Implement NewsletterForm.client.tsx with email validation",
+            "description": "Create `apps/web2/src/components/islands/NewsletterForm.client.tsx` and `.module.css`. Props: `{ locale: string }`. Render: email/WhatsApp `<input type='email' placeholder={t('footer.newsletter.placeholder')}>` + submit `<button>`. Validation: on submit, check email format via HTML5 `type='email'` + regex pattern. If invalid: show error message below input (`t('footer.newsletter.errorMessage')`), focus input. If valid: prevent default submit (no API call), disable button (add spinner icon), do nothing further. Add `// TODO: wire to newsletter API endpoint when available` comment in submit handler. Focus ring: `--brand-primary` 2px. Tests: invalid email shows error message; empty submit focuses input with error; valid email disables button without API call.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Build form markup with input and submit button",
+                    "completed": true
+                },
+                {
+                    "title": "Implement email validation state",
+                    "completed": true
+                },
+                {
+                    "title": "Show inline error message on invalid",
+                    "completed": true
+                },
+                {
+                    "title": "Disable button on valid submit (no API call)",
+                    "completed": true
+                },
+                {
+                    "title": "Test invalid, empty, and valid submission paths",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "newsletter", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:00:51.000Z",
+                "completed": "2026-04-03T19:00:51.000Z"
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Implement MobileMenu.client.tsx full-screen overlay",
+            "description": "Create `apps/web2/src/components/islands/MobileMenu.client.tsx` and `.module.css`. Props: `{ locale: string; navLinks: NavLink[] }`. Controlled by `isOpen` state managed externally via callback or internal toggle. On open: render full-screen overlay sliding in from right (`transform: translateX(0)` from `translateX(100%)`), add `overflow: hidden` to `document.body` (scroll lock). On close: reverse slide, remove body overflow. Use native `<dialog>` with `showModal()` for automatic inert background + ESC handling. Nav links render as `<a>` list. Close button triggers `dialog.close()`. Focus trap: native `<dialog>` handles it. Tests: dialog opens on trigger; ESC closes dialog; body scroll is locked while open; all nav links are rendered.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-007"],
+            "blocks": ["T-054"],
+            "subtasks": [
+                {
+                    "title": "Create MobileMenu with <dialog> element",
+                    "completed": true
+                },
+                {
+                    "title": "Implement slide-in animation via CSS transform",
+                    "completed": true
+                },
+                {
+                    "title": "Add scroll lock (body overflow: hidden)",
+                    "completed": true
+                },
+                {
+                    "title": "Render nav links inside overlay",
+                    "completed": true
+                },
+                {
+                    "title": "Test open, ESC close, scroll lock, and link rendering",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "mobile-menu", "react-island", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:26.000Z",
+                "completed": "2026-04-03T18:59:26.000Z"
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Wire MobileMenu island into Header.astro",
+            "description": "In `apps/web2/src/components/layout/Header.astro`, replace the hamburger button placeholder with `<MobileMenu client:idle locale={locale} navLinks={navLinks} />`. Pass locale from `Astro.locals.locale`. Build `navLinks` array from the same links used in the desktop nav. The hamburger icon in the header triggers the island's open state. Verify the island mounts with `client:idle` (above-fold, needed soon). Tests: render test verifying MobileMenu island is present in Header; verify locale prop passed.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-053", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Pass navLinks and locale props to MobileMenu island",
+                    "completed": true
+                },
+                {
+                    "title": "Set client:idle directive",
+                    "completed": true
+                },
+                {
+                    "title": "Write render test for island mounting",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "header", "mobile-menu", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:39.000Z",
+                "completed": "2026-04-03T18:59:39.000Z"
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Wire HeroSearchBar island into HeroSection.astro",
+            "description": "In `apps/web2/src/components/sections/HeroSection.astro`, replace the static search bar placeholder with `<HeroSearchBar client:idle locale={locale} accommodationTypes={types} destinations={destinations} />`. Pass accommodation types and destination options from `homepage-config.ts` or static data. Set `client:idle` directive (above-fold island). Verify the island renders within the hero left column. Tests: render test verifying HeroSearchBar island mounts; verify props are passed correctly.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-044", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Pass locale, accommodationTypes, destinations props",
+                    "completed": true
+                },
+                {
+                    "title": "Set client:idle directive",
+                    "completed": true
+                },
+                {
+                    "title": "Write render test",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "hero", "search-bar", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Wire FilterChips and DestinationsCarousel islands into their sections",
+            "description": "Wire remaining islands into Astro sections: (1) In `FeaturedAccommodationsSection.astro`, add `<FilterChips client:visible items={accommodations} locale={locale} />` and remove direct AccommodationCard rendering (FilterChips renders filtered grid). (2) In `DestinationsSection.astro`, add `<DestinationsCarousel client:visible destinations={destinations} locale={locale} />` in the right column. Verify `client:visible` directives (below-fold). Pass correct props. Tests: render tests verifying each island mounts with correct props.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-041", "T-047", "T-030", "T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Wire FilterChips into FeaturedAccommodationsSection",
+                    "completed": true
+                },
+                {
+                    "title": "Wire DestinationsCarousel into DestinationsSection",
+                    "completed": true
+                },
+                {
+                    "title": "Set client:visible on both islands",
+                    "completed": true
+                },
+                {
+                    "title": "Write render tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-3", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Implement ScrollToTop.astro floating button with progress ring",
+            "description": "Create `apps/web2/src/components/shared/ScrollToTop.astro`. Floating `<button>` fixed to bottom-right corner. Desktop: 48px, mobile: 40px. SVG progress ring: `<circle>` radius 18px, `stroke-dasharray` + `stroke-dashoffset` driven by scroll percentage. Ring color `--brand-primary`. Hidden when scroll < 300px (opacity 0, pointer-events none). Inline `<script>`: `scroll` event listener with `requestAnimationFrame` updates `stroke-dashoffset` and button opacity. On click: `window.scrollTo({ top: 0, behavior: 'smooth' })`. Hover: bg \u2192 `--brand-primary`, icon \u2192 `--button-label-on-dark`. Focus ring: 2px solid `--brand-primary`. `aria-label={t('common.scrollToTop')}`. Check `prefers-reduced-motion` and skip smooth scroll if active. Tests: verify button has aria-label; verify SVG circle element present.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Build circular button with SVG progress ring",
+                    "completed": true
+                },
+                {
+                    "title": "Add scroll event listener with rAF for ring update",
+                    "completed": true
+                },
+                {
+                    "title": "Add show/hide logic at scroll 300px threshold",
+                    "completed": true
+                },
+                {
+                    "title": "Add smooth scroll to top on click",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests for aria-label and SVG presence",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-1", "shared", "scroll-to-top", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:48:12.000Z",
+                "completed": "2026-04-03T18:48:12.000Z"
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Add global focus ring and CSS layer organization to global.css",
+            "description": "In `apps/web2/src/styles/global.css`, add: (1) Universal focus ring rule: `a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: 2px; border-radius: var(--radius-md); }` and suppress browser default `outline: none` on `:focus` only. (2) Organize CSS into `@layer` blocks: `@layer base, tokens, components, sections, utilities`. Move existing rules into appropriate layers. (3) Add `html { scroll-behavior: smooth }`. Tests: verify focus ring rule present in CSS; verify @layer order in file.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add :focus-visible global rule",
+                    "completed": true
+                },
+                {
+                    "title": "Suppress :focus outline with replacement check",
+                    "completed": true
+                },
+                {
+                    "title": "Add @layer declarations in correct order",
+                    "completed": true
+                },
+                {
+                    "title": "Add scroll-behavior: smooth to html",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-0", "css", "a11y", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T18:59:26.000Z",
+                "completed": "2026-04-03T18:59:26.000Z"
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Responsive QA at xs and sm breakpoints (320px, 640px)",
+            "description": "Visual QA pass at 320px and 640px viewports. Check: hero stacks vertically with text on top and blob below; search bar shows single trigger button; all grids are 1-column; stats show 2x2+1; partners show horizontal scroll; footer stacks vertically; no horizontal scrollbar at 280px. Document any visual regressions found. Fix layout issues in the relevant component files. Tests: automated snapshot tests at 320px and 640px for each section; verify no overflow-x on body at 280px.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-027", "T-030", "T-033", "T-039", "T-040", "T-028"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test hero layout at 320px",
+                    "completed": true
+                },
+                {
+                    "title": "Test grid layouts at 320px and 640px",
+                    "completed": true
+                },
+                {
+                    "title": "Test partners horizontal scroll at mobile",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any layout overflow or breakage found",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "responsive", "qa", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Responsive QA at md and lg breakpoints (768px, 1024px)",
+            "description": "Visual QA pass at 768px and 1024px viewports. Check: hero reduced title (64px) at md; search bar 2x2 grid at md; events grid 2-column at md; destinations map visible at reduced size at md; footer 2x2 nav grid at md; hero full 2-column at lg; accommodations 3-column grid at lg; destinations 2-column layout at lg; stats 5-column at lg. Fix any layout issues found. Tests: automated snapshot tests at 768px and 1024px for each affected section.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-059"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test hero and search bar at 768px",
+                    "completed": true
+                },
+                {
+                    "title": "Test destinations map visibility at 768px",
+                    "completed": true
+                },
+                {
+                    "title": "Test 3-column grids at 1024px",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any layout issues",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "responsive", "qa", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Responsive QA at xl and 2xl breakpoints (1440px, 2560px)",
+            "description": "Visual QA pass at 1440px and 2560px viewports. At 1440px: verify pixel-accurate layout against Figma reference. At 2560px: verify content is constrained to max-width 1440px centered, section backgrounds extend to full viewport width. Check all sections for any overflow or misalignment. Tests: automated snapshot at 1440px; verify `max-width: 1440px; margin: 0 auto` on content container CSS.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-060"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test full layout at 1440px against Figma",
+                    "completed": true
+                },
+                {
+                    "title": "Test max-width constraint at 2560px",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any overflow at wide viewports",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "responsive", "qa", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Accessibility audit \u2014 keyboard navigation and focus rings",
+            "description": "Audit keyboard navigation across all interactive elements on the page. Verify: Tab order is logical top-to-bottom, left-to-right. All interactive elements (links, buttons, inputs, chips, carousel arrows, pagination dots, pins) receive visible focus ring (2px solid `--brand-primary`, 2px offset). Skip navigation link appears as first focusable element and becomes visible on focus. Map pins are `<button>` elements reachable via Tab. No keyboard traps except within `<dialog>` (native behavior). Fix any missing focus rings or Tab order issues. Tests: automated axe-core scan for keyboard-related violations; manual Tab sequence verification.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-058", "T-054", "T-056", "T-057"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run axe-core scan for keyboard violations",
+                    "completed": true
+                },
+                {
+                    "title": "Verify Tab order across all sections",
+                    "completed": true
+                },
+                {
+                    "title": "Verify focus ring on all interactive elements",
+                    "completed": true
+                },
+                {
+                    "title": "Verify skip navigation link visibility on focus",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any violations found",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "a11y", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Accessibility audit \u2014 screen reader and ARIA",
+            "description": "Audit screen reader announcements and ARIA attributes. Verify: rating stars containers have `aria-label='N.N de 5 estrellas'` (or locale equivalent) and individual stars have `aria-hidden='true'`. Amenity icon wrappers have `aria-label` matching the amenity name. Partner logos have `alt='Logo de {name}'`. Decorative images have `alt=''` and optionally `role='presentation'`. Carousel region has `aria-label` and `aria-live='polite'`. Map pins are `<button>` with `aria-label`. Filter chips have `aria-pressed`. ScrollToTop button has `aria-label`. Heading hierarchy is correct (h1 in hero, h2 for sections, h3 for card titles). Tests: axe-core scan for ARIA violations; heading structure test.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-062"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Audit rating star ARIA across all cards",
+                    "completed": true
+                },
+                {
+                    "title": "Audit icon aria-labels (amenity, map pin, partner)",
+                    "completed": true
+                },
+                {
+                    "title": "Audit decorative image alt attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Audit carousel ARIA attributes",
+                    "completed": true
+                },
+                {
+                    "title": "Fix all ARIA violations found",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "a11y", "aria", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Accessibility audit \u2014 contrast ratios",
+            "description": "Check WCAG AA contrast ratios (4.5:1 for normal text, 3:1 for large text) across all sections. Priority areas: stats section (values on gradient background), muted text (`--core-muted-foreground` on white `--core-card`), footer text (`--footer-fg-muted` on `--footer-bg`), badge text on colored backgrounds. Use browser DevTools or a contrast checker tool. If any fail: add semi-opaque scrim or `text-shadow` to the affected element. Record contrast ratios for the 5 most critical text/background pairs. Tests: automated color-contrast check via axe-core; manual check for stats section gradient.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-063"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run axe-core color-contrast check",
+                    "completed": true
+                },
+                {
+                    "title": "Check stats section text on gradient",
+                    "completed": true
+                },
+                {
+                    "title": "Check footer muted text contrast",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any failing contrast with scrim or text-shadow",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "a11y", "contrast", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Lighthouse performance audit and CLS verification",
+            "description": "Run Lighthouse audit on the homepage in mobile 3G simulation mode. Target: Performance >= 90, Accessibility >= 95. Verify CLS < 0.1 on desktop and mobile. Check: all images have explicit `width` and `height`; hero LCP image has `fetchpriority='high'`; below-fold images have `loading='lazy'` and `decoding='async'`; no layout shifts from font loading (use `font-display: swap`). If Performance < 90: identify largest bottlenecks (LCP, FID, CLS) and apply fixes (image optimization, unused CSS deferral, island lazy loading). Tests: document Lighthouse scores in a QA report; CLS measurement via PerformanceObserver.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-061", "T-064"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run Lighthouse on mobile 3G",
+                    "completed": true
+                },
+                {
+                    "title": "Measure CLS on desktop and mobile",
+                    "completed": true
+                },
+                {
+                    "title": "Verify all images have width/height/loading attrs",
+                    "completed": true
+                },
+                {
+                    "title": "Fix top bottlenecks if score < 90",
+                    "completed": true
+                },
+                {
+                    "title": "Document final scores in QA report",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "performance", "cls", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Cross-browser testing on Chrome, Firefox, Safari, Edge",
+            "description": "Test the homepage in Chrome, Firefox, Safari, and Edge. Priority checks: (1) Blob SVG mask (`clip-path` / `mask-image`) renders correctly in all browsers. (2) OKLCH colors render correctly (Firefox 133+ required for OKLCH; verify no fallback needed for supported browser matrix). (3) `color-mix()` hover states work. (4) `:has()` selector applied correctly. (5) `<dialog>` overlay functions in all browsers. (6) CSS `@layer` respected. (7) Embla carousel touch/swipe works in Safari iOS. Document any browser-specific issues and fix. Tests: manual test checklist per browser; document findings.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-065"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test in Chrome \u2014 full page visual check",
+                    "completed": true
+                },
+                {
+                    "title": "Test in Firefox \u2014 OKLCH color check",
+                    "completed": true
+                },
+                {
+                    "title": "Test in Safari \u2014 blob mask and touch events",
+                    "completed": true
+                },
+                {
+                    "title": "Test in Edge \u2014 dialog and @layer",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any browser-specific issues",
+                    "completed": true
+                }
+            ],
+            "tags": ["phase-4", "cross-browser", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-02T00:00:00.000Z",
+                "started": "2026-04-03T19:05:33.000Z",
+                "completed": "2026-04-03T19:05:33.000Z"
+            }
+        }
+    ]
+}

@@ -1,0 +1,681 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-043",
+    "title": "Addon Lifecycle Events",
+    "created": "2026-03-16T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create addon-lifecycle constants file with ADDON_RECALC_SOURCE_ID",
+            "description": "Create `apps/api/src/services/addon-lifecycle.constants.ts` exporting the sentinel UUID constant.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-006"],
+            "subtasks": [
+                {
+                    "title": "Create constants file with ADDON_RECALC_SOURCE_ID export",
+                    "completed": true
+                },
+                { "title": "Add JSDoc explaining sentinel UUID rationale", "completed": true }
+            ],
+            "tags": ["billing", "constants", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:05:00.000Z",
+                "completed": "2026-03-16T12:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create DB migration for subscription_id partial index on billing_addon_purchases",
+            "description": "Drizzle migration adding partial index on subscription_id WHERE status='active' AND deleted_at IS NULL.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Add partial index definition in schema", "completed": true },
+                { "title": "Generate migration file with pnpm db:generate", "completed": true },
+                { "title": "Verify migration applies cleanly", "completed": true }
+            ],
+            "tags": ["database", "migration", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:05:00.000Z",
+                "completed": "2026-03-16T12:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add PLAN_DOWNGRADE_LIMIT_WARNING notification type, payload interface, and i18n keys",
+            "description": "NotificationType enum + PlanDowngradeLimitWarningPayload + i18n in es/en/pt.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-004", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Add PLAN_DOWNGRADE_LIMIT_WARNING to NotificationType enum",
+                    "completed": true
+                },
+                { "title": "Create PlanDowngradeLimitWarningPayload interface", "completed": true },
+                { "title": "Add to NotificationPayload union type", "completed": true },
+                { "title": "Add i18n keys in es/en/pt billing.json", "completed": true }
+            ],
+            "tags": ["notifications", "i18n", "types", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:05:00.000Z",
+                "completed": "2026-03-16T12:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create React Email template for plan-downgrade-limit-warning and wire into selectTemplate()",
+            "description": "Template + selectTemplate() case + subject-builder entry.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Create template component file", "completed": true },
+                { "title": "Wire into selectTemplate() switch", "completed": true },
+                { "title": "Add subject pattern to subject-builder", "completed": true }
+            ],
+            "tags": ["notifications", "template", "react-email", "setup"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:25:00.000Z",
+                "completed": "2026-03-16T12:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Implement revokeAddonForSubscriptionCancellation() service method",
+            "description": "Strict QZPay revocation per addon with fallbacks, fatal errors. 17 tests passing.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007", "T-009", "T-012", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Create service file with revokeAddonForSubscriptionCancellation()",
+                    "completed": true
+                },
+                {
+                    "title": "Implement entitlement-type revocation with fallback",
+                    "completed": true
+                },
+                { "title": "Implement limit-type revocation with fallback", "completed": true },
+                { "title": "Handle undefined addon definition (both channels)", "completed": true },
+                { "title": "Return typed RevocationResult", "completed": true }
+            ],
+            "tags": ["billing", "service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:25:00.000Z",
+                "completed": "2026-03-16T12:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Implement recalculateAddonLimitsForCustomer() shared function",
+            "description": "Shared aggregated limit recalculation function. Separate file addon-limit-recalculation.service.ts.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Query remaining active addon purchases by limitKey",
+                    "completed": true
+                },
+                { "title": "Resolve plan base limit via getPlanBySlug()", "completed": true },
+                { "title": "Handle unlimited (-1) base limit", "completed": true },
+                {
+                    "title": "Compute aggregated newMaxValue and call billing.limits.set()",
+                    "completed": true
+                },
+                { "title": "Handle no remaining addons (removeBySource)", "completed": true }
+            ],
+            "tags": ["billing", "service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:25:00.000Z",
+                "completed": "2026-03-16T12:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement webhook subscription cancellation addon cleanup handler",
+            "description": "Sequential processing, per-addon DB update, partial failure handling. File: addon-lifecycle-cancellation.service.ts.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-002"],
+            "blocks": ["T-014", "T-020"],
+            "subtasks": [
+                { "title": "Query active addon purchases by subscriptionId", "completed": true },
+                {
+                    "title": "Sequential processing loop with per-addon DB update",
+                    "completed": true
+                },
+                {
+                    "title": "Handle partial failures with metadata retry tracking",
+                    "completed": true
+                },
+                { "title": "Cache invalidation and audit logging", "completed": true },
+                { "title": "Error propagation for MercadoPago retry", "completed": true },
+                { "title": "Elapsed time tracking and warning", "completed": true }
+            ],
+            "tags": ["billing", "webhook", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:40:00.000Z",
+                "completed": "2026-03-16T12:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create admin subscription cancel route skeleton with validation",
+            "description": "Route + permission guard + validation + subscription lookup + mount in admin index.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-017"],
+            "subtasks": [
+                { "title": "Create route file with Hono app", "completed": true },
+                { "title": "Add permission guard and schema validation", "completed": true },
+                { "title": "Implement subscription lookup and status checks", "completed": true },
+                { "title": "Return proper error responses for edge cases", "completed": true }
+            ],
+            "tags": ["billing", "admin", "route", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:05:00.000Z",
+                "completed": "2026-03-16T12:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement admin cancel two-phase orchestration (Phase 1 + Phase 2)",
+            "description": "Phase 1: parallel QZPay revocations. Phase 2: DB transaction + QZPay cancel. 14 tests passing.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-008"],
+            "blocks": ["T-017", "T-021"],
+            "subtasks": [
+                { "title": "Implement Phase 1: parallel QZPay revocations", "completed": true },
+                {
+                    "title": "Handle Phase 1 failures with detailed error response",
+                    "completed": true
+                },
+                {
+                    "title": "Implement Phase 2: DB transaction for batch status update",
+                    "completed": true
+                },
+                {
+                    "title": "Implement Phase 2: QZPay subscription cancel outside transaction",
+                    "completed": true
+                },
+                { "title": "Handle Phase 2 QZPay cancel failure gracefully", "completed": true },
+                { "title": "Cache invalidation and audit logging", "completed": true }
+            ],
+            "tags": ["billing", "admin", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:40:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement Flow B addon limit recalculation core logic",
+            "description": "Group by limitKey, compute newMaxValue, handle edge cases. File: addon-plan-change.service.ts (487 lines).",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-011", "T-015", "T-016", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Query and filter active limit-type addon purchases",
+                    "completed": true
+                },
+                { "title": "Group addons by limitKey", "completed": true },
+                { "title": "Resolve base limits from plan config", "completed": true },
+                {
+                    "title": "Handle edge cases (unlimited, missing plan, missing limitKey)",
+                    "completed": true
+                },
+                {
+                    "title": "Compute aggregated maxValue and call billing.limits.set()",
+                    "completed": true
+                },
+                { "title": "Audit logging with recalculation details", "completed": true }
+            ],
+            "tags": ["billing", "service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:45:00.000Z",
+                "completed": "2026-03-16T13:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Implement Flow B downgrade detection and notification dispatch",
+            "description": "Detect downgrades, check usage, dispatch PLAN_DOWNGRADE_LIMIT_WARNING. 10 tests passing.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-003", "T-004"],
+            "blocks": ["T-016", "T-022"],
+            "subtasks": [
+                { "title": "Compute oldMaxValue for downgrade detection", "completed": true },
+                { "title": "Query current usage via billing.limits.check()", "completed": true },
+                { "title": "Dispatch notification for usage > newMaxValue", "completed": true },
+                { "title": "Handle check() errors gracefully (AC-4.4)", "completed": true }
+            ],
+            "tags": ["billing", "notifications", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:05:00.000Z",
+                "completed": "2026-03-16T13:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Extend addon-expiry cron job with revocation retry phase",
+            "description": "Query orphaned active addons on cancelled subscriptions, retry with limit.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "Add query for active addons on cancelled subscriptions",
+                    "completed": true
+                },
+                { "title": "Filter by revocationRetryCount < 3", "completed": true },
+                { "title": "Attempt revocation and update status on success", "completed": true },
+                { "title": "Track retries in metadata JSONB", "completed": true },
+                { "title": "Sentry escalation after 3 retries", "completed": true }
+            ],
+            "tags": ["billing", "cron", "retry", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:40:00.000Z",
+                "completed": "2026-03-16T12:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Modify cancelUserAddon() for limit re-recalculation (AC-3.9)",
+            "description": "Call recalculateAddonLimitsForCustomer() for limit-type addons after removal.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Detect limit-type addon in cancelUserAddon()", "completed": true },
+                {
+                    "title": "Call recalculateAddonLimitsForCustomer() after limit removal",
+                    "completed": true
+                },
+                { "title": "Preserve existing entitlement addon flow", "completed": true }
+            ],
+            "tags": ["billing", "service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:45:00.000Z",
+                "completed": "2026-03-16T12:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Integrate cancellation cleanup into webhook handler (subscription-logic.ts)",
+            "description": "Call handleSubscriptionCancellationAddons in processSubscriptionUpdated() on CANCELLED status.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-020", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Call handleSubscriptionCancellationAddons after CANCELLED detection",
+                    "completed": true
+                },
+                { "title": "Handle customer-not-found edge case (AC-1.9)", "completed": true },
+                { "title": "Ensure error propagation for MercadoPago retry", "completed": true }
+            ],
+            "tags": ["billing", "webhook", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:55:00.000Z",
+                "completed": "2026-03-16T13:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add planId comparison safety net to processSubscriptionUpdated()",
+            "description": "Compare planId, trigger recalculation on mismatch (AC-3.7). Safety net only.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "Compare fetched planId with local planId", "completed": true },
+                { "title": "Trigger recalculation on planId mismatch", "completed": true },
+                { "title": "Update local planId in billing_subscriptions", "completed": true }
+            ],
+            "tags": ["billing", "webhook", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:05:00.000Z",
+                "completed": "2026-03-16T13:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Integrate Flow B recalculation into plan-change.ts route",
+            "description": "Call recalculation after successful changePlan() (AC-3.8 primary trigger).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-022", "T-026"],
+            "subtasks": [
+                { "title": "Extract oldPlanId before changePlan() call", "completed": true },
+                {
+                    "title": "Call handlePlanChangeAddonRecalculation after successful change",
+                    "completed": true
+                },
+                {
+                    "title": "Handle recalculation errors gracefully (log, don't fail)",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "route", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:20:00.000Z",
+                "completed": "2026-03-16T13:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Mount admin subscription-cancel route in billing admin index",
+            "description": "Import and mount in billing admin index.ts. Done as part of T-008.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-021", "T-025"],
+            "subtasks": [
+                { "title": "Import subscription-cancel route", "completed": true },
+                { "title": "Mount route under /subscriptions path", "completed": true }
+            ],
+            "tags": ["billing", "admin", "route", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T12:05:00.000Z",
+                "completed": "2026-03-16T12:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Unit tests for revokeAddonForSubscriptionCancellation()",
+            "description": "17 test cases covering entitlement/limit/fallback/undefined/fatal error. Pre-existing from T-005.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test entitlement revocation happy path", "completed": true },
+                { "title": "Test entitlement fallback path", "completed": true },
+                { "title": "Test limit revocation happy path", "completed": true },
+                { "title": "Test limit fallback path", "completed": true },
+                { "title": "Test undefined addon definition", "completed": true },
+                { "title": "Test error propagation (fatal)", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:30:00.000Z",
+                "completed": "2026-03-16T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Unit tests for recalculateAddonLimitsForCustomer()",
+            "description": "28 test cases in 10 groups. File: addon-limit-recalculation.service.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test single addon recalculation", "completed": true },
+                { "title": "Test multiple addons aggregation", "completed": true },
+                { "title": "Test no remaining addons cleanup", "completed": true },
+                { "title": "Test unlimited and missing plan edge cases", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:30:00.000Z",
+                "completed": "2026-03-16T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Unit tests for webhook cancellation handler",
+            "description": "30 test cases covering AC-1.1 through AC-1.10. File: addon-lifecycle-cancellation.service.test.ts.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-007", "T-014"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test happy path with multiple addons", "completed": true },
+                { "title": "Test idempotency on repeated webhook", "completed": true },
+                { "title": "Test partial failure handling", "completed": true },
+                {
+                    "title": "Test edge cases (retired addon, pending ignored, timing)",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "unit", "billing", "webhook"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:30:00.000Z",
+                "completed": "2026-03-16T13:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Unit tests for admin subscription cancel route",
+            "description": "14+ test cases covering AC-2.1 through AC-2.4 plus schema validation. Extended existing file.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-009", "T-017"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test happy path two-phase completion", "completed": true },
+                { "title": "Test Phase 1 partial failure", "completed": true },
+                { "title": "Test Phase 2 QZPay cancel failure", "completed": true },
+                { "title": "Test error responses (404, 400, permission)", "completed": true },
+                { "title": "Test concurrent webhook race condition", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing", "admin"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:45:00.000Z",
+                "completed": "2026-03-16T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Unit tests for Flow B recalculation and downgrade detection",
+            "description": "30 test cases covering AC-3.1 through AC-4.4. Extended existing file.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-010", "T-011", "T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test upgrade recalculation", "completed": true },
+                { "title": "Test multiple addons aggregation", "completed": true },
+                { "title": "Test edge cases (unlimited, missing, entitlement)", "completed": true },
+                { "title": "Test downgrade with usage above/below limit", "completed": true },
+                { "title": "Test check() error handling", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:45:00.000Z",
+                "completed": "2026-03-16T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Unit tests for cron retry phase",
+            "description": "25 test cases (8 new for retry phase + existing). File: addon-expiry.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test orphaned addon detection and revocation", "completed": true },
+                { "title": "Test retry limit enforcement", "completed": true },
+                { "title": "Test metadata tracking", "completed": true },
+                { "title": "Test coexistence with existing expiry logic", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing", "cron"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:30:00.000Z",
+                "completed": "2026-03-16T13:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Unit tests for cancelUserAddon() modification (AC-3.9)",
+            "description": "16 test cases covering limit recalc, entitlement unchanged, error handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test limit addon triggers recalculation", "completed": true },
+                { "title": "Test entitlement addon unchanged", "completed": true },
+                { "title": "Test no remaining addons cleanup", "completed": true },
+                { "title": "Test recalculation error handling", "completed": true }
+            ],
+            "tags": ["testing", "unit", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T13:30:00.000Z",
+                "completed": "2026-03-16T13:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Integration tests for end-to-end subscription cancellation flow",
+            "description": "9 test cases covering webhook E2E, admin E2E, idempotency, partial failure.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-014", "T-017"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test webhook cancellation E2E flow", "completed": true },
+                { "title": "Test admin cancellation E2E flow", "completed": true },
+                { "title": "Test idempotent retry", "completed": true },
+                { "title": "Test partial failure + cron recovery", "completed": true }
+            ],
+            "tags": ["testing", "integration", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T14:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Integration tests for end-to-end plan change flow",
+            "description": "11 test cases covering route trigger, upgrade/downgrade, webhook safety net, AC-3.9.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Test plan-change route triggers recalculation", "completed": true },
+                { "title": "Test upgrade and downgrade scenarios", "completed": true },
+                { "title": "Test downgrade notification dispatch", "completed": true },
+                { "title": "Test webhook safety net", "completed": true },
+                {
+                    "title": "Test individual cancel after recalculation (AC-3.9)",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "integration", "billing"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-03-16T12:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T14:15:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 26,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 26,
+        "blocked": 0,
+        "averageComplexity": 3.1
+    }
+}

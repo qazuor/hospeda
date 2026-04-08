@@ -1,0 +1,337 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-020-GAPS",
+    "title": "SPEC-020 Deployment Readiness — Gaps Remediation",
+    "description": "17 gaps confirmed post-audit of SPEC-020 (53/53 tasks completed). Organized in 8 implementation phases. Excludes: gap-010 (descartado), gap-013 (descartado), gap-022 (delegado a SPEC-025). Fases 6-8 generan nuevas SPECs formales.",
+    "created": "2026-03-16T00:00:00.000Z",
+    "outOfScope": [
+        {
+            "id": "GAP-020-010",
+            "reason": "Descartado — route-factory.ts con 519 líneas (19 sobre límite) no justifica el esfuerzo. El archivo ya fue descompuesto en SPEC-020."
+        },
+        {
+            "id": "GAP-020-013",
+            "reason": "Descartado — remote image patterns se agregan cuando realmente se necesite un CDN. No hay impacto actual."
+        },
+        {
+            "id": "GAP-020-022",
+            "reason": "Delegado a SPEC-025 — la creación de la rama staging y su infraestructura ya están cubiertos en SPEC-025-staging-environment-setup."
+        }
+    ],
+    "tasks": [
+        {
+            "id": "G-001",
+            "title": "Fix env var prefixes in web/logger.ts and astro.config.mjs",
+            "description": "Corregir 2 bugs de prefijos de variables de entorno que causan comportamiento silencioso incorrecto en producción.\n\n1. apps/web/src/lib/logger.ts:52 — `import.meta.env.VITE_ENABLE_LOGGING` debe ser `import.meta.env.PUBLIC_ENABLE_LOGGING`. Web (Astro) expone variables client-side con prefijo PUBLIC_*, no VITE_*. La variable VITE_ENABLE_LOGGING nunca es inyectada por Astro, por lo que el logger nunca puede habilitarse via env var.\n\n2. apps/web/astro.config.mjs:158 — `process.env.VITE_API_URL` es dead code: las variables Vite NUNCA se inyectan en `process.env` en Astro. Remover esta línea o reemplazarla con el acceso correcto si es necesaria.\n\nFiles affected:\n- apps/web/src/lib/logger.ts\n- apps/web/astro.config.mjs\n\nAcceptance criteria:\n- web/logger.ts usa PUBLIC_ENABLE_LOGGING correctamente\n- La variable PUBLIC_ENABLE_LOGGING está en apps/web/.env.example con valor por defecto\n- Dead code de process.env.VITE_API_URL removido o corregido en astro.config.mjs\n- pnpm typecheck --filter=web pasa sin errores relacionados",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-003"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["bugfix", "env-vars", "web", "config"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-002",
+            "title": "Enable Sentry source maps upload in Web app",
+            "description": "Habilitar el upload de source maps a Sentry en la app Web para tener stack traces legibles en producción.\n\nActualmente apps/web/astro.config.mjs tiene `sourceMapsUploadOptions: { enabled: false }`. Esto produce stack traces minificados en Sentry, dificultando el debugging en producción.\n\nCambios requeridos:\n1. Cambiar `enabled: false` → `enabled: true` en sourceMapsUploadOptions de astro.config.mjs\n2. Agregar a apps/web/.env.example las variables necesarias: SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT con comentarios explicativos\n3. Documentar en .github/SECRETS.md (sección Web) que SENTRY_AUTH_TOKEN es requerida para builds de producción con source maps\n\nFiles affected:\n- apps/web/astro.config.mjs\n- apps/web/.env.example\n- .github/SECRETS.md\n\nAcceptance criteria:\n- sourceMapsUploadOptions.enabled = true en astro.config.mjs\n- SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT documentados en .env.example y SECRETS.md\n- Build de web completa sin errores cuando SENTRY_AUTH_TOKEN está configurado\n- Si SENTRY_AUTH_TOKEN no está configurado (dev local), el build no falla (debe ser graceful/optional)",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-005"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["monitoring", "sentry", "web", "config"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-003",
+            "title": "Add VITE_SENTRY_DSN to apps/admin/.env.example",
+            "description": "El archivo apps/admin/.env.example no documenta la variable VITE_SENTRY_DSN. La variable existe en el .env.example raíz pero cada archivo per-app debe ser self-contained.\n\nCambio requerido:\n- Agregar `VITE_SENTRY_DSN=` a apps/admin/.env.example con un comentario explicativo indicando que es el DSN de Sentry para el admin panel, se obtiene en sentry.io → proyecto admin → Settings → Client Keys.\n\nFiles affected:\n- apps/admin/.env.example\n\nAcceptance criteria:\n- VITE_SENTRY_DSN está en apps/admin/.env.example\n- Tiene comentario que explica de dónde obtenerla\n- El formato es consistente con las otras variables del archivo",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-006"],
+            "standalone": true,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["docs", "env-vars", "admin", "sentry"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-004",
+            "title": "Add post-deploy health check step to cd-production.yml",
+            "description": "El workflow cd-production.yml deploya a Vercel pero no verifica que la app esté respondiendo. Si Vercel reporta éxito pero la app crashea al startup, el pipeline muestra verde mientras producción está roto.\n\nCambios requeridos:\n- Agregar un job `verify-production` al final de .github/workflows/cd-production.yml que:\n  1. Espere 30 segundos después del deploy (startup time)\n  2. Haga curl con retry (--retry 3 --retry-delay 10) al endpoint de health de la API: `${{ vars.HOSPEDA_API_URL }}/health/live`\n  3. También verifique el Web: `${{ vars.HOSPEDA_SITE_URL }}`\n  4. Falle el job si la respuesta no es 2xx\n- El health endpoint debe existir en la API (verificar si `/health/live` existe en apps/api, de lo contrario usar `/health`)\n\nFiles affected:\n- .github/workflows/cd-production.yml\n\nAcceptance criteria:\n- Job verify-production corre después del deploy exitoso\n- Hace curl con retry al /health endpoint de la API\n- Si la API no responde en 3 intentos, el workflow falla y notifica\n- El endpoint de health verificado es correcto (existente en la API)",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-007"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["ci-cd", "devops", "monitoring"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-005",
+            "title": "Add pnpm deploy:* scripts to root package.json",
+            "description": "No existen scripts de deploy manual en el monorepo. Si CI/CD falla y hay que deployar urgente, el developer debe conocer los comandos de Vercel CLI de memoria.\n\nCambios requeridos:\n- Agregar en root package.json, sección scripts:\n  - `deploy:api`: deploya solo la API a producción\n  - `deploy:web`: deploya solo el Web a producción\n  - `deploy:admin`: deploya solo el Admin a producción\n  - `deploy:all`: deploya las 3 apps en secuencia\n- Los scripts deben usar `vercel deploy --prod` con `--cwd` o `cd` al directorio correcto\n- Agregar nota en CLAUDE.md o en el root README indicando que estos son fallbacks manuales, el deploy normal es vía CI/CD\n\nFiles affected:\n- package.json (root)\n\nAcceptance criteria:\n- Los 4 scripts existen en root package.json\n- `pnpm deploy:api` ejecuta el deploy de apps/api a Vercel\n- Los scripts fallan explícitamente si VERCEL_TOKEN no está configurado localmente\n- Están documentados en CLAUDE.md como comandos de deploy",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-009"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["devops", "scripts", "deploy"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-006",
+            "title": "Complete turbo.json globalEnv with missing vars",
+            "description": "turbo.json globalEnv tiene 9 variables pero faltan variables que afectan el output del build. Si cambian, TurboRepo puede servir builds cacheados stale.\n\nVariables a agregar (verificar cuáles ya están antes de agregar):\n- HOSPEDA_REDIS_URL — usado en API rate limiting middleware\n- HOSPEDA_CRON_SECRET — usado en cron job configuration\n\nNota del análisis: HOSPEDA_ADMIN_URL, PUBLIC_SENTRY_DSN y VITE_SENTRY_DSN ya fueron agregados en una auditoría anterior. Verificar el archivo actual antes de modificar.\n\nFiles affected:\n- turbo.json\n\nAcceptance criteria:\n- HOSPEDA_REDIS_URL y HOSPEDA_CRON_SECRET están en globalEnv\n- No hay duplicados en el array\n- `pnpm build` completa sin warnings de TurboRepo sobre variables no declaradas",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-010-turbo"],
+            "standalone": true,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["config", "turborepo", "build"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-007",
+            "title": "Convert .then() to async/await in API error handlers",
+            "description": "Existen 4 instancias de .then() en código crítico de la API que violan la convención del proyecto (async/await siempre) y teóricamente podrían crear loops de excepciones.\n\nInstancias a corregir:\n1. apps/api/src/index.ts (línea ~154): uncaughtException handler usa .then() para dynamic import de Sentry\n2. apps/api/src/index.ts (línea ~176): unhandledRejection handler usa .then() para dynamic import de Sentry\n3. apps/api/src/lib/auth.ts (línea ~220): .then() chain\n4. apps/api/src/lib/auth.ts (línea ~241): .then() chain\n\nConvertir cada uno a async/await con try/catch apropiado.\n\nFiles affected:\n- apps/api/src/index.ts\n- apps/api/src/lib/auth.ts\n\nAcceptance criteria:\n- 0 instancias de .then() en estos archivos\n- Los dynamic imports de Sentry usan await con try/catch\n- pnpm typecheck --filter=api pasa sin errores\n- pnpm test --filter=api pasa sin regresiones",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-infra-ci",
+            "gaps": ["GAP-020-012"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["code-quality", "api", "async"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T12:00:00.000Z",
+                "completed": "2026-03-16T13:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-008",
+            "title": "Add lint rule to prevent .only() and hard-coded .skip() in CI",
+            "description": "Agregar verificación en CI para prevenir que .only() y .skip() hard-coded lleguen a la rama main. Documentar la convención en CLAUDE.md.\n\nContexto: El análisis encontró que no hay .only() activos ahora, pero el riesgo existe. Los skipIf condicionales (ej: `it.skipIf(condition)`) son legítimos y NO deben bloquearse.\n\nCambios requeridos:\n1. En .github/workflows/ci.yml, agregar un step que busque `.only(` y `.skip(` hard-coded en archivos de test y falle si los encuentra:\n   ```bash\n   grep -rn '\\.only(' apps/*/test packages/*/test --include='*.test.ts' && exit 1 || true\n   grep -rn '\\.skip(' apps/*/test packages/*/test --include='*.test.ts' | grep -v 'skipIf' && exit 1 || true\n   ```\n2. Documentar en CLAUDE.md (sección Testing) que .only() y .skip() hard-coded están prohibidos, skipIf condicional está permitido.\n\nFiles affected:\n- .github/workflows/ci.yml\n- CLAUDE.md\n\nAcceptance criteria:\n- CI falla si hay .only() en archivos de test\n- CI falla si hay .skip() hard-coded (pero NO skipIf condicional)\n- La convención está documentada en CLAUDE.md\n- El step de CI tiene nombre descriptivo: 'Check for disabled tests (.only/.skip)'",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P2-test-repair",
+            "gaps": ["GAP-020-004"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["ci-cd", "testing", "code-quality"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T13:05:00.000Z",
+                "completed": "2026-03-16T13:30:00.000Z"
+            }
+        },
+        {
+            "id": "G-009",
+            "title": "Fix real-user-scenarios.test.ts — correct routes and assertions",
+            "description": "apps/api/test/integration/real-user-scenarios.test.ts tiene 7 TODOs indicando que las rutas y assertions son incorrectas. Estos son los únicos E2E tests del flujo crítico de negocio (owner → trial → subscription).\n\nProblemas conocidos:\n- Asume que existe una ruta /metrics en el root (no existe en esa ubicación)\n- Asume que los responses incluyen header x-request-id (no se confirma que exista)\n- Otras rutas y assertions que no reflejan la API actual\n\nProceso de fix:\n1. Leer el archivo completo para identificar los 7 TODOs\n2. Para cada TODO, verificar la estructura real de rutas en apps/api/src/routes/\n3. Corregir cada ruta incorrecta a la URL real\n4. Corregir assertions de response shapes y headers\n5. Si algún flujo no existe aún (e.g., trial → subscription), marcarlo con skipIf o documentar que es un test futuro\n\nFiles affected:\n- apps/api/test/integration/real-user-scenarios.test.ts\n\nAcceptance criteria:\n- Los 7 TODOs están resueltos (removidos o convertidos en skipIf con comentario)\n- Los tests que cubren flujos existentes pasan: `pnpm test --filter=api real-user-scenarios`\n- Los flujos cubiertos están documentados en un comentario al inicio del archivo\n- 0 referencias a rutas que no existen",
+            "status": "completed",
+            "complexity": 4,
+            "phase": "P2-test-repair",
+            "gaps": ["GAP-020-019"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "api", "e2e", "bugfix"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T13:05:00.000Z",
+                "completed": "2026-03-16T13:30:00.000Z"
+            }
+        },
+        {
+            "id": "G-010",
+            "title": "Add coverage thresholds to all vitest.config.ts files in the monorepo",
+            "description": "Solo apps/web/vitest.config.ts define thresholds de coverage (80%). Los otros 12+ configs no tienen thresholds, por lo que los developers solo se enteran de coverage insuficiente en CI, no localmente.\n\nCambios requeridos:\n- Agregar sección coverage.thresholds a cada vitest.config.ts que tenga tests:\n  - apps/api/vitest.config.ts\n  - apps/admin/vitest.config.ts\n  - packages/billing/vitest.config.ts\n  - packages/service-core/vitest.config.ts\n  - packages/db/vitest.config.ts\n  - packages/schemas/vitest.config.ts\n  - packages/i18n/vitest.config.ts\n  - packages/auth-ui/vitest.config.ts\n  - packages/icons/vitest.config.ts (verificar si tiene tests)\n  - packages/notifications/vitest.config.ts (crear si no existe)\n- Valor inicial recomendado: lines/functions/branches/statements >= 70% (realista para estado actual, subir a 90% cuando coverage mejore)\n- ANTES de agregar, verificar coverage actual de cada package para no romper CI inmediatamente\n\nFiles affected:\n- Todos los vitest.config.ts del monorepo\n\nAcceptance criteria:\n- Todos los vitest.config.ts tienen sección coverage.thresholds\n- `pnpm test` local falla si coverage cae por debajo del threshold\n- Los thresholds están en un nivel alcanzable para el estado actual del código (sin romper CI)\n- packages/notifications tiene vitest.config.ts con @vitest/coverage-v8",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P3-coverage-thresholds",
+            "gaps": ["GAP-020-018"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": ["G-011", "G-012", "G-013", "G-014"],
+            "tags": ["testing", "coverage", "config"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T13:35:00.000Z",
+                "completed": "2026-03-16T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-011",
+            "title": "Add tests to packages/ai-image-generation",
+            "description": "packages/ai-image-generation no tiene ningún test. El package maneja generación de imágenes via Replicate API.\n\nCambios requeridos:\n1. Crear packages/ai-image-generation/test/ (o src/__tests__/ siguiendo el patrón del monorepo)\n2. Configurar vitest.config.ts si no existe\n3. Agregar tests unitarios para:\n   - Schema de validación de inputs (mock del resultado de Zod)\n   - Función principal de generación (mock de Replicate API client)\n   - Error handling cuando Replicate falla\n   - Transformación del resultado de Replicate al formato interno\n\nFiles affected:\n- packages/ai-image-generation/test/ (nuevo)\n- packages/ai-image-generation/vitest.config.ts (crear si no existe)\n\nAcceptance criteria:\n- Al menos 3 test files con >10 assertions cada uno\n- Replicate API mockeado (no llamadas reales en tests)\n- `pnpm test --filter=ai-image-generation` pasa\n- Coverage >= 70% del package",
+            "status": "completed",
+            "complexity": 4,
+            "phase": "P4-package-tests",
+            "gaps": ["GAP-020-021"],
+            "standalone": false,
+            "blockedBy": ["G-010"],
+            "blocks": [],
+            "tags": ["testing", "ai-image-generation"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-012",
+            "title": "Add tests to packages/seed",
+            "description": "packages/seed no tiene ningún test. El package maneja la siembra de datos en la base de datos.\n\nCambios requeridos:\n1. Crear packages/seed/test/\n2. Agregar tests unitarios para:\n   - Los builders/factories de entidades (generan objetos válidos)\n   - Que los datos generados pasan validación Zod de los schemas de @repo/schemas\n   - Que las dependencias entre seeds están en orden correcto (ej: users antes de accommodations)\n3. NO necesita tests de integración con DB (eso es responsabilidad de packages/db)\n\nFiles affected:\n- packages/seed/test/ (nuevo)\n- packages/seed/vitest.config.ts (crear si no existe)\n\nAcceptance criteria:\n- Tests verifican que los seed builders generan datos válidos según los Zod schemas\n- `pnpm test --filter=seed` pasa\n- No requiere conexión a DB para correr los tests",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P4-package-tests",
+            "gaps": ["GAP-020-021"],
+            "standalone": false,
+            "blockedBy": ["G-010"],
+            "blocks": [],
+            "tags": ["testing", "seed", "database"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-013",
+            "title": "Add tests to packages/tailwind-config and packages/typescript-config",
+            "description": "Ambos packages no tienen tests. Son packages de configuración estables y de bajo riesgo.\n\npages/tailwind-config:\n- Verificar que los tokens custom exportados son objetos válidos\n- Verificar que el plugin de Tailwind se puede instanciar sin errores\n\npackages/typescript-config:\n- Verificar que los tsconfig.json exportados son JSON válidos\n- Verificar que las extensiones de tsconfig existen y son accesibles\n\nFiles affected:\n- packages/tailwind-config/test/ (nuevo)\n- packages/typescript-config/test/ (nuevo)\n\nAcceptance criteria:\n- Cada package tiene al menos 2-3 tests básicos de smoke\n- `pnpm test --filter=tailwind-config` pasa\n- `pnpm test --filter=typescript-config` pasa",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P4-package-tests",
+            "gaps": ["GAP-020-021"],
+            "standalone": false,
+            "blockedBy": ["G-010"],
+            "blocks": [],
+            "tags": ["testing", "config", "tailwind"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-014",
+            "title": "Fix as any in API middlewares and utilities",
+            "description": "Resolver instancias de `as any` fuera de los 5 archivos con excepción documentada en SPEC-020, priorizando código crítico de la API.\n\nInstancias en API (mayor prioridad):\n1. apps/api/src/middlewares/validation.ts:35 — `c as unknown as Record<string, unknown>` (middleware crítico de validación)\n2. apps/api/src/utils/logger.ts:81 — `apiLogger as unknown as ApiLogger`\n3. apps/api/src/routes/billing/index.ts:N — 1 instancia\n\nInstancias en Admin:\n4. apps/admin/src/lib/api/client.ts:23,26 — `globalThis as any` con biome-ignore (verificar si hay alternativa tipada)\n5. apps/admin/src/components/entity-list/EntityListPage.tsx:416 — `basePath as any`\n6. apps/admin/src/components/entity-list/examples/VirtualizedEntityListExample.tsx — 4 instancias (menor prioridad, son archivos de ejemplo)\n\nPara cada instancia: agregar tipo correcto, o moverla a los archivos de excepción con comentario justificado.\n\nFiles affected:\n- apps/api/src/middlewares/validation.ts\n- apps/api/src/utils/logger.ts\n- apps/api/src/routes/billing/index.ts\n- apps/admin/src/lib/api/client.ts\n- apps/admin/src/components/entity-list/EntityListPage.tsx\n\nAcceptance criteria:\n- 0 instancias de `as any` fuera de los archivos de excepción documentados\n- Si algún `as any` no puede evitarse, está en el archivo de excepción con JSDoc explicando por qué\n- pnpm typecheck pasa sin errores\n- pnpm lint pasa sin nuevas supresiones de biome",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P5-type-safety",
+            "gaps": ["GAP-020-020"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": ["G-015"],
+            "tags": ["type-safety", "api", "admin", "code-quality"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T14:00:00.000Z",
+                "completed": "2026-03-16T15:00:00.000Z"
+            }
+        },
+        {
+            "id": "G-015",
+            "title": "Create SPEC-039: Type Safety Audit — as unknown as X double cast",
+            "description": "Crear la especificación formal SPEC-039 para auditar y resolver las 70+ instancias del anti-patrón `as unknown as SomeType` en el monorepo.\n\nEl double cast es funcionalmente equivalente a `as any` — bypasea el type checker completamente. SPEC-020 auditó `as any` pero no cubrió este patrón.\n\nDistribución verificada:\n- apps/admin: ~24 instancias (feature configs, EntityList)\n- packages/db: ~20 instancias (Drizzle models)\n- apps/web: ~13 instancias (components)\n- apps/api: ~14 instancias (services, routes, middlewares)\n- packages/service-core: ~8 instancias\n\nLa SPEC debe contemplar:\n1. Fase de auditoría y categorización (3 categorías: bug real, limitación de Drizzle, workaround legítimo de TS)\n2. Fix de instancias en web y API (mayor riesgo de runtime errors)\n3. Fix de instancias en admin configs y DB models (o documentar como excepciones justificadas)\n\nArchivo a crear: .claude/specs/SPEC-039-type-safety-double-cast/spec.md\n\nAcceptance criteria:\n- spec.md creado con estructura completa: overview, user stories, scope, out of scope, acceptance criteria\n- Fases claramente definidas con estimación de esfuerzo\n- Referencia al análisis del specs-gaps-020.md para contexto",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P6-new-specs",
+            "gaps": ["GAP-020-017"],
+            "standalone": true,
+            "blockedBy": ["G-014"],
+            "blocks": [],
+            "tags": ["spec", "type-safety", "planning"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T15:00:00.000Z",
+                "completed": "2026-03-16T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "G-016",
+            "title": "Create SPEC-040: Critical Package Coverage — auth-ui, billing, logger, email",
+            "description": "Crear la especificación formal SPEC-040 para incrementar la cobertura de tests en los 4 packages más críticos con cobertura peligrosamente baja.\n\nEstado actual verificado:\n- packages/auth-ui: 2 test files (maneja login/signup/password-recovery para 2 apps)\n- packages/billing: 9 tests smoke (maneja pagos con MercadoPago)\n- packages/logger: 1 test (infraestructura crítica usada en todo el monorepo)\n- packages/email: 1 test (transport de emails)\n\nLa SPEC debe contemplar:\n1. packages/auth-ui: Tests de componentes con mocks de Better Auth client (login form, registration, password reset)\n2. packages/billing: Reactivar smoke tests skipeados + tests de lógica de planes, addons, cálculos de precios\n3. packages/logger: Tests para formatters, categorías, level filtering, structured output\n4. packages/email: Tests para templates y transport (mock del cliente de email)\n\nTarget de coverage: >= 80% para auth-ui y billing, >= 70% para logger y email.\n\nArchivo a crear: .claude/specs/SPEC-040-critical-package-coverage/spec.md\n\nAcceptance criteria:\n- spec.md creado con estructura completa\n- Prioridad explícita: auth-ui y billing primero\n- Estrategia de mocking documentada para Better Auth y MercadoPago",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P6-new-specs",
+            "gaps": ["GAP-020-016"],
+            "standalone": true,
+            "blockedBy": ["G-010"],
+            "blocks": [],
+            "tags": ["spec", "testing", "coverage", "planning"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T15:00:00.000Z",
+                "completed": "2026-03-16T15:30:00.000Z"
+            }
+        },
+        {
+            "id": "G-017",
+            "title": "Create SPEC-041: Admin Integration Tests",
+            "description": "Crear la especificación formal SPEC-041 para implementar tests de integración en el admin, que actualmente tiene cero tests para sus ~40 páginas de file-based routing.\n\nEstado actual:\n- 40+ páginas de admin sin ningún test de integración\n- CRUD workflows sin validación automatizada\n- 0 tests de integración con endpoints /api/v1/admin/*\n- TanStack Table interactions (sort, filter, paginación) sin tests\n- Dialogs críticos sin tests (PlanDialog 621 líneas, AddonDialog 598 líneas)\n\nLa SPEC debe contemplar:\n1. Setup de test infrastructure: TanStack Router + Query mocks, MSW para API mocking\n2. Smoke tests para secciones críticas (accommodations, users, billing)\n3. CRUD flow tests para entidades principales\n4. Table interaction tests (sort, filter, pagination)\n5. Dialog tests (create/edit/delete confirmations)\n\nEnfoque recomendado: smoke-first (verificar que páginas cargan sin crashes) antes de tests funcionales.\n\nArchivo a crear: .claude/specs/SPEC-041-admin-integration-tests/spec.md\n\nAcceptance criteria:\n- spec.md creado con estructura completa\n- Enfoque smoke-first documentado\n- Stack de mocking definido (MSW vs vitest mocks)\n- Estimación de esfuerzo por sección del admin",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P6-new-specs",
+            "gaps": ["GAP-020-015"],
+            "standalone": true,
+            "blockedBy": ["G-010"],
+            "blocks": [],
+            "tags": ["spec", "testing", "admin", "planning"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": "2026-03-16T15:00:00.000Z",
+                "completed": "2026-03-16T15:30:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 17,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 17,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

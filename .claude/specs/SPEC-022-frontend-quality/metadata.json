@@ -1,0 +1,26 @@
+{
+    "specId": "SPEC-022",
+    "title": "Frontend Quality: Theming, i18n, Performance & Code Quality",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-02-27T00:00:00.000Z",
+    "approved": "2026-02-27T00:00:00.000Z",
+    "lastRevised": "2026-03-16T00:00:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "revisionNote": "2026-03-16: Full codebase re-audit. ~90% of original scope completed by other teams. Spec updated to reflect remaining gaps and newly discovered quality issues.",
+    "tags": [
+        "web",
+        "admin",
+        "dark-mode",
+        "css-variables",
+        "accessibility",
+        "typescript-quality",
+        "technical-debt",
+        "i18n",
+        "performance",
+        "indexes",
+        "production-readiness"
+    ]
+}

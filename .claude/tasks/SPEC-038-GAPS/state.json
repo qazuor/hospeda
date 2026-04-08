@@ -1,0 +1,588 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-038-GAPS",
+    "title": "Addon Entitlements Architecture — Gaps Remediation",
+    "description": "49 confirmed gaps from 8 audit passes on SPEC-038. Organized by priority phase. Excludes: GAP-038-01 (New SPEC), GAP-038-04 (Future SPEC), GAP-038-45 (New SPEC). Standalone tasks noted explicitly.",
+    "created": "2026-03-16T00:00:00.000Z",
+    "outOfScope": [
+        {
+            "id": "GAP-038-01",
+            "reason": "New SPEC required — subscription cancellation addon cleanup is a separate feature involving webhook handlers"
+        },
+        {
+            "id": "GAP-038-04",
+            "reason": "Future SPEC — plan upgrade/downgrade addon limit recalculation is a v2 enhancement"
+        },
+        {
+            "id": "GAP-038-45",
+            "reason": "New SPEC required — adding deletedAt column + soft-delete to billing_addon_purchases is a schema migration requiring its own formal spec"
+        }
+    ],
+    "tasks": [
+        {
+            "id": "G-001",
+            "title": "Fix cancel route: extract addonSlug from query and add purchaseId to WHERE clause",
+            "description": "CRITICAL functional bug fix combining GAP-038-03, GAP-038-22, and GAP-038-24.\n\nGAP-038-03: The cancel route at addons.ts:298-314 only selects { id } from billing_addon_purchases but passes params.id (UUID) as addonId to cancelUserAddon(). The service at addon.user-addons.ts:235 treats this UUID as an addon slug, causing ALL slug-based lookups to fail silently.\n\nGAP-038-22: CancelAddonInput.purchaseId is optional with slug fallback (purchaseId ?? input.addonId). When purchaseId is missing, revokeBySource receives a slug as sourceId (finds 0 rows). Make purchaseId required in CancelAddonInput.\n\nGAP-038-24: cancelUserAddon WHERE clause filters by (customerId, addonSlug, status='active') but NOT by purchaseId, risking over-cancellation.\n\nFiles affected:\n- apps/api/src/routes/billing/addons.ts: Add addonSlug to SELECT, pass slug as addonId and UUID as purchaseId\n- apps/api/src/services/addon.types.ts: Make purchaseId required in CancelAddonInput\n- apps/api/src/services/addon.user-addons.ts: Add purchaseId to WHERE clause in cancelUserAddon DB update\n\nAcceptance criteria:\n- Route selects { id, addonSlug } from the ownership query\n- Route passes ownedAddon.addonSlug as addonId and ownedAddon.id as purchaseId\n- CancelAddonInput.purchaseId is typed as required string (not optional)\n- cancelUserAddon WHERE clause includes eq(billingAddonPurchases.id, input.purchaseId)\n- All existing cancel route tests still pass\n- New integration test verifying route-to-service data flow passes",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P0-critical",
+            "gaps": ["GAP-038-03", "GAP-038-22", "GAP-038-24"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": ["G-002"],
+            "tags": ["critical", "routes", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-002",
+            "title": "Add integration test for cancel route-to-service flow and regression test for UUID-as-slug bug",
+            "description": "Test coverage for the G-001 fix (GAP-038-03, GAP-038-24).\n\nFiles affected:\n- apps/api/test/routes/billing/addons.cancel.test.ts (new or extend existing)\n\nAcceptance criteria:\n- Test that verifies the cancel route passes addonSlug (not UUID) to the service\n- Test that verifies purchaseId is included in the WHERE clause (exactly 1 row updated)\n- Regression test: mock service call and assert addonId received is a slug string (not a UUID format)\n- Test for case where purchaseId is absent — should fail at TypeScript level (compile error), not runtime",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P0-critical",
+            "gaps": ["GAP-038-03", "GAP-038-24"],
+            "standalone": false,
+            "blockedBy": ["G-001"],
+            "blocks": [],
+            "tags": ["critical", "testing", "routes", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-003",
+            "title": "Add revokeBySource and removeBySource to admin billing HTTP adapter",
+            "description": "CRITICAL functional bug: GAP-038-23.\n\nThe admin HTTP adapter at apps/admin/src/lib/billing-http-adapter/ does NOT implement revokeBySource() on createEntitlementStorage() nor removeBySource() on createLimitStorage(). These methods were introduced in QZPay v1.2.0 and the production service code calls them in removeAddonEntitlements(). The admin app fails TypeScript compilation on this interface mismatch.\n\nFiles affected:\n- apps/admin/src/lib/billing-http-adapter/vendor-entitlement-limit-addon-storage.ts (or equivalent split files)\n\nAcceptance criteria:\n- createEntitlementStorage() implements revokeBySource(source, sourceId) calling the appropriate API endpoint\n- createLimitStorage() implements removeBySource(source, sourceId) calling the appropriate API endpoint\n- Both storage objects are explicitly typed as the QZPay storage interface (satisfies check) to prevent future missing methods\n- pnpm typecheck --filter=admin passes with zero errors related to this adapter\n- Verify the API endpoints /api/v1/protected/billing/entitlements/revoke-by-source and /api/v1/protected/billing/limits/remove-by-source exist (document finding)\n- Also add any other missing methods found during the interface audit (the gap mentions 'delete' and 'deleteBySource' as potentially missing)",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P0-critical",
+            "gaps": ["GAP-038-23"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["critical", "admin", "billing", "types"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-004",
+            "title": "Fix expireAddon idempotent path to return actual expiration timestamp",
+            "description": "P1/HIGH: GAP-038-36.\n\nIn addon-expiration.service.ts, the idempotent branch (when purchase.status !== 'active') returns expiredAt: new Date() (current time) instead of the actual recorded expiration timestamp. This misleads callers and produces wrong timestamps in logs.\n\nFix: return expiredAt: purchase.expiresAt ?? purchase.updatedAt ?? new Date()\n\nFiles affected:\n- apps/api/src/services/addon-expiration.service.ts: Single-line fix in idempotent branch\n\nAcceptance criteria:\n- Idempotent re-run returns the actual purchase.expiresAt value\n- Falls back to purchase.updatedAt if expiresAt is null\n- Falls back to new Date() only if both are null\n- Existing expiration tests still pass\n- Add or update test for the idempotent path to assert correct timestamp is returned",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P1-high",
+            "gaps": ["GAP-038-36"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["service", "billing", "correctness"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-005",
+            "title": "Fix migration idempotency: remove subscriptionId from dedup check and normalize timestamp comparison",
+            "description": "P1/HIGH: GAP-038-39 (primary) + GAP-038-28 (secondary, same file).\n\nGAP-038-39: The idempotency check includes subscriptionId in the WHERE clause. If a customer's subscription ID changes between migration runs, the same (customerId, addonSlug, purchasedAt) tuple won't match the existing record, causing duplicate inserts. Fix: remove subscriptionId from the dedup check.\n\nGAP-038-28: The timestamp comparison uses raw string equality which breaks across different PostgreSQL timestamp representations. Fix: normalize both sides with new Date(ts).toISOString() or use integer epoch comparison.\n\nFiles affected:\n- packages/db/src/billing/migrate-addon-purchases.ts\n\nAcceptance criteria:\n- Dedup query uses (customerId, addonSlug, purchasedAt) without subscriptionId\n- Timestamps are normalized before comparison (both to ISO string or epoch)\n- Migration re-run after subscription change does NOT create duplicate rows\n- Existing migration tests still pass\n- Add test case: re-run migration after subscription ID change → no duplicates",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P1-high",
+            "gaps": ["GAP-038-39", "GAP-038-28"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": ["G-006"],
+            "tags": ["migration", "database", "correctness"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-006",
+            "title": "Fix migration: throw on empty INSERT returning and remove 100-plan pagination ceiling",
+            "description": "P1/HIGH + P2/MEDIUM: GAP-038-29 (throw on empty returning) + GAP-038-19 (pagination ceiling).\n\nGAP-038-29: After db.insert().returning(), if the array is empty, the code silently skips entitlement backfill. Fix: throw if inserted?.id is falsy.\n\nGAP-038-19: The plan restoration phase in migrate-addon-purchases.ts is limited by an implicit or explicit page size. Fix: fetch all plans without pagination using db.select().from(billingPlans) with no .limit().\n\nFiles affected:\n- packages/db/src/billing/migrate-addon-purchases.ts\n\nAcceptance criteria:\n- INSERT returning empty throws an error with clear message including customerId and addonSlug\n- Plan restoration iterates ALL plans, not just the first 100\n- Dry-run mode still works correctly\n- Existing migration tests still pass\n- Existing plan restoration test checks ALL_PLANS.length plans are processed (updated per G-012)",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P1-high",
+            "gaps": ["GAP-038-29", "GAP-038-19"],
+            "standalone": false,
+            "blockedBy": ["G-005"],
+            "blocks": [],
+            "tags": ["migration", "database", "correctness"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-007",
+            "title": "Deduplicate ServiceResult<T> — remove local copies, import from addon.types.ts",
+            "description": "P2/MEDIUM: GAP-038-26.\n\nServiceResult<T> is defined in three places: addon.types.ts (canonical), addon-entitlement.service.ts (local copy lines 27-34), addon-expiration.service.ts (local copy). This violates the Single Source of Truth principle in CLAUDE.md.\n\nFiles affected:\n- apps/api/src/services/addon-entitlement.service.ts: Remove local ServiceResult<T> definition, add import from addon.types.ts\n- apps/api/src/services/addon-expiration.service.ts: Same\n\nAcceptance criteria:\n- Both service files import ServiceResult from addon.types.ts\n- No duplicate ServiceResult<T> type definitions in the services directory\n- TypeScript compiles with no errors\n- All existing tests pass",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-26"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["types", "dry", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-008",
+            "title": "Fix cron wasNotificationSent to filter by addonSlug and store slug in notification log",
+            "description": "P2/MEDIUM: GAP-038-27.\n\nwasNotificationSent(type, customerId) does not filter by addonSlug. If a customer has two addons expiring the same day, the second notification is suppressed because the check finds the first notification of that type for that customer today.\n\nFix: add addonSlug to the idempotency check. Store addonSlug in billing_notification_log metadata (or as a dedicated column if available).\n\nFiles affected:\n- apps/api/src/cron/jobs/addon-expiry.job.ts: Update wasNotificationSent signature and query\n\nAcceptance criteria:\n- wasNotificationSent takes (type, customerId, addonSlug) as parameters\n- Query filters by type + customerId + addonSlug + todayStart\n- addonSlug is stored in notification log when notification is sent\n- Customer with two addons expiring same day receives two separate notifications\n- Tests updated to pass addonSlug to wasNotificationSent mock\n- New test for multiple addons same customer same day (see also G-018)",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-27"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["cron", "notifications", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-009",
+            "title": "Add Zod validation for daysAhead and fix appliedAt schema to require ISO datetime",
+            "description": "P2/MEDIUM: GAP-038-37 (daysAhead bounds) + GAP-038-38 (appliedAt schema).\n\nGAP-038-37: findExpiringAddons() accepts daysAhead: number with no validation. Negative values query the past; zero returns empty set; values > 36500 risk integer overflow.\nFix: add z.number().int().min(1).max(365) Zod validation.\n\nGAP-038-38: addonAdjustmentSchema in addon.types.ts defines appliedAt as z.string(). It accepts any string including invalid dates. Migration script calls new Date(adjustment.appliedAt) which produces Invalid Date.\nFix: change to z.string().datetime({ offset: true }) with a union fallback if needed.\n\nFiles affected:\n- apps/api/src/services/addon-expiration.service.ts: Add FindExpiringAddonsInputSchema, validate at entry\n- apps/api/src/services/addon.types.ts: Update addonAdjustmentSchema.appliedAt\n\nAcceptance criteria:\n- findExpiringAddons throws ZodError if daysAhead < 1 or > 365 or non-integer\n- addonAdjustmentSchema rejects non-ISO-datetime strings for appliedAt\n- Existing valid inputs still pass validation\n- Tests cover invalid daysAhead values and invalid appliedAt strings",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-37", "GAP-038-38"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["validation", "service", "billing", "types"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-010",
+            "title": "Add transaction rollback simulation tests to addon.checkout.test.ts",
+            "description": "P2/MEDIUM: GAP-038-41.\n\nThe checkout test suite does not simulate a DB error thrown by the transaction callback itself. The mock transaction simply calls the callback and propagates errors up, but tests do not verify that a non-23505 DB error is correctly returned as INTERNAL_ERROR.\n\nFiles affected:\n- apps/api/test/services/addon.checkout.test.ts\n\nAcceptance criteria:\n- New test: mockDbTransaction.mockRejectedValueOnce(new Error('DB connection lost')) → confirmAddonPurchase returns { success: false, error: { code: 'INTERNAL_ERROR' } }\n- New test: transaction callback throws a generic error (not 23505) → error propagated correctly\n- New test: idempotency key generation failure inside transaction → error surfaced (if applicable)\n- Minimum 2 new test cases added\n- All existing tests still pass",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-41"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "checkout", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-011",
+            "title": "Replace unsafe 'as number' casts on plan limits with typeof guards",
+            "description": "P2/MEDIUM: GAP-038-43.\n\nIn addon.checkout.ts (~line 390), plan.limits[addon.affectsLimitKey] is cast with 'as number', which silently produces NaN/undefined if the value is not actually a number. A similar unsafe cast exists in addon-entitlement.service.ts.\n\nFix: replace all 'as number' casts on plan/limit object access with typeof rawValue === 'number' ? rawValue : 0 guards.\n\nFiles affected:\n- apps/api/src/services/addon.checkout.ts: Fix unsafe cast at ~line 390\n- apps/api/src/services/addon-entitlement.service.ts: Fix similar cast in limit computation path\n\nAcceptance criteria:\n- No 'as number' casts on plan.limits[key] or equivalent plan object property access\n- typeof guard pattern used: typeof rawValue === 'number' ? rawValue : 0\n- TypeScript compiles without additional errors\n- Existing tests pass; add test cases verifying NaN is never produced when plan limit is null/undefined",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-43"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["type-safety", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-012",
+            "title": "Add metadata race condition comment and document deprecated addonAdjustments path",
+            "description": "P2/MEDIUM: GAP-038-46.\n\nThe read-modify-write on subscription.metadata.addonAdjustments in applyAddonEntitlements() and removeAddonEntitlements() is not protected against concurrent writes. The practical risk is LOW because metadata is a deprecated backward-compatibility path (primary source is QZPay tables). However, the code is undocumented and future developers may not realize this.\n\nDecision from gaps analysis: accept risk, document the limitation.\n\nFiles affected:\n- apps/api/src/services/addon-entitlement.service.ts: Add JSDoc/comments at lines 219-224 and 425-430\n\nAcceptance criteria:\n- Comment explains that addonAdjustments is a DEPRECATED backward-compat shadow copy\n- Comment explains that the primary source of truth is billing_customer_entitlements / billing_customer_limits\n- Comment notes the race condition risk and why it is acceptable (deprecated path)\n- Comment references future cleanup: remove metadata writes once all consumers migrate to QZPay tables\n- No code change required; documentation only",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-46"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["documentation", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-013",
+            "title": "Add Sentry.captureException to all cron job error catch blocks",
+            "description": "P2/MEDIUM: GAP-038-47.\n\nThe addon expiry cron job (addon-expiry.job.ts) logs errors via apiLogger.error() but never calls Sentry.captureException(). Cron failures are invisible in Sentry alerting. Compare with entitlement.ts middleware which correctly calls Sentry.captureException().\n\nFiles affected:\n- apps/api/src/cron/jobs/addon-expiry.job.ts: Add Sentry.captureException() to each error catch block (4-5 locations)\n\nAcceptance criteria:\n- All error catch blocks (lines ~149-160, ~173-181, ~279-282, ~387-393, ~430-433) call Sentry.captureException()\n- Each call includes tags: { subsystem: 'billing-cron', job: 'addon-expiry' } and extra context (purchaseId, addonSlug, customerId where available)\n- Import '@sentry/node' added if not already present\n- Existing cron job tests still pass (Sentry should be mocked in tests)\n- TypeScript compiles without errors",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-47"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["observability", "cron", "sentry", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-014",
+            "title": "Replace any types in test files with proper TypeScript types",
+            "description": "P3/LOW: GAP-038-30.\n\nMultiple locations in apps/api/test/services/addon-expiration.service.test.ts use 'any' types that violate Biome noExplicitAny rule and the project TypeScript strict mode requirement. These will block the pre-commit lint hook and CI.\n\nFiles affected:\n- apps/api/test/services/addon-expiration.service.test.ts: Replace let mockDb: any, let mockEntitlementService: any, const createMockAddonPurchase = (overrides: any = {})\n\nAcceptance criteria:\n- mockDb typed as ReturnType<typeof vi.fn> or more specific db mock type\n- mockEntitlementService typed as appropriate Mocked<AddonEntitlementService> type\n- createMockAddonPurchase overrides typed as Partial<BillingAddonPurchase>\n- Biome lint runs clean on test files (pnpm lint passes)\n- All existing tests still pass",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-30"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "types", "lint"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-015",
+            "title": "Fix misleading test title and add proper -1 unlimited sentinel test case",
+            "description": "P3/LOW: GAP-038-31.\n\nThe test titled 'should skip limits.set() when base plan limit is -1 (unlimited)' does NOT actually test the -1 value — it tests with a plan where the limit key is absent (returns 0). The -1 code path in the service is never exercised.\n\nFiles affected:\n- apps/api/test/services/addon-entitlement.service.test.ts\n\nAcceptance criteria:\n- New dedicated test case mocks ALL_PLANS to return { limits: { [addon.affectsLimitKey]: -1 } }\n- Test asserts billing.limits.set was NOT called when basePlanLimit === -1\n- Existing test either fixed to use correct mock or renamed to reflect what it actually tests\n- All tests pass",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-31"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-016",
+            "title": "Raise notification send failures from debug to warn level",
+            "description": "P3/LOW: GAP-038-33.\n\nIn addon-expiry.job.ts, sendNotification() failures are caught but logged at debug level. In production, debug logs are suppressed (level: info or higher), making notification failures completely invisible.\n\nFiles affected:\n- apps/api/src/cron/jobs/addon-expiry.job.ts: Change apiLogger.debug to apiLogger.warn in notification send catch blocks\n\nAcceptance criteria:\n- All catch blocks around sendNotification() calls use apiLogger.warn() not debug()\n- Log payload includes { addonSlug, customerId, purchaseId, error: err.message, notificationType }\n- Log message: 'Failed to send addon expiry notification — customer may not receive warning'\n- Existing cron tests still pass",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-33"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["observability", "cron", "logging", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-017",
+            "title": "Fix dynamic plan count in migration test and expand billingEnabled mock coverage",
+            "description": "P3/LOW: GAP-038-40 (hardcoded plan count) + GAP-038-20 (billingEnabled mock).\n\nGAP-038-40: migrate-addon-purchases.test.ts has expect(stats.plansRestored).toBe(9) which breaks when a 10th plan is added.\nFix: import ALL_PLANS and use ALL_PLANS.length dynamically.\n\nGAP-038-20: Entitlement middleware tests may not consistently set billingEnabled=true, causing tests to pass by hitting the early return instead of testing the actual logic.\nFix: Add explicit process.env.HOSPEDA_BILLING_ENABLED = 'true' in beforeAll, plus a dedicated test group for billing disabled behavior.\n\nFiles affected:\n- packages/db/test/billing/migrate-addon-purchases.test.ts: Use ALL_PLANS.length\n- apps/api/test/middlewares/entitlement.test.ts: Add billingEnabled env setup and billing-disabled test group\n\nAcceptance criteria:\n- Migration test uses ALL_PLANS.length instead of 9\n- Middleware tests explicitly set HOSPEDA_BILLING_ENABLED=true in beforeAll for positive path tests\n- Dedicated test group verifies billing disabled → middleware calls next() immediately without any QZPay calls\n- All tests pass",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-40", "GAP-038-20"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "migration", "middleware", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-018",
+            "title": "Add missing test cases: permanent entitlement, cache not cleared on failure, multiple addons same day",
+            "description": "P3/LOW: GAP-038-12 (permanent entitlement) + GAP-038-16 (cache not cleared on failure) + GAP-038-51 (multiple addons same day).\n\nGAP-038-12: No test for addon with durationDays=null (permanent grant). Code correctly handles null but untested.\nGAP-038-16: Tests verify clearEntitlementCache IS called on success but NOT that it is NOT called on failure.\nGAP-038-51: No test for customer with multiple addons expiring same day.\n\nFiles affected:\n- apps/api/test/services/addon-entitlement.service.test.ts: Add permanent entitlement test + not.toHaveBeenCalled assertions\n- apps/api/test/cron/addon-expiry.test.ts: Add multi-addon same customer same day test\n\nAcceptance criteria:\n- Test: addon with durationDays=null → billing.entitlements.grant() called WITHOUT expiresAt\n- Tests for INTERNAL_ERROR paths assert expect(clearEntitlementCache).not.toHaveBeenCalled()\n- Test: customer with 2 addons expiring same day → both processed, both notifications queued (with G-008 fix)\n- All new tests pass",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-12", "GAP-038-16", "GAP-038-51"],
+            "standalone": false,
+            "blockedBy": ["G-008"],
+            "blocks": [],
+            "tags": ["testing", "service", "cron", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-019",
+            "title": "Expand error status map in addon routes and document checkout metadata dual format",
+            "description": "P3/LOW: GAP-038-49 (error status map) + GAP-038-44 (checkout metadata).\n\nGAP-038-49: addons.ts statusMap only maps 4 error codes. 15+ service error codes fall through to HTTP 500. Fix: add all known error codes with semantically correct HTTP statuses.\n\nGAP-038-44: Checkout preference metadata in addon.checkout.ts contains both snake_case and camelCase duplicates. No comment explains why. Fix: add comment explaining dual format purpose.\n\nFiles affected:\n- apps/api/src/routes/billing/addons.ts: Expand statusMap\n- apps/api/src/services/addon.checkout.ts: Add explanatory comment on metadata object\n\nAcceptance criteria:\n- statusMap includes all error codes from addon.types.ts with correct HTTP status (404 for NOT_FOUND/CUSTOMER_NOT_FOUND/PLAN_NOT_FOUND, 422 for NO_SUBSCRIPTION/NO_ACTIVE_SUBSCRIPTION/ADDON_INACTIVE, 409 for ADDON_ALREADY_ACTIVE, 503 for SERVICE_UNAVAILABLE/PAYMENT_NOT_CONFIGURED, 502 for CHECKOUT_ERROR)\n- Checkout metadata has comment explaining snake_case (MercadoPago IPN webhook) vs camelCase (internal handler) duality\n- Add tests verifying correct HTTP status codes are returned for unmapped error codes",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-49", "GAP-038-44"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["routes", "error-handling", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-020",
+            "title": "Restructure revokeBySource fallback to attempt revoke() in catch and add cascading failure test",
+            "description": "P3/LOW: GAP-038-50.\n\nIn removeAddonEntitlements(), when revokeBySource throws, the code jumps to the catch block and skips the fallback revoke(). The fallback is only called when revokedCount === 0 (success but nothing found). Fix: attempt revoke() INSIDE the catch block as a true fallback.\n\nFiles affected:\n- apps/api/src/services/addon-entitlement.service.ts: Restructure try/catch to call revoke() in catch\n- apps/api/test/services/addon-entitlement.service.test.ts: Add cascading failure test\n\nAcceptance criteria:\n- When revokeBySource throws, fallback revoke() is attempted inside the catch block\n- When both revokeBySource AND revoke() throw, service still returns success (resilient) and logs both errors\n- Test: mock revokeBySource to throw AND revoke() to throw → service returns success, both errors logged\n- No regression on existing resilience tests (revokeBySource throws → continues with metadata cleanup)",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-50"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["service", "resilience", "testing", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-021",
+            "title": "Update spec metadata and TODOs.md to reflect completed status",
+            "description": "P3/LOW + P4: GAP-038-13 (spec metadata status drift) + GAP-038-05 (TODOs.md out of sync).\n\nGAP-038-13: metadata.json has status: 'draft' and spec.md shows Status: draft while all 22 tasks are completed.\nGAP-038-05: TODOs.md shows 1/22 tasks (4.5%) completed.\n\nFiles affected:\n- .claude/specs/SPEC-038-addon-entitlements-architecture/metadata.json: Change status to 'completed'\n- .claude/specs/SPEC-038-addon-entitlements-architecture/spec.md: Change Status to completed\n- .claude/tasks/SPEC-038-addon-entitlements-architecture/TODOs.md (if exists): Update all task checkboxes to [x] and change progress line\n\nAcceptance criteria:\n- metadata.json status === 'completed'\n- spec.md Status: completed\n- TODOs.md shows 22/22 tasks (100%) completed\n- All checkboxes [x]",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-13", "GAP-038-05"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["documentation", "metadata"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-022",
+            "title": "Add overlapping limit key validation in addon config validator and cache TTL/FIFO tests",
+            "description": "P3/LOW: GAP-038-07 (overlapping limit keys) + GAP-038-18 (cache TTL/FIFO tests).\n\nGAP-038-07: config-validator.ts validates limitIncrease > 0 but does NOT validate that no two active addons share the same affectsLimitKey. Future addon additions could silently cause last-write-wins behavior.\n\nGAP-038-18: The entitlement middleware cache has TTL (5 min) and FIFO eviction (500 entries) but neither is tested. vi.setSystemTime() and filling the cache to capacity are needed.\n\nFiles affected:\n- apps/api/src/services/addon-config-validator.ts: Add validation that no two addons share the same affectsLimitKey\n- apps/api/test/middlewares/entitlement.test.ts: Add TTL expiration test (vi.setSystemTime) and FIFO eviction test (500+ entries)\n\nAcceptance criteria:\n- Config validator throws if two active addons share the same affectsLimitKey\n- Test: TTL expiration — after CACHE_TTL_MS + 1ms, next request re-fetches from QZPay (spy confirms call)\n- Test: FIFO eviction — adding 501st entry evicts the 1st, cache.size === CACHE_MAX_SIZE\n- Existing validator tests still pass",
+            "status": "completed",
+            "complexity": 3,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-07", "GAP-038-18"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "config", "middleware", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-023",
+            "title": "Fix Drizzle relations and correct FIFO/LRU naming and error logging context",
+            "description": "P4/TRIVIAL: GAP-038-06 (relations) + GAP-038-10 (FIFO/LRU naming) + GAP-038-15 (logging context).\n\nGAP-038-06: billingAddonPurchasesRelations only defines relation to billingCustomers. Missing: billingSubscriptions (via subscriptionId FK) and billingAddons (via addonId FK).\n\nGAP-038-10: Code comments use 'FIFO' and 'LRU' interchangeably. Implementation is FIFO (Map.keys().next().value for eviction). Standardize all comments to 'FIFO'.\n\nGAP-038-15: catch blocks in removeAddonEntitlements() may not include { customerId, addonSlug, purchaseId, operation } in log payload. Verify and fix.\n\nFiles affected:\n- packages/db/src/schemas/billing/billing_addon_purchase.dbschema.ts: Add billingSubscriptions and billingAddons relations\n- apps/api/src/middlewares/entitlement.ts: Standardize FIFO terminology in comments\n- apps/api/src/services/addon-entitlement.service.ts: Ensure catch block log payloads include full context\n\nAcceptance criteria:\n- billingAddonPurchasesRelations includes one: billingSubscriptions and one: billingAddons relations\n- All comments in entitlement.ts that reference cache eviction use 'FIFO' consistently\n- removeAddonEntitlements catch blocks log { customerId, addonSlug, purchaseId, operation: 'revokeBySource' | 'removeBySource' }\n- TypeScript compiles without errors",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P4-trivial",
+            "gaps": ["GAP-038-06", "GAP-038-10", "GAP-038-15"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["database", "documentation", "logging", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-024",
+            "title": "Remove redundant getQZPayBilling() calls and variable shadowing in cron loops",
+            "description": "P4/TRIVIAL: GAP-038-09 + GAP-038-17 (combined, noted together in gaps analysis).\n\ngetQZPayBilling() is called at lines 219 and 330 inside notification loops, despite being captured at line 122. The inner calls create new const billing variables that shadow the outer scope variable and add redundant null guards (outer scope already validated and returned early).\n\nFiles affected:\n- apps/api/src/cron/jobs/addon-expiry.job.ts: Remove lines ~219-224 and ~330-335, use outer billing variable directly\n\nAcceptance criteria:\n- No inner-scope billing variable declarations inside notification loops\n- Outer billing variable used directly in loop bodies\n- No redundant null guards for billing inside loops\n- All existing cron tests still pass",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "P4-trivial",
+            "gaps": ["GAP-038-09", "GAP-038-17"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["code-quality", "cron", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-025",
+            "title": "Replace billing.plans.get() with ALL_PLANS.find() in confirmAddonPurchase and document restoreAllPlans exception",
+            "description": "P4/TRIVIAL: GAP-038-34 (unnecessary billing API call) + GAP-038-35 (private storage access without docs).\n\nGAP-038-34: confirmAddonPurchase in addon.checkout.ts calls billing.plans.get(activeSubscription.planId) for metadata computation. applyAddonEntitlements already uses ALL_PLANS.find() for the same data. Replace with ALL_PLANS.find() for consistency and one fewer billing API call.\n\nGAP-038-35: restoreAllPlans() in the migration script uses billing.getStorage().plans.update() — the exact anti-pattern SPEC-038 fixed. It's intentional for the migration context but undocumented. Add prominent warning JSDoc explaining why this is an intentional exception.\n\nFiles affected:\n- apps/api/src/services/addon.checkout.ts: Replace billing.plans.get() with ALL_PLANS.find()\n- packages/db/src/billing/migrate-addon-purchases.ts: Add JSDoc warning to restoreAllPlans()\n\nAcceptance criteria:\n- confirmAddonPurchase uses ALL_PLANS.find(p => p.slug === activeSubscription.planId) instead of billing.plans.get()\n- restoreAllPlans() has JSDoc: 'MIGRATION-ONLY: Uses private storage API intentionally. DO NOT copy this pattern. See SPEC-038.'\n- Consider adding runtime guard: if (process.env.NODE_ENV === 'production' && !process.env.FORCE_MIGRATION_RESTORE) throw\n- All existing tests pass",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P4-trivial",
+            "gaps": ["GAP-038-34", "GAP-038-35"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["code-quality", "migration", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-026",
+            "title": "Add getDb() null check, cron timeout monitoring comment, and cancel route performance note",
+            "description": "P4/TRIVIAL: GAP-038-52 (getDb null check) + GAP-038-42 (cron timeout monitor) + GAP-038-48 (cancel route redundancy).\n\nGAP-038-52: addon-expiration.service.ts calls getDb() without null check. Add defensive guard returning DB_NOT_INITIALIZED error.\n\nGAP-038-42: processExpiredAddons processes sequentially; at scale (100 addons x 500ms/addon = 50s) could hit the 120s timeout. Decision: accept and document. Add comment with performance note and recommended action when timeouts occur.\n\nGAP-038-48: Cancel route re-fetches all user addons after route already verified ownership. Not a bug, just redundant. Decision: track as future improvement. Add TODO comment in cancelUserAddon.\n\nFiles affected:\n- apps/api/src/services/addon-expiration.service.ts: Add getDb() null check + performance comment\n- apps/api/src/services/addon.user-addons.ts: Add TODO comment about redundant getUserAddons() call\n\nAcceptance criteria:\n- getDb() result checked: if (!db) return { success: false, error: { code: 'DB_NOT_INITIALIZED' } }\n- processExpiredAddons has a comment noting sequential processing, the scale threshold, and recommendation to use p-limit if timeouts occur\n- cancelUserAddon has TODO comment: 'TODO(perf): route already verified ownership — consider passing pre-fetched data to avoid double query'\n- All existing tests pass",
+            "status": "completed",
+            "complexity": 2,
+            "phase": "P4-trivial",
+            "gaps": ["GAP-038-52", "GAP-038-42", "GAP-038-48"],
+            "standalone": false,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["defensive", "performance", "service", "billing"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        },
+        {
+            "id": "G-027",
+            "title": "Add getUserAddons statuses filter parameter for purchase history",
+            "description": "P3/LOW: GAP-038-32. STANDALONE TASK.\n\ngetUserAddons() in addon.user-addons.ts filters with WHERE status = 'active' exclusively. This makes expired and cancelled addon purchase history invisible. The UI cannot show past addon activity without writing new queries.\n\nThis is marked as a STANDALONE task because it requires design decisions about the API contract and may affect the frontend addon history page.\n\nFiles affected:\n- apps/api/src/services/addon.user-addons.ts: Add optional statuses parameter (default: ['active'])\n- apps/api/src/services/addon.types.ts: Update GetUserAddonsInput to include statuses?: AddonStatus[]\n- apps/api/src/routes/billing/addons.ts: Expose statuses filter on the GET /addons route if appropriate\n\nAcceptance criteria:\n- getUserAddons accepts optional statuses?: AddonStatus[] parameter with default ['active']\n- When statuses includes 'expired' or 'cancelled', those purchases are returned\n- Route exposes optional ?statuses= query parameter (comma-separated or repeated)\n- Backward compatible: existing callers without statuses get only active (no behavior change)\n- Tests cover: default (active only), explicit active, expired, all statuses",
+            "status": "pending",
+            "complexity": 3,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-32"],
+            "standalone": true,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["service", "routes", "billing", "standalone"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "G-028",
+            "title": "Extend addon-expiry cron with orphaned purchase reconciliation phase",
+            "description": "P2/MEDIUM: GAP-038-02. STANDALONE TASK.\n\nThe spec mentions (line 1241): 'Until the reconciliation cron is built, an admin can manually trigger applyAddonEntitlements()'. No tracked task, TODO, or implementation exists. If billing.entitlements.grant() or billing.limits.set() fails after the purchase INSERT succeeds, the purchase is orphaned with no automated repair.\n\nDecision: extend existing addon-expiry.job.ts with a reconciliation phase (not a new separate cron file).\n\nThis is a STANDALONE task that depends on the core service functions being stable (complete P0 and P1 tasks first).\n\nFiles affected:\n- apps/api/src/cron/jobs/addon-expiry.job.ts: Add reconciliation phase at end of job\n- apps/api/test/cron/addon-expiry.test.ts: Add reconciliation phase tests\n\nAcceptance criteria:\n- New reconciliation phase runs after expiry processing in the same cron job\n- Detects billing_addon_purchases with status='active' that have no corresponding QZPay entitlement/limit rows\n- Calls applyAddonEntitlements() for each orphaned purchase\n- Reconciliation is idempotent: running twice does not grant duplicate entitlements\n- Phase has a configurable limit (e.g., max 50 reconciliations per run) to prevent timeouts\n- Dry-run mode skips reconciliation actions but logs what would be done\n- Tests cover: no orphans (no-op), 1 orphan fixed, reconciliation idempotency",
+            "status": "pending",
+            "complexity": 4,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-02"],
+            "standalone": true,
+            "blockedBy": ["G-001", "G-004"],
+            "blocks": [],
+            "tags": ["cron", "reconciliation", "billing", "standalone"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "G-029",
+            "title": "Create admin endpoint and page for per-customer entitlement and limit visibility",
+            "description": "P2/MEDIUM: GAP-038-11. STANDALONE TASK.\n\nThe spec UX section (lines 1243-1248) describes admin visibility of source and sourceId columns, but no admin panel page or endpoint exposes billing_customer_entitlements or billing_customer_limits data.\n\nThis is a full-stack STANDALONE task with significant scope. It requires:\n1. API: new admin endpoint GET /api/v1/admin/billing/customers/:customerId/entitlements\n2. Admin: new page or panel component showing entitlement/limit rows with source and sourceId\n\nFiles affected:\n- apps/api/src/routes/billing/ (or admin/billing/): New admin route for customer entitlements\n- apps/admin/src/routes/_authed/billing/: New admin page\n- apps/admin/src/lib/billing-http-adapter/: HTTP adapter method for the new endpoint\n\nAcceptance criteria:\n- Admin endpoint returns per-customer entitlements and limits with source, sourceId, key, value, expiresAt\n- Requires admin authentication and appropriate permission\n- Admin page shows the data in a readable table\n- Includes customer selector or accessible via /billing/customers/:id/entitlements path\n- API endpoint has tests\n- Admin page loads without crash",
+            "status": "pending",
+            "complexity": 4,
+            "phase": "P2-medium",
+            "gaps": ["GAP-038-11"],
+            "standalone": true,
+            "blockedBy": ["G-003"],
+            "blocks": [],
+            "tags": ["admin", "billing", "standalone", "routes"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "G-030",
+            "title": "Add integration test for concurrent addon purchase unique constraint collision",
+            "description": "P3/LOW: GAP-038-14. STANDALONE TASK.\n\nThe spec explicitly describes handling concurrent addon purchases (Risk 4, spec line 1703-1709) and the code correctly handles Postgres error 23505. However, there is no integration-level test that simulates two concurrent purchase confirmations and verifies exactly one succeeds.\n\nThis is STANDALONE because it requires a test DB or more realistic mocking that simulates actual Postgres partial index constraint violations.\n\nFiles affected:\n- apps/api/test/services/addon.checkout.test.ts: Add more realistic constraint test\n\nAcceptance criteria:\n- Test simulates DB INSERT throwing an error with code '23505' (Postgres unique constraint violation)\n- confirmAddonPurchase correctly maps this to ADDON_ALREADY_ACTIVE (or equivalent graceful error)\n- Test verifies the error is NOT re-thrown and is returned as a structured error response\n- Documents why a full integration test (real DB) is deferred\n- All tests pass",
+            "status": "pending",
+            "complexity": 2,
+            "phase": "P3-low",
+            "gaps": ["GAP-038-14"],
+            "standalone": true,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["testing", "checkout", "billing", "standalone"],
+            "timestamps": {
+                "created": "2026-03-16T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "G-031",
+            "title": "Final quality gate: typecheck, lint, full test suite",
+            "description": "Final validation task. Runs after all other tasks are complete.\n\nCommands:\n- pnpm typecheck\n- pnpm lint\n- pnpm test\n\nAcceptance criteria:\n- Zero TypeScript errors in billing-related files (preexisting errors in config/notifications packages are allowed if pre-existing)\n- Zero Biome lint errors (noExplicitAny, useDefaultParameterLast, noUnusedVariables)\n- All tests pass (full suite, not just billing)\n- Zero @ts-expect-error added by this remediation work",
+            "status": "completed",
+            "complexity": 1,
+            "phase": "validation",
+            "gaps": [],
+            "standalone": false,
+            "blockedBy": [
+                "G-001",
+                "G-002",
+                "G-003",
+                "G-004",
+                "G-005",
+                "G-006",
+                "G-007",
+                "G-008",
+                "G-009",
+                "G-010",
+                "G-011",
+                "G-012",
+                "G-013",
+                "G-014",
+                "G-015",
+                "G-016",
+                "G-017",
+                "G-018",
+                "G-019",
+                "G-020",
+                "G-021",
+                "G-022",
+                "G-023",
+                "G-024",
+                "G-025",
+                "G-026"
+            ],
+            "blocks": [],
+            "tags": ["validation", "quality"],
+            "timestamps": {
+                "completed": "2026-03-16T13:35:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 31,
+        "pending": 4,
+        "inProgress": 0,
+        "completed": 27,
+        "phases": {
+            "P0-critical": 3,
+            "P1-high": 3,
+            "P2-medium": 8,
+            "P3-low": 10,
+            "P4-trivial": 4,
+            "validation": 1
+        },
+        "standalone": 4,
+        "outOfScope": 3,
+        "gapsCovered": 49,
+        "gapsExcluded": 3,
+        "averageComplexity": 2.1,
+        "maxComplexity": 4
+    },
+    "parallelTracks": {
+        "track-A-critical": ["G-001", "G-002"],
+        "track-B-critical": ["G-003"],
+        "track-P1": ["G-004", "G-005", "G-006"],
+        "track-P2-services": ["G-007", "G-009", "G-011", "G-012"],
+        "track-P2-cron": ["G-008", "G-013"],
+        "track-P2-migration": ["G-005", "G-006"],
+        "track-P2-standalone": ["G-028", "G-029"],
+        "track-P3-tests": ["G-014", "G-015", "G-017", "G-018", "G-022", "G-030"],
+        "track-P3-observability": ["G-016", "G-019", "G-020"],
+        "track-P4": ["G-023", "G-024", "G-025", "G-026"],
+        "validation": ["G-031"]
+    },
+    "criticalPath": ["G-001", "G-002", "G-031"]
+}

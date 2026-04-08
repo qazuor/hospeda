@@ -1,0 +1,1090 @@
+{
+    "specId": "SPEC-019",
+    "title": "Security & Permissions Hardening",
+    "status": "completed",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Update hono to >=4.9.6 across all workspace packages",
+            "description": "Update the `hono` dependency to version >=4.9.6 in all workspace packages that declare it. This addresses CVE URL path parsing confusion (4.8.0-4.9.5) that allows middleware auth bypass.\n\nFiles to modify:\n- `apps/api/package.json` (primary consumer)\n- Any other `package.json` files in the monorepo that declare `hono` as a dependency\n\nSteps:\n1. Run `pnpm why hono` to identify all packages depending on hono\n2. Update each `package.json` to specify hono >=4.9.6\n3. Run `pnpm install` and resolve any peer dependency conflicts\n4. Run `pnpm typecheck` to verify no type errors from the upgrade\n5. Run `pnpm test` in `apps/api` to verify all route and middleware tests pass\n\nTest expectations:\n- All existing API tests pass without modification\n- `pnpm why hono` shows only >=4.9.6 versions resolved",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Update @tanstack/form-core to non-vulnerable version",
+            "description": "Update `@tanstack/form-core` to a version that resolves known prototype pollution advisories.\n\nFiles to modify:\n- `apps/admin/package.json` (primary consumer of TanStack Form)\n- Any other `package.json` files declaring `@tanstack/form-core` or `@tanstack/react-form`\n\nSteps:\n1. Run `pnpm why @tanstack/form-core` to identify all consumers\n2. Check npm advisory page for the minimum safe version\n3. Update the dependency version in all relevant package.json files\n4. Run `pnpm install`\n5. Run `pnpm typecheck` in `apps/admin`\n6. Run `pnpm test` in `apps/admin` to verify no regressions\n\nTest expectations:\n- All admin app tests pass\n- `pnpm audit` no longer reports this advisory",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Update devalue to non-vulnerable version",
+            "description": "Update the `devalue` package to a version without known prototype pollution or code injection advisories.\n\nFiles to modify:\n- Identify all `package.json` files declaring `devalue` via `pnpm why devalue`\n- May be a transitive dependency of Astro or TanStack Start\n\nSteps:\n1. Run `pnpm why devalue` to identify direct and transitive consumers\n2. If direct dependency: update version in the relevant `package.json`\n3. If transitive: check if updating the parent package resolves it, or add a `pnpm.overrides` entry in root `package.json`\n4. Run `pnpm install`\n5. Run `pnpm test` across affected apps\n\nTest expectations:\n- All tests pass\n- `pnpm audit` no longer reports devalue advisory",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Update path-to-regexp to non-vulnerable version",
+            "description": "Update `path-to-regexp` to a version without known ReDoS (Regular Expression Denial of Service) advisories.\n\nFiles to modify:\n- Identify all consumers via `pnpm why path-to-regexp`\n- Likely a transitive dependency of routing libraries\n\nSteps:\n1. Run `pnpm why path-to-regexp` to identify the dependency chain\n2. If direct: update version. If transitive: update parent or add `pnpm.overrides` in root `package.json`\n3. Run `pnpm install`\n4. Run `pnpm test` across all apps to verify routing still works\n\nTest expectations:\n- All route-related tests pass\n- `pnpm audit` no longer reports path-to-regexp advisory",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-005"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Run pnpm audit and fix remaining high/critical advisories",
+            "description": "After updating the four known vulnerable packages (T-001 through T-004), run a comprehensive audit to catch any remaining critical or high severity advisories.\n\nSteps:\n1. Run `pnpm audit --production` and capture output\n2. For each remaining critical/high advisory, determine fix (version update, override, or accepted risk)\n3. Apply fixes\n4. Run `pnpm install`\n5. Run `pnpm typecheck && pnpm lint && pnpm test` to verify no regressions\n6. Run `pnpm audit --production` again and confirm zero critical/high advisories\n\nTest expectations:\n- `pnpm audit --production` reports zero critical and zero high advisories\n- Full test suite passes\n- Full typecheck passes",
+            "phase": "setup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-001", "T-002", "T-003", "T-004"],
+            "blocks": ["T-049"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create .env.example with all required variables documented",
+            "description": "Create a `.env.example` file at the repository root documenting all required environment variables with placeholder values and descriptions. No real credentials.\n\nFile to create:\n- `/home/qazuor/projects/WEBS/hospeda/.env.example`\n\nSteps:\n1. Audit all env variable references across the codebase: search for `process.env.HOSPEDA_`, `process.env.NODE_ENV`, `process.env.CRON_SECRET`, etc.\n2. Check `apps/api/src/utils/env.ts` for the env schema definition\n3. Check any other env validation files in apps/admin and apps/web\n4. Create `.env.example` with sections: Database, Authentication, API, Site, Billing, Redis, Cron, Sentry\n5. Each variable: placeholder value (e.g., `postgresql://user:password@localhost:5432/hospeda`), inline comment describing purpose and whether required/optional\n6. Include `HOSPEDA_SUPER_ADMIN_PASSWORD` as optional with description of random-generation fallback\n7. Include `HOSPEDA_REDIS_URL` as required for production\n8. Include `CRON_SECRET` as required for production\n9. Verify `.gitignore` already has `.env` and `.env.local` patterns\n\nTest expectations:\n- File exists with no real credential values\n- All env vars used in the codebase are documented",
+            "phase": "setup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Rotate database credentials and update deployment secrets",
+            "description": "Rotate the PostgreSQL database credentials that were exposed in the committed `.env` file (commits `33bd4124` and `bacbf585`).\n\nSteps:\n1. Generate new database password using a cryptographically secure method\n2. Update the database password on the PostgreSQL server (or managed database provider)\n3. Update `HOSPEDA_DATABASE_URL` in Fly.io secrets: `fly secrets set HOSPEDA_DATABASE_URL=...`\n4. Update `HOSPEDA_DATABASE_URL` in Vercel environment variables for admin and web apps\n5. Verify the API can connect to the database with the new credentials\n6. Verify the admin and web apps can function with the updated env vars\n\nIMPORTANT: This is a manual/operational task. The old credential values must be considered compromised. Coordinate timing with deployment to minimize downtime.\n\nTest expectations:\n- API starts successfully with new credentials\n- Database operations work normally\n\n**DEFERRED to SPEC-024** (Credential Rotation & Git History Purge). All credential rotation tasks are tracked there.",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "deferred",
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Rotate Better Auth secret and update deployment secrets",
+            "description": "Rotate the Better Auth secret key that was exposed in the committed `.env` file.\n\nSteps:\n1. Generate a new `HOSPEDA_BETTER_AUTH_SECRET` using `openssl rand -base64 32` or equivalent\n2. Update Fly.io secrets: `fly secrets set HOSPEDA_BETTER_AUTH_SECRET=...`\n3. Update Vercel environment variables for admin and web apps\n4. NOTE: Rotating this secret will invalidate all existing sessions. Users will need to re-login.\n5. Verify authentication flow works with the new secret\n\nIMPORTANT: Coordinate with the team. All active sessions will be invalidated.\n\nTest expectations:\n- Login flow works with new secret\n- Session creation and validation work correctly\n\n**DEFERRED to SPEC-024** (Credential Rotation & Git History Purge). All credential rotation tasks are tracked there.",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "deferred",
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Rotate all other API keys and service credentials",
+            "description": "Rotate any remaining API keys or service credentials that appeared in the committed `.env` file, beyond the database URL and Better Auth secret.\n\nSteps:\n1. Review the contents of the old `.env` (from git history if still accessible, or from records) to identify all credentials\n2. For each credential (Sentry DSN, MercadoPago keys, any external service keys):\n   a. Generate new key/secret with the respective provider\n   b. Revoke the old key with the provider\n   c. Update Fly.io secrets and Vercel env vars\n3. Verify all integrations work with the new credentials\n\nTest expectations:\n- All external integrations (Sentry, billing, etc.) function correctly\n- No references to old credential values remain in deployment configuration\n\n**DEFERRED to SPEC-024** (Credential Rotation & Git History Purge). All credential rotation tasks are tracked there.",
+            "phase": "setup",
+            "complexity": 3,
+            "status": "deferred",
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Purge .env from git history using git-filter-repo",
+            "description": "Remove all traces of the `.env` file from git history to prevent credential recovery from historical commits.\n\nSteps:\n1. Ensure all credentials have been rotated first (T-007, T-008, T-009)\n2. Notify all contributors they will need to re-clone after this operation\n3. Install `git-filter-repo` if not already available\n4. Run: `git filter-repo --path .env --invert-paths`\n5. Force push to the remote repository\n6. All contributors must delete their local clone and re-clone\n\nIMPORTANT: This is a destructive operation that rewrites git history. ALL contributors must re-clone afterwards. Coordinate timing carefully.\n\nTest expectations:\n- `git log --all -- .env` returns no commits\n- Fresh clone shows no `.env` content in any historical commit\n\n**DEFERRED to SPEC-024** (Credential Rotation & Git History Purge). Git history purge is tracked there.",
+            "phase": "setup",
+            "complexity": 3,
+            "status": "deferred",
+            "blockedBy": ["T-006", "T-007", "T-008", "T-009"],
+            "blocks": ["T-011"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Verify git history purge is clean",
+            "description": "After the git-filter-repo purge (T-010), verify that no credential values are recoverable from the repository history.\n\nSteps:\n1. Perform a fresh `git clone` of the repository to a temporary directory\n2. Run `git log --all -- .env` and verify no results with credential content\n3. For each known old credential value, run `git log --all -S '<old-credential-value>'` and verify no matches\n4. Run `git log --all --diff-filter=A -- .env` and verify no results\n5. Verify `.gitignore` contains `.env` and `.env.local` patterns\n6. Document the verification results\n\nTest expectations:\n- Zero credential values recoverable from git history\n- `.gitignore` properly ignores `.env` files\n\n**DEFERRED to SPEC-024** (Credential Rotation & Git History Purge). Purge verification is tracked there.",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "deferred",
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Remove hardcoded password from superAdminLoader.ts and add random generation",
+            "description": "Replace the hardcoded `SuperAdmin123!` password in the seed utility with environment variable support and random password generation fallback.\n\nFile to modify:\n- `packages/seed/src/utils/superAdminLoader.ts`\n\nSteps:\n1. Read `packages/seed/src/utils/superAdminLoader.ts` and locate the hardcoded password string `SuperAdmin123!`\n2. Replace the hardcoded password with:\n   a. Read `process.env.HOSPEDA_SUPER_ADMIN_PASSWORD`\n   b. If set, use that value\n   c. If NOT set, generate a cryptographically random password using `crypto.randomBytes(24).toString('base64url')` (or similar)\n   d. If generated, print it to stdout once: `console.log('[SEED] Generated super admin password: <password>')`\n   e. Log a warning: `console.warn('[SEED] Save this password now. It will not be shown again.')`\n3. Ensure no other seed files contain hardcoded passwords (search for `SuperAdmin123` across the codebase)\n4. Update `.env.example` (if already created by T-006) to include `HOSPEDA_SUPER_ADMIN_PASSWORD`\n\nTest expectations:\n- No hardcoded password strings in any seed file\n- When env var is set, that value is used\n- When env var is not set, a random password is generated and printed\n- `grep -r 'SuperAdmin123' packages/seed/` returns no matches",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-013"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement forced password change on first super admin login",
+            "description": "Add a mechanism to force the super admin to change their password on first login before accessing admin functionality.\n\nFiles to modify:\n- `packages/seed/src/utils/superAdminLoader.ts` -- add a `forcePasswordChange: true` flag to the created user record (or equivalent metadata)\n- `packages/db/src/schemas/user/` -- may need to add a `forcePasswordChange` column or use existing metadata fields\n- `apps/admin/src/routes/_authed.tsx` -- check for forcePasswordChange flag and redirect to password change page\n- `apps/admin/src/routes/change-password.tsx` -- create or update password change page\n- `apps/api/` -- endpoint to handle password change and clear the flag\n\nSteps:\n1. Determine how to store the forcePasswordChange flag (new column vs. user metadata JSON)\n2. Set the flag to true when the super admin account is created in the seed\n3. In the admin route guard (_authed.tsx), after auth check, if forcePasswordChange is true, redirect to /change-password\n4. Create the /change-password page with a form (current password, new password, confirm password)\n5. On successful password change, clear the forcePasswordChange flag\n6. The change-password page should be accessible even when forcePasswordChange is true\n7. Add a flag to skip this in test/CI environments (e.g., `HOSPEDA_SKIP_FORCE_PASSWORD_CHANGE=true`)\n\nTest expectations:\n- Super admin created with forcePasswordChange flag\n- Admin route guard redirects when flag is true\n- After password change, flag is cleared and admin is accessible\n- Keyboard navigable and screen reader compatible form",
+            "phase": "core",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Audit billing routes to identify all routes lacking ownership checks",
+            "description": "Perform a thorough audit of all billing routes in the API to identify which routes are missing ownership verification (IDOR vulnerability).\n\nFiles to audit:\n- `apps/api/src/routes/billing/` -- all route files\n- `apps/api/src/routes/index.ts` -- billing route mounting\n- Check the difference between `/protected/billing/` and `/admin/billing/` routes\n\nSteps:\n1. List all billing route handlers and their HTTP methods\n2. For each route, determine: Does it access a resource by ID? Does it verify the requesting user owns that resource?\n3. Document findings in a list:\n   - Route path + method\n   - Has ownership check: yes/no\n   - Should be admin-only: yes/no\n   - Current tier: public/protected/admin\n4. Identify routes that should be admin-only but are currently in the protected tier\n5. Identify routes that accept a resource ID but don't verify ownership\n\nOutput: A documented list of all billing routes and their IDOR status, to be used by T-015 through T-019.\n\nTest expectations:\n- Complete inventory of all billing routes with ownership check status",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016", "T-017", "T-018", "T-019"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create billing ownership verification middleware",
+            "description": "Create a reusable middleware/guard function that verifies the requesting user owns the target billing resource, or has admin BILLING_MANAGE permission to bypass.\n\nFile to create/modify:\n- `apps/api/src/middlewares/billing-ownership.ts` (new file) or add to existing billing middleware\n\nSteps:\n1. Create a middleware factory function `createBillingOwnershipGuard({ resourceType })` that:\n   a. Extracts the resource ID from `c.req.param('id')` or the request body\n   b. Queries the billing_customers table to find the customer record\n   c. Compares the customer's userId with the authenticated user's ID (`c.get('actor').id`)\n   d. If match: proceed (call `await next()`)\n   e. If no match: check if actor has `PermissionEnum.BILLING_MANAGE` permission\n   f. If has permission: proceed (admin bypass)\n   g. Otherwise: return 403 Forbidden (or 404 to prevent enumeration)\n2. Handle edge cases: resource not found (return 404), unauthenticated (return 401)\n3. Support different resource types: customer, subscription, invoice, payment\n4. For subscription/invoice/payment: look up the parent customer to determine ownership\n\nTest expectations:\n- Owner can access their own resource\n- Non-owner gets 403/404\n- Admin with BILLING_MANAGE can access any resource\n- Unauthenticated gets 401\n- Non-existent resource gets 404",
+            "phase": "core",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016", "T-017", "T-018"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Apply ownership middleware to billing customer routes",
+            "description": "Apply the billing ownership verification middleware (T-015) to all protected billing customer routes.\n\nFiles to modify:\n- `apps/api/src/routes/billing/` -- customer route files under the protected tier\n\nSteps:\n1. Identify all customer routes: GET /protected/billing/customers/:id, PUT /protected/billing/customers/:id, etc.\n2. Add the ownership middleware to each route that accesses a customer by ID\n3. Ensure the middleware runs after authentication but before the route handler\n4. For list endpoints (GET /protected/billing/customers), filter to only return the authenticated user's customer records\n\nTest expectations:\n- User A cannot GET User B's customer record (403 or 404)\n- User A can GET their own customer record (200)\n- Admin with BILLING_MANAGE can GET any customer (200)",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Apply ownership middleware to billing subscription routes",
+            "description": "Apply the billing ownership verification middleware (T-015) to all protected billing subscription routes.\n\nFiles to modify:\n- `apps/api/src/routes/billing/` -- subscription route files under the protected tier\n\nSteps:\n1. Identify all subscription routes: GET/PUT /protected/billing/subscriptions/:id, etc.\n2. For subscription routes, the ownership check must look up the parent customer of the subscription to verify ownership\n3. Add the ownership middleware with `resourceType: 'subscription'` to each route\n4. Ensure PUT/PATCH operations also verify ownership\n\nTest expectations:\n- User A cannot PUT User B's subscription (403)\n- User A can GET their own subscription (200)\n- Admin bypass works correctly",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Apply ownership middleware to billing invoice and payment routes",
+            "description": "Apply the billing ownership verification middleware (T-015) to all protected billing invoice and payment routes.\n\nFiles to modify:\n- `apps/api/src/routes/billing/` -- invoice and payment route files under the protected tier\n\nSteps:\n1. Identify all invoice routes: GET /protected/billing/invoices/:id, POST /protected/billing/refunds, etc.\n2. Identify all payment routes: GET /protected/billing/payments/:id, etc.\n3. For invoice/payment routes, look up the parent customer via the subscription chain\n4. Add ownership middleware to each route\n5. Special attention to POST /protected/billing/refunds: verify the referenced invoice belongs to the requesting user\n\nTest expectations:\n- User A cannot POST a refund referencing User B's invoice (403)\n- User A can view their own invoices (200)\n- Admin bypass works for all operations",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Migrate admin-only billing operations to /admin/billing/ with createAdminRoute",
+            "description": "Move billing operations that should only be accessible to admins from the protected tier to the admin tier, using the `createAdminRoute` pattern.\n\nFiles to modify:\n- `apps/api/src/routes/billing/` -- identified admin-only routes from T-014 audit\n- `apps/api/src/routes/index.ts` -- update route mounting\n\nSteps:\n1. From T-014 audit results, identify routes that should be admin-only (e.g., billing management, plan CRUD, etc.)\n2. Move those route handlers to `/admin/billing/` path\n3. Wrap with `createAdminRoute` and appropriate permission flags (e.g., `BILLING_MANAGE`)\n4. Remove the old protected-tier mount points for these routes\n5. Update any admin panel API calls if paths changed\n\nTest expectations:\n- Admin-only billing routes return 403 for non-admin users\n- Admin with BILLING_MANAGE can access all admin billing routes\n- Regular users can still access their own billing data via protected routes",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-014"],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Wrap metrics routes with createAdminRoute and permission flags",
+            "description": "Ensure all metrics endpoints require admin-level authorization using `createAdminRoute` with appropriate permission flags.\n\nFiles to modify:\n- `apps/api/src/routes/metrics/index.ts` (or wherever metrics routes are defined)\n- `apps/api/src/routes/index.ts` -- verify metrics are mounted under `/admin/metrics/`\n\nSteps:\n1. Locate all metrics route definitions\n2. Verify they are mounted under `/api/v1/admin/metrics/`\n3. Wrap each route with `createAdminRoute` if not already done\n4. Set permission flags: `METRICS_VIEW` for GET endpoints, `METRICS_RESET` for POST reset endpoint\n5. If `METRICS_VIEW` and `METRICS_RESET` permissions don't exist in `PermissionEnum`, they may need to be added or mapped to existing admin permissions\n6. Verify the admin panel's metrics page still works with admin credentials\n\nTest expectations:\n- Regular authenticated user gets 403 on GET /admin/metrics\n- Regular authenticated user gets 403 on POST /admin/metrics/reset\n- Unauthenticated user gets 401\n- Admin with METRICS_VIEW gets 200 on GET /admin/metrics\n- Admin with METRICS_RESET gets 200 on POST /admin/metrics/reset",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write integration tests for billing IDOR and metrics authorization",
+            "description": "Write comprehensive integration tests covering all IDOR scenarios for billing routes and authorization for metrics routes.\n\nFile to create:\n- `apps/api/test/integration/billing-idor.test.ts`\n- `apps/api/test/integration/metrics-auth.test.ts`\n\nBilling IDOR tests:\n1. User A authenticated, GET /protected/billing/customers/:userBId -> 403 or 404\n2. User A authenticated, GET /protected/billing/customers/:userAId -> 200\n3. User A authenticated, PUT /protected/billing/subscriptions/:userBSubId -> 403\n4. User A authenticated, POST /protected/billing/refunds with User B's invoice -> 403\n5. Admin with BILLING_MANAGE, GET /admin/billing/customers/:anyId -> 200\n6. Unauthenticated, GET /protected/billing/customers/:id -> 401\n7. Owner reads own subscription, invoice, payment -> 200\n\nMetrics auth tests:\n1. Regular user, GET /admin/metrics -> 403\n2. Regular user, POST /admin/metrics/reset -> 403\n3. Unauthenticated, GET /admin/metrics -> 401\n4. Admin with METRICS_VIEW, GET /admin/metrics -> 200\n5. Admin with METRICS_RESET, POST /admin/metrics/reset -> 200\n\nTest expectations:\n- All tests use the AAA pattern\n- Tests create necessary test fixtures (users, billing records)\n- All assertions match the acceptance criteria from US-04 and US-05",
+            "phase": "testing",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-016", "T-017", "T-018", "T-019", "T-020"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Replace sql.raw() in billing-metrics.service.ts with parameterized query",
+            "description": "Eliminate the SQL injection risk by replacing `sql.raw(months.toString())` with a parameterized Drizzle interval expression.\n\nFile to modify:\n- `apps/api/src/services/billing-metrics.service.ts`\n\nSteps:\n1. Locate the `sql.raw(months.toString())` usage in the INTERVAL expression\n2. Replace with a Drizzle-native parameterized approach. Options:\n   a. Use `sql`\\`INTERVAL '1 month' * ${months}\\`` (Drizzle template literal with parameter binding)\n   b. Or compute the date boundary in JavaScript and pass it as a parameterized date value\n3. Ensure the `months` value is bound as a parameter, never interpolated into the SQL string\n\nTest expectations:\n- Passing `months = 6` produces the correct interval query\n- No `sql.raw()` calls remain in the file\n- Query results are identical to before the change",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-023"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add input validation for months parameter in billing-metrics",
+            "description": "Add strict input validation for the `months` parameter in billing-metrics to prevent any injection or abuse.\n\nFile to modify:\n- `apps/api/src/services/billing-metrics.service.ts`\n\nSteps:\n1. Add Zod validation for the `months` parameter: `z.number().int().min(1).max(120)` (or appropriate range)\n2. Validate at the service entry point before any database query\n3. Return a typed validation error if the value is invalid\n4. Write unit tests:\n   a. `months = 6` -> valid, proceeds\n   b. `months = 0` -> validation error\n   c. `months = -1` -> validation error\n   d. `months = 1.5` -> validation error (not integer)\n   e. `months = '1; DROP TABLE billing_subscriptions'` -> validation error (not number)\n   f. `months = 200` -> validation error (exceeds max)\n\nTest expectations:\n- Invalid values never reach the database\n- Valid values produce correct results\n- Unit tests cover all edge cases listed above",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-022"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create Redis rate limit store implementation",
+            "description": "Create a Redis-backed rate limit store to replace the in-memory Map, ensuring rate limits work across multiple API instances.\n\nFile to create:\n- `apps/api/src/lib/rate-limit-store.ts` (or similar)\n\nSteps:\n1. Check if the project already has a Redis client (search for `ioredis`, `redis`, or `HOSPEDA_REDIS_URL` usage)\n2. If no Redis client exists, determine which library to use (ioredis is commonly used)\n3. Create a rate limit store class/module that:\n   a. Connects to Redis using `HOSPEDA_REDIS_URL`\n   b. Implements `increment(key: string, windowMs: number): Promise<{ count: number; resetTime: number }>`\n   c. Uses Redis `INCR` + `EXPIRE` (or `MULTI/EXEC`) for atomic increment with TTL\n   d. TTL-based expiration handles cleanup automatically (no manual cleanup code)\n   e. Key format: `ratelimit:<identifier>:<window>`\n4. Handle Redis connection failures gracefully (fallback to allow or use a circuit breaker)\n5. Export the store for use by the rate limit middleware\n\nTest expectations:\n- Redis store correctly increments counters\n- Counters expire after the TTL window\n- Multiple increments within a window accumulate correctly\n- Connection failure is handled without crashing the server",
+            "phase": "core",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-025"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Replace in-memory Map rate limiter with Redis implementation",
+            "description": "Replace the in-memory `Map` rate limiter in the rate limit middleware with the Redis-backed implementation from T-024.\n\nFile to modify:\n- `apps/api/src/middlewares/rate-limit.ts`\n\nSteps:\n1. Import the Redis rate limit store from T-024\n2. Remove the in-memory `Map` variable and all related cleanup logic\n3. Replace the rate limit check to use the Redis store's `increment` method\n4. Use the returned count and resetTime to determine if the request should be throttled\n5. Set `Retry-After` and `X-RateLimit-*` headers based on the Redis store's data\n6. Ensure `HOSPEDA_REDIS_URL` is documented in `.env.example` as required for production\n\nTest expectations:\n- No in-memory `Map` exists in the rate limit middleware\n- Rate limit headers are correctly set\n- Requests exceeding the threshold receive 429 Too Many Requests\n- Rate limits are enforced consistently (verified by Redis key inspection in tests)",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-024"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add non-root user to Dockerfile.api",
+            "description": "Add a non-root user to the API Dockerfile so the container process does not run as root.\n\nFile to modify:\n- `apps/api/Dockerfile.api` (or `Dockerfile` in apps/api/)\n\nSteps:\n1. Locate the Dockerfile for the API app\n2. Before the `CMD` instruction, add:\n   ```dockerfile\n   RUN addgroup --system --gid 1001 hospeda && \\\n       adduser --system --uid 1001 --ingroup hospeda hospeda\n   USER hospeda\n   ```\n3. Ensure the application's working directory and any log/temp directories are writable by the non-root user:\n   ```dockerfile\n   RUN chown -R hospeda:hospeda /app\n   ```\n   (Adjust paths as needed based on the existing Dockerfile structure)\n4. Build the image and verify: `docker build -t hospeda-api-test . && docker run --rm hospeda-api-test whoami` should output `hospeda`\n5. Verify the application starts without permission errors\n\nTest expectations:\n- `docker inspect` shows default user is not root (not UID 0)\n- `whoami` inside container returns `hospeda` (or `node`)\n- Application starts and can write to logs/temp without errors\n\nN/A: Migrated from Docker/Fly.io to Vercel serverless deployment.\n\n**OBSOLETE**: Dockerfile.api is deprecated. API migrated to Vercel serverless where container user context is not applicable. Vercel handles security isolation at the platform level.",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-053"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Gate docs routes behind NODE_ENV check in production",
+            "description": "Prevent Swagger/Scalar API documentation endpoints from being accessible in production.\n\nFiles to modify:\n- `apps/api/src/index.ts` or `apps/api/src/app.ts` -- wherever docs routes are registered\n- Look for `/docs`, `/reference`, `/ui` route registrations\n\nSteps:\n1. Locate where Scalar/Swagger/OpenAPI documentation routes are registered\n2. Wrap the registration in a `NODE_ENV` check:\n   ```typescript\n   if (process.env.NODE_ENV !== 'production') {\n     // Register docs routes\n   }\n   ```\n3. Optionally, for production environments where docs access is needed internally, add an API key guard:\n   ```typescript\n   if (process.env.HOSPEDA_DOCS_API_KEY) {\n     // Register docs behind API key auth\n   }\n   ```\n4. Verify in development: `/docs` returns the documentation UI\n5. Verify with `NODE_ENV=production`: `/docs` returns 404\n\nTest expectations:\n- In development: docs endpoints return 200 with documentation UI\n- In production (NODE_ENV=production): docs endpoints return 404\n- If HOSPEDA_DOCS_API_KEY is set in production: docs accessible with correct Authorization header",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Fix wildcard subdomain matching in security.ts",
+            "description": "Fix the CORS origin validation to properly reject sibling domains that end with the allowed domain suffix (e.g., `evil-hospeda.com.ar` should not match `*.hospeda.com.ar`).\n\nFile to modify:\n- `apps/api/src/middlewares/security.ts`\n\nSteps:\n1. Locate the wildcard origin matching logic in the CORS configuration\n2. Find the pattern that checks if an origin matches a wildcard like `*.hospeda.com.ar`\n3. The current implementation likely uses `origin.endsWith('hospeda.com.ar')` which incorrectly matches `evil-hospeda.com.ar`\n4. Fix to check for `.` prefix: `origin.endsWith('.hospeda.com.ar')` or use a proper subdomain regex: `/^https?:\\/\\/[a-z0-9-]+\\.hospeda\\.com\\.ar$/`\n5. Handle apex domain (`hospeda.com.ar`) separately in an explicit allowlist\n6. Write unit tests for the matching function\n\nTest expectations:\n- `evil-hospeda.com.ar` -> rejected (no CORS headers)\n- `admin.hospeda.com.ar` -> allowed\n- `sub.admin.hospeda.com.ar` -> allowed (nested subdomain)\n- `hospeda.com.ar` -> allowed if in explicit allowlist\n- `notahospeda.com.ar` -> rejected",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Filter error details on 5xx responses in production",
+            "description": "Ensure internal error details (stack traces, query details, internal messages) are not exposed in 5xx error responses in production.\n\nFile to modify:\n- `apps/api/src/middlewares/response.ts` (or the error handler middleware)\n\nSteps:\n1. Locate the error handler/response middleware that formats error responses\n2. Add a production check: `const isProduction = process.env.NODE_ENV === 'production'`\n3. For 5xx errors (status >= 500):\n   a. In production: omit the `details` field or replace with `'An unexpected error occurred'`\n   b. In development: keep full details for debugging\n4. For 4xx errors: keep `details` field (field-level validation messages are safe to expose)\n5. Ensure the full error is still logged server-side (via logger) even when filtered from the response\n\nTest expectations:\n- 5xx in production: response has no `details` or generic message only\n- 5xx in development: response includes full diagnostic `details`\n- 4xx in production: `details` field with validation info is preserved\n- Server-side logging still captures the full error",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Update cron middleware to block when CRON_SECRET not set",
+            "description": "Change the cron middleware to always require `CRON_SECRET` authentication, blocking requests when the secret is not configured (instead of allowing them).\n\nFile to modify:\n- `apps/api/src/cron/middleware.ts` (or wherever cron auth is handled)\n\nSteps:\n1. Locate the cron authentication middleware\n2. Remove any `CRON_AUTH_DISABLED` bypass logic, or restrict it to `NODE_ENV !== 'production'` with a logged warning\n3. When `CRON_SECRET` is not set:\n   a. In production: refuse to register cron routes (or return 401 on all cron requests)\n   b. In non-production: log a warning and return 401 (block by default, not allow)\n4. When `CRON_SECRET` is set: validate `Authorization: Bearer <CRON_SECRET>` header\n5. Invalid or missing header: return 401 Unauthorized\n\nTest expectations:\n- No CRON_SECRET set + any request -> 401\n- CRON_SECRET set + correct Bearer header -> request processed\n- CRON_SECRET set + wrong Bearer header -> 401\n- CRON_SECRET set + no Authorization header -> 401",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-031"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Add CRON_SECRET to env schema as required for production",
+            "description": "Update the environment variable schema to declare `CRON_SECRET` as required when `NODE_ENV=production`.\n\nFile to modify:\n- `apps/api/src/utils/env.ts` (or wherever the env schema is defined)\n\nSteps:\n1. Locate the Zod env schema definition\n2. Add `CRON_SECRET` as a string field\n3. Add a refinement or conditional validation: required when `NODE_ENV === 'production'`, optional otherwise\n4. Update `.env.example` to document `CRON_SECRET` as required for production\n\nTest expectations:\n- In production without CRON_SECRET: env validation fails with descriptive error\n- In production with CRON_SECRET: validation passes\n- In development without CRON_SECRET: validation passes (optional)\n- In development with CRON_SECRET: validation passes",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-030"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Re-mount public exchange rate routes under /api/v1/public/",
+            "description": "Move public exchange rate routes from their current mount point to the correct `/api/v1/public/` tier.\n\nFiles to modify:\n- `apps/api/src/routes/index.ts` -- route mounting\n- Exchange rate route files as needed\n\nSteps:\n1. Identify current exchange rate route mount points in `routes/index.ts`\n2. Identify which exchange rate endpoints are public (read-only, no auth needed)\n3. Mount those routes under `/api/v1/public/exchange-rates/`\n4. Remove the old mount points for these public routes\n5. Update any client code that references the old paths (check `apps/web/src/lib/api/`)\n\nTest expectations:\n- Public exchange rate data accessible at /api/v1/public/exchange-rates/ without auth\n- Old mount point returns 404 (or redirects)\n- Web app correctly uses the new path",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-034"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Re-mount protected exchange rate routes under /api/v1/protected/",
+            "description": "Move protected exchange rate routes (requiring user authentication) to the `/api/v1/protected/` tier.\n\nFiles to modify:\n- `apps/api/src/routes/index.ts`\n- Exchange rate route files\n\nSteps:\n1. Identify exchange rate endpoints that require user authentication\n2. Mount them under `/api/v1/protected/exchange-rates/`\n3. Remove old mount points\n4. Update client references\n\nTest expectations:\n- Authenticated user can access protected exchange rate endpoints\n- Unauthenticated requests get 401",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-034"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Create admin exchange rate routes with createAdminRoute",
+            "description": "Create admin-only exchange rate management routes under `/api/v1/admin/exchange-rates/` using `createAdminRoute`.\n\nFiles to modify:\n- `apps/api/src/routes/index.ts`\n- Exchange rate admin route files\n\nSteps:\n1. Identify exchange rate operations that should be admin-only (create, update, delete)\n2. Wrap these with `createAdminRoute` and appropriate permission flags\n3. Mount under `/api/v1/admin/exchange-rates/`\n4. Ensure the admin panel still works with the new paths\n5. Remove any admin-only exchange rate operations from public/protected tiers\n\nTest expectations:\n- Non-admin user gets 403 on admin exchange rate routes\n- Admin with appropriate permission gets 200\n- CRUD operations work correctly for admin users",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-032", "T-033"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Create shared sanitizeHtml utility for Astro pages",
+            "description": "Create a shared HTML sanitization utility to prevent XSS from API-sourced content rendered with `set:html`.\n\nFile to create:\n- `apps/web/src/utils/sanitize-html.ts`\n\nSteps:\n1. Choose a server-safe sanitization library: `sanitize-html` or `isomorphic-dompurify`\n2. Add the dependency to `apps/web/package.json`\n3. Create the utility function:\n   ```typescript\n   import sanitizeHtml from 'sanitize-html';\n   \n   export function sanitize({ html }: { html: string }): string {\n     return sanitizeHtml(html, {\n       allowedTags: ['strong', 'em', 'p', 'a', 'ul', 'ol', 'li', 'br', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote'],\n       allowedAttributes: {\n         'a': ['href', 'target', 'rel']\n       },\n       disallowedTagsMode: 'discard'\n     });\n   }\n   ```\n4. Write unit tests:\n   a. `<script>alert('xss')</script>` -> stripped\n   b. `<img onerror=\"alert('xss')\" src=\"x\">` -> attribute stripped\n   c. `<strong>bold</strong>` -> preserved\n   d. `<p>paragraph</p>` -> preserved\n   e. `<a href=\"https://example.com\">link</a>` -> preserved\n\nTest expectations:\n- Script tags and inline event handlers are always stripped\n- Legitimate formatting HTML is preserved\n- Function follows RO-RO pattern",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-036"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Apply sanitizeHtml to all Astro pages using set:html",
+            "description": "Find all Astro pages/components that use `set:html` with dynamic API-sourced content and wrap the content through the sanitization utility.\n\nFiles to modify:\n- All `.astro` files in `apps/web/src/` that use `set:html` with dynamic content\n\nSteps:\n1. Search for all `set:html` usages: `grep -r 'set:html' apps/web/src/`\n2. For each usage, determine if the content comes from an API response or user-generated data\n3. If API-sourced, wrap with the sanitize function:\n   ```astro\n   ---\n   import { sanitize } from '@/utils/sanitize-html';\n   const cleanHtml = sanitize({ html: apiContent });\n   ---\n   <div set:html={cleanHtml} />\n   ```\n4. If the content is hardcoded/static, no change needed\n5. Create a checklist of all `set:html` usages and their sanitization status\n\nTest expectations:\n- Every `set:html` with dynamic content passes through sanitize()\n- No raw API content is directly set as HTML without sanitization\n- Static/hardcoded HTML is not unnecessarily sanitized",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-035"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Add force_https to fly.toml",
+            "description": "Enable HTTPS enforcement in the Fly.io deployment configuration to redirect all HTTP traffic to HTTPS.\n\nFile to modify:\n- `apps/api/fly.toml`\n\nSteps:\n1. Open `apps/api/fly.toml`\n2. Locate the `[[services]]` or `[http_service]` section\n3. Add `force_https = true`\n4. Verify the configuration syntax is correct per Fly.io docs\n\nExample:\n```toml\n[http_service]\n  internal_port = 3001\n  force_https = true\n```\n\nTest expectations:\n- `fly.toml` contains `force_https = true`\n- HTTP requests to the API are redirected to HTTPS (301 or 308) on staging\n\nN/A: Migrated from Docker/Fly.io to Vercel serverless deployment.\n\n**OBSOLETE**: fly.toml is deprecated. API migrated to Vercel serverless where HTTPS is enforced at the platform level.",
+            "phase": "integration",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-052"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Remove unused x-actor-id and x-user-id from CORS headers",
+            "description": "Remove `x-actor-id` and `x-user-id` from the CORS allowed headers list after confirming they are not used by any client.\n\nFile to modify:\n- `apps/api/src/utils/env.ts` (or wherever CORS headers are configured)\n\nSteps:\n1. Search `apps/web/` and `apps/admin/` for any usage of `x-actor-id` or `x-user-id` headers in fetch/axios calls\n2. If found in use: document as accepted risk and skip removal\n3. If NOT found: remove from the `allowedHeaders` CORS configuration\n4. Verify web and admin apps still function correctly (no CORS errors)\n\nTest expectations:\n- `x-actor-id` and `x-user-id` not in CORS allowed headers\n- No 403 CORS errors in web or admin app requests\n- If headers are found in use, document the finding and keep them",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Replace Content-Length body size check with Hono bodyLimit middleware",
+            "description": "Replace the manual `Content-Length` header check with Hono's built-in `bodyLimit` middleware to prevent chunked transfer encoding bypass.\n\nFile to modify:\n- `apps/api/src/middlewares/validation.ts` (or wherever body size is checked)\n\nSteps:\n1. Locate the current body size validation (likely checking `Content-Length` header)\n2. Remove the manual `Content-Length` check\n3. Replace with Hono's `bodyLimit` middleware:\n   ```typescript\n   import { bodyLimit } from 'hono/body-limit';\n   \n   app.use('*', bodyLimit({\n     maxSize: 10 * 1024 * 1024, // 10MB or appropriate limit\n     onError: (c) => {\n       return c.json({ error: 'Payload too large' }, 413);\n     }\n   }));\n   ```\n4. The `bodyLimit` middleware handles both Content-Length and chunked transfer encoding\n5. Verify with a test: send a chunked request exceeding the limit\n\nTest expectations:\n- Normal request within limit: processed normally\n- Request with Content-Length exceeding limit: 413\n- Chunked request exceeding limit: 413\n- No manual Content-Length check remains",
+            "phase": "integration",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Refactor permission.ts to use PermissionEnum instead of role checks",
+            "description": "Replace all `actor.role === RoleEnum.ADMIN` (or similar role comparisons) in the permission utility with `PermissionEnum`-based checks.\n\nFile to modify:\n- `packages/service-core/src/utils/permission.ts`\n\nSteps:\n1. Read the file and identify all instances of role-based checks (e.g., `actor.role === RoleEnum.ADMIN`, `actor.role === RoleEnum.SUPER_ADMIN`, `actor.role !== RoleEnum.USER`)\n2. For each role check, determine the equivalent permission check:\n   - `actor.role === RoleEnum.ADMIN` -> `actor.permissions.includes(PermissionEnum.ADMIN_ACCESS)` (or similar)\n   - Map each role-based decision to the specific permission that should control it\n3. Refactor each check to use `hasPermission(actor, PermissionEnum.XXX)` or equivalent utility\n4. Ensure no `RoleEnum` comparisons remain in the file\n5. Run existing unit tests to verify behavior is preserved\n\nTest expectations:\n- No `actor.role ===` comparisons in the file\n- All authorization decisions use PermissionEnum\n- Existing permission tests pass\n- An actor with admin role but missing a specific permission is correctly denied",
+            "phase": "integration",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-041", "T-042", "T-043"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T12:00:00.000Z",
+                "completed": "2026-03-02T12:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Refactor accommodation.service.ts role checks to permission checks",
+            "description": "Replace all direct role checks in the accommodation service with PermissionEnum-based authorization.\n\nFile to modify:\n- `packages/service-core/src/services/accommodation.service.ts` (or the path where this service lives)\n\nSteps:\n1. Read the file and identify all role-based authorization checks\n2. For each check, determine the appropriate PermissionEnum value:\n   - Read access: `PermissionEnum.ACCOMMODATION_READ` or similar\n   - Write access: `PermissionEnum.ACCOMMODATION_WRITE` or `ACCOMMODATION_MANAGE`\n   - Delete access: `PermissionEnum.ACCOMMODATION_DELETE` or `ACCOMMODATION_MANAGE`\n3. Replace each `actor.role === RoleEnum.XXX` with the permission-based check\n4. Use the pattern from T-040's refactored permission.ts\n5. Verify with existing tests\n\nTest expectations:\n- No role comparisons in the service file\n- Authorization uses PermissionEnum throughout\n- Existing accommodation service tests pass",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-040"],
+            "blocks": ["T-043"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Refactor post.service.ts and post.permissions.ts role checks",
+            "description": "Replace all direct role checks in the post service and post permissions module with PermissionEnum-based authorization.\n\nFiles to modify:\n- `packages/service-core/src/services/post.service.ts`\n- `packages/service-core/src/services/post.permissions.ts` (or the path where post permissions are defined)\n\nSteps:\n1. Read both files and identify all role-based authorization checks\n2. In `post.permissions.ts`: replace role-based canCreate/canEdit/canDelete with permission checks\n3. In `post.service.ts`: replace any remaining role checks with permission-based calls\n4. Map roles to permissions:\n   - Admin post management: `PermissionEnum.POST_MANAGE` or equivalent\n   - Own post editing: `PermissionEnum.POST_EDIT_OWN` or equivalent\n5. Use the same patterns established in T-040\n6. Verify with existing tests\n\nTest expectations:\n- No role comparisons in either file\n- Authorization uses PermissionEnum throughout\n- Existing post service tests pass\n- Post permission functions work correctly",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-040"],
+            "blocks": ["T-043"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Update permission-related unit tests for refactored checks",
+            "description": "Update all unit tests affected by the permission refactor (T-040, T-041, T-042) to test permission presence rather than role identity.\n\nFiles to modify:\n- `packages/service-core/test/utils/permission.test.ts` (or equivalent)\n- `packages/service-core/test/services/accommodation.service.test.ts`\n- `packages/service-core/test/services/post.service.test.ts`\n- Any other test files that create mock actors with roles for authorization testing\n\nSteps:\n1. Identify all test files that test permission/authorization behavior\n2. Update mock actor objects to include `permissions` arrays instead of just `role`\n3. Add test cases:\n   a. Actor with correct permission but non-admin role -> authorized\n   b. Actor with admin role but missing specific permission -> denied\n   c. Actor with no permissions -> denied\n   d. Actor with all required permissions -> authorized\n4. Ensure all existing test assertions are updated to match the new behavior\n5. Run the full test suite to verify no regressions\n\nTest expectations:\n- All permission/authorization tests pass\n- Tests verify permission-based access, not role-based\n- Coverage for edge cases (admin without permission, user with permission)",
+            "phase": "testing",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-040", "T-041", "T-042"],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Add admin role check to _authed.tsx route guard",
+            "description": "Add an admin role verification to the admin app's authentication route guard so regular users cannot access the admin panel.\n\nFile to modify:\n- `apps/admin/src/routes/_authed.tsx`\n\nSteps:\n1. Read the current `_authed.tsx` route guard\n2. Locate the `beforeLoad` function that checks authentication\n3. After verifying `session.user` exists, add an admin role check:\n   ```typescript\n   if (session.user.role !== RoleEnum.ADMIN && session.user.role !== RoleEnum.SUPER_ADMIN) {\n     throw redirect({ to: '/unauthorized' }); // or redirect to web app\n   }\n   ```\n4. Create an `/unauthorized` page (if it doesn't exist) that:\n   - Displays a clear message: 'You do not have permission to access this area'\n   - Has proper heading structure for accessibility\n   - Provides a link back to the main web app\n5. Ensure unauthenticated users still get redirected to login (existing behavior preserved)\n\nTest expectations:\n- Authenticated USER role -> redirected to unauthorized page\n- Authenticated ADMIN role -> can access admin routes\n- Authenticated SUPER_ADMIN role -> can access admin routes\n- Unauthenticated -> redirected to login (existing behavior)",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T12:00:00.000Z",
+                "completed": "2026-03-02T12:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Filter /auth/me response to exclude full permission array",
+            "description": "Add response field filtering to the `/auth/me` endpoint so the full permission array and sensitive actor metadata are not transmitted to clients.\n\nFile to modify:\n- `apps/api/src/routes/auth/me.ts` (or wherever the auth/me endpoint is defined)\n\nSteps:\n1. Locate the `/auth/me` route handler\n2. Create a response schema or field whitelist:\n   ```typescript\n   const MeResponseSchema = z.object({\n     id: z.string(),\n     email: z.string(),\n     name: z.string(),\n     role: z.string(),\n     image: z.string().nullable().optional(),\n     // Only include permissions the client needs for UI rendering\n   });\n   ```\n3. Before returning the response, filter the actor object through the schema:\n   ```typescript\n   const filtered = MeResponseSchema.parse(actor);\n   return c.json(filtered);\n   ```\n4. Ensure the admin panel still receives enough data to render (role, display name, avatar)\n5. Verify the web app still functions correctly with the filtered response\n\nTest expectations:\n- Response includes: id, email, name, role, image\n- Response does NOT include: raw permissions array, internal metadata, audit fields\n- Admin panel login/session bootstrap still works\n- Web app user features still work",
+            "phase": "integration",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-050"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Audit account.dbschema.ts endpoints for password field exposure",
+            "description": "Audit the accounts database schema and all endpoints that return user/account data to confirm no endpoint exposes the password field.\n\nFiles to audit:\n- `packages/db/src/schemas/user/account.dbschema.ts`\n- All API routes that return user or account data\n- All service methods that return user/account objects\n\nSteps:\n1. Read `account.dbschema.ts` and identify the password field(s)\n2. Search all API routes for endpoints that return user or account data\n3. For each endpoint, trace the data flow:\n   a. What fields does the database query select?\n   b. Does the response include the password field?\n   c. Is there a response schema that filters out the password?\n4. Document findings:\n   - If no endpoint exposes password: document as verified safe\n   - If an endpoint does expose password: flag as critical finding and create a fix task\n5. Write the findings in a comment in the task or in a security audit document\n\nTest expectations:\n- Complete audit of all user/account-returning endpoints\n- Documented verification that password field is never exposed\n- If exposure found: immediate fix task created",
+            "phase": "docs",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-048"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Document cookie cache tradeoff in auth.ts comments",
+            "description": "Add documentation comments to the auth configuration explaining the 5-minute cookie cache propagation tradeoff (SEC-17 accepted risk).\n\nFile to modify:\n- `apps/api/src/lib/auth.ts`\n\nSteps:\n1. Locate the cookie cache configuration in `auth.ts`\n2. Add a JSDoc comment block explaining:\n   a. The 5-minute session cache means permission changes take up to 5 minutes to propagate\n   b. This is an accepted tradeoff between performance and immediate revocation\n   c. If an admin revokes a user's role, the user retains access for up to 5 minutes\n   d. Recommendation: consider reducing to 1-2 minutes in a future iteration\n   e. Reference: SPEC-019, SEC-17\n3. Keep the comment concise but informative\n\nExample:\n```typescript\n/**\n * Cookie cache TTL: 5 minutes.\n * SECURITY NOTE (SEC-17): Permission changes (e.g., role revocation) take up to\n * 5 minutes to propagate due to this cache. This is an accepted tradeoff for\n * performance. Consider reducing to 1-2 minutes if near-realtime revocation\n * becomes a requirement. See SPEC-019.\n */\n```\n\nTest expectations:\n- Comment exists near the cookie cache configuration\n- No functional code changes",
+            "phase": "docs",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-048"],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Document accepted risks in project security notes",
+            "description": "Document all accepted risks from the security audit in a dedicated security notes section.\n\nFile to create or modify:\n- Add a `## Security Notes` section to the project CLAUDE.md or create a dedicated `docs/security-notes.md`\n\nSteps:\n1. Document SEC-17 (cookie cache desync): 5-minute propagation delay, accepted tradeoff\n2. Document SEC-15 (CORS headers): if x-actor-id/x-user-id were found in use and not removed, document why\n3. Document any other findings from T-046 (password field audit) if issues were found and accepted\n4. For each accepted risk, include:\n   a. Finding ID and description\n   b. Why it is accepted (business/technical rationale)\n   c. Mitigation recommendation for future iterations\n   d. Date of decision\n\nTest expectations:\n- All accepted risks documented with rationale\n- No functional code changes",
+            "phase": "docs",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-046", "T-047"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Run npm audit and verify zero critical/high advisories",
+            "description": "Final verification that the dependency graph is clean of critical and high severity advisories.\n\nSteps:\n1. Run `pnpm audit --production`\n2. Capture and review the output\n3. Verify zero critical advisories\n4. Verify zero high advisories\n5. Document any medium/low advisories that remain as accepted\n6. If any critical/high remain, create fix tasks and block the spec completion\n\nTest expectations:\n- `pnpm audit --production` reports zero critical and zero high\n- Output is documented/captured for the security record",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T12:00:00.000Z",
+                "completed": "2026-03-02T12:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Run full test suite and verify all tests pass",
+            "description": "Run the complete test suite across the entire monorepo and verify all tests pass with minimum 90% coverage.\n\nSteps:\n1. Run `pnpm test` from the monorepo root\n2. Verify all test suites pass (zero failures)\n3. Run `pnpm test:coverage` and verify >= 90% coverage\n4. If any tests fail, identify whether the failure is from this spec's changes and fix\n5. Document the test results\n\nTest expectations:\n- All test suites pass\n- Coverage >= 90%\n- No test regressions from security hardening changes",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [
+                "T-021",
+                "T-023",
+                "T-025",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-031",
+                "T-034",
+                "T-036",
+                "T-038",
+                "T-039",
+                "T-043",
+                "T-044",
+                "T-045"
+            ],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Run typecheck and lint verification",
+            "description": "Run TypeScript type checking and Biome linting across the monorepo and verify zero errors.\n\nSteps:\n1. Run `pnpm typecheck` from the monorepo root\n2. Verify zero type errors\n3. Run `pnpm lint` from the monorepo root\n4. Verify zero lint errors\n5. If errors found, fix them\n\nTest expectations:\n- `pnpm typecheck` exits with code 0\n- `pnpm lint` exits with code 0",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-050"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Manual verification of all user stories on staging",
+            "description": "Deploy to staging and manually verify all user story acceptance criteria from SPEC-019.\n\nChecklist:\n- [ ] `npm audit --production` shows zero critical/high advisories\n- [ ] `git log --all -- .env` shows no credential values\n- [ ] Super admin seed generates random password when env var absent, prints to stdout\n- [ ] Super admin prompted to change password on first login\n- [ ] Non-owner user gets 403 accessing another user's billing data\n- [ ] Non-admin user gets 403 on all metrics endpoints\n- [ ] API docs (/docs, /reference, /ui) return 404 in production\n- [ ] HTTP request redirected to HTTPS on Fly.io\n- [ ] Docker container runs as non-root user (verified with `docker exec whoami`)\n- [ ] Non-admin authenticated user redirected when accessing admin app routes\n- [ ] /auth/me response does not include full permission array\n- [ ] Chunked request exceeding body limit returns 413\n- [ ] Cron endpoint without CRON_SECRET returns 401\n- [ ] Exchange rate routes on correct tiers (public/protected/admin)\n- [ ] CORS rejects `evil-hospeda.com.ar` but allows `admin.hospeda.com.ar`\n\nTest expectations:\n- All checklist items verified and passing\n\n**DEFERRED to SPEC-025** (Staging Environment Setup & Deployment Pipeline). Manual verification requires a staging environment which is tracked in SPEC-025.",
+            "phase": "cleanup",
+            "complexity": 4,
+            "status": "deferred",
+            "blockedBy": ["T-051"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Verify Docker container runs as non-root on staging",
+            "description": "After deploying the updated Dockerfile to staging, verify the API container actually runs as a non-root user.\n\nSteps:\n1. Deploy the updated Docker image to staging (Fly.io)\n2. SSH into the staging machine or exec into the container:\n   `fly ssh console -a hospeda-api`\n3. Run `whoami` and verify output is NOT `root`\n4. Run `id` and verify UID is not 0\n5. Verify the application is running and responding to requests\n6. Verify log and temp directories are writable\n7. Document the verification result\n\nTest expectations:\n- `whoami` returns `hospeda` or `node` (not `root`)\n- `id` shows non-zero UID\n- Application functions normally\n\nN/A: Migrated from Docker/Fly.io to Vercel serverless deployment.\n\n**OBSOLETE**: Docker deployment is deprecated. API migrated to Vercel serverless.",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-026", "T-052"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-02-27T00:00:00.000Z",
+                "started": "2026-03-02T00:00:00.000Z",
+                "completed": "2026-03-02T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 53,
+        "pending": 53,
+        "inProgress": 0,
+        "completed": 43,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}

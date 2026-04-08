@@ -1,0 +1,4766 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-030",
+    "title": "Web Pages Migration: web-old to web",
+    "created": "2026-03-06T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Verify infrastructure readiness for migration",
+            "description": "Verify all prerequisite infrastructure exists in apps/web before starting migration. Check: (1) All shared components in src/components/shared/ exist (AccommodationCard, DestinationCard, EventCard, FeaturedArticleCard, SecondaryArticleCard, ReviewCard, StatCard, SectionHeader, GradientButton, EmptyState, WaveDivider, ParallaxDivider, BackgroundPattern, DecorativeElement, Badge, CategoryBadge, LocationBadge, RatingBadge, AmenityTag, StarsDisplay). (2) All UI primitives in src/components/ui/ exist (button.tsx, calendar.tsx, drawer.tsx, Modal.client.tsx, popover.tsx, select.tsx, ThemeToggle.astro, Toast.client.tsx). (3) All lib files exist (api/client.ts, api/endpoints.ts, api/endpoints-protected.ts, api/transforms.ts, api/types.ts, i18n.ts, auth-client.ts, env.ts, cn.ts, logger.ts, media.ts, middleware-helpers.ts, sanitize-html.ts, tiptap-renderer.ts, urls.ts, page-helpers.ts, pricing-fallbacks.ts, pricing-plans.ts, owners-page-data.ts). (4) Layouts exist (BaseLayout.astro, Header.astro, Footer.astro). (5) SEO components exist. (6) Skeleton components exist. (7) Static data files exist in src/data/. Document any missing items.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-003",
+                "T-005",
+                "T-007",
+                "T-013",
+                "T-015",
+                "T-017",
+                "T-022",
+                "T-024",
+                "T-026",
+                "T-028",
+                "T-030",
+                "T-032",
+                "T-034",
+                "T-036",
+                "T-038",
+                "T-040",
+                "T-042",
+                "T-044",
+                "T-045",
+                "T-046",
+                "T-047",
+                "T-048",
+                "T-050",
+                "T-051",
+                "T-055",
+                "T-056",
+                "T-084",
+                "T-103",
+                "T-104",
+                "T-105",
+                "T-019",
+                "T-109",
+                "T-111"
+            ],
+            "subtasks": [
+                {
+                    "title": "Check shared components exist",
+                    "completed": true
+                },
+                {
+                    "title": "Check UI primitives exist",
+                    "completed": true
+                },
+                {
+                    "title": "Check lib files exist",
+                    "completed": true
+                },
+                {
+                    "title": "Check layouts exist",
+                    "completed": true
+                },
+                {
+                    "title": "Check SEO/skeleton components exist",
+                    "completed": true
+                },
+                {
+                    "title": "Document findings",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "verification"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:00:00Z",
+                "completed": "2026-03-06T12:10:00Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Verify and port CSS animation classes",
+            "description": "Check if apps/web/src/styles/global.css already contains the scroll-reveal animation classes from web-old (scroll-reveal, scroll-reveal-left, scroll-reveal-right, scroll-reveal-scale). Also check if animation keyframes and component CSS from web-old/src/styles/animations.css, components.css, and textures.css are covered by the new global.css or BackgroundPattern/DecorativeElement components. Port any missing CSS that is needed. Do NOT port CSS that is now handled by Tailwind utility classes or shared components.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-003",
+                "T-005",
+                "T-013",
+                "T-015",
+                "T-017",
+                "T-022",
+                "T-024",
+                "T-026",
+                "T-028",
+                "T-030",
+                "T-032",
+                "T-034",
+                "T-036",
+                "T-038",
+                "T-040",
+                "T-042",
+                "T-055",
+                "T-056",
+                "T-084",
+                "T-103",
+                "T-104",
+                "T-105",
+                "T-019",
+                "T-044",
+                "T-045",
+                "T-046",
+                "T-047",
+                "T-048",
+                "T-050",
+                "T-051"
+            ],
+            "subtasks": [
+                {
+                    "title": "Read web-old animations.css",
+                    "completed": true
+                },
+                {
+                    "title": "Read web-old components.css",
+                    "completed": true
+                },
+                {
+                    "title": "Read web-old textures.css",
+                    "completed": true
+                },
+                {
+                    "title": "Compare with web global.css",
+                    "completed": true
+                },
+                {
+                    "title": "Port missing CSS classes",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "css"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:00:00Z",
+                "completed": "2026-03-06T12:10:00Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Evaluate and port Pagination.astro",
+            "description": "Evaluate web-old/src/components/ui/Pagination.astro (181 lines) and port to web/src/components/shared/Pagination.astro. Read the source component first and decide strategy (copy+adapt recommended). The component has two URL modes (segment /page/2/ and query ?page=2), ellipsis algorithm, responsive design (3 pages mobile, 5 desktop), prev/next buttons. Adaptation: update import path for t() from src/lib/i18n, replace color classes (bg-blue-600 to bg-primary, text-gray-500 to text-muted-foreground), apply border-radius and padding from STYLE_GUIDE. Keep same props interface.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-004", "T-058", "T-066", "T-072", "T-078", "T-082"],
+            "subtasks": [
+                {
+                    "title": "Read source Pagination.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate migration strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port component with adaptations",
+                    "completed": true
+                },
+                {
+                    "title": "Verify i18n keys exist for es",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:15:00Z",
+                "completed": "2026-03-06T12:25:00Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Write Pagination.astro unit tests",
+            "description": "Write unit tests for Pagination.astro at web/test/components/shared/pagination.test.ts. Test: ellipsis logic for various page counts (1, 5, 10, 50 pages), both URL modes (segment and query param), edge cases (page 1, last page, single page, out of bounds), responsive page count, prev/next button disabled states, correct aria attributes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write ellipsis logic tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write URL mode tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write edge case tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write accessibility tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Evaluate and port Breadcrumb.astro",
+            "description": "Evaluate web-old/src/components/ui/Breadcrumb.astro and port to web/src/components/shared/Breadcrumb.astro. Update color tokens (text-muted-foreground for separators), verify HOME_BREADCRUMB constant from lib/page-helpers, ensure chevron separator styling matches STYLE_GUIDE.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": [
+                "T-006",
+                "T-058",
+                "T-060",
+                "T-066",
+                "T-068",
+                "T-072",
+                "T-074",
+                "T-078",
+                "T-080",
+                "T-084",
+                "T-092",
+                "T-094",
+                "T-096",
+                "T-099",
+                "T-100",
+                "T-101"
+            ],
+            "subtasks": [
+                {
+                    "title": "Read source Breadcrumb.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate migration strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port component with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:15:00Z",
+                "completed": "2026-03-06T12:25:00Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Write Breadcrumb.astro unit tests",
+            "description": "Write unit tests for Breadcrumb.astro at web/test/components/shared/breadcrumb.test.ts. Test: renders with single item, renders with multiple items, renders HOME_BREADCRUMB, chevron separators present, last item is not a link, correct aria-label on nav element.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write accessibility tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Port filter-sidebar.types.ts with destination data fix",
+            "description": "Port web-old/src/components/accommodation/filter-sidebar.types.ts to web/src/components/accommodation/filter-sidebar.types.ts. FIX BUG: Replace hardcoded 5 destination names with import from src/data/destinations.ts (DESTINATION_NAMES which has 9 destinations). Update TypeScript types as needed.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Read source types file",
+                    "completed": true
+                },
+                {
+                    "title": "Read DESTINATION_NAMES from data",
+                    "completed": true
+                },
+                {
+                    "title": "Port with fix applied",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "types", "bugfix"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:30:00Z",
+                "completed": "2026-03-06T12:40:00Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Evaluate and port FilterSection.client.tsx",
+            "description": "Evaluate web-old/src/components/accommodation/FilterSection.client.tsx and port to web/src/components/accommodation/FilterSection.client.tsx. Sub-component of FilterSidebar. Read source, decide strategy. Update useTranslation hook import, @repo/icons imports, color tokens to semantic.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Read source FilterSection",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Evaluate and port PriceRangeFilter.client.tsx",
+            "description": "Evaluate web-old/src/components/accommodation/PriceRangeFilter.client.tsx and port to web/src/components/accommodation/PriceRangeFilter.client.tsx. Sub-component of FilterSidebar. Read source, decide strategy. Update useTranslation hook import, color tokens to semantic. Check if range slider needs custom styling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Read source PriceRangeFilter",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Evaluate and port ActiveFilterChips.client.tsx",
+            "description": "Evaluate web-old/src/components/accommodation/ActiveFilterChips.client.tsx and port. Sub-component of FilterSidebar showing active filter chips with remove buttons. Update useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Read source ActiveFilterChips",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Evaluate and port FilterSidebar.client.tsx",
+            "description": "Evaluate web-old/src/components/accommodation/FilterSidebar.client.tsx (385 lines, complex) and port. Main filter component composing FilterSection, PriceRangeFilter, ActiveFilterChips. Update: useTranslation, @repo/icons, replace hardcoded DESTINATIONS with DESTINATION_NAMES from data, color tokens, URL sync with window.history.pushState stays the same.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-007", "T-008", "T-009", "T-010"],
+            "blocks": ["T-012", "T-058"],
+            "subtasks": [
+                {
+                    "title": "Read source FilterSidebar (385 lines)",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy carefully",
+                    "completed": true
+                },
+                {
+                    "title": "Port with all sub-component imports updated",
+                    "completed": true
+                },
+                {
+                    "title": "Verify URL sync behavior",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "accommodation", "complex"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write FilterSidebar system tests",
+            "description": "Write tests for FilterSidebar system at web/test/components/accommodation/filter-sidebar.test.tsx. Port and adapt existing tests from web-old. Test: renders all filter sections, price range interaction, active filter chips display/removal, URL sync, destination filter uses 9 destinations (not 5), filter reset.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing filter-sidebar tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add destination data fix test",
+                    "completed": true
+                },
+                {
+                    "title": "Add URL sync tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Evaluate and port ImageGallery.client.tsx",
+            "description": "Evaluate web-old/src/components/ui/ImageGallery.client.tsx (281 lines) and port to web/src/components/shared/ImageGallery.client.tsx. Features: main image + thumbnail strip + fullscreen lightbox, keyboard navigation. Clean component. Update: useTranslation import, @repo/icons (CloseIcon, NextIcon, PreviousIcon), border-radius and shadow tokens from STYLE_GUIDE.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-014", "T-060", "T-068"],
+            "subtasks": [
+                {
+                    "title": "Read source ImageGallery",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with theme adaptations",
+                    "completed": true
+                },
+                {
+                    "title": "Verify keyboard navigation",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:45:00Z",
+                "completed": "2026-03-06T13:00:00Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Write ImageGallery tests",
+            "description": "Write tests at web/test/components/shared/image-gallery.test.tsx. Test: renders main image, thumbnails, thumbnail click changes main, fullscreen lightbox opens/closes, keyboard navigation (Escape, arrows), empty images, single image.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write interaction tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write keyboard nav tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Evaluate and port FavoriteButton system",
+            "description": "Evaluate and port web-old FavoriteButton.client.tsx (285 lines) + FavoriteButtonIsland.astro to web/src/components/shared/. Complex: heart toggle, optimistic updates, auth check, API calls, Sentry, toast. Update imports: @sentry/astro, toast-store, lib/env. Verify AuthRequiredPopover exists in web/src/components/auth/. Verify userBookmarksApi endpoints.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-016", "T-060", "T-068"],
+            "subtasks": [
+                {
+                    "title": "Read source FavoriteButton (285 lines)",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port FavoriteButton.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Port FavoriteButtonIsland.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API endpoint compatibility",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared", "complex"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:45:00Z",
+                "completed": "2026-03-06T13:00:00Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write FavoriteButton system tests",
+            "description": "Write tests at web/test/components/shared/favorite-button.test.tsx. Test: renders heart icon, toggle state (optimistic), auth popover when not logged in, API call, Sentry error handling, toast on success, loading state.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write auth interaction tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write API mock tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write error handling tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Evaluate and port ShareButtons.client.tsx",
+            "description": "Evaluate web-old ShareButtons.client.tsx (219 lines) and port to web/src/components/shared/. Features: Native Web Share API (mobile) with fallback to WhatsApp/Facebook/X, copy to clipboard. Update: icon imports, logger import, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-018", "T-060", "T-068", "T-074", "T-080"],
+            "subtasks": [
+                {
+                    "title": "Read source ShareButtons",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:30:00Z",
+                "completed": "2026-03-06T12:40:00Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Write ShareButtons tests",
+            "description": "Write tests at web/test/components/shared/share-buttons.test.tsx. Test: renders share buttons, copy to clipboard, Web Share API detection and fallback, correct URLs per platform.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write clipboard tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write Web Share API tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Evaluate and port ReviewList.client.tsx + ReviewListIsland.astro",
+            "description": "Evaluate web-old ReviewList.client.tsx (314 lines) + ReviewListIsland.astro and port to web/src/components/review/. ReviewCard.astro already exists in shared/ - decide reuse approach. Update: icon imports, formatDate from @repo/i18n, useTranslation.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-020", "T-021", "T-060"],
+            "subtasks": [
+                {
+                    "title": "Read source ReviewList",
+                    "completed": true
+                },
+                {
+                    "title": "Read source ReviewListIsland",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy and ReviewCard reuse",
+                    "completed": true
+                },
+                {
+                    "title": "Port both components",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "review"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:45:00Z",
+                "completed": "2026-03-06T13:00:00Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Evaluate and port ReviewForm.client.tsx",
+            "description": "Evaluate web-old ReviewForm.client.tsx (323 lines) and port to web/src/components/review/. Decision: React Hook Form + Zod (project pattern) vs manual validation. Update: icon imports, useTranslation, color tokens. Check star rating input. NOTE: ReviewForm submit will be a placeholder (console.log or toast) during this migration. The form UI should be complete and validated, but actual submission is deferred.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-021", "T-060"],
+            "subtasks": [
+                {
+                    "title": "Read source ReviewForm (323 lines)",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy (manual vs RHF+Zod)",
+                    "completed": true
+                },
+                {
+                    "title": "Port with chosen strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Verify form submission API endpoint",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "review"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:35:00Z",
+                "completed": "2026-03-06T13:50:00Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Write Review system tests",
+            "description": "Write tests for ReviewList and ReviewForm at web/test/components/review/. Test ReviewList: renders cards, pagination, empty state, loading. Test ReviewForm: renders fields, star rating, validation, submission with mock API, error handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write ReviewList rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write ReviewList interaction tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write ReviewForm validation tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write ReviewForm submission tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "review"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Evaluate and port SearchBar.client.tsx",
+            "description": "Evaluate web-old SearchBar.client.tsx (183 lines) and port to web/src/components/search/. Simple: text input with 300ms debounce, clear button, navigates to /busqueda/?q=. Update: icon imports, useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-023", "T-092"],
+            "subtasks": [
+                {
+                    "title": "Read source SearchBar",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "search"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:05:00Z",
+                "completed": "2026-03-06T13:15:00Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Write SearchBar tests",
+            "description": "Write tests at web/test/components/search/search-bar.test.tsx. Test: renders input, debounce (300ms), clear button, navigation to /busqueda/?q=query, empty query handling.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write debounce tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write navigation tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "search"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Evaluate and port SortDropdown.astro",
+            "description": "Evaluate web-old SortDropdown.astro and port to web/src/components/shared/. Server-rendered dropdown for sort options. Update: color tokens, verify i18n keys.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-025", "T-058"],
+            "subtasks": [
+                {
+                    "title": "Read source SortDropdown",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:30:00Z",
+                "completed": "2026-03-06T12:40:00Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Write SortDropdown tests",
+            "description": "Write tests at web/test/components/shared/sort-dropdown.test.ts. Test: renders sort options, correct values, i18n labels resolve.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write i18n tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Evaluate and port ImageCarousel.client.tsx",
+            "description": "Evaluate web-old ImageCarousel.client.tsx (189 lines) and port to web/src/components/shared/. CSS scroll-snap carousel, max 5 images, native touch swipe. Update: useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-027", "T-058"],
+            "subtasks": [
+                {
+                    "title": "Read source ImageCarousel",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:30:00Z",
+                "completed": "2026-03-06T12:40:00Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Write ImageCarousel tests",
+            "description": "Write tests at web/test/components/shared/image-carousel.test.tsx. Test: renders images, scroll-snap container, max 5 limit, navigation, empty array.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-026"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write interaction tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Evaluate and port AmenitiesList.astro",
+            "description": "Evaluate web-old AmenitiesList.astro and port to web/src/components/shared/. Update color tokens. Check if AmenityTag.astro from shared/ can be reused within AmenitiesList.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-029", "T-060"],
+            "subtasks": [
+                {
+                    "title": "Read source AmenitiesList",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate AmenityTag reuse",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:05:00Z",
+                "completed": "2026-03-06T13:15:00Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Write AmenitiesList tests",
+            "description": "Write tests at web/test/components/shared/amenities-list.test.ts. Port existing tests from web-old. Test: renders amenities, handles empty list, icon rendering, correct aria labels.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add new tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Evaluate and port AccordionFAQ component",
+            "description": "Evaluate web-old AccordionFAQ.client.tsx. Decide: (1) Copy+adapt React, or (2) Rewrite with native <details>/<summary> to avoid React hydration. If native, create .astro; if React, create .client.tsx. Update color tokens.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-031", "T-060", "T-101"],
+            "subtasks": [
+                {
+                    "title": "Read source AccordionFAQ",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate React vs native <details>",
+                    "completed": true
+                },
+                {
+                    "title": "Implement chosen approach",
+                    "completed": true
+                },
+                {
+                    "title": "Apply STYLE_GUIDE styling",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:05:00Z",
+                "completed": "2026-03-06T13:15:00Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Write AccordionFAQ tests",
+            "description": "Write tests at web/test/components/shared/accordion-faq.test.ts(x). Test: renders question/answer pairs, toggle open/close, accessibility (keyboard, aria-expanded), empty items.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write interaction tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write accessibility tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Evaluate and port MapView.client.tsx placeholder",
+            "description": "Evaluate web-old MapView.client.tsx (205 lines) and port to web/src/components/shared/. This is a PLACEHOLDER (no real map). Keep same API surface for future Leaflet. Update: icon imports, useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-033", "T-060", "T-068"],
+            "subtasks": [
+                {
+                    "title": "Read source MapView",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port as placeholder",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:30:00Z",
+                "completed": "2026-03-06T12:40:00Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Write MapView tests",
+            "description": "Write tests at web/test/components/shared/map-view.test.tsx. Port existing tests. Test: renders placeholder, displays coordinates, handles missing coordinates, aria labels.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-032"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add placeholder-specific tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Evaluate and port CalendarView.client.tsx",
+            "description": "Copy and adapt web-old CalendarView.client.tsx (430 lines). Custom monthly calendar marking event dates (NOT date picker). Decision resolved: copy+adapt the custom component (no external dependencies, no need for react-day-picker). Update: useTranslation hook import, toBcp47Locale from @repo/i18n, color tokens to semantic. Verify locale-aware month/day names.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-035", "T-074"],
+            "subtasks": [
+                {
+                    "title": "Read source CalendarView (430 lines)",
+                    "completed": true
+                },
+                {
+                    "title": "Adapt color tokens to semantic",
+                    "completed": true
+                },
+                {
+                    "title": "Port/rewrite with chosen approach",
+                    "completed": true
+                },
+                {
+                    "title": "Verify locale-aware formatting",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "event", "complex"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:35:00Z",
+                "completed": "2026-03-06T13:50:00Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Write CalendarView tests",
+            "description": "Write tests at web/test/components/event/calendar-view.test.tsx. Port existing tests. Test: renders current month, month navigation, event dates highlighted, locale-aware day names (es), no events, month with no events.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-034"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add month navigation tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add locale tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "event"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Evaluate and port DestinationFilters.client.tsx",
+            "description": "Evaluate web-old DestinationFilters.client.tsx and port to web/src/components/destination/. Update: useTranslation, icon imports, color tokens. Check filter behavior (text search, type filter).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-037", "T-066"],
+            "subtasks": [
+                {
+                    "title": "Read source DestinationFilters",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:35:00Z",
+                "completed": "2026-03-06T13:50:00Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Write DestinationFilters tests",
+            "description": "Write tests at web/test/components/destination/destination-filters.test.tsx. Port existing tests. Test: renders filter inputs, text search, type filter, clear filters.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-036"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Verify test coverage",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Port LitoralMap.astro",
+            "description": "Port web-old LitoralMap.astro to web/src/components/destination/. Simple SVG map component. Update: color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-039", "T-066"],
+            "subtasks": [
+                {
+                    "title": "Read source LitoralMap",
+                    "completed": true
+                },
+                {
+                    "title": "Port with color token updates",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:20:00Z",
+                "completed": "2026-03-06T13:30:00Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Write LitoralMap tests",
+            "description": "Write tests at web/test/components/destination/litoral-map.test.ts. Port existing tests. Test: renders SVG, destination points, click handlers.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Evaluate and port ContactForm.client.tsx",
+            "description": "Evaluate web-old ContactForm.client.tsx and port to web/src/components/content/. Decision: rewrite with RHF+Zod or keep manual validation. Update: color tokens, API endpoint.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-041", "T-094"],
+            "subtasks": [
+                {
+                    "title": "Read source ContactForm",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy (manual vs RHF+Zod)",
+                    "completed": true
+                },
+                {
+                    "title": "Port/rewrite",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API endpoint",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:20:00Z",
+                "completed": "2026-03-06T13:30:00Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Write ContactForm tests",
+            "description": "Write tests at web/test/components/content/contact-form.test.tsx. Port existing tests. Test: renders fields, validation (required, email format), submission with mock API, success/error states, loading.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add validation tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add submission tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "content"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Evaluate and port PricingCard.astro",
+            "description": "Evaluate web-old PricingCard.astro and port to web/src/components/shared/. Update: color tokens, use GradientButton for highlighted plan. Apply STYLE_GUIDE card patterns.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-043", "T-096"],
+            "subtasks": [
+                {
+                    "title": "Read source PricingCard",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:20:00Z",
+                "completed": "2026-03-06T13:30:00Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Write PricingCard tests",
+            "description": "Write tests at web/test/components/shared/pricing-card.test.ts. Port existing tests. Test: renders plan name/price, highlighted variant, feature list, CTA button.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-042"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port existing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Add variant tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:40:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Evaluate and port ProfileEditForm.client.tsx",
+            "description": "Evaluate web-old ProfileEditForm.client.tsx (~200 lines) and port to web/src/components/account/. Update: API imports, useTranslation, color tokens, @repo/icons. Verify API endpoints in endpoints-protected.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-052", "T-086"],
+            "subtasks": [
+                {
+                    "title": "Read source ProfileEditForm",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API endpoints",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:55:00Z",
+                "completed": "2026-03-06T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Evaluate and port PreferenceToggles.client.tsx",
+            "description": "Evaluate web-old PreferenceToggles.client.tsx (~150 lines) and port to web/src/components/account/. Features: 3 notification checkboxes (email, SMS, push), language select dropdown, timezone display (read-only). Uses `userApi.patchProfile()` with payload `{settings: {notifications: {...}, language: string}}`. Toast notification on save. Update: API imports, useTranslation hook, color tokens, @repo/icons.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-052", "T-088"],
+            "subtasks": [
+                {
+                    "title": "Read source PreferenceToggles",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:55:00Z",
+                "completed": "2026-03-06T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Evaluate and port UserFavoritesList.client.tsx",
+            "description": "Evaluate web-old UserFavoritesList.client.tsx (~250 lines) and port. Features: favorites list with tabs, pagination, remove favorite. Update: API imports, useTranslation, color tokens. Verify userBookmarksApi endpoints.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-053", "T-087"],
+            "subtasks": [
+                {
+                    "title": "Read source",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                },
+                {
+                    "title": "Verify bookmark API endpoints",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:15:00Z",
+                "completed": "2026-03-06T14:30:00Z"
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Evaluate and port UserReviewsList + ReviewEditForm",
+            "description": "Evaluate web-old UserReviewsList.client.tsx (~250 lines) and ReviewEditForm.client.tsx (~200 lines) and port to web/src/components/account/. Features: user reviews list with tabs, inline edit. Update: API imports, useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-053", "T-090"],
+            "subtasks": [
+                {
+                    "title": "Read source UserReviewsList",
+                    "completed": true
+                },
+                {
+                    "title": "Read source ReviewEditForm",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port both components",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:15:00Z",
+                "completed": "2026-03-06T14:30:00Z"
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Evaluate and port SubscriptionDashboard + SubscriptionCard",
+            "description": "Evaluate web-old SubscriptionDashboard.client.tsx (~300 lines) and SubscriptionCard.client.tsx (~150 lines) and port. Features: main subscription view, status card. Update: API imports, useTranslation, color tokens. Note: billing_plans.id is UUID but billing_subscriptions.plan_id is varchar.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-049", "T-054", "T-089"],
+            "subtasks": [
+                {
+                    "title": "Read source SubscriptionDashboard",
+                    "completed": true
+                },
+                {
+                    "title": "Read source SubscriptionCard",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port both",
+                    "completed": true
+                },
+                {
+                    "title": "Verify billing API endpoints",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T13:55:00Z",
+                "completed": "2026-03-06T14:10:00Z"
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Evaluate and port CancelSubscriptionDialog + ChangePlanDialog",
+            "description": "Evaluate web-old CancelSubscriptionDialog.client.tsx (~100 lines) and ChangePlanDialog.client.tsx (~150 lines) and port. Modal dialogs used by SubscriptionDashboard. Consider reusing Modal.client.tsx or drawer.tsx from web/src/components/ui/. Update: API imports, useTranslation, color tokens.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-048"],
+            "blocks": ["T-054", "T-089"],
+            "subtasks": [
+                {
+                    "title": "Read source dialogs",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy (reuse Modal/drawer?)",
+                    "completed": true
+                },
+                {
+                    "title": "Port both components",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:15:00Z",
+                "completed": "2026-03-06T14:30:00Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Evaluate and port InvoiceHistory + PaymentHistory",
+            "description": "Evaluate web-old InvoiceHistory.client.tsx (~200 lines) and PaymentHistory.client.tsx (~200 lines) and port. Both are table/list components for billing history. Update: API imports, useTranslation, color tokens, date formatting via @repo/i18n.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-054", "T-089"],
+            "subtasks": [
+                {
+                    "title": "Read source InvoiceHistory",
+                    "completed": true
+                },
+                {
+                    "title": "Read source PaymentHistory",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port both components",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:00:00Z",
+                "completed": "2026-03-06T14:15:00Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Evaluate and port UsageOverview + ActiveAddons",
+            "description": "Evaluate web-old UsageOverview.client.tsx (~150 lines) and ActiveAddons.client.tsx (~150 lines) and port. Usage stats display and active add-ons list. Update: API imports, useTranslation, color tokens, icon imports.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-054", "T-089"],
+            "subtasks": [
+                {
+                    "title": "Read source UsageOverview",
+                    "completed": true
+                },
+                {
+                    "title": "Read source ActiveAddons",
+                    "completed": true
+                },
+                {
+                    "title": "Evaluate strategy",
+                    "completed": true
+                },
+                {
+                    "title": "Port both components",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:00:00Z",
+                "completed": "2026-03-06T14:15:00Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Write account component tests (Profile, Preferences)",
+            "description": "Write tests for ProfileEditForm and PreferenceToggles at web/test/components/account/. Port existing tests. Test ProfileEditForm: form rendering, validation, submission. Test PreferenceToggles: toggle rendering, state changes, API calls.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-044", "T-045"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port ProfileEditForm tests",
+                    "completed": true
+                },
+                {
+                    "title": "Port PreferenceToggles tests",
+                    "completed": true
+                },
+                {
+                    "title": "Verify test coverage",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Write account component tests (Favorites, Reviews)",
+            "description": "Write tests for UserFavoritesList and UserReviewsList at web/test/components/account/. Port existing tests. Test list rendering, pagination, empty states, remove/edit actions.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-046", "T-047"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port UserFavoritesList tests",
+                    "completed": true
+                },
+                {
+                    "title": "Port UserReviewsList tests",
+                    "completed": true
+                },
+                {
+                    "title": "Verify test coverage",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "account"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Write account component tests (Subscription, Billing)",
+            "description": "Write tests for SubscriptionDashboard, SubscriptionCard, CancelSubscriptionDialog, ChangePlanDialog, InvoiceHistory, PaymentHistory, UsageOverview, ActiveAddons at web/test/components/account/. Port existing tests. Test: subscription status, plan change, cancel flow, billing lists, usage stats.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-048", "T-049", "T-050", "T-051"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Port SubscriptionCard tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write SubscriptionDashboard tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write dialog tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write billing list tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "component", "account", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Create 404 error page",
+            "description": "Create web/src/pages/404.astro. Recreate (not port). SSR (no prerender) with locale detection from URL path, then Accept-Language header, fallback es. Use BaseLayout with noindex: true. Custom SVG illustration (nature/river theme). i18n keys: error.404.title, error.404.description, error.404.heading, error.404.message, error.404.goHome. Link to /${locale}/ (home). Apply STYLE_GUIDE section spacing and typography. No decorative patterns. Reference: web-old/src/pages/404.astro (107 lines).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add locale detection logic",
+                    "completed": true
+                },
+                {
+                    "title": "Add illustration",
+                    "completed": true
+                },
+                {
+                    "title": "Verify i18n keys exist",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "error"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Create 500 error page",
+            "description": "Create web/src/pages/500.astro. Same structure as 404 but with retry button (window.location.reload()). i18n keys: error.500.*. Two CTAs: Retry + Go Home. Reference: web-old/src/pages/500.astro (126 lines).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add retry button",
+                    "completed": true
+                },
+                {
+                    "title": "Add locale detection",
+                    "completed": true
+                },
+                {
+                    "title": "Verify i18n keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "error"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Write error pages tests",
+            "description": "Write tests for 404 and 500 pages at web/test/pages/error-pages.test.ts. Port existing tests. Test: 404 renders, home link, 500 has retry, locale detection, noindex meta tag.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-055", "T-056"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Port existing error tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write 404 tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write 500 tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "error"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Create accommodation list page",
+            "description": "Create web/src/pages/[lang]/alojamientos/index.astro. Copy+Adapt from web-old (271 lines). SSR (prerender=false). Features: 11 filters, 5 sort options via SORT_MAP, FilterChipsBar React island (client:idle), responsive grid (1/2/3 columns), pagination with filter preservation, empty state, error state. API: accommodationsApi.list(). Components: Breadcrumb, EmptyState, Pagination, AccommodationCard, SortDropdown, FilterSidebar. Theming: bg-background, bg-muted/30 for sidebar, pattern-dots, 2-3 decoratives. IMPORTANT: As part of this task, create a shared `_AccommodationListLayout.astro` partial that contains all list page logic (filters, grid, pagination). The variant pages (T-062, T-063, T-064) will be thin wrappers importing this layout.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-003", "T-005", "T-011", "T-024", "T-026"],
+            "blocks": ["T-059", "T-062", "T-063"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page from web-old",
+                    "completed": true
+                },
+                {
+                    "title": "Wire up FilterSidebar",
+                    "completed": true
+                },
+                {
+                    "title": "Wire up Pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming per STYLE_GUIDE",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API integration",
+                    "completed": true
+                },
+                {
+                    "title": "Add decorative elements",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "accommodation", "complex"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Write accommodation list page tests",
+            "description": "Write tests at web/test/pages/accommodations/list.test.ts. Test: renders with mock data, filter application, sort options, pagination, empty state, error state, breadcrumb, SEO tags.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-058"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write filter tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write pagination tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write error state tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Create accommodation detail page",
+            "description": "Create web/src/pages/[lang]/alojamientos/[slug].astro. Copy+Adapt from web-old (310 lines). SSG with getStaticPaths + on-demand fallback. SUBDIVIDE into 3 logical sections: (A) Base structure + hero/gallery: page layout, ImageGallery (client:visible), hero image, sticky sidebar with price/check-in/CTA. (B) Interactive sections: ReviewListIsland (server:defer), FavoriteButton (server:defer), ShareButtons, MapView (client:visible), similar accommodations grid (4 cards). (C) SEO/metadata: JSON-LD LodgingBusiness, breadcrumb, view transitions, TipTap content rendering + HTML sanitization, amenities list, FAQ accordion.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": [
+                "T-005",
+                "T-013",
+                "T-015",
+                "T-017",
+                "T-019",
+                "T-020",
+                "T-028",
+                "T-030",
+                "T-032"
+            ],
+            "blocks": ["T-061"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page structure",
+                    "completed": true
+                },
+                {
+                    "title": "Wire ImageGallery island",
+                    "completed": true
+                },
+                {
+                    "title": "Wire MapView island",
+                    "completed": true
+                },
+                {
+                    "title": "Wire Reviews (server:defer)",
+                    "completed": true
+                },
+                {
+                    "title": "Wire FavoriteButton (server:defer)",
+                    "completed": true
+                },
+                {
+                    "title": "Add sticky sidebar",
+                    "completed": true
+                },
+                {
+                    "title": "Add TipTap rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD",
+                    "completed": true
+                },
+                {
+                    "title": "Add similar accommodations",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "accommodation", "complex"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Write accommodation detail page tests",
+            "description": "Write tests at web/test/pages/accommodations/detail.test.ts. Test: renders with mock data, image gallery, amenities, reviews, favorite, share, similar accommodations, JSON-LD valid, SEO meta, 404 on invalid slug, breadcrumb.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-060"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write JSON-LD tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write SEO tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write error handling tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Create accommodation pagination page",
+            "description": "Create web/src/pages/[lang]/alojamientos/page/[page].astro. Uses shared `_AccommodationListLayout.astro` partial (created in T-058). Thin wrapper that passes page from URL segment. SSR.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-058"],
+            "blocks": ["T-064", "T-065"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Share logic with index.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Verify pagination routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:15:00Z",
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Create accommodation type filter page",
+            "description": "Create web/src/pages/[lang]/alojamientos/tipo/[type]/index.astro. Uses shared `_AccommodationListLayout.astro` partial. Thin wrapper that passes pre-applied type filter. SSR.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-058"],
+            "blocks": ["T-064", "T-065"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Pre-apply type filter",
+                    "completed": true
+                },
+                {
+                    "title": "Verify routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:15:00Z",
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Create accommodation type filter pagination",
+            "description": "Create web/src/pages/[lang]/alojamientos/tipo/[type]/page/[page].astro. Uses shared `_AccommodationListLayout.astro` partial. Thin wrapper passing both type filter and page from URL. SSR.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-062", "T-063"],
+            "blocks": ["T-065"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Combine type filter and pagination",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-065",
+            "title": "Write accommodation variant pages tests",
+            "description": "Write tests at web/test/pages/accommodations/variants.test.ts. Test: pagination extracts page param, type filter pre-applied, combined type+pagination, correct breadcrumbs and SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-062", "T-063", "T-064"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write pagination page tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write type filter tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write combined tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "accommodation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-066",
+            "title": "Create destination list page",
+            "description": "Create web/src/pages/[lang]/destinos/index.astro. Copy+Adapt from web-old (217 lines). SSG with getStaticLocalePaths. Features: DestinationFilters island (client:visible), grid, pagination, Provinces section, hero. API: destinationsApi.list({page, pageSize: 12, destinationType: 'CITY'}). Theming: bg-secondary for hero, pattern-diagonal, 2-3 decoratives.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005", "T-036", "T-038"],
+            "blocks": ["T-067", "T-068", "T-070"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Wire DestinationFilters island",
+                    "completed": true
+                },
+                {
+                    "title": "Add provinces section",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API integration",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:20:00Z",
+                "completed": "2026-03-06T14:40:00Z"
+            }
+        },
+        {
+            "id": "T-067",
+            "title": "Write destination list page tests",
+            "description": "Write tests at web/test/pages/destinations/list.test.ts. Test: renders with mock data, filter interaction, pagination, provinces, empty state, error state, SEO, breadcrumb.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-066"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write filter tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write provinces tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-068",
+            "title": "Create destination detail page",
+            "description": "Create web/src/pages/[lang]/destinos/[...path].astro. Copy+Adapt from web-old (459 lines, MOST COMPLEX). Catch-all route for hierarchy. SSG with getStaticPaths + fallback. SUBDIVIDE into 3 logical sections: (A) Base structure + hero: page layout, hero with destination info, dynamic breadcrumb from API. (B) Interactive/data sections: accommodations preview grid (6 cards), events preview with client-side city filtering, ImageGallery, MapView, ShareButtons, FavoriteButtonIsland. (C) SEO/metadata: JSON-LD Place, climate section (4 conditional fields), tPlural usage, view transitions. Known issue: fetches ALL events (pageSize: 100) for client-side filtering.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-013", "T-015", "T-017", "T-032", "T-066"],
+            "blocks": ["T-069", "T-070"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page structure",
+                    "completed": true
+                },
+                {
+                    "title": "Implement catch-all routing",
+                    "completed": true
+                },
+                {
+                    "title": "Wire 5-6 API calls",
+                    "completed": true
+                },
+                {
+                    "title": "Add dynamic breadcrumb",
+                    "completed": true
+                },
+                {
+                    "title": "Add climate section",
+                    "completed": true
+                },
+                {
+                    "title": "Add accommodation preview",
+                    "completed": true
+                },
+                {
+                    "title": "Add event preview with client filter",
+                    "completed": true
+                },
+                {
+                    "title": "Wire gallery/map/share/favorite",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD Place",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "destination", "complex"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:45:00Z",
+                "completed": "2026-03-06T15:00:00Z"
+            }
+        },
+        {
+            "id": "T-069",
+            "title": "Write destination detail page tests",
+            "description": "Write tests at web/test/pages/destinations/detail.test.ts. Test: renders with mock data, dynamic breadcrumb, climate conditionals, accommodation preview, event preview, JSON-LD valid, catch-all routing, view transitions, SEO.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-068"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write API integration tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write JSON-LD tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write routing tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-070",
+            "title": "Create destination pagination page",
+            "description": "Create web/src/pages/[lang]/destinos/page/[page].astro. SSG with getStaticLocalePaths. Variant of destination list (T-066) with page from URL segment instead of query param.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-066", "T-068"],
+            "blocks": ["T-071"],
+            "subtasks": [
+                {
+                    "title": "Create destination pagination page",
+                    "completed": true
+                },
+                {
+                    "title": "Verify pagination routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:55:00Z",
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-071",
+            "title": "Write destination sub-pages tests",
+            "description": "Write tests at web/test/pages/destinations/sub-pages.test.ts. Test: pagination, destination accommodations list, destination accommodations pagination, breadcrumbs, SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-070", "T-119", "T-120"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write pagination tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write destination accommodations tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-072",
+            "title": "Create event list page",
+            "description": "Create web/src/pages/[lang]/eventos/index.astro. Copy+Adapt from web-old (201 lines). SSR. Features: timeframe filter tabs (upcoming/past/all) as HTML links, category filter with native <select> + inline <script>, 5 categories, grid, pagination. API: eventsApi.list(). Theming: pattern-crosses, 2-3 decoratives.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": ["T-073", "T-076"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Add timeframe filter tabs",
+                    "completed": true
+                },
+                {
+                    "title": "Add category filter with inline script",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API integration",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:20:00Z",
+                "completed": "2026-03-06T14:40:00Z"
+            }
+        },
+        {
+            "id": "T-073",
+            "title": "Write event list page tests",
+            "description": "Write tests at web/test/pages/events/list.test.ts. Test: renders with mock data, timeframe tabs, category filter, pagination, empty state, SEO tags.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-072"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write filter tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-074",
+            "title": "Create event detail page",
+            "description": "Create web/src/pages/[lang]/eventos/[slug].astro. Copy+Adapt from web-old (368 lines). SSG with getStaticPaths + fallback. Features: past event detection, agenda section, pricing (conditional), organizer info, share buttons, JSON-LD Event, view transitions, related upcoming events (4). Localized date/time via @repo/i18n.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-017", "T-034"],
+            "blocks": ["T-075", "T-076"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Add past event detection",
+                    "completed": true
+                },
+                {
+                    "title": "Add agenda section",
+                    "completed": true
+                },
+                {
+                    "title": "Add pricing section (conditional)",
+                    "completed": true
+                },
+                {
+                    "title": "Add organizer info",
+                    "completed": true
+                },
+                {
+                    "title": "Add share buttons",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD Event",
+                    "completed": true
+                },
+                {
+                    "title": "Add related events section",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "event", "complex"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:45:00Z",
+                "completed": "2026-03-06T15:00:00Z"
+            }
+        },
+        {
+            "id": "T-075",
+            "title": "Write event detail page tests",
+            "description": "Write tests at web/test/pages/events/detail.test.ts. Test: renders with mock data, past event indicator, agenda, conditional pricing, organizer, share buttons, JSON-LD valid, related events, date formatting, SEO.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-074"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write conditional section tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write JSON-LD tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-076",
+            "title": "Create event pagination page",
+            "description": "Create web/src/pages/[lang]/eventos/page/[page].astro. SSR. Variant of event list (T-072) with page from URL segment.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-072", "T-074"],
+            "blocks": ["T-077"],
+            "subtasks": [
+                {
+                    "title": "Create event pagination page",
+                    "completed": true
+                },
+                {
+                    "title": "Verify pagination routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:55:00Z",
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-077",
+            "title": "Write event variant pages tests",
+            "description": "Write tests at web/test/pages/events/variants.test.ts. Test: pagination, category filter pre-applied, combined category+pagination, SEO tags.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-076", "T-121", "T-122"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write pagination tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write category filter tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-078",
+            "title": "Create blog list page",
+            "description": "Create web/src/pages/[lang]/publicaciones/index.astro. Copy+Adapt from web-old (268 lines). SSR. Features: featured post (side-by-side), category filter as HTML links (6 categories), grid, pagination. API: postsApi.list(), postsApi.getFeatured(). Use FeaturedArticleCard + SecondaryArticleCard from shared. Theming: pattern-waves, 2-3 decoratives.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": ["T-079", "T-082"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Add featured post layout",
+                    "completed": true
+                },
+                {
+                    "title": "Add category filter links",
+                    "completed": true
+                },
+                {
+                    "title": "Wire FeaturedArticleCard + SecondaryArticleCard",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                },
+                {
+                    "title": "Verify API",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:20:00Z",
+                "completed": "2026-03-06T14:40:00Z"
+            }
+        },
+        {
+            "id": "T-079",
+            "title": "Write blog list page tests",
+            "description": "Write tests at web/test/pages/blog/list.test.ts. Test: renders with mock data, featured post, category filter links, post cards grid, pagination, empty state, SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-078"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write featured post tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write filter tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-080",
+            "title": "Create blog detail page",
+            "description": "Create web/src/pages/[lang]/publicaciones/[slug].astro. Copy+Adapt from web-old (209 lines). SSG with getStaticPaths + fallback. Features: TipTap content + sanitization, author info, reading time, tags as Badge, share buttons, JSON-LD Article, view transitions, related posts (3). Theming: detail page (no patterns, prose for content).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-017"],
+            "blocks": ["T-081", "T-082"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Add TipTap rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Add author section",
+                    "completed": true
+                },
+                {
+                    "title": "Add reading time",
+                    "completed": true
+                },
+                {
+                    "title": "Add tags section",
+                    "completed": true
+                },
+                {
+                    "title": "Add share buttons",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD Article",
+                    "completed": true
+                },
+                {
+                    "title": "Add related posts",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:45:00Z",
+                "completed": "2026-03-06T15:00:00Z"
+            }
+        },
+        {
+            "id": "T-081",
+            "title": "Write blog detail page tests",
+            "description": "Write tests at web/test/pages/blog/detail.test.ts. Test: renders with mock data, TipTap content sanitized, author info, reading time, tags, share buttons, JSON-LD valid, related posts, date formatting, SEO.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-080"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write content sanitization tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write JSON-LD tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-082",
+            "title": "Create blog pagination page",
+            "description": "Create web/src/pages/[lang]/publicaciones/page/[page].astro. SSR. Variant of blog list (T-078) with page from URL segment.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-078"],
+            "blocks": ["T-083"],
+            "subtasks": [
+                {
+                    "title": "Create blog pagination page",
+                    "completed": true
+                },
+                {
+                    "title": "Verify pagination routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:55:00Z",
+                "completed": "2026-03-06T16:10:00Z"
+            }
+        },
+        {
+            "id": "T-083",
+            "title": "Write blog variant pages tests",
+            "description": "Write tests at web/test/pages/blog/variants.test.ts. Test: pagination, tag filter, combined tag+pagination, SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-082", "T-123", "T-124"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write pagination tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write tag filter tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-084",
+            "title": "Create account dashboard page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/index.astro. Copy+Adapt from web-old (315 lines). SSR, auth-guarded, noindex. Features: avatar with initials, sidebar nav (5 links), 3 stat cards, client-side stats loading via <script>, subscription status. API (client-side): GET /api/v1/protected/users/me/stats.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002", "T-005"],
+            "blocks": ["T-085", "T-086", "T-087", "T-088", "T-089", "T-090"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Add avatar with initials",
+                    "completed": true
+                },
+                {
+                    "title": "Add sidebar navigation",
+                    "completed": true
+                },
+                {
+                    "title": "Add stat cards",
+                    "completed": true
+                },
+                {
+                    "title": "Add client-side stats loading",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                },
+                {
+                    "title": "Verify auth guard",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T14:00:00Z",
+                "completed": "2026-03-06T14:15:00Z"
+            }
+        },
+        {
+            "id": "T-085",
+            "title": "Write account dashboard tests",
+            "description": "Write tests at web/test/pages/account/dashboard.test.ts. Test: renders with user data, avatar initials, sidebar nav, stat cards, stats fetching, noindex, auth guard.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-084"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write stats loading tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-086",
+            "title": "Create edit profile page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/editar.astro. Copy+Adapt from web-old (89 lines, thin wrapper). SSR, auth-guarded, noindex. Wraps ProfileEditForm island (client:load).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-044", "T-084"],
+            "blocks": ["T-091"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire ProfileEditForm island",
+                    "completed": true
+                },
+                {
+                    "title": "Add sidebar nav",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-087",
+            "title": "Create favorites page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/favoritos.astro. Copy+Adapt from web-old (66 lines). SSR, auth-guarded, noindex. Wraps UserFavoritesList island (client:load).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-046", "T-084"],
+            "blocks": ["T-091"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire UserFavoritesList island",
+                    "completed": true
+                },
+                {
+                    "title": "Add sidebar nav",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-088",
+            "title": "Create preferences page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/preferencias.astro. Copy+Adapt from web-old (133 lines). SSR, auth-guarded, noindex. Settings extraction + PreferenceToggles island (client:load).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-045", "T-084"],
+            "blocks": ["T-091"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add settings extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Wire PreferenceToggles island",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-089",
+            "title": "Create subscription page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/suscripcion.astro. Copy+Adapt from web-old (73 lines). SSR, auth-guarded, noindex. Wraps SubscriptionDashboard island (client:load).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-048", "T-049", "T-050", "T-051", "T-084"],
+            "blocks": ["T-091"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire SubscriptionDashboard island",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account", "billing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-090",
+            "title": "Create reviews page",
+            "description": "Create web/src/pages/[lang]/mi-cuenta/resenas.astro. Copy+Adapt from web-old (66 lines). SSR, auth-guarded, noindex. Wraps UserReviewsList island (client:load).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-047", "T-084"],
+            "blocks": ["T-091"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire UserReviewsList island",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:15:00Z",
+                "completed": "2026-03-06T16:30:00Z"
+            }
+        },
+        {
+            "id": "T-091",
+            "title": "Write account sub-pages tests",
+            "description": "Write tests at web/test/pages/account/sub-pages.test.ts. Test each page: renders with auth, sidebar nav, correct island loaded, noindex, unauthenticated redirect.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-086", "T-087", "T-088", "T-089", "T-090"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write edit profile tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write favorites tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write preferences tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write subscription tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write reviews tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "account"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-092",
+            "title": "Create search results page",
+            "description": "Create web/src/pages/[lang]/busqueda.astro. Copy+Adapt from web-old (331 lines). SSR. Features: 4 APIs in parallel (Promise.all), differentiated empty states, popular searches from i18n, view-all links, noindex. Components: Breadcrumb, EmptyState, all entity cards, SearchBar. Theming: pattern-grid at low opacity.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-005", "T-022"],
+            "blocks": ["T-093"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Implement 4-API parallel search",
+                    "completed": true
+                },
+                {
+                    "title": "Add differentiated empty states",
+                    "completed": true
+                },
+                {
+                    "title": "Add popular searches",
+                    "completed": true
+                },
+                {
+                    "title": "Add view-all links",
+                    "completed": true
+                },
+                {
+                    "title": "Wire entity cards",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "search", "complex"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-093",
+            "title": "Write search page tests",
+            "description": "Write tests at web/test/pages/search.test.ts. Test: renders with results from 4 entities, empty state (no query), empty state (no results), error state, popular searches, view-all links, noindex.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-092"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write multi-entity results tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write empty state tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write error state tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "search"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-094",
+            "title": "Create contact page",
+            "description": "Create web/src/pages/[lang]/contacto.astro. Recreate from web-old (167 lines). SSG (prerender=true). Two-column layout: form left + contact info right. ContactForm island (client:visible). Hardcoded email, social links, office hours from i18n. Theming: info page with pattern-waves, 2-3 decoratives, 1 illustration.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-040"],
+            "blocks": ["T-095"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add two-column layout",
+                    "completed": true
+                },
+                {
+                    "title": "Wire ContactForm island",
+                    "completed": true
+                },
+                {
+                    "title": "Add contact info section",
+                    "completed": true
+                },
+                {
+                    "title": "Add social media links",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming with decoratives",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "contact"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-095",
+            "title": "Write contact page tests",
+            "description": "Write tests at web/test/pages/contact.test.ts. Test: two-column layout, contact form, email, social links, office hours, breadcrumb, SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-094"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write rendering tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write content tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "contact"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-096",
+            "title": "Create tourist pricing page",
+            "description": "Create web/src/pages/[lang]/precios/turistas.astro. Recreate from web-old (156 lines). SSG. Plans via plansApi.list() with fallback. PricingCard with highlighted prop. 3 FAQ items from i18n. BreadcrumbList JSON-LD. CTA to registration. Theming: marketing page, gradient background for highlighted.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-042"],
+            "blocks": ["T-097", "T-098"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire plan data fetching",
+                    "completed": true
+                },
+                {
+                    "title": "Add PricingCard components",
+                    "completed": true
+                },
+                {
+                    "title": "Add FAQ section",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD",
+                    "completed": true
+                },
+                {
+                    "title": "Apply marketing theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "pricing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:05:00Z",
+                "completed": "2026-03-06T15:30:00Z"
+            }
+        },
+        {
+            "id": "T-097",
+            "title": "Create owner pricing page",
+            "description": "Create web/src/pages/[lang]/precios/propietarios.astro. SSG (prerender=true). Same structure as tourist pricing (T-096) but with owner plan data. Owner plans fetched via plansApi.list() with owner-specific filter, fallback from lib/pricing-fallbacks.ts. PricingCard components with highlighted prop. FAQ section using AccordionFAQ with owner-specific FAQ items from i18n. CTA toward owner registration/contact. BreadcrumbList JSON-LD. Components: Container, Section, Breadcrumb, PricingCard, AccordionFAQ, JsonLd.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-096"],
+            "blocks": ["T-098"],
+            "subtasks": [
+                {
+                    "title": "Create page file (based on tourist pricing)",
+                    "completed": true
+                },
+                {
+                    "title": "Wire owner plan data",
+                    "completed": true
+                },
+                {
+                    "title": "Verify i18n keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "pricing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-098",
+            "title": "Write pricing pages tests",
+            "description": "Write tests at web/test/pages/pricing.test.ts. Test: plan cards render, highlighted styling, FAQ, CTA link, JSON-LD valid, fallback data, SEO.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-096", "T-097"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write tourist pricing tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write owner pricing tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "pricing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-099",
+            "title": "Create benefits page with CTA fix",
+            "description": "Create web/src/pages/[lang]/beneficios.astro. Recreate from web-old (260 lines). SSG. 5 tourist + 5 owner benefits with icons, dual CTA. BUG FIX: Fix broken CTA links (/precios-turistas/ to /precios/turistas/). 8 icons needed. Theming: marketing page with rich visuals.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-102"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add tourist benefits section",
+                    "completed": true
+                },
+                {
+                    "title": "Add owner benefits section",
+                    "completed": true
+                },
+                {
+                    "title": "Fix CTA links (bug)",
+                    "completed": true
+                },
+                {
+                    "title": "Apply marketing theming with illustrations",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "marketing", "bugfix"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-100",
+            "title": "Create about us page",
+            "description": "Create web/src/pages/[lang]/quienes-somos.astro. Recreate from web-old (173 lines). SSG. Sections: Hero with heading/subtitle, Mission statement (full-width), Values grid (2x2 with icons: CheckIcon, UsersIcon, CheckCircleIcon, GlobeIcon), Region/History (2 paragraphs about Litoral region), CTA to contact page. All content static from i18n keys under about.* namespace. No API calls.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-102"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Add hero/mission/values/region sections",
+                    "completed": true
+                },
+                {
+                    "title": "Add CTA to contact",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "marketing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-101",
+            "title": "Create owners landing page",
+            "description": "Create web/src/pages/[lang]/propietarios/index.astro. Recreate from web-old (223 lines). SSG. Content from lib/owners-page-data.ts (already ported). 4 sections: Hero, Benefits (6), How It Works, FAQ (<details>). FAQPage JSON-LD. Full-width gradient CTA. 7 icons.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-030"],
+            "blocks": ["T-102"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire owners-page-data.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add hero section",
+                    "completed": true
+                },
+                {
+                    "title": "Add benefits grid",
+                    "completed": true
+                },
+                {
+                    "title": "Add how-it-works steps",
+                    "completed": true
+                },
+                {
+                    "title": "Add FAQ with <details>",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSON-LD FAQPage",
+                    "completed": true
+                },
+                {
+                    "title": "Apply theming",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "marketing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-102",
+            "title": "Write marketing pages tests",
+            "description": "Write tests at web/test/pages/marketing/. Benefits: tourist/owner benefits, CTA links correct, icons. About: all sections, CTA. Owners: data from owners-page-data, FAQ, JSON-LD valid, step numbers.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-099", "T-100", "T-101"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write benefits page tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write about us tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write owners landing tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "marketing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-103",
+            "title": "Create privacy policy page",
+            "description": "Create web/src/pages/[lang]/privacidad.astro. Minimal Adapt from web-old (149 lines). SSG. 7 sections hardcoded Spanish legal text, Tailwind prose prose-lg, dynamic last updated date. Content NOT internationalized (keep as-is). Update: layout imports, semantic color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-106"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Update layout imports",
+                    "completed": true
+                },
+                {
+                    "title": "Apply semantic tokens",
+                    "completed": true
+                },
+                {
+                    "title": "Verify prose styling",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "legal"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-104",
+            "title": "Create terms and conditions page",
+            "description": "Create web/src/pages/[lang]/terminos-condiciones.astro. Minimal Adapt from web-old. SSG (prerender=true). Same structure as privacy page (T-103): sections of hardcoded Spanish legal text. Uses Tailwind prose prose-lg for typography. Dynamic 'last updated' date. Content is NOT internationalized (Spanish only). Update layout imports, apply semantic color tokens, use new Container/Section. i18n namespace: terms (title and description keys only).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-106"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Update content",
+                    "completed": true
+                },
+                {
+                    "title": "Verify prose styling",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "legal"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:35:00Z",
+                "completed": "2026-03-06T16:50:00Z"
+            }
+        },
+        {
+            "id": "T-105",
+            "title": "Create sitemap page with link fixes",
+            "description": "Create web/src/pages/[lang]/mapa-del-sitio.astro. Minimal Adapt from web-old (155 lines). SSG. 7 sections of links in 3-column grid. BUG FIX: Fix broken internal links (/terminos-y-condiciones/ to /terminos-condiciones/, /politica-de-privacidad/ to /privacidad/).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-106"],
+            "subtasks": [
+                {
+                    "title": "Copy and adapt page",
+                    "completed": true
+                },
+                {
+                    "title": "Fix broken internal links (bug)",
+                    "completed": true
+                },
+                {
+                    "title": "Verify all link targets exist",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "legal", "bugfix"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-106",
+            "title": "Write legal pages tests",
+            "description": "Write tests at web/test/pages/legal/. Privacy: 7 sections, prose, last updated. Terms: same structure. Sitemap: 7 link sections, correct routes (verify bug fix), 3-column grid.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-103", "T-104", "T-105"],
+            "blocks": ["T-107"],
+            "subtasks": [
+                {
+                    "title": "Write privacy page tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write terms page tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write sitemap tests with link verification",
+                    "completed": true
+                }
+            ],
+            "tags": ["test", "page", "legal"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T18:30:00Z"
+            }
+        },
+        {
+            "id": "T-107",
+            "title": "Run full regression test suite",
+            "description": "Run complete test suite for apps/web: pnpm typecheck, pnpm lint, pnpm test. Fix any failures. Ensure minimum 90% coverage. Verify all migrated components and pages have tests.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-057",
+                "T-065",
+                "T-071",
+                "T-077",
+                "T-083",
+                "T-091",
+                "T-093",
+                "T-095",
+                "T-098",
+                "T-102",
+                "T-106"
+            ],
+            "blocks": ["T-108"],
+            "subtasks": [
+                {
+                    "title": "Run typecheck",
+                    "completed": true
+                },
+                {
+                    "title": "Run lint",
+                    "completed": true
+                },
+                {
+                    "title": "Run tests with coverage",
+                    "completed": true
+                },
+                {
+                    "title": "Fix any failures",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "regression"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T18:05:00Z",
+                "completed": "2026-03-06T19:00:00Z"
+            }
+        },
+        {
+            "id": "T-108",
+            "title": "Cross-viewport and dark mode visual verification",
+            "description": "Visually verify ALL migrated pages using Playwright screenshots in 3 viewports (375px mobile, 768px tablet, 1440px desktop). Checklist per page: layout correct at all viewports, no horizontal scrolling, typography hierarchy correct, decorative elements render without overlap, dark mode toggle works with all elements visible, images load with correct aspect ratios, cards have consistent styling, buttons/links visually distinct. Also verify dark mode: all text readable (contrast >= 4.5:1), no white/light backgrounds (all semantic tokens), cards have visible borders/shadows, form inputs have visible borders, active/focus states visible.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-107"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Check mobile viewport (375px)",
+                    "completed": true
+                },
+                {
+                    "title": "Check tablet viewport (768px)",
+                    "completed": true
+                },
+                {
+                    "title": "Check desktop viewport (1440px)",
+                    "completed": true
+                },
+                {
+                    "title": "Check dark mode across all viewports",
+                    "completed": true
+                },
+                {
+                    "title": "Document issues found",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "visual", "verification"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-03-06T19:00:00Z"
+            }
+        },
+        {
+            "id": "T-109",
+            "title": "Create useTranslation hook for React islands",
+            "description": "Create src/hooks/useTranslation.ts as a wrapper hook over createT/createTranslations from src/lib/i18n.ts. This hook does NOT exist in apps/web yet but is needed by ALL React islands that use translations. The old web had this hook; the new web does not. Implementation: export function useTranslation that takes a namespace and returns t() function. Must work with @repo/i18n locale detection.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-013",
+                "T-015",
+                "T-017",
+                "T-019",
+                "T-022",
+                "T-026",
+                "T-032",
+                "T-034",
+                "T-036",
+                "T-040",
+                "T-044",
+                "T-045",
+                "T-046",
+                "T-047",
+                "T-048",
+                "T-050",
+                "T-051"
+            ],
+            "subtasks": [
+                {
+                    "title": "Read web-old useTranslation.ts implementation",
+                    "completed": true
+                },
+                {
+                    "title": "Read src/lib/i18n.ts to understand createT/createTranslations",
+                    "completed": true
+                },
+                {
+                    "title": "Create wrapper hook",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["hook", "i18n", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:15:00Z",
+                "completed": "2026-03-06T12:25:00Z"
+            }
+        },
+        {
+            "id": "T-110",
+            "title": "Create apps/web/CLAUDE.md",
+            "description": "Create apps/web/CLAUDE.md adapted for the new web app. Base on web-old/CLAUDE.md but update for new architecture: Tailwind CSS v4 semantic tokens, Shadcn/Radix UI primitives, shared components in src/components/shared/, API layer in src/lib/api/, new i18n pattern with createT, BaseLayout/Header/Footer, SEO components, Server Islands support. Document key patterns, file structure, and conventions specific to apps/web.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Read web-old/CLAUDE.md",
+                    "completed": true
+                },
+                {
+                    "title": "Audit new web structure",
+                    "completed": true
+                },
+                {
+                    "title": "Write CLAUDE.md",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:35:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-111",
+            "title": "Verify and enable experimental.serverIslands in astro.config",
+            "description": "Verify that apps/web/astro.config.mjs has experimental.serverIslands: true enabled. This is required for server:defer directives used by FavoriteButton and ReviewList islands. Also verify any other config differences between web-old and web astro configs (integrations, vite config, etc.) and port missing configs.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Read web astro.config.mjs",
+                    "completed": true
+                },
+                {
+                    "title": "Read web-old astro.config.mjs",
+                    "completed": true
+                },
+                {
+                    "title": "Enable serverIslands if missing",
+                    "completed": true
+                },
+                {
+                    "title": "Port any missing config",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "config"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T12:00:00Z",
+                "completed": "2026-03-06T12:10:00Z"
+            }
+        },
+        {
+            "id": "T-112",
+            "title": "Port FilterChipsBar.client.tsx",
+            "description": "Port web-old/src/components/accommodation/FilterChipsBar.client.tsx to web/src/components/accommodation/. Sub-component used by accommodation list page to show active filter chips inline. Update: useTranslation hook, color tokens to semantic, @repo/icons imports.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-109"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Read source FilterChipsBar",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "accommodation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:15:00Z",
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-113",
+            "title": "Port NavigationProgress.astro",
+            "description": "Port web-old/src/components/ui/NavigationProgress.astro to web/src/components/shared/NavigationProgress.astro. Add to BaseLayout.astro. This shows a progress bar during page navigation. Update color tokens to semantic (use bg-primary for the bar).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Read source NavigationProgress",
+                    "completed": true
+                },
+                {
+                    "title": "Port to shared/",
+                    "completed": true
+                },
+                {
+                    "title": "Add to BaseLayout",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:35:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-114",
+            "title": "Port Tabs.client.tsx",
+            "description": "Port web-old/src/components/ui/Tabs.client.tsx to web/src/components/shared/Tabs.client.tsx. Needed for Account pages (UserFavoritesList, UserReviewsList use tabs). Update: useTranslation hook, color tokens, @repo/icons.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-109"],
+            "blocks": ["T-046", "T-047"],
+            "subtasks": [
+                {
+                    "title": "Read source Tabs.client.tsx",
+                    "completed": true
+                },
+                {
+                    "title": "Port with adaptations",
+                    "completed": true
+                },
+                {
+                    "title": "Write basic tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:35:00Z",
+                "completed": "2026-03-06T15:50:00Z"
+            }
+        },
+        {
+            "id": "T-115",
+            "title": "Port DestinationCarousel.astro + utils",
+            "description": "Port web-old/src/components/destination/DestinationCarousel.astro and destination-carousel.utils.ts to web/src/components/destination/. Carousel for destination cards. Update: color tokens, use DestinationCard from shared/.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-066"],
+            "subtasks": [
+                {
+                    "title": "Read source files",
+                    "completed": true
+                },
+                {
+                    "title": "Port DestinationCarousel.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Port destination-carousel.utils.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:15:00Z",
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-116",
+            "title": "Port DestinationPreview.astro + utils",
+            "description": "Port web-old/src/components/destination/DestinationPreview.astro and destination-preview.utils.ts to web/src/components/destination/. Preview component used in destination detail page. Update: color tokens, imports.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-068"],
+            "subtasks": [
+                {
+                    "title": "Read source files",
+                    "completed": true
+                },
+                {
+                    "title": "Port DestinationPreview.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Port destination-preview.utils.ts",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "astro", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:15:00Z",
+                "completed": "2026-03-06T17:30:00Z"
+            }
+        },
+        {
+            "id": "T-117",
+            "title": "Port CounterAnimation.client.tsx + useCountUp hook",
+            "description": "Port web-old/src/components/content/CounterAnimation.client.tsx and web-old/src/hooks/useCountUp.ts to web/src/components/shared/ and web/src/hooks/. Animated stat counters used in marketing pages (benefits, about). Update: useTranslation if needed, color tokens.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-099", "T-100"],
+            "subtasks": [
+                {
+                    "title": "Read source CounterAnimation",
+                    "completed": true
+                },
+                {
+                    "title": "Read source useCountUp",
+                    "completed": true
+                },
+                {
+                    "title": "Port both files",
+                    "completed": true
+                },
+                {
+                    "title": "Write basic tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["component", "react", "shared"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:35:00Z",
+                "completed": "2026-03-06T15:50:00Z"
+            }
+        },
+        {
+            "id": "T-118",
+            "title": "Create format-utils.ts utility",
+            "description": "Create src/lib/format-utils.ts with generic formatting functions used across cards and pages: formatPrice({amount, currency, locale}) returns '$12.500', formatLocationDisplay({city, state}) returns 'City, State', formatRating({rating}) returns '4.6', buildDetailUrl({locale, slug, type}) returns '/es/alojamientos/slug/', formatDate({date, locale, format}) returns '15 de enero 2024', formatReadingTime({minutes, locale}) returns '5 min'. After creating, refactor existing card components (AccommodationCard, DestinationCard, EventCard, etc.) to use these shared functions. Write comprehensive unit tests.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create format-utils.ts with all functions",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for each function",
+                    "completed": true
+                },
+                {
+                    "title": "Refactor existing cards to use shared functions",
+                    "completed": true
+                }
+            ],
+            "tags": ["utility", "shared", "refactor"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T17:35:00Z",
+                "completed": "2026-03-06T18:00:00Z"
+            }
+        },
+        {
+            "id": "T-119",
+            "title": "Create destination accommodations list page",
+            "description": "Create web/src/pages/[lang]/destinos/[slug]/alojamientos/index.astro. SSR (dynamic destination slug parameter). List of accommodations for a specific destination. Uses AccommodationCard (shared), Pagination, Breadcrumb with destination hierarchy. API: accommodationsApi.list() filtered by destination.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-066", "T-068"],
+            "blocks": ["T-120", "T-071"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Wire API with destination filter",
+                    "completed": true
+                },
+                {
+                    "title": "Add breadcrumb with destination hierarchy",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:05:00Z",
+                "completed": "2026-03-06T15:30:00Z"
+            }
+        },
+        {
+            "id": "T-120",
+            "title": "Create destination accommodations pagination page",
+            "description": "Create web/src/pages/[lang]/destinos/[slug]/alojamientos/page/[page].astro. SSR (dynamic destination slug + page parameters). Variant of T-119 with page from URL segment.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-119"],
+            "blocks": ["T-071"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Share logic with T-119",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-121",
+            "title": "Create event category list page",
+            "description": "Create web/src/pages/[lang]/eventos/categoria/[category]/index.astro. SSR. Variant of event list (T-072) with pre-applied category filter from URL. Uses same components as event list page.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-072", "T-074"],
+            "blocks": ["T-122", "T-077"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Pre-apply category filter from URL",
+                    "completed": true
+                },
+                {
+                    "title": "Verify routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:05:00Z",
+                "completed": "2026-03-06T15:30:00Z"
+            }
+        },
+        {
+            "id": "T-122",
+            "title": "Create event category pagination page",
+            "description": "Create web/src/pages/[lang]/eventos/categoria/[category]/page/[page].astro. SSR. Combines category filter and pagination from URL.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-121"],
+            "blocks": ["T-077"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Combine category filter and pagination",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "event"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        },
+        {
+            "id": "T-123",
+            "title": "Create blog tag list page",
+            "description": "Create web/src/pages/[lang]/publicaciones/etiqueta/[tag]/index.astro. SSR. Variant of blog list (T-078) with pre-applied tag filter from URL.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-078", "T-080"],
+            "blocks": ["T-124", "T-083"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Pre-apply tag filter from URL",
+                    "completed": true
+                },
+                {
+                    "title": "Verify routing",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T15:35:00Z",
+                "completed": "2026-03-06T15:50:00Z"
+            }
+        },
+        {
+            "id": "T-124",
+            "title": "Create blog tag pagination page",
+            "description": "Create web/src/pages/[lang]/publicaciones/etiqueta/[tag]/page/[page].astro. SSR. Combines tag filter and pagination from URL.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-123"],
+            "blocks": ["T-083"],
+            "subtasks": [
+                {
+                    "title": "Create page file",
+                    "completed": true
+                },
+                {
+                    "title": "Combine tag filter and pagination",
+                    "completed": true
+                }
+            ],
+            "tags": ["page", "blog"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T16:55:00Z",
+                "completed": "2026-03-06T17:10:00Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 124,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 124,
+        "blocked": 0,
+        "averageComplexity": 2.6
+    }
+}

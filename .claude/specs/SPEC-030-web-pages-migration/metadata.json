@@ -1,0 +1,12 @@
+{
+    "id": "SPEC-030",
+    "title": "Web Pages Migration: web-old to web",
+    "status": "draft",
+    "priority": "high",
+    "created": "2026-03-06",
+    "updated": "2026-03-06",
+    "author": "claude",
+    "tags": ["web", "migration", "frontend", "astro", "react"],
+    "dependencies": [],
+    "estimatedComplexity": "high"
+}

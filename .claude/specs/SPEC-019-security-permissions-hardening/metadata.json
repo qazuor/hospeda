@@ -1,0 +1,30 @@
+{
+    "specId": "SPEC-019",
+    "title": "Security & Permissions Hardening",
+    "type": "security",
+    "complexity": "high",
+    "status": "completed",
+    "created": "2026-02-27T00:00:00.000Z",
+    "approved": "2026-02-27T00:00:00.000Z",
+    "completed": "2026-03-02T00:00:00.000Z",
+    "planFileRef": null,
+    "tags": [
+        "security",
+        "permissions",
+        "dependencies",
+        "idor",
+        "authentication",
+        "authorization",
+        "rate-limiting",
+        "cors",
+        "docker",
+        "billing",
+        "metrics",
+        "xss",
+        "sql-injection",
+        "git-history",
+        "credentials",
+        "hardening",
+        "production-readiness"
+    ]
+}

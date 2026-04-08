@@ -1,0 +1,725 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-041",
+    "title": "Admin Integration Tests",
+    "created": "2026-03-17T12:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PointerEvent polyfill to test/setup.tsx",
+            "description": "Add the MockPointerEvent class and HTMLElement prototype patches to test/setup.tsx BEFORE the existing vi.mock() blocks. This fixes Radix UI Select/Popover/Dialog not opening in JSDOM tests.\n\nFiles to modify: apps/admin/test/setup.tsx\n\nAdd:\n- class MockPointerEvent extends Event (with button, ctrlKey, pointerType)\n- window.PointerEvent = MockPointerEvent as any\n- window.HTMLElement.prototype.scrollIntoView = vi.fn()\n- window.HTMLElement.prototype.hasPointerCapture = vi.fn()\n- window.HTMLElement.prototype.releasePointerCapture = vi.fn()\n\nTest: Run existing tests to verify nothing breaks. Add a small test in test/setup-validation.test.ts that verifies window.PointerEvent is defined.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "Add MockPointerEvent class before vi.mock blocks", "completed": false },
+                { "title": "Add HTMLElement prototype patches", "completed": false },
+                { "title": "Run existing tests to verify no regressions", "completed": false }
+            ],
+            "tags": ["setup", "polyfill"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add @repo/icons Proxy mock to test/setup.tsx",
+            "description": "Add a global Proxy mock for @repo/icons to test/setup.tsx. Currently this mock is duplicated in 3 individual test files (Header.test.tsx, Sidebar.test.tsx, navigation.test.tsx). The Proxy returns a functional component stub for ANY icon name.\n\nFiles to modify: apps/admin/test/setup.tsx\n\nAdd vi.mock('@repo/icons', ...) with Proxy that returns <span data-testid={`icon-${prop}`} aria-hidden='true' /> for any prop.\n\nTest: Run existing tests — the 3 files with local @repo/icons mocks should still pass (local mocks override global). Verify no new warnings.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "Add Proxy-based vi.mock for @repo/icons", "completed": false },
+                { "title": "Run existing tests to verify compatibility", "completed": false }
+            ],
+            "tags": ["setup", "mock"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add useTranslations, RoutePermissionGuard, useAuthContext mocks to setup",
+            "description": "Add 3 global mocks to test/setup.tsx:\n\n1. vi.mock('@/hooks/use-translations') returning { t: (key) => key, tPlural: (key, _count) => key, locale: 'es' }\n2. vi.mock('@/components/auth/RoutePermissionGuard') returning component that renders children\n3. vi.mock('@/hooks/use-auth-context') returning { user: { id: 'test_user_id', name: 'Test User', email: 'test@example.com', role: 'ADMIN' }, isAuthenticated: true, isLoading: false }\n\nFiles to modify: apps/admin/test/setup.tsx\n\nTest: Run existing tests. The use-translations.test.tsx should still pass (it tests the real hook, local mock takes precedence if needed).",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Add useTranslations mock with { t, tPlural, locale }",
+                    "completed": false
+                },
+                { "title": "Add RoutePermissionGuard mock (renders children)", "completed": false },
+                { "title": "Add useAuthContext mock with ADMIN user", "completed": false },
+                { "title": "Run existing tests to verify no regressions", "completed": false }
+            ],
+            "tags": ["setup", "mock"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add @qazuor/qzpay-react mock and createLazyFileRoute mock to setup",
+            "description": "Add 2 mocks to test/setup.tsx:\n\n1. vi.mock('@qazuor/qzpay-react') with: LimitGate (renders children), LimitReachedUI (stub), EntitlementGate (renders children), useEntitlements ({ check: () => true, isLoading: false }), QZPayProvider (renders children)\n2. Add createLazyFileRoute to the existing @tanstack/react-router mock block (same shape as createFileRoute but also accepts pendingComponent)\n\nFiles to modify: apps/admin/test/setup.tsx\n\nTest: Run existing tests (especially qzpay-provider.test.tsx) to verify no regressions.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "Add @qazuor/qzpay-react mock with all exports", "completed": false },
+                { "title": "Add createLazyFileRoute to router mock", "completed": false },
+                { "title": "Run existing tests to verify no regressions", "completed": false }
+            ],
+            "tags": ["setup", "mock"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Export response factory functions from handlers.ts",
+            "description": "Export the existing mockPaginatedResponse, mockSuccessResponse, mockErrorResponse functions and the API_BASE constant from test/mocks/handlers.ts as named exports.\n\nThe functions already exist and are already exported (confirmed). Verify they are importable from admin-handlers.ts by checking the export statements.\n\nFiles to verify: apps/admin/test/mocks/handlers.ts\n\nTest: Verify imports work by adding a simple test or checking TypeScript compilation.",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Verify mockPaginatedResponse, mockSuccessResponse, mockErrorResponse are exported",
+                    "completed": false
+                },
+                { "title": "Verify API_BASE is exported", "completed": false }
+            ],
+            "tags": ["setup", "infrastructure"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create test helpers (renderWithProviders, createTestQueryClient, waitForLoading)",
+            "description": "Create 3 helper files in apps/admin/test/helpers/:\n\n1. create-test-query-client.ts — exports createTestQueryClient() with retry: false, gcTime: Infinity\n2. render-with-providers.tsx — exports renderWithProviders() wrapping in QueryClientProvider + ToastProvider. Returns { ...renderResult, queryClient }\n3. wait-for-loading.ts — exports waitForLoadingToFinish() that waits for skeletons/pulse animations to disappear\n\nFiles to create:\n- apps/admin/test/helpers/create-test-query-client.ts\n- apps/admin/test/helpers/render-with-providers.tsx\n- apps/admin/test/helpers/wait-for-loading.ts\n\nTest: Import each helper in a test file and verify they work. No functional test needed yet — they'll be validated by smoke tests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "Create create-test-query-client.ts", "completed": false },
+                {
+                    "title": "Create render-with-providers.tsx with ToastProvider",
+                    "completed": false
+                },
+                { "title": "Create wait-for-loading.ts", "completed": false },
+                { "title": "Verify TypeScript compilation", "completed": false }
+            ],
+            "tags": ["setup", "helpers"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create entity fixtures (accommodation, destination, event, user, tag, post, sponsor)",
+            "description": "Create 7 fixture files for core entities in apps/admin/test/fixtures/. Each exports mock{Entity}, mock{Entity}List (3 items), mock{Entity}Page (paginated response). Derive shapes from Zod schemas in @repo/schemas.\n\nFiles to create:\n- apps/admin/test/fixtures/accommodation.fixture.ts\n- apps/admin/test/fixtures/destination.fixture.ts\n- apps/admin/test/fixtures/event.fixture.ts\n- apps/admin/test/fixtures/user.fixture.ts\n- apps/admin/test/fixtures/tag.fixture.ts\n- apps/admin/test/fixtures/post.fixture.ts\n- apps/admin/test/fixtures/sponsor.fixture.ts\n\nTest: Each fixture must typecheck against the corresponding schema types from @repo/schemas.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-008", "T-012"],
+            "subtasks": [
+                { "title": "Create accommodation.fixture.ts", "completed": false },
+                { "title": "Create destination.fixture.ts", "completed": false },
+                { "title": "Create event.fixture.ts", "completed": false },
+                { "title": "Create user.fixture.ts", "completed": false },
+                { "title": "Create tag.fixture.ts", "completed": false },
+                { "title": "Create post.fixture.ts", "completed": false },
+                { "title": "Create sponsor.fixture.ts", "completed": false }
+            ],
+            "tags": ["setup", "fixtures"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create billing fixtures (plan, addon, subscription, invoice, promo-code, promotion, sponsorship)",
+            "description": "Create 7 fixture files for billing entities in apps/admin/test/fixtures/. Each exports mock{Entity}, mock{Entity}List (3 items). For plans/addons use non-paginated format (array). For others use paginated.\n\nFiles to create:\n- apps/admin/test/fixtures/billing-plan.fixture.ts\n- apps/admin/test/fixtures/billing-addon.fixture.ts\n- apps/admin/test/fixtures/billing-subscription.fixture.ts\n- apps/admin/test/fixtures/billing-invoice.fixture.ts\n- apps/admin/test/fixtures/promo-code.fixture.ts\n- apps/admin/test/fixtures/owner-promotion.fixture.ts\n- apps/admin/test/fixtures/sponsorship.fixture.ts\n\nTest: Each fixture must typecheck against corresponding types.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                { "title": "Create billing-plan.fixture.ts", "completed": false },
+                { "title": "Create billing-addon.fixture.ts", "completed": false },
+                { "title": "Create billing-subscription.fixture.ts", "completed": false },
+                { "title": "Create billing-invoice.fixture.ts", "completed": false },
+                { "title": "Create promo-code.fixture.ts", "completed": false },
+                { "title": "Create owner-promotion.fixture.ts", "completed": false },
+                { "title": "Create sponsorship.fixture.ts", "completed": false }
+            ],
+            "tags": ["setup", "fixtures"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create remaining fixtures (webhook-event, notification-log, role) and index.ts",
+            "description": "Create remaining fixture files and the barrel index.\n\nFiles to create:\n- apps/admin/test/fixtures/webhook-event.fixture.ts\n- apps/admin/test/fixtures/notification-log.fixture.ts\n- apps/admin/test/fixtures/role.fixture.ts\n- apps/admin/test/fixtures/index.ts (re-exports all fixtures)\n\nTest: Import from test/fixtures and verify all fixtures are accessible.",
+            "status": "pending",
+            "complexity": 1.5,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Create webhook-event.fixture.ts", "completed": false },
+                { "title": "Create notification-log.fixture.ts", "completed": false },
+                { "title": "Create role.fixture.ts", "completed": false },
+                { "title": "Create index.ts barrel export", "completed": false }
+            ],
+            "tags": ["setup", "fixtures"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create admin-handlers.ts for paginated entities",
+            "description": "Create apps/admin/test/mocks/admin-handlers.ts with MSW handlers for all paginated admin endpoints.\n\nEntities: accommodations, destinations, events, event-locations, event-organizers, accommodation-amenities, accommodation-features, destination-attractions, sponsors, posts, tags, users, billing/subscriptions, billing/invoices, billing/payments, billing/promo-codes, billing/owner-promotions, billing/sponsorships, billing/webhook-events, billing/notification-logs.\n\nEach entity gets: GET list (mockPaginatedResponse), GET :id (mockSuccessResponse), POST (201), PATCH :id (200), DELETE :id (200).\n\nImport fixtures from test/fixtures/ and response factories from handlers.ts.\n\nExport getAdminHandlers() returning the handler array.\n\nFiles to create: apps/admin/test/mocks/admin-handlers.ts\n\nTest: Import and verify the handler array has the expected length.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-007", "T-008", "T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Create handler factory for standard CRUD endpoints",
+                    "completed": false
+                },
+                { "title": "Add handlers for all paginated entities", "completed": false },
+                {
+                    "title": "Add handlers for non-paginated entities (plans, addons, cron, roles, permissions)",
+                    "completed": false
+                },
+                { "title": "Export getAdminHandlers()", "completed": false }
+            ],
+            "tags": ["setup", "msw"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Register admin handlers in server.ts",
+            "description": "Update apps/admin/test/mocks/server.ts to import getAdminHandlers() from admin-handlers.ts and include them in setupServer().\n\nFiles to modify: apps/admin/test/mocks/server.ts\n\nTest: Run all existing tests to verify nothing breaks. The admin handlers should not interfere with existing public handlers.",
+            "status": "pending",
+            "complexity": 0.5,
+            "blockedBy": ["T-010"],
+            "blocks": [
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023"
+            ],
+            "subtasks": [
+                { "title": "Import getAdminHandlers in server.ts", "completed": false },
+                { "title": "Spread admin handlers into setupServer", "completed": false },
+                { "title": "Run existing tests", "completed": false }
+            ],
+            "tags": ["setup", "msw"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Smoke tests: Accommodations module (8 routes)",
+            "description": "Create apps/admin/test/smoke/accommodations.smoke.test.tsx with one smoke test per route: index, new, $id, $id_.edit, $id_.amenities, $id_.gallery, $id_.pricing, $id_.reviews.\n\nEach test: mock createFileRoute, import Route, extract component, renderWithProviders, waitFor content, assert meaningful element (table for list, form for create/edit, heading for view).\n\nFor $id routes: mock useParams returning { id: 'test-id' }.\n\nFiles to create: apps/admin/test/smoke/accommodations.smoke.test.tsx\n\nTest: All 8 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Smoke test: accommodations/index.tsx (list)", "completed": false },
+                { "title": "Smoke test: accommodations/new.tsx (create)", "completed": false },
+                { "title": "Smoke test: accommodations/$id.tsx (view)", "completed": false },
+                { "title": "Smoke test: accommodations/$id_.edit.tsx (edit)", "completed": false },
+                {
+                    "title": "Smoke tests: amenities, gallery, pricing, reviews sub-routes",
+                    "completed": false
+                }
+            ],
+            "tags": ["smoke", "accommodations"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Smoke tests: Destinations module (7 routes)",
+            "description": "Create apps/admin/test/smoke/destinations.smoke.test.tsx with one smoke test per route: index, new, $id, $id_.edit, $id_.accommodations, $id_.attractions, $id_.events.\n\nFiles to create: apps/admin/test/smoke/destinations.smoke.test.tsx\n\nTest: All 7 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Smoke tests: index, new, $id, $id_.edit", "completed": false },
+                {
+                    "title": "Smoke tests: $id_.accommodations, $id_.attractions, $id_.events",
+                    "completed": false
+                }
+            ],
+            "tags": ["smoke", "destinations"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Smoke tests: Events module — main routes (6 routes)",
+            "description": "Create apps/admin/test/smoke/events.smoke.test.tsx with smoke tests for the 6 main event routes: index, new, $id, $id_.edit, $id_.attendees, $id_.tickets.\n\nFiles to create: apps/admin/test/smoke/events.smoke.test.tsx\n\nTest: All 6 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Smoke tests: events index, new, $id, $id_.edit", "completed": false },
+                { "title": "Smoke tests: events $id_.attendees, $id_.tickets", "completed": false }
+            ],
+            "tags": ["smoke", "events"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Smoke tests: Events locations + organizers (11 routes)",
+            "description": "Add smoke tests to apps/admin/test/smoke/events.smoke.test.tsx for event locations (5 routes) and event organizers (6 routes).\n\nLocations: index, new, $id, $id_.edit, $id_.events\nOrganizers: index, new, $id, $id_.edit, $id_.events, $id_.contact\n\nFiles to modify: apps/admin/test/smoke/events.smoke.test.tsx\n\nTest: All 11 additional smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Smoke tests: 5 event location routes", "completed": false },
+                { "title": "Smoke tests: 6 event organizer routes", "completed": false }
+            ],
+            "tags": ["smoke", "events"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Smoke tests: Content module (12 routes)",
+            "description": "Create apps/admin/test/smoke/content.smoke.test.tsx with smoke tests for accommodation-amenities (4), accommodation-features (4), destination-attractions (4).\n\nFiles to create: apps/admin/test/smoke/content.smoke.test.tsx\n\nTest: All 12 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Smoke tests: 4 accommodation-amenities routes", "completed": false },
+                { "title": "Smoke tests: 4 accommodation-features routes", "completed": false },
+                { "title": "Smoke tests: 4 destination-attractions routes", "completed": false }
+            ],
+            "tags": ["smoke", "content"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Smoke tests: Billing module (14 routes)",
+            "description": "Create apps/admin/test/smoke/billing.smoke.test.tsx with smoke tests for all 14 billing routes: plans, addons, subscriptions, invoices, payments, promo-codes, owner-promotions, sponsorships, webhook-events, notification-logs, exchange-rates, metrics, cron, settings.\n\nIMPORTANT: billing/plans and billing/addons use non-paginated responses. billing/cron uses custom format.\n\nFiles to create: apps/admin/test/smoke/billing.smoke.test.tsx\n\nTest: All 14 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-006", "T-008", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Smoke tests: plans, addons, subscriptions, invoices, payments",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke tests: promo-codes, owner-promotions, sponsorships",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke tests: webhook-events, notification-logs, exchange-rates, metrics, cron, settings",
+                    "completed": false
+                }
+            ],
+            "tags": ["smoke", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Smoke tests: Access module (8 routes)",
+            "description": "Create apps/admin/test/smoke/access.smoke.test.tsx with smoke tests for: users/index, users/new, users/$id, users/$id_.edit, users/$id_.activity, users/$id_.permissions, roles, permissions.\n\nFiles to create: apps/admin/test/smoke/access.smoke.test.tsx\n\nTest: All 8 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Smoke tests: users CRUD routes (index, new, $id, $id_.edit)",
+                    "completed": false
+                },
+                {
+                    "title": "Smoke tests: users sub-routes (activity, permissions)",
+                    "completed": false
+                },
+                { "title": "Smoke tests: roles, permissions pages", "completed": false }
+            ],
+            "tags": ["smoke", "access"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Smoke tests: Sponsors + Posts + Settings modules (20 routes)",
+            "description": "Create 3 smoke test files:\n\n1. apps/admin/test/smoke/sponsors.smoke.test.tsx — 4 admin sponsor routes + 4 sponsor dashboard routes\n2. apps/admin/test/smoke/posts.smoke.test.tsx — 6 post routes\n3. apps/admin/test/smoke/settings.smoke.test.tsx — 4 tag routes + critical + seo\n\nFiles to create: 3 test files\n\nTest: All 20 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Create sponsors.smoke.test.tsx (8 routes)", "completed": false },
+                { "title": "Create posts.smoke.test.tsx (6 routes)", "completed": false },
+                { "title": "Create settings.smoke.test.tsx (6 routes)", "completed": false }
+            ],
+            "tags": ["smoke", "sponsors", "posts", "settings"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Smoke tests: Dashboard + Analytics + Me + System (11 routes)",
+            "description": "Create 3 smoke test files:\n\n1. apps/admin/test/smoke/dashboard.smoke.test.tsx — dashboard.lazy (uses createLazyFileRoute), analytics/business, analytics/usage, analytics/debug\n2. apps/admin/test/smoke/me.smoke.test.tsx — profile, settings, change-password, accommodations/index\n3. apps/admin/test/smoke/system.smoke.test.tsx — notifications, revalidation\n\nIMPORTANT: Dashboard uses createLazyFileRoute, not createFileRoute.\n\nFiles to create: 3 test files\n\nTest: All 11 smoke tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-004", "T-006", "T-007", "T-011"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Create dashboard.smoke.test.tsx (4 routes including lazy)",
+                    "completed": false
+                },
+                { "title": "Create me.smoke.test.tsx (4 routes)", "completed": false },
+                { "title": "Create system.smoke.test.tsx (2 routes)", "completed": false }
+            ],
+            "tags": ["smoke", "dashboard", "me", "system"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "CRUD tests: Accommodations create flow",
+            "description": "Create apps/admin/test/integration/accommodations.crud.test.tsx with tests for the create flow:\n\n1. Submits form with valid data → POST to API → navigates to detail\n2. Shows validation errors when form submitted empty → no API call\n3. Shows error toast when API returns 400 VALIDATION_ERROR\n4. Disables submit button while mutation is pending\n\nUse MSW server.use() for POST handler, renderWithProviders, userEvent.setup().\n\nFiles to create: apps/admin/test/integration/accommodations.crud.test.tsx\n\nTest: All 4 tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Test: valid submit → POST → navigate", "completed": false },
+                { "title": "Test: empty form → validation errors", "completed": false },
+                { "title": "Test: API 400 → error toast", "completed": false },
+                { "title": "Test: pending → button disabled", "completed": false }
+            ],
+            "tags": ["crud", "accommodations"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "CRUD tests: Accommodations edit flow",
+            "description": "Add edit flow tests to apps/admin/test/integration/accommodations.crud.test.tsx:\n\n1. Pre-fills form with existing data from GET :id\n2. Submits edited data → PATCH to API → success toast\n3. Shows 404 error when entity not found\n\nUse MSW for GET and PATCH handlers.\n\nFiles to modify: apps/admin/test/integration/accommodations.crud.test.tsx\n\nTest: All 3 edit tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Test: pre-fills form with existing data", "completed": false },
+                { "title": "Test: edit submit → PATCH → success", "completed": false },
+                { "title": "Test: 404 error handling", "completed": false }
+            ],
+            "tags": ["crud", "accommodations"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "CRUD tests: Users create flow",
+            "description": "Create apps/admin/test/integration/users.crud.test.tsx with tests for the create flow:\n\n1. Submits form with valid data → POST → navigates\n2. Shows validation errors on empty submit\n3. Shows API error on 400\n\nFiles to create: apps/admin/test/integration/users.crud.test.tsx\n\nTest: All 3 tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007", "T-011"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                { "title": "Test: valid submit → POST → navigate", "completed": false },
+                { "title": "Test: empty form → validation errors", "completed": false },
+                { "title": "Test: API 400 → error message", "completed": false }
+            ],
+            "tags": ["crud", "users"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Table interaction tests: Accommodations sort + pagination",
+            "description": "Create apps/admin/test/integration/accommodations.table.test.tsx with table interaction tests:\n\n1. Sends sort params when column header clicked — verify ?sort=[{\"id\":\"name\",\"desc\":false}]\n2. Sends page=2 when next page button clicked\n3. Navigates to edit page when row edit action clicked\n\nCapture API requests via MSW handler to verify query params.\n\nIMPORTANT: Sort format is DataTableSort: [{id: string, desc: boolean}], serialized as JSON in query param 'sort'.\n\nFiles to create: apps/admin/test/integration/accommodations.table.test.tsx\n\nTest: All 3 tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Test: column header click → sort params in API request",
+                    "completed": false
+                },
+                { "title": "Test: next page → page=2 in API request", "completed": false },
+                { "title": "Test: row edit action → navigate to edit page", "completed": false }
+            ],
+            "tags": ["table", "accommodations"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "PlanDialog tests: Create mode",
+            "description": "Create apps/admin/test/integration/plan-dialog.test.tsx with PlanDialog create mode tests:\n\n1. Renders dialog with empty fields when plan=null\n2. Calls onSubmit with correct payload on valid submit (slug, name, pricing)\n3. Shows validation error when required fields are empty\n4. Handles Radix Select for category field (requires PointerEvent polyfill)\n\nImport PlanDialog directly from @/features/billing-plans/components/PlanDialog.\n\nIMPORTANT: PlanDialog uses @tanstack/react-form, not useState. Button text uses translation keys: createButton / saveButton.\n\nFiles to create: apps/admin/test/integration/plan-dialog.test.tsx\n\nTest: All 4 tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001", "T-006", "T-008"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Test: create mode renders empty fields", "completed": false },
+                { "title": "Test: valid submit calls onSubmit with payload", "completed": false },
+                { "title": "Test: empty submit shows validation errors", "completed": false },
+                { "title": "Test: Radix Select category interaction", "completed": false }
+            ],
+            "tags": ["dialog", "billing", "plan"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "PlanDialog tests: Edit mode + loading + cancel",
+            "description": "Add edit mode, loading state, and cancel tests to apps/admin/test/integration/plan-dialog.test.tsx:\n\n1. Pre-fills all fields with existing plan data when plan is provided\n2. Renders 'Save' button (saveButton key) instead of 'Create' in edit mode\n3. Disables submit button when isSubmitting=true\n4. Calls onOpenChange(false) when cancel button clicked\n\nFiles to modify: apps/admin/test/integration/plan-dialog.test.tsx\n\nTest: All 4 tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Test: edit mode pre-fills fields", "completed": false },
+                { "title": "Test: edit mode shows saveButton", "completed": false },
+                { "title": "Test: isSubmitting disables button", "completed": false },
+                { "title": "Test: cancel calls onOpenChange(false)", "completed": false }
+            ],
+            "tags": ["dialog", "billing", "plan"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "PromoCodeFormDialog tests",
+            "description": "Create apps/admin/test/integration/promo-code-dialog.test.tsx:\n\n1. Auto-uppercases code field on every keystroke (onChange, not submit)\n2. Shows discount value field for both percentage and fixed types\n3. Pre-fills fields in edit mode\n4. Calls onSubmit with correct payload\n5. Calls onClose when cancel clicked\n\nIMPORTANT: PromoCodeFormDialog uses useState, NOT @tanstack/react-form. Code field is disabled in edit mode.\n\nFiles to create: apps/admin/test/integration/promo-code-dialog.test.tsx\n\nTest: All 5 tests pass.",
+            "status": "pending",
+            "complexity": 2.5,
+            "blockedBy": ["T-001", "T-006", "T-008"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "Test: code field auto-uppercase onChange", "completed": false },
+                { "title": "Test: discount type switching", "completed": false },
+                { "title": "Test: edit mode pre-fills + code disabled", "completed": false },
+                { "title": "Test: valid submit payload", "completed": false },
+                { "title": "Test: cancel calls onClose", "completed": false }
+            ],
+            "tags": ["dialog", "billing", "promo-code"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Read-only dialog tests: InvoiceDetail, WebhookEvent, Notification",
+            "description": "Create 2 test files for read-only dialogs:\n\n1. apps/admin/test/integration/invoice-detail-dialog.test.tsx:\n   - Renders invoice data correctly\n   - Calls onMarkAsPaid when button clicked\n   - Renders null gracefully when invoice is null\n\n2. apps/admin/test/integration/detail-dialogs.test.tsx:\n   - WebhookEventDetailDialog renders event data\n   - NotificationDetailDialog renders notification data\n   - Both handle null gracefully\n\nFiles to create: 2 test files\n\nTest: All tests pass.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-008", "T-009"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                { "title": "InvoiceDetailDialog: 3 tests", "completed": false },
+                { "title": "WebhookEventDetailDialog: 2 tests", "completed": false },
+                { "title": "NotificationDetailDialog: 2 tests", "completed": false }
+            ],
+            "tags": ["dialog", "billing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Final validation: run full test suite and verify coverage",
+            "description": "Run the complete admin test suite (pnpm test in apps/admin). Verify:\n\n1. All new tests pass (smoke + CRUD + table + dialog)\n2. All existing tests still pass (no regressions)\n3. Coverage meets the 70% thresholds defined in vitest.config.ts\n4. No lint or typecheck errors in test files\n\nRun: pnpm test, pnpm typecheck, pnpm lint in apps/admin.\n\nFix any issues found.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-024", "T-026", "T-027", "T-028"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run full test suite", "completed": false },
+                { "title": "Verify coverage thresholds", "completed": false },
+                { "title": "Run typecheck", "completed": false },
+                { "title": "Run lint", "completed": false },
+                { "title": "Fix any issues", "completed": false }
+            ],
+            "tags": ["validation", "coverage"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T12:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 29,
+        "pending": 29,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}

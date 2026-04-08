@@ -1,0 +1,672 @@
+{
+    "specId": "SPEC-037",
+    "title": "Security Gaps Remediation (SPEC-019 Post-Audit)",
+    "status": "completed",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create USER_BOOKMARK_VIEW_ANY and METRICS_RESET permissions in PermissionEnum and seed",
+            "description": "Add two new permissions to the system:\n1. `USER_BOOKMARK_VIEW_ANY` - allows viewing any user's bookmarks (for admin support)\n2. `METRICS_RESET` - allows resetting metrics counters\n\nSteps:\n1. Add both to `PermissionEnum` in `packages/schemas/src/entities/permission/`\n2. Add to seed data for ADMIN and SUPER_ADMIN roles in `packages/seed/src/data/`\n3. Run typecheck to verify enum usage compiles\n4. Run existing permission tests\n\nGaps: GAP-27 (partial), GAP-21 (partial)\nFiles: `packages/schemas/src/entities/permission/`, `packages/seed/src/data/`\nTests: Verify permissions exist in enum, seed includes them for correct roles",
+            "phase": "setup",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-014", "T-015"],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add _isSystemActor flag to Actor type and createSystemActor()",
+            "description": "Add a `_isSystemActor` boolean flag to the Actor type and set it in `createSystemActor()`. This will be used by T-011 to add a runtime guard in authorization middleware.\n\nSteps:\n1. Add optional `_isSystemActor?: boolean` to Actor type in `packages/schemas/src/entities/actor/`\n2. Set `_isSystemActor: true` in `createSystemActor()` in `apps/api/src/utils/actor.ts:32-36`\n3. Ensure regular actor creation does NOT set this flag\n\nGaps: GAP-48 (partial)\nFiles: `packages/schemas/src/entities/actor/`, `apps/api/src/utils/actor.ts`\nTests: createSystemActor returns actor with _isSystemActor=true, getActorFromContext returns actors without flag",
+            "phase": "setup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-011"],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Use timingSafeEqual for CRON_SECRET + enforce min(32) for BETTER_AUTH_SECRET",
+            "description": "Two crypto hardening fixes:\n1. Replace `===` with `crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))` at `cron/middleware.ts:43,51`\n2. Change `z.string().min(1)` to `z.string().min(32, 'Better Auth secret must be at least 32 characters')` at `env.ts:66`\n\nGaps: GAP-23, GAP-40\nFiles: `apps/api/src/cron/middleware.ts`, `apps/api/src/utils/env.ts`\nTests: Cron middleware still authenticates correctly with valid secret; env rejects secrets < 32 chars",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Replace string literals with RoleEnum.HOST and isGuestActor()",
+            "description": "Fix string literal role references:\n1. Replace `'HOST'` with `RoleEnum.HOST` at `auth.ts:309,332` (and line 273 if applicable)\n2. Replace `actor.role !== 'GUEST'` with `!isGuestActor(actor)` at `auth/me.ts:21`\n\nGaps: GAP-24, GAP-16\nFiles: `apps/api/src/lib/auth.ts`, `apps/api/src/routes/auth/me.ts`\nTests: Existing auth and me tests pass unchanged",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "OAuth cross-validation + replace Math.random() in utils and request-id",
+            "description": "Three fixes:\n1. Add superRefine in env.ts: if HOSPEDA_GOOGLE_CLIENT_ID is set, require HOSPEDA_GOOGLE_CLIENT_SECRET (same for Facebook)\n2. Replace Math.random() with crypto.getRandomValues() in `packages/utils/src/string.ts:133-143` (randomString function)\n3. Replace Math.random() with crypto.randomUUID() in `apps/api/src/utils/request-id.ts:9`\n\nGaps: GAP-39, GAP-52, GAP-56\nFiles: `apps/api/src/utils/env.ts`, `packages/utils/src/string.ts`, `apps/api/src/utils/request-id.ts`\nTests: Env rejects clientId without clientSecret; randomString produces valid output; requestId is UUID format",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Sanitize health endpoints - remove DB error details and NODE_ENV",
+            "description": "Fix information leaks in health endpoints:\n1. Replace raw DB error message at `db-health.ts:77` with generic 'Database health check failed'\n2. Remove `environment: process.env.NODE_ENV` from `health.ts:20`, `db-health.ts:58,82`\n\nGaps: GAP-25, GAP-35\nFiles: `apps/api/src/routes/health/db-health.ts`, `apps/api/src/routes/health/health.ts`\nTests: Health endpoint returns sanitized errors; response body has no 'environment' field",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Remove PII from logs + mask billing data + fix password logging",
+            "description": "Three information leak fixes:\n1. Remove firstName/lastName/email from INFO log at `contact/submit.ts:42-52`. Keep only contactType, accommodationId, messageLength, emailDomain\n2. Mask preapproval IDs in `subscription-logic.ts:196-199,284-293` - show only last 4 chars (e.g., '***...a1b2')\n3. Replace `logger.info('Generated password: ...')` with `console.warn` to stderr at `superAdminLoader.ts:59`. Update `docs/guides/environment-variables.md` to document this behavior\n\nGaps: GAP-29, GAP-11, GAP-46, GAP-66\nFiles: `apps/api/src/routes/contact/submit.ts`, `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts`, `packages/seed/src/utils/superAdminLoader.ts`, `docs/guides/environment-variables.md`\nTests: Log output doesn't contain PII fields; masked IDs show ***...xxxx pattern; no logger.info for passwords",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Sanitize file.name in error responses + generic billing-usage errors",
+            "description": "Two error response fixes:\n1. Replace `file.name` with generic message in error responses at `reports/create-report.ts:118,131,155` and `feedback/submit.ts:292`\n2. Return generic error 'Failed to get system usage stats' from `billing-usage.service.ts:155`. Show detailed error only when `HOSPEDA_API_DEBUG_ERRORS` env var is true\n\nGaps: GAP-58, GAP-61\nFiles: `apps/api/src/routes/reports/create-report.ts`, `apps/api/src/routes/feedback/submit.ts`, `apps/api/src/services/billing-usage.service.ts`\nTests: Error responses don't contain file names; billing errors generic unless debug flag set",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Fix rate limiting: trust proxy docs, signout auth, path classification, contact rate limit",
+            "description": "Four rate limiting fixes:\n1. Document API_RATE_LIMIT_TRUST_PROXY=true requirement for Vercel in deployment docs and env-variables.md\n2. In `signout.ts`: only call clearRateLimitForIp when user is authenticated (check actor before clearing)\n3. In `rate-limit.ts:233-244`: replace `path.includes('/auth/')` etc. with `path.startsWith('/api/v1/auth/')` pattern\n4. Add `customRateLimit: { requests: 5, windowMs: 60000 }` to contact form route in `contact/submit.ts`\n\nGaps: GAP-03, GAP-30, GAP-43, GAP-62\nFiles: `apps/api/src/routes/auth/signout.ts`, `apps/api/src/middlewares/rate-limit.ts`, `apps/api/src/routes/contact/submit.ts`, `docs/guides/environment-variables.md`\nTests: getEndpointType classifies correctly; contact form rate limited; signout doesn't clear rate limit for unauthenticated",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Remove dead sanitization code from validation middleware",
+            "description": "Remove two blocks of dead code:\n1. Remove header sanitization at `validation.ts:107-111` (Object.assign on Headers has no effect)\n2. Remove query param sanitization at `validation.ts:115-125` (defineProperty on c.req doesn't affect c.req.query())\n\nGaps: GAP-41, GAP-42\nFiles: `apps/api/src/middlewares/validation.ts`\nTests: Existing validation tests pass; middleware works without dead code",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add runtime guard rejecting system actors from HTTP context",
+            "description": "Add a check in authorization middleware that rejects actors with `_isSystemActor: true` flag. System actors should only be used in background jobs and cron, never in HTTP request handlers.\n\nSteps:\n1. In `authorizationMiddleware`, check if `actor._isSystemActor === true`\n2. If so, log a security warning and throw HTTPException(403)\n3. This prevents accidental injection of createSystemActor() in route handlers\n\nGaps: GAP-48 (part 2)\nDepends on: T-002\nFiles: `apps/api/src/middlewares/authorization.ts`\nTests: Authorization middleware rejects system actors with 403; allows normal actors",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Remove SUPER_ADMIN role bypasses in authorization and permission utils",
+            "description": "Remove redundant `actor.role === RoleEnum.SUPER_ADMIN` bypasses. SUPER_ADMIN already has all permissions seeded.\n\nRemove from:\n1. `authorization.ts:52-53` - role bypass before permission check\n2. `billing-admin-guard.middleware.ts:85` - hasAdminAccess function\n3. `permission.ts:120` - entity permission check\n\nReplace with standard permission check flow (the existing permission checks will cover SUPER_ADMIN via seeded permissions).\n\nGaps: GAP-05\nFiles: `apps/api/src/middlewares/authorization.ts`, `apps/api/src/middlewares/billing-admin-guard.middleware.ts`, `packages/service-core/src/utils/permission.ts`\nTests: SUPER_ADMIN still authorized via permissions (not role bypass); all existing permission tests pass",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Fix direct role checks in promo-codes routes",
+            "description": "Replace direct role checks with permission checks in billing promo-codes:\n1. At `promo-codes.ts:229-234`: replace `actor.role !== RoleEnum.ADMIN && actor.role !== RoleEnum.SUPER_ADMIN` with `!actor.permissions?.includes(PermissionEnum.BILLING_MANAGE)` (or appropriate billing permission)\n2. At `promo-codes.ts:280-285`: same replacement\n3. Replace `throw new Error(...)` with `throw new HTTPException(403, { message: '...' })` in both locations\n\nGaps: GAP-33\nFiles: `apps/api/src/routes/billing/promo-codes.ts`\nTests: Promo code routes return 403 (not 500) for unauthorized users; admin with permission can access",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add UserBookmark ownership verification + admin permission bypass",
+            "description": "Fix bookmark access control:\n1. In `userBookmark.permissions.ts`: add admin bypass via `USER_BOOKMARK_VIEW_ANY` permission in `canAccessBookmark`\n2. In `userBookmark.service.ts:83-90`: modify `_canList`/`_canSearch`/`_canCount` to verify ownership (filter by actor.id) unless actor has `USER_BOOKMARK_VIEW_ANY` permission\n3. In `listBookmarksByEntity`: add ownership filter for non-admin actors\n\nGaps: GAP-27, GAP-47\nDepends on: T-001\nFiles: `packages/service-core/src/services/userBookmark/userBookmark.permissions.ts`, `packages/service-core/src/services/userBookmark/userBookmark.service.ts`\nTests: Regular user only sees own bookmarks; admin with USER_BOOKMARK_VIEW_ANY sees all; guest denied",
+            "phase": "core",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add METRICS_RESET permission check + billing ownership fail-closed",
+            "description": "Two permission fixes:\n1. Add `METRICS_RESET` permission requirement to `POST /metrics/reset` endpoint\n2. Change billing ownership middleware default from pass-through to fail-closed at `billing-ownership.middleware.ts:241-243`. Unknown resource types with IDs should return 403 with a warning log.\n\nGaps: GAP-21, GAP-49\nDepends on: T-001\nFiles: `apps/api/src/routes/metrics/`, `apps/api/src/middlewares/billing-ownership.middleware.ts`\nTests: Metrics reset requires METRICS_RESET permission; unknown billing resource type returns 403",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Wrap webhook subscription update + audit log in database transaction",
+            "description": "Wrap the subscription status UPDATE and audit log INSERT in a `db.transaction()` at `subscription-logic.ts:279-314`.\n\nThe audit log INSERT should still catch errors within the transaction (log and continue, don't rollback on audit failure), but both operations are now atomic: if the UPDATE fails, no audit log is created.\n\nGaps: GAP-04\nFiles: `apps/api/src/routes/webhooks/mercadopago/subscription-logic.ts`\nTests: Both operations succeed atomically; transaction rolls back on update failure; audit error doesn't crash transaction",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Remove deprecated webhookEventIds Map + add Redis fallback logging",
+            "description": "Two cleanup fixes:\n1. Remove deprecated `webhookEventIds` Map from `utils.ts:22` and its export from `index.ts:13`\n2. Add `apiLogger.warn('Redis unavailable, falling back to in-memory store', { error })` in empty catch blocks at `rate-limit.ts:101,115,126,153,179`\n\nGaps: GAP-31, GAP-20\nFiles: `apps/api/src/routes/webhooks/mercadopago/utils.ts`, `apps/api/src/routes/webhooks/mercadopago/index.ts`, `apps/api/src/middlewares/rate-limit.ts`\nTests: No import errors after Map removal; Redis fallback logs warning (mock test)",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Delete orphan exchange-rate write files in protected tier",
+            "description": "Delete 4 unmounted write operation files in `apps/api/src/routes/exchange-rates/protected/`:\n- create.ts\n- update-config.ts\n- delete.ts\n- fetch-now.ts\n\nThese files implement admin operations using createProtectedRoute but are NOT mounted in the router. They are dead code.\n\nGaps: GAP-32\nFiles to delete: 4 files in `apps/api/src/routes/exchange-rates/protected/`\nTests: Build passes, no import errors, protected/index.ts unchanged",
+            "phase": "core",
+            "complexity": 1,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Remove exchange-rate protected tier duplication",
+            "description": "Remove the duplicated protected tier for exchange rates:\n1. The /config and /history endpoints exist in BOTH `/protected/exchange-rates/` and `/admin/exchange-rates/`\n2. Remove the protected tier mount entirely (or keep only public-appropriate read operations)\n3. Update any frontend references if needed\n\nGaps: GAP-22\nDepends on: T-018\nFiles: `apps/api/src/routes/exchange-rates/protected/index.ts`, `apps/api/src/routes/index.ts`\nTests: Admin exchange rate routes work; protected routes removed; no frontend breaks",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": ["T-018"],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Consolidate cron routes - remove /api/v1/cron public access",
+            "description": "Cron has dual mounts: `/api/v1/cron` (secret-based) and `/api/v1/admin/cron` (permission-based). The `/api/v1/cron` path is used by Vercel scheduler.\n\nOptions:\n- Keep `/api/v1/cron` for Vercel scheduler (it uses CRON_SECRET, not public) but document it as internal-only\n- Ensure admin panel only uses `/api/v1/admin/cron`\n- Remove any documentation that treats `/api/v1/cron` as a public API\n\nGaps: GAP-14 (cron part)\nFiles: `apps/api/src/routes/index.ts`, `apps/api/src/cron/`, documentation\nTests: Cron jobs still triggerable via secret; admin cron works with permissions",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Move billing admin-only operations from protected to admin tier",
+            "description": "Identify billing operations in `/protected/billing/` that are admin-only and move them to `/admin/billing/`:\n- metrics/system-usage\n- metrics/approaching-limits\n- Any customer search/management operations that only admins use\n\nUpdate admin frontend URL references in hooks/API calls accordingly.\nClean change: no backward-compatible redirects.\n\nGaps: GAP-14 (billing part)\nFiles: `apps/api/src/routes/billing/index.ts`, `apps/api/src/routes/index.ts`, `apps/admin/src/` (hooks/API calls)\nTests: Admin billing operations work at new URLs; user billing operations unchanged; admin panel loads correctly",
+            "phase": "core",
+            "complexity": 4,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Move reports admin operations to admin tier",
+            "description": "If reports has admin-only operations (list all reports, manage labels), move them to `/admin/reports/`. Keep user-facing operations (create report, list own, get labels) at `/protected/reports/`.\n\nGaps: GAP-14 (reports part)\nFiles: `apps/api/src/routes/reports/`, `apps/api/src/routes/index.ts`\nTests: User can create reports at /protected/; admin can manage all reports at /admin/",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Fix JSON-LD XSS in Breadcrumb and propietarios Astro components",
+            "description": "Replace raw JSON.stringify with the existing JsonLd component (which escapes < as \\u003c):\n1. `Breadcrumb.astro:114` - replace `<script type=\"application/ld+json\" set:html={JSON.stringify(jsonLd)} />` with `<JsonLd data={jsonLd} />`\n2. `propietarios/index.astro:96` - same replacement\n\nThe JsonLd component already exists at `apps/web/src/components/seo/JsonLd.astro` with proper escaping.\n\nGaps: GAP-06\nFiles: `apps/web/src/components/shared/Breadcrumb.astro`, `apps/web/src/pages/[lang]/propietarios/index.astro`\nTests: JSON-LD output escapes < characters as \\u003c",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Add UUID validation to accommodation route parameters",
+            "description": "Add `requestParams` with `z.string().uuid()` validation to 3 accommodation routes:\n1. `getFaqs.ts:24` - validate `id` param\n2. `getByDestination.ts:24` - validate `destinationId` param\n3. `getTopRatedByDestination.ts:24` - validate `destinationId` param\n\nGaps: GAP-28\nFiles: `apps/api/src/routes/accommodation/protected/getFaqs.ts`, `apps/api/src/routes/accommodation/public/getByDestination.ts`, `apps/api/src/routes/accommodation/public/getTopRatedByDestination.ts`\nTests: Invalid UUID returns 400 validation error; valid UUID passes through",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add Content-Security-Policy-Report-Only headers to web and admin vercel.json",
+            "description": "Add CSP in Report-Only mode to detect violations without breaking:\n1. Add `Content-Security-Policy-Report-Only` header to `apps/web/vercel.json`\n2. Add `Content-Security-Policy-Report-Only` header to `apps/admin/vercel.json`\n\nStart with a permissive policy that covers known requirements:\n- `default-src 'self'`\n- `script-src 'self' 'unsafe-inline'` (for Astro/React hydration)\n- `style-src 'self' 'unsafe-inline'` (for Tailwind)\n- `img-src 'self' data: https:`\n- `connect-src 'self' https://api.mercadopago.com` (and API URL)\n- `font-src 'self'`\n\nGaps: GAP-45\nFiles: `apps/web/vercel.json`, `apps/admin/vercel.json`\nTests: Headers present in vercel.json config; deploy does not break",
+            "phase": "core",
+            "complexity": 3,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Fix CI audit blocking for critical/high vulnerabilities",
+            "description": "Remove `continue-on-error: true` and `|| true` from pnpm audit step in CI pipeline:\n1. Edit `.github/workflows/ci.yml:63-69`\n2. Keep `--audit-level=critical` so only critical CVEs block\n3. Optionally add a separate step for high-level audit with continue-on-error for visibility\n\nGaps: GAP-12\nFiles: `.github/workflows/ci.yml`\nTests: CI workflow syntax valid (use `act` or manual verification)",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Fix GitHub workflow inconsistencies (Node version, pnpm action, engines)",
+            "description": "Three CI/CD fixes:\n1. Update `refresh-search.yml:13` to use `HOSPEDA_DATABASE_URL` (not `DATABASE_URL`) and Node 20 (not 18)\n2. Update `docs.yml:34,59,80` to use `pnpm/action-setup@v4` and read version from `packageManager` field\n3. Change `engines.node` from `>=18` to `>=20` in root `package.json:77`\n\nGaps: GAP-55, GAP-63, GAP-64\nFiles: `.github/workflows/refresh-search.yml`, `.github/workflows/docs.yml`, `package.json`\nTests: Workflow syntax valid; engines constraint updated",
+            "phase": "core",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Replace console.error/console.warn with structured logger",
+            "description": "Replace console.* calls with @repo/logger:\n1. `auth.ts:404`: replace `console.error` with `apiLogger.error`\n2. `past-due-grace.middleware.ts:29-33`: replace `console.warn` with `apiLogger.warn`\n\nGaps: GAP-36, GAP-59\nFiles: `apps/api/src/lib/auth.ts`, `apps/api/src/middlewares/past-due-grace.middleware.ts`\nTests: No console.* calls in modified files; logging works correctly",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Clean bookmark permissions dead code + error type guard in event-handler",
+            "description": "Two cleanup fixes:\n1. In `userBookmark.permissions.ts`: remove commented-out code (line 13) and Spanish JSDoc comments (lines 6-8, 23-25). Replace with English.\n2. In `event-handler.ts:223-230`: add `instanceof Error` type guard before accessing `error.stack`\n\nGaps: GAP-17, GAP-60\nFiles: `packages/service-core/src/services/userBookmark/userBookmark.permissions.ts`, `apps/api/src/routes/webhooks/mercadopago/event-handler.ts`\nTests: No Spanish comments; error handler works with non-Error objects",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Update documentation examples to use PermissionEnum instead of role checks",
+            "description": "Replace `actor.role !== RoleEnum.ADMIN` patterns with `PermissionEnum` checks in 5 example files:\n1. `packages/service-core/docs/examples/basic-service.ts:83,97,111,125,139`\n2. `packages/service-core/docs/examples/custom-methods.ts:55,63,67,72`\n3. `packages/service-core/docs/examples/complex-logic.ts:117,121,125`\n4. `packages/service-core/docs/examples/with-hooks.ts:92,102,108,116`\n5. `apps/api/docs/examples/complex-logic.ts:185`\n\nGaps: GAP-57\nFiles: 5 example files in service-core/docs and api/docs\nTests: Examples compile (if .ts); no actor.role patterns remain",
+            "phase": "cleanup",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Update ACCEPTED_RISKS.md with SEC-IDs, new accepted risks, and numbering fix",
+            "description": "Documentation updates to ACCEPTED_RISKS.md:\n1. GAP-18: Add SEC-ID cross-references to all 11 risks, fix non-sequential numbering (5,7,8,6,9,11,10)\n2. GAP-08: Add entitlements fail-closed limitation as accepted risk (QZPayEntitlementService has no getById)\n3. GAP-44: Add /auth/me permission exposure as accepted risk (user's own data, needed for client-side gating)\n4. GAP-65: Document webhook-retry schedule mismatch as Vercel free plan limitation (daily vs hourly)\n\nGaps: GAP-18, GAP-08, GAP-44, GAP-65\nFiles: `docs/security/ACCEPTED_RISKS.md`",
+            "phase": "docs",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Fix CORS docs + document undocumented cron jobs",
+            "description": "Two documentation fixes:\n1. GAP-19: Remove references to `x-actor-id` and `x-user-id` from `cors-configuration.md:40,119-121` (headers no longer exist)\n2. GAP-54: Document `exchange-rate-fetch` and `dunning` cron jobs in `cron-system.md` (Registered Jobs section)\n\nGaps: GAP-19, GAP-54\nFiles: `apps/api/docs/cors-configuration.md`, `apps/api/docs/cron-system.md`",
+            "phase": "docs",
+            "complexity": 2,
+            "status": "completed",
+            "blockedBy": [],
+            "blocks": [],
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-07T00:00:00.000Z",
+                "started": "2026-03-07T23:00:09.000Z",
+                "completed": "2026-03-07T23:00:09.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "completed": 32,
+        "inProgress": 0,
+        "pending": 0,
+        "blocked": 0,
+        "phases": {
+            "setup": {
+                "total": 2,
+                "completed": 2
+            },
+            "core": {
+                "total": 25,
+                "completed": 25
+            },
+            "cleanup": {
+                "total": 3,
+                "completed": 3
+            },
+            "docs": {
+                "total": 2,
+                "completed": 2
+            }
+        }
+    }
+}

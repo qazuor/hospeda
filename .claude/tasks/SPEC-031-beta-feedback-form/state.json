@@ -1,0 +1,1858 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-031",
+    "title": "Beta Feedback Form with Linear Integration",
+    "created": "2026-03-06T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create packages/feedback/ package scaffold",
+            "description": "Initialize the `packages/feedback/` package with `package.json` (name: `@repo/feedback`), `tsconfig.json` extending `@repo/typescript-config`, and `src/index.ts` entry point. Add dependencies: `zod`, `react`, `ua-parser-js`. Add devDependencies: `@repo/typescript-config`, `vitest`. Register the package in the root `pnpm-workspace.yaml` if needed. Verify the package builds and is importable from other packages.\n\n**Test requirements:**\n- Unit test: verify package exports are accessible (`packages/feedback/test/index.test.ts`)\n- Verify tsconfig compiles without errors",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create package.json with name, dependencies, scripts",
+                    "completed": true
+                },
+                {
+                    "title": "Create tsconfig.json extending shared config",
+                    "completed": true
+                },
+                {
+                    "title": "Create src/index.ts with placeholder export",
+                    "completed": true
+                },
+                {
+                    "title": "Verify package compiles and is importable",
+                    "completed": true
+                }
+            ],
+            "tags": ["setup", "monorepo"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:28:37.529Z",
+                "completed": "2026-03-06T04:28:37.529Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Define Zod schemas for feedback form payload",
+            "description": "Create `packages/feedback/src/schemas/feedback.schema.ts` with the `feedbackFormSchema` Zod schema as defined in spec section 3.6. Include: step 1 fields (type enum, title, description), step 2 optional fields (severity enum, stepsToReproduce, expectedResult, actualResult, attachments as File array), user info (reporterEmail, reporterName), and environment object (currentUrl, browser, os, viewport, timestamp, appSource enum, deployVersion, userId, consoleErrors array, errorInfo object). Export inferred TypeScript types (`FeedbackFormData`, `FeedbackEnvironment`). Also create a server-side variant schema that accepts attachments as `Buffer` instead of `File` for API validation.\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/schemas/feedback.schema.test.ts`\n- Test valid payloads pass validation\n- Test each required field missing triggers error\n- Test enum values reject invalid values\n- Test min/max length constraints on title (5-200) and description (10-5000)\n- Test optional fields can be omitted\n- Test email validation\n- Test environment sub-object validation",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-013", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Define feedbackFormSchema with all fields",
+                    "completed": true
+                },
+                {
+                    "title": "Define server-side variant for Buffer attachments",
+                    "completed": true
+                },
+                {
+                    "title": "Export inferred types (FeedbackFormData, FeedbackEnvironment)",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "zod", "validation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:58:28.414Z",
+                "completed": "2026-03-06T04:58:28.414Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create feedback config file with configurable settings",
+            "description": "Create `packages/feedback/src/config/feedback.config.ts` with all configurable values as defined in spec sections 3.1-3.4. Include: `REPORT_TYPES` array (6 types with id, label in Spanish, linearLabelId placeholders), `SEVERITY_LEVELS` array (4 levels with id, label, description, linearPriority), `LINEAR_CONFIG` object (teamId, projectId, defaultStateId, labels for source and environment), and `FEEDBACK_CONFIG` master object (linear, reportTypes, severityLevels, fallbackEmail, rateLimit: 30, linearMaxRetries: 3, maxFileSize: 10MB, maxAttachments: 5, keyboardShortcut, enabled). All values use `as const` for type safety.\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/config/feedback.config.test.ts`\n- Verify all config values are readonly\n- Verify REPORT_TYPES has 6 entries with correct structure\n- Verify SEVERITY_LEVELS maps to correct linearPriority values (1-4)\n- Verify FEEDBACK_CONFIG merges all sub-configs",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-013", "T-016", "T-022"],
+            "subtasks": [
+                {
+                    "title": "Define REPORT_TYPES constant",
+                    "completed": true
+                },
+                {
+                    "title": "Define SEVERITY_LEVELS constant",
+                    "completed": true
+                },
+                {
+                    "title": "Define LINEAR_CONFIG constant",
+                    "completed": true
+                },
+                {
+                    "title": "Define FEEDBACK_CONFIG master object",
+                    "completed": true
+                },
+                {
+                    "title": "Write config unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "constants"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:58:28.414Z",
+                "completed": "2026-03-06T04:58:28.414Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create hardcoded Spanish strings constants file",
+            "description": "Create `packages/feedback/src/config/strings.ts` with the `FEEDBACK_STRINGS` constant as defined in spec section 9. Contains all user-facing text in Spanish organized by section: fab, form, fields, buttons, techDetails, success, errorBoundary, validation, rateLimit. All values as `as const`.\n\n**Test requirements:**\n- Unit test in `packages/feedback/test/config/strings.test.ts`\n- Verify all keys exist and are non-empty strings\n- Verify no English text accidentally included",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-016", "T-017", "T-022", "T-023", "T-029"],
+            "subtasks": [
+                {
+                    "title": "Define FEEDBACK_STRINGS constant with all sections",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests verifying all keys",
+                    "completed": true
+                }
+            ],
+            "tags": ["strings", "constants"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:58:28.414Z",
+                "completed": "2026-03-06T04:58:28.414Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add feedback environment variables to @repo/config",
+            "description": "Add the following environment variables to `@repo/config`: `HOSPEDA_LINEAR_API_KEY` (string, required in production), `HOSPEDA_FEEDBACK_FALLBACK_EMAIL` (string, default 'feedback@hospeda.com'), `HOSPEDA_FEEDBACK_ENABLED` (boolean, default true). Follow existing patterns in the config package for env var registration and validation.\n\n**Test requirements:**\n- Verify env vars are properly typed and validated\n- Verify defaults work when env vars are not set",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add env var definitions to @repo/config",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation for new env vars",
+                    "completed": true
+                },
+                {
+                    "title": "Update .env.example files",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "env"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:58:28.414Z",
+                "completed": "2026-03-06T04:58:28.414Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Export feedback schemas to @repo/schemas",
+            "description": "Re-export the feedback Zod schemas and inferred types from `@repo/schemas` so they are available to other packages. Add a re-export barrel in `packages/schemas/src/feedback/` or append to existing exports. Ensure `FeedbackFormData` and `feedbackFormSchema` are accessible as `@repo/schemas/feedback`.\n\n**Test requirements:**\n- Verify import from `@repo/schemas` works\n- Verify types are properly re-exported",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add re-export in @repo/schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Verify import from consumer packages",
+                    "completed": true
+                }
+            ],
+            "tags": ["schema", "monorepo"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add attachments field to SendEmailInput interface",
+            "description": "In `packages/notifications/src/transports/email/` (or wherever `SendEmailInput` is defined), add an optional `attachments` field: `attachments?: Array<{ filename: string; content: Buffer | string; contentType?: string; }>`. This matches the Resend SDK's native attachment format.\n\n**Test requirements:**\n- Unit test: verify the interface accepts attachments\n- Verify existing code compiles without changes (backward compatible)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Add attachments field to SendEmailInput",
+                    "completed": true
+                },
+                {
+                    "title": "Verify backward compatibility (existing tests pass)",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "email", "interface"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:28:37.529Z",
+                "completed": "2026-03-06T04:28:37.529Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Pass attachments through ResendEmailTransport.send()",
+            "description": "In `packages/notifications/src/transports/email/resend-transport.ts`, update the `send()` method to include `attachments` when calling `this.resend.emails.send()`. Resend SDK already supports attachments natively, so this is just passing the field through. If attachments is undefined, no change to behavior.\n\n**Test requirements:**\n- Unit test in `packages/notifications/test/transports/resend-transport.test.ts`\n- Test that attachments are passed to Resend SDK when provided\n- Test that omitting attachments works as before (backward compatible)\n- Mock the Resend SDK to verify the payload",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Update ResendEmailTransport.send() to pass attachments",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests with Resend mock",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "email", "resend"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:28:37.529Z",
+                "completed": "2026-03-06T04:28:37.529Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add skipDb and skipLogging options to NotificationService.send()",
+            "description": "In `packages/notifications/src/` (NotificationService class), add a `SendNotificationOptions` interface with `skipDb?: boolean` and `skipLogging?: boolean`. Update the `send()` method signature to accept this options object. When `skipDb` is true, skip writing to `billing_notification_log` table. When `skipLogging` is true, skip structured logging via `@repo/logger`. Both default to false for backward compatibility.\n\n**Test requirements:**\n- Unit tests in `packages/notifications/test/notification-service.test.ts`\n- Test normal flow (no options) still logs and writes to DB\n- Test skipDb=true skips DB write\n- Test skipLogging=true skips logger calls\n- Test both combined",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Define SendNotificationOptions interface",
+                    "completed": true
+                },
+                {
+                    "title": "Update send() method to accept options",
+                    "completed": true
+                },
+                {
+                    "title": "Add skipDb conditional around DB write",
+                    "completed": true
+                },
+                {
+                    "title": "Add skipLogging conditional around logger calls",
+                    "completed": true
+                },
+                {
+                    "title": "Write unit tests for all combinations",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "options"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:28:37.529Z",
+                "completed": "2026-03-06T04:28:37.529Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add FEEDBACK_REPORT to NotificationType enum and template mapping",
+            "description": "In `packages/notifications/`, add `FEEDBACK_REPORT` to the `NotificationType` enum. Add a corresponding entry in `NOTIFICATION_CATEGORY_MAP`. Add a case in `selectTemplate()` that maps to the FeedbackReportEmail template (created in T-011). Add a subject pattern in `subject-builder.ts` using format `[{type}] {title}`.\n\n**Test requirements:**\n- Verify enum includes new value\n- Verify selectTemplate returns correct template\n- Verify subject builder formats correctly",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add FEEDBACK_REPORT to NotificationType enum",
+                    "completed": true
+                },
+                {
+                    "title": "Add to NOTIFICATION_CATEGORY_MAP",
+                    "completed": true
+                },
+                {
+                    "title": "Add case in selectTemplate()",
+                    "completed": true
+                },
+                {
+                    "title": "Add subject pattern in subject-builder",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "enum", "template"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:58:28.414Z",
+                "completed": "2026-03-06T04:58:28.414Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create FeedbackReportEmail React Email template",
+            "description": "Create `packages/notifications/src/templates/feedback/FeedbackReportEmail.tsx`. This React Email component renders a full feedback report as an HTML email. Uses existing shared components (`EmailLayout`, `EmailHeading`, `InfoRow`). Sections: Report header (type badge, title), Reporter info (name, email), Description, Severity (if provided), Steps to reproduce (if provided), Expected/Actual result (if provided), Environment details table (URL, browser, OS, viewport, version, console errors), Timestamps. All text in Spanish.\n\n**Test requirements:**\n- Snapshot test of rendered output\n- Test with minimal data (step 1 only)\n- Test with full data (step 1 + step 2 + all environment fields)\n- Verify all fields are rendered when provided",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Create FeedbackReportEmail component",
+                    "completed": true
+                },
+                {
+                    "title": "Add report header section with type badge",
+                    "completed": true
+                },
+                {
+                    "title": "Add reporter info, description, severity sections",
+                    "completed": true
+                },
+                {
+                    "title": "Add environment details table",
+                    "completed": true
+                },
+                {
+                    "title": "Write snapshot and data variation tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "email-template", "react-email"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T04:28:37.529Z",
+                "completed": "2026-03-06T04:28:37.529Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write integration tests for notifications extensions",
+            "description": "Write comprehensive integration tests verifying all `@repo/notifications` extensions work together: sending an email with attachments, skipDb, skipLogging, and the FEEDBACK_REPORT template. Use mocked Resend client and mocked DB.\n\n**Test requirements:**\n- Integration test in `packages/notifications/test/feedback-integration.test.ts`\n- Test full flow: create FEEDBACK_REPORT notification with attachments, skipDb, skipLogging\n- Verify Resend receives correct payload including attachments\n- Verify DB is NOT written to when skipDb=true\n- Verify logger is NOT called when skipLogging=true\n- Verify template renders correctly in the flow",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Set up mocks for Resend, DB, logger",
+                    "completed": true
+                },
+                {
+                    "title": "Test full FEEDBACK_REPORT flow with all options",
+                    "completed": true
+                },
+                {
+                    "title": "Verify correct payload reaches Resend",
+                    "completed": true
+                },
+                {
+                    "title": "Verify skip options work correctly",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "testing", "integration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create POST /api/v1/public/feedback endpoint with multipart validation",
+            "description": "Create the feedback API route in `apps/api/src/routes/public/feedback.ts`. The endpoint accepts `multipart/form-data` with form fields + file attachments. Validate the payload with the server-side feedback schema (from T-002). Validate attachments: max 5 files, max 10MB each, allowed types: image/png, image/jpeg, image/webp, image/gif. Add a honeypot hidden field for spam prevention. Return structured responses as defined in spec section 6.\n\n**Test requirements:**\n- Unit tests in `apps/api/test/routes/public/feedback.test.ts`\n- Test valid payload returns 200\n- Test missing required fields returns 400 with VALIDATION_ERROR\n- Test invalid file type rejected\n- Test file too large rejected\n- Test too many files rejected\n- Test honeypot field filled triggers silent rejection",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-002", "T-003", "T-005", "T-006"],
+            "blocks": ["T-014", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Create route file with multipart handling",
+                    "completed": true
+                },
+                {
+                    "title": "Add Zod validation for form fields",
+                    "completed": true
+                },
+                {
+                    "title": "Add attachment validation (type, size, count)",
+                    "completed": true
+                },
+                {
+                    "title": "Add honeypot field check",
+                    "completed": true
+                },
+                {
+                    "title": "Return structured success/error responses",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive endpoint tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "endpoint", "hono", "multipart"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:53:43.689Z",
+                "completed": "2026-03-06T05:53:43.689Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Implement Linear API client for issue creation with file uploads",
+            "description": "Create `apps/api/src/lib/linear-client.ts` (or `packages/feedback/src/lib/linear-client.ts`). Implement: (1) `uploadFileToLinear({linearClient, fileBuffer, filename, contentType, size})` - calls `linearClient.fileUpload()` to get pre-signed URL, then PUTs the binary with correct headers (Content-Type is mandatory, 403 without it), returns `assetUrl`. (2) `createLinearIssue({linearClient, formData, assetUrls})` - creates issue with `issueCreate` mutation, title format `[{type}] {title}`, markdown description with all fields and embedded images as `![filename](assetUrl)`, labels from config, priority mapped from severity (default Medium/3), project and state from config. Uses `@linear/sdk`.\n\n**Test requirements:**\n- Unit tests in `test/lib/linear-client.test.ts`\n- Mock `@linear/sdk` LinearClient\n- Test fileUpload flow: verify correct params, verify PUT call with headers\n- Test issueCreate: verify title format, description markdown, labels, priority mapping\n- Test severity-to-priority mapping (critical=1, high=2, medium=3, low=4, undefined=3)\n- Test assetUrls are embedded in description markdown\n- Test error thrown when fileUpload fails\n- Test error thrown when PUT fails (e.g., 403)",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Install @linear/sdk dependency",
+                    "completed": true
+                },
+                {
+                    "title": "Implement uploadFileToLinear function",
+                    "completed": true
+                },
+                {
+                    "title": "Implement createLinearIssue function",
+                    "completed": true
+                },
+                {
+                    "title": "Implement description markdown formatter",
+                    "completed": true
+                },
+                {
+                    "title": "Implement severity-to-priority mapper",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive tests with SDK mock",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "linear", "sdk", "file-upload"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:08:40.628Z",
+                "completed": "2026-03-06T06:08:40.628Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Implement retry logic with exponential backoff",
+            "description": "Create a `withRetry` utility function in the feedback package or API. Accepts: an async function, max retries (from `FEEDBACK_CONFIG.linearMaxRetries`, default 3), and backoff delays (1s, 2s, 4s). On failure, retries with exponential backoff. On final failure, calls the email fallback via `@repo/notifications` with `skipDb: true` and `skipLogging: true`, using the `FeedbackReportEmail` template and including attachments as base64. Integrates into the feedback endpoint flow.\n\n**Test requirements:**\n- Unit tests in `test/lib/retry.test.ts`\n- Test succeeds on first try: no retries\n- Test succeeds on 2nd try after 1 failure\n- Test succeeds on 3rd try after 2 failures\n- Test all retries fail: verify email fallback is called\n- Test email fallback receives correct data (report + attachments)\n- Test backoff timing (verify delays between retries)\n- Mock timers for fast tests",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-014", "T-012"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Create withRetry utility with configurable retries and backoff",
+                    "completed": true
+                },
+                {
+                    "title": "Implement email fallback call on final failure",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate into feedback endpoint flow",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests with timer mocks",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "retry", "fallback", "email"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:22:46.426Z",
+                "completed": "2026-03-06T06:22:46.426Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add rate limiting middleware for feedback endpoint",
+            "description": "Add IP-based rate limiting to the `POST /api/v1/public/feedback` endpoint. Use configurable limit from `FEEDBACK_CONFIG.rateLimit` (default 30 requests per IP per hour). Return 429 with a JSON error body including the rate limit message from `FEEDBACK_STRINGS`. Use an in-memory store (Map with TTL) for simplicity during beta. Follow existing rate limiting patterns in the API if any exist.\n\n**Test requirements:**\n- Unit tests in `apps/api/test/middleware/rate-limit.test.ts`\n- Test requests under limit pass through\n- Test request at limit returns 429\n- Test different IPs have independent limits\n- Test limit resets after TTL window",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Create rate limiting middleware",
+                    "completed": true
+                },
+                {
+                    "title": "Implement in-memory store with TTL",
+                    "completed": true
+                },
+                {
+                    "title": "Apply middleware to feedback route",
+                    "completed": true
+                },
+                {
+                    "title": "Write rate limit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "middleware", "rate-limiting"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:53:43.689Z",
+                "completed": "2026-03-06T05:53:43.689Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Write full endpoint integration tests for feedback API",
+            "description": "Comprehensive integration tests for the complete `POST /api/v1/public/feedback` endpoint flow. Mock Linear SDK and notifications. Test the full pipeline: validation -> file upload -> issue creation -> response. Test error paths: Linear failure with retries -> email fallback.\n\n**Test requirements:**\n- Integration tests in `apps/api/test/routes/public/feedback.integration.test.ts`\n- Test happy path: valid payload -> Linear issue created -> 200 with issueId\n- Test happy path with attachments: files uploaded to Linear -> embedded in description\n- Test Linear failure: all retries fail -> email fallback sent -> 200 with fallback message\n- Test rate limiting: 31st request in an hour -> 429\n- Test validation errors: various invalid payloads -> 400\n- Test file validation: oversized file, wrong type -> 400\n- Test honeypot triggered -> silent 200 (no issue created)",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-015", "T-016"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Set up test fixtures and mocks",
+                    "completed": true
+                },
+                {
+                    "title": "Write happy path tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write attachment upload tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write Linear failure + email fallback tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write rate limiting tests",
+                    "completed": true
+                },
+                {
+                    "title": "Write validation and honeypot tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing", "integration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:30:35.538Z",
+                "completed": "2026-03-06T06:30:35.538Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Build environment data collector utility",
+            "description": "Create `packages/feedback/src/lib/collector.ts`. Pure function `collectEnvironmentData({appSource, deployVersion?, userId?, userEmail?, userName?})` that returns the environment object: reads `window.location.href`, parses `navigator.userAgent` with `ua-parser-js` for browser name+version and OS name+version, reads `window.innerWidth`x`window.innerHeight`, generates ISO timestamp, and merges provided auth data. All values are strings. Handles SSR gracefully (returns empty strings when window is not available).\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/lib/collector.test.ts`\n- Mock window/navigator objects\n- Test browser detection from various user agents (Chrome, Firefox, Safari, mobile)\n- Test OS detection (Windows, macOS, Linux, iOS, Android)\n- Test viewport format\n- Test SSR fallback (no window)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Implement collectEnvironmentData function",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate ua-parser-js for browser/OS detection",
+                    "completed": true
+                },
+                {
+                    "title": "Handle SSR gracefully",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests with mocked globals",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "collector", "utility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Build useAutoCollect React hook",
+            "description": "Create `packages/feedback/src/hooks/useAutoCollect.ts`. React hook that calls `collectEnvironmentData()` on mount and returns the environment data object. Accepts `appSource` and optional auth context (userId, userEmail, userName) as params. Also reads the console error buffer from `useConsoleCapture` (T-020). Returns a mutable state so the user can edit values before submission.\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/hooks/useAutoCollect.test.ts`\n- Test hook returns environment data on mount\n- Test auth data is included when provided\n- Test values are editable (state updates)\n- Use React Testing Library renderHook",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Implement useAutoCollect hook",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate with collectEnvironmentData",
+                    "completed": true
+                },
+                {
+                    "title": "Return mutable state for editing",
+                    "completed": true
+                },
+                {
+                    "title": "Write hook tests with renderHook",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "hook", "react"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:53:43.689Z",
+                "completed": "2026-03-06T05:53:43.689Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Build useConsoleCapture hook for console.error interception",
+            "description": "Create `packages/feedback/src/hooks/useConsoleCapture.ts`. On mount, wraps `console.error` with an interceptor that stores calls in a circular buffer (max 10 entries). Each entry: `{timestamp: ISO string, message: string}` where message is the serialized arguments truncated to 500 chars. The interceptor is passive (still calls original `console.error`). Returns function `getConsoleErrors()` to retrieve the buffer. Cleanup on unmount restores original `console.error`.\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/hooks/useConsoleCapture.test.ts`\n- Test console.error calls are captured\n- Test buffer is circular (11th call evicts 1st)\n- Test message truncation at 500 chars\n- Test original console.error is still called\n- Test cleanup restores original on unmount",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-019", "T-024"],
+            "subtasks": [
+                {
+                    "title": "Implement circular buffer with max 10 entries",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap console.error preserving original behavior",
+                    "completed": true
+                },
+                {
+                    "title": "Serialize and truncate arguments",
+                    "completed": true
+                },
+                {
+                    "title": "Implement cleanup/restore on unmount",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "hook", "console"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build useKeyboardShortcut hook",
+            "description": "Create `packages/feedback/src/hooks/useKeyboardShortcut.ts`. React hook that listens for `Ctrl+Shift+F` (or `Cmd+Shift+F` on macOS) keyboard events. Accepts a callback function and calls it when the shortcut is pressed. Detects macOS via `navigator.platform` or `navigator.userAgentData`. Uses `useEffect` with `keydown` event listener. Cleans up on unmount. Does not conflict with browser defaults (Ctrl+Shift+F is not a standard browser shortcut).\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/hooks/useKeyboardShortcut.test.ts`\n- Test callback is called on Ctrl+Shift+F\n- Test callback is called on Cmd+Shift+F (macOS)\n- Test callback is NOT called on just Ctrl+F\n- Test cleanup removes listener on unmount",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Implement keyboard shortcut listener",
+                    "completed": true
+                },
+                {
+                    "title": "Detect macOS for Cmd key",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests with simulated keyboard events",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "hook", "keyboard"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Build StepBasic component (form step 1)",
+            "description": "Create `packages/feedback/src/components/steps/StepBasic.tsx`. React component for step 1 of the feedback form. Uses shadcn components (Select, Input, Textarea). Fields: report type (Select from REPORT_TYPES), title (Input, min 5 max 200), description (Textarea, min 10 max 5000), email (Input, shown if not authenticated), name (Input, shown if not authenticated). Shows validation errors from FEEDBACK_STRINGS. Pre-fills email/name from auth context if available.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/steps/StepBasic.test.tsx`\n- Test all 6 report types render in select\n- Test validation errors show on submit with empty fields\n- Test email/name fields hidden when authenticated\n- Test email/name fields shown and required when not authenticated\n- Test pre-fill from auth context",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Build report type Select with REPORT_TYPES",
+                    "completed": true
+                },
+                {
+                    "title": "Build title Input with validation",
+                    "completed": true
+                },
+                {
+                    "title": "Build description Textarea with validation",
+                    "completed": true
+                },
+                {
+                    "title": "Build conditional email/name fields",
+                    "completed": true
+                },
+                {
+                    "title": "Wire up validation error display",
+                    "completed": true
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "form", "shadcn"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:53:43.689Z",
+                "completed": "2026-03-06T05:53:43.689Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Build StepDetails component (form step 2)",
+            "description": "Create `packages/feedback/src/components/steps/StepDetails.tsx`. React component for step 2 (optional). Fields: severity (Select from SEVERITY_LEVELS with descriptions), steps to reproduce (Textarea), expected result (Textarea), actual result (Textarea), file upload (drag-and-drop or click, max 5 files, max 10MB each, image types only, preview thumbnails), and collapsible 'Technical details' section showing all auto-collected environment data as editable inputs. Uses FEEDBACK_STRINGS for all labels.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/steps/StepDetails.test.tsx`\n- Test severity select renders all 4 levels with descriptions\n- Test all text fields accept input\n- Test file upload accepts valid images\n- Test file upload rejects invalid types\n- Test file upload rejects oversized files\n- Test technical details section is collapsible\n- Test environment data fields are editable",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Build severity Select with descriptions",
+                    "completed": true
+                },
+                {
+                    "title": "Build reproduction text fields",
+                    "completed": true
+                },
+                {
+                    "title": "Build file upload with drag-and-drop and preview",
+                    "completed": true
+                },
+                {
+                    "title": "Build collapsible technical details section",
+                    "completed": true
+                },
+                {
+                    "title": "Make environment fields editable",
+                    "completed": true
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "form", "shadcn", "file-upload"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:53:43.689Z",
+                "completed": "2026-03-06T05:53:43.689Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Build FeedbackForm component orchestrating steps and submission",
+            "description": "Create `packages/feedback/src/components/FeedbackForm.tsx`. Main form component that orchestrates StepBasic and StepDetails. Manages form state across steps. Step 1 is shown initially with 'Enviar' and 'Agregar mas detalles' buttons. Clicking 'Agregar mas detalles' shows step 2 with a 'Volver' button. 'Enviar' is available on both steps. On submit, combines step 1 + step 2 + auto-collected data into the full payload. Uses `useFeedbackSubmit` hook for API call. Shows success state (issue ID, thank you message) or error state. 'Enviar otro' resets the form.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/FeedbackForm.test.tsx`\n- Test step 1 renders by default\n- Test clicking 'Agregar mas detalles' shows step 2\n- Test 'Volver' returns to step 1\n- Test submit from step 1 sends minimal payload\n- Test submit from step 2 sends full payload\n- Test success state shows issue ID\n- Test 'Enviar otro' resets form\n- Test error state on API failure",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-019", "T-020", "T-022", "T-023"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "Manage multi-step form state",
+                    "completed": true
+                },
+                {
+                    "title": "Wire step navigation (forward/back)",
+                    "completed": true
+                },
+                {
+                    "title": "Combine all data on submit",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate useFeedbackSubmit hook",
+                    "completed": true
+                },
+                {
+                    "title": "Build success and error states",
+                    "completed": true
+                },
+                {
+                    "title": "Build 'submit another' reset flow",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "form", "orchestration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:08:40.628Z",
+                "completed": "2026-03-06T06:08:40.628Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Build FeedbackModal component (desktop modal / mobile drawer)",
+            "description": "Create `packages/feedback/src/components/FeedbackModal.tsx`. Wrapper component that renders FeedbackForm inside a shadcn Dialog (desktop, max-width 640px) or Drawer (mobile, slides up from bottom). Detects viewport with a media query (768px breakpoint). Backdrop overlay with click-to-close. Close button (X) in top-right. Escape key closes. Focus trap inside modal. Accepts `isOpen` and `onClose` props. Accepts `prefillData` prop for error boundary pre-fill.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/FeedbackModal.test.tsx`\n- Test renders Dialog on desktop viewport\n- Test renders Drawer on mobile viewport\n- Test close button closes modal\n- Test Escape key closes modal\n- Test backdrop click closes modal\n- Test prefillData is passed to FeedbackForm",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Implement responsive Dialog/Drawer switch",
+                    "completed": true
+                },
+                {
+                    "title": "Wire isOpen/onClose props",
+                    "completed": true
+                },
+                {
+                    "title": "Add focus trap and Escape key handling",
+                    "completed": true
+                },
+                {
+                    "title": "Pass prefillData to FeedbackForm",
+                    "completed": true
+                },
+                {
+                    "title": "Write component tests for both viewports",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "modal", "drawer", "shadcn"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:22:46.426Z",
+                "completed": "2026-03-06T06:22:46.426Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Build FeedbackFAB component with minimize and pulse",
+            "description": "Create `packages/feedback/src/components/FeedbackFAB.tsx`. Floating action button component. Position: fixed bottom-right, 24px from edges. Size: 48px (mobile), 56px (desktop). Uses bug/message icon from `@repo/icons`. Hardcoded light mode styles. Z-index above content, below modals. Tooltip 'Reportar un problema (Ctrl+Shift+F)'. Subtle pulse animation every 30s (respects `prefers-reduced-motion`). Minimize button: shrinks to 24px dot, hover expands temporarily, state in `localStorage('feedback-fab-minimized')`. Uses `useKeyboardShortcut` hook. Clicking opens FeedbackModal. Renders FeedbackModal internally.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/FeedbackFAB.test.tsx`\n- Test FAB renders with correct size\n- Test click opens modal\n- Test keyboard shortcut opens modal\n- Test minimize shrinks to dot\n- Test minimized state persists in localStorage\n- Test hover on minimized FAB expands\n- Test tooltip text",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-021", "T-025"],
+            "blocks": ["T-032", "T-036"],
+            "subtasks": [
+                {
+                    "title": "Build FAB button with positioning and icon",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate FeedbackModal open/close",
+                    "completed": true
+                },
+                {
+                    "title": "Add pulse animation with prefers-reduced-motion",
+                    "completed": true
+                },
+                {
+                    "title": "Build minimize/restore with localStorage",
+                    "completed": true
+                },
+                {
+                    "title": "Integrate useKeyboardShortcut",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "fab", "animation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:30:35.538Z",
+                "completed": "2026-03-06T06:30:35.538Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Build useFeedbackSubmit hook for multipart API submission",
+            "description": "Create `packages/feedback/src/hooks/useFeedbackSubmit.ts`. React hook that handles submitting the feedback form to the API. Builds a `FormData` object from the form payload (serializes JSON fields, appends File objects). Posts to the configured API URL (`/api/v1/public/feedback`). Manages loading, success, and error states. On success, extracts linearIssueId and linearIssueUrl from response. On error, extracts error details. Accepts the API base URL as a config prop.\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/hooks/useFeedbackSubmit.test.ts`\n- Mock fetch\n- Test successful submission returns issue data\n- Test FormData is built correctly with files\n- Test loading state during submission\n- Test error state on API error\n- Test rate limit error (429) shows correct message",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Build FormData from payload",
+                    "completed": true
+                },
+                {
+                    "title": "Implement fetch call with loading state",
+                    "completed": true
+                },
+                {
+                    "title": "Handle success response parsing",
+                    "completed": true
+                },
+                {
+                    "title": "Handle error response parsing",
+                    "completed": true
+                },
+                {
+                    "title": "Write tests with fetch mock",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "hook", "api", "fetch"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Build query param serialization/deserialization for standalone",
+            "description": "Create `packages/feedback/src/lib/query-params.ts`. Two functions: (1) `serializeFeedbackParams({type, title, description, url, error, source, errorStack})` - encodes form pre-fill data as URL query params, truncates long values (stack trace max 500 chars), URL-encodes all values. (2) `parseFeedbackParams(searchParams: URLSearchParams)` - reads and sanitizes query params, returns partial form data for pre-filling. Sanitizes against XSS (strips HTML tags, script content).\n\n**Test requirements:**\n- Unit tests in `packages/feedback/test/lib/query-params.test.ts`\n- Test round-trip: serialize -> parse returns same data\n- Test long stack trace is truncated\n- Test URL encoding/decoding\n- Test XSS sanitization (strips <script> tags)\n- Test missing params return undefined (not errors)\n- Test empty string params are treated as undefined",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-029", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Implement serializeFeedbackParams",
+                    "completed": true
+                },
+                {
+                    "title": "Implement parseFeedbackParams with sanitization",
+                    "completed": true
+                },
+                {
+                    "title": "Write round-trip and edge case tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "utility", "query-params", "sanitization"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Build FeedbackErrorBoundary component",
+            "description": "Create `packages/feedback/src/components/FeedbackErrorBoundary.tsx`. React error boundary (class component with `componentDidCatch`). On error: shows friendly UI from FEEDBACK_STRINGS (title, message, 'Reportar este error' button, 'Recargar' button). Clicking 'Reportar este error' tries to open FeedbackModal inline (pre-filled with error message, stack trace, current URL, type='bug-js'). If modal fails to render (widget JS broken), falls back to opening a new tab with the standalone form URL + serialized error data in query params (using T-028). Reload button calls `window.location.reload()`.\n\n**Test requirements:**\n- Component tests in `packages/feedback/test/components/FeedbackErrorBoundary.test.tsx`\n- Test error boundary catches child errors\n- Test friendly error UI renders with correct text\n- Test 'Reportar este error' opens modal with pre-filled data\n- Test 'Recargar' calls window.location.reload\n- Test pre-fill data includes error message and stack\n- Test fallback to new tab when modal render fails",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-004", "T-025", "T-028"],
+            "blocks": ["T-033", "T-037"],
+            "subtasks": [
+                {
+                    "title": "Implement error boundary class component",
+                    "completed": true
+                },
+                {
+                    "title": "Build error fallback UI",
+                    "completed": true
+                },
+                {
+                    "title": "Implement inline modal opening with pre-fill",
+                    "completed": true
+                },
+                {
+                    "title": "Implement new tab fallback with query params",
+                    "completed": true
+                },
+                {
+                    "title": "Write comprehensive tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "component", "error-boundary"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:30:35.538Z",
+                "completed": "2026-03-06T06:30:35.538Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Update packages/feedback/src/index.ts with all public exports",
+            "description": "Update the barrel export file `packages/feedback/src/index.ts` to export all public API: components (FeedbackFAB, FeedbackModal, FeedbackForm, FeedbackErrorBoundary), hooks (useAutoCollect, useConsoleCapture, useKeyboardShortcut, useFeedbackSubmit), config (FEEDBACK_CONFIG, FEEDBACK_STRINGS, REPORT_TYPES, SEVERITY_LEVELS), schemas (feedbackFormSchema, FeedbackFormData), and utilities (serializeFeedbackParams, parseFeedbackParams). All named exports.\n\n**Test requirements:**\n- Verify all exports are accessible from `@repo/feedback`",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-026", "T-029"],
+            "blocks": ["T-032", "T-036"],
+            "subtasks": [
+                {
+                    "title": "Add all component exports",
+                    "completed": true
+                },
+                {
+                    "title": "Add all hook exports",
+                    "completed": true
+                },
+                {
+                    "title": "Add config, schema, and utility exports",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "exports", "barrel"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:36:02.078Z",
+                "completed": "2026-03-06T06:36:02.078Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Write component integration tests for feedback form flow",
+            "description": "End-to-end component tests verifying the full form flow within the package, using Testing Library. Mock the API endpoint.\n\n**Test requirements:**\n- Integration tests in `packages/feedback/test/integration/form-flow.test.tsx`\n- Test: open FAB -> modal opens -> fill step 1 -> submit -> success shown\n- Test: open FAB -> fill step 1 -> go to step 2 -> fill severity -> submit -> success\n- Test: open FAB -> fill step 1 -> go to step 2 -> go back -> step 1 data preserved\n- Test: error boundary catches error -> report button -> modal opens pre-filled\n- Test: keyboard shortcut opens modal\n- Test: unauthenticated shows email/name fields",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-026", "T-029"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Set up test environment with mocked API",
+                    "completed": true
+                },
+                {
+                    "title": "Test FAB -> modal -> step 1 -> submit flow",
+                    "completed": true
+                },
+                {
+                    "title": "Test step 1 -> step 2 -> submit flow",
+                    "completed": true
+                },
+                {
+                    "title": "Test step navigation preserves data",
+                    "completed": true
+                },
+                {
+                    "title": "Test error boundary -> report flow",
+                    "completed": true
+                },
+                {
+                    "title": "Test keyboard shortcut",
+                    "completed": true
+                }
+            ],
+            "tags": ["feedback", "testing", "integration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:36:02.078Z",
+                "completed": "2026-03-06T06:36:02.078Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Integrate FeedbackFAB in apps/web BaseLayout as React island",
+            "description": "Add `FeedbackFAB` from `@repo/feedback` to `apps/web-old/src/layouts/BaseLayout.astro` (or the new `apps/web` BaseLayout if migrated). Render as a React island with `client:idle` directive. Pass `appSource='web'` and `apiUrl` props. Pass auth context (userId, userEmail, userName) from the Astro page's server-side auth check if available. The FAB should appear on every page.\n\n**Test requirements:**\n- Verify FAB renders on a web page\n- Verify it uses `client:idle` (does not block page load)\n- Verify auth context is passed when user is logged in",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017", "T-030", "T-031"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Import FeedbackFAB in BaseLayout",
+                    "completed": true
+                },
+                {
+                    "title": "Add as React island with client:idle",
+                    "completed": true
+                },
+                {
+                    "title": "Pass appSource and apiUrl props",
+                    "completed": true
+                },
+                {
+                    "title": "Pass auth context conditionally",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "integration", "astro", "island"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:47:51.457Z",
+                "completed": "2026-03-06T06:47:51.457Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Integrate FeedbackErrorBoundary in apps/web React islands",
+            "description": "Wrap key React islands in `apps/web` with `FeedbackErrorBoundary` from `@repo/feedback`. Identify the main React islands that could crash (search components, filter sidebars, carousels, etc.) and wrap them. Pass `standaloneUrl` prop pointing to `/es/feedback`. The error boundary should catch errors and show the report UI without breaking the rest of the Astro page.\n\n**Test requirements:**\n- Verify error boundary catches errors in a wrapped island\n- Verify the rest of the page still renders when one island crashes",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Identify key React islands to wrap",
+                    "completed": true
+                },
+                {
+                    "title": "Wrap each island with FeedbackErrorBoundary",
+                    "completed": true
+                },
+                {
+                    "title": "Pass standaloneUrl prop",
+                    "completed": true
+                },
+                {
+                    "title": "Verify isolation (other islands still work)",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "integration", "error-boundary"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:47:51.457Z",
+                "completed": "2026-03-06T06:47:51.457Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Update apps/web 500.astro with link to standalone feedback form",
+            "description": "Update `apps/web-old/src/pages/500.astro` (or new `apps/web` equivalent). Add a 'Reportar este error' link/button that navigates to `/es/feedback?type=bug-js&source=web&error=Error+interno+del+servidor`. Use hardcoded Spanish text. The link should work even if all JS fails (plain HTML link). Style consistent with error page.\n\n**Test requirements:**\n- Verify 500 page includes the report link\n- Verify link URL includes correct query params\n- Verify link is a plain HTML anchor (no JS required)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Add report link to 500.astro",
+                    "completed": true
+                },
+                {
+                    "title": "Include correct query params in link URL",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "error-page", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T05:27:03.553Z",
+                "completed": "2026-03-06T05:27:03.553Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Create standalone feedback page at /[lang]/feedback.astro",
+            "description": "Create `apps/web-old/src/pages/[lang]/feedback.astro` (or new `apps/web` equivalent). Minimal layout: no header, no footer, no sidebar. Just a centered container with the `FeedbackForm` React component rendered with `client:load`. Reads query params and passes them as `prefillData` prop to FeedbackForm (using `parseFeedbackParams` from `@repo/feedback`). Email and name always required (no auth context on standalone). Pass `appSource='standalone'`. Include a plain HTML `mailto:` fallback link at the bottom in case even this page fails. Minimal CSS (Tailwind utilities only).\n\n**Test requirements:**\n- Verify page renders at /es/feedback\n- Verify query params are parsed and passed to form\n- Verify email and name are required\n- Verify mailto fallback link exists\n- Verify no heavy layout dependencies (no header/footer)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-028", "T-030"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Create minimal Astro page with centered layout",
+                    "completed": true
+                },
+                {
+                    "title": "Render FeedbackForm with client:load",
+                    "completed": true
+                },
+                {
+                    "title": "Parse and pass query params as prefillData",
+                    "completed": true
+                },
+                {
+                    "title": "Add mailto fallback link",
+                    "completed": true
+                },
+                {
+                    "title": "Verify minimal dependencies",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "standalone", "astro", "page"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:47:51.457Z",
+                "completed": "2026-03-06T06:47:51.457Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Integrate FeedbackFAB in apps/admin root layout",
+            "description": "Add `FeedbackFAB` from `@repo/feedback` to the admin app's root layout component (TanStack Start). Pass `appSource='admin'` and `apiUrl` props. Pass auth context from the admin session (userId, userEmail, userName - always available since admin requires login).\n\n**Test requirements:**\n- Verify FAB renders in admin layout\n- Verify auth context is passed\n- Verify it doesn't conflict with admin's existing floating elements",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-030"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Import FeedbackFAB in admin root layout",
+                    "completed": true
+                },
+                {
+                    "title": "Pass appSource, apiUrl, and auth context",
+                    "completed": true
+                },
+                {
+                    "title": "Verify no z-index conflicts",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "integration", "tanstack"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:47:51.457Z",
+                "completed": "2026-03-06T06:47:51.457Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Integrate FeedbackErrorBoundary in apps/admin router",
+            "description": "Wrap the admin app's router outlet (TanStack Start) with `FeedbackErrorBoundary` from `@repo/feedback`. Pass `standaloneUrl` pointing to the web app's standalone form URL. This catches any unhandled errors in admin pages and shows the report UI.\n\n**Test requirements:**\n- Verify error boundary wraps the router\n- Verify caught errors show the feedback report UI\n- Verify standalone URL points to web app's /feedback page",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "Wrap router outlet with FeedbackErrorBoundary",
+                    "completed": true
+                },
+                {
+                    "title": "Pass standaloneUrl prop",
+                    "completed": true
+                },
+                {
+                    "title": "Verify error catching works",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "integration", "error-boundary"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:47:51.457Z",
+                "completed": "2026-03-06T06:47:51.457Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Write integration tests for app-level feedback integration",
+            "description": "Integration tests verifying the feedback system works correctly when integrated into both apps.\n\n**Test requirements:**\n- Tests in `apps/web-old/test/feedback/` and `apps/admin/test/feedback/`\n- Test FAB renders on web pages\n- Test FAB renders on admin pages\n- Test standalone page loads at /es/feedback\n- Test standalone page accepts and pre-fills query params\n- Test 500 page includes report link\n- Test error boundary works in web React islands\n- Test error boundary works in admin router",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-032", "T-033", "T-034", "T-035", "T-036", "T-037"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Write web FAB integration test",
+                    "completed": true
+                },
+                {
+                    "title": "Write admin FAB integration test",
+                    "completed": true
+                },
+                {
+                    "title": "Write standalone page integration test",
+                    "completed": true
+                },
+                {
+                    "title": "Write 500 page test",
+                    "completed": true
+                },
+                {
+                    "title": "Write error boundary integration tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "integration", "web", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": "2026-03-06T06:50:35.286Z",
+                "completed": "2026-03-06T06:50:35.286Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Responsive testing: modal on desktop, drawer on mobile",
+            "description": "Manual + automated responsive testing. Verify FeedbackModal renders as Dialog on desktop (>= 768px) and Drawer on mobile (< 768px). Test at breakpoints: 320px, 768px, 1024px, 1440px. Verify form fields are usable on small screens. Verify file upload works on mobile. Verify keyboard shortcut tooltip shows correct key for platform.\n\n**Test requirements:**\n- E2E tests with viewport resizing in `packages/feedback/test/e2e/responsive.test.ts`\n- Test Dialog renders at 1024px width\n- Test Drawer renders at 375px width\n- Test form is scrollable on small screens\n- Test all inputs are tappable on mobile",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test desktop modal rendering",
+                    "completed": false
+                },
+                {
+                    "title": "Test mobile drawer rendering",
+                    "completed": false
+                },
+                {
+                    "title": "Test form usability on small screens",
+                    "completed": false
+                },
+                {
+                    "title": "Write E2E viewport tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "responsive", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Accessibility audit: keyboard nav, focus management, screen reader",
+            "description": "Audit and fix accessibility issues. Verify: focus is trapped inside modal when open, focus returns to FAB when modal closes, all form fields have labels, select dropdowns are keyboard navigable, file upload is keyboard accessible, error messages are associated with fields via aria-describedby, screen reader announces modal open/close, error boundary report button is focusable, color contrast meets WCAG AA in hardcoded light mode styles.\n\n**Test requirements:**\n- Accessibility tests in `packages/feedback/test/a11y/accessibility.test.tsx`\n- Test focus trap in modal\n- Test focus return on close\n- Test all fields have accessible labels\n- Test keyboard navigation through form\n- Test ARIA attributes on error messages\n- Run axe-core on rendered form",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test focus trap in modal",
+                    "completed": false
+                },
+                {
+                    "title": "Test focus return to trigger on close",
+                    "completed": false
+                },
+                {
+                    "title": "Verify all labels and ARIA attributes",
+                    "completed": false
+                },
+                {
+                    "title": "Test keyboard navigation",
+                    "completed": false
+                },
+                {
+                    "title": "Run axe-core audit",
+                    "completed": false
+                },
+                {
+                    "title": "Fix any issues found",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "accessibility", "a11y"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "FAB minimize/restore testing with localStorage persistence",
+            "description": "Verify the FAB minimize feature works correctly across page navigations and browser sessions.\n\n**Test requirements:**\n- E2E tests in `packages/feedback/test/e2e/fab-minimize.test.ts`\n- Test clicking minimize shrinks FAB to dot\n- Test hovering minimized FAB expands temporarily\n- Test clicking minimized FAB opens form\n- Test localStorage is set on minimize\n- Test FAB loads minimized on page reload when localStorage is set\n- Test clearing localStorage restores full FAB",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test minimize visual behavior",
+                    "completed": false
+                },
+                {
+                    "title": "Test hover expand on minimized",
+                    "completed": false
+                },
+                {
+                    "title": "Test localStorage persistence",
+                    "completed": false
+                },
+                {
+                    "title": "Test page reload preserves state",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "fab", "localstorage"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Rate limiting E2E verification",
+            "description": "End-to-end test verifying rate limiting works in a realistic scenario.\n\n**Test requirements:**\n- E2E test in `apps/api/test/e2e/feedback-rate-limit.test.ts`\n- Send 30 valid requests from same IP -> all succeed\n- Send 31st request -> returns 429 with rate limit message\n- Send request from different IP -> succeeds (independent limits)\n- Wait for TTL window -> rate limit resets",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test requests under limit succeed",
+                    "completed": false
+                },
+                {
+                    "title": "Test request over limit returns 429",
+                    "completed": false
+                },
+                {
+                    "title": "Test independent IP limits",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "rate-limiting", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Linear integration E2E test with mock server",
+            "description": "End-to-end test of the full feedback -> Linear flow using a mocked Linear API.\n\n**Test requirements:**\n- E2E test in `apps/api/test/e2e/feedback-linear.test.ts`\n- Mock Linear GraphQL endpoint\n- Test: submit feedback -> fileUpload called for each attachment -> PUT to signed URL -> issueCreate called with correct payload\n- Test: verify issue title format `[type] title`\n- Test: verify description contains all fields in markdown\n- Test: verify labels, priority, project, state are set correctly\n- Test: verify response includes linearIssueId and linearIssueUrl",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Set up mock Linear GraphQL server",
+                    "completed": false
+                },
+                {
+                    "title": "Test file upload flow",
+                    "completed": false
+                },
+                {
+                    "title": "Test issue creation with correct payload",
+                    "completed": false
+                },
+                {
+                    "title": "Verify response format",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "linear", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Error boundary E2E test: simulate crash and verify form opens pre-filled",
+            "description": "End-to-end test verifying the error boundary flow works in a real browser.\n\n**Test requirements:**\n- E2E test (Playwright) in `packages/feedback/test/e2e/error-boundary.test.ts`\n- Render a component that throws an error\n- Verify error boundary UI appears\n- Click 'Reportar este error'\n- Verify feedback form opens with pre-filled: type='bug-js', error message, URL\n- Verify user can edit pre-filled data\n- Verify submit works from error boundary context",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create test component that throws",
+                    "completed": false
+                },
+                {
+                    "title": "Verify error boundary UI renders",
+                    "completed": false
+                },
+                {
+                    "title": "Verify form opens pre-filled",
+                    "completed": false
+                },
+                {
+                    "title": "Verify submit from error context",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "error-boundary", "e2e", "playwright"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Keyboard shortcut E2E test",
+            "description": "End-to-end test verifying the keyboard shortcut works in a real browser context.\n\n**Test requirements:**\n- E2E test (Playwright) in `packages/feedback/test/e2e/keyboard-shortcut.test.ts`\n- Test Ctrl+Shift+F opens the feedback modal\n- Test pressing shortcut again closes the modal\n- Test Escape closes the modal\n- Test shortcut works when FAB is minimized\n- Test shortcut does not fire when focus is in an input field (optional: decide if this is desired)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Test shortcut opens modal",
+                    "completed": false
+                },
+                {
+                    "title": "Test shortcut toggles modal",
+                    "completed": false
+                },
+                {
+                    "title": "Test Escape closes modal",
+                    "completed": false
+                },
+                {
+                    "title": "Test works when FAB minimized",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "keyboard", "e2e", "playwright"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Update Linear config with real IDs (manual step)",
+            "description": "Replace all PLACEHOLDER_ values in `packages/feedback/src/config/feedback.config.ts` with real Linear IDs. This is a manual step performed by the user after creating the corresponding labels, project, and team in Linear. Document which IDs map to which Linear entities.\n\n**Subtasks:**\n- Replace PLACEHOLDER_TEAM_ID with real Linear team ID\n- Replace PLACEHOLDER_PROJECT_ID with real Linear project ID\n- Replace PLACEHOLDER_STATE_TRIAGE with real triage state ID\n- Replace all PLACEHOLDER_LABEL_* with real label IDs (6 type labels + 3 source labels + 1 env label)\n- Set HOSPEDA_LINEAR_API_KEY env var in .env\n- Set HOSPEDA_FEEDBACK_FALLBACK_EMAIL in .env\n- Test a real submission end-to-end",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create labels in Linear",
+                    "completed": false
+                },
+                {
+                    "title": "Create project in Linear",
+                    "completed": false
+                },
+                {
+                    "title": "Replace all PLACEHOLDER_ values in config",
+                    "completed": false
+                },
+                {
+                    "title": "Set env vars in .env",
+                    "completed": false
+                },
+                {
+                    "title": "Test real end-to-end submission",
+                    "completed": false
+                }
+            ],
+            "tags": ["config", "linear", "manual"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-03-06T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 46,
+        "pending": 46,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.7
+    }
+}

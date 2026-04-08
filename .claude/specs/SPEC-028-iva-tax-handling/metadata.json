@@ -1,0 +1,38 @@
+{
+    "id": "SPEC-028",
+    "title": "IVA/Tax Handling and ARCA Electronic Invoicing",
+    "status": "draft",
+    "priority": "high",
+    "complexity": 9,
+    "createdAt": "2026-03-03",
+    "updatedAt": "2026-03-06",
+    "supersedes": "ADR-008",
+    "deferredFrom": "SPEC-021-billing-system-fixes",
+    "tags": [
+        "billing",
+        "tax",
+        "iva",
+        "arca",
+        "afip",
+        "invoicing",
+        "fiscal",
+        "pdf",
+        "cloud-storage"
+    ],
+    "phases": [
+        "prerequisites",
+        "database-and-configuration",
+        "core-services",
+        "api-endpoints",
+        "ui-changes",
+        "integration-testing"
+    ],
+    "dependencies": [
+        "@afipsdk/afip.js",
+        "qrcode",
+        "@types/qrcode",
+        "@react-pdf/renderer",
+        "@aws-sdk/client-s3",
+        "@aws-sdk/s3-request-presigner"
+    ]
+}

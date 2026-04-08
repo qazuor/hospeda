@@ -1,0 +1,355 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-038",
+    "title": "Addon Entitlements Architecture Fix",
+    "created": "2026-03-10T10:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Update all QZPay dependencies to latest versions",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002a", "T-003a", "T-005a", "T-008", "T-009a"],
+            "tags": ["setup", "dependency"],
+            "phase": "setup",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T10:00:00.000Z",
+                "completed": "2026-03-10T10:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-002a",
+            "title": "Clean applyAddonEntitlements(): change signature and remove obsolete code",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-002b"],
+            "tags": ["core", "service", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-002b",
+            "title": "Implement grant/set calls in applyAddonEntitlements() with canonical config",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-002a"],
+            "blocks": ["T-004", "T-010a"],
+            "tags": ["core", "service", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T12:00:00.000Z",
+                "completed": "2026-03-10T12:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003a",
+            "title": "Clean removeAddonEntitlements(): change signature and remove obsolete code",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003b"],
+            "tags": ["core", "service", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003b",
+            "title": "Implement revokeBySource/removeBySource with fallbacks in removeAddonEntitlements()",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-003a"],
+            "blocks": ["T-006", "T-007", "T-010a"],
+            "tags": ["core", "service", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T12:00:00.000Z",
+                "completed": "2026-03-10T12:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Update addon.checkout.ts to capture purchaseId and pass to applyAddonEntitlements",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-002b"],
+            "blocks": ["T-010a", "T-013"],
+            "tags": ["core", "service", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T10:00:00.000Z",
+                "completed": "2026-03-10T10:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005a",
+            "title": "Add customer-level entitlement/limit merge in loadEntitlements() middleware",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005b"],
+            "tags": ["core", "middleware", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005b",
+            "title": "Add graceful degradation and no-cache flag to loadEntitlements() middleware",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005a"],
+            "blocks": ["T-011a"],
+            "tags": ["core", "middleware", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T12:00:00.000Z",
+                "completed": "2026-03-10T12:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix cron job to pass billing instance and update expireAddon() to pass purchaseId",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003b"],
+            "blocks": ["T-012"],
+            "tags": ["core", "cron", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T10:00:00.000Z",
+                "completed": "2026-03-10T10:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update addon cancel route to pass purchaseId to removeAddonEntitlements",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003b"],
+            "blocks": ["T-010a"],
+            "tags": ["core", "routes", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T10:00:00.000Z",
+                "completed": "2026-03-10T10:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add unique partial index on billing_addon_purchases",
+            "status": "completed",
+            "note": "Migration generated: 0021_dazzling_zzzax.sql",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-015"],
+            "tags": ["database", "schema", "billing"],
+            "phase": "core",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009a",
+            "title": "Migration script: billing init + entitlement backfill",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009b"],
+            "tags": ["migration", "database", "billing"],
+            "phase": "migration",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-009b",
+            "title": "Migration script: limit backfill + plan restoration + fix gaps",
+            "status": "completed",
+            "complexity": 2.5,
+            "blockedBy": ["T-009a"],
+            "blocks": ["T-014a"],
+            "tags": ["migration", "database", "billing"],
+            "phase": "migration",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T12:00:00.000Z",
+                "completed": "2026-03-10T12:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-010a",
+            "title": "Tests for applyAddonEntitlements() with new QZPay APIs",
+            "status": "completed",
+            "note": "34 tests passing in addon-entitlement.service.test.ts - complete rewrite with createMockBilling()",
+            "complexity": 2.5,
+            "blockedBy": ["T-002b", "T-003b", "T-004", "T-007"],
+            "blocks": ["T-010b"],
+            "tags": ["testing", "service", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T13:00:00.000Z",
+                "completed": "2026-03-10T13:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-010b",
+            "title": "Tests for removeAddonEntitlements() with revokeBySource/removeBySource",
+            "status": "completed",
+            "note": "Covered in same 34-test rewrite of addon-entitlement.service.test.ts",
+            "complexity": 2,
+            "blockedBy": ["T-010a"],
+            "blocks": ["T-015"],
+            "tags": ["testing", "service", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T13:00:00.000Z",
+                "completed": "2026-03-10T13:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011a",
+            "title": "Middleware tests: plan-only and plan+addon merge scenarios",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005b"],
+            "blocks": ["T-011b"],
+            "tags": ["testing", "middleware", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T11:00:00.000Z",
+                "completed": "2026-03-10T11:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-011b",
+            "title": "Middleware tests: error fallback and no-cache on degraded result",
+            "status": "completed",
+            "note": "60 tests passing in entitlement.test.ts - includes graceful degradation and no-cache tests",
+            "complexity": 2,
+            "blockedBy": ["T-011a"],
+            "blocks": ["T-015"],
+            "tags": ["testing", "middleware", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T14:00:00.000Z",
+                "completed": "2026-03-10T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Extend cron job and expiration service tests",
+            "status": "completed",
+            "note": "29 expiration service tests + 15 cron job tests all passing",
+            "complexity": 2.5,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-015"],
+            "tags": ["testing", "cron", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T14:00:00.000Z",
+                "completed": "2026-03-10T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Verify checkout test captures purchaseId and handles constraint violation",
+            "status": "completed",
+            "note": "14 checkout tests passing including purchaseId propagation tests",
+            "complexity": 2.5,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-015"],
+            "tags": ["testing", "service", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T14:00:00.000Z",
+                "completed": "2026-03-10T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014a",
+            "title": "Migration tests: entitlement/limit backfill and idempotency",
+            "status": "completed",
+            "note": "13 tests passing in packages/db/test/billing/migrate-addon-purchases.test.ts",
+            "complexity": 2.5,
+            "blockedBy": ["T-009b"],
+            "blocks": ["T-014b"],
+            "tags": ["testing", "migration", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T14:00:00.000Z",
+                "completed": "2026-03-10T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-014b",
+            "title": "Migration tests: plan restoration, dry-run, and error handling",
+            "status": "completed",
+            "note": "Covered in same 13-test file for migration script",
+            "complexity": 2,
+            "blockedBy": ["T-014a"],
+            "blocks": ["T-015"],
+            "tags": ["testing", "migration", "billing"],
+            "phase": "testing",
+            "timestamps": {
+                "created": "2026-03-10T11:00:00.000Z",
+                "started": "2026-03-10T14:00:00.000Z",
+                "completed": "2026-03-10T14:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Final quality gate: typecheck, lint, full test suite, zero @ts-expect-error verification",
+            "status": "completed",
+            "note": "165 tests passing (152 API + 13 DB). Lint clean. Zero @ts-expect-error. Typecheck errors are preexisting (config/notifications packages).",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-010b", "T-011b", "T-012", "T-013", "T-014b"],
+            "blocks": [],
+            "tags": ["validation", "quality"],
+            "phase": "validation",
+            "timestamps": {
+                "created": "2026-03-10T10:00:00.000Z",
+                "started": "2026-03-10T15:00:00.000Z",
+                "completed": "2026-03-10T15:30:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 22,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 22,
+        "averageComplexity": 2.2,
+        "maxComplexity": 2.5
+    }
+}

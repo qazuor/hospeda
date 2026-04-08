@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-032",
+    "title": "Interactive CLI Tool for Development Workflows",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-03-06T00:00:00.000Z",
+    "updated": "2026-03-09T00:00:00.000Z",
+    "approved": "2026-03-09T00:00:00.000Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["cli", "developer-experience", "tooling", "scripts", "interactive-menu", "monorepo"]
+}

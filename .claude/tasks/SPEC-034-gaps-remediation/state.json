@@ -1,0 +1,814 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-034-GAPS",
+    "title": "SPEC-034 ISR Revalidation — Gaps Remediation",
+    "created": "2026-03-17T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Fix ISR exclude patterns with optional locale prefix in astro.config.mjs",
+            "description": "Update the 8 ISR exclude regex patterns in `apps/web/astro.config.mjs` to include the optional locale prefix `(\\/(?:en|pt))?` at the start of each pattern, so that auth/mi-cuenta pages in en/pt locales are properly excluded from ISR cache.\n\nAffected file: `apps/web/astro.config.mjs` (lines 69-76).\n\nKey changes:\n- `/^\\/mi-cuenta(.*)$/` → `/^(\\/(?:en|pt))?\\/mi-cuenta(.*)?$/`\n- `/^\\/auth(.*)$/` → `/^(\\/(?:en|pt))?\\/auth(.*)?$/`\n- All 8 patterns get the optional locale prefix\n- Note: Spanish (default locale) uses no prefix in Astro, so `(\\/(en|pt))?` is correct (not `(\\/(es|en|pt))?`)\n- Also ensure index pages of alojamientos/eventos are excluded (fix GAP-126: `(.*)` → `(.*)?`)\n- Also fix tipo/categoria patterns to include parent path prefix (GAP-127)\n\nAcceptance criteria:\n- Auth pages in /en/auth/* and /pt/auth/* are excluded from ISR cache\n- /es/auth/* continues to be excluded\n- detail pages of alojamientos and eventos are NOT excluded (they must be ISR-cached)\n- listing index pages /alojamientos/ and /eventos/ are excluded\n- tipo and categoria pages have correct path-specific exclusion\n\nTests: Create `apps/web/test/isr-exclude-patterns.test.ts` that imports the regex patterns and asserts inclusion/exclusion for all URL categories (resolves GAP-062).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Update 8 regex patterns with optional locale prefix",
+                    "completed": false
+                },
+                { "title": "Fix index page patterns (GAP-126)", "completed": false },
+                {
+                    "title": "Fix tipo/categoria patterns with parent path prefix (GAP-127)",
+                    "completed": false
+                },
+                {
+                    "title": "Create isr-exclude-patterns.test.ts with full URL matrix",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "isr", "astro", "config"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add page-revalidation cron to apps/api/vercel.json",
+            "description": "The `page-revalidation` cron job exists in the registry but is not registered in `apps/api/vercel.json`. Without this entry, Vercel Cron never triggers the job in production.\n\nAffected file: `apps/api/vercel.json`.\n\nKey change: Add `{ \"path\": \"/api/v1/cron/page-revalidation\", \"schedule\": \"0 * * * *\" }` to the `crons` array.\n\nAcceptance criteria:\n- Entry exists in vercel.json crons array\n- Schedule matches the existing 6 other cron jobs pattern (hourly: `0 * * * *`)\n- Path matches the actual mounted route of the cron job\n\nResolves: GAP-073, GAP-081, GAP-085.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Verify actual cron route path in registry", "completed": false },
+                { "title": "Add cron entry to vercel.json", "completed": false }
+            ],
+            "tags": ["api", "cron", "deployment"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add revalidation entry to admin sidebar menu with i18n keys",
+            "description": "The revalidation dashboard exists at `/revalidation/` but is not discoverable from the sidebar — there is no menu item. Admins can only access it via direct URL.\n\nAffected files:\n- `apps/admin/src/lib/menu.ts`: add entry in the administration section\n- `packages/i18n/src/locales/es/admin-menu.json`: add `admin-menu.admin.revalidation` key\n- `packages/i18n/src/locales/en/admin-menu.json`: add same key in English\n- `packages/i18n/src/locales/pt/admin-menu.json`: add same key in Portuguese\n\nKey change: Add `{ titleKey: 'admin-menu.admin.revalidation', to: '/revalidation', permission: PermissionEnum.REVALIDATION_CONFIG_VIEW }` to the menu tree.\n\nAcceptance criteria:\n- Menu item appears for users with REVALIDATION_CONFIG_VIEW permission\n- Menu item is hidden for users without the permission\n- i18n keys present in all 3 locales\n\nResolves: GAP-134.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Add menu item to apps/admin/src/lib/menu.ts", "completed": false },
+                { "title": "Add i18n key in es/en/pt admin-menu.json files", "completed": false }
+            ],
+            "tags": ["admin", "navigation", "i18n"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add logger.warn when NoOp adapter is used in non-local environments",
+            "description": "The adapter factory silently returns NoOpRevalidationAdapter when HOSPEDA_REVALIDATION_SECRET is missing, even in production/staging. This means ISR revalidation is silently disabled with no visible warning.\n\nAffected file: `packages/service-core/src/revalidation/adapters/adapter-factory.ts`.\n\nKey change: Before `return new NoOpRevalidationAdapter()`, check if the environment is non-local (production or staging). If so, call `logger.warn('ISR revalidation DISABLED: missing HOSPEDA_REVALIDATION_SECRET. On-demand page revalidation will not work.')` using `@repo/logger`.\n\nAcceptance criteria:\n- Warning logged when NoOp used in production\n- No warning in local/test/development environments\n- Warning message is actionable (mentions the env var name)\n\nResolves: GAP-129.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add environment check in adapter factory", "completed": false },
+                { "title": "Add logger.warn call with descriptive message", "completed": false }
+            ],
+            "tags": ["service-core", "adapter", "logging"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add trigger parameter to revalidateByEntityType method",
+            "description": "The `revalidateByEntityType` method in `RevalidationService` hardcodes `trigger='cron'` even when called from manual revalidation endpoints. This corrupts the audit trail — manual revalidations appear as cron-triggered in logs.\n\nAffected file: `packages/service-core/src/revalidation/revalidation.service.ts`.\n\nKey change: Add `trigger: RevalidationTrigger` parameter to `revalidateByEntityType`. The POST /revalidate/type route passes `'manual'` and the cron job passes `'cron'`.\n\nAcceptance criteria:\n- `revalidateByEntityType` accepts optional `trigger` parameter (default: `'cron'` for backward compat)\n- Manual API route passes `trigger: 'manual'`\n- Cron job continues to pass `trigger: 'cron'` (or relies on default)\n- Logs correctly show trigger source\n\nResolves: GAP-046, GAP-014 partial.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Add trigger param to revalidateByEntityType signature",
+                    "completed": false
+                },
+                {
+                    "title": "Update POST /revalidate/type route to pass trigger='manual'",
+                    "completed": false
+                },
+                { "title": "Update cron job to pass trigger='cron'", "completed": false }
+            ],
+            "tags": ["service-core", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Pass triggeredBy and reason to service in manual, entity and type revalidation routes",
+            "description": "The manual and entity/type revalidation routes do not pass `triggeredBy` (userId of the actor) or `reason` to the service, so the audit trail is missing attribution.\n\nAffected files:\n- `apps/api/src/routes/revalidation/index.ts`: POST /revalidate/manual, POST /revalidate/entity, POST /revalidate/type handlers\n\nKey changes:\n- In each handler, extract actor with `getActorFromContext(c)` (the manual route may already do this)\n- Pass `triggeredBy: actor?.id` and `reason` to `revalidatePaths` / `revalidateByEntityType`\n\nAcceptance criteria:\n- All 3 POST revalidation routes extract actor from context\n- triggeredBy is stored in revalidation_log for manual triggers\n- reason field is propagated correctly\n\nResolves: GAP-047, GAP-131.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Extract actor in POST /revalidate/entity handler", "completed": false },
+                { "title": "Extract actor in POST /revalidate/type handler", "completed": false },
+                {
+                    "title": "Verify POST /revalidate/manual already passes actor",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add beforeLoad permission guard to admin revalidation route",
+            "description": "The admin revalidation page `/_authed/revalidation/` is accessible to any authenticated user, including owners without REVALIDATION_* permissions. The sidebar hides the link but the route itself has no guard.\n\nAffected file: `apps/admin/src/routes/_authed/revalidation/index.tsx`.\n\nKey change: Add `beforeLoad` handler in `createFileRoute` that checks `REVALIDATION_CONFIG_VIEW` permission, following the same pattern as other protected admin routes (e.g., redirect with 403 or throw notFound).\n\nAcceptance criteria:\n- Users without REVALIDATION_CONFIG_VIEW get redirected/rejected on direct URL access\n- Users with the permission can access normally\n- Pattern matches existing admin route guards\n\nResolves: GAP-070, GAP-088.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add beforeLoad with REVALIDATION_CONFIG_VIEW check",
+                    "completed": false
+                },
+                {
+                    "title": "Verify redirect pattern matches other admin routes",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "security", "permissions"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Remove prerender=true from auth/forgot-password.astro",
+            "description": "The `apps/web/src/pages/[lang]/auth/forgot-password.astro` page has `export const prerender = true`, making it a static HTML page built at build time. Auth pages must be SSR to handle dynamic tokens, error messages, and redirects correctly.\n\nAffected file: `apps/web/src/pages/[lang]/auth/forgot-password.astro`.\n\nKey change: Remove `export const prerender = true` (line 2).\n\nAcceptance criteria:\n- Page renders server-side on every request\n- No `prerender = true` or `getStaticPaths` in auth pages\n- Combined with T-001 (ISR exclude fix), auth pages are properly excluded from ISR cache in en/pt\n\nResolves: GAP-084.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Remove prerender = true from forgot-password.astro",
+                    "completed": false
+                },
+                { "title": "Verify page still works without static generation", "completed": false }
+            ],
+            "tags": ["web", "astro", "auth"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Document API route URL divergence as technical decision in spec",
+            "description": "The implementation uses sub-path routes (`/revalidate/manual`, PATCH with `:id` UUID) that differ from the spec's proposed routes (PUT with `:entityType`). The current implementation is more RESTful and consistent with project conventions, so the spec was misaligned, not the code.\n\nAffected file: `.claude/specs/SPEC-034-on-demand-isr-revalidation/spec.md` or equivalent spec document.\n\nKey change: Add a section documenting the deliberate divergence: PATCH with UUID primary key is more RESTful for partial updates; hyphens in sub-paths are not used in this project. No code changes required.\n\nAcceptance criteria:\n- Divergence documented as explicit technical decision\n- No code changes to API routes\n- Future developers understand why the route structure differs from original spec\n\nResolves: GAP-049, GAP-050, GAP-132.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add technical decision note to spec documentation", "completed": false }
+            ],
+            "tags": ["docs", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Align RevalidationService and adapter to RO-RO pattern with corrected return types",
+            "description": "Multiple methods in RevalidationService and the adapter interface violate the project's mandatory RO-RO pattern and have void return types where the spec requires ReadonlyArray<RevalidationResult>.\n\nAffected files:\n- `packages/service-core/src/revalidation/revalidation.service.ts`\n- `packages/service-core/src/revalidation/adapters/revalidation.adapter.ts`\n- `packages/service-core/src/revalidation/adapters/vercel-revalidation.adapter.ts`\n- `packages/service-core/src/revalidation/adapters/noop-revalidation.adapter.ts`\n- All service hooks (~20-30 call sites) in the 8 service files\n\nKey changes:\n- `revalidatePaths(paths[], triggeredBy?, reason?, trigger?)` → `revalidatePaths({ paths, reason, triggeredBy, trigger? })` returning `ReadonlyArray<RevalidationResult>`\n- `revalidateByEntityType(entityType)` → `revalidateByEntityType({ entityType, trigger? })` returning `ReadonlyArray<RevalidationResult>`\n- `adapter.revalidate(path)` → `adapter.revalidate({ path })` returning `RevalidationResult`\n- `adapter.revalidateMany(paths[])` → `adapter.revalidateMany({ paths })` returning `ReadonlyArray<RevalidationResult>`\n- Update all ~20-30 call sites in service hooks to use new signatures\n- Rename `RevalidatePathResult` type to `RevalidationResult` for consistency with spec\n\nAcceptance criteria:\n- All public methods use RO-RO object params\n- Return types are ReadonlyArray<RevalidationResult> where specified\n- All call sites updated (no TypeScript errors)\n- Existing unit tests pass with updated call signatures\n\nResolves: GAP-064, GAP-065, GAP-080.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012", "T-013", "T-014", "T-018", "T-019"],
+            "subtasks": [
+                { "title": "Update adapter interface to RO-RO", "completed": false },
+                {
+                    "title": "Update VercelRevalidationAdapter and NoOpAdapter to RO-RO",
+                    "completed": false
+                },
+                {
+                    "title": "Update revalidatePaths and revalidateByEntityType in service",
+                    "completed": false
+                },
+                { "title": "Update all call sites in 8 service hooks", "completed": false },
+                {
+                    "title": "Rename RevalidatePathResult to RevalidationResult",
+                    "completed": false
+                },
+                { "title": "Fix TypeScript errors and run typecheck", "completed": false }
+            ],
+            "tags": ["service-core", "adapter", "refactor"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add locales, maxCronRevalidations and logRetentionDays to RevalidationServiceConfig",
+            "description": "RevalidationServiceConfig and InitRevalidationParams are missing `locales`, `maxCronRevalidations`, and `logRetentionDays` fields. These are currently hardcoded (5s/30s debounce default, 30d log retention). This also blocks GAP-043 (entityResolver) which needs the locales list to generate multi-locale paths.\n\nAffected files:\n- `packages/service-core/src/revalidation/revalidation.service.ts` (config interface, lines 9-18)\n- `packages/service-core/src/revalidation/revalidation-init.ts` (init params, lines 11-30)\n- `apps/api/src/index.ts` (initialization call site)\n\nKey changes:\n- Add `locales: ReadonlyArray<string>` to config (default from `@repo/i18n` SUPPORTED_LOCALES)\n- Add `maxCronRevalidations: number` (default 500)\n- Add `logRetentionDays: number` (default 30)\n- Expose via getters so cron reads from config instead of hardcoded values\n- In `initializeRevalidationService`, pass SUPPORTED_LOCALES from `@repo/i18n`\n\nAcceptance criteria:\n- Config interface has all 3 new fields with defaults\n- Cron job reads logRetentionDays from service config\n- Initialization passes SUPPORTED_LOCALES\n- Existing behavior unchanged when defaults are used\n\nResolves: GAP-048, GAP-068.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add locales, maxCronRevalidations, logRetentionDays to config interface",
+                    "completed": false
+                },
+                { "title": "Add getters on RevalidationService", "completed": false },
+                {
+                    "title": "Pass SUPPORTED_LOCALES in initializeRevalidationService",
+                    "completed": false
+                },
+                {
+                    "title": "Update cron job to read logRetentionDays from service config",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "config"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Thread entityType through revalidatePaths to writeLog call chain",
+            "description": "The `writeLog` method in RevalidationService always receives `entityType: 'unknown'` because the entityType is not threaded through the call chain from `scheduleRevalidation` → `debouncePaths` → `revalidatePaths` → `writeLog`. This makes the audit trail completely useless for diagnostics.\n\nAffected file: `packages/service-core/src/revalidation/revalidation.service.ts`.\n\nKey changes:\n- Identify where entityType is available (in the EntityChangeData passed to scheduleRevalidation)\n- Thread entityType from scheduleRevalidation through debouncePaths and revalidatePaths to writeLog\n- The two hardcoded `entityType: 'unknown'` call sites (lines ~120 and ~185) must be replaced with the actual entityType from the event context\n\nAcceptance criteria:\n- Revalidation logs in DB have the correct entityType (not 'unknown')\n- All 3 triggers (hook, manual, cron) log entityType correctly\n- Unit tests verify entityType is persisted in logs\n\nResolves: GAP-044, GAP-079.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Trace entityType flow from scheduleRevalidation to writeLog",
+                    "completed": false
+                },
+                {
+                    "title": "Add entityType param to revalidatePaths internal method",
+                    "completed": false
+                },
+                {
+                    "title": "Replace hardcoded 'unknown' with actual entityType",
+                    "completed": false
+                },
+                { "title": "Add test asserting correct entityType in logs", "completed": false }
+            ],
+            "tags": ["service-core", "logging"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Change debounce key to entityType:entityId and update default from 5000 to 30000",
+            "description": "The debounce in RevalidationService uses the individual path as the key (creating one timer per path), instead of `entityType:entityId` (one timer per entity). This means 15 paths for one entity create 15 independent timers instead of 1, defeating the purpose of debouncing.\n\nAdditionally, the default debounce is 5000ms but spec requires 30000ms.\n\nAffected file: `packages/service-core/src/revalidation/revalidation.service.ts`.\n\nKey changes:\n- Change debounce key from `path` to `${entityType}:${entityId}` (when entityId available, fallback to entityType)\n- Collect all paths for the same entity key, batch them when the timer fires\n- Change default `debounceMs` from `5000` to `30000`\n\nNote: This task depends on T-010 (RO-RO) because the new entityId field needs to come from EntityChangeEvent. If entityId is not yet available in EntityChangeData, use entityType as the key until T-019 adds the full EntityChangeEvent wrapper.\n\nAcceptance criteria:\n- One debounce timer per entity (not per path)\n- Default debounce is 30 seconds\n- Rapid successive updates to the same entity result in one batch revalidation\n- Unit tests verify debounce behavior with entity-keyed batching\n\nResolves: GAP-045, GAP-091, GAP-020.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Change debounce key from path to entityType:entityId",
+                    "completed": false
+                },
+                {
+                    "title": "Accumulate paths per entity key until timer fires",
+                    "completed": false
+                },
+                { "title": "Change default debounceMs from 5000 to 30000", "completed": false },
+                { "title": "Update unit tests for debounce batching behavior", "completed": false }
+            ],
+            "tags": ["service-core", "performance"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Resolve parent slug in AccommodationReview and DestinationReview service hooks",
+            "description": "Both review services call `scheduleRevalidation({ entityType: 'accommodation_review' })` without passing the parent entity's slug. The entity-path-mapper requires `accommodationSlug` / `destinationSlug` to generate detail page paths. Without it, only the listing page is revalidated and the accommodation/destination detail page (which shows the review) is never refreshed.\n\nFor DestinationReviewService this is even more severe: the path mapper returns an empty array when `destinationSlug` is undefined, meaning ZERO pages are revalidated for destination review events.\n\nAffected files:\n- `packages/service-core/src/services/accommodationReview/accommodationReview.service.ts`\n- `packages/service-core/src/services/destinationReview/destinationReview.service.ts`\n\nKey changes:\n- In each CRUD hook (_afterCreate, _afterUpdate, _afterSoftDelete, _afterHardDelete, _afterRestore), look up the parent entity slug from `entity.accommodationId` / `entity.destinationId` via DB model query\n- Pass the resolved slug as `accommodationSlug` / `destinationSlug` in the scheduleRevalidation call\n- Follow the existing pattern used in AccommodationService for resolving related data before revalidation\n\nAcceptance criteria:\n- AccommodationReview hooks pass accommodationSlug in all 5 CRUD hooks\n- DestinationReview hooks pass destinationSlug in all 5 CRUD hooks\n- Accommodation/destination detail pages are revalidated when their reviews change\n- Unit tests verify parent slug is resolved and passed\n\nResolves: GAP-066, GAP-082, GAP-083.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add parent slug lookup in AccommodationReviewService hooks",
+                    "completed": false
+                },
+                {
+                    "title": "Add parent slug lookup in DestinationReviewService hooks",
+                    "completed": false
+                },
+                { "title": "Add unit tests for parent slug resolution", "completed": false }
+            ],
+            "tags": ["service-core", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Add _afterUpdateVisibility hook with revalidation to all 8 services",
+            "description": "None of the 8 services implement `_afterUpdateVisibility`. When a content item is published or unpublished (visibility toggled), the ISR cache is not invalidated. Published content doesn't appear; hidden content remains visible until the next cron cycle.\n\nAffected files (8 services):\n- `packages/service-core/src/services/accommodation/accommodation.service.ts`\n- `packages/service-core/src/services/destination/destination.service.ts`\n- `packages/service-core/src/services/event/event.service.ts`\n- `packages/service-core/src/services/post/post.service.ts`\n- `packages/service-core/src/services/tag/tag.service.ts`\n- `packages/service-core/src/services/amenity/amenity.service.ts`\n- `packages/service-core/src/services/accommodationReview/accommodationReview.service.ts`\n- `packages/service-core/src/services/destinationReview/destinationReview.service.ts`\n\nKey changes: Implement `_afterUpdateVisibility` in each service with the same fire-and-forget pattern as `_afterUpdate`, passing full EntityChangeData context.\n\nAcceptance criteria:\n- All 8 services have _afterUpdateVisibility with revalidation call\n- Pattern is consistent with _afterUpdate hook in each service\n- Entity slug and relevant context is passed (same as _afterUpdate)\n- Unit tests cover the visibility hook in at least 2 representative services\n\nResolves: GAP-076 (A6).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement _afterUpdateVisibility in accommodation service",
+                    "completed": false
+                },
+                {
+                    "title": "Implement _afterUpdateVisibility in destination service",
+                    "completed": false
+                },
+                {
+                    "title": "Implement _afterUpdateVisibility in event service",
+                    "completed": false
+                },
+                { "title": "Implement _afterUpdateVisibility in post service", "completed": false },
+                {
+                    "title": "Implement _afterUpdateVisibility in tag, amenity, accommodationReview, destinationReview services",
+                    "completed": false
+                },
+                {
+                    "title": "Add unit tests for visibility hook in 2 representative services",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Pass slug context in _afterSoftDelete and _afterHardDelete hooks across all services",
+            "description": "The `_afterSoftDelete` and `_afterHardDelete` hooks in most services pass only `{ entityType }` to `scheduleRevalidation`, losing the slug. When an entity is deleted, only the listing page gets revalidated. The detail page (which should show 404) keeps serving stale cached content until the cache expires (up to 24h).\n\nAffected files: all 8 service files (same as T-015).\n\nKey changes: In `_afterSoftDelete` and `_afterHardDelete`, pass `slug: entity.slug` (and `destinationSlug`, `accommodationType`, etc. where applicable) — the entity object is available as the hook parameter and contains all needed data.\n\nAlso wrap each `scheduleRevalidation` call in try-catch (without rethrowing) with a `logger.warn` to prevent revalidation errors from propagating and blocking the CRUD operation. This applies to all 7 services that currently lack try-catch (only accommodation service has it).\n\nAcceptance criteria:\n- Slug is passed in soft/hard delete hooks in all 8 services\n- Detail page paths are included in revalidation after deletion\n- All 8 services have try-catch around scheduleRevalidation calls\n- No CRUD operation can be blocked by a revalidation error\n\nResolves: GAP-077 (A6), GAP-078 (A6).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add slug context to _afterSoftDelete and _afterHardDelete in all 8 services",
+                    "completed": false
+                },
+                {
+                    "title": "Add try-catch around scheduleRevalidation in 7 services that lack it",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "hooks"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Implement entityResolver pattern for revalidateByEntityType with DB queries",
+            "description": "The `revalidateByEntityType` method generates only generic listing paths because it cannot query the DB for individual entities (service-core has no DB dependency). The spec requires querying all published entities of the type and generating full detail paths.\n\nSolution: Inject an `entityResolver` interface into the service during initialization. The API layer provides the concrete implementation using real models.\n\nAffected files:\n- `packages/service-core/src/revalidation/revalidation.service.ts`: add entityResolver field and use it in revalidateByEntityType\n- `packages/service-core/src/revalidation/revalidation-init.ts`: add entityResolver to InitRevalidationParams\n- `packages/service-core/src/revalidation/entity-resolver.types.ts` (new file): define EntityResolver interface\n- `apps/api/src/index.ts` or adjacent file: implement EntityResolver with real model queries for each entity type\n\nKey changes:\n- Define interface: `EntityResolver { resolveByType(entityType: RevalidationEntityType): Promise<ReadonlyArray<EntityChangeData>> }`\n- In `initializeRevalidationService`, accept optional `entityResolver` parameter\n- In `revalidateByEntityType`, if resolver available, use it to fetch entities and generate detail paths; otherwise fall back to listing-only behavior\n- The concrete resolver in apps/api queries accommodation/destination/event/post/tag models for published entities, extracting slugs and relevant context\n\nAcceptance criteria:\n- entityResolver interface defined and exported from service-core\n- Service uses resolver when available, falls back gracefully when not\n- API provides concrete resolver implementation with DB queries for all 8 entity types\n- Cron job revalidates detail pages for all published entities\n- Unit tests mock the resolver and verify path generation\n\nResolves: GAP-043, GAP-005 partial.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-018"],
+            "subtasks": [
+                {
+                    "title": "Define EntityResolver interface in entity-resolver.types.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add entityResolver to service and InitRevalidationParams",
+                    "completed": false
+                },
+                {
+                    "title": "Implement resolver usage in revalidateByEntityType",
+                    "completed": false
+                },
+                {
+                    "title": "Implement concrete EntityResolver in apps/api with model queries",
+                    "completed": false
+                },
+                {
+                    "title": "Wire concrete resolver in initializeRevalidationService call",
+                    "completed": false
+                },
+                { "title": "Add unit tests with mocked resolver", "completed": false }
+            ],
+            "tags": ["service-core", "api", "database"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Fix POST /revalidate/entity to lookup entity by ID and use actual slug",
+            "description": "POST /revalidate/entity receives `entityType` and `entityId` in the request body but completely ignores `entityId`. It calls `revalidateByEntityType(entityType)`, which is identical to POST /revalidate/type. The endpoint should revalidate ONLY the specific entity identified by entityId.\n\nAffected file: `apps/api/src/routes/revalidation/index.ts` (entity route handler).\n\nKey changes:\n- Use the entityResolver (from T-017) to fetch a single entity by type+id\n- Construct EntityChangeData with the entity's real slug and context fields\n- Call `scheduleRevalidation` with the specific entity event (not revalidateByEntityType)\n- Return proper 404 if entity not found by the given id\n\nAcceptance criteria:\n- POST /revalidate/entity revalidates ONLY the specified entity's paths\n- Returns 404 with specific error message if entity not found\n- Returns results array showing which paths were revalidated\n- Does not fall back to full-type revalidation\n\nResolves: GAP-003, GAP-004 partial.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement entity lookup by type+id in route handler",
+                    "completed": false
+                },
+                { "title": "Build EntityChangeData from fetched entity", "completed": false },
+                {
+                    "title": "Call scheduleRevalidation with specific entity event",
+                    "completed": false
+                },
+                { "title": "Add 404 response for entity not found", "completed": false },
+                {
+                    "title": "Add integration tests: valid entity, unknown entity, 401/403",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "routes"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Implement VercelAdapter with AbortController timeout, chunked batching and token validation",
+            "description": "The VercelRevalidationAdapter is missing three spec-required features: timeout protection, chunked batch processing, and constructor token validation.\n\nAffected file: `packages/service-core/src/revalidation/adapters/vercel-revalidation.adapter.ts`.\n\nKey changes:\n1. **Token validation**: In constructor, if `config.bypassToken?.trim()` is empty, throw descriptive error\n2. **AbortController timeout**: Wrap each `fetch` in a 10-second AbortController signal: `const controller = new AbortController(); setTimeout(() => controller.abort(), 10000);`\n3. **Chunked batching in revalidateMany**: Split `paths` into chunks of 10, `await Promise.allSettled(chunk)`, delay 200ms between chunks using `await new Promise(r => setTimeout(r, 200))`\n\nAcceptance criteria:\n- Constructor throws if bypassToken is empty/whitespace\n- Each revalidation request has a 10s timeout (aborts on exceeded)\n- revalidateMany processes at most 10 paths in parallel at a time, with 200ms inter-chunk delay\n- Timeout results in the path being reported as failed (not throwing)\n- Unit tests cover: token validation, timeout scenario, chunked batching, partial success\n\nResolves: GAP-037, GAP-060, GAP-090, GAP-128, GAP-012.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add bypassToken validation in constructor", "completed": false },
+                {
+                    "title": "Add AbortController with 10s timeout to revalidate()",
+                    "completed": false
+                },
+                {
+                    "title": "Implement chunked batching (10 paths, 200ms delay) in revalidateMany()",
+                    "completed": false
+                },
+                {
+                    "title": "Add unit tests: token validation, timeout, batching, partial success",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapter"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Fix RevalidateEntityButton: useTranslations, permission check, className prop",
+            "description": "The RevalidateEntityButton component has 3 issues:\n1. Hardcodes Spanish strings in toasts instead of using i18n\n2. Missing permission check for REVALIDATION_TRIGGER (should return null if user lacks permission)\n3. Missing `className` prop that the spec defines\n\nAffected file: `apps/admin/src/components/RevalidateEntityButton.tsx`.\n\nKey changes:\n- Import and call `useTranslations()` hook\n- Replace 4 hardcoded Spanish strings with `t('revalidation.messages.revalidateSuccess')`, `t('revalidation.messages.revalidateError')`, `t('revalidation.actions.revalidate')`, etc.\n- Add `useHasAnyPermission([PermissionEnum.REVALIDATION_TRIGGER])` and `if (!hasPermission) return null`\n- Add `className?: string` to props interface and pass it to the underlying Button component\n\nAcceptance criteria:\n- No hardcoded Spanish strings in the component\n- Component returns null for users without REVALIDATION_TRIGGER\n- className prop is accepted and applied to the button\n- All 3 supported locales (es/en/pt) display correct text\n\nResolves: GAP-032, GAP-033, GAP-057, GAP-135.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Add useTranslations and replace hardcoded strings",
+                    "completed": false
+                },
+                { "title": "Add REVALIDATION_TRIGGER permission check", "completed": false },
+                { "title": "Add className prop to interface and Button usage", "completed": false }
+            ],
+            "tags": ["admin", "components", "i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Integrate RevalidateEntityButton in 4 entity edit pages",
+            "description": "The `RevalidateEntityButton` component exists but is not imported or used in any entity edit page. Admins cannot trigger per-entity revalidation from the edit UI.\n\nAffected files:\n- `apps/admin/src/routes/_authed/accommodations/$id_.edit.tsx`\n- `apps/admin/src/routes/_authed/destinations/$id_.edit.tsx`\n- `apps/admin/src/routes/_authed/events/$id_.edit.tsx`\n- `apps/admin/src/routes/_authed/posts/$id_.edit.tsx`\n\nKey changes: In each edit page, import `RevalidateEntityButton` and render it alongside the save button:\n```tsx\n<RevalidateEntityButton entityType=\"accommodation\" entityId={id} />\n```\nUse the correct entityType for each page. The `id` comes from the route params.\n\nAcceptance criteria:\n- Button appears in all 4 entity edit pages for users with REVALIDATION_TRIGGER\n- Button is hidden for users without the permission (handled by the component)\n- Clicking triggers revalidation of that specific entity's paths\n- Loading state and success/error toasts work correctly\n\nResolves: GAP-072, GAP-089, GAP-133.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add RevalidateEntityButton to accommodation edit page",
+                    "completed": false
+                },
+                {
+                    "title": "Add RevalidateEntityButton to destination edit page",
+                    "completed": false
+                },
+                { "title": "Add RevalidateEntityButton to event edit page", "completed": false },
+                { "title": "Add RevalidateEntityButton to post edit page", "completed": false }
+            ],
+            "tags": ["admin", "components", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Migrate destinos/index.astro from SSG to SSR",
+            "description": "The destinations listing page `apps/web/src/pages/[lang]/destinos/index.astro` uses `prerender = true` and `getStaticPaths()`, making it a fully static page. New destinations don't appear until the next build. The spec requires this page to be SSR like the other listing pages.\n\nAffected file: `apps/web/src/pages/[lang]/destinos/index.astro`.\n\nKey changes:\n- Remove `export const prerender = true`\n- Remove `getStaticPaths()` function\n- Add dynamic locale validation (follow the pattern of the other 9 migrated pages)\n- Replace static params with dynamic `Astro.params.lang` lookup\n- Fetch data server-side using the existing API client pattern\n\nAcceptance criteria:\n- Page renders SSR on every request\n- Locale is validated dynamically\n- New destinations appear without a build\n- Page builds without TypeScript errors\n\nResolves: GAP-042, GAP-094.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Remove prerender=true and getStaticPaths", "completed": false },
+                {
+                    "title": "Add dynamic locale validation following existing SSR page pattern",
+                    "completed": false
+                },
+                { "title": "Replace static data fetch with server-side fetch", "completed": false }
+            ],
+            "tags": ["web", "astro", "ssr"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add path and date filters to GET /logs endpoint and model query",
+            "description": "The GET /revalidation/logs endpoint defines `path`, `fromDate`, and `toDate` in its Zod schema but the handler does not forward these filters to the model query. Date filtering is completely non-functional.\n\nAffected files:\n- `apps/api/src/routes/revalidation/index.ts`: logs handler (forward filters to model)\n- `packages/db/src/models/revalidation-log.model.ts`: add WHERE clauses for path LIKE and date range\n\nKey changes:\n- In the handler, extract `path`, `fromDate`, `toDate` from query params and pass to model\n- In the model's `findMany`/`findFiltered` method, add `AND path LIKE $path` and `AND created_at BETWEEN $from AND $to` where provided\n\nThis is a prerequisite for T-024 (admin logs tab UI).\n\nAcceptance criteria:\n- GET /logs?path=/alojamientos returns only logs matching that path\n- GET /logs?fromDate=2026-01-01 returns logs from that date forward\n- Date range filtering works correctly\n- Existing tests pass\n\nResolves: GAP-022, GAP-051.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "Add path LIKE filter to RevalidationLogModel query",
+                    "completed": false
+                },
+                {
+                    "title": "Add fromDate/toDate date range filters to model query",
+                    "completed": false
+                },
+                {
+                    "title": "Update handler to forward path/fromDate/toDate params to model",
+                    "completed": false
+                },
+                { "title": "Add tests for filter combinations", "completed": false }
+            ],
+            "tags": ["api", "database"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Admin logs tab: add filters UI, pagination, sorting and auto-refresh",
+            "description": "The admin revalidation logs tab renders a flat list with no filters, no pagination, no sorting, and no auto-refresh. With real usage volume this page becomes unusable.\n\nAffected files:\n- `apps/admin/src/routes/_authed/revalidation/index.tsx` (LogsTab component)\n- `apps/admin/src/lib/revalidation-http-adapter/index.ts` (add filter params)\n- `apps/admin/src/hooks/useRevalidation.ts` (update logs query to pass filters)\n\nKey changes:\n1. HTTP adapter: add filter params to `getRevalidationLogs(filters)` method\n2. Logs hook: pass filter state to HTTP adapter call; add `refetchInterval: 30000`\n3. Admin page - LogsTab:\n   - Add filter controls: Select for entityType, Select for trigger, Select for status, date range inputs for fromDate/toDate\n   - Integrate TanStack Table with sorting on date/status/entityType columns\n   - Add pagination controls using the page/pageSize params\n   - Add `refetchInterval: 30000` for auto-refresh\n4. Fix log status badge to use i18n keys instead of raw value (resolves GAP-056)\n\nAcceptance criteria:\n- Filters UI: entityType, trigger, status, date range\n- Pagination with configurable pageSize\n- Sortable columns\n- Auto-refresh every 30 seconds\n- Status badge shows translated text\n\nResolves: GAP-019, GAP-022 UI part, GAP-052, GAP-056, GAP-086.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add filter params to HTTP adapter getRevalidationLogs method",
+                    "completed": false
+                },
+                {
+                    "title": "Update logs hook with filter state and refetchInterval",
+                    "completed": false
+                },
+                { "title": "Add filter controls UI in LogsTab", "completed": false },
+                {
+                    "title": "Integrate TanStack Table with sorting and pagination",
+                    "completed": false
+                },
+                { "title": "Fix status badge to use i18n translation", "completed": false }
+            ],
+            "tags": ["admin", "components", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add entity-type revalidation mode to admin Manual tab with confirmation dialog",
+            "description": "The admin Manual tab only supports path-based revalidation. The spec requires a second mode: entity-type revalidation with a dropdown of entity types and a confirmation dialog.\n\nAffected file: `apps/admin/src/routes/_authed/revalidation/index.tsx` (ManualTab component).\n\nKey changes:\n- Add a second form/section below the existing path textarea\n- Include a `<Select>` with all 8 entity types (using i18n keys for display names)\n- Add a 'Regenerate all' button that opens an AlertDialog: 'This will regenerate all pages of type [X]. Continue?'\n- On confirmation, call POST /revalidate/type via the HTTP adapter's existing `revalidateByType` method (or add it if missing per GAP-061)\n- Show success/error toast with count of pages revalidated\n\nAcceptance criteria:\n- Entity type dropdown shows all 8 types with translated names\n- Confirmation dialog shows before triggering\n- POST /revalidate/type is called with selected entity type\n- Response shows count of revalidated paths\n- Only visible to users with REVALIDATION_TRIGGER permission\n\nResolves: GAP-025 manual UI part, GAP-071, GAP-087. Also adds missing `revalidateByType` and `checkServiceHealth` to HTTP adapter (GAP-061).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add revalidateByType and checkServiceHealth to admin HTTP adapter (GAP-061)",
+                    "completed": false
+                },
+                { "title": "Add entity type Select component in ManualTab", "completed": false },
+                { "title": "Add AlertDialog confirmation before triggering", "completed": false },
+                { "title": "Wire to POST /revalidate/type endpoint", "completed": false }
+            ],
+            "tags": ["admin", "components", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add accessibility aria-labels to admin revalidation UI components",
+            "description": "The admin revalidation page has accessibility gaps: switches lack contextual aria-labels and status badges are not announced to screen readers.\n\nAffected file: `apps/admin/src/routes/_authed/revalidation/index.tsx`.\n\nKey changes:\n- Add `aria-label={t('revalidation.config.enabledFor', { entityType })}` to each enable/disable switch, making the label contextual with the entity type name\n- Add `role=\"status\"` and `aria-label={t('revalidation.status.' + status)}` to status/trigger badges\n- Add `role=\"status\"` and `aria-live=\"polite\"` to InlineNumberField when in edit mode\n\nAcceptance criteria:\n- Screen readers announce the entity type name when focus moves to a switch\n- Badge elements have accessible role and label\n- Edit mode number field announces changes\n- No new linting errors\n\nResolves: GAP-026, GAP-036, GAP-100.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add aria-label with entity type to switches", "completed": false },
+                { "title": "Add role/aria-label to status and trigger badges", "completed": false },
+                { "title": "Add aria-live to InlineNumberField in edit mode", "completed": false }
+            ],
+            "tags": ["admin", "accessibility", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Write all test gaps: API 401/403, adapter edge cases, E2E Playwright, admin UI tests",
+            "description": "Multiple test coverage gaps exist across the implementation. This task consolidates all remaining test work.\n\nAffected files (test additions):\n- `apps/api/test/routes/revalidation/` — API route tests\n- `packages/service-core/test/revalidation/adapters.test.ts` — adapter edge cases\n- `packages/service-core/test/revalidation/service-hooks.test.ts` — missing 4 services\n- `apps/admin/test/` or adjacent — admin UI hook and component tests\n- `apps/web/test/revalidation.e2e.test.ts` — Playwright E2E\n- Minor gaps: config cache TTL, revalidateMany([]), first-run cron\n\nKey test additions:\n1. **API route tests (GAP-030)**: For each of the 8 revalidation endpoints, add explicit tests for: no auth token → 401, valid token + no REVALIDATION_* permission → 403.\n2. **Adapter edge cases (GAP-074)**: Add test cases in `adapters.test.ts` for: AbortController timeout (request hangs), HTTP 429 response (rate limit), partial success in revalidateMany (some 200, some 404/500), HTTP 403 auth failure, HTTP 503 service down.\n3. **Service hooks — 4 missing services (GAP-059/138)**: Add test suites for PostService hooks (verifying tagSlugs context), AccommodationReviewService (verifying accommodationSlug resolution), DestinationReviewService (verifying destinationSlug and non-empty paths), AmenityService hooks.\n4. **Admin UI tests (GAP-034)**: Unit tests for `useRevalidation` hooks (mock API responses), `RevalidateEntityButton` component (permission-hidden state, loading state, success/error toasts), admin HTTP adapter methods.\n5. **E2E Playwright (GAP-025)**: Test flow: login as admin → navigate to /revalidation → submit manual revalidation → verify response → check logs tab shows new entry.\n6. **Minor test gaps (GAP-139/140/141)**: Config cache TTL expiration test (mock time, verify cache miss after 60s), `revalidateMany([])` empty array guard, first-ever cron run with no prior logs.\n\nAcceptance criteria:\n- All 8 API endpoints have 401/403 test coverage\n- Adapter tests cover timeout, rate-limit, partial-success, auth-failure\n- All 8 services have hook test coverage\n- Admin UI components have unit tests\n- E2E Playwright test passes in CI\n- Minor edge cases are covered\n\nResolves: GAP-025, GAP-030, GAP-031, GAP-034, GAP-059, GAP-062 (covered by T-001), GAP-074, GAP-138, GAP-139, GAP-140, GAP-141.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-010", "T-018", "T-019", "T-020", "T-021", "T-024", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add 401/403 tests for all 8 API revalidation endpoints",
+                    "completed": false
+                },
+                {
+                    "title": "Add adapter edge case tests (timeout, 429, partial, 403, 503)",
+                    "completed": false
+                },
+                { "title": "Add service hooks tests for 4 missing services", "completed": false },
+                {
+                    "title": "Add admin UI unit tests (hooks, RevalidateEntityButton, HTTP adapter)",
+                    "completed": false
+                },
+                {
+                    "title": "Create E2E Playwright test for manual revalidation flow",
+                    "completed": false
+                },
+                {
+                    "title": "Add minor edge case tests (TTL, empty array, first-run cron)",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e", "api", "admin"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Document API URL divergence and other minor doc/code fixes",
+            "description": "Several minor documentation and code quality issues remain after the implementation phases. This task consolidates them.\n\nKey changes:\n1. **CLAUDE.md env var name (GAP-058)**: Fix `apps/web/CLAUDE.md` to replace all references to `HOSPEDA_ISR_BYPASS_TOKEN` with `HOSPEDA_REVALIDATION_SECRET`.\n2. **JSDoc in revalidation-init.ts (GAP-069)**: Fix JSDoc on line 15 of `packages/service-core/src/revalidation/revalidation-init.ts` to reference `HOSPEDA_REVALIDATION_SECRET` instead of `HOSPEDA_ISR_BYPASS_TOKEN`.\n3. **API URL divergence (from T-009, GAP-049/050/132)**: Confirm the technical decision note was added to the spec/docs.\n4. **Astro config limitation comment (GAP-130)**: Add comment in `apps/web/astro.config.mjs` near the `process.env.HOSPEDA_REVALIDATION_SECRET` read explaining why it cannot use the validated env schema.\n5. **Verify PT revalidation locale (GAP-136)**: Confirm existence of `packages/i18n/src/locales/pt/revalidation.json`. If missing, create it by translating the 87 keys from en/revalidation.json.\n\nAcceptance criteria:\n- No stale env var name in any documentation file\n- PT locale file exists with all 87 revalidation keys\n- astro.config.mjs has explanatory comment for direct env read\n- All docs are consistent with the implementation\n\nResolves: GAP-058, GAP-069, GAP-130, GAP-136 verification.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Fix HOSPEDA_ISR_BYPASS_TOKEN references in CLAUDE.md and JSDoc",
+                    "completed": false
+                },
+                { "title": "Verify or create PT revalidation locale file", "completed": false },
+                {
+                    "title": "Add explanatory comment in astro.config.mjs for direct env read",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "i18n"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-03-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

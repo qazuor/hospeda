@@ -919,7 +919,7 @@ If future specs add transformation logic (not just `.pick()`) to access schemas,
 
 ### Sibling Spec Analysis
 
-- **SPEC-050 (Lifecycle State Modeling)**: SPEC-050 modifies `SponsorshipAdminSearchSchema` (a different file than the `access.schema.ts` created here). No direct file conflict. SPEC-057 creates `sponsorship.access.schema.ts` which only imports from `sponsorship.schema.ts`.. it does NOT touch `sponsorship.admin-search.schema.ts`. **Run SPEC-050 first.**
+- **~~SPEC-050~~ (deleted, superseded by SPEC-063 Lifecycle State Standardization)**: SPEC-050 was deleted. It originally modified `SponsorshipAdminSearchSchema` (a different file than the `access.schema.ts` created here). No direct file conflict existed. SPEC-057 is already completed; no sequencing concern remains.
 - **SPEC-056 (Numeric Column Coercion)**: SPEC-056 changes `averageRating` columns from string to number type in DB schemas and Zod query schemas. Note: the AccommodationReview and DestinationReview **entity** Zod schemas use `rating` (a composite object via `AccommodationRatingSchema`/`DestinationRatingSchema`), NOT `averageRating`.. so SPEC-056's changes do not affect the fields picked in SPEC-057's access schemas. Any AdminSchema with numeric fields will automatically reflect correct types after SPEC-056 since AdminSchema is an alias, not a copy. Implementation order technically does not matter, but **run SPEC-056 first** for a cleaner sequence.
 
 ### No Overlap with Other SPECs (050-056)

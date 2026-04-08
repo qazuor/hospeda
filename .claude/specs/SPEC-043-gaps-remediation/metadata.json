@@ -1,0 +1,10 @@
+{
+    "specId": "SPEC-043-GAPS",
+    "title": "SPEC-043 Addon Lifecycle Events — Gaps Remediation",
+    "status": "in-progress",
+    "complexity": "high",
+    "type": "bugfix",
+    "tags": ["billing", "addon", "lifecycle", "gaps", "remediation"],
+    "created": "2026-03-17",
+    "source": "specs-gaps-043.md"
+}
