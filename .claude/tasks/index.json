@@ -161,6 +161,13 @@
             "status": "completed",
             "progress": "25/25",
             "path": "SPEC-054-default-filters-ui-indicator"
+        },
+        {
+            "specId": "SPEC-058",
+            "title": "Align BaseModel Interface with Implementation",
+            "status": "pending",
+            "progress": "0/18",
+            "path": "SPEC-058-basemodel-interface-alignment"
         }
     ],
     "standalone": {

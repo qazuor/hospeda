@@ -1,0 +1,952 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-067",
+    "title": "Web App Production Hardening",
+    "created": "2026-04-08T00:00:00.000Z",
+    "parallelTracks": {
+        "A": {
+            "label": "Critical + Image + CSP (sequential, critical path)",
+            "tasks": [
+                "TASK-067-001",
+                "TASK-067-002",
+                "TASK-067-003",
+                "TASK-067-004",
+                "TASK-067-005",
+                "TASK-067-006",
+                "TASK-067-007",
+                "TASK-067-008",
+                "TASK-067-009",
+                "TASK-067-010"
+            ]
+        },
+        "B": {
+            "label": "Security hardening (independent after T-010)",
+            "tasks": ["TASK-067-011", "TASK-067-012"]
+        },
+        "C": {
+            "label": "SEO (mostly independent, OG depends on T-002)",
+            "tasks": [
+                "TASK-067-013",
+                "TASK-067-014",
+                "TASK-067-015",
+                "TASK-067-016",
+                "TASK-067-017",
+                "TASK-067-018"
+            ]
+        },
+        "D": {
+            "label": "i18n completeness (independent after T-001)",
+            "tasks": [
+                "TASK-067-019",
+                "TASK-067-020",
+                "TASK-067-021",
+                "TASK-067-022",
+                "TASK-067-023"
+            ]
+        },
+        "E": {
+            "label": "Performance (independent)",
+            "tasks": [
+                "TASK-067-024",
+                "TASK-067-025",
+                "TASK-067-026",
+                "TASK-067-027",
+                "TASK-067-028"
+            ]
+        },
+        "F": {
+            "label": "Code quality (independent)",
+            "tasks": [
+                "TASK-067-029",
+                "TASK-067-030",
+                "TASK-067-031",
+                "TASK-067-032",
+                "TASK-067-033",
+                "TASK-067-034",
+                "TASK-067-035",
+                "TASK-067-036",
+                "TASK-067-037"
+            ]
+        },
+        "G": {
+            "label": "Testing (depends on all other tracks)",
+            "tasks": [
+                "TASK-067-038",
+                "TASK-067-039",
+                "TASK-067-040",
+                "TASK-067-041",
+                "TASK-067-042"
+            ]
+        }
+    },
+    "criticalPath": [
+        "TASK-067-001",
+        "TASK-067-003",
+        "TASK-067-006",
+        "TASK-067-007",
+        "TASK-067-008",
+        "TASK-067-009",
+        "TASK-067-010",
+        "TASK-067-038"
+    ],
+    "tasks": [
+        {
+            "id": "TASK-067-001",
+            "title": "Create 404 and 500 error pages",
+            "description": "Create /src/pages/404.astro and /src/pages/500.astro using BaseLayout.\n\nFiles affected:\n- apps/web/src/pages/404.astro (create)\n- apps/web/src/pages/500.astro (create)\n- packages/i18n/src/locales/es.json (add error page keys)\n- packages/i18n/src/locales/en.json (add error page keys)\n- packages/i18n/src/locales/pt.json (add error page keys)\n\nAcceptance criteria:\n- 404 page renders via BaseLayout with header and footer, contains a heading, sub-message, search suggestion, and 'Go home' CTA using t()\n- 500 page renders via BaseLayout with a 'Something went wrong' heading, sub-message, 'Try again' button (reloads), and 'Go home' link using t()\n- All text strings use t() with keys present in all three locale files\n- No stack traces or technical details exposed to the user\n\nTesting: Write Vitest/testing-library tests in apps/web/src/pages/__tests__/ verifying rendered link and button presence.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["TASK-067-002", "TASK-067-019"],
+            "subtasks": [],
+            "tags": ["web", "critical", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-002",
+            "title": "Fix canonical URL generation",
+            "description": "Replace hardcoded 'https://hospeda.com.ar' domain in canonical URL construction with a runtime-derived value.\n\nFiles affected:\n- apps/web/src/pages/[lang]/index.astro (fix hardcoded URL)\n- apps/web/src/lib/urls.ts (add/update getSiteUrl() utility)\n- Any other page with hardcoded canonical domain (audit needed)\n\nAcceptance criteria:\n- Canonical URL is derived from PUBLIC_SITE_URL env var or Astro.site at runtime\n- getSiteUrl() returns the correct base URL without trailing slash\n- Staging environment produces staging canonical URLs\n- TypeScript compiles without errors\n\nTesting: Unit tests in apps/web/src/lib/__tests__/urls.test.ts verifying getSiteUrl() returns correct values for different PUBLIC_SITE_URL inputs.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-001"],
+            "blocks": ["TASK-067-016"],
+            "subtasks": [],
+            "tags": ["web", "critical", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-003",
+            "title": "Fix logo image paths in Header and Footer",
+            "description": "Replace string-path logo references with static imports using Astro's <Image> component.\n\nFiles affected:\n- apps/web/src/components/Header.astro\n- apps/web/src/components/Footer.astro\n- apps/web/src/assets/images/logo.webp (must exist; move from /public if needed)\n\nAcceptance criteria:\n- Logo imported via 'import logoSrc from ../assets/images/logo.webp'\n- Rendered with Astro <Image> component with explicit width, height, and localized alt attribute using t()\n- Build output includes logo with content-hashed filename\n- Logo visible in both header and footer in production build\n\nTesting: Build-time verification; add locale keys for alt text to all three locale files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-001"],
+            "blocks": ["TASK-067-004"],
+            "subtasks": [],
+            "tags": ["web", "critical", "images"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-004",
+            "title": "Use Astro <Image> for all local images",
+            "description": "Audit all local image usages and migrate from string paths to Astro <Image> component with static imports.\n\nFiles affected:\n- Any .astro or .tsx file in apps/web/src/ that uses <img> with local string paths\n- apps/web/src/components/ (multiple files, audit required)\n\nAcceptance criteria:\n- All local images use static import + <Image> component (not raw img src strings)\n- All img tags include explicit width, height, and appropriate loading attribute (eager for above-fold, lazy otherwise)\n- Build output serves images in WebP/AVIF format with content-hashed URLs\n- No TypeScript errors\n\nTesting: Build inspection to confirm optimized format output; no visual regressions.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-003"],
+            "blocks": ["TASK-067-005"],
+            "subtasks": [],
+            "tags": ["web", "images", "performance"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-005",
+            "title": "Fix hero image optimization via getImage()",
+            "description": "Refactor HeroImageRotator to process hero images through getImage() from astro:assets instead of using raw .src strings.\n\nFiles affected:\n- apps/web/src/components/HeroImageRotator.astro (or .tsx)\n- apps/web/src/pages/[lang]/index.astro (hero image imports)\n\nAcceptance criteria:\n- Each hero image processed through getImage() at build time\n- First hero image uses loading='eager'; subsequent images use loading='lazy'\n- Optimized src, width, height, and format values passed to rendered img elements\n- No TypeScript errors\n\nTesting: Build inspection confirming getImage() output is used; LCP measurement via Lighthouse should not regress vs baseline.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-004"],
+            "blocks": ["TASK-067-006"],
+            "subtasks": [],
+            "tags": ["web", "images", "performance"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-006",
+            "title": "Create generic image fallback script",
+            "description": "Create a delegated event-listener script that replaces broken image src with the value of data-fallback attribute. This replaces per-component inline onerror handlers.\n\nFiles affected:\n- apps/web/src/scripts/image-fallback.ts (create)\n- apps/web/src/layouts/BaseLayout.astro (inject script with nonce)\n- apps/web/public/images/placeholder.webp (create/verify placeholder exists)\n\nAcceptance criteria:\n- Script attaches a single delegated 'error' listener to document (not one per image)\n- When an img with data-fallback='/placeholder.webp' fails, src is swapped to the data-fallback value\n- No inline onerror attributes anywhere in the codebase\n- Script is compatible with nonce-based CSP (script tag carries nonce attribute injected by BaseLayout)\n- Placeholder image at the referenced path always exists and returns 200\n\nTesting: Unit tests in apps/web/src/scripts/__tests__/image-fallback.test.ts using jsdom to simulate error events.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-005"],
+            "blocks": ["TASK-067-007", "TASK-067-008"],
+            "subtasks": [],
+            "tags": ["web", "images", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-007",
+            "title": "Integrate image fallback into AccommodationCard and change HeroImageRotator to client:load",
+            "description": "Replace the inline onerror handler in AccommodationCard.astro with data-fallback attribute. Change HeroImageRotator hydration directive from client:visible to client:load.\n\nFiles affected:\n- apps/web/src/components/AccommodationCard.astro (remove onerror, add data-fallback)\n- apps/web/src/pages/[lang]/index.astro (change client:visible to client:load on HeroImageRotator)\n\nAcceptance criteria:\n- AccommodationCard img has no onerror attribute; uses data-fallback pointing to the placeholder\n- HeroImageRotator uses client:load directive\n- Page renders correctly without inline event handlers\n- CSP with no unsafe-inline would not be violated by these components\n\nTesting: Visual inspection; automated test verifying no onerror attribute in rendered HTML.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["TASK-067-006"],
+            "blocks": ["TASK-067-008"],
+            "subtasks": [],
+            "tags": ["web", "images", "security", "performance"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-008",
+            "title": "Implement nonce-based CSP in middleware and BaseLayout",
+            "description": "Generate a cryptographic nonce per request in middleware, thread it to BaseLayout, inject it into all inline scripts/styles, and set the CSP header in Report-Only mode.\n\nFiles affected:\n- apps/web/src/middleware.ts (generate nonce, set CSP header, expose nonce via locals)\n- apps/web/src/lib/middleware-helpers.ts (add generateNonce(), buildCspHeader())\n- apps/web/src/layouts/BaseLayout.astro (read nonce from Astro.locals, apply to inline scripts/styles)\n- apps/web/src/scripts/image-fallback.ts (already nonce-aware from TASK-067-006)\n\nAcceptance criteria:\n- generateNonce() produces a base64-encoded string of >= 16 random bytes\n- Each request gets a unique nonce value (verified by calling twice)\n- Content-Security-Policy-Report-Only header is set on all responses\n- Header includes nonce-{value} and strict-dynamic in script-src, NO unsafe-inline\n- All inline <script> and <style> tags rendered by BaseLayout carry the nonce attribute\n- CSP header includes all required directives: default-src, script-src, style-src, img-src, connect-src, font-src, frame-ancestors\n\nTesting: Unit tests in apps/web/src/lib/__tests__/middleware-helpers.test.ts for generateNonce() uniqueness and buildCspHeader() directive correctness.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["TASK-067-007"],
+            "blocks": ["TASK-067-009", "TASK-067-010", "TASK-067-040"],
+            "subtasks": [],
+            "tags": ["web", "security", "csp"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-009",
+            "title": "Fix JSON-LD script injection vulnerability",
+            "description": "Update JsonLd.astro to escape </script> sequences inside JSON-LD content before injecting via set:html.\n\nFiles affected:\n- apps/web/src/components/JsonLd.astro (add escaping logic)\n- apps/web/src/lib/sanitize-html.ts (add escapeJsonLd() utility)\n\nAcceptance criteria:\n- Any string containing </script> (case-insensitive) is escaped to <\\/script> in the JSON output\n- The resulting JSON remains valid and parseable by JSON.parse()\n- A test with an accommodation name containing </script> verifies the escaped output\n- <script>alert(1)</script> in a description field does not execute JavaScript\n\nTesting: Unit tests in apps/web/src/lib/__tests__/sanitize-html.test.ts for the escapeJsonLd() function.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-008"],
+            "blocks": ["TASK-067-010"],
+            "subtasks": [],
+            "tags": ["web", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-010",
+            "title": "Restrict CSP img-src and validate connect-src env var",
+            "description": "Tighten CSP img-src from 'https:' to specific trusted domains. Add validation so an empty PUBLIC_API_URL does not produce a malformed connect-src directive.\n\nFiles affected:\n- apps/web/src/lib/middleware-helpers.ts (update buildCspHeader() img-src and connect-src logic)\n- apps/web/src/middleware.ts (log warning if PUBLIC_API_URL is missing)\n\nAcceptance criteria:\n- img-src lists only trusted domains: self, Vercel blob storage origin, API media domain, placeholder image origin\n- connect-src only includes PUBLIC_API_URL when the env var is a valid non-empty URL\n- If PUBLIC_API_URL is missing, middleware logs a warning and omits it from connect-src (no empty token)\n- Existing tests for buildCspHeader() pass and new tests cover the empty-env case\n\nTesting: Additional unit tests in apps/web/src/lib/__tests__/middleware-helpers.test.ts for the missing/empty PUBLIC_API_URL case.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-009"],
+            "blocks": ["TASK-067-038"],
+            "subtasks": [],
+            "tags": ["web", "security", "csp"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-011",
+            "title": "Create robots.txt",
+            "description": "Create a public/robots.txt file with appropriate crawl rules and Sitemap reference.\n\nFiles affected:\n- apps/web/public/robots.txt (create)\n\nAcceptance criteria:\n- robots.txt is served at /robots.txt with correct Content-Type\n- File contains Allow and Disallow rules blocking admin, API, and account paths from indexing\n- File includes a Sitemap: directive pointing to the sitemap URL\n- Passes robots.txt validation\n\nTesting: Simple HTTP test or content assertion.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-012",
+            "title": "Fix site.webmanifest and fix footer newsletter input type",
+            "description": "Replace placeholder values in the web manifest with real Hospeda brand values. Also fix the newsletter input type from text to email in Footer.\n\nFiles affected:\n- apps/web/public/site.webmanifest (update name, short_name, description, icons, theme_color, background_color)\n- apps/web/src/components/Footer.astro (change input type='text' to type='email')\n\nAcceptance criteria:\n- Manifest name='Hospeda', short_name='Hospeda', correct theme_color matching brand primary color\n- Icons array references real icon files in /public/icons/ (create 192x192 and 512x512 if missing)\n- Manifest passes validator without errors for required fields\n- Footer newsletter input has type='email'\n- Mobile keyboard shows email layout when newsletter input is focused\n\nTesting: Manifest JSON validity check; HTML attribute assertion for input type.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo", "pwa"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-013",
+            "title": "Create dynamic OG image generation endpoint",
+            "description": "Create an Astro API endpoint that generates 1200x630 OG images using @vercel/og (or satori+sharp) with Hospeda branding.\n\nFiles affected:\n- apps/web/src/pages/api/og.ts (create endpoint)\n- apps/web/package.json (add @vercel/og dependency if not present)\n- apps/web/src/lib/og-helpers.ts (optional: extract template logic)\n\nAcceptance criteria:\n- GET /api/og?title={}&description={}&image={} returns a PNG/JPEG at 1200x630\n- Missing or empty title returns a valid fallback image (not an error)\n- Cache-Control header is set (e.g., max-age=86400, s-maxage=604800)\n- Response includes correct Content-Type (image/png or image/jpeg)\n- Design uses Hospeda brand colors, font, and logo mark\n\nTesting: Unit tests verifying the endpoint returns 200 with image Content-Type for valid and missing title params.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-002"],
+            "blocks": ["TASK-067-014"],
+            "subtasks": [],
+            "tags": ["web", "seo", "api"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-014",
+            "title": "Integrate OG image endpoint with SEOHead",
+            "description": "Update SEOHead.astro to generate og:image meta tag URLs pointing to the /api/og endpoint with page-specific parameters.\n\nFiles affected:\n- apps/web/src/components/SEOHead.astro (add og:image meta tag using /api/og endpoint)\n- apps/web/src/lib/urls.ts (add buildOgImageUrl() helper)\n\nAcceptance criteria:\n- Accommodation, destination, and event detail pages have og:image pointing to /api/og?title=...&description=...\n- Home page has a default og:image via /api/og with brand-level title\n- URL is absolute (includes site base URL)\n- Passes OpenGraph debugger validation\n\nTesting: Unit tests in apps/web/src/lib/__tests__/urls.test.ts for buildOgImageUrl() with various inputs.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-013"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-015",
+            "title": "Fix duplicate title appending",
+            "description": "Remove the '| Hospeda' brand suffix from BaseLayout.astro since SEOHead.astro already appends it, preventing double-suffix titles.\n\nFiles affected:\n- apps/web/src/layouts/BaseLayout.astro (remove brand suffix from title construction)\n- apps/web/src/components/SEOHead.astro (ensure single canonical brand suffix)\n- apps/web/src/lib/urls.ts or constants.ts (add BRAND_NAME and TITLE_SEPARATOR constants)\n\nAcceptance criteria:\n- A page titled 'Casa del Rio' renders <title>Casa del Rio | Hospeda</title> (no duplication)\n- The home page renders <title>Hospeda</title> without suffix repetition\n- The separator and brand name are defined in exactly one constant, not duplicated\n\nTesting: Snapshot or string assertion on rendered <title> tag output.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-016",
+            "title": "Add BreadcrumbList JSON-LD to detail pages",
+            "description": "Create a BreadcrumbJsonLd.astro component and integrate it into accommodation, destination, event, and blog post detail pages.\n\nFiles affected:\n- apps/web/src/components/BreadcrumbJsonLd.astro (create)\n- apps/web/src/pages/[lang]/alojamientos/[slug].astro (integrate)\n- apps/web/src/pages/[lang]/destinos/[slug].astro (integrate)\n- apps/web/src/pages/[lang]/eventos/[slug].astro (integrate, if exists)\n- apps/web/src/pages/[lang]/blog/[slug].astro (integrate, if exists)\n- apps/web/src/lib/urls.ts (use getSiteUrl() for breadcrumb item URLs)\n\nAcceptance criteria:\n- BreadcrumbJsonLd receives a breadcrumbs array and outputs valid JSON-LD BreadcrumbList schema\n- Accommodation detail page breadcrumb: Home > Accommodations > {Name}\n- Destination detail page breadcrumb: Home > Destinations > {Name}\n- All item URLs are absolute (use getSiteUrl())\n- JSON-LD passes structured data validation (schema.org validator)\n\nTesting: Unit tests for the BreadcrumbJsonLd component verifying output structure for a sample breadcrumbs input.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-017",
+            "title": "Add root redirect to vercel.json",
+            "description": "Configure a Vercel-level 308 redirect from / to /es/ in vercel.json to bypass Astro server for this common redirect.\n\nFiles affected:\n- apps/web/vercel.json (create or update with redirect rule)\n- apps/web/src/pages/index.astro (remove or no-op the existing Astro redirect to avoid double-redirect)\n\nAcceptance criteria:\n- GET / returns 308 redirect to /es/ from Vercel edge (not Astro SSR)\n- No double-redirect (Astro page no longer performs its own redirect)\n- vercel.json redirect config is valid JSON\n\nTesting: Local verification via 'astro preview' that / redirects correctly; note edge redirect only verifiable on Vercel.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo", "deployment"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-018",
+            "title": "Fix SEO-related minor issues (title duplication already covered, this tracks OG + sitemap verification)",
+            "description": "NOTE: This task is intentionally left for any SEO audit items discovered during implementation of TASK-067-011 through TASK-067-017 that do not fit neatly into those tasks. If no additional items are found, mark as completed with 'no additional items'.\n\nPotential scope:\n- Verify all meta tags in SEOHead.astro are correct (og:type, og:locale, twitter:card)\n- Verify sitemap is referenced from robots.txt correctly\n- Check for missing or duplicate meta description tags\n\nFiles affected:\n- apps/web/src/components/SEOHead.astro (minor fixes if needed)\n\nAcceptance criteria:\n- No duplicate or missing critical meta tags on home and accommodation detail pages\n- Lighthouse SEO score >= 95 on home page\n\nTesting: Lighthouse CI or manual audit.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["TASK-067-015"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "seo"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-019",
+            "title": "Translate Header navigation labels and sign-in page labels",
+            "description": "Replace hardcoded Spanish navigation labels in Header.astro and hardcoded labels object in signin.astro with t() calls. Add all keys to all three locale files.\n\nFiles affected:\n- apps/web/src/components/Header.astro (replace hardcoded nav labels with t())\n- apps/web/src/pages/[lang]/signin.astro (replace local labels object with t() calls)\n- packages/i18n/src/locales/es.json (add nav and signin keys)\n- packages/i18n/src/locales/en.json (add nav and signin keys)\n- packages/i18n/src/locales/pt.json (add nav and signin keys)\n\nAcceptance criteria:\n- All nav labels (ALOJAMIENTOS, DESTINOS, etc.) use t() with locale file keys\n- Signin page email, password, submit, forgot password labels use t()\n- English locale shows English labels\n- Portuguese locale shows Portuguese labels\n- t() falls back to 'es' string if a locale key is missing\n\nTesting: Render tests or string assertions verifying t() is called; locale file key presence verified by TypeScript types.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-001"],
+            "blocks": ["TASK-067-020"],
+            "subtasks": [],
+            "tags": ["web", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-020",
+            "title": "Translate post category labels and all hardcoded aria-labels",
+            "description": "Update getPostCategoryLabel() to use t() and audit all aria-label/title attributes across .astro and .tsx files to replace hardcoded Spanish strings.\n\nFiles affected:\n- apps/web/src/lib/format-utils.ts (update getPostCategoryLabel() to use t())\n- apps/web/src/components/TestimonialsCarousel.client.tsx (translate aria-label)\n- apps/web/src/pages/[lang]/mi-cuenta/index.astro (translate aria-labels)\n- apps/web/src/components/AccommodationCard.astro (translate save button aria-label)\n- Any other .astro/.tsx files with hardcoded Spanish aria-label (audit during implementation)\n- packages/i18n/src/locales/es.json, en.json, pt.json (add new keys)\n\nAcceptance criteria:\n- getPostCategoryLabel() returns locale-appropriate string via t()\n- Zero hardcoded Spanish strings in aria-label, aria-labelledby, or title attributes across apps/web/src/\n- All new keys present in all three locale files\n- No functionality changes, only label text source changes\n\nTesting: Grep audit for hardcoded Spanish aria-labels; unit tests for getPostCategoryLabel() with different locales.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-019"],
+            "blocks": ["TASK-067-021"],
+            "subtasks": [],
+            "tags": ["web", "i18n", "accessibility"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-021",
+            "title": "Create language switcher component",
+            "description": "Create a LanguageSwitcher.astro component that renders a dropdown/button group for switching between es/en/pt locales.\n\nFiles affected:\n- apps/web/src/components/LanguageSwitcher.astro (create)\n- packages/i18n/src/locales/es.json, en.json, pt.json (add switcher labels)\n\nAcceptance criteria:\n- Renders three locale options (es/en/pt) regardless of current locale\n- Current locale is visually indicated\n- Each option generates the correct locale-prefixed URL for the current page path\n- Component is keyboard-navigable and screen-reader accessible\n- Clicking an option performs a soft navigation (respects View Transitions if active)\n\nTesting: Unit test verifying URL generation for each locale from a given current path.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-020"],
+            "blocks": ["TASK-067-022"],
+            "subtasks": [],
+            "tags": ["web", "i18n", "components"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-022",
+            "title": "Integrate language switcher into Header",
+            "description": "Add LanguageSwitcher component to Header.astro navigation area (desktop and mobile hamburger menu).\n\nFiles affected:\n- apps/web/src/components/Header.astro (import and place LanguageSwitcher)\n\nAcceptance criteria:\n- LanguageSwitcher appears in desktop navbar near auth/account menu\n- LanguageSwitcher is accessible from the hamburger menu on mobile\n- No visual regression to existing header layout\n- Switching locale from any page takes the user to the correct locale-prefixed URL\n\nTesting: Visual regression check; integration test verifying switcher presence in rendered Header.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["TASK-067-021"],
+            "blocks": ["TASK-067-041"],
+            "subtasks": [],
+            "tags": ["web", "i18n", "components"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-023",
+            "title": "Remove deprecated t() overload and fix coverage exclusion patterns",
+            "description": "Remove the deprecated object-style t() overload from src/lib/i18n.ts. Migrate any callers. Also tighten vitest coverage exclusion patterns so lib utilities are not silently excluded.\n\nFiles affected:\n- apps/web/src/lib/i18n.ts (remove deprecated overload)\n- Any file using the deprecated object-style t() (migrate to function-style)\n- apps/web/vitest.config.ts (tighten coverage exclude patterns)\n\nAcceptance criteria:\n- TypeScript compiles without errors after overload removal\n- No callers use the deprecated object-style t() interface\n- Coverage exclusions only cover config files, type-only files, and generated files\n- src/lib/ files appear in coverage reports\n- All existing i18n tests pass\n\nTesting: TypeScript check; vitest --coverage run showing src/lib/ files in the report.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-019"],
+            "blocks": ["TASK-067-038"],
+            "subtasks": [],
+            "tags": ["web", "i18n", "code-quality"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-024",
+            "title": "Lazy-load GLightbox CSS and optimize Google Fonts",
+            "description": "Remove GLightbox CSS from BaseLayout global imports and move it to the component that uses the lightbox. Change Google Fonts from render-blocking stylesheet to preload+async swap pattern.\n\nFiles affected:\n- apps/web/src/layouts/BaseLayout.astro (remove GLightbox CSS import; update Google Fonts link tags)\n- apps/web/src/components/[lightbox component].astro or .tsx (add local CSS import)\n\nAcceptance criteria:\n- GLightbox CSS not present in initial page load on pages that don't use the lightbox\n- GLightbox CSS loads correctly when the lightbox component hydrates (no missing styles)\n- Google Fonts link uses rel='preload' + as='style' + onload swap pattern\n- Lighthouse reports no render-blocking resource for Google Fonts\n- font-display: swap is set to prevent FOIT\n\nTesting: Lighthouse audit result; stylesheet presence check on pages with and without lightbox.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "performance"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-025",
+            "title": "Configure Astro prefetch",
+            "description": "Add prefetch configuration to astro.config.mjs with defaultStrategy: 'hover'.\n\nFiles affected:\n- apps/web/astro.config.mjs (add prefetch: { defaultStrategy: 'hover' })\n\nAcceptance criteria:\n- Hovering an internal link triggers background prefetch of the linked page\n- Navigation to hovered links feels near-instant\n- No console errors or warnings related to prefetch\n\nTesting: Manual verification; Astro config unit test if config parsing is tested.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "performance"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-026",
+            "title": "Fix IntersectionObserver memory leak in scroll reveal",
+            "description": "Refactor initScrollReveal() to disconnect previous observers before creating new ones on astro:page-load events.\n\nFiles affected:\n- apps/web/src/lib/scroll-reveal.ts (track and disconnect observers on re-init)\n- apps/web/src/layouts/BaseLayout.astro (verify listener registration pattern)\n\nAcceptance criteria:\n- On each astro:page-load event, all observers from the previous page load are disconnected before new ones are created\n- Number of active IntersectionObservers does not grow unboundedly across page navigations\n- Scroll reveal animations still work correctly after fix\n\nTesting: Unit tests in apps/web/src/lib/__tests__/scroll-reveal.test.ts verifying observer cleanup on re-initialization.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "performance", "memory"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-027",
+            "title": "Fix Header scroll listener accumulation",
+            "description": "Refactor Header.astro inline script to remove the previous scroll listener before adding a new one on each astro:page-load event.\n\nFiles affected:\n- apps/web/src/components/Header.astro (update inline script to track and remove listener)\n\nAcceptance criteria:\n- At most one scroll listener on window at any time\n- Header scroll behavior (sticky/transparent) works correctly after visiting multiple pages\n- No console errors\n\nTesting: Unit test or manual inspection verifying single listener registration.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "performance", "memory"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-028",
+            "title": "Add View Transition morph animations",
+            "description": "Add transition:name attributes to accommodation card images, destination card images, and their corresponding hero images on detail pages to enable element morphing.\n\nFiles affected:\n- apps/web/src/components/AccommodationCard.astro (add transition:name with unique id-based value)\n- apps/web/src/components/DestinationCard.astro (add transition:name)\n- apps/web/src/pages/[lang]/alojamientos/[slug].astro (add matching transition:name on hero image)\n- apps/web/src/pages/[lang]/destinos/[slug].astro (add matching transition:name on hero image)\n\nAcceptance criteria:\n- Clicking an accommodation card morphs its image into the detail page hero image\n- Clicking a destination card morphs its image into the destination detail hero image\n- Animations respect prefers-reduced-motion (Astro handles this automatically)\n- Pages load correctly without the morph animation when View Transitions are disabled\n- Unique transition:name values per item (e.g., accommodation-image-{id})\n\nTesting: Manual verification with View Transitions enabled and disabled.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "performance", "ux"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-029",
+            "title": "Deduplicate type definitions",
+            "description": "Audit type definitions in src/lib/api/transforms.ts and src/data/types.ts. Consolidate to a single canonical location and update all importers.\n\nFiles affected:\n- apps/web/src/data/types.ts (canonical location; keep or expand)\n- apps/web/src/lib/api/transforms.ts (remove duplicate type definitions; import from types.ts)\n- Any other file importing the removed types (update import paths)\n\nAcceptance criteria:\n- Each type appears exactly once in the codebase\n- TypeScript compiles without errors after consolidation\n- No circular import cycles introduced\n- All test files still pass\n\nTesting: pnpm typecheck in apps/web; grep for duplicate type names.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["TASK-067-030"],
+            "subtasks": [],
+            "tags": ["web", "code-quality", "types"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-030",
+            "title": "Split data/types.ts (588 lines)",
+            "description": "Split apps/web/src/data/types.ts into focused modules, each under 500 lines, within a src/types/ directory or co-located with related domains.\n\nFiles affected:\n- apps/web/src/data/types.ts (split into multiple files)\n- All files importing from src/data/types.ts (update import paths)\n\nAcceptance criteria:\n- No resulting file exceeds 500 lines\n- TypeScript compiles without errors\n- All importers updated to new paths\n- Type names are not changed (no breaking renames)\n\nTesting: pnpm typecheck in apps/web.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-029"],
+            "blocks": ["TASK-067-031", "TASK-067-032"],
+            "subtasks": [],
+            "tags": ["web", "code-quality"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-031",
+            "title": "Split AccommodationCard.astro (653 lines)",
+            "description": "Extract sub-components from AccommodationCard.astro to bring the main file under 500 lines.\n\nFiles affected:\n- apps/web/src/components/AccommodationCard.astro (refactor to orchestrate sub-components)\n- apps/web/src/components/AccommodationCard/ (create directory with extracted sub-components)\n\nAcceptance criteria:\n- Main AccommodationCard.astro file is under 500 lines\n- No extracted sub-component exceeds 500 lines\n- Visual output identical to before the split (no layout or style regressions)\n- All imports to AccommodationCard from other files still work\n\nTesting: Visual diff; pnpm typecheck; build without errors.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-030"],
+            "blocks": ["TASK-067-033"],
+            "subtasks": [],
+            "tags": ["web", "code-quality", "components"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-032",
+            "title": "Split mi-cuenta/index.astro (672 lines)",
+            "description": "Extract profile, bookings, and reviews sections from mi-cuenta/index.astro into sub-components to bring the main file under 500 lines.\n\nFiles affected:\n- apps/web/src/pages/[lang]/mi-cuenta/index.astro (refactor)\n- apps/web/src/components/account/ (create sub-components directory)\n\nAcceptance criteria:\n- mi-cuenta/index.astro is under 500 lines\n- All account sections (profile, bookings, reviews) render correctly\n- Existing page functionality (auth guard, data loading) is preserved\n\nTesting: Manual functional test of account page sections; pnpm typecheck.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-030"],
+            "blocks": ["TASK-067-033"],
+            "subtasks": [],
+            "tags": ["web", "code-quality", "components"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-033",
+            "title": "Remove dead mock data files and fix utility bugs",
+            "description": "Delete unused mock data files in src/data/homepage-*.ts. Fix isLoggingEnabled() to read PUBLIC_ENABLE_LOGGING correctly. Fix loadStats() empty catch block.\n\nFiles affected:\n- apps/web/src/data/homepage-*.ts (delete if no importers found)\n- apps/web/src/lib/i18n.ts or logger utility (fix isLoggingEnabled())\n- apps/web/src/lib/ or page data loader (fix loadStats() catch block)\n\nAcceptance criteria:\n- Files with zero importers are deleted\n- Build succeeds with no import errors after deletion\n- isLoggingEnabled() returns true when PUBLIC_ENABLE_LOGGING=true\n- isLoggingEnabled() returns false when PUBLIC_ENABLE_LOGGING is unset or false\n- loadStats() catch block logs error via @repo/logger with relevant context\n\nTesting: Unit tests for isLoggingEnabled() with different env values; unit test for loadStats() error path using mocked fetch.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-031", "TASK-067-032"],
+            "blocks": ["TASK-067-038"],
+            "subtasks": [],
+            "tags": ["web", "code-quality", "bugfix"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-034",
+            "title": "Add React Error Boundary",
+            "description": "Create a reusable ErrorBoundary React component and wrap all React islands in the web app with it.\n\nFiles affected:\n- apps/web/src/components/ErrorBoundary.tsx (create)\n- apps/web/src/components/*.client.tsx (wrap each React island with ErrorBoundary)\n- packages/i18n/src/locales/es.json, en.json, pt.json (add error boundary fallback message keys)\n\nAcceptance criteria:\n- ErrorBoundary is a class component (required for componentDidCatch) with a 'retry' button\n- Retry resets error state causing child re-mount\n- Fallback UI uses Tailwind classes (no inline styles)\n- Caught errors are logged via @repo/logger (not console.log)\n- ErrorBoundary wraps at minimum: HeroImageRotator, TestimonialsCarousel, and any other client React islands\n\nTesting: Unit test verifying ErrorBoundary catches a thrown error and renders fallback; test verifying retry resets state.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["TASK-067-041"],
+            "subtasks": [],
+            "tags": ["web", "code-quality", "react"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-038",
+            "title": "Write tests for src/lib/ utilities",
+            "description": "Create comprehensive test files for all utility files in apps/web/src/lib/ that lack coverage.\n\nFiles affected:\n- apps/web/src/lib/__tests__/urls.test.ts (create)\n- apps/web/src/lib/__tests__/format-utils.test.ts (create)\n- apps/web/src/lib/__tests__/sanitize-html.test.ts (create)\n- apps/web/src/lib/__tests__/colors.test.ts (create)\n- apps/web/src/lib/__tests__/i18n.test.ts (create or extend)\n- apps/web/src/lib/__tests__/scroll-reveal.test.ts (create)\n- apps/web/src/lib/__tests__/tiptap-renderer.test.ts (create)\n- apps/web/src/lib/__tests__/media.test.ts (create)\n\nAcceptance criteria:\n- Each utility file has a corresponding *.test.ts with happy path, edge case, and error case tests\n- src/lib/ achieves >= 90% line and branch coverage\n- Tests follow AAA pattern\n- No .only() or hard-coded .skip() in committed tests\n\nTesting: This task IS the tests. Run vitest --coverage to verify >= 90% on src/lib/.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["TASK-067-010", "TASK-067-023", "TASK-067-033"],
+            "blocks": ["TASK-067-039"],
+            "subtasks": [],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-039",
+            "title": "Write tests for API layer (client.ts, transforms.ts, endpoints.ts)",
+            "description": "Create test files for the API client, transform functions, and endpoints module.\n\nFiles affected:\n- apps/web/src/lib/api/__tests__/client.test.ts (create)\n- apps/web/src/lib/api/__tests__/transforms.test.ts (create)\n- apps/web/src/lib/api/__tests__/endpoints.test.ts (create)\n\nAcceptance criteria:\n- client.ts tests mock fetch and verify correct headers, error handling, and response parsing\n- transforms.ts tests verify malformed data is handled without uncaught exceptions\n- endpoints.ts tests verify correct URL construction for each endpoint\n- All exported functions tested with happy path, error, and edge cases\n- src/lib/api/ achieves >= 90% coverage\n\nTesting: vitest --coverage on src/lib/api/.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-038"],
+            "blocks": ["TASK-067-040"],
+            "subtasks": [],
+            "tags": ["web", "testing", "api"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-040",
+            "title": "Write tests for middleware-helpers",
+            "description": "Create test file for middleware-helpers.ts covering nonce generation, CSP header construction, and locale detection.\n\nFiles affected:\n- apps/web/src/lib/__tests__/middleware-helpers.test.ts (create or extend)\n\nAcceptance criteria:\n- generateNonce() test verifies output is base64-encoded string of >= 16 bytes, unique across calls\n- buildCspHeader() test verifies all required directives are present with the nonce\n- buildCspHeader() test verifies connect-src behavior with missing/empty PUBLIC_API_URL\n- detectLocale() tests cover: explicit locale in URL, default fallback, edge cases\n- All tests follow AAA pattern\n\nTesting: vitest run on middleware-helpers.test.ts; 100% coverage of the helpers file.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-008", "TASK-067-039"],
+            "blocks": ["TASK-067-041"],
+            "subtasks": [],
+            "tags": ["web", "testing", "security"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-041",
+            "title": "Write tests for auth components (SignIn, SignUp, UserNav, ForgotPassword)",
+            "description": "Create test files for authentication React components in the web app.\n\nFiles affected:\n- apps/web/src/components/__tests__/SignIn.test.tsx (create)\n- apps/web/src/components/__tests__/SignUp.test.tsx (create)\n- apps/web/src/components/__tests__/UserNav.test.tsx (create)\n- apps/web/src/components/__tests__/ForgotPassword.test.tsx (create)\n\nAcceptance criteria:\n- SignIn: submitting empty email shows validation error; server error response shows localized error via t()\n- SignUp: password mismatch shows error\n- UserNav: renders authenticated user's name when available\n- ForgotPassword: submitting shows confirmation state\n- Errors do not expose raw server error messages\n- Tests use @testing-library/react\n\nTesting: vitest run on auth component tests.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["TASK-067-022", "TASK-067-034", "TASK-067-040"],
+            "blocks": ["TASK-067-042"],
+            "subtasks": [],
+            "tags": ["web", "testing", "auth"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "TASK-067-042",
+            "title": "Write tests for 404/500 pages, account page auth redirect, and mi-cuenta",
+            "description": "Create test files for the error pages created in TASK-067-001 and the mi-cuenta account page auth guard.\n\nFiles affected:\n- apps/web/src/pages/__tests__/404.test.ts (create)\n- apps/web/src/pages/__tests__/500.test.ts (create)\n- apps/web/src/pages/__tests__/mi-cuenta.test.ts (create)\n\nAcceptance criteria:\n- 404 page test verifies 'Go home' link and search suggestion are rendered\n- 500 page test verifies 'Try again' button is rendered\n- mi-cuenta page test verifies unauthenticated users are redirected to sign-in\n- Tests use Astro testing utilities or vitest with jsdom\n\nTesting: vitest run on page test files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["TASK-067-041"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "testing", "pages"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
