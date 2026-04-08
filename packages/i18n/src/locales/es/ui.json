@@ -1,4 +1,5 @@
 {
+    "saveItem": "Guardar {{name}}",
     "slider": {
         "previousImage": "Imagen anterior",
         "nextImage": "Siguiente imagen",

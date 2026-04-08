@@ -5,6 +5,7 @@
  * panels. Replaces the static SearchBar.astro stub with full interactivity.
  */
 
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import type { DateRange } from 'react-day-picker';
@@ -100,7 +101,15 @@ const TYPE_ICONS: Record<
  * />
  * ```
  */
-export function SearchBar({ locale, destinations }: SearchBarProps) {
+export function SearchBar(props: SearchBarProps) {
+    return (
+        <ErrorBoundary>
+            <SearchBarInner {...props} />
+        </ErrorBoundary>
+    );
+}
+
+function SearchBarInner({ locale, destinations }: SearchBarProps) {
     const { t } = createTranslations(locale);
     const barRef = useRef<HTMLDivElement>(null);
 
@@ -563,7 +572,7 @@ export function SearchBar({ locale, destinations }: SearchBarProps) {
                                 className={styles.stepperButton}
                                 onClick={() => setAdults((prev) => Math.max(1, prev - 1))}
                                 disabled={adults <= 1}
-                                aria-label="Menos adultos"
+                                aria-label={t('search.fewerAdults', 'Fewer adults')}
                             >
                                 -
                             </button>
@@ -573,7 +582,7 @@ export function SearchBar({ locale, destinations }: SearchBarProps) {
                                 className={styles.stepperButton}
                                 onClick={() => setAdults((prev) => Math.min(10, prev + 1))}
                                 disabled={adults >= 10}
-                                aria-label="Más adultos"
+                                aria-label={t('search.moreAdults', 'More adults')}
                             >
                                 +
                             </button>
@@ -590,7 +599,7 @@ export function SearchBar({ locale, destinations }: SearchBarProps) {
                                 className={styles.stepperButton}
                                 onClick={() => setChildren((prev) => Math.max(0, prev - 1))}
                                 disabled={children <= 0}
-                                aria-label="Menos niños"
+                                aria-label={t('search.fewerChildren', 'Fewer children')}
                             >
                                 -
                             </button>
@@ -600,7 +609,7 @@ export function SearchBar({ locale, destinations }: SearchBarProps) {
                                 className={styles.stepperButton}
                                 onClick={() => setChildren((prev) => Math.min(6, prev + 1))}
                                 disabled={children >= 6}
-                                aria-label="Más niños"
+                                aria-label={t('search.moreChildren', 'More children')}
                             >
                                 +
                             </button>

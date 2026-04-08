@@ -1,4 +1,12 @@
 {
+    "carousel": {
+        "previous": "Testimonio anterior",
+        "next": "Testimonio siguiente",
+        "title": "Testimonios de huéspedes",
+        "itemOf": "Testimonio {{current}} de {{total}}",
+        "navigate": "Navegar entre testimonios",
+        "group": "Grupo de testimonios {{number}}"
+    },
     "form": {
         "ratingLabel": "Calificación",
         "ratingAspects": {

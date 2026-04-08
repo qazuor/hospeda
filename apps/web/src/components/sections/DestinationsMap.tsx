@@ -172,6 +172,8 @@ interface DestinationsMapProps {
     readonly onSelectDestination: (index: number) => void;
     /** The list of destination cards. Slugs must match `City.slug` values above. */
     readonly destinations: readonly DestinationCardData[];
+    /** Accessible label for the map container. */
+    readonly mapLabel?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -203,7 +205,8 @@ function toPercent(value: number, max: number): string {
 export function DestinationsMap({
     activeIndex,
     onSelectDestination,
-    destinations
+    destinations,
+    mapLabel
 }: DestinationsMapProps) {
     /**
      * Finds the destination index matching a given city slug.
@@ -216,7 +219,7 @@ export function DestinationsMap({
         <div
             className={styles.mapContainer}
             role="img"
-            aria-label="Mapa interactivo de destinos en Entre Ríos, Argentina"
+            aria-label={mapLabel ?? 'Interactive map of destinations in Entre Ríos, Argentina'}
         >
             {/* Background: river SVG */}
             <img

@@ -89,7 +89,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             <div
                 className={styles.skeleton}
                 aria-busy="true"
-                aria-label="Cargando formulario"
+                aria-label={t('auth-ui.loading', 'Loading form')}
             >
                 <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
                 <div className={styles.skeletonField} />

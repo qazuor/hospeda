@@ -38,14 +38,9 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const siteOrigin = getSiteUrl();
 const redirectTo = new URL(buildUrl({ locale, path: 'mi-cuenta' }), siteOrigin).href;
 
-// Localized secondary link labels
-const labels = {
-    es: { haveAccount: 'Ya tienes cuenta?', signIn: 'Iniciar sesion' },
-    en: { haveAccount: 'Already have an account?', signIn: 'Sign In' },
-    pt: { haveAccount: 'Ja tem uma conta?', signIn: 'Entrar' }
-} as const satisfies Record<SupportedLocale, unknown>;
-
-const l = labels[locale];
+// Localized secondary link labels via i18n
+const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an account?');
+const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 ---
 
 <BaseLayout locale={locale} title={title} description={description}>
@@ -63,13 +58,13 @@ const l = labels[locale];
             <SignUp client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
 
             <div class="auth-page__footer">
-                <span class="auth-page__footer-text">{l.haveAccount}</span>
+                <span class="auth-page__footer-text">{haveAccountLabel}</span>
                 {' '}
                 <a
                     href={buildUrl({ locale, path: 'auth/signin' })}
                     class="auth-page__link auth-page__link--strong"
                 >
-                    {l.signIn}
+                    {signInLabel}
                 </a>
             </div>
         </div>

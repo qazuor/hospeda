@@ -1,0 +1,162 @@
+---
+/**
+ * @file LanguageSwitcher.astro
+ * @description Locale switcher dropdown for switching between es/en/pt.
+ * Uses CSS-only disclosure (details/summary) — zero client JavaScript.
+ * Preserves the current page path when switching locales.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { SUPPORTED_LOCALES, createTranslations } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly currentPath: string;
+}
+
+const { locale, currentPath } = Astro.props;
+const { t } = createTranslations(locale);
+
+/** Map locale codes to display labels */
+const LOCALE_LABELS: Record<SupportedLocale, string> = {
+    es: 'ES',
+    en: 'EN',
+    pt: 'PT',
+} as const;
+
+const LOCALE_FULL_NAMES: Record<SupportedLocale, string> = {
+    es: 'Español',
+    en: 'English',
+    pt: 'Português',
+} as const;
+
+/**
+ * Build the URL for a different locale by swapping the locale prefix.
+ * /es/destinos/colon/ → /en/destinos/colon/
+ */
+function buildLocaleUrl(targetLocale: SupportedLocale): string {
+    const pathWithoutLocale = currentPath.replace(/^\/(es|en|pt)(\/|$)/, '/');
+    return `/${targetLocale}${pathWithoutLocale}`;
+}
+---
+
+<details class="lang-switcher" aria-label={t('nav.changeLanguage', 'Change language')}>
+    <summary class="lang-switcher__trigger">
+        <span class="lang-switcher__current">{LOCALE_LABELS[locale]}</span>
+        <svg class="lang-switcher__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+    </summary>
+
+    <ul class="lang-switcher__menu" role="list">
+        {SUPPORTED_LOCALES.map((loc) => (
+            <li>
+                <a
+                    href={buildLocaleUrl(loc)}
+                    class:list={['lang-switcher__option', { 'lang-switcher__option--active': loc === locale }]}
+                    aria-current={loc === locale ? 'true' : undefined}
+                    data-astro-prefetch
+                >
+                    <span class="lang-switcher__code">{LOCALE_LABELS[loc]}</span>
+                    <span class="lang-switcher__name">{LOCALE_FULL_NAMES[loc]}</span>
+                </a>
+            </li>
+        ))}
+    </ul>
+</details>
+
+<style>
+    .lang-switcher {
+        position: relative;
+        display: inline-block;
+    }
+
+    .lang-switcher__trigger {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 6px 10px;
+        border-radius: var(--radius-button, 8px);
+        cursor: pointer;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--core-foreground);
+        background: transparent;
+        border: 1px solid var(--border, #dee5eb);
+        transition: all 0.2s ease;
+        list-style: none;
+    }
+
+    .lang-switcher__trigger::-webkit-details-marker {
+        display: none;
+    }
+
+    .lang-switcher__trigger:hover {
+        background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    }
+
+    .lang-switcher__trigger:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .lang-switcher__chevron {
+        transition: transform 0.2s ease;
+    }
+
+    .lang-switcher[open] .lang-switcher__chevron {
+        transform: rotate(180deg);
+    }
+
+    .lang-switcher__menu {
+        position: absolute;
+        top: calc(100% + 4px);
+        right: 0;
+        z-index: 100;
+        min-width: 140px;
+        padding: 4px;
+        margin: 0;
+        list-style: none;
+        background-color: var(--core-card, #fff);
+        border: 1px solid var(--border, #dee5eb);
+        border-radius: var(--radius-button, 8px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .lang-switcher__option {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        color: var(--core-foreground);
+        transition: background-color 0.15s ease;
+    }
+
+    .lang-switcher__option:hover {
+        background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    }
+
+    .lang-switcher__option--active {
+        font-weight: 700;
+        color: var(--brand-primary);
+    }
+
+    .lang-switcher__code {
+        font-weight: 600;
+        min-width: 22px;
+    }
+
+    .lang-switcher__name {
+        color: var(--core-muted-foreground);
+        font-size: 12px;
+    }
+
+    .lang-switcher__option--active .lang-switcher__name {
+        color: var(--brand-primary);
+    }
+</style>

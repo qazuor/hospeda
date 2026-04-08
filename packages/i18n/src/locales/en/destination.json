@@ -1,4 +1,13 @@
 {
+    "map": {
+        "label": "Interactive map of destinations in Entre Ríos, Argentina"
+    },
+    "carousel": {
+        "navigation": "Destination navigation",
+        "previous": "Previous destination",
+        "next": "Next destination",
+        "itemOf": "Destination {{current}} of {{total}}"
+    },
     "title": "Tourist Destinations",
     "description": "Discover the best tourist destinations. Explore unique places and plan your next adventure.",
     "heading": "Tourist Destinations",

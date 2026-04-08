@@ -1,4 +1,13 @@
 {
+    "map": {
+        "label": "Mapa interativo de destinos em Entre Ríos, Argentina"
+    },
+    "carousel": {
+        "navigation": "Navegação de destinos",
+        "previous": "Destino anterior",
+        "next": "Próximo destino",
+        "itemOf": "Destino {{current}} de {{total}}"
+    },
     "title": "Destinos Turísticos",
     "description": "Descubra os melhores destinos turísticos. Explore lugares únicos e planeje a sua próxima aventura.",
     "heading": "Destinos Turísticos",

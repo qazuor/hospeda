@@ -10,10 +10,12 @@
  * - Autoplay pauses on hover and focus-within for accessibility
  */
 
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { ReviewCard } from '@/components/shared/ReviewCard';
 import type { ReviewCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { ChevronLeftIcon, ChevronRightIcon } from '@repo/icons';
 import Autoplay from 'embla-carousel-autoplay';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -54,11 +56,20 @@ interface TestimonialsCarouselProps {
  * />
  * ```
  */
-export function TestimonialsCarousel({
+export function TestimonialsCarousel(props: TestimonialsCarouselProps) {
+    return (
+        <ErrorBoundary>
+            <TestimonialsCarouselInner {...props} />
+        </ErrorBoundary>
+    );
+}
+
+function TestimonialsCarouselInner({
     reviews,
     locale,
     autoplayDelay = 7000
 }: TestimonialsCarouselProps) {
+    const { t } = createTranslations(locale);
     const [selectedSnap, setSelectedSnap] = useState(0);
     const [snapCount, setSnapCount] = useState(0);
     const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -146,7 +157,7 @@ export function TestimonialsCarousel({
                     className={cn(styles.arrow, styles.arrowPrev)}
                     onClick={scrollPrev}
                     disabled={!canScrollPrev}
-                    aria-label="Testimonio anterior"
+                    aria-label={t('review.carousel.previous', 'Previous testimonial')}
                 >
                     <ChevronLeftIcon
                         size={20}
@@ -160,7 +171,7 @@ export function TestimonialsCarousel({
                     ref={mainRef}
                     className={styles.mainViewport}
                     aria-roledescription="carousel"
-                    aria-label="Testimonios de huéspedes"
+                    aria-label={t('review.carousel.title', 'Guest testimonials')}
                 >
                     <div
                         className={styles.mainTrack}
@@ -175,7 +186,11 @@ export function TestimonialsCarousel({
                                     isActiveSlide(index) && styles.mainSlideActive
                                 )}
                                 aria-roledescription="slide"
-                                aria-label={`Testimonio ${index + 1} de ${reviews.length}`}
+                                aria-label={t(
+                                    'review.carousel.itemOf',
+                                    'Testimonial {{current}} of {{total}}',
+                                    { current: index + 1, total: reviews.length }
+                                )}
                                 aria-hidden={!isActiveSlide(index)}
                             >
                                 <div className={styles.slideCard}>
@@ -195,7 +210,7 @@ export function TestimonialsCarousel({
                     className={cn(styles.arrow, styles.arrowNext)}
                     onClick={scrollNext}
                     disabled={!canScrollNext}
-                    aria-label="Testimonio siguiente"
+                    aria-label={t('review.carousel.next', 'Next testimonial')}
                 >
                     <ChevronRightIcon
                         size={20}
@@ -209,7 +224,7 @@ export function TestimonialsCarousel({
             <div
                 className={styles.dotsWrapper}
                 role="tablist"
-                aria-label="Navegar entre testimonios"
+                aria-label={t('review.carousel.navigate', 'Navigate between testimonials')}
             >
                 {Array.from({ length: snapCount }).map((_, snapIndex) => (
                     <button
@@ -218,7 +233,9 @@ export function TestimonialsCarousel({
                         type="button"
                         role="tab"
                         aria-selected={snapIndex === selectedSnap}
-                        aria-label={`Grupo de testimonios ${snapIndex + 1}`}
+                        aria-label={t('review.carousel.group', 'Testimonial group {{number}}', {
+                            number: snapIndex + 1
+                        })}
                         onClick={() => scrollToSnap(snapIndex)}
                         className={cn(styles.dot, snapIndex === selectedSnap && styles.dotActive)}
                     />

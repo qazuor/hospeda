@@ -24,6 +24,13 @@
         "preferences": "Preferences",
         "signOut": "Sign Out"
     },
+    "mainNavigation": "Main navigation",
+    "openMenu": "Open navigation menu",
+    "closeMenu": "Close navigation menu",
+    "mobileMenu": "Navigation menu",
+    "goHome": "Hospeda - Go to home",
+    "goToSearch": "Go to search",
+    "changeLanguage": "Change language",
     "breadcrumb": {
         "home": "Home"
     }

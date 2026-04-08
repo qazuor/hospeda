@@ -10,6 +10,7 @@
  * - Mobile: Only the carousel column (map is hidden via CSS)
  */
 
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import type { DestinationCardData } from '@/data/types';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -69,7 +70,15 @@ function renderStars(rating: number): ReactElement[] {
  * <DestinationsIsland destinations={destinations} locale={locale} client:visible />
  * ```
  */
-export function DestinationsIsland({ destinations, locale }: DestinationsIslandProps) {
+export function DestinationsIsland(props: DestinationsIslandProps) {
+    return (
+        <ErrorBoundary>
+            <DestinationsIslandInner {...props} />
+        </ErrorBoundary>
+    );
+}
+
+function DestinationsIslandInner({ destinations, locale }: DestinationsIslandProps) {
     const { t } = createTranslations(locale);
 
     const [activeIndex, setActiveIndex] = useState(0);
@@ -143,6 +152,10 @@ export function DestinationsIsland({ destinations, locale }: DestinationsIslandP
                     activeIndex={activeIndex}
                     onSelectDestination={setActiveIndex}
                     destinations={destinations}
+                    mapLabel={t(
+                        'destination.map.label',
+                        'Interactive map of destinations in Entre Ríos, Argentina'
+                    )}
                 />
             </div>
 
@@ -257,13 +270,13 @@ export function DestinationsIsland({ destinations, locale }: DestinationsIslandP
                 {/* Slide counter + arrow navigation (replaces dots when >7 items) */}
                 <nav
                     className={styles.controls}
-                    aria-label="Navegación de destinos"
+                    aria-label={t('destination.carousel.navigation', 'Destination navigation')}
                 >
                     <button
                         type="button"
                         className={styles.arrowButton}
                         onClick={scrollPrev}
-                        aria-label="Destino anterior"
+                        aria-label={t('destination.carousel.previous', 'Previous destination')}
                     >
                         ←
                     </button>
@@ -272,7 +285,11 @@ export function DestinationsIsland({ destinations, locale }: DestinationsIslandP
                         className={styles.slideCounter}
                         aria-live="polite"
                         aria-atomic="true"
-                        aria-label={`Destino ${activeIndex + 1} de ${total}`}
+                        aria-label={t(
+                            'destination.carousel.itemOf',
+                            'Destination {{current}} of {{total}}',
+                            { current: activeIndex + 1, total }
+                        )}
                     >
                         {activeIndex + 1} / {total}
                     </span>
@@ -281,7 +298,7 @@ export function DestinationsIsland({ destinations, locale }: DestinationsIslandP
                         type="button"
                         className={styles.arrowButton}
                         onClick={scrollNext}
-                        aria-label="Siguiente destino"
+                        aria-label={t('destination.carousel.next', 'Next destination')}
                     >
                         →
                     </button>

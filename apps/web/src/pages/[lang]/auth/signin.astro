@@ -43,26 +43,10 @@ const returnPath =
 const siteOrigin = getSiteUrl();
 const redirectTo = new URL(returnPath, siteOrigin).href;
 
-// Localized secondary link labels
-const labels = {
-    es: {
-        noAccount: 'No tienes cuenta?',
-        signUp: 'Registrarse',
-        forgotPassword: 'Olvidaste tu contrasena?'
-    },
-    en: {
-        noAccount: "Don't have an account?",
-        signUp: 'Sign Up',
-        forgotPassword: 'Forgot password?'
-    },
-    pt: {
-        noAccount: 'Nao tem uma conta?',
-        signUp: 'Registrar',
-        forgotPassword: 'Esqueceu a senha?'
-    }
-} as const satisfies Record<SupportedLocale, unknown>;
-
-const l = labels[locale];
+// Localized secondary link labels via i18n
+const noAccountLabel = t('auth-ui.signIn.dontHaveAccount', "Don't have an account?");
+const signUpLabel = t('auth-ui.signIn.signUpLink', 'Sign Up');
+const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?');
 ---
 
 <BaseLayout locale={locale} title={title} description={description}>
@@ -84,18 +68,18 @@ const l = labels[locale];
                     href={buildUrl({ locale, path: 'auth/forgot-password' })}
                     class="auth-page__link"
                 >
-                    {l.forgotPassword}
+                    {forgotPasswordLabel}
                 </a>
             </div>
 
             <div class="auth-page__footer">
-                <span class="auth-page__footer-text">{l.noAccount}</span>
+                <span class="auth-page__footer-text">{noAccountLabel}</span>
                 {' '}
                 <a
                     href={buildUrl({ locale, path: 'auth/signup' })}
                     class="auth-page__link auth-page__link--strong"
                 >
-                    {l.signUp}
+                    {signUpLabel}
                 </a>
             </div>
         </div>

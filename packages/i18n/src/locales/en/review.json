@@ -1,4 +1,12 @@
 {
+    "carousel": {
+        "previous": "Previous testimonial",
+        "next": "Next testimonial",
+        "title": "Guest testimonials",
+        "itemOf": "Testimonial {{current}} of {{total}}",
+        "navigate": "Navigate between testimonials",
+        "group": "Testimonial group {{number}}"
+    },
     "form": {
         "ratingLabel": "Rating",
         "ratingAspects": {

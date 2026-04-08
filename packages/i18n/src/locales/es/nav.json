@@ -24,6 +24,13 @@
         "preferences": "Preferencias",
         "signOut": "Cerrar sesión"
     },
+    "mainNavigation": "Navegación principal",
+    "openMenu": "Abrir menú de navegación",
+    "closeMenu": "Cerrar menú de navegación",
+    "mobileMenu": "Menú de navegación",
+    "goHome": "Hospeda - Ir al inicio",
+    "goToSearch": "Ir a búsqueda",
+    "changeLanguage": "Cambiar idioma",
     "breadcrumb": {
         "home": "Inicio"
     }

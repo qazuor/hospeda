@@ -1,4 +1,8 @@
 {
+    "fewerAdults": "Menos adultos",
+    "moreAdults": "Más adultos",
+    "fewerChildren": "Menos niños",
+    "moreChildren": "Más niños",
     "title": "Búsqueda - Hospeda",
     "description": "Busca y encuentra el alojamiento perfecto para tu próximo viaje. Filtra por ubicación, precio y comodidades.",
     "heading": "Buscar Alojamientos",

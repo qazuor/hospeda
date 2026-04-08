@@ -16,6 +16,7 @@
 
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { CloseIcon, SearchIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './MobileMenu.module.css';
@@ -62,7 +63,8 @@ interface MobileMenuProps {
  * <MobileMenu locale={locale} navItems={navItems} client:media="(max-width: 768px)" />
  * ```
  */
-export function MobileMenu({ locale: _locale, navItems }: MobileMenuProps) {
+export function MobileMenu({ locale, navItems }: MobileMenuProps) {
+    const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
 
@@ -142,7 +144,7 @@ export function MobileMenu({ locale: _locale, navItems }: MobileMenuProps) {
         <div
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={t('nav.mobileMenu', 'Navigation menu')}
             aria-hidden={!isOpen}
             className={cn(styles.overlay, isOpen && styles.overlayOpen)}
         >
@@ -152,7 +154,7 @@ export function MobileMenu({ locale: _locale, navItems }: MobileMenuProps) {
                     ref={closeButtonRef}
                     type="button"
                     onClick={handleClose}
-                    aria-label="Cerrar menú de navegación"
+                    aria-label={t('nav.closeMenu', 'Close navigation menu')}
                     className={styles.closeButton}
                     tabIndex={isOpen ? 0 : -1}
                 >
@@ -166,7 +168,7 @@ export function MobileMenu({ locale: _locale, navItems }: MobileMenuProps) {
 
             {/* Navigation links */}
             <nav
-                aria-label="Navegación principal móvil"
+                aria-label={t('nav.mainNavigation', 'Main navigation')}
                 className={styles.nav}
             >
                 <ul className={styles.navList}>
@@ -191,7 +193,7 @@ export function MobileMenu({ locale: _locale, navItems }: MobileMenuProps) {
                     href="/busqueda/"
                     onClick={handleClose}
                     tabIndex={isOpen ? 0 : -1}
-                    aria-label="Ir a búsqueda"
+                    aria-label={t('nav.goToSearch', 'Go to search')}
                     className={styles.searchLink}
                 >
                     <SearchIcon

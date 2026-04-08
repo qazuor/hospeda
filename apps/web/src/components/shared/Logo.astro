@@ -14,6 +14,9 @@
  * - `lg` → h-14 (56px)
  */
 
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
 interface Props {
 	/** Controls which logo asset is rendered. Use `light` on dark backgrounds. */
 	readonly variant?: 'light' | 'dark';
@@ -21,13 +24,18 @@ interface Props {
 	readonly size?: 'sm' | 'md' | 'lg';
 	/** Optional additional CSS classes applied to the wrapping `<a>` element. */
 	readonly class?: string;
+	/** Locale for i18n. Defaults to 'es'. */
+	readonly locale?: SupportedLocale;
 }
 
 const {
 	variant = 'dark',
 	size = 'md',
 	class: className,
+	locale = 'es',
 } = Astro.props;
+
+const { t } = createTranslations(locale);
 
 /** Map size tokens to CSS height values. */
 const sizeValues: Record<NonNullable<Props['size']>, string> = {
@@ -48,7 +56,7 @@ const src = srcMap[variant];
 
 <a
 	href="/"
-	aria-label="Hospeda — Volver al inicio"
+	aria-label={t('nav.goHome', 'Hospeda - Go to home')}
 	class:list={['logo', className]}
 >
 	<img

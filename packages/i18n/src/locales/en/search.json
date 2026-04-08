@@ -1,4 +1,8 @@
 {
+    "fewerAdults": "Fewer adults",
+    "moreAdults": "More adults",
+    "fewerChildren": "Fewer children",
+    "moreChildren": "More children",
     "title": "Search - Hospeda",
     "description": "Search and find the perfect accommodation for your next trip. Filter by location, price, and amenities.",
     "heading": "Search Accommodations",

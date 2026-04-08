@@ -19,6 +19,8 @@ import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
+import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
+import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
 import {
     UserIcon,
     FavoriteIcon,
@@ -105,21 +107,6 @@ const navItems = [
     }
 ] as const;
 
-// Stat card labels (also used as data-label-* attributes for client-side update)
-const statFavoritesLabel = t('account.pages.dashboard.stats.favorites', 'Favoritos');
-const statReviewsLabel = t('account.pages.dashboard.stats.reviews', 'Resenas');
-const statSubscriptionLabel = t('account.pages.dashboard.stats.subscription', 'Suscripcion');
-const statFavoritesDesc = t('account.pages.dashboard.stats.favoritesDesc', 'Alojamientos guardados');
-const statReviewsDesc = t('account.pages.dashboard.stats.reviewsDesc', 'Resenas escritas');
-const statSubscriptionDesc = t('account.pages.dashboard.stats.subscriptionDesc', 'Plan actual');
-const statSubscriptionStatus = t(
-    'account.pages.dashboard.stats.subscriptionStatus',
-    'Estado de la suscripcion'
-);
-const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
-const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
-const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
-
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
@@ -153,7 +140,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <!-- ── Two-column layout: sidebar + main ── -->
         <div class="account__body">
             <!-- Navigation sidebar -->
-            <aside id="account-nav" class="account__sidebar" aria-label="Navegación de cuenta">
+            <aside id="account-nav" class="account__sidebar" aria-label={t('account.navigation', 'Account navigation')}>
                 <nav>
                     <ul class="account__nav-list" role="list">
                         {navItems.map(({ label, href, description: desc, Icon }) => (
@@ -181,84 +168,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 <h2 class="account__section-title">{dashboardLabel}</h2>
 
                 <!-- Stat cards row -->
-                <div class="account__stats-grid">
-                    <!-- Favorites stat -->
-                    <article class="account__stat-card">
-                        <div class="account__stat-card-header">
-                            <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
-                            <FavoriteIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
-                        </div>
-                        <p id="stat-favorites" class="account__stat-value" aria-live="polite">0</p>
-                        <p class="account__stat-desc">{statFavoritesDesc}</p>
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
-                            class="account__stat-link"
-                        >
-                            {viewLabel} {statFavoritesLabel.toLowerCase()} &rarr;
-                        </a>
-                    </article>
-
-                    <!-- Reviews stat -->
-                    <article class="account__stat-card">
-                        <div class="account__stat-card-header">
-                            <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
-                            <StarIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
-                        </div>
-                        <p id="stat-reviews" class="account__stat-value" aria-live="polite">0</p>
-                        <p class="account__stat-desc">{statReviewsDesc}</p>
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/resenas' })}
-                            class="account__stat-link"
-                        >
-                            {viewLabel} {statReviewsLabel.toLowerCase()} &rarr;
-                        </a>
-                    </article>
-
-                    <!-- Subscription stat -->
-                    <article class="account__stat-card">
-                        <div class="account__stat-card-header">
-                            <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
-                            <CreditCardIcon size={24} weight="regular" className="account__stat-icon" aria-hidden="true" />
-                        </div>
-                        <p id="stat-subscription" class="account__stat-value" aria-live="polite">
-                            {statSubscriptionDesc}
-                        </p>
-                        <p
-                            id="stat-subscription-status"
-                            class="account__stat-desc"
-                            data-label-active={statActiveStatus}
-                            data-label-trial={statTrialStatus}
-                            data-label-free={statFreeStatus}
-                            aria-live="polite"
-                        >
-                            {statSubscriptionStatus}
-                        </p>
-                        <a
-                            href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
-                            class="account__stat-link"
-                        >
-                            {viewLabel} {statSubscriptionLabel.toLowerCase()} &rarr;
-                        </a>
-                    </article>
-                </div>
+                <AccountStatsGrid locale={locale} />
 
                 <!-- Navigation cards grid (secondary) -->
-                <section class="account__sections" aria-label="Secciones de cuenta">
-                    <h2 class="account__section-subtitle">{sectionsLabel}</h2>
-                    <div class="account__sections-grid">
-                        {navItems.map(({ label, href, description: desc, Icon }) => (
-                            <a href={href} class="account__section-card">
-                                <div class="account__section-card-header">
-                                    <div class="account__section-icon-wrapper">
-                                        <Icon size={20} weight="regular" aria-hidden="true" />
-                                    </div>
-                                    <span class="account__section-card-label">{label}</span>
-                                </div>
-                                <p class="account__section-card-desc">{desc}</p>
-                            </a>
-                        ))}
-                    </div>
-                </section>
+                <AccountSectionCards locale={locale} navItems={navItems} />
             </div>
         </div>
     </div>
@@ -428,182 +341,6 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         color: var(--core-foreground);
     }
 
-    /* ── Stats grid ── */
-    .account__stats-grid {
-        display: grid;
-        gap: var(--space-6, 1.5rem);
-        grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 640px) {
-        .account__stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1024px) {
-        .account__stats-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .account__stat-card {
-        border-radius: var(--radius-card);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        padding: var(--space-6, 1.5rem);
-        box-shadow: var(--shadow-card);
-        transition: box-shadow var(--duration-normal) ease;
-    }
-
-    .account__stat-card:hover {
-        box-shadow: var(--shadow-card-hover);
-    }
-
-    .account__stat-card-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 0.75rem;
-    }
-
-    .account__stat-card-title {
-        margin: 0;
-        font-size: var(--text-body, 1.125rem);
-        font-weight: 600;
-        color: var(--core-foreground);
-    }
-
-    .account__stat-icon {
-        color: var(--brand-primary);
-    }
-
-    .account__stat-value {
-        margin: 0 0 0.5rem;
-        font-size: 1.875rem;
-        font-family: var(--font-heading);
-        font-weight: 700;
-        color: var(--core-foreground);
-    }
-
-    .account__stat-desc {
-        margin: 0;
-        font-size: var(--text-body-sm);
-        color: var(--core-muted-foreground);
-    }
-
-    .account__stat-link {
-        display: inline-flex;
-        align-items: center;
-        margin-top: 1rem;
-        font-size: var(--text-body-sm);
-        font-weight: 500;
-        color: var(--brand-primary);
-        text-decoration: none;
-        transition: color var(--duration-fast) ease;
-    }
-
-    .account__stat-link:hover {
-        text-decoration: underline;
-    }
-
-    /* ── Sections cards grid ── */
-    .account__sections {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .account__section-subtitle {
-        margin: 0;
-        font-size: var(--text-body, 1.125rem);
-        font-family: var(--font-heading);
-        font-weight: 600;
-        color: var(--core-foreground);
-    }
-
-    .account__sections-grid {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: 1fr;
-    }
-
-    @media (min-width: 640px) {
-        .account__sections-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (min-width: 1280px) {
-        .account__sections-grid {
-            grid-template-columns: repeat(3, 1fr);
-        }
-    }
-
-    .account__section-card {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        border-radius: var(--radius-card);
-        border: 1px solid var(--border);
-        background-color: var(--core-card);
-        padding: var(--space-5, 1.25rem);
-        box-shadow: var(--shadow-card);
-        text-decoration: none;
-        transition: border-color var(--duration-normal) ease,
-            box-shadow var(--duration-normal) ease;
-    }
-
-    .account__section-card:hover {
-        border-color: oklch(from var(--brand-primary) l c h / 0.4);
-        box-shadow: var(--shadow-card-hover);
-    }
-
-    .account__section-card:focus-visible {
-        outline: 2px solid var(--brand-primary);
-        outline-offset: 2px;
-    }
-
-    .account__section-card-header {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-    }
-
-    .account__section-icon-wrapper {
-        flex-shrink: 0;
-        display: flex;
-        width: 2.5rem;
-        height: 2.5rem;
-        align-items: center;
-        justify-content: center;
-        border-radius: var(--radius-button);
-        background-color: oklch(from var(--brand-primary) l c h / 0.1);
-        color: var(--brand-primary);
-        transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
-    }
-
-    .account__section-card:hover .account__section-icon-wrapper {
-        background-color: var(--brand-primary);
-        color: var(--core-card);
-    }
-
-    .account__section-card-label {
-        font-weight: 600;
-        font-size: var(--text-body-sm);
-        color: var(--core-foreground);
-        transition: color var(--duration-fast) ease;
-    }
-
-    .account__section-card:hover .account__section-card-label {
-        color: var(--brand-primary);
-    }
-
-    .account__section-card-desc {
-        margin: 0;
-        font-size: var(--text-body-sm);
-        color: var(--core-muted-foreground);
-    }
 </style>
 
 <script>
@@ -663,8 +400,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     revEl.textContent = String(reviewsData.data.totals.total);
                 }
             }
-        } catch {
-            // Silently fail — default values are already displayed.
+        } catch (error) {
+            console.error('[account] Failed to load stats:', error);
         }
     }
 

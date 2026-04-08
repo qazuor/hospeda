@@ -1,4 +1,6 @@
 {
+    "navigation": "Navegação da conta",
+    "sections": "Seções da conta",
     "profileEdit": {
         "name": "Nome completo",
         "email": "Endereço de e-mail",

@@ -182,26 +182,29 @@ const POST_CATEGORY_COLOR: Readonly<Record<string, ColorScheme>> = {
     [PostCategoryEnum.GENERAL]: scheme({ token: 'primary' })
 };
 
-/** Display labels for post categories. Keyed by PostCategoryEnum values. */
-const POST_CATEGORY_LABEL: Readonly<Record<string, string>> = {
-    [PostCategoryEnum.TOURISM]: 'Turismo',
-    [PostCategoryEnum.TIPS]: 'Consejos',
-    [PostCategoryEnum.GASTRONOMY]: 'Gastronomía',
-    [PostCategoryEnum.CULTURE]: 'Cultura',
-    [PostCategoryEnum.NATURE]: 'Naturaleza',
-    [PostCategoryEnum.EVENTS]: 'Eventos',
-    [PostCategoryEnum.SPORT]: 'Deportes',
-    [PostCategoryEnum.CARNIVAL]: 'Carnaval',
-    [PostCategoryEnum.NIGHTLIFE]: 'Noche',
-    [PostCategoryEnum.HISTORY]: 'Historia',
-    [PostCategoryEnum.TRADITIONS]: 'Tradiciones',
-    [PostCategoryEnum.WELLNESS]: 'Bienestar',
-    [PostCategoryEnum.FAMILY]: 'Familia',
-    [PostCategoryEnum.ART]: 'Arte',
-    [PostCategoryEnum.BEACH]: 'Playa',
-    [PostCategoryEnum.RURAL]: 'Rural',
-    [PostCategoryEnum.FESTIVALS]: 'Festivales',
-    [PostCategoryEnum.GENERAL]: 'General'
+/**
+ * i18n keys for post category labels. Keyed by PostCategoryEnum values.
+ * These are looked up via `t()` at render time for proper locale support.
+ */
+const POST_CATEGORY_I18N_KEY: Readonly<Record<string, string>> = {
+    [PostCategoryEnum.TOURISM]: 'blog.categories.tourism',
+    [PostCategoryEnum.TIPS]: 'blog.categories.tips',
+    [PostCategoryEnum.GASTRONOMY]: 'blog.categories.gastronomy',
+    [PostCategoryEnum.CULTURE]: 'blog.categories.culture',
+    [PostCategoryEnum.NATURE]: 'blog.categories.nature',
+    [PostCategoryEnum.EVENTS]: 'blog.categories.events',
+    [PostCategoryEnum.SPORT]: 'blog.categories.sport',
+    [PostCategoryEnum.CARNIVAL]: 'blog.categories.carnival',
+    [PostCategoryEnum.NIGHTLIFE]: 'blog.categories.nightlife',
+    [PostCategoryEnum.HISTORY]: 'blog.categories.history',
+    [PostCategoryEnum.TRADITIONS]: 'blog.categories.traditions',
+    [PostCategoryEnum.WELLNESS]: 'blog.categories.wellness',
+    [PostCategoryEnum.FAMILY]: 'blog.categories.family',
+    [PostCategoryEnum.ART]: 'blog.categories.art',
+    [PostCategoryEnum.BEACH]: 'blog.categories.beach',
+    [PostCategoryEnum.RURAL]: 'blog.categories.rural',
+    [PostCategoryEnum.FESTIVALS]: 'blog.categories.festivals',
+    [PostCategoryEnum.GENERAL]: 'blog.categories.general'
 };
 
 /**
@@ -222,18 +225,27 @@ export function getPostCategoryColor({ category }: { readonly category: string }
 }
 
 /**
- * Returns a human-readable display label for a post category.
+ * Returns a human-readable display label for a post category using i18n.
  *
- * @param params - Object containing the post category string (PostCategoryEnum value).
- * @returns Display label string (e.g. 'Deportes' for 'SPORT').
+ * @param params - Object containing the post category string and a translation function.
+ * @returns Localized display label string.
  *
  * @example
  * ```ts
- * getPostCategoryLabel({ category: 'GASTRONOMY' }) // 'Gastronomía'
+ * const { t } = createTranslations(locale);
+ * getPostCategoryLabel({ category: 'GASTRONOMY', t }) // 'Gastronomía' (es) or 'Gastronomy' (en)
  * ```
  */
-export function getPostCategoryLabel({ category }: { readonly category: string }): string {
-    return POST_CATEGORY_LABEL[category] ?? category;
+export function getPostCategoryLabel({
+    category,
+    t
+}: {
+    readonly category: string;
+    readonly t: (key: string, fallback?: string) => string;
+}): string {
+    const i18nKey = POST_CATEGORY_I18N_KEY[category];
+    if (!i18nKey) return category;
+    return t(i18nKey, category);
 }
 
 /** Emoji icons per post category for placeholder images. */

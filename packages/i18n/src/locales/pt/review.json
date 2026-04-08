@@ -1,4 +1,12 @@
 {
+    "carousel": {
+        "previous": "Depoimento anterior",
+        "next": "Proximo depoimento",
+        "title": "Depoimentos de hospedes",
+        "itemOf": "Depoimento {{current}} de {{total}}",
+        "navigate": "Navegar entre depoimentos",
+        "group": "Grupo de depoimentos {{number}}"
+    },
     "form": {
         "ratingLabel": "Avaliação",
         "ratingAspects": {
