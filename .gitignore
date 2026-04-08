@@ -123,3 +123,9 @@ scripts/ralph/snapshots/
 # =========================
 .cli-history.json
 node_modules
+.playwright-mcp
+.claude/design-clones
+.claude/specs
+.claude/stats
+apps/web-test
+apps/web-old

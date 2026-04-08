@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
-  <rect width="800" height="600" fill="#eff6ff"/>
-  <g transform="translate(400,270)" fill="none" stroke="#93c5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="-30" y="-35" width="60" height="70" rx="4"/>
-    <path d="M-15-20h30M-15-8h30M-15 4h20"/>
-  </g>
-  <text x="400" y="340" text-anchor="middle" fill="#93c5fd" font-family="system-ui,sans-serif" font-size="14">Blog</text>
-</svg>

@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
-  <rect width="800" height="600" fill="#f1f5f9"/>
-  <g transform="translate(400,280)" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M-40 20h80M-50 20v-30l25-20 25 20v30M-20 20v-15h10v15M10 -5h10v10h-10z"/>
-    <path d="M-60 20h120" stroke-width="1.5"/>
-  </g>
-  <text x="400" y="340" text-anchor="middle" fill="#94a3b8" font-family="system-ui,sans-serif" font-size="14">Alojamiento</text>
-</svg>
