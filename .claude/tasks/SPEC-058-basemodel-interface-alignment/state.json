@@ -1,0 +1,635 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-058",
+    "title": "Align BaseModel Interface with Implementation",
+    "created": "2026-04-08T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Run pre-implementation verification checks",
+            "description": "Before touching any code, verify the spec's assumptions match codebase state. (1) Confirm SPEC-053 completion: `rg 'findAllWithRelations' packages/service-core/src/types/index.ts` and `packages/db/src/base/base.model.ts` — both must show the `tx` param. (2) Confirm no circular deps: `rg \"from '@repo/service-core'\" packages/db/src/ --type ts` must return 0 results. (3) Confirm PaginatedListOutput is exported from @repo/schemas: `rg 'PaginatedListOutput' packages/schemas/src/index.ts`. (4) Confirm both EventOrganizer files exist and check getTableName values. (5) Count model subclasses: `rg 'extends BaseModel<' packages/db/src/models/ --count-matches | wc -l` — should be 39. (6) Inventory all BaseModel imports for backward-compat verification baseline.\n\nTest requirements: No code to test. Document results in a comment/note. Fail fast if any assumption is wrong — update spec before proceeding.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Verify SPEC-053 findAllWithRelations tx param exists in both interface and impl",
+                    "completed": false
+                },
+                {
+                    "title": "Verify @repo/db does NOT import from @repo/service-core (no circular dep)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify @repo/schemas does NOT import from @repo/db (no circular dep)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify PaginatedListOutput is exported from @repo/schemas index",
+                    "completed": false
+                },
+                {
+                    "title": "Verify both EventOrganizer files exist + check their getTableName return values",
+                    "completed": false
+                },
+                {
+                    "title": "Count model subclasses extending BaseModel (should be 39)",
+                    "completed": false
+                }
+            ],
+            "tags": ["verification", "pre-impl"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create packages/db/src/types.ts with DrizzleClient and QueryContext",
+            "description": "Create new file `packages/db/src/types.ts`. Add: (1) `DrizzleClient` type alias using `PgDatabase<NodePgQueryResultHKT, typeof schema, ExtractTablesWithRelations<typeof schema>>` — NOT a union type. (2) `QueryContext` interface with `tx?: DrizzleClient` property and JSDoc per spec section 1. Imports needed: `PgDatabase` from `drizzle-orm/pg-core`, `NodePgQueryResultHKT` from `drizzle-orm/node-postgres`, `ExtractTablesWithRelations` from `drizzle-orm`, `schema` from `./client`. Do NOT add the `BaseModel<T>` interface yet (that's T-003). Leave the file open for the next task to append to it.\n\nTest requirements: Unit — none (pure type definitions). Verify with `pnpm typecheck --filter @repo/db` after completion (should pass since nothing imports this file yet).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create packages/db/src/types.ts with correct imports",
+                    "completed": false
+                },
+                {
+                    "title": "Add DrizzleClient type alias with PgDatabase base (NOT union)",
+                    "completed": false
+                },
+                {
+                    "title": "Add QueryContext interface with tx?: DrizzleClient + JSDoc",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "types", "drizzle"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add BaseModel<T> interface definition to packages/db/src/types.ts",
+            "description": "Append the complete `BaseModel<T extends Record<string, unknown>>` interface to `packages/db/src/types.ts` (created in T-002). The interface must include all 14 members: 13 methods with `tx?: DrizzleClient` where applicable + `getTable(): Table`. Add imports: `SQL` from `drizzle-orm`, `Table` from `drizzle-orm`, `PaginatedListOutput` from `@repo/schemas`. All methods must have JSDoc per spec section 1. The `count()` method nests tx inside `options` object. The `findWithRelations` JSDoc must note that the base implementation is a FALLBACK ignoring the `relations` param. Use full interface definition from spec section 1 verbatim.\n\nTest requirements: No runtime tests (pure types). Verify with `pnpm typecheck --filter @repo/db`.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-014"],
+            "subtasks": [
+                { "title": "Add SQL, Table imports from drizzle-orm", "completed": false },
+                {
+                    "title": "Add PaginatedListOutput import from @repo/schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Add BaseModel<T extends Record<string, unknown>> interface with all 14 members",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc to findWithRelations noting base is a FALLBACK (not a stub)",
+                    "completed": false
+                },
+                {
+                    "title": "Add JSDoc to updateById noting silent-failure behavior",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "types", "interface"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Export DrizzleClient, QueryContext, BaseModel from packages/db/src/index.ts",
+            "description": "Edit `packages/db/src/index.ts`. Add the line: `export type { DrizzleClient, QueryContext, BaseModel } from './types';`. Place it alongside the other type exports. This makes all three types part of the public @repo/db API.\n\nTest requirements: No runtime tests. Verify with `pnpm typecheck --filter @repo/db`. Confirm the types are importable: check if any consumer already imports these names to avoid name collisions.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Add export type { DrizzleClient, QueryContext, BaseModel } from './types' to index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "exports"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update withTransaction callback type in packages/db/src/client.ts",
+            "description": "Edit `packages/db/src/client.ts`. Change `withTransaction` callback parameter type from `NodePgDatabase<typeof schema>` to `DrizzleClient`. Add import: `import type { DrizzleClient } from './types';`. Keep `NodePgDatabase` import if it's still used by `getDb()` return type — verify before removing. Do NOT change the `getDb()` return type (intentionally stays `NodePgDatabase<typeof schema>`).\n\nTest requirements: No new tests needed (pure type change). Verify with `pnpm typecheck --filter @repo/db`. Confirm existing callers of `withTransaction` still compile (the callback type is widened, not narrowed).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add import type { DrizzleClient } from './types' to client.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Change withTransaction callback type from NodePgDatabase to DrizzleClient",
+                    "completed": false
+                },
+                {
+                    "title": "Verify NodePgDatabase import still needed for getDb() return type (keep or remove)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "client", "drizzle"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Rename BaseModel to BaseModelImpl and update generic constraint and getClient() in base.model.ts",
+            "description": "Edit `packages/db/src/base/base.model.ts`. (a) Add import: `import type { DrizzleClient } from '../types';`. (b) Add generic constraint: change `BaseModel<T>` to `BaseModelImpl<T extends Record<string, unknown>>`. (c) Rename class declaration from `abstract class BaseModel` to `abstract class BaseModelImpl` — do NOT add the `implements` clause yet (that's T-014). (d) Change `getClient(tx?: NodePgDatabase<typeof schema>): NodePgDatabase<typeof schema>` to `getClient(tx?: DrizzleClient): DrizzleClient`. Add JSDoc: 'Returns the provided tx if available, otherwise returns the default db connection from getDb(). Safe to call with undefined.' (e) Check if `NodePgDatabase` import can be removed yet (it cannot — still used in method signatures which are updated in T-007).\n\nTest requirements: Run `pnpm typecheck --filter @repo/db` after this task. The backward-compat re-export (added in T-007) is needed for tests to pass without changes, so T-006 alone may show test failures — that's expected and resolved in T-007.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Add import type { DrizzleClient } from '../types' to base.model.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add T extends Record<string, unknown> constraint to class declaration",
+                    "completed": false
+                },
+                { "title": "Rename class from BaseModel to BaseModelImpl", "completed": false },
+                {
+                    "title": "Update getClient() param and return type to DrizzleClient with JSDoc",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "base-model", "rename"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Update all 13 method tx params in base.model.ts to DrizzleClient + add backward-compat re-export",
+            "description": "Edit `packages/db/src/base/base.model.ts`. (a) Change ALL 13 method `tx` parameter types from `NodePgDatabase<typeof schema>` to `DrizzleClient`: findById, findOne, create, update, updateById, softDelete, restore, hardDelete, count, findAll, findAllWithRelations, findWithRelations, raw. NOTE: count() nests tx inside options object. NOTE: findAllWithRelations already has tx (from SPEC-053) — this is a TYPE change only, not a new param. (b) Remove `NodePgDatabase` import from `drizzle-orm/node-postgres` if it's no longer referenced elsewhere in the file. (c) Add backward-compat re-export at bottom of file: `/** @deprecated Use BaseModelImpl directly. */ export { BaseModelImpl as BaseModel };`. (d) Run `pnpm typecheck --filter @repo/db` — must pass.\n\nTest requirements: After this task, run `pnpm test --filter @repo/db`. Existing base.model.test.ts uses `extends BaseModel<DummyType>` — must still work via the backward-compat alias.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-009", "T-010", "T-011", "T-012", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Update tx param types for findById, findOne, create, update, updateById",
+                    "completed": false
+                },
+                {
+                    "title": "Update tx param types for softDelete, restore, hardDelete, count, findAll",
+                    "completed": false
+                },
+                {
+                    "title": "Update tx param types for findAllWithRelations, findWithRelations, raw",
+                    "completed": false
+                },
+                { "title": "Remove NodePgDatabase import if no longer needed", "completed": false },
+                {
+                    "title": "Add @deprecated backward-compat re-export: export { BaseModelImpl as BaseModel }",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm typecheck --filter @repo/db and verify pass",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "base-model", "drizzle", "tx"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Consolidate duplicate EventOrganizer models",
+            "description": "Two files exist: `packages/db/src/models/event/eventOrganizer.model.ts` (minimal, active) and `packages/db/src/models/eventOrganizer.model.ts` (complete, orphaned). (1) Copy content of orphaned root-level file into `packages/db/src/models/event/eventOrganizer.model.ts`. (2) Adjust import path from `'../base/base.model.ts'` to `'../../base/base.model.ts'`. (3) CRITICAL: Fix getTableName() — the orphaned file returns `'event_organizers'` which is WRONG for db.query access. Must return `'eventOrganizers'` (matching the JS variable name from the schema export). (4) Update the consolidated file to use `BaseModelImpl` in import and extends clause (part of the mechanical rename). (5) Delete the orphaned root-level file `packages/db/src/models/eventOrganizer.model.ts`. (6) Verify the event/index.ts still exports EventOrganizerModel correctly.\n\nTest requirements: Run `pnpm test --filter @repo/db` focusing on EventOrganizer tests. Confirm findWithRelations works (has override). Confirm no import from orphaned path remains.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Copy complete implementation from orphaned eventOrganizer.model.ts to event/eventOrganizer.model.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Fix import path from '../base/base.model' to '../../base/base.model'",
+                    "completed": false
+                },
+                {
+                    "title": "CRITICAL: Fix getTableName() to return 'eventOrganizers' (NOT 'event_organizers')",
+                    "completed": false
+                },
+                {
+                    "title": "Update import to use BaseModelImpl and extends to BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Delete orphaned packages/db/src/models/eventOrganizer.model.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Verify event/index.ts still exports EventOrganizerModel",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "models", "event-organizer", "consolidation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Update accommodation model subclasses to use BaseModelImpl (8 files)",
+            "description": "Mechanical rename in 8 accommodation model files. For each: (1) change import from `BaseModel` to `BaseModelImpl`, (2) change `extends BaseModel<X>` to `extends BaseModelImpl<X>`. Files: `packages/db/src/models/accommodation/accommodation.model.ts`, `accommodationFaq.model.ts`, `accommodationIaData.model.ts`, `accommodationReview.model.ts`, `amenity.model.ts`, `feature.model.ts`, `rAccommodationAmenity.model.ts`, `rAccommodationFeature.model.ts`. No logic changes — pure import and extends clause updates.\n\nTest requirements: Run `pnpm typecheck --filter @repo/db` after all 8 files updated. These files may have custom methods with NodePgDatabase — those are OUT OF SCOPE (SPEC-060 handles them). Only update the import and extends clause.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Update accommodation.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update accommodationFaq.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update accommodationIaData.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update accommodationReview.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update amenity.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update feature.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update rAccommodationAmenity.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update rAccommodationFeature.model.ts: import BaseModelImpl, extends BaseModelImpl",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "models", "accommodation", "rename"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Update billing model subclasses to use BaseModelImpl (5 files)",
+            "description": "Mechanical rename in 5 billing model files. For each: (1) change import from `BaseModel` to `BaseModelImpl`, (2) change `extends BaseModel<X>` to `extends BaseModelImpl<X>`. Files: `packages/db/src/models/billing/billingAddonPurchase.model.ts`, `billingDunningAttempt.model.ts`, `billingNotificationLog.model.ts`, `billingSettings.model.ts`, `billingSubscriptionEvent.model.ts`. No logic changes.\n\nTest requirements: Run `pnpm typecheck --filter @repo/db` after updates.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Update billingAddonPurchase.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update billingDunningAttempt.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update billingNotificationLog.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                { "title": "Update billingSettings.model.ts: BaseModelImpl", "completed": false },
+                {
+                    "title": "Update billingSubscriptionEvent.model.ts: BaseModelImpl",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "models", "billing", "rename"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update destination and event model subclasses to use BaseModelImpl (6 files)",
+            "description": "Mechanical rename in 6 model files. For each: (1) change import from `BaseModel` to `BaseModelImpl`, (2) change `extends BaseModel<X>` to `extends BaseModelImpl<X>`. Files: `packages/db/src/models/destination/attraction.model.ts`, `destination.model.ts`, `destinationReview.model.ts`, `rDestinationAttraction.model.ts`, `event/event.model.ts`, `event/eventLocation.model.ts`. Note: `event/eventOrganizer.model.ts` was already updated in T-008. No logic changes.\n\nTest requirements: Run `pnpm typecheck --filter @repo/db` after updates.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Update destination/attraction.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update destination/destination.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update destination/destinationReview.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                {
+                    "title": "Update destination/rDestinationAttraction.model.ts: BaseModelImpl",
+                    "completed": false
+                },
+                { "title": "Update event/event.model.ts: BaseModelImpl", "completed": false },
+                {
+                    "title": "Update event/eventLocation.model.ts: BaseModelImpl",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "models", "destination", "event", "rename"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Update remaining 18 model subclasses to use BaseModelImpl",
+            "description": "Mechanical rename in 18 remaining model files. For each: (1) change import from `BaseModel` to `BaseModelImpl`, (2) change `extends BaseModel<X>` to `extends BaseModelImpl<X>`. Files: `exchange-rate/exchange-rate-config.model.ts`, `exchange-rate/exchange-rate.model.ts`, `owner-promotion/ownerPromotion.model.ts`, `post/post.model.ts`, `post/postSponsor.model.ts`, `post/postSponsorship.model.ts`, `revalidation/revalidation-config.model.ts`, `revalidation/revalidation-log.model.ts`, `sponsorship/sponsorship.model.ts`, `sponsorship/sponsorshipLevel.model.ts`, `sponsorship/sponsorshipPackage.model.ts`, `tag/rEntityTag.model.ts`, `tag/tag.model.ts`, `user/rRolePermission.model.ts`, `user/rUserPermission.model.ts`, `user/user.model.ts`, `user/userBookmark.model.ts`, `user/userIdentity.model.ts`. No logic changes.\n\nTest requirements: After all updates, run `rg 'extends BaseModel<' packages/db/src/models/` — must return 0 results. Then `pnpm typecheck --filter @repo/db`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Update exchange-rate models (2 files): exchange-rate-config, exchange-rate",
+                    "completed": false
+                },
+                { "title": "Update owner-promotion/ownerPromotion.model.ts", "completed": false },
+                {
+                    "title": "Update post models (3 files): post, postSponsor, postSponsorship",
+                    "completed": false
+                },
+                {
+                    "title": "Update revalidation models (2 files): revalidation-config, revalidation-log",
+                    "completed": false
+                },
+                {
+                    "title": "Update sponsorship models (3 files): sponsorship, sponsorshipLevel, sponsorshipPackage",
+                    "completed": false
+                },
+                { "title": "Update tag models (2 files): rEntityTag, tag", "completed": false },
+                {
+                    "title": "Update user models (5 files): rRolePermission, rUserPermission, user, userBookmark, userIdentity",
+                    "completed": false
+                },
+                {
+                    "title": "Verify: rg 'extends BaseModel<' packages/db/src/models/ returns 0 results",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "models", "rename"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Update service-core/src/types/index.ts: remove BaseModel interface, add re-export from @repo/db",
+            "description": "Edit `packages/service-core/src/types/index.ts`. (a) REMOVE the entire `BaseModel<T>` interface definition from this file. (b) REMOVE the `import type { NodePgDatabase } from 'drizzle-orm/node-postgres'` import (no longer needed). (c) REMOVE the `import type { schema } from '@repo/db'` import (no longer needed). (d) ADD the re-export line: `export type { BaseModel } from '@repo/db';`. (e) Keep all other types unchanged: AdminSearchExecuteParams, etc. This maintains full backward compatibility — all existing code importing BaseModel from @repo/service-core continues to work.\n\nTest requirements: Run `pnpm typecheck --filter @repo/service-core`. Existing service-core tests that import BaseModel from service-core should still compile via re-export.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-014", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Remove BaseModel<T> interface definition from service-core/src/types/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Remove NodePgDatabase import from drizzle-orm/node-postgres",
+                    "completed": false
+                },
+                {
+                    "title": "Remove schema import from @repo/db (if only used for BaseModel interface)",
+                    "completed": false
+                },
+                { "title": "Add export type { BaseModel } from '@repo/db'", "completed": false }
+            ],
+            "tags": ["service-core", "types", "re-export"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add implements BaseModel<T> clause to BaseModelImpl in base.model.ts",
+            "description": "Edit `packages/db/src/base/base.model.ts`. Add `implements BaseModel<T>` clause to the class declaration: `export abstract class BaseModelImpl<T extends Record<string, unknown>> implements BaseModel<T>`. Add the import: `import type { BaseModel } from '../types';` (same-package import, zero circular dependency risk). This is the step that TypeScript uses to enforce the interface contract — any method mismatch will immediately appear as a typecheck error.\n\nTest requirements: Run `pnpm typecheck --filter @repo/db` immediately after this change. Any method signature mismatch between BaseModelImpl and BaseModel<T> will surface here. Fix mismatches before proceeding.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-007", "T-013"],
+            "blocks": ["T-015", "T-016"],
+            "subtasks": [
+                {
+                    "title": "Add import type { BaseModel } from '../types' to base.model.ts",
+                    "completed": false
+                },
+                { "title": "Add implements BaseModel<T> to class declaration", "completed": false },
+                {
+                    "title": "Run pnpm typecheck --filter @repo/db and fix any interface mismatch errors",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "base-model", "implements"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Run pnpm typecheck --filter @repo/db and fix all errors",
+            "description": "Run `pnpm typecheck --filter @repo/db`. All 38 model subclasses must compile. The implements clause (T-014) must be satisfied. DrizzleClient, QueryContext, BaseModel must be exported correctly. Fix any errors found. Common issues to watch for: (1) any model subclass that still imports `BaseModel` (not `BaseModelImpl`) — missed in T-009 through T-012. (2) Any method signature mismatch caught by implements clause. (3) Import path issues.\n\nTest requirements: This IS the test. Output must be zero errors. Run command: `cd /home/qazuor/projects/WEBS/hospeda && pnpm typecheck --filter @repo/db`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-010", "T-011", "T-012", "T-014"],
+            "blocks": ["T-017", "T-018"],
+            "subtasks": [
+                { "title": "Run pnpm typecheck --filter @repo/db", "completed": false },
+                {
+                    "title": "Fix any remaining BaseModel references in model files",
+                    "completed": false
+                },
+                { "title": "Fix any implements clause violations", "completed": false }
+            ],
+            "tags": ["typecheck", "db", "validation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Run pnpm typecheck --filter @repo/service-core and fix all errors",
+            "description": "Run `pnpm typecheck --filter @repo/service-core`. All service-core types must compile correctly. The re-export `export type { BaseModel } from '@repo/db'` must work. All consumers of BaseModel from @repo/service-core must still compile. Fix any errors found.\n\nTest requirements: This IS the test. Output must be zero errors. Run command: `cd /home/qazuor/projects/WEBS/hospeda && pnpm typecheck --filter @repo/service-core`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": ["T-017", "T-018"],
+            "subtasks": [
+                { "title": "Run pnpm typecheck --filter @repo/service-core", "completed": false },
+                {
+                    "title": "Fix any errors related to the BaseModel re-export or removed interface",
+                    "completed": false
+                }
+            ],
+            "tags": ["typecheck", "service-core", "validation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Run full test suite for @repo/db and @repo/service-core and fix regressions",
+            "description": "Run `pnpm test --filter @repo/db --filter @repo/service-core`. All existing tests must pass — no regressions introduced. Critical files: (1) `packages/db/test/models/base.model.test.ts` — uses `extends BaseModel<DummyType>` via backward-compat alias. (2) `packages/service-core/test/utils/modelMockFactory.ts` — uses `extends BaseModel<T>` from @repo/db. (3) All crud tests in service-core that import BaseModel as type annotation. (4) EventOrganizer-related tests — verify findWithRelations override works correctly after consolidation.\n\nTest requirements: Zero test failures. If tests fail, diagnose and fix. Do NOT change test assertions — only fix implementation if a genuine bug is introduced.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run pnpm test --filter @repo/db --filter @repo/service-core",
+                    "completed": false
+                },
+                {
+                    "title": "Verify base.model.test.ts passes (backward-compat alias)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify modelMockFactory.ts and baseServiceFactory.ts tests pass",
+                    "completed": false
+                },
+                {
+                    "title": "Verify EventOrganizer findWithRelations tests pass after consolidation",
+                    "completed": false
+                },
+                { "title": "Fix any regressions found", "completed": false }
+            ],
+            "tags": ["testing", "db", "service-core", "regression"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Run pnpm lint and fix all biome errors",
+            "description": "Run `pnpm lint` (or `pnpm check`) across all affected packages. Fix any biome errors introduced. Common gotchas for this spec: (1) `useDefaultParameterLast` — if any optional `tx?` param was placed before required params. (2) `noUnusedVariables` — check for any leftover imports (e.g., NodePgDatabase removed from imports). (3) `noExplicitAny` — ensure no `any` types snuck in. (4) Missing JSDoc on exported symbols (biome may warn). All errors must be zero before marking complete.\n\nTest requirements: `pnpm lint` must return zero errors. Run: `cd /home/qazuor/projects/WEBS/hospeda && pnpm lint`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Run pnpm lint", "completed": false },
+                { "title": "Fix useDefaultParameterLast violations if any", "completed": false },
+                { "title": "Fix noUnusedVariables / leftover imports", "completed": false },
+                { "title": "Verify zero biome errors", "completed": false }
+            ],
+            "tags": ["lint", "biome", "validation"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-04-08T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 18,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

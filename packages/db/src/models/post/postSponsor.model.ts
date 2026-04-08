@@ -1,8 +1,8 @@
 import type { PostSponsor } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { postSponsors } from '../../schemas/post/post_sponsor.dbschema.ts';
 
-export class PostSponsorModel extends BaseModel<PostSponsor> {
+export class PostSponsorModel extends BaseModelImpl<PostSponsor> {
     protected table = postSponsors;
     protected entityName = 'postSponsors';
 

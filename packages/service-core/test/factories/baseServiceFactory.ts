@@ -9,7 +9,9 @@ import { vi } from 'vitest';
 /**
  * Creates a mock base model with standard methods
  */
-export const createMockBaseModel = <T = any>(): BaseModel<T> => {
+export const createMockBaseModel = <
+    T extends Record<string, unknown> = Record<string, unknown>
+>(): BaseModel<T> => {
     const mockModel = {
         findById: vi.fn(),
         findAll: vi.fn(),

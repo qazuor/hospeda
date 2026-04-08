@@ -1,6 +1,6 @@
 import type { Sponsorship } from '@repo/schemas';
 import { and, eq, gte, lte } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { sponsorships } from '../../schemas/sponsorship/sponsorship.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  * Model for managing sponsorships in the database.
  * Extends BaseModel to provide CRUD operations for sponsorship entities.
  */
-export class SponsorshipModel extends BaseModel<Sponsorship> {
+export class SponsorshipModel extends BaseModelImpl<Sponsorship> {
     protected table = sponsorships;
     protected entityName = 'sponsorships';
 

@@ -1,6 +1,6 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, count, desc, eq, gte, ilike, lt, lte } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { revalidationLog } from '../../schemas/revalidation/revalidation-log.dbschema.ts';
 
@@ -18,7 +18,7 @@ export type InsertRevalidationLog = InferInsertModel<typeof revalidationLog>;
  * Model for the revalidation_log table.
  * Records every ISR revalidation attempt with outcome and diagnostic metadata.
  */
-export class RevalidationLogModel extends BaseModel<RevalidationLogRecord> {
+export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
     protected table = revalidationLog;
     protected entityName = 'revalidation_log';
 

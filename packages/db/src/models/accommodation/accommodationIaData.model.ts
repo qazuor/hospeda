@@ -1,8 +1,8 @@
 import type { AccommodationIaData } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationIaData } from '../../schemas/accommodation/accommodation_iaData.dbschema.ts';
 
-export class AccommodationIaDataModel extends BaseModel<AccommodationIaData> {
+export class AccommodationIaDataModel extends BaseModelImpl<AccommodationIaData> {
     protected table = accommodationIaData;
     protected entityName = 'accommodationIaData';
 

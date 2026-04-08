@@ -137,7 +137,7 @@ export function createTypedModelMock<M extends new (...args: unknown[]) => unkno
 /**
  * Mock class that extends BaseModel<T> and mocks all required methods/properties for strict type compatibility.
  */
-export class MockBaseModel<T> extends BaseModel<T> {
+export class MockBaseModel<T extends Record<string, unknown>> extends BaseModel<T> {
     protected table = {} as any;
     protected entityName = 'mock_entity';
 
@@ -149,6 +149,7 @@ export class MockBaseModel<T> extends BaseModel<T> {
     findOne = vi.fn();
     create = vi.fn();
     update = vi.fn();
+    updateById = vi.fn();
     softDelete = vi.fn();
     restore = vi.fn();
     hardDelete = vi.fn();
@@ -157,6 +158,7 @@ export class MockBaseModel<T> extends BaseModel<T> {
     findAllWithRelations = vi.fn();
     findWithRelations = vi.fn();
     raw = vi.fn();
+    getTable = vi.fn();
     protected override getClient = vi.fn();
 }
 
@@ -164,6 +166,6 @@ export class MockBaseModel<T> extends BaseModel<T> {
  * Creates a strict BaseModel mock instance for use in tests.
  * @returns {MockBaseModel<T>} A mock model instance compatible with BaseModel<T>.
  */
-export function createBaseModelMock<T>(): BaseModel<T> {
+export function createBaseModelMock<T extends Record<string, unknown>>(): BaseModel<T> {
     return new MockBaseModel<T>();
 }

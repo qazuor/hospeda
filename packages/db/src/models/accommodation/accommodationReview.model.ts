@@ -1,6 +1,6 @@
 import type { AccommodationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
 import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
@@ -19,7 +19,7 @@ type AccommodationReviewWithRelations = AccommodationReview & {
  * Model for accommodation reviews. Use for all DB access related to accommodation reviews.
  * Inherits CRUD and paginated methods from BaseModel.
  */
-export class AccommodationReviewModel extends BaseModel<AccommodationReview> {
+export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview> {
     protected table = accommodationReviews;
     protected entityName = 'accommodationReviews';
 

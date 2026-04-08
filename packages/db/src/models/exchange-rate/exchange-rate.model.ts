@@ -6,11 +6,11 @@ import type {
 } from '@repo/schemas';
 import { and, count, desc, eq, gte, lte, max } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { exchangeRates } from '../../schemas/exchange-rate/exchange-rate.dbschema.ts';
 
-export class ExchangeRateModel extends BaseModel<ExchangeRate> {
+export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
     protected table = exchangeRates;
     protected entityName = 'exchange_rates';
 

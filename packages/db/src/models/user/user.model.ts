@@ -1,7 +1,7 @@
 import type { User } from '@repo/schemas';
 import { type SQL, and, count, ilike, or, sql } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
@@ -15,7 +15,7 @@ export type UserWithCounts = User & {
     postsCount: number;
 };
 
-export class UserModel extends BaseModel<User> {
+export class UserModel extends BaseModelImpl<User> {
     protected table = users;
     protected entityName = 'users';
 

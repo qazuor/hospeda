@@ -1,11 +1,11 @@
 import type { Amenity } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { amenities } from '../../schemas/accommodation/amenity.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class AmenityModel extends BaseModel<Amenity> {
+export class AmenityModel extends BaseModelImpl<Amenity> {
     protected table = amenities;
     protected entityName = 'amenities';
 

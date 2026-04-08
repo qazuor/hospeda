@@ -14,10 +14,13 @@ class MockModel {
     count = vi.fn();
     create = vi.fn();
     update = vi.fn();
+    updateById = vi.fn();
     delete = vi.fn();
     softDelete = vi.fn();
     restore = vi.fn();
     hardDelete = vi.fn();
+    findWithRelations = vi.fn();
+    raw = vi.fn();
     getTable = vi.fn();
 }
 

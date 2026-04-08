@@ -1,11 +1,11 @@
 import type { DestinationAttractionRelation } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class RDestinationAttractionModel extends BaseModel<DestinationAttractionRelation> {
+export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttractionRelation> {
     protected table = rDestinationAttraction;
     protected entityName = 'rDestinationAttraction';
 

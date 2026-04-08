@@ -1,11 +1,11 @@
 import type { PostSponsorship } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { postSponsorships } from '../../schemas/post/post_sponsorship.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class PostSponsorshipModel extends BaseModel<PostSponsorship> {
+export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
     protected table = postSponsorships;
     protected entityName = 'postSponsorships';
 

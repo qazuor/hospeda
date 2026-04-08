@@ -1,10 +1,10 @@
 import type { Post } from '@repo/schemas';
 import { eq, sql } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
 
-export class PostModel extends BaseModel<Post> {
+export class PostModel extends BaseModelImpl<Post> {
     protected table = posts;
     protected entityName = 'posts';
 

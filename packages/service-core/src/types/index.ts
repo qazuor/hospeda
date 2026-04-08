@@ -1,4 +1,3 @@
-import type { schema } from '@repo/db';
 import type {
     BaseSearchSchema,
     EntityPermissionReasonEnum,
@@ -8,8 +7,7 @@ import type {
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
-import type { SQL, Table } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import type { SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
 
@@ -157,44 +155,7 @@ export class ServiceError extends Error {
 }
 
 export type { PaginatedListOutput } from '@repo/schemas';
-
-// --- Model Interface ---
-
-export interface BaseModel<T> {
-    findById(id: string): Promise<T | null>;
-    findOne(where: Record<string, unknown>): Promise<T | null>;
-    create(input: Partial<T>): Promise<T>;
-    update(where: Record<string, unknown>, input: Partial<T>): Promise<T | null>;
-    softDelete(where: Record<string, unknown>): Promise<number>;
-    restore(where: Record<string, unknown>): Promise<number>;
-    hardDelete(where: Record<string, unknown>): Promise<number>;
-    count(
-        where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[] }
-    ): Promise<number>;
-    findAll(
-        where: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
-        additionalConditions?: SQL[]
-    ): Promise<PaginatedListOutput<T>>;
-    /**
-     * Finds all entities with specified relations populated.
-     * @param relations - Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
-     * @param where - Filter conditions
-     * @param options - Pagination and sort options
-     * @param additionalConditions - Optional extra SQL conditions
-     * @param tx - Optional transaction client for atomic operations
-     */
-    findAllWithRelations(
-        relations: Record<string, boolean | Record<string, unknown>>,
-        where?: Record<string, unknown>,
-        options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
-        additionalConditions?: SQL[],
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<PaginatedListOutput<T>>;
-    /** Returns the Drizzle table schema for this model */
-    getTable(): Table;
-}
+export type { BaseModel } from '@repo/db';
 
 // --- Search Types ---
 export type SortingType = z.infer<typeof HttpSortingSchema>;

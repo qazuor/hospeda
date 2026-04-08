@@ -1,6 +1,6 @@
 import type { SponsorshipLevel } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { sponsorshipLevels } from '../../schemas/sponsorship/sponsorship_level.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  * Model for managing sponsorship levels in the database.
  * Extends BaseModel to provide CRUD operations for sponsorship level entities.
  */
-export class SponsorshipLevelModel extends BaseModel<SponsorshipLevel> {
+export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
     protected table = sponsorshipLevels;
     protected entityName = 'sponsorshipLevels';
 

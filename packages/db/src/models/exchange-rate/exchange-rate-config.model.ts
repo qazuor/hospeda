@@ -1,7 +1,7 @@
 import type { ExchangeRateConfig } from '@repo/schemas';
 import { ExchangeRateTypeEnum } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
 import { exchangeRateConfig } from '../../schemas/exchange-rate/exchange-rate-config.dbschema.ts';
 
@@ -35,7 +35,7 @@ interface UpdateConfigInput {
  * This is a singleton model - only one configuration row should exist.
  * Methods handle automatic creation if config does not exist.
  */
-export class ExchangeRateConfigModel extends BaseModel<ExchangeRateConfig> {
+export class ExchangeRateConfigModel extends BaseModelImpl<ExchangeRateConfig> {
     protected table = exchangeRateConfig;
     protected entityName = 'exchange_rate_config';
 

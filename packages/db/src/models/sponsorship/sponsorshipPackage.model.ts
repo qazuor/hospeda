@@ -1,6 +1,6 @@
 import type { SponsorshipPackage } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { sponsorshipPackages } from '../../schemas/sponsorship/sponsorship_package.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  * Model for managing sponsorship packages in the database.
  * Extends BaseModel to provide CRUD operations for sponsorship package entities.
  */
-export class SponsorshipPackageModel extends BaseModel<SponsorshipPackage> {
+export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
     protected table = sponsorshipPackages;
     protected entityName = 'sponsorshipPackages';
 

@@ -1,12 +1,12 @@
 import type { AccommodationAmenityRelation } from '@repo/schemas';
 import { count, inArray } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class RAccommodationAmenityModel extends BaseModel<AccommodationAmenityRelation> {
+export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmenityRelation> {
     protected table = rAccommodationAmenity;
     protected entityName = 'rAccommodationAmenity';
 

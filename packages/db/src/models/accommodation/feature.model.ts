@@ -1,8 +1,8 @@
 import type { Feature } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { features } from '../../schemas/accommodation/feature.dbschema.ts';
 
-export class FeatureModel extends BaseModel<Feature> {
+export class FeatureModel extends BaseModelImpl<Feature> {
     protected table = features;
     protected entityName = 'features';
 

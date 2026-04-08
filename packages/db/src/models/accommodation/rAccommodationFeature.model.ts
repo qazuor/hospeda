@@ -1,12 +1,12 @@
 import type { AccommodationFeature } from '@repo/schemas';
 import { count, inArray } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class RAccommodationFeatureModel extends BaseModel<AccommodationFeature> {
+export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeature> {
     protected table = rAccommodationFeature;
     protected entityName = 'rAccommodationFeature';
 

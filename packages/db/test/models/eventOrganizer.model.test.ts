@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
-import { EventOrganizerModel } from '../../src/models/eventOrganizer.model';
+import { EventOrganizerModel } from '../../src/models/event/eventOrganizer.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
@@ -32,7 +32,7 @@ describe('EventOrganizerModel', () => {
     describe('getTableName', () => {
         it('should return correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('event_organizers');
+            expect(tableName).toBe('eventOrganizers');
         });
     });
 
@@ -78,7 +78,7 @@ describe('EventOrganizerModel', () => {
             const result = await model.findWithRelations(where, relations);
 
             expect(result).toEqual({ id: 'org2', name: 'Organizer 2' });
-            expect(mockFindOne).toHaveBeenCalledWith(where);
+            expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
             expect(logQuery).toHaveBeenCalledWith(
                 'eventOrganizers',
                 'findWithRelations',

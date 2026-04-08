@@ -1,6 +1,6 @@
 import type { DestinationReview } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
 import { destinationReviews } from '../../schemas/destination/destination_review.dbschema.ts';
 import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
@@ -15,7 +15,7 @@ type DestinationReviewWithRelations = DestinationReview & {
     destination?: { id: string; name: string; slug: string };
 };
 
-export class DestinationReviewModel extends BaseModel<DestinationReview> {
+export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
     protected table = destinationReviews;
     protected entityName = 'destinationReviews';
 

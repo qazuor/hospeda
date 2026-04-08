@@ -3,6 +3,7 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import * as hospedaSchema from './schemas/index.ts';
+import type { DrizzleClient } from './types.ts';
 
 /**
  * Combined schema including both Hospeda application schemas
@@ -105,9 +106,7 @@ export function getDb(): NodePgDatabase<typeof schema> {
  * });
  * ```
  */
-export async function withTransaction<T>(
-    callback: (tx: NodePgDatabase<typeof schema>) => Promise<T>
-): Promise<T> {
+export async function withTransaction<T>(callback: (tx: DrizzleClient) => Promise<T>): Promise<T> {
     const db = getDb();
     return await db.transaction(callback);
 }

@@ -1,6 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm';
 import { eq } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { revalidationConfig } from '../../schemas/revalidation/revalidation-config.dbschema.ts';
 
@@ -13,7 +13,7 @@ export type RevalidationConfigRecord = InferSelectModel<typeof revalidationConfi
  * Model for the revalidation_config table.
  * Provides per-entity-type ISR revalidation configuration.
  */
-export class RevalidationConfigModel extends BaseModel<RevalidationConfigRecord> {
+export class RevalidationConfigModel extends BaseModelImpl<RevalidationConfigRecord> {
     protected table = revalidationConfig;
     protected entityName = 'revalidation_config';
 

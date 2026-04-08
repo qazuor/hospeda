@@ -7,13 +7,13 @@ import type {
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
 import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class AccommodationModel extends BaseModel<Accommodation> {
+export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
     protected entityName = 'accommodations';
 

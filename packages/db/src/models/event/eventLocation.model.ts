@@ -1,8 +1,8 @@
 import type { EventLocation } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { eventLocations } from '../../schemas/event/event_location.dbschema.ts';
 
-export class EventLocationModel extends BaseModel<EventLocation> {
+export class EventLocationModel extends BaseModelImpl<EventLocation> {
     protected table = eventLocations;
     protected entityName = 'eventLocations';
 

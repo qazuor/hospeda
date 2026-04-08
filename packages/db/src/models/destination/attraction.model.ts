@@ -1,8 +1,8 @@
 import type { Attraction } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 
-export class AttractionModel extends BaseModel<Attraction> {
+export class AttractionModel extends BaseModelImpl<Attraction> {
     protected table = attractions;
     protected entityName = 'attractions';
 

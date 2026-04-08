@@ -16,7 +16,7 @@ import {
     sql
 } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb, type schema } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
@@ -24,7 +24,7 @@ import { rDestinationAttraction } from '../../schemas/destination/r_destination_
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class DestinationModel extends BaseModel<Destination> {
+export class DestinationModel extends BaseModelImpl<Destination> {
     protected table = destinations;
     protected entityName = 'destinations';
 

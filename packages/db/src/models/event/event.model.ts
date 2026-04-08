@@ -1,11 +1,11 @@
 import type { Event } from '@repo/schemas';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class EventModel extends BaseModel<Event> {
+export class EventModel extends BaseModelImpl<Event> {
     protected table = events;
     protected entityName = 'events';
 

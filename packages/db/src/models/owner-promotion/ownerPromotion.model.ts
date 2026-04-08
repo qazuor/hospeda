@@ -1,6 +1,6 @@
 import type { OwnerPromotion } from '@repo/schemas';
 import { and, eq, gte, lte } from 'drizzle-orm';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  * Model for managing owner promotions in the database.
  * Extends BaseModel to provide CRUD operations for owner promotion entities.
  */
-export class OwnerPromotionModel extends BaseModel<OwnerPromotion> {
+export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     protected table = ownerPromotions;
     protected entityName = 'ownerPromotions';
 

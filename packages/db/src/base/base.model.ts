@@ -1,8 +1,8 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
 import { and, count } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { getDb, type schema } from '../client.ts';
+import { getDb } from '../client.ts';
+import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
 import { DbError } from '../utils/error.ts';
 import { logError, logQuery } from '../utils/logger.ts';
@@ -55,7 +55,7 @@ function transformRelationsForDrizzle(
  *
  * @template T - The entity type managed by the model
  */
-export abstract class BaseModel<T> {
+export abstract class BaseModelImpl<T extends Record<string, unknown>> implements BaseModel<T> {
     /**
      * The table/schema object (Drizzle table)
      */
@@ -72,11 +72,10 @@ export abstract class BaseModel<T> {
     protected abstract getTableName(): string;
 
     /**
-     * Gets the database client, either from transaction or global connection.
-     * @param tx - Optional transaction client
-     * @returns Database client
+     * Returns the provided tx if available, otherwise returns the default db connection from getDb().
+     * Safe to call with undefined.
      */
-    protected getClient(tx?: NodePgDatabase<typeof schema>): NodePgDatabase<typeof schema> {
+    protected getClient(tx?: DrizzleClient): DrizzleClient {
         return tx ?? getDb();
     }
 
@@ -105,7 +104,7 @@ export abstract class BaseModel<T> {
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
         additionalConditions?: SQL[],
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
@@ -168,7 +167,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
-    async findById(id: string, tx?: NodePgDatabase<typeof schema>): Promise<T | null> {
+    async findById(id: string, tx?: DrizzleClient): Promise<T | null> {
         const db = this.getClient(tx);
         try {
             const whereClause = buildWhereClause({ id }, this.table);
@@ -192,10 +191,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the entity or null if not found
      */
-    async findOne(
-        where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<T | null> {
+    async findOne(where: Record<string, unknown>, tx?: DrizzleClient): Promise<T | null> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -220,7 +216,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the created entity
      */
-    async create(data: Partial<T>, tx?: NodePgDatabase<typeof schema>): Promise<T> {
+    async create(data: Partial<T>, tx?: DrizzleClient): Promise<T> {
         const db = this.getClient(tx);
         try {
             const result = await db.insert(this.table).values(data).returning();
@@ -248,7 +244,7 @@ export abstract class BaseModel<T> {
     async update(
         where: Record<string, unknown>,
         data: Partial<T>,
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<T | null> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
@@ -285,7 +281,7 @@ export abstract class BaseModel<T> {
      */
     async count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: NodePgDatabase<typeof schema> }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
     ): Promise<number> {
         const { additionalConditions = [], tx } = options ?? {};
         const db = this.getClient(tx);
@@ -325,7 +321,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the query result
      */
-    async raw(query: SQL, tx?: NodePgDatabase<typeof schema>): Promise<unknown> {
+    async raw(query: SQL, tx?: DrizzleClient): Promise<unknown> {
         const db = this.getClient(tx);
         try {
             const result = await db.execute(query);
@@ -348,10 +344,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of deleted rows
      */
-    async hardDelete(
-        where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<number> {
+    async hardDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -378,10 +371,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of deleted rows
      */
-    async softDelete(
-        where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<number> {
+    async softDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -416,10 +406,7 @@ export abstract class BaseModel<T> {
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of restored rows
      */
-    async restore(
-        where: Record<string, unknown>,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<number> {
+    async restore(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -457,7 +444,7 @@ export abstract class BaseModel<T> {
     async findWithRelations(
         where: Record<string, unknown>,
         relations: Record<string, boolean | Record<string, unknown>>,
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<T | null> {
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
@@ -498,11 +485,7 @@ export abstract class BaseModel<T> {
      * @param data - The fields to update
      * @param tx - Optional transaction client
      */
-    async updateById(
-        id: string,
-        data: Partial<T>,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<void> {
+    async updateById(id: string, data: Partial<T>, tx?: DrizzleClient): Promise<void> {
         await this.update({ id }, data, tx);
     }
 
@@ -529,7 +512,7 @@ export abstract class BaseModel<T> {
         where: Record<string, unknown> = {},
         options: Omit<PaginatedListOptions, 'relations'> = {},
         additionalConditions?: SQL[],
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
         const db = this.getClient(tx);
         // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
@@ -674,3 +657,6 @@ export abstract class BaseModel<T> {
         }
     }
 }
+
+/** @deprecated Use BaseModelImpl directly. Alias kept for backward compatibility. */
+export { BaseModelImpl as BaseModel };

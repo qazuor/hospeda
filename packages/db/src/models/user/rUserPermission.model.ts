@@ -1,12 +1,12 @@
 import type { UserPermissionAssignment } from '@repo/schemas';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import { BaseModel } from '../../base/base.model.ts';
+import { BaseModelImpl } from '../../base/base.model.ts';
 import type { schema } from '../../client.ts';
 import { userPermission } from '../../schemas/user/r_user_permission.dbschema.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-export class RUserPermissionModel extends BaseModel<UserPermissionAssignment> {
+export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment> {
     protected table = userPermission;
     protected entityName = 'userPermission';
 
