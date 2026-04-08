@@ -1,0 +1,100 @@
+---
+/**
+ * @file DestinationGridSkeleton.astro
+ * @description Skeleton fallback for the destinations grid (Server Island).
+ * Renders 4 placeholder cards with pulse animation using web2 design tokens.
+ * Cards use a tall 3/4 aspect-ratio with text overlay at the bottom.
+ */
+---
+
+<div class="skeleton-grid skeleton-grid--destinations">
+  {Array.from({ length: 4 }).map(() => (
+    <div class="skeleton-card skeleton-card--destination">
+      <div class="skeleton-image skeleton-image--3-4 skeleton-pulse" />
+      <div class="skeleton-overlay">
+        <div class="skeleton-line skeleton-line--name skeleton-pulse" />
+        <div class="skeleton-line skeleton-line--count skeleton-pulse" />
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-pulse {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+
+  .skeleton-grid--destinations {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: var(--space-card-gap);
+  }
+
+  @media (min-width: 640px) {
+    .skeleton-grid--destinations {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .skeleton-grid--destinations {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .skeleton-card--destination {
+    position: relative;
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .skeleton-image {
+    background-color: var(--border);
+    width: 100%;
+    border-radius: var(--radius-organic);
+  }
+
+  .skeleton-image--3-4 {
+    aspect-ratio: 3 / 4;
+  }
+
+  .skeleton-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .skeleton-line {
+    background-color: var(--muted);
+    border-radius: var(--radius-sm);
+  }
+
+  .skeleton-line--name {
+    width: 66%;
+    height: 1.25rem;
+  }
+
+  .skeleton-line--count {
+    width: 33%;
+    height: 0.75rem;
+  }
+</style>

@@ -1,0 +1,166 @@
+---
+/**
+ * @file NextEventsSection.astro
+ * @description Homepage upcoming events section rendered as a Bento Grid layout.
+ * Updated: 2026-04-07
+ *
+ * Grid structure (desktop):
+ *   Top row:    Featured card (spans 2 rows, left column) + 2 horizontal cards stacked (right column)
+ *   Bottom row: Up to 3 horizontal cards in a 3-column row
+ *
+ * Mobile: all cards stack vertically in a single column, featured card first.
+ * Shows an empty state when no events are available.
+ * The SectionHeader includes an inline "view all" action link. Background uses
+ * the default section bg per the alternating section rule.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { eventsApi, toEventCardProps } from '@/lib/api';
+import type { EventCardData } from '@/lib/api/transforms';
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import EventCardHorizontal from '@/components/shared/EventCardHorizontal.astro';
+import EventCardFeatured from '@/components/shared/EventCardFeatured.astro';
+import { webLogger } from '@/lib/logger';
+
+interface Props {
+  /** Active locale used to resolve translations and build internal URLs. */
+  readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+
+const { t } = createTranslations(locale);
+
+// Fetch from API - empty array if unavailable
+let eventItems: EventCardData[] = [];
+try {
+  const result = await eventsApi.getUpcoming({ pageSize: 6, daysAhead: 60 });
+  if (result.ok) {
+    eventItems = result.data.items.map((raw) => toEventCardProps({ item: raw as Record<string, unknown> }));
+  }
+} catch (err) {
+  webLogger.error('API fetch failed', { endpoint: 'events', error: err instanceof Error ? err.message : err });
+}
+
+/**
+ * Split events into bento grid zones:
+ * - featuredEvent: first item flagged as featured, or the first item overall
+ * - topEvents:     next 2 items shown stacked to the right of the featured card
+ * - bottomEvents:  remaining items (up to 3) shown in the bottom 3-column row
+ */
+const featuredEvent = eventItems.find((e) => e.isFeatured) ?? eventItems[0];
+const remainingEvents = eventItems.filter((e) => e !== featuredEvent);
+const topEvents = remainingEvents.slice(0, 2);
+const bottomEvents = remainingEvents.slice(2, 5);
+---
+
+<section class="section">
+  <div class="section__container">
+
+    <!-- Section header with inline view-all action -->
+    <SectionHeader
+      tagline={t('home.upcomingEvents.accentSubtitle')}
+      title={t('home.upcomingEvents.title')}
+      subtitle={t('home.upcomingEvents.description')}
+      alignment="left"
+      actionLabel={t('home.upcomingEvents.viewAll')}
+      actionHref={buildUrl({ locale, path: '/eventos/' })}
+    />
+
+    {eventItems.length === 0 ? (
+      <p class="events__empty">{t('home.upcomingEvents.emptyState')}</p>
+    ) : (
+      <div class="events__bento">
+
+        <!-- Top section: featured card (2 rows tall) + up to 2 stacked horizontal cards -->
+        <div class="events__grid-top">
+          <div class="events__grid-featured" data-reveal="left">
+            <EventCardFeatured data={featuredEvent} locale={locale} />
+          </div>
+          {topEvents.map((event, i) => (
+            <div data-reveal="right" style={`transition-delay: ${(i + 1) * 100}ms`}>
+              <EventCardHorizontal data={event} locale={locale} />
+            </div>
+          ))}
+        </div>
+
+        <!-- Bottom row: up to 3 horizontal cards in a 3-column grid -->
+        {bottomEvents.length > 0 && (
+          <div class="events__grid-bottom">
+            {bottomEvents.map((event, i) => (
+              <div data-reveal="up" style={`transition-delay: ${(i + 3) * 100}ms`}>
+                <EventCardHorizontal data={event} locale={locale} />
+              </div>
+            ))}
+          </div>
+        )}
+
+      </div>
+    )}
+
+  </div>
+</section>
+
+<style>
+  /* -------------------------------------------------------------------------
+   * Bento wrapper — no gap between top and bottom rows, each section handles
+   * its own internal spacing via margin-top on the bottom grid.
+   * ---------------------------------------------------------------------- */
+  .events__bento {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* -------------------------------------------------------------------------
+   * Top grid: 1 column on mobile, 2 columns on tablet+
+   * Featured card spans both rows in the first column on tablet+.
+   * ---------------------------------------------------------------------- */
+  .events__grid-top {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap);
+  }
+
+  @media (min-width: 768px) {
+    .events__grid-top {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+    }
+
+    /* Featured card occupies column 1, rows 1 and 2.
+       It drives the total height; horizontal cards stretch to fill. */
+    .events__grid-featured {
+      grid-column: 1;
+      grid-row: 1 / 3;
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+   * Bottom grid: 1 column → 2 columns (md) → 3 columns (xl+)
+   * Bumped the 3-col breakpoint to 1200px so cards aren't too narrow.
+   * ---------------------------------------------------------------------- */
+  .events__grid-bottom {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-card-gap);
+    margin-top: var(--space-card-gap);
+  }
+
+  @media (min-width: 768px) {
+    .events__grid-bottom {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  /* -------------------------------------------------------------------------
+   * Empty state
+   * ---------------------------------------------------------------------- */
+  .events__empty {
+    font-family: var(--font-sans);
+    color: var(--core-muted-foreground);
+    text-align: center;
+    padding: 2rem 0;
+  }
+</style>

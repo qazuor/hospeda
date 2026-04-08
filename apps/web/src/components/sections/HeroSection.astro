@@ -1,0 +1,550 @@
+---
+/**
+ * @file HeroSection.astro
+ * @description Homepage hero section matching Figma node 21:1665.
+ * Light blue bg with wave, two columns: text+search left, blob image right.
+ * CSS adapted from design-cloner output.
+ */
+
+import heroAtardecer from '@/assets/images/hero/hero-atardecer.jpg';
+import heroIsla from '@/assets/images/hero/hero-isla.jpg';
+import heroPlaya from '@/assets/images/hero/hero-playa.jpg';
+import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
+import { SearchBar } from '@/components/sections/SearchBar.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface SocialProofData {
+	/** Traveler count displayed in the badge (e.g. "500+"). */
+	readonly count: string;
+	/** Average rating displayed (e.g. "4.8/5"). */
+	readonly rating: string;
+	/** Total rating context shown next to the score (e.g. "de 500+"). */
+	readonly ratingOf: string;
+}
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/**
+	 * Real social proof data from the API. When not provided, the social proof
+	 * block is not rendered (avoids showing fake numbers).
+	 */
+	readonly socialProof?: SocialProofData;
+	/** Pre-fetched city destinations for the search bar dropdown. */
+	readonly destinations?: readonly { id: string; slug: string; name: string }[];
+}
+
+const { locale, socialProof, destinations } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="hero" aria-label={t('home.hero.title')}>
+	<!-- Wave at bottom of blue bg -->
+	<div class="hero__bg-wave" aria-hidden="true">
+		<svg viewBox="0 0 1440 160" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+			<path d="M0,60 C180,120 360,160 540,130 C720,100 900,30 1080,20 C1200,14 1350,40 1440,60 L1440,160 L0,160 Z" fill="var(--core-card)"/>
+		</svg>
+	</div>
+
+	<div class="hero__container">
+		<!-- Two-column row: text left, blob right -->
+		<div class="hero__row">
+			<!-- LEFT: Text content -->
+			<div class="hero__content">
+				<p class="hero__tagline">{t('home.hero.tagline', 'Descubrí el Litoral')}</p>
+				<h1 class="hero__title">{t('home.hero.title', 'Tu escapada empieza acá')}</h1>
+				<p class="hero__description">{t('home.hero.subtitle', 'Descubrí los mejores alojamientos, destinos y experiencias del litoral.')}</p>
+
+			</div>
+
+		<!-- RIGHT: Blob image -->
+		<div class="hero__visual">
+			<svg class="hero__clip-defs" width="0" height="0" aria-hidden="true">
+				<defs>
+					<clipPath id="blob-clip" clipPathUnits="objectBoundingBox">
+						<path d="M0.3477 0.0025 C0.2385 0.0171 0.1531 0.0856 0.1360 0.1733 C0.1340 0.1836 0.1324 0.2231 0.1324 0.2607 C0.1324 0.3609 0.1234 0.4024 0.0800 0.5026 C0.0249 0.6294 0.0095 0.6748 0.0022 0.7334 C-0.0212 0.9217 0.1487 1.0580 0.3043 0.9753 C0.3210 0.9664 0.3651 0.9366 0.4028 0.9089 C0.5143 0.8265 0.5326 0.8183 0.5977 0.8215 C0.6291 0.8233 0.6505 0.8268 0.6932 0.8382 C0.8318 0.8744 0.8932 0.8556 0.9456 0.7604 C1.0000 0.6613 1.0147 0.5438 0.9847 0.4429 C0.9643 0.3736 0.9353 0.3236 0.8822 0.2678 C0.8137 0.1957 0.7440 0.1556 0.6295 0.1225 C0.5654 0.1041 0.5430 0.0909 0.4956 0.0437 C0.4592 0.0071 0.4115 -0.0060 0.3477 0.0025Z"/>
+					</clipPath>
+				</defs>
+			</svg>
+
+			<div class="hero__blob-container">
+				<div class="hero__blob-bg" aria-hidden="true"></div>
+				<div class="hero__blob-image">
+					<HeroImageRotator
+						client:visible
+						images={[
+							{ src: heroPlaya.src, alt: t('home.hero.imageAlt', 'Playa del Litoral') },
+							{ src: heroAtardecer.src, alt: t('home.hero.imageAlt', 'Atardecer') },
+							{ src: heroIsla.src, alt: t('home.hero.imageAlt', 'Isla del Litoral') },
+						]}
+						interval={5000}
+					/>
+				</div>
+
+				<!-- Small decorative accent blob at top-right of the main blob -->
+				<div class="hero__blob-accent" aria-hidden="true">
+					<img
+						src="/assets/images/shapes/hero-blob-accent.png"
+						alt=""
+						width="104"
+						height="104"
+						loading="lazy"
+					/>
+				</div>
+			</div>
+
+			<!-- Floating icon left (beach) with hand-drawn deco arrow curving bottom-left -->
+			<div class="floating-icon floating-icon--left" aria-hidden="true">
+				<div class="floating-icon__circle">
+					<img src="/assets/images/shapes/hero-icon-beach.svg" alt="" width="52" height="52" loading="lazy" />
+				</div>
+				<!-- Deco arrow: curves down-left from the icon (teal/green) -->
+				<div class="floating-icon__deco-arrow floating-icon__deco-arrow--left">
+					<img
+						src="/assets/images/shapes/deco-arrow-1.svg"
+						alt=""
+						width="52"
+						height="66"
+						loading="lazy"
+					/>
+				</div>
+			</div>
+
+			<!-- Floating icon right (hotel) with hand-drawn deco arrow curving top-right -->
+			<div class="floating-icon floating-icon--right" aria-hidden="true">
+				<div class="floating-icon__circle">
+					<img src="/assets/images/shapes/hero-icon-hotel.svg" alt="" width="52" height="52" loading="lazy" />
+				</div>
+				<!-- Deco arrow: curves up-right from the icon (orange), rotated 90deg -->
+				<div class="floating-icon__deco-arrow floating-icon__deco-arrow--right">
+					<img
+						src="/assets/images/shapes/deco-arrow-2.svg"
+						alt=""
+						width="52"
+						height="66"
+						loading="lazy"
+					/>
+				</div>
+			</div>
+		</div>
+		</div>
+		<!-- /hero__row -->
+
+		<!-- Bottom block: social proof + search + CTA, pulled up to overlap hero row -->
+		<div class="hero__bottom">
+			<!-- Social proof (inline, right-aligned above search bar) -->
+			{socialProof && (
+			<div class="social-proof">
+				<div class="social-proof__avatars">
+					<span class="social-proof__avatar social-proof__avatar--1" aria-hidden="true"></span>
+					<span class="social-proof__avatar social-proof__avatar--2" aria-hidden="true"></span>
+					<span class="social-proof__avatar social-proof__avatar--3" aria-hidden="true"></span>
+					<span class="social-proof__avatar social-proof__avatar--4" aria-hidden="true"></span>
+					<span class="social-proof__badge">{socialProof.count}</span>
+				</div>
+				<span class="social-proof__star" aria-hidden="true">★</span>
+				<span class="social-proof__score">{socialProof.rating}</span>
+				<span class="social-proof__separator">·</span>
+				<span class="social-proof__subtext">{t('home.hero.socialProof.subtext', 'viajeros que ya encontraron su lugar')}</span>
+
+				<!-- Decorative hand-drawn arrow pointing down toward search bar -->
+				<svg class="social-proof__deco-arrow" width="65" height="30" viewBox="0 0 65 30" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+					<path d="M3 4 C15 2, 35 0, 48 6 C56 10, 58 16, 55 24" stroke="var(--brand-accent)" stroke-width="2" stroke-linecap="round" fill="none" stroke-dasharray="4 3"/>
+					<path d="M59 21 L55 30 L50 21" stroke="var(--brand-accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+				</svg>
+			</div>
+			)}
+
+			<!-- Search bar (React island: hydrates immediately, above the fold) -->
+			<div class="hero__search-wrapper">
+				<SearchBar
+					client:load
+					locale={locale}
+					destinations={destinations ?? []}
+				/>
+			</div>
+
+			<!-- Secondary CTA -->
+			<div class="hero__cta-wrapper">
+				<a class="hero__secondary-cta" href={buildUrl({ locale, path: '/destinos/' })}>
+					{t('home.hero.secondaryCta', '¿No sabés qué buscar? Explorá los destinos')}
+					<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+						<path d="M5 3l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+					</svg>
+				</a>
+			</div>
+		</div>
+	</div>
+</section>
+
+<style>
+	/* Hero section — negative margin pulls it behind the transparent navbar */
+	.hero {
+		position: relative;
+		background-color: var(--brand-secondary);
+		min-height: 786px;
+		overflow-x: clip;
+		overflow-y: visible;
+		margin-top: -76px;
+		padding-top: 130px;
+	}
+
+	.hero__bg-wave {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 160px;
+		z-index: 1;
+	}
+
+	.hero__bg-wave svg {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.hero__container {
+		position: relative;
+		z-index: 15;
+		max-width: 1440px;
+		margin: 0 auto;
+		padding: 0 48px;
+	}
+
+	.hero__row {
+		display: flex;
+		align-items: center;
+		min-height: 460px;
+		gap: 48px;
+	}
+
+	/* Left column */
+	.hero__content {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		padding-bottom: 32px;
+		min-width: 0;
+	}
+
+	.hero__bottom {
+		position: relative;
+		z-index: 10;
+		margin-top: -80px;
+	}
+
+	.hero__search-wrapper {
+		max-width: 989px;
+		margin-bottom: 16px;
+		position: relative;
+		z-index: 20;
+	}
+
+	.hero__cta-wrapper {
+		display: flex;
+		justify-content: left;
+		max-width: 989px;
+		padding-bottom: 32px;
+	}
+
+	.hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: 48px;
+		font-weight: 700;
+		line-height: 1.2;
+		color: var(--brand-primary);
+		margin-bottom: 16px;
+	}
+
+	.hero__title {
+		font-family: var(--font-heading);
+		font-size: 96px;
+		font-weight: 700;
+		line-height: 0.896;
+		color: var(--core-foreground);
+		margin-bottom: 24px;
+		letter-spacing: -0.02em;
+	}
+
+	.hero__description {
+		font-family: var(--font-sans);
+		font-size: 16px;
+		font-weight: 400;
+		line-height: 1.5;
+		color: var(--core-foreground);
+		max-width: 520px;
+		margin-bottom: 24px;
+	}
+
+	/* Social proof — single inline row, centered above search bar */
+	.social-proof {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		max-width: 989px;
+		justify-content: center;
+		margin-bottom: 15px;
+		position: relative;
+        margin-left: 40px;
+	}
+
+	.social-proof__avatars {
+		display: flex;
+		align-items: center;
+	}
+
+	.social-proof__avatar {
+		display: inline-block;
+		width: 30px;
+		height: 30px;
+		border-radius: 9999px;
+		border: 2px solid var(--core-card);
+		background-size: cover;
+		background-position: center;
+	}
+
+	.social-proof__avatar + .social-proof__avatar {
+		margin-left: -8px;
+	}
+
+	.social-proof__avatar--1 { background: linear-gradient(135deg, var(--avatar-1-from), var(--avatar-1-to)); z-index: 1; }
+	.social-proof__avatar--2 { background: linear-gradient(135deg, var(--avatar-2-from), var(--avatar-2-to)); z-index: 2; }
+	.social-proof__avatar--3 { background: linear-gradient(135deg, var(--avatar-3-from), var(--avatar-3-to)); z-index: 3; }
+	.social-proof__avatar--4 { background: linear-gradient(135deg, var(--avatar-4-from), var(--avatar-4-to)); z-index: 4; }
+
+	.social-proof__badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 30px;
+		height: 30px;
+		border-radius: 9999px;
+		background-color: var(--brand-primary);
+		color: var(--core-card);
+		font-size: 10px;
+		font-weight: 700;
+		margin-left: -8px;
+		z-index: 5;
+		border: 2px solid var(--core-card);
+	}
+
+	.social-proof__star { color: var(--rating-star); font-size: 14px; }
+	.social-proof__score { font-size: 13px; font-weight: 700; color: var(--brand-primary); }
+	.social-proof__separator { font-size: 13px; color: var(--core-muted-foreground); }
+	.social-proof__subtext { font-size: 13px; color: var(--core-muted-foreground); }
+
+	/* Decorative hand-drawn arrow pointing from social proof toward search bar */
+	.social-proof__deco-arrow {
+		flex-shrink: 0;
+		opacity: 0.75;
+		pointer-events: none;
+		margin-left: -4px;
+		position: relative;
+		top: 11px;
+	}
+
+	/* Secondary CTA */
+	.hero__secondary-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 12px;
+		font-weight: 500;
+		font-family: var(--font-sans);
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+		background: linear-gradient(
+			135deg,
+			oklch(from var(--core-card) l c h / 0.9) 0%,
+			oklch(from var(--brand-secondary) l c h / 0.6) 100%
+		);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+		border-radius: 9999px;
+		padding: 8px 20px;
+		transition:
+			background var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			border-color var(--duration-fast) ease,
+			box-shadow var(--duration-fast) ease;
+		align-self: flex-start;
+		box-shadow: 0 2px 8px oklch(from var(--core-foreground) l c h / 0.06);
+	}
+
+	.hero__secondary-cta:hover {
+		background: var(--core-card);
+		color: var(--brand-primary);
+		border-color: oklch(from var(--brand-primary) l c h / 0.4);
+		box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.12);
+	}
+
+	/* Right column: blob image */
+	.hero__visual {
+		position: relative;
+		width: 480px;
+		height: 540px;
+		flex-shrink: 0;
+	}
+
+	.hero__clip-defs {
+		position: absolute;
+		width: 0;
+		height: 0;
+	}
+
+	.hero__blob-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.hero__blob-bg {
+		position: absolute;
+		top: -20px;
+		left: -20px;
+		width: 112%;
+		height: 108%;
+		background-color: var(--hospeda-sky);
+		clip-path: url(#blob-clip);
+		opacity: 0.6;
+	}
+
+	.hero__blob-image {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		clip-path: url(#blob-clip);
+		overflow: hidden;
+	}
+
+	/* Small decorative accent blob at top-right of the blob area */
+	.hero__blob-accent {
+		position: absolute;
+		top: -37px;
+		left: 366px;
+		width: 104px;
+		height: 104px;
+		opacity: 0.85;
+		pointer-events: none;
+		z-index: 4;
+	}
+
+	.hero__blob-accent img {
+		width: 100%;
+		height: 100%;
+		object-fit: contain;
+	}
+
+	/* Floating icons */
+	.floating-icon {
+		position: absolute;
+		z-index: 5;
+		width: 136px;
+		height: 136px;
+	}
+
+	.floating-icon--left {
+		top: 250px;
+		left: -25px;
+	}
+
+	.floating-icon--right {
+		top: 68px;
+		right: -15px;
+		left: auto;
+	}
+
+	.floating-icon__circle {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		width: 96px;
+		height: 96px;
+		background-color: var(--core-card);
+		border: 11px solid var(--brand-secondary);
+		border-radius: 9999px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		box-shadow: 0 4px 12px oklch(from var(--core-foreground) l c h / 0.08);
+		z-index: 2;
+	}
+
+	/* Decorative hand-drawn arrows next to floating icons */
+	.floating-icon__deco-arrow {
+		position: absolute;
+		pointer-events: none;
+		z-index: 1;
+	}
+
+	/* Left arrow: top-left of 136x136 container (Figma: top: 1.32px, left: -1.5px, scaleY(-1)) */
+	.floating-icon__deco-arrow--left {
+		top: 1px;
+		left: -2px;
+		transform: scaleY(-1);
+	}
+
+	/* Right arrow: top-right of 136x136 container (Figma: left: 73px, top: 0, scaleY(-1) rotate(90deg)) */
+	.floating-icon__deco-arrow--right {
+		top: 0;
+		left: 73px;
+		right: auto;
+		transform: rotate(90deg) scaleY(-1);
+	}
+
+	/* Floating animation - applied to the whole container */
+	@keyframes hero-float-a {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-10px); }
+	}
+
+    /* Floating animation - applied to the whole container */
+	@keyframes hero-float-b {
+		0%, 100% { transform: translateX(0); }
+		50% { transform: translateX(-10px); }
+	}
+
+    .floating-icon--top { animation: hero-float-a 4s ease-in-out infinite; }
+	.floating-icon--left { animation: hero-float-a 4s ease-in-out infinite; }
+	.floating-icon--right { animation: hero-float-a 5s ease-in-out infinite 0.5s; }
+
+	@media (prefers-reduced-motion: reduce) {
+		.floating-icon--left,
+		.floating-icon--right { animation: none !important; }
+	}
+
+	/* Responsive */
+	@media (max-width: 1024px) {
+		.hero__container {
+			padding: 32px 24px;
+		}
+		.hero__row {
+			flex-direction: column;
+			min-height: auto;
+			gap: 32px;
+		}
+		.hero__content { padding-top: 32px; align-items: center; text-align: center; }
+		.hero__tagline { font-size: 48px; }
+		.hero__title { font-size: 56px; line-height: 1; }
+		.hero__description { max-width: 480px; }
+		.social-proof { align-items: center; margin-left: 0; }
+		.social-proof__deco-arrow { display: none; }
+		.hero__secondary-cta { align-self: center; }
+		.hero__visual { width: 100%; max-width: 500px; height: 500px; margin: 0 auto; }
+		.hero__blob-accent { left: auto; right: -20px; }
+	}
+
+	@media (max-width: 640px) {
+		.hero__tagline { font-size: 36px; }
+		.hero__title { font-size: 40px; }
+		.hero__description { font-size: 16px; }
+		.hero__visual { display: none; }
+		.floating-icon { display: none; }
+	}
+</style>

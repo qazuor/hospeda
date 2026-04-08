@@ -1,0 +1,590 @@
+---
+/**
+ * @file EventCardHorizontal.astro
+ * @description Horizontal event card for the homepage upcoming events section.
+ *
+ * Layout: event photo on the left, a category-colored date block overlapping
+ * the image edge showing month abbreviation + date range + time, content area
+ * with category badge/title/description/location in the center, and a circular
+ * arrow CTA on the far right. Matches the Figma homepage design.
+ */
+
+import {
+    LocationIcon,
+    ArrowRightIcon,
+    BallroomIcon,
+    SportsCenterIcon,
+    CulturalCenterIcon,
+    RestaurantIcon,
+    FestivalPlazaIcon,
+    WellnessCenterIcon,
+    MuseumIcon,
+    UsersIcon,
+    NatureReserveIcon,
+    AmphitheaterIcon,
+    WorkshopSpaceIcon,
+    BooksAndMagazinesIcon,
+    EventIcon,
+} from "@repo/icons";
+import { buildUrl } from "@/lib/urls";
+import { getEventCategoryColor } from "@/lib/colors";
+import type { EventCardData } from "@/data/types";
+import type { SupportedLocale } from "@/lib/i18n";
+
+/**
+ * Props for the EventCardHorizontal component.
+ *
+ * @example
+ * ```astro
+ * <EventCardHorizontal data={eventData} locale="es" />
+ * ```
+ */
+interface Props {
+    /** Event data produced by toEventCardProps(). */
+    readonly data: EventCardData;
+    /** Active locale used to build the detail page URL and format date values. */
+    readonly locale: SupportedLocale;
+}
+
+const { data, locale } = Astro.props;
+
+const detailUrl = buildUrl({ locale, path: `/eventos/${data.slug}/` });
+
+/** Locale tag used by Intl formatters. */
+const bcp47: Record<SupportedLocale, string> = { es: "es-AR", en: "en-US", pt: "pt-BR" };
+const intlLocale = bcp47[locale];
+
+const startDate = new Date(data.date.start);
+const endDate = data.date.end ? new Date(data.date.end) : null;
+
+/** Month abbreviation (3 chars, uppercase) extracted from the start date. */
+const monthAbbr = startDate
+    .toLocaleDateString(intlLocale, { month: "short" })
+    .replace(".", "")
+    .toUpperCase()
+    .slice(0, 3);
+
+/** Normalize API category to lowercase and handle aliases. */
+const rawCategory = data.category.toLowerCase();
+const CATEGORY_ALIASES: Record<string, string> = { culture: "cultural" };
+const normalizedCategory = CATEGORY_ALIASES[rawCategory] ?? rawCategory;
+
+/** Category colors resolved from design tokens. */
+const categoryColors = getEventCategoryColor({ category: normalizedCategory });
+
+/** Capitalize the first letter of a string for display. */
+function capitalize(str: string): string {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+/**
+ * Localized category label map.
+ * Keys are lowercase API category slugs. Fallback is capitalize(category).
+ */
+const CATEGORY_LABELS: Record<string, Record<SupportedLocale, string>> = {
+    music: { es: "Música", en: "Music", pt: "Música" },
+    sports: { es: "Deportes", en: "Sports", pt: "Esportes" },
+    cultural: { es: "Cultural", en: "Cultural", pt: "Cultural" },
+    culture: { es: "Cultural", en: "Cultural", pt: "Cultural" },
+    gastronomy: { es: "Gastronomía", en: "Gastronomy", pt: "Gastronomia" },
+    festival: { es: "Festival", en: "Festival", pt: "Festival" },
+    wellness: { es: "Bienestar", en: "Wellness", pt: "Bem-estar" },
+    art: { es: "Arte", en: "Art", pt: "Arte" },
+    family: { es: "Familia", en: "Family", pt: "Família" },
+    nature: { es: "Naturaleza", en: "Nature", pt: "Natureza" },
+    workshop: { es: "Taller", en: "Workshop", pt: "Oficina" },
+    education: { es: "Educación", en: "Education", pt: "Educação" },
+    other: { es: "Evento", en: "Event", pt: "Evento" },
+};
+
+/**
+ * Returns the localized display label for a given category slug.
+ * Falls back to capitalized slug when no mapping exists.
+ */
+function getCategoryLabel(category: string, loc: SupportedLocale): string {
+    const labels = CATEGORY_LABELS[category.toLowerCase()];
+    if (labels) return labels[loc];
+    return capitalize(category);
+}
+
+/**
+ * Human-readable date range text shown inside the date block.
+ * Supports: single day, same-month range, cross-month range.
+ */
+function buildDateLabel(): string {
+    const startDay = startDate.getDate();
+    const startMonthShort = startDate.toLocaleDateString(intlLocale, { month: "short" }).replace(".", "");
+
+    if (!endDate) {
+        return `${startDay} ${startMonthShort}`;
+    }
+
+    const endDay = endDate.getDate();
+    const endMonthShort = endDate.toLocaleDateString(intlLocale, { month: "short" }).replace(".", "");
+
+    const sameDay =
+        startDate.getDate() === endDate.getDate() &&
+        startDate.getMonth() === endDate.getMonth() &&
+        startDate.getFullYear() === endDate.getFullYear();
+
+    if (sameDay) {
+        return `${startDay} ${startMonthShort}`;
+    }
+
+    const sameMonth = startDate.getMonth() === endDate.getMonth();
+
+    /* Multi-day same month: "14-16 Ago" */
+    if (sameMonth) {
+        return `${startDay}-${endDay} ${startMonthShort}`;
+    }
+
+    /* Multi-day cross-month: "14 Ago - 16 Sep" */
+    return `${startDay} ${startMonthShort} -\n${endDay} ${endMonthShort}`;
+}
+
+/**
+ * Human-readable time range.
+ * Hides time when start time is "00:00" (no real time set).
+ * Shows "HH:MM hs" for start-only, "HH:MM a HH:MM" for range.
+ */
+function buildTimeLabel(): string | null {
+    const startHH = startDate.getHours().toString().padStart(2, "0");
+    const startMM = startDate.getMinutes().toString().padStart(2, "0");
+    const startTime = `${startHH}:${startMM}`;
+
+    if (startTime === "00:00") {
+        return null;
+    }
+
+    if (!endDate) {
+        return `${startTime} hs`;
+    }
+
+    const endHH = endDate.getHours().toString().padStart(2, "0");
+    const endMM = endDate.getMinutes().toString().padStart(2, "0");
+    const endTime = `${endHH}:${endMM}`;
+
+    return `${startTime} a ${endTime}`;
+}
+
+const dateLabel = buildDateLabel();
+const timeLabel = buildTimeLabel();
+
+/** Whether the URL is a known placeholder or invalid for direct rendering. */
+const showImage = Boolean(data.featuredImage) && !data.featuredImage?.includes("placeholder");
+
+/** Location label: "Venue Name, City" or just "City". */
+const locationLabel = data.location
+    ? data.location.name
+        ? `${data.location.name}, ${data.location.city}`
+        : data.location.city
+    : null;
+
+/** Inline style for the date block background (category color as solid token). */
+const dateBlockStyle = `background-color: ${categoryColors.text}; color: var(--primary-foreground);`;
+
+/** Inline style for the image placeholder gradient. */
+const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.bg} 0%, oklch(from var(--core-card) calc(l - 0.03) c h) 100%);`;
+---
+
+<article class="event-card-h">
+    <a href={detailUrl} class="event-card-h__link" aria-label={data.name}>
+        <!-- Left: event photo layered over placeholder -->
+        <div class="event-card-h__photo-wrap" aria-hidden="true">
+            <!-- Placeholder always renders as a background layer -->
+            <div class="event-card-h__photo-placeholder" style={`${placeholderStyle} color: ${categoryColors.text};`}>
+                {normalizedCategory === "music" && <BallroomIcon size={64} weight="duotone" aria-hidden="true" />}
+                {normalizedCategory === "sports" && <SportsCenterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {
+                    normalizedCategory === "cultural" && (
+                        <CulturalCenterIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "gastronomy" && (
+                        <RestaurantIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "festival" && (
+                        <FestivalPlazaIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "wellness" && (
+                        <WellnessCenterIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {normalizedCategory === "art" && <MuseumIcon size={64} weight="duotone" aria-hidden="true" />}
+                {normalizedCategory === "family" && <UsersIcon size={64} weight="duotone" aria-hidden="true" />}
+                {normalizedCategory === "nature" && <NatureReserveIcon size={64} weight="duotone" aria-hidden="true" />}
+                {normalizedCategory === "theater" && <AmphitheaterIcon size={64} weight="duotone" aria-hidden="true" />}
+                {
+                    normalizedCategory === "workshop" && (
+                        <WorkshopSpaceIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "education" && (
+                        <BooksAndMagazinesIcon size={64} weight="duotone" aria-hidden="true" />
+                    )
+                }
+                {
+                    ![
+                        "music",
+                        "sports",
+                        "cultural",
+                        "gastronomy",
+                        "festival",
+                        "wellness",
+                        "art",
+                        "family",
+                        "nature",
+                        "theater",
+                        "workshop",
+                        "education",
+                    ].includes(normalizedCategory) && <EventIcon size={64} weight="duotone" aria-hidden="true" />
+                }
+            </div>
+            <!-- Image renders on top; if it fails to load the placeholder shows through -->
+            {
+                showImage && (
+                    <img
+                        src={data.featuredImage}
+                        alt=""
+                        loading="lazy"
+                        class="event-card-h__photo"
+                        width="150"
+                        height="160"
+                        onerror="this.style.display='none'"
+                    />
+                )
+            }
+        </div>
+
+        <!-- Overlapping date block with category color -->
+        <div class="event-card-h__date-block" style={dateBlockStyle} aria-hidden="true">
+            <span class="event-card-h__month-rotated">{monthAbbr}</span>
+            <div class="event-card-h__date-inner">
+                <span class="event-card-h__date-range">{dateLabel}</span>
+                {timeLabel && <span class="event-card-h__time">{timeLabel}</span>}
+            </div>
+        </div>
+
+        <!-- Center: content -->
+        <div class="event-card-h__content">
+            <!-- Category badge -->
+            <span
+                class="event-card-h__category"
+                style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`}
+                aria-hidden="true"
+            >
+                {normalizedCategory === "music" && <BallroomIcon size={14} weight="regular" aria-hidden="true" />}
+                {normalizedCategory === "sports" && <SportsCenterIcon size={14} weight="regular" aria-hidden="true" />}
+                {
+                    normalizedCategory === "cultural" && (
+                        <CulturalCenterIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "gastronomy" && (
+                        <RestaurantIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "festival" && (
+                        <FestivalPlazaIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "wellness" && (
+                        <WellnessCenterIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {normalizedCategory === "art" && <MuseumIcon size={14} weight="regular" aria-hidden="true" />}
+                {normalizedCategory === "family" && <UsersIcon size={14} weight="regular" aria-hidden="true" />}
+                {normalizedCategory === "nature" && <NatureReserveIcon size={14} weight="regular" aria-hidden="true" />}
+                {normalizedCategory === "theater" && <AmphitheaterIcon size={14} weight="regular" aria-hidden="true" />}
+                {
+                    normalizedCategory === "workshop" && (
+                        <WorkshopSpaceIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {
+                    normalizedCategory === "education" && (
+                        <BooksAndMagazinesIcon size={14} weight="regular" aria-hidden="true" />
+                    )
+                }
+                {
+                    ![
+                        "music",
+                        "sports",
+                        "cultural",
+                        "gastronomy",
+                        "festival",
+                        "wellness",
+                        "art",
+                        "family",
+                        "nature",
+                        "theater",
+                        "workshop",
+                        "education",
+                    ].includes(normalizedCategory) && <EventIcon size={14} weight="regular" aria-hidden="true" />
+                }
+                {getCategoryLabel(data.category, locale)}
+            </span>
+
+            <h3 class="event-card-h__title">{data.name}</h3>
+            <p class="event-card-h__summary">{data.summary}</p>
+
+            {
+                locationLabel && (
+                    <span class="event-card-h__location">
+                        <LocationIcon size={13} weight="fill" aria-hidden="true" />
+                        {locationLabel}
+                    </span>
+                )
+            }
+        </div>
+
+        <!-- Right: circular arrow CTA -->
+        <div class="event-card-h__cta" aria-hidden="true">
+            <ArrowRightIcon size={20} weight="bold" />
+        </div>
+    </a>
+</article>
+
+<style>
+    .event-card-h {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        border: 1px solid oklch(from var(--brand-primary) l c h / 0.15);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+        transition:
+            box-shadow var(--duration-normal) ease,
+            transform var(--duration-normal) ease;
+        height: 100%;
+    }
+
+    .event-card-h:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-2px);
+    }
+
+    .event-card-h__link {
+        display: flex;
+        align-items: stretch;
+        text-decoration: none;
+        color: inherit;
+        min-height: 160px;
+        height: 100%;
+    }
+
+    /* Photo */
+    .event-card-h__photo-wrap {
+        position: relative;
+        flex-shrink: 0;
+        width: 150px;
+        overflow: hidden;
+    }
+
+    /* Placeholder always fills the wrap as a background layer */
+    .event-card-h__photo-placeholder {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 0;
+    }
+
+    .event-card-h__photo-placeholder > :global(svg) {
+        opacity: 0.15;
+        transform: rotate(-12deg) scale(1.6);
+    }
+
+    /* Real image sits on top; when it fails to load the placeholder shows through */
+    .event-card-h__photo {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        z-index: 1;
+        transition: transform var(--duration-normal) ease;
+        border: none;
+    }
+
+    .event-card-h:hover .event-card-h__photo {
+        transform: scale(1.05);
+    }
+
+    /* Date block — overlaps the photo on its right edge.
+     background-color is set via inline style (category color). */
+    .event-card-h__date-block {
+        position: relative;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        border-radius: 0 12px 12px 0;
+        padding: 0.75rem 1rem 0.75rem 0;
+        min-width: 120px;
+        overflow: hidden;
+        gap: 0.375rem;
+    }
+
+    /* Large rotated month abbreviation flush to the left edge of the date block */
+    .event-card-h__month-rotated {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        transform: rotate(180deg);
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-size: 1.875rem;
+        line-height: 1;
+        letter-spacing: 0.05em;
+        color: oklch(from var(--primary-foreground) l c h / 0.3);
+        user-select: none;
+        flex-shrink: 0;
+        margin-left: -0.125rem;
+    }
+
+    .event-card-h__date-inner {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .event-card-h__date-range {
+        font-family: var(--font-heading);
+        font-size: var(--text-body-sm);
+        font-weight: 600;
+        color: var(--primary-foreground);
+        line-height: 1.25;
+        white-space: pre-line;
+    }
+
+    .event-card-h__time {
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: oklch(from var(--primary-foreground) l c h / 0.8);
+        line-height: 1;
+    }
+
+    /* Content area */
+    .event-card-h__content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 1rem 1.25rem;
+        gap: 0.375rem;
+        min-width: 0;
+    }
+
+    /* Category badge — pill shaped, colors from inline style */
+    .event-card-h__category {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        font-weight: 600;
+        border-radius: var(--radius-pill);
+        padding: 0.15rem 0.55rem;
+        width: fit-content;
+        line-height: 1.4;
+        letter-spacing: 0.01em;
+        text-transform: none;
+    }
+
+    .event-card-h__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h4);
+        color: var(--core-foreground);
+        line-height: 1.2;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .event-card-h__summary {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        line-height: 1.4;
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .event-card-h__location {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-family: var(--font-sans);
+        font-size: var(--text-caption);
+        color: var(--brand-primary);
+        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        border-radius: var(--radius-pill);
+        padding: 0.2rem 0.6rem;
+        width: fit-content;
+        font-weight: 500;
+    }
+
+    /* Circular arrow CTA */
+    .event-card-h__cta {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        align-self: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+        margin-right: 1.25rem;
+        transition:
+            background-color var(--duration-fast) ease,
+            transform var(--duration-fast) ease;
+    }
+
+    .event-card-h:hover .event-card-h__cta {
+        background-color: oklch(from var(--brand-primary) calc(l - 0.05) c h);
+        transform: rotate(-45deg);
+    }
+
+    /* Responsive: stack vertically on very small screens */
+    @media (max-width: 480px) {
+        .event-card-h__photo-wrap {
+            width: 100px;
+        }
+
+        .event-card-h__date-block {
+            min-width: 95px;
+            padding: 0.5rem 0.75rem 0.5rem 0.375rem;
+        }
+
+        .event-card-h__month-rotated {
+            font-size: 1.375rem;
+        }
+
+        .event-card-h__content {
+            padding: 0.75rem 0.875rem;
+        }
+
+        .event-card-h__cta {
+            margin-right: 0.75rem;
+            width: 36px;
+            height: 36px;
+        }
+    }
+</style>

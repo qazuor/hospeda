@@ -1,0 +1,340 @@
+/* DestinationsMap.module.css — Interactive SVG map of the Río Uruguay coast */
+
+.mapContainer {
+    position: relative;
+    width: 100%;
+    /* 616x793 original Figma ratio — scale to container width */
+    aspect-ratio: 616 / 793;
+    max-width: 616px;
+    /* Ensure the map fits in the visible area */
+    max-height: 700px;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+/* --- Background SVG layers --- */
+
+/*
+ * rio.svg: 180×789 actual SVG size
+ * Figma position within 616×793: left 268.5px, top -0.5px
+ * As percentages: left=43.59%, top≈0, width=29.06%, height=99.5%
+ */
+.bgLayer {
+    position: absolute;
+    left: 14%;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/*
+ * rutas.svg: clip-path area 563×800
+ * Figma position within 616×793: left -40px, top -10px
+ * As percentages: left=-6.49%, top=-1.26%, width=91.4%, height=100.88%
+ */
+.bgLayerRoutes {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.75;
+}
+
+/* --- Pins layer (absolutely positioned over the SVG) --- */
+
+.pinsLayer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* --- Generic pin wrapper --- */
+
+.pinWrapper {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transform: translate(-50%, -50%);
+}
+
+/* --- Main city pin (clickable button) --- */
+
+.mainPin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    /* bring pins above secondary ones */
+    z-index: 2;
+}
+
+.mainPin:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.mainDot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--core-muted-foreground);
+    border: 2px solid var(--core-card);
+    box-shadow: 0 1px 4px oklch(from var(--core-foreground) l c h / 0.2);
+    transition: width var(--duration-fast) ease, height var(--duration-fast) ease, background-color
+        var(--duration-fast) ease, transform var(--duration-fast) ease;
+    flex-shrink: 0;
+}
+
+.mainDotActive {
+    width: 16px;
+    height: 16px;
+    background-color: var(--brand-accent);
+    border-color: var(--core-card);
+    box-shadow: 0 2px 8px oklch(from var(--brand-accent) l c h / 0.55);
+    transform: scale(1.1);
+}
+
+/* Pulsing ring for active main pin */
+.mainDotActive::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid var(--brand-accent);
+    animation: pinPulse 1.6s ease-out infinite;
+    opacity: 0;
+}
+
+@keyframes pinPulse {
+    0% {
+        transform: scale(0.6);
+        opacity: 0.8;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}
+
+/* Ensure active dot has position:relative for ::after ring */
+.mainDot {
+    position: relative;
+}
+
+/* --- Main city label --- */
+
+.mainLabel {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--core-foreground);
+    line-height: 1.2;
+    text-align: center;
+    white-space: pre-line;
+    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
+        oklch(from var(--core-card) l c h / 0.9);
+    pointer-events: none;
+    transition: color var(--duration-fast) ease;
+    max-width: 90px;
+}
+
+.mainLabelActive {
+    color: var(--brand-accent);
+}
+
+/* Label positioned to the left side of the pin */
+.pinLabelLeft {
+    flex-direction: row-reverse;
+    gap: 4px;
+    align-items: center;
+}
+
+.pinLabelRight {
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.pinLabelBottom {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.pinLabelTop {
+    flex-direction: column-reverse;
+    gap: 4px;
+    align-items: center;
+}
+
+.pinLabelLeft .mainLabel {
+    text-align: right;
+}
+
+.pinLabelRight .mainLabel {
+    text-align: left;
+}
+
+.pinLabelBottom .mainLabel,
+.pinLabelTop .mainLabel {
+    text-align: center;
+}
+
+/* --- Secondary city pin (clickable button, smaller visual) --- */
+
+.secondaryPin {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    background: none;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.secondaryPin:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.secondaryPin:disabled {
+    cursor: default;
+    pointer-events: none;
+}
+
+.secondaryDot {
+    position: relative;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--core-muted-foreground);
+    border: 1.5px solid var(--core-card);
+    flex-shrink: 0;
+    opacity: 0.85;
+    transition: background-color var(--duration-fast) ease, opacity var(--duration-fast) ease, width
+        var(--duration-fast) ease, height var(--duration-fast) ease;
+}
+
+.secondaryDotActive {
+    width: 10px;
+    height: 10px;
+    background-color: var(--brand-accent);
+    border-color: var(--core-card);
+    opacity: 1;
+    box-shadow: 0 1px 5px oklch(from var(--brand-accent) l c h / 0.45);
+}
+
+.secondaryLabel {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--core-muted-foreground);
+    line-height: 1.2;
+    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9), 0 0 4px
+        oklch(from var(--core-card) l c h / 0.9);
+    opacity: 0.85;
+    max-width: 80px;
+    white-space: normal;
+    text-align: center;
+    pointer-events: none;
+    transition: color var(--duration-fast) ease, opacity var(--duration-fast) ease;
+}
+
+.secondaryLabelActive {
+    color: var(--brand-accent);
+    opacity: 1;
+}
+
+.secondaryPinLeft {
+    flex-direction: row-reverse;
+    gap: 4px;
+    align-items: center;
+}
+
+.secondaryPinRight {
+    flex-direction: row;
+    gap: 4px;
+    align-items: center;
+}
+
+.secondaryPinBottom {
+    flex-direction: column;
+    gap: 4px;
+    align-items: center;
+}
+
+.secondaryPinTop {
+    flex-direction: column-reverse;
+    gap: 4px;
+    align-items: center;
+}
+
+.secondaryPinLeft .secondaryLabel {
+    text-align: right;
+}
+
+.secondaryPinRight .secondaryLabel {
+    text-align: left;
+}
+
+.secondaryPinBottom .secondaryLabel,
+.secondaryPinTop .secondaryLabel {
+    text-align: center;
+}
+
+/* --- Bridge marker --- */
+
+.bridgeMarker {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 5px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.bridgeLabels {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.bridgeName {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--brand-primary);
+    line-height: 1.2;
+    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9);
+    white-space: nowrap;
+}
+
+.bridgeSubtitle {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--brand-primary);
+    opacity: 0.45;
+    line-height: 1.2;
+    text-shadow: 0 0 4px oklch(from var(--core-card) l c h / 0.9);
+    white-space: nowrap;
+}
+
+.bridgeIcon {
+    font-size: 11px;
+    line-height: 1;
+    margin-bottom: 1px;
+}

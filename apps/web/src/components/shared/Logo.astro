@@ -1,0 +1,80 @@
+---
+/**
+ * @file Logo.astro
+ * @description Site logo component. Renders the Hospeda brand logo as an
+ * image wrapped in an anchor tag linking to the homepage.
+ *
+ * Two image assets are used to support light/dark variants:
+ * - `dark`  variant → `/assets/images/logo-1.png`   (dark logo for light backgrounds)
+ * - `light` variant → `/assets/images/logo-light-footer.png` (light logo for dark backgrounds)
+ *
+ * Size mappings (Tailwind height classes):
+ * - `sm` → h-8  (32px)
+ * - `md` → h-10 (40px)
+ * - `lg` → h-14 (56px)
+ */
+
+interface Props {
+	/** Controls which logo asset is rendered. Use `light` on dark backgrounds. */
+	readonly variant?: 'light' | 'dark';
+	/** Controls the rendered height of the logo image. */
+	readonly size?: 'sm' | 'md' | 'lg';
+	/** Optional additional CSS classes applied to the wrapping `<a>` element. */
+	readonly class?: string;
+}
+
+const {
+	variant = 'dark',
+	size = 'md',
+	class: className,
+} = Astro.props;
+
+/** Map size tokens to CSS height values. */
+const sizeValues: Record<NonNullable<Props['size']>, string> = {
+	sm: '2rem',
+	md: '2.5rem',
+	lg: '3.5rem',
+} as const;
+
+/** Map variant tokens to the corresponding public asset paths. */
+const srcMap: Record<NonNullable<Props['variant']>, string> = {
+	dark: '/assets/images/logo-1.png',
+	light: '/assets/images/logo-light-footer.png',
+} as const;
+
+const heightValue = sizeValues[size];
+const src = srcMap[variant];
+---
+
+<a
+	href="/"
+	aria-label="Hospeda — Volver al inicio"
+	class:list={['logo', className]}
+>
+	<img
+		src={src}
+		alt="Hospeda"
+		class="logo__image"
+		style={`height: ${heightValue};`}
+		loading="eager"
+		decoding="async"
+	/>
+</a>
+
+<style>
+	.logo {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-sm);
+	}
+
+	.logo:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.logo__image {
+		width: auto;
+		object-fit: contain;
+	}
+</style>

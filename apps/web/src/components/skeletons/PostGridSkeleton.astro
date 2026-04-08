@@ -1,0 +1,170 @@
+---
+/**
+ * @file PostGridSkeleton.astro
+ * @description Skeleton fallback for the blog posts magazine layout (Server Island).
+ * Renders 1 featured large card + 2 smaller secondary cards with pulse animation
+ * using web2 design tokens.
+ */
+---
+
+<div class="skeleton-magazine">
+  <!-- Featured article skeleton -->
+  <div class="skeleton-card skeleton-card--featured">
+    <div class="skeleton-image skeleton-image--16-9 skeleton-pulse" />
+    <div class="skeleton-content">
+      <div class="skeleton-badge skeleton-pulse" />
+      <div class="skeleton-line skeleton-line--title skeleton-pulse" />
+      <div class="skeleton-body">
+        <div class="skeleton-line skeleton-line--body skeleton-pulse" />
+        <div class="skeleton-line skeleton-line--body-short skeleton-pulse" />
+      </div>
+      <div class="skeleton-line skeleton-line--meta skeleton-pulse" />
+    </div>
+  </div>
+
+  <!-- Secondary articles skeleton -->
+  <div class="skeleton-secondary-list">
+    {Array.from({ length: 2 }).map(() => (
+      <div class="skeleton-card skeleton-card--secondary">
+        <div class="skeleton-thumbnail skeleton-pulse" />
+        <div class="skeleton-content skeleton-content--secondary">
+          <div class="skeleton-badge skeleton-badge--sm skeleton-pulse" />
+          <div class="skeleton-line skeleton-line--title skeleton-pulse" />
+          <div class="skeleton-line skeleton-line--meta skeleton-pulse" />
+        </div>
+      </div>
+    ))}
+  </div>
+</div>
+
+<style>
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-pulse {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+
+  .skeleton-magazine {
+    display: grid;
+    gap: var(--space-card-gap);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  @media (min-width: 1024px) {
+    .skeleton-magazine {
+      grid-template-columns: 7fr 5fr;
+      align-items: start;
+    }
+  }
+
+  /* --- Featured card --- */
+  .skeleton-card--featured {
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .skeleton-image {
+    background-color: var(--border);
+    width: 100%;
+    border-radius: var(--radius-organic);
+  }
+
+  .skeleton-image--16-9 {
+    aspect-ratio: 16 / 9;
+  }
+
+  .skeleton-content {
+    padding: var(--space-card-content);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .skeleton-badge {
+    background-color: var(--border);
+    border-radius: var(--radius-pill);
+    height: 1.25rem;
+    width: 6rem;
+    align-self: flex-start;
+  }
+
+  .skeleton-badge--sm {
+    height: 0.875rem;
+    width: 4rem;
+  }
+
+  .skeleton-line {
+    background-color: var(--border);
+    border-radius: var(--radius-sm);
+  }
+
+  .skeleton-line--title {
+    width: 75%;
+    height: 1.25rem;
+  }
+
+  .skeleton-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .skeleton-line--body {
+    width: 100%;
+    height: 0.75rem;
+  }
+
+  .skeleton-line--body-short {
+    width: 83%;
+    height: 0.75rem;
+  }
+
+  .skeleton-line--meta {
+    width: 25%;
+    height: 0.75rem;
+  }
+
+  /* --- Secondary list --- */
+  .skeleton-secondary-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-card-gap);
+  }
+
+  .skeleton-card--secondary {
+    display: flex;
+    gap: 1rem;
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    padding: 0.75rem;
+    overflow: hidden;
+  }
+
+  .skeleton-thumbnail {
+    background-color: var(--border);
+    border-radius: var(--radius-organic-alt);
+    flex-shrink: 0;
+    width: 6rem;
+    height: 6rem;
+  }
+
+  .skeleton-content--secondary {
+    flex: 1;
+    padding: 0.25rem 0;
+    gap: 0.5rem;
+  }
+</style>

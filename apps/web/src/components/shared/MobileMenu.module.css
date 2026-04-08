@@ -1,0 +1,111 @@
+/* MobileMenu.module.css — Full-screen mobile navigation overlay */
+
+.overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background-color: var(--core-background);
+    display: flex;
+    flex-direction: column;
+    transition: transform var(--duration-normal) ease-in-out;
+    transform: translateX(100%);
+}
+
+.overlayOpen {
+    transform: translateX(0);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.closeButton {
+    padding: 0.5rem;
+    border-radius: var(--radius-button);
+    color: var(--core-foreground);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color var(--duration-normal) ease;
+}
+
+.closeButton:hover {
+    color: var(--brand-accent);
+}
+
+.closeButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+.nav {
+    flex: 1;
+    overflow-y: auto;
+    padding-inline: 1.5rem;
+}
+
+.navList {
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.navLink {
+    display: flex;
+    align-items: center;
+    padding-block: 1rem;
+    border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
+    font-family: var(--font-heading);
+    font-weight: 500;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    text-decoration: none;
+    transition: color var(--duration-normal) ease;
+}
+
+.navLink:hover {
+    color: var(--brand-accent);
+}
+
+.navLink:focus-visible {
+    outline: none;
+    color: var(--brand-accent);
+}
+
+.footer {
+    padding: 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.searchLink {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-button);
+    background-color: var(--surface-warm);
+    color: var(--core-foreground);
+    text-decoration: none;
+    transition: color var(--duration-normal) ease, background-color var(--duration-normal) ease;
+}
+
+.searchLink:hover {
+    background-color: var(--brand-accent);
+    color: white;
+}
+
+.searchLink:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+.searchLabel {
+    font-family: var(--font-sans);
+    font-weight: 500;
+}

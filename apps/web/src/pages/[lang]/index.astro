@@ -1,0 +1,107 @@
+---
+/**
+ * @file Homepage
+ * @description Static homepage rendered with BaseLayout for all supported locales.
+ * Renders all 10 content sections in alternating bg-background / bg-surface-warm order.
+ */
+import AboutUsSection from "@/components/sections/AboutUsSection.astro";
+import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
+import DestinationsSection from "@/components/sections/DestinationsSection.astro";
+import FeaturedAccommodationsSection from "@/components/sections/FeaturedAccommodationsSection.astro";
+import HeroSection from "@/components/sections/HeroSection.astro";
+import LatestArticlesSection from "@/components/sections/LatestArticlesSection.astro";
+import NextEventsSection from "@/components/sections/NextEventsSection.astro";
+import PartnersSection from "@/components/sections/PartnersSection.astro";
+import StatsSection from "@/components/sections/StatsSection.astro";
+import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
+import SEOHead from "@/components/seo/SEOHead.astro";
+import type { StatItemData } from "@/data/types";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { destinationsApi, statsApi } from "@/lib/api/endpoints";
+import type { SupportedLocale } from "@/lib/i18n";
+import type { GetStaticPaths } from "astro";
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+    return [{ params: { lang: "es" } }, { params: { lang: "en" } }, { params: { lang: "pt" } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+
+// Fetch city destinations for the search bar (SSG — fetched at build time)
+const destinationsResult = await destinationsApi.list({
+    destinationType: "CITY",
+    pageSize: 50,
+});
+const destinations = destinationsResult.ok
+    ? destinationsResult.data.items.map((d) => ({
+          id: String(d.id),
+          slug: String(d.slug),
+          name: String(d.name),
+      }))
+    : [];
+
+// TODO: Replace with real social proof data from testimonials/stats API
+const socialProofMock = {
+    count: "500+",
+    rating: "4.8/5",
+    ratingOf: "de 500+",
+} as const;
+
+// Fetch platform stats for the stats section (SSG — fetched at build time)
+const statsResult = await statsApi.getPlatformStats();
+const platformStats: readonly StatItemData[] = statsResult.ok
+    ? [
+          { icon: "BuildingIcon", value: statsResult.data.accommodations, labelKey: "home.statistics.accommodations" },
+          { icon: "CompassIcon", value: statsResult.data.destinations, labelKey: "home.statistics.destinations" },
+          { icon: "StarIcon", value: statsResult.data.reviews, labelKey: "home.statistics.reviews" },
+          { icon: "PostIcon", value: statsResult.data.posts, labelKey: "home.statistics.posts" },
+          { icon: "EventIcon", value: statsResult.data.events, labelKey: "home.statistics.events" },
+      ]
+    : [];
+---
+
+<BaseLayout
+    locale={locale}
+    title="Inicio"
+    description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
+>
+    <SEOHead
+        slot="head"
+        title="Inicio"
+        description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
+        canonical={`https://hospeda.com.ar/${locale}/`}
+        locale={locale}
+    />
+    <!-- 1. Hero -->
+    <HeroSection locale={locale} socialProof={socialProofMock} destinations={destinations} />
+
+    <!-- 2. Featured Accommodations -->
+    <FeaturedAccommodationsSection locale={locale} />
+
+    <!-- 3. Destinations -->
+    <DestinationsSection locale={locale} />
+
+    <!-- 4. Next Events -->
+    <NextEventsSection locale={locale} />
+
+    <!-- 5. About Us -->
+    <AboutUsSection locale={locale} />
+
+    <!-- 6. Latest Articles -->
+    <LatestArticlesSection locale={locale} />
+
+    <!-- 8. CTA Owners -->
+    <CtaOwnersSection locale={locale} />
+
+    <!-- 7. Testimonials -->
+    <TestimonialsSection locale={locale} />
+
+    <!-- 9. Stats -->
+    <StatsSection locale={locale} stats={platformStats} suffixes={["+", "+", "+", "+", "+"]} />
+
+    <!-- 10. Partners -->
+    <PartnersSection locale={locale} />
+</BaseLayout>

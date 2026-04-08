@@ -1,0 +1,65 @@
+---
+/**
+ * @file GradientButton.astro
+ * @description CTA anchor button with gradient hover effect. Supports primary
+ * and accent color variants, three size options, and an optional trailing icon.
+ */
+
+import { ArrowRightIcon } from '@repo/icons';
+
+interface Props {
+  /** Button label text. */
+  readonly label: string;
+  /** Destination URL. The button always renders as an <a> element. */
+  readonly href: string;
+  /**
+   * Color variant. 'primary' uses the brand blue; 'accent' uses the orange
+   * accent (default). Both share the .btn-gradient base class whose CSS is
+   * defined in components.css.
+   */
+  readonly variant?: 'primary' | 'accent';
+  /** Size variant controlling padding. Defaults to 'md'. */
+  readonly size?: 'sm' | 'md' | 'lg';
+  /**
+   * When truthy an ArrowRightIcon is rendered after the label. Pass any
+   * non-empty string (e.g. "true") to enable it.
+   */
+  readonly icon?: string;
+}
+
+const { label, href, variant = 'accent', size = 'md', icon } = Astro.props;
+
+const paddingMap = {
+  sm: '10px 24px',
+  md: '14px 32px',
+  lg: '18px 40px',
+} as const;
+
+const padding = paddingMap[size];
+
+const variantStyle =
+  variant === 'primary'
+    ? 'background: var(--brand-primary);'
+    : 'background: var(--brand-accent);';
+---
+
+<a
+  href={href}
+  class="btn-gradient"
+  style={`${variantStyle} padding: ${padding};`}
+>
+  {label}
+  {icon && (
+    <span class="gradient-btn__icon" aria-hidden="true">
+      <ArrowRightIcon size={20} weight="bold" color="currentColor" />
+    </span>
+  )}
+</a>
+
+<style>
+  .gradient-btn__icon {
+    margin-left: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+  }
+</style>

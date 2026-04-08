@@ -1,0 +1,76 @@
+---
+/**
+ * @file TestimonialsSection.astro
+ * @description Homepage testimonials section with carousel.
+ *
+ * Fetches testimonial data from the API and renders the interactive
+ * TestimonialsCarousel React island. If the API returns no data,
+ * the section is not rendered.
+ */
+
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import { TestimonialsCarousel } from '@/components/sections/TestimonialsCarousel.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { testimonialsApi, toTestimonialCardProps } from '@/lib/api';
+import type { ReviewCardData } from '@/data/types';
+import { webLogger } from '@/lib/logger';
+
+interface Props {
+    /** Active locale used to resolve translations. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Fetch from API - empty array if unavailable
+let reviews: ReviewCardData[] = [];
+
+try {
+    const result = await testimonialsApi.list({ pageSize: 20 });
+    if (result.ok) {
+        reviews = result.data.items.map((raw) => toTestimonialCardProps({ item: raw as Record<string, unknown> }));
+    }
+} catch (err) {
+    webLogger.error('API fetch failed', { endpoint: 'testimonials', error: err instanceof Error ? err.message : err });
+}
+---
+
+{reviews.length > 0 && (
+<section
+    class="section testimonials-section"
+    aria-label={t('home.testimonials.title', 'Testimonios')}
+>
+    <div class="testimonials-section__container">
+        <SectionHeader
+            tagline={t('home.testimonials.tagline', 'Testimonios')}
+            title={t('home.testimonials.title', 'Lo que dicen nuestros huéspedes')}
+            subtitle={t('home.testimonials.description', 'Reviews y experiencias compartidas por quienes nos visitaron.')}
+            alignment="center"
+        />
+        
+        <TestimonialsCarousel
+            client:visible
+            reviews={reviews}
+            locale={locale}
+        />
+    </div>
+</section>
+)}
+
+<style>
+    .testimonials-section {
+        background-color: var(--core-background);
+        padding-block: var(--space-section);
+    }
+
+    .testimonials-section__container {
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+        max-width: var(--container-max);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-card-gap);
+    }
+</style>

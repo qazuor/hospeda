@@ -1,0 +1,74 @@
+---
+/**
+ * @file SocialLinks.astro
+ * @description Social media icon links rendered as a flex row.
+ * Supports light (white icons) and dark (foreground icons) variants.
+ */
+
+import { InstagramIcon, FacebookIcon, WhatsappIcon, YoutubeIcon } from '@repo/icons';
+
+interface Props {
+  /** Controls icon color: 'light' renders white icons, 'dark' renders foreground-colored icons */
+  readonly variant?: 'light' | 'dark';
+}
+
+const { variant = 'dark' } = Astro.props;
+
+const iconColor = variant === 'light' ? 'white' : 'currentColor';
+
+const links = [
+  {
+    href: '#',
+    label: 'Seguinos en Facebook',
+    Icon: FacebookIcon,
+  },
+  {
+    href: '#',
+    label: 'Seguinos en Instagram',
+    Icon: InstagramIcon,
+  },
+  {
+    href: '#',
+    label: 'Seguinos en YouTube',
+    Icon: YoutubeIcon,
+  },
+  {
+    href: 'https://wa.me/5434424537970',
+    label: 'Contactanos por WhatsApp',
+    Icon: WhatsappIcon,
+  },
+] as const;
+---
+
+<div class="social-links">
+  {
+    links.map(({ href, label, Icon }) => (
+      <a
+        href={href}
+        aria-label={label}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="social-links__item"
+      >
+        <Icon size={28} weight="fill" color={iconColor} aria-hidden="true" />
+      </a>
+    ))
+  }
+</div>
+
+<style>
+  .social-links {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    padding-block: 16px;
+  }
+
+  .social-links__item {
+    transition: opacity var(--duration-normal) ease;
+  }
+
+  .social-links__item:hover {
+    opacity: 0.75;
+  }
+</style>

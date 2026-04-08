@@ -1,0 +1,208 @@
+---
+/**
+ * @file SearchBar.astro
+ * @description Visual-only search bar matching Figma design (node 21:1779).
+ * Non-functional (no form submission). Each column has icon + label + placeholder,
+ * separated by solid vertical dividers. Button is a pill shape with text-then-icon order.
+ */
+
+import { SearchIcon, LocationIcon, BuildingIcon, CalendarDotsIcon, UsersIcon } from '@repo/icons';
+import { createT } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Active locale used to resolve translations. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+
+const t = createT(locale);
+---
+
+<div
+    class="hero-search-bar"
+    role="search"
+    aria-label={t('home.searchBar.ctaLabel', 'Buscar')}
+>
+    <div class="hero-search-bar__inner">
+        <!-- Col 1: Location / Destination -->
+        <div class="hero-search-bar__col hero-search-bar__col--divider">
+            <div class="hero-search-bar__icon">
+                <LocationIcon size={16} weight="regular" aria-hidden="true" />
+            </div>
+            <div class="hero-search-bar__content">
+                <span class="hero-search-bar__label">{t('home.searchBar.destinationLabel', 'Destino')}</span>
+                <span class="hero-search-bar__value">{t('home.searchBar.destinationPlaceholder', '¿Dónde querés ir?')}</span>
+            </div>
+        </div>
+
+        <!-- Col 2: Type -->
+        <div class="hero-search-bar__col hero-search-bar__col--divider">
+            <div class="hero-search-bar__icon">
+                <BuildingIcon size={16} weight="regular" aria-hidden="true" />
+            </div>
+            <div class="hero-search-bar__content">
+                <span class="hero-search-bar__label">{t('home.searchBar.typeLabel', 'Tipo')}</span>
+                <span class="hero-search-bar__value">{t('home.searchBar.typePlaceholder', '¿Tipo de alojamiento?')}</span>
+            </div>
+        </div>
+
+        <!-- Col 3: Dates -->
+        <div class="hero-search-bar__col hero-search-bar__col--divider">
+            <div class="hero-search-bar__icon">
+                <CalendarDotsIcon size={16} weight="regular" aria-hidden="true" />
+            </div>
+            <div class="hero-search-bar__content">
+                <span class="hero-search-bar__label">{t('home.searchBar.datesLabel', 'Fechas')}</span>
+                <span class="hero-search-bar__value">{t('home.searchBar.datesPlaceholder', '¿Cuándo querés venir?')}</span>
+            </div>
+        </div>
+
+        <!-- Col 4: Guests -->
+        <div class="hero-search-bar__col">
+            <div class="hero-search-bar__icon">
+                <UsersIcon size={16} weight="regular" aria-hidden="true" />
+            </div>
+            <div class="hero-search-bar__content">
+                <span class="hero-search-bar__label">{t('home.searchBar.guestsLabel', 'Huéspedes')}</span>
+                <span class="hero-search-bar__value">{t('home.searchBar.guestsPlaceholder', '¿Cuántas personas son?')}</span>
+            </div>
+        </div>
+
+        <!-- Search button: pill shape, text first then icon -->
+        <button
+            type="button"
+            class="hero-search-bar__button"
+            aria-label={t('home.searchBar.ctaLabel', 'Buscar')}
+        >
+            <span>{t('home.searchBar.ctaLabel', 'Buscar')}</span>
+            <span class="hero-search-bar__button-icon">
+                <SearchIcon size={20} weight="bold" color="currentColor" aria-hidden="true" />
+            </span>
+        </button>
+    </div>
+</div>
+
+<style>
+    .hero-search-bar {
+        width: 100%;
+    }
+
+    .hero-search-bar__inner {
+        display: flex;
+        align-items: center;
+        background: var(--core-background);
+        border-radius: 24px;
+        box-shadow: var(--shadow-search);
+        padding: 0 24px 0 16px;
+        gap: 0;
+    }
+
+    /* Each column: icon + label/value stacked */
+    .hero-search-bar__col {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 6px;
+        padding: 12px 20px;
+        flex: 1;
+        min-width: 0;
+    }
+
+    .hero-search-bar__col--divider {
+        border-right: 1px solid var(--border);
+    }
+
+    .hero-search-bar__icon {
+        color: var(--core-muted-foreground);
+        opacity: 0.66;
+        flex-shrink: 0;
+    }
+
+    .hero-search-bar__content {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .hero-search-bar__label {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--brand-secondary-foreground);
+        line-height: 1.6;
+        white-space: nowrap;
+    }
+
+    .hero-search-bar__value {
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--core-muted-foreground);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Search button: pill shape, text then icon */
+    .hero-search-bar__button {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: var(--brand-primary);
+        color: var(--primary-foreground);
+        border: none;
+        border-radius: 24px;
+        padding: 10px 14px 10px 24px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition: background var(--duration-normal) ease;
+    }
+
+    .hero-search-bar__button-icon {
+        opacity: 0.44;
+        display: flex;
+        align-items: center;
+    }
+
+    .hero-search-bar__button:hover {
+        background: oklch(from var(--brand-primary) calc(l * 0.9) c h);
+    }
+
+    .hero-search-bar__button:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    /* Mobile: stack vertically */
+    @media (max-width: 767px) {
+        .hero-search-bar__inner {
+            flex-direction: column;
+            padding: 16px;
+            gap: 0;
+        }
+
+        .hero-search-bar__col {
+            padding: 12px 0;
+            border-right: none !important;
+            border-bottom: 1px solid var(--border);
+            width: 100%;
+        }
+
+        .hero-search-bar__col:last-of-type {
+            border-bottom: none;
+        }
+
+        .hero-search-bar__button {
+            border-radius: 8px;
+            margin-top: 12px;
+            padding: 14px 24px;
+            width: 100%;
+            justify-content: center;
+        }
+    }
+</style>

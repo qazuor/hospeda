@@ -1,0 +1,258 @@
+/* --- Component styles (must precede all non-import statements per CSS spec) --- */
+@import './components.css';
+
+/* ==========================================================================
+   Hospeda Web2 — Global Styles
+   Tokens + Base Resets
+   ========================================================================== */
+
+:root {
+    /* --- Core palette --- */
+    --core-background: oklch(0.985 0.002 210);
+    --core-foreground: oklch(0.2 0.02 220);
+    --core-card: oklch(1 0 0);
+    --card-foreground: oklch(0.2 0.02 220);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2 0.02 220);
+    --brand-primary: oklch(0.63 0.19 259);
+    --primary-foreground: oklch(0.99 0 0);
+    --brand-secondary: oklch(0.96 0.02 236);
+    --brand-secondary-foreground: oklch(0.26 0.06 255);
+    --brand-tertiary: oklch(0.92 0.03 155);
+    --muted: oklch(0.95 0.01 210);
+    --core-muted-foreground: oklch(0.45 0.03 261);
+    --brand-accent: oklch(0.7 0.18 55);
+    --rating-star: oklch(0.82 0.19 95);
+    --accent-foreground: oklch(0.99 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.98 0 0);
+    --overlay: oklch(0.2 0.02 220 / 0.5);
+    --border: oklch(0.9 0.02 210);
+    --input: oklch(0.9 0.02 210);
+    --ring: oklch(0.63 0.19 259);
+    --chart-1: oklch(0.63 0.19 259);
+    --chart-2: oklch(0.6 0.14 155);
+    --chart-3: oklch(0.7 0.18 55);
+    --chart-4: oklch(0.75 0.1 190);
+    --chart-5: oklch(0.5 0.08 240);
+    --radius: 0.75rem;
+
+    /* --- Feedback tokens --- */
+    --success: oklch(0.58 0.15 150);
+    --success-foreground: oklch(0.99 0 0);
+    --warning: oklch(0.75 0.18 85);
+    --warning-foreground: oklch(0.2 0.02 85);
+    --info: oklch(0.63 0.19 259);
+    --info-foreground: oklch(0.99 0 0);
+
+    /* --- Surface tokens --- */
+    --surface-warm: oklch(0.95 0.03 250);
+    --surface-warm-foreground: oklch(0.35 0.03 250);
+    --surface-dark: oklch(0.15 0.02 160);
+    --surface-dark-foreground: oklch(0.92 0.01 210);
+
+    /* --- Footer surface tokens --- */
+    --footer-bg: var(--surface-dark);
+    --footer-fg: var(--surface-dark-foreground);
+    --footer-fg-muted: oklch(0.74 0.02 240);
+    --footer-newsletter-bg: white;
+    --footer-newsletter-fg: var(--core-muted-foreground);
+    --footer-newsletter-border: transparent;
+    --footer-link: oklch(from var(--surface-dark-foreground) l c h / 0.7);
+    --footer-link-hover: var(--surface-dark-foreground);
+    --footer-border: oklch(from var(--surface-dark-foreground) l c h / 0.15);
+
+    /* --- Hospeda brand colors --- */
+    --hospeda-sky: oklch(0.80 0.08 259);
+    --hospeda-sky-light: oklch(0.88 0.06 259);
+    --hospeda-river: oklch(0.63 0.19 259);
+    --hospeda-forest: oklch(0.50 0.14 155);
+    --hospeda-sand: oklch(0.93 0.03 85);
+
+    /* --- Social proof avatar gradient stops --- */
+    --avatar-1-from: oklch(0.25 0.08 255);
+    --avatar-1-to: oklch(0.36 0.12 255);
+    --avatar-2-from: oklch(0.65 0.15 75);
+    --avatar-2-to: oklch(0.78 0.17 80);
+    --avatar-3-from: oklch(0.50 0.10 195);
+    --avatar-3-to: oklch(0.65 0.13 195);
+    --avatar-4-from: oklch(0.42 0.12 155);
+    --avatar-4-to: oklch(0.62 0.16 155);
+
+    /* --- Font families --- */
+    --font-sans: "Roboto", sans-serif;
+    --font-heading: "Geologica", sans-serif;
+    --font-decorative: "Caveat", cursive;
+
+    /* --- Radius (derived from --radius) --- */
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 4px);
+
+    /* --- Organic / component radius --- */
+    --radius-organic: 0px 100px;
+    --radius-organic-sm: 0px 75px;
+    --radius-organic-alt: 100px 0px;
+    --radius-card: 24px;
+    --radius-pill: 9999px;
+    --radius-button: 8px;
+
+    /* --- Spacing --- */
+    --space-section: 120px;
+    --space-section-sm: 80px;
+    --space-section-lg: 160px;
+    --space-container-x: 15px;
+    --space-card-content: 27px 30px 26px;
+    --space-card-gap: 30px;
+    --space-section-header-mb: 50px;
+
+    /* --- Typography scale --- */
+    --text-hero: clamp(3rem, 2rem + 5vw, 5.75rem);
+    --text-display: clamp(2rem, 1.5rem + 3vw, 3rem);
+    --text-h2: clamp(1.75rem, 1.5rem + 1.75vw, 2.75rem);
+    --text-h3: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
+    --text-h4: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
+    --text-body: 1rem;
+    --text-body-sm: 0.875rem;
+    --text-meta: 0.8125rem;
+    --text-caption: 0.75rem;
+    --text-tagline: clamp(1.125rem, 1rem + 0.625vw, 1.5rem);
+    --text-nav: 0.875rem;
+    --text-button: 1rem;
+
+    /* --- Shadows --- */
+    --shadow-card: 0 4px 12px -2px oklch(from var(--core-foreground) l c h / 0.08);
+    --shadow-card-hover: 0 12px 24px -4px oklch(from var(--core-foreground) l c h / 0.12);
+    --shadow-search: 0 4px 60px oklch(from var(--core-foreground) l c h / 0.10);
+    --shadow-nav: 0 2px 4px oklch(from var(--core-foreground) l c h / 0.15);
+
+    /* --- Transitions --- */
+    --duration-fast: 0.2s;
+    --duration-normal: 0.4s;
+    --duration-slow: 0.5s;
+    --duration-reveal: 1.5s;
+    --ease-bounce: cubic-bezier(0.1, 0, 0.3, 1);
+
+    /* --- Z-index --- */
+    --z-content: 10;
+    --z-nav: 50;
+    --z-modal: 100;
+
+    /* --- Layout --- */
+    --container-max: 1350px;
+    --container-narrow: 900px;
+}
+
+/* --- Dark mode overrides --- */
+[data-theme="dark"] {
+    --core-background: oklch(0.14 0.02 220);
+    --core-foreground: oklch(0.92 0.01 210);
+    --core-card: oklch(0.19 0.02 220);
+    --card-foreground: oklch(0.92 0.01 210);
+    --popover: oklch(0.19 0.02 220);
+    --popover-foreground: oklch(0.92 0.01 210);
+    --brand-primary: oklch(0.68 0.17 259);
+    --primary-foreground: oklch(0.1 0.02 259);
+    --brand-secondary: oklch(0.25 0.05 255);
+    --brand-secondary-foreground: oklch(0.8 0.08 255);
+    --brand-tertiary: oklch(0.28 0.05 155);
+    --muted: oklch(0.22 0.02 220);
+    --core-muted-foreground: oklch(0.6 0.03 261);
+    --brand-accent: oklch(0.72 0.19 55);
+    --rating-star: oklch(0.85 0.19 95);
+    --accent-foreground: oklch(0.1 0.01 55);
+    --destructive: oklch(0.6 0.22 27);
+    --destructive-foreground: oklch(0.98 0 0);
+    --overlay: oklch(0.05 0.01 220 / 0.7);
+    --border: oklch(0.28 0.02 220);
+    --input: oklch(0.28 0.02 220);
+    --ring: oklch(0.68 0.17 259);
+    --chart-1: oklch(0.68 0.17 259);
+    --chart-2: oklch(0.68 0.15 155);
+    --chart-3: oklch(0.72 0.19 55);
+    --chart-4: oklch(0.78 0.11 190);
+    --chart-5: oklch(0.62 0.1 240);
+
+    /* Feedback tokens (dark) */
+    --success: oklch(0.65 0.16 150);
+    --success-foreground: oklch(0.1 0.02 150);
+    --warning: oklch(0.78 0.18 85);
+    --warning-foreground: oklch(0.1 0.02 85);
+    --info: oklch(0.68 0.17 259);
+    --info-foreground: oklch(0.1 0.02 259);
+
+    /* Surface tokens (dark) */
+    --surface-warm: oklch(0.20 0.03 50);
+    --surface-dark: oklch(0.10 0.02 160);
+
+    /* Footer surface tokens (dark) */
+    --footer-bg: oklch(0.12 0.02 220);
+    --footer-fg: oklch(0.85 0.01 210);
+    --footer-fg-muted: oklch(0.60 0.02 240);
+    --footer-newsletter-bg: oklch(0.18 0.025 220);
+    --footer-newsletter-fg: oklch(0.80 0.01 210);
+    --footer-newsletter-border: oklch(0.3 0.02 220);
+    --footer-link: oklch(0.65 0.01 210);
+    --footer-link-hover: oklch(0.90 0.01 210);
+    --footer-border: oklch(from var(--brand-accent) l c h / 0.2);
+
+    /* Social proof avatar gradient stops (dark) */
+    --avatar-1-from: oklch(0.30 0.10 255);
+    --avatar-1-to: oklch(0.42 0.14 255);
+    --avatar-2-from: oklch(0.68 0.16 75);
+    --avatar-2-to: oklch(0.80 0.18 80);
+    --avatar-3-from: oklch(0.52 0.11 195);
+    --avatar-3-to: oklch(0.68 0.14 195);
+    --avatar-4-from: oklch(0.45 0.13 155);
+    --avatar-4-to: oklch(0.65 0.17 155);
+}
+
+/* --- Base resets --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+* {
+    border-color: var(--border);
+    outline-color: oklch(from var(--ring) l c h / 0.5);
+}
+
+/* Global focus ring for keyboard navigation */
+:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 10px);
+}
+
+body {
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+/* --- Reduced motion: disable all decorative animations --- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+

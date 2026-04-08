@@ -1,0 +1,167 @@
+/* ReviewCard.module.css — Review/testimonial card for Embla carousel slides */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    position: relative;
+}
+
+/* Decorative background quote icon — large, positioned absolute */
+.quoteIcon {
+    position: absolute;
+    top: -0.25rem;
+    left: -0.25rem;
+    width: 5rem;
+    height: 5rem;
+    color: var(--brand-accent);
+    opacity: 0.09;
+    pointer-events: none;
+    transition: opacity var(--duration-normal) ease;
+}
+
+/* Entity type badge — top-right chip */
+.entityBadge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--brand-accent);
+    background-color: oklch(from var(--brand-accent) l c h / 0.1);
+    border-radius: var(--radius-pill);
+    padding: 0.2rem 0.6rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    font-weight: 500;
+}
+
+/* Quote text — slightly enlarged for readability */
+.quoteText {
+    font-size: clamp(0.8125rem, 0.8rem + 0.15vw, 0.875rem);
+    font-style: italic;
+    color: var(--core-foreground);
+    line-height: 1.75;
+    padding-top: 1.75rem; /* space for the large decorative icon */
+}
+
+/* Individual star rating row */
+.reviewRating {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.reviewStars {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.reviewStarIcon {
+    color: var(--brand-secondary-foreground);
+    opacity: 0.3;
+}
+
+.reviewStarIconFilled {
+    color: var(--brand-accent);
+    opacity: 1;
+}
+
+/* Author caption */
+.caption {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: auto;
+}
+
+.avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+/* Avatar initials fallback */
+.avatarInitials {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 9999px;
+    flex-shrink: 0;
+    background-color: var(--brand-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-decorative);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--brand-primary);
+    line-height: 1;
+}
+
+.authorInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.authorName {
+    font-weight: 600;
+    color: var(--core-foreground);
+    line-height: 1.25;
+}
+
+/* Inline container for origin + date separator */
+.authorMeta {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    font-size: var(--text-meta);
+    color: var(--core-muted-foreground);
+    flex-wrap: wrap;
+}
+
+.authorOrigin {
+    font-size: var(--text-meta);
+    color: var(--core-muted-foreground);
+}
+
+.authorOriginLink {
+    font-size: var(--text-meta);
+    color: var(--brand-accent);
+    text-decoration: none;
+    transition: text-decoration var(--duration-normal) ease;
+}
+
+.authorOriginLink:hover {
+    text-decoration: underline;
+}
+
+/* Review date — same weight as authorOrigin, separated visually by · dot */
+.reviewDate {
+    font-size: var(--text-meta);
+    color: var(--core-muted-foreground);
+}
+
+/* Entity badge as clickable link */
+.entityBadgeLink {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-meta);
+    color: var(--brand-accent);
+    background-color: oklch(from var(--brand-accent) l c h / 0.1);
+    border-radius: var(--radius-pill);
+    padding: 0.2rem 0.6rem;
+    line-height: 1.4;
+    white-space: nowrap;
+    font-weight: 500;
+    text-decoration: none;
+    transition: opacity var(--duration-normal) ease;
+}
+
+.entityBadgeLink:hover {
+    opacity: 0.8;
+}

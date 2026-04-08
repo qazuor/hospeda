@@ -1,0 +1,395 @@
+---
+/**
+ * @file AboutUsSection.astro
+ * @description Homepage About Us section. Three-zone horizontal layout: photo collage (left),
+ * text content (center), and traveler photo (right). Uses brand-secondary light blue background
+ * with rounded inner container to match the Figma design. No interactive islands required.
+ *
+ * Zones:
+ * - Zone 1 (432x500px): Absolute-positioned photo collage with experience badge and
+ *   decorative flight path SVG.
+ * - Zone 2 (513px): Tagline, heading, and body text.
+ * - Zone 3 (347px): Transparent PNG traveler cutout anchored to the bottom.
+ */
+
+import type { SupportedLocale } from "@/lib/i18n";
+import { createTranslations } from "@/lib/i18n";
+
+interface Props {
+    /** Active locale used to resolve translations. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<section class="section about-us">
+    <div class="about-us__inner">
+        <div class="about-us__layout">
+            <!-- ===== Zone 1: Photo collage ===== -->
+            <div class="about-us__collage" data-reveal="left">
+                <!--
+                    Decorative flight path: 3 chained instances of misc-ap-1.png.
+                    Each shows one segment of a continuous arc from upper-left to
+                    mid-right. The airplane in the original image sits at the
+                    top-right corner; the dashed trail curves to bottom-left.
+
+                    #1 (large, top-left): flipped so airplane points upper-left,
+                        trail extends down-right. This is the DEPARTURE airplane.
+                    #2 (middle connector): rotated to continue the curve where
+                        #1's trail ends. Its airplane is clipped/hidden.
+                    #3 (small, right): airplane points upper-right at the end
+                        of the path. This is the ARRIVAL airplane.
+                -->
+                <img
+                    class="about-us__airplane about-us__airplane--1"
+                    src="/assets/images/shapes/misc-ap-1.png"
+                    alt=""
+                    aria-hidden="true"
+                />
+                <img
+                    class="about-us__airplane about-us__airplane--2"
+                    src="/assets/images/shapes/misc-ap-1.png"
+                    alt=""
+                    aria-hidden="true"
+                />
+                <img
+                    class="about-us__airplane about-us__airplane--3"
+                    src="/assets/images/shapes/misc-ap-1.png"
+                    alt=""
+                    aria-hidden="true"
+                />
+
+                <!-- Main photo: 231x352px, positioned at left:111px top:63px, radius 24px -->
+                <div class="about-us__photo-main">
+                    <img
+                        src="/assets/images/resources/choose-1-1.png"
+                        alt={t("home.about.primaryPhotoAlt", "Alojamientos y paisajes del Litoral argentino")}
+                        loading="lazy"
+                    />
+                </div>
+
+                <!--
+                    Secondary photo: 135x195px, positioned at left:291px top:268px, radius 24px.
+                    Has a 12px solid border in brand-secondary to create a "frame" that blends
+                    with the section background, giving a floating effect.
+                -->
+                <div class="about-us__photo-secondary">
+                    <img src="/assets/images/resources/choose-1-2.jpg" alt="" loading="lazy" aria-hidden="true" />
+                </div>
+
+                <!--
+                    Experience badge: rotated -90deg so it reads bottom-to-top along the left
+                    edge of the main photo. Positioned at left:91px top:111px before rotation.
+                -->
+                <span class="about-us__exp-badge" aria-hidden="true">
+                    {t("home.about.experienceBadge", "2 años de experiencia")}
+                </span>
+            </div>
+
+            <!-- ===== Zone 2: Text content ===== -->
+            <div class="about-us__content" data-reveal="up">
+                <p class="about-us__tagline">
+                    {t("home.about.accentSubtitle", "Acerca de nosotros")}
+                </p>
+
+                <h2 class="about-us__title">
+                    {t("home.about.title", "Los mejores alojamientos e información para tus vacaciones")}
+                </h2>
+
+                <p class="about-us__body">
+                    {
+                        t(
+                            "home.about.description",
+                            "Desde 2022, conectamos viajeros con los mejores alojamientos de Concepción del Uruguay y el litoral entrerriano. Nuestro equipo trabaja para que descubras los rincones más auténticos de la región, con información actualizada y experiencias verificadas por nuestra comunidad.",
+                        )
+                    }
+                </p>
+            </div>
+
+            <!-- ===== Zone 3: Side traveler photo ===== -->
+            <!--
+                Transparent PNG cutout. No border-radius, no shadow, no background.
+                Container anchors the image to the bottom of its stretch height with 80px padding.
+            -->
+            <div class="about-us__side" data-reveal="right">
+                <img
+                    src="/assets/images/resources/about-us.png"
+                    alt={t("home.about.travelerPhotoAlt", "Viajeros disfrutando del Litoral entrerriano")}
+                    loading="lazy"
+                    class="about-us__side-img"
+                />
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* ===================================================
+       Section shell — inherits .section padding from components.css
+       but overrides background to brand-secondary.
+       The section itself has no padding-block of its own; the inner
+       container with border-radius holds the padding via the layout.
+    =================================================== */
+    .about-us {
+        background-color: var(--brand-secondary);
+        /* Top padding ensures the collage (with decorative airplanes)
+           is visible below any sticky header. Bottom padding: 0 so
+           content sits flush. */
+        padding-block: 0;
+        /* Override .section overflow:hidden so decorative airplanes
+           above the collage remain visible. */
+        overflow: visible;
+    }
+
+    /* Inner container: max-width, rounded corners (30px per Figma).
+       overflow: visible so the decorative airplanes can extend
+       beyond the container bounds. Photo containers have their
+       own overflow: hidden for border-radius clipping. */
+    .about-us__inner {
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+        max-width: var(--container-max);
+        border-radius: 30px;
+    }
+
+    /* ===================================================
+       Three-zone flex layout
+    =================================================== */
+    .about-us__layout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding-block: 0;
+    }
+
+    /* ===================================================
+       Zone 1: Photo collage
+       Fixed 432x500px at desktop. Absolute positioning for
+       main photo, secondary photo, badge, and flight-path SVG.
+    =================================================== */
+    .about-us__collage {
+        position: relative;
+        width: 432px;
+        height: 470px;
+        flex-shrink: 0;
+    }
+
+    /* Main photo — 231x352px, left:111px top:63px */
+    .about-us__photo-main {
+        position: absolute;
+        left: 111px;
+        top: 63px;
+        width: 231px;
+        height: 352px;
+        border-radius: 24px;
+        overflow: hidden;
+    }
+
+    .about-us__photo-main img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Secondary photo — 135x195px, left:291px top:268px.
+       12px brand-secondary border creates a "floating frame" effect
+       that blends with the section background. */
+    .about-us__photo-secondary {
+        position: absolute;
+        left: 291px;
+        top: 268px;
+        width: 135px;
+        height: 195px;
+        border-radius: 24px;
+        border: 12px solid var(--brand-secondary);
+        overflow: hidden;
+        z-index: 2;
+    }
+
+    .about-us__photo-secondary img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    /* Experience badge — rotated -90deg so it reads vertically,
+       overlapping the left edge of the main photo.
+       transform-origin: top left places the rotation pivot at the
+       badge's own top-left corner; the element then extends rightward
+       in local space (which is downward after the -90deg rotation). */
+    .about-us__exp-badge {
+        position: absolute;
+        left: 91px;
+        top: 330px;
+        transform: rotate(-90deg);
+        transform-origin: top left;
+        background-color: var(--brand-secondary);
+        border-radius: 12px;
+        padding: 6px 24px;
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--core-foreground);
+        white-space: nowrap;
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    /* Decorative airplanes — three chained instances of misc-ap-1.png.
+       Original image: airplane at top-right, trail curves to bottom-left.
+       Chained together they form one smooth arc across the collage top. */
+    .about-us__airplane {
+        position: absolute;
+        pointer-events: none;
+        z-index: 0;
+        overflow: visible;
+    }
+
+    /* #1 — Large airplane, top-left of collage.
+       scaleX(-1) flips so airplane points upper-left.
+       Positioned above the main photo (which starts at top:63px).
+       The airplane silhouette is the prominent element; trail extends
+       rightward over/behind the main photo. */
+    .about-us__airplane--1 {
+        top: 50px;
+        left: 0;
+        width: 200px;
+        height: auto;
+        transform: rotate(-105deg);
+    }
+
+    /* #2 — Trail connector (middle segment).
+       Rotated to extend the arc from #1 toward #3.
+       Lower opacity so it blends as a subtle fill between the
+       two endpoint trails without creating double-dashed noise. */
+    .about-us__airplane--2 {
+        top: 195px;
+        left: 35px;
+        width: 140px;
+        height: auto;
+        transform: rotate(-150deg) scale(1);
+        opacity: 0.85;
+    }
+
+    /* #3 — Small airplane, above-right of the main photo.
+       Original orientation: airplane points upper-right at
+       the end of the flight path. */
+    .about-us__airplane--3 {
+        top: 230px;
+        left: 325px;
+        width: 90px;
+        height: auto;
+        transform: rotate(-20deg) scale(130%);
+    }
+
+    /* ===================================================
+       Zone 2: Text content
+    =================================================== */
+    .about-us__content {
+        flex: 0 0 auto;
+        max-width: 550px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    /* Tagline: Caveat Bold 32px, italic, brand-primary */
+    .about-us__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: 32px;
+        line-height: 38.4px;
+        font-style: italic;
+        color: var(--brand-primary);
+        margin: 0;
+    }
+
+    /* Heading: Geologica Bold, clamp for fluid scaling */
+    .about-us__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(2rem, 4vw, 3rem);
+        line-height: 1.2;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    /* Body: Inter Regular 16px, 4px horizontal + 10px vertical padding per Figma */
+    .about-us__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+        padding: 10px 4px;
+        max-width: 566px;
+    }
+
+    /* ===================================================
+       Zone 3: Side traveler image
+       align-self: stretch fills the full layout height so
+       justify-content: flex-end anchors the image to the bottom.
+       80px padding-block per Figma.
+    =================================================== */
+    .about-us__side {
+        flex-shrink: 0;
+        width: 347px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-end;
+        align-self: stretch;
+    }
+
+    /* Transparent PNG cutout — no border-radius, no shadow, no background */
+    .about-us__side-img {
+        width: 100%;
+        max-width: 364px;
+        height: auto;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* ===================================================
+       Responsive overrides
+       Below 1024px: stack zones vertically, hide decorative
+       elements that rely on absolute pixel positioning.
+    =================================================== */
+    @media (max-width: 1023px) {
+        .about-us__layout {
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Reset fixed dimensions — let the collage adapt */
+        .about-us__collage {
+            width: 100%;
+            max-width: 432px;
+            height: auto;
+            min-height: 400px;
+        }
+
+        .about-us__content {
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .about-us__side {
+            width: 100%;
+            max-width: 347px;
+            padding-block: 2rem;
+        }
+
+        /* Hide decoratives that use pixel-exact positioning */
+        .about-us__exp-badge,
+        .about-us__airplane {
+            display: none;
+        }
+    }
+</style>

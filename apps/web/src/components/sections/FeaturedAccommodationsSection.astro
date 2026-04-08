@@ -1,0 +1,97 @@
+---
+/**
+ * @file FeaturedAccommodationsSection.astro
+ * @description Homepage featured accommodations section. Displays a left-aligned
+ * section header with a "Ver todos" action pill, a uniform-dark badge row for
+ * filtering by accommodation type, and a 3-column responsive grid of
+ * AccommodationCard components (3×2 layout, 6 cards).
+ * Background uses `var(--core-background)` per the section alternation rule.
+ */
+
+import { AccommodationTypeEnum } from '@repo/schemas';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getAccommodationTypeColor } from '@/lib/colors';
+import { accommodationsApi, toAccommodationCardProps } from '@/lib/api';
+import type { AccommodationCardData } from '@/lib/api/transforms';
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import BadgeRow from '@/components/shared/BadgeRow.astro';
+import AccommodationCard from '@/components/shared/AccommodationCard.astro';
+import type { BadgeRowItem } from '@/components/shared/BadgeRow.astro';
+import { webLogger } from '@/lib/logger';
+
+interface Props {
+  /** Active locale used to resolve translations and build internal URLs. */
+  readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+
+const { t } = createTranslations(locale);
+
+/** All accommodation types derived from the canonical enum in @repo/schemas. */
+const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map(
+  (v) => String(v).toLowerCase()
+);
+
+// Fetch from API - empty array if unavailable
+let items: AccommodationCardData[] = [];
+try {
+  const result = await accommodationsApi.list({ isFeatured: true, pageSize: 6, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc' });
+  if (result.ok) {
+    items = result.data.items.map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown> }));
+  }
+} catch (err) {
+  webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });
+}
+
+const typeBadges: BadgeRowItem[] = ACCOMMODATION_TYPES.map((type) => ({
+  label: t(`common.enums.accommodationType.${type}`),
+  href: buildUrl({ locale, path: `/alojamientos/tipo/${type}/` }),
+  colorScheme: getAccommodationTypeColor({ type }),
+}));
+
+const seeAllLabel = t('home.featuredAccommodations.seeAllAction', 'Ver todos los alojamientos →');
+const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
+---
+
+<section class="section accommodations">
+  <div class="section__container">
+
+    <!-- Section header: left-aligned with "Ver todos" pill action -->
+    <SectionHeader
+      tagline={t('home.featuredAccommodations.accentSubtitle')}
+      title={t('home.featuredAccommodations.title')}
+      subtitle={t('home.featuredAccommodations.description')}
+      alignment="left"
+      actionLabel={seeAllLabel}
+      actionHref={seeAllHref}
+    />
+
+    <!-- Accommodation type filter badges: uniform dark style per Figma -->
+    <BadgeRow badges={typeBadges} uniformDark={true} />
+
+    <!-- Cards grid: 3 columns (3×2), 6 cards -->
+    <div class="grid-cards--3col accommodations__grid">
+      {items.length === 0 ? (
+        <p class="accommodations__empty">{t('home.featuredAccommodations.emptyState')}</p>
+      ) : null}
+      {items.map((accommodation, i) => (
+        <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+          <AccommodationCard data={accommodation} locale={locale} />
+        </div>
+      ))}
+    </div>
+
+  </div>
+</section>
+
+<style>
+  .accommodations {
+    background-color: var(--core-background);
+  }
+  .accommodations__card-wrapper {
+    height: 100%;
+  }
+</style>

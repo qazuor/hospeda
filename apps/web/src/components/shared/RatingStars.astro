@@ -1,0 +1,130 @@
+---
+/**
+ * @file RatingStars.astro
+ * @description Displays a star rating with filled, half, and empty stars.
+ * Uses StarIcon from @repo/icons. Respects the design system color tokens.
+ */
+
+import { StarIcon } from '@repo/icons';
+
+interface Props {
+  /** Numeric rating value between 0 and maxStars. */
+  readonly rating: number;
+  /** Maximum number of stars. Defaults to 5. */
+  readonly maxStars?: number;
+  /** Size variant controlling icon dimensions. Defaults to 'md'. */
+  readonly size?: 'sm' | 'md';
+  /** When true, renders the numeric rating value next to the stars. */
+  readonly showValue?: boolean;
+}
+
+const { rating, maxStars = 5, size = 'md', showValue = false } = Astro.props;
+
+const iconSize = size === 'sm' ? 16 : 20;
+const clampedRating = Math.max(0, Math.min(rating, maxStars));
+const fullStars = Math.floor(clampedRating);
+const hasHalf = clampedRating - fullStars >= 0.5;
+const emptyStars = maxStars - fullStars - (hasHalf ? 1 : 0);
+
+const stars: Array<'full' | 'half' | 'empty'> = [
+  ...Array.from<'full'>({ length: fullStars }).fill('full'),
+  ...(hasHalf ? (['half'] as const) : []),
+  ...Array.from<'empty'>({ length: emptyStars }).fill('empty'),
+];
+---
+
+<div
+  class="rating-stars"
+  role="img"
+  aria-label={`Calificación: ${clampedRating} de ${maxStars} estrellas`}
+>
+  {stars.map((type) => {
+    if (type === 'full') {
+      return (
+        <StarIcon
+          size={iconSize}
+          weight="fill"
+          color="var(--rating-star)"
+          aria-hidden="true"
+        />
+      );
+    }
+
+    if (type === 'half') {
+      return (
+        <span
+          class="rating-stars__half"
+          style={`width: ${iconSize}px; height: ${iconSize}px;`}
+          aria-hidden="true"
+        >
+          {/* Empty star as background */}
+          <span class="rating-stars__half-bg">
+            <StarIcon
+              size={iconSize}
+              weight="regular"
+              color="var(--core-muted-foreground)"
+              aria-hidden="true"
+            />
+          </span>
+          {/* Filled star clipped to left half */}
+          <span class="rating-stars__half-fg">
+            <StarIcon
+              size={iconSize}
+              weight="fill"
+              color="var(--rating-star)"
+              aria-hidden="true"
+            />
+          </span>
+        </span>
+      );
+    }
+
+    return (
+      <StarIcon
+        size={iconSize}
+        weight="regular"
+        color="var(--core-muted-foreground)"
+        aria-hidden="true"
+      />
+    );
+  })}
+
+  {showValue && (
+    <span class="rating-stars__value" aria-hidden="true">
+      {clampedRating.toFixed(1)}
+    </span>
+  )}
+</div>
+
+<style>
+  .rating-stars {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.125rem;
+  }
+
+  .rating-stars__half {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .rating-stars__half-bg {
+    position: absolute;
+    inset: 0;
+  }
+
+  .rating-stars__half-fg {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    clip-path: inset(0 50% 0 0);
+  }
+
+  .rating-stars__value {
+    margin-left: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-muted-foreground);
+    font-variant-numeric: tabular-nums;
+  }
+</style>

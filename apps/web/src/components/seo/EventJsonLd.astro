@@ -1,0 +1,73 @@
+---
+/**
+ * @file EventJsonLd.astro
+ * @description Event JSON-LD component for events.
+ * Generates schema.org Event structured data.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Event location interface */
+export interface EventLocation {
+  /** Name of the location/venue */
+  readonly name: string;
+  /** Address of the location */
+  readonly address: string;
+}
+
+/** Props interface for EventJsonLd component. */
+interface Props {
+  /** Name of the event */
+  readonly name: string;
+  /** Description of the event */
+  readonly description: string;
+  /** Start date and time in ISO 8601 format */
+  readonly startDate: string;
+  /** End date and time in ISO 8601 format */
+  readonly endDate?: string;
+  /** URL of the event page */
+  readonly url: string;
+  /** Image URL for the event */
+  readonly image?: string;
+  /** Event location information */
+  readonly location: EventLocation;
+  /** Event organizer name */
+  readonly organizer?: string;
+}
+
+const { name, description, startDate, endDate, url, image, location, organizer } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Event',
+  name,
+  description,
+  startDate,
+  url,
+  location: {
+    '@type': 'Place',
+    name: location.name,
+    address: {
+      '@type': 'PostalAddress',
+      streetAddress: location.address,
+    },
+  },
+};
+
+if (endDate) {
+  structuredData.endDate = endDate;
+}
+
+if (image) {
+  structuredData.image = image;
+}
+
+if (organizer) {
+  structuredData.organizer = {
+    '@type': 'Organization',
+    name: organizer,
+  };
+}
+---
+
+<JsonLd data={structuredData} />

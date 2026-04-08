@@ -1,0 +1,130 @@
+---
+/**
+ * @file NavMenu.astro
+ * @description Desktop navigation menu with locale-aware links and active page highlighting.
+ * Renders a horizontal list of nav items using i18n keys and locale-prefixed URLs.
+ * Hidden on mobile (md:flex). Includes a search icon link.
+ */
+
+import { createT } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { SearchIcon } from '@repo/icons';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly currentPath?: string;
+}
+
+const { locale, currentPath } = Astro.props;
+
+const t = createT(locale);
+
+/** Nav item definition. */
+interface NavItem {
+	readonly label: string;
+	readonly href: string;
+}
+
+const navItems: readonly NavItem[] = [
+	{ label: t('nav.home', 'Inicio'), href: buildUrl({ locale, path: '/' }) },
+	{ label: t('nav.accommodations', 'Alojamientos'), href: buildUrl({ locale, path: '/alojamientos/' }) },
+	{ label: t('nav.destinations', 'Destinos'), href: buildUrl({ locale, path: '/destinos/' }) },
+	{ label: t('nav.events', 'Eventos'), href: buildUrl({ locale, path: '/eventos/' }) },
+	{ label: t('nav.blog', 'Blog'), href: buildUrl({ locale, path: '/publicaciones/' }) },
+	{ label: t('nav.contact', 'Contacto'), href: buildUrl({ locale, path: '/contacto/' }) },
+] as const;
+
+const searchHref = buildUrl({ locale, path: '/busqueda/' });
+
+/**
+ * Returns true when the given href matches the current path.
+ * Performs an exact match to avoid false positives (e.g. `/es/` matching `/es/alojamientos/`).
+ */
+function isActive(href: string): boolean {
+	if (!currentPath) return false;
+	return currentPath === href || currentPath.startsWith(href) && href !== buildUrl({ locale, path: '/' });
+}
+---
+
+<nav
+	aria-label="Main navigation"
+	class="nav-menu"
+>
+	{navItems.map(({ label, href }) => {
+		const active = isActive(href);
+		return (
+			<a
+				href={href}
+				aria-current={active ? 'page' : undefined}
+				class:list={['nav-menu__link', active && 'nav-menu__link--active']}
+			>
+				{label}
+			</a>
+		);
+	})}
+
+	<a
+		href={searchHref}
+		aria-label={t('nav.search', 'Buscar')}
+		class:list={['nav-menu__search', isActive(searchHref) && 'nav-menu__link--active']}
+	>
+		<SearchIcon size={20} weight="regular" aria-hidden="true" />
+	</a>
+</nav>
+
+<style>
+	.nav-menu {
+		display: none;
+		align-items: center;
+		gap: 0.25rem;
+		font-family: var(--font-sans);
+		font-size: var(--text-nav);
+	}
+
+	@media (min-width: 768px) {
+		.nav-menu {
+			display: flex;
+		}
+	}
+
+	.nav-menu__link {
+		padding: 0.375rem 0.75rem;
+		border-radius: var(--radius-button);
+		color: var(--core-foreground);
+		text-decoration: none;
+		transition: color var(--duration-normal) ease;
+	}
+
+	.nav-menu__link:hover {
+		color: var(--brand-accent);
+	}
+
+	.nav-menu__link:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+
+	.nav-menu__link--active {
+		color: var(--brand-accent);
+		font-weight: 600;
+	}
+
+	.nav-menu__search {
+		margin-left: 0.5rem;
+		padding: 0.375rem;
+		border-radius: var(--radius-button);
+		color: var(--core-foreground);
+		text-decoration: none;
+		transition: color var(--duration-normal) ease;
+	}
+
+	.nav-menu__search:hover {
+		color: var(--brand-accent);
+	}
+
+	.nav-menu__search:focus-visible {
+		outline: 2px solid var(--ring);
+		outline-offset: 2px;
+	}
+</style>

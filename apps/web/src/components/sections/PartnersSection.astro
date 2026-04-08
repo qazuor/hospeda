@@ -1,0 +1,207 @@
+---
+/**
+ * @file PartnersSection.astro
+ * @description Homepage partners/sponsors strip section. Renders an infinite
+ * CSS marquee animation of partner logos with grayscale filter. The track is
+ * duplicated for seamless looping. Animation pauses on hover and respects
+ * prefers-reduced-motion.
+ *
+ * Task: T-058, T-080
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { PartnerData } from '@/data/types';
+
+interface Props {
+  /** Active locale used to resolve translations. */
+  readonly locale: SupportedLocale;
+  /** Partner logo items to display. When empty, the section does not render. */
+  readonly partners?: readonly PartnerData[];
+}
+
+const { locale, partners = [] } = Astro.props;
+
+const { t } = createTranslations(locale);
+---
+
+{partners.length > 0 && (
+<section
+  class="partners"
+  aria-label={t('home.partners.title', 'Nuestros socios')}
+>
+  <div class="partners__container">
+
+    <!-- Section header -->
+    <div class="partners__header" data-reveal="up">
+      <p class="partners__tagline">{t('home.partners.tagline', 'Nuestros partners')}</p>
+      <h2 class="partners__title">
+        {t('home.partners.title', 'Empresas e instituciones que confían y apoyan')}
+      </h2>
+    </div>
+
+  </div>
+
+  <!-- Marquee: full-width, outside the max-container so the track bleeds edge-to-edge -->
+  <div class="partners-marquee" data-reveal="up">
+    <div class="partners-track">
+      <!-- First set of logos (visible, accessible) -->
+      {partners.map((partner) => (
+        partner.url ? (
+          <a
+            href={partner.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="partner-logo-link"
+            aria-label={partner.name}
+          >
+            <img
+              src={partner.logoPath}
+              alt={`Logo de ${partner.name}`}
+              class="partner-logo"
+              loading="lazy"
+              height="60"
+            />
+          </a>
+        ) : (
+          <div class="partner-logo-link" aria-label={partner.name}>
+            <img
+              src={partner.logoPath}
+              alt={`Logo de ${partner.name}`}
+              class="partner-logo"
+              loading="lazy"
+              height="60"
+            />
+          </div>
+        )
+      ))}
+      <!-- Duplicate set for seamless infinite loop (decorative, hidden from AT) -->
+      {partners.map((partner) => (
+        partner.url ? (
+          <a
+            href={partner.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="partner-logo-link"
+            aria-hidden="true"
+            tabindex="-1"
+          >
+            <img
+              src={partner.logoPath}
+              alt=""
+              class="partner-logo"
+              loading="lazy"
+              height="60"
+            />
+          </a>
+        ) : (
+          <div class="partner-logo-link" aria-hidden="true">
+            <img
+              src={partner.logoPath}
+              alt=""
+              class="partner-logo"
+              loading="lazy"
+              height="60"
+            />
+          </div>
+        )
+      ))}
+    </div>
+  </div>
+</section>
+)}
+
+<style>
+  .partners {
+    position: relative;
+    background-color: var(--core-background);
+    padding-block: var(--space-section-sm);
+    overflow: hidden;
+  }
+
+  .partners__container {
+    position: relative;
+    margin-inline: auto;
+    padding-inline: var(--space-container-x);
+    max-width: var(--container-max);
+    z-index: var(--z-content);
+  }
+
+  .partners__header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .partners__tagline {
+    font-family: var(--font-decorative);
+    font-style: italic;
+    font-size: 1.5rem;
+    color: var(--brand-primary);
+    margin: 0 0 0.5rem;
+  }
+
+  .partners__title {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-align: center;
+    color: var(--core-foreground);
+    margin: 0;
+    font-size: var(--text-h2);
+  }
+
+  .partners-marquee {
+    overflow: hidden;
+  }
+
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+
+  .partners-track {
+    display: flex;
+    gap: 3rem;
+    align-items: center;
+    animation: marquee 30s linear infinite;
+    width: max-content;
+  }
+
+  .partners-marquee:hover .partners-track {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .partners-track {
+      animation-play-state: paused;
+    }
+  }
+
+  .partner-logo {
+    max-height: 60px;
+    width: auto;
+    filter: grayscale(100%);
+    opacity: 0.65;
+    transition:
+      filter var(--duration-normal) ease,
+      opacity var(--duration-normal) ease;
+  }
+
+  .partner-logo-link:hover .partner-logo,
+  .partner-logo-link:focus-visible .partner-logo {
+    filter: grayscale(0%);
+    opacity: 1;
+  }
+
+  .partner-logo-link:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm, 8px);
+  }
+
+  .partner-logo-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+</style>

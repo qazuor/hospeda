@@ -1,0 +1,328 @@
+---
+/**
+ * @file StatsSection.astro
+ * @description Homepage statistics section. Displays platform-wide stat
+ * counters alongside a traveler image and section header. Uses a gradient
+ * background with a decorative wavy dashed line + dots connecting the stats.
+ *
+ * Figma reference: node 26:797
+ * Task: T-061
+ */
+
+import { createT } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import { AnimatedCounter } from '@/components/sections/AnimatedCounter.client';
+import type { StatItemData } from '@/data/types';
+
+interface Props {
+  /** Active locale used to resolve translations. */
+  readonly locale: SupportedLocale;
+  /** Stat items to display. When empty, the section does not render. */
+  readonly stats?: readonly StatItemData[];
+  /** Per-stat suffixes (e.g. "+"). Must match the length of stats array. */
+  readonly suffixes?: readonly (string | undefined)[];
+}
+
+const { locale, stats = [], suffixes = [] } = Astro.props;
+
+const t = createT(locale);
+---
+
+{stats.length > 0 && (
+<section
+  class="stats-section"
+  aria-label={t('home.statistics.title', 'Nuestros números')}
+>
+  <div class="stats-section__container">
+
+    <!-- Traveler image (desktop only) -->
+    <div class="stats-section__traveler" aria-hidden="true">
+      <img
+        src="/assets/images/resources/stats-traveler.png"
+        alt=""
+        class="stats-section__traveler-img"
+        loading="lazy"
+        width="135"
+        height="339"
+        onerror="this.style.display='none'"
+      />
+    </div>
+
+    <!-- Section header -->
+    <div class="stats-section__header-wrap">
+      <SectionHeader
+        tagline={t('home.statistics.accentSubtitle', 'Estadísticas')}
+        title={t('home.statistics.title', 'Nuestros números')}
+        subtitle={t('home.statistics.subtitle', 'La comunidad de turismo más grande del Litoral')}
+        alignment="left"
+      />
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stats-section__cards">
+      {stats.map((stat, i) => (
+        <div
+          class="stats-section__card"
+          data-reveal="up"
+          style={`transition-delay: ${i * 100}ms`}
+        >
+          <AnimatedCounter
+            client:visible
+            value={stat.value}
+            label={t(stat.labelKey)}
+            icon={stat.icon}
+            suffix={suffixes[i]}
+            variant="counter"
+          />
+        </div>
+      ))}
+    </div>
+
+  </div>
+
+  <!-- Wavy dashed line + dots: full viewport, vertically centered (desktop only) -->
+  <!-- Wave + dots: generated dynamically to match viewport width -->
+  <div class="stats-section__wave-wrap" aria-hidden="true">
+    <svg
+      class="stats-section__wave"
+      preserveAspectRatio="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path class="stats-section__wave-path" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="10 8" />
+    </svg>
+  </div>
+</section>
+)}
+
+<script>
+  function initWave() {
+    const section = document.querySelector('.stats-section');
+    if (!section) return;
+
+    const svg = section.querySelector('.stats-section__wave') as SVGSVGElement | null;
+    const path = section.querySelector('.stats-section__wave-path') as SVGPathElement | null;
+    const cards = section.querySelectorAll('.stats-section__card');
+    if (!svg || !path || !cards.length) return;
+
+    // Clean previous run
+    svg.querySelectorAll('.wave-dot').forEach((d) => d.remove());
+    svg.removeAttribute('viewBox');
+    cards.forEach((c) => { (c as HTMLElement).style.transform = ''; });
+
+    if (window.innerWidth < 1024) {
+      path.setAttribute('d', '');
+      return;
+    }
+
+    const svgBox = svg.getBoundingClientRect();
+    const W = svgBox.width;
+    const H = svgBox.height;
+    const NS = 'http://www.w3.org/2000/svg';
+
+    // Set viewBox to match pixel size — no stretching, 1:1 mapping
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+
+    // Generate a smooth sine wave path — extend 50px beyond each edge
+    // to guarantee coverage regardless of scrollbar/rounding offsets
+    const PAD = 50;
+    const AMP = 25;
+    const MID = H / 2;
+    const FREQ = 3;
+    const STEPS = 200;
+    const totalW = W + PAD * 2;
+    let d = `M${-PAD},${MID}`;
+    for (let i = 1; i <= STEPS; i++) {
+      const x = -PAD + (i / STEPS) * totalW;
+      const y = MID + AMP * Math.sin((i / STEPS) * Math.PI * FREQ);
+      d += ` L${x.toFixed(1)},${y.toFixed(1)}`;
+    }
+    path.setAttribute('d', d);
+
+    // Pre-sample the rendered path for Y lookup
+    const pathLen = path.getTotalLength();
+    const SAMPLES = 2000;
+    const pts: { x: number; y: number }[] = [];
+    for (let i = 0; i <= SAMPLES; i++) {
+      pts.push(path.getPointAtLength((i / SAMPLES) * pathLen));
+    }
+
+    // Place dots at each card center and offset cards to follow the wave
+    const svgRect = svg.getBoundingClientRect();
+    const CARD_SHIFT = 20; // max px shift up/down
+
+    cards.forEach((card) => {
+      const r = card.getBoundingClientRect();
+      const cx = r.left + r.width / 2 - svgRect.left;
+
+      // Find Y on path at this X
+      let bestDist = Infinity;
+      let bestY = MID;
+      for (const pt of pts) {
+        const dist = Math.abs(pt.x - cx);
+        if (dist < bestDist) { bestDist = dist; bestY = pt.y; }
+      }
+
+      // Shift card vertically to follow the wave: normalize Y from [MID-AMP, MID+AMP] to [-CARD_SHIFT, +CARD_SHIFT]
+      const normalizedY = ((bestY - MID) / AMP) * CARD_SHIFT;
+      (card as HTMLElement).style.transform = `translateY(${normalizedY}px)`;
+
+      // Halo
+      const halo = document.createElementNS(NS, 'circle');
+      halo.setAttribute('cx', String(cx));
+      halo.setAttribute('cy', String(bestY));
+      halo.setAttribute('r', '8');
+      halo.setAttribute('fill', 'var(--accent)');
+      halo.setAttribute('opacity', '0.25');
+      halo.classList.add('wave-dot');
+      svg.appendChild(halo);
+
+      // Solid dot
+      const dot = document.createElementNS(NS, 'circle');
+      dot.setAttribute('cx', String(cx));
+      dot.setAttribute('cy', String(bestY));
+      dot.setAttribute('r', '4');
+      dot.setAttribute('fill', 'var(--accent)');
+      dot.classList.add('wave-dot');
+      svg.appendChild(dot);
+    });
+  }
+
+  if (document.readyState === 'complete') {
+    initWave();
+  } else {
+    window.addEventListener('load', initWave);
+  }
+  window.addEventListener('resize', initWave);
+</script>
+
+<style>
+  /* ── Section wrapper ──────────────────────────────────────────── */
+  .stats-section {
+    position: relative;
+    overflow: clip;
+    padding-top: var(--space-48, 3rem);
+    padding-bottom: var(--space-48, 3rem);
+    background: linear-gradient(
+      to top,
+      var(--brand-secondary) 0%,
+      var(--brand-tertiary) 100%
+    );
+  }
+
+  /* ── Content container ────────────────────────────────────────── */
+  .stats-section__container {
+    position: relative;
+    z-index: 2;
+    max-width: var(--container-max, 1350px);
+    margin-inline: auto;
+    padding-inline: var(--space-6, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8, 2rem);
+    align-items: flex-start;
+  }
+
+  /* ── Traveler image (hidden by default on mobile) ─────────────── */
+  .stats-section__traveler {
+    display: none;
+    flex-shrink: 0;
+    align-self: flex-end;
+  }
+
+  .stats-section__traveler-img {
+    width: 135px;
+    height: 339px;
+    object-fit: contain;
+    object-position: bottom center;
+    display: block;
+  }
+
+  /* ── Header wrapper ───────────────────────────────────────────── */
+  .stats-section__header-wrap {
+    flex-shrink: 0;
+  }
+
+  /* ── Stat cards ───────────────────────────────────────────────── */
+  .stats-section__cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-32, 2rem);
+    width: 100%;
+  }
+
+  .stats-section__card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 27px;
+    min-width: 120px;
+  }
+
+  /* ── Wavy line wrapper (desktop only) ────────────────────────── */
+  .stats-section__wave-wrap {
+    display: none;
+  }
+
+  .stats-section__wave {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ── Tablet: 768px+ ───────────────────────────────────────────── */
+  @media (min-width: 768px) {
+    .stats-section__container {
+      align-items: center;
+    }
+
+    .stats-section__cards {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: var(--space-32, 2rem);
+    }
+  }
+
+  /* ── Desktop: 1024px+ ─────────────────────────────────────────── */
+  @media (min-width: 1024px) {
+    .stats-section__container {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: var(--space-48, 3rem);
+    }
+
+    .stats-section__traveler {
+      display: block;
+    }
+
+    .stats-section__header-wrap {
+      min-width: 260px;
+      max-width: 300px;
+    }
+
+    .stats-section__cards {
+      flex: 1;
+      display: flex;
+      flex-direction: row;
+      flex-wrap: nowrap;
+      gap: var(--space-32, 2rem);
+      align-items: flex-start;
+    }
+
+    .stats-section__card {
+      flex: 1;
+    }
+
+    /* Full-viewport wavy dashed line — centered vertically, behind content */
+    .stats-section__wave-wrap {
+      display: block;
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 80px;
+      transform: translateY(-50%);
+      color: oklch(0.15 0 0 / 0.3);
+      pointer-events: none;
+      z-index: 1;
+    }
+  }
+</style>

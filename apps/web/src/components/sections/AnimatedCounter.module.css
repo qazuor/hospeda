@@ -1,0 +1,68 @@
+/* StatCounter.module.css — Animated stat counter island */
+
+/* --- Badge variant --- */
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: var(--radius-pill);
+    background-color: oklch(from var(--brand-accent) l c h / 0.1);
+    padding: 0.25rem 0.75rem;
+}
+
+.badgeValue {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--brand-accent);
+    font-variant-numeric: tabular-nums;
+}
+
+.badgeLabel {
+    font-family: var(--font-sans);
+    color: var(--core-muted-foreground);
+}
+
+/* --- Counter variant --- */
+
+.counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    text-align: center;
+}
+
+.iconCircle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    background-color: oklch(from var(--brand-accent) l c h / 0.1);
+    width: 72px;
+    height: 72px;
+    margin-bottom: 2.5rem;
+}
+
+.iconFallback {
+    font-family: var(--font-sans);
+    font-weight: 700;
+    color: var(--brand-accent);
+    font-size: var(--text-h4);
+}
+
+.counterValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    color: var(--core-foreground);
+    font-variant-numeric: tabular-nums;
+    font-size: clamp(2rem, 4vw, 2.75rem);
+    margin-bottom: 0;
+}
+
+.counterLabel {
+    font-family: var(--font-sans);
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    margin-top: -10px;
+}

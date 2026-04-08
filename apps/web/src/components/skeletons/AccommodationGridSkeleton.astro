@@ -1,0 +1,140 @@
+---
+/**
+ * @file AccommodationGridSkeleton.astro
+ * @description Skeleton fallback for the accommodations grid (Server Island).
+ * Renders 8 placeholder cards with pulse animation using web2 design tokens.
+ */
+---
+
+<div class="skeleton-grid skeleton-grid--accommodations">
+  {Array.from({ length: 8 }).map(() => (
+    <div class="skeleton-card">
+      <div class="skeleton-image skeleton-image--4-3 skeleton-pulse" />
+      <div class="skeleton-content">
+        <div class="skeleton-line skeleton-line--title skeleton-pulse" />
+        <div class="skeleton-line skeleton-line--subtitle skeleton-pulse" />
+        <div class="skeleton-badges">
+          <div class="skeleton-badge skeleton-pulse" />
+          <div class="skeleton-badge skeleton-pulse" />
+        </div>
+        <div class="skeleton-footer">
+          <div class="skeleton-line skeleton-line--price skeleton-pulse" />
+          <div class="skeleton-button skeleton-pulse" />
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
+<style>
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.8s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .skeleton-pulse {
+      animation: none;
+      opacity: 0.6;
+    }
+  }
+
+  .skeleton-grid--accommodations {
+    display: grid;
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    gap: var(--space-card-gap);
+  }
+
+  @media (min-width: 640px) {
+    .skeleton-grid--accommodations {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .skeleton-grid--accommodations {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .skeleton-grid--accommodations {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .skeleton-card {
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+  }
+
+  .skeleton-image {
+    background-color: var(--border);
+    width: 100%;
+    border-radius: var(--radius-organic);
+  }
+
+  .skeleton-image--4-3 {
+    aspect-ratio: 4 / 3;
+  }
+
+  .skeleton-content {
+    padding: var(--space-card-content);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .skeleton-line {
+    background-color: var(--border);
+    border-radius: var(--radius-sm);
+    height: 0.875rem;
+  }
+
+  .skeleton-line--title {
+    width: 75%;
+    height: 1rem;
+  }
+
+  .skeleton-line--subtitle {
+    width: 50%;
+  }
+
+  .skeleton-line--price {
+    width: 6rem;
+    height: 1.125rem;
+  }
+
+  .skeleton-badges {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .skeleton-badge {
+    background-color: var(--border);
+    border-radius: var(--radius-pill);
+    height: 1.5rem;
+    width: 4rem;
+  }
+
+  .skeleton-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .skeleton-button {
+    background-color: var(--border);
+    border-radius: var(--radius-button);
+    height: 2rem;
+    width: 5rem;
+  }
+</style>

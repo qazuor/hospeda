@@ -1,0 +1,392 @@
+---
+/**
+ * @file Pagination.astro
+ * @description Accessible pagination component with URL-segment and query-param routing modes.
+ * Renders previous/next buttons and page numbers with an ellipsis algorithm.
+ * Mobile-responsive: shows 3 page buttons (current ± 1) on mobile, 5 on desktop.
+ * Uses web2 CSS custom properties and scoped styles (no Tailwind).
+ *
+ * @example Segment mode (default)
+ * ```astro
+ * <Pagination
+ *   currentPage={2}
+ *   totalPages={10}
+ *   baseUrl="/es/alojamientos"
+ *   locale="es"
+ * />
+ * // Page 1 → /es/alojamientos/
+ * // Page 2 → /es/alojamientos/page/2/
+ * ```
+ *
+ * @example Query-param mode
+ * ```astro
+ * <Pagination
+ *   currentPage={3}
+ *   totalPages={10}
+ *   baseUrl="/es/busqueda"
+ *   locale="es"
+ *   searchParams={new URLSearchParams('q=playa&tipo=cabana')}
+ * />
+ * // Page 1 → /es/busqueda/?q=playa&tipo=cabana
+ * // Page 3 → /es/busqueda/?q=playa&tipo=cabana&page=3
+ * ```
+ */
+
+import { createT, type SupportedLocale } from '../../lib/i18n';
+
+/**
+ * Props for the Pagination component.
+ */
+interface Props {
+    /** Current active page number (1-based). */
+    readonly currentPage: number;
+    /** Total number of pages available. */
+    readonly totalPages: number;
+    /**
+     * Base URL without a page segment (e.g. "/es/alojamientos").
+     * Must NOT end with a page segment like "/page/2".
+     */
+    readonly baseUrl: string;
+    /** Locale used for ARIA labels and translated button text. Defaults to "es". */
+    readonly locale?: SupportedLocale;
+    /**
+     * When provided, the component switches to query-param mode: `?page=N&...params`.
+     * Pass any extra search params that must be preserved across pages (e.g. filters).
+     * Page 1 removes the `page` param entirely to keep URLs canonical.
+     */
+    readonly searchParams?: URLSearchParams;
+    /** Additional CSS class merged onto the `<nav>` element. */
+    readonly class?: string;
+}
+
+const {
+    currentPage,
+    totalPages,
+    baseUrl,
+    locale = 'es',
+    searchParams,
+    class: className,
+} = Astro.props;
+
+const t = createT(locale);
+
+/** Resolved i18n labels for pagination controls. */
+const labels = {
+    previous: t('ui.pagination.previous', 'Anterior'),
+    next:     t('ui.pagination.next',     'Siguiente'),
+    page:     t('ui.pagination.page',     'Página'),
+    of:       t('ui.pagination.of',       'de'),
+} as const;
+
+/**
+ * Build the href for a given page number.
+ *
+ * In query-param mode (`searchParams` provided):
+ *   - Clones the URLSearchParams to avoid mutation.
+ *   - Removes the `page` param for page 1 (canonical URL).
+ *   - Appends `?qs` only when there are params remaining.
+ *
+ * In segment mode (default):
+ *   - Page 1 → `{base}/`
+ *   - Page N → `{base}/page/{N}/`
+ *
+ * @param page - Target page number.
+ * @returns Fully formed URL string.
+ */
+function buildPageUrl(page: number): string {
+    const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+    if (searchParams) {
+        const params = new URLSearchParams(searchParams);
+        if (page === 1) {
+            params.delete('page');
+        } else {
+            params.set('page', String(page));
+        }
+        const qs = params.toString();
+        return qs ? `${base}/?${qs}` : `${base}/`;
+    }
+
+    if (page === 1) {
+        return `${base}/`;
+    }
+    return `${base}/page/${page}/`;
+}
+
+/**
+ * Generate the sequence of page numbers (and ellipsis sentinels) to render.
+ *
+ * Rules (desktop, max 5 visible page numbers):
+ * - Total ≤ 5: show all pages without ellipsis.
+ * - Near start (current ≤ 3): 1, 2, 3, 4, …, last
+ * - Near end (current ≥ last - 2): 1, …, last-3, last-2, last-1, last
+ * - Middle: 1, …, current-1, current, current+1, …, last
+ *
+ * Sentinel value `-1` represents an ellipsis ("…").
+ *
+ * @param current - Current active page (1-based).
+ * @param total   - Total number of pages.
+ * @returns Array of page numbers with `-1` for ellipsis positions.
+ */
+function getPageNumbers(current: number, total: number): readonly number[] {
+    if (total <= 5) {
+        return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    if (current <= 3) {
+        return [1, 2, 3, 4, -1, total] as const;
+    }
+
+    if (current >= total - 2) {
+        return [1, -1, total - 3, total - 2, total - 1, total] as const;
+    }
+
+    return [1, -1, current - 1, current, current + 1, -1, total] as const;
+}
+
+const pageNumbers = getPageNumbers(currentPage, totalPages);
+const hasPrevious = currentPage > 1;
+const hasNext     = currentPage < totalPages;
+---
+
+{totalPages > 1 && (
+    <nav
+        class:list={['pagination', className]}
+        aria-label={`${labels.page} ${currentPage} ${labels.of} ${totalPages}`}
+        role="navigation"
+    >
+        <ul class="pagination__list">
+            {/* Previous button */}
+            <li>
+                {hasPrevious ? (
+                    <a
+                        href={buildPageUrl(currentPage - 1)}
+                        class="pagination__link pagination__link--prev"
+                        rel="prev"
+                        aria-label={labels.previous}
+                    >
+                        <span class="pagination__label-full">{labels.previous}</span>
+                        <span class="pagination__label-short" aria-hidden="true">&lsaquo;</span>
+                        <span class="pagination__sr-only">{labels.previous}</span>
+                    </a>
+                ) : (
+                    <span
+                        class="pagination__link pagination__link--disabled"
+                        aria-disabled="true"
+                        aria-label={labels.previous}
+                    >
+                        <span class="pagination__label-full">{labels.previous}</span>
+                        <span class="pagination__label-short" aria-hidden="true">&lsaquo;</span>
+                    </span>
+                )}
+            </li>
+
+            {/* Page number buttons */}
+            {pageNumbers.map((p) => {
+                if (p === -1) {
+                    return (
+                        <li class="pagination__ellipsis-item pagination__ellipsis-item--desktop">
+                            <span
+                                class="pagination__ellipsis"
+                                aria-hidden="true"
+                            >
+                                &hellip;
+                            </span>
+                        </li>
+                    );
+                }
+
+                const isCurrent = p === currentPage;
+                const isHiddenOnMobile = Math.abs(p - currentPage) > 1;
+
+                return isCurrent ? (
+                    <li>
+                        <span
+                            class="pagination__link pagination__link--active"
+                            aria-current="page"
+                            aria-label={`${labels.page} ${p}`}
+                        >
+                            {p}
+                        </span>
+                    </li>
+                ) : (
+                    <li class:list={[isHiddenOnMobile && 'pagination__item--desktop']}>
+                        <a
+                            href={buildPageUrl(p)}
+                            class="pagination__link"
+                            aria-label={`${labels.page} ${p}`}
+                        >
+                            {p}
+                        </a>
+                    </li>
+                );
+            })}
+
+            {/* Next button */}
+            <li>
+                {hasNext ? (
+                    <a
+                        href={buildPageUrl(currentPage + 1)}
+                        class="pagination__link pagination__link--next"
+                        rel="next"
+                        aria-label={labels.next}
+                    >
+                        <span class="pagination__label-full">{labels.next}</span>
+                        <span class="pagination__label-short" aria-hidden="true">&rsaquo;</span>
+                        <span class="pagination__sr-only">{labels.next}</span>
+                    </a>
+                ) : (
+                    <span
+                        class="pagination__link pagination__link--disabled"
+                        aria-disabled="true"
+                        aria-label={labels.next}
+                    >
+                        <span class="pagination__label-full">{labels.next}</span>
+                        <span class="pagination__label-short" aria-hidden="true">&rsaquo;</span>
+                    </span>
+                )}
+            </li>
+        </ul>
+    </nav>
+)}
+
+<style>
+    /* Screen-reader only utility */
+    .pagination__sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border-width: 0;
+    }
+
+    /* Nav container */
+    .pagination {
+        margin-top: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Ordered list of page items */
+    .pagination__list {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    @media (min-width: 640px) {
+        .pagination__list {
+            gap: 0.5rem;
+        }
+    }
+
+    /* Base link / button styles */
+    .pagination__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button);
+        padding: 0.5rem 0.75rem;
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        text-decoration: none;
+        transition: background-color var(--duration-fast) ease,
+                    color var(--duration-fast) ease;
+        cursor: pointer;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    a.pagination__link:hover {
+        background-color: var(--muted);
+        color: var(--core-foreground);
+    }
+
+    /* Active / current page */
+    .pagination__link--active {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        border-color: var(--brand-accent);
+        cursor: default;
+    }
+
+    /* Disabled prev / next */
+    .pagination__link--disabled {
+        color: oklch(from var(--core-muted-foreground) l c h / 0.5);
+        opacity: 0.5;
+        cursor: not-allowed;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-button);
+        padding: 0.5rem 0.75rem;
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    /* Ellipsis token */
+    .pagination__ellipsis {
+        padding: 0.5rem 0.25rem;
+        color: var(--core-muted-foreground);
+        font-size: var(--text-body-sm);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Responsive: hide far-from-current page numbers on mobile */
+    .pagination__item--desktop {
+        display: none;
+    }
+
+    /* Responsive: hide ellipsis on mobile */
+    .pagination__ellipsis-item--desktop {
+        display: none;
+    }
+
+    /* Responsive: show short label (‹ ›) on mobile, full label on desktop */
+    .pagination__label-full {
+        display: none;
+    }
+
+    .pagination__label-short {
+        display: inline;
+    }
+
+    @media (min-width: 640px) {
+        .pagination__item--desktop {
+            display: list-item;
+        }
+
+        .pagination__ellipsis-item--desktop {
+            display: list-item;
+        }
+
+        .pagination__label-full {
+            display: inline;
+        }
+
+        .pagination__label-short {
+            display: none;
+        }
+
+        /* Hide .pagination__sr-only on desktop since label-full is visible */
+        .pagination__link--prev .pagination__sr-only,
+        .pagination__link--next .pagination__sr-only {
+            display: none;
+        }
+    }
+</style>

@@ -1,0 +1,101 @@
+---
+/**
+ * @file NavigationProgress.astro
+ * @description Thin progress bar shown at the top of the viewport during page navigation.
+ *
+ * Integrates with Astro View Transitions events (`astro:before-preparation` and
+ * `astro:after-swap`) to animate a slim progress indicator. Also includes a click
+ * fallback for non-View Transitions navigation (internal link clicks) and a
+ * `pageshow` handler to complete the bar after regular navigations.
+ *
+ * Purely decorative — hidden from assistive technologies via `aria-hidden="true"`.
+ * Uses `--brand-accent` for color and `--z-modal` for stacking context.
+ * No Tailwind classes.
+ */
+---
+
+<div
+    id="nav-progress"
+    class="nav-progress"
+    style="width: 0%; opacity: 0;"
+    aria-hidden="true"
+></div>
+
+<script>
+    const progressBar = document.getElementById('nav-progress');
+
+    if (progressBar) {
+        let animationFrame: number | null = null;
+
+        function startProgress(): void {
+            if (!progressBar) return;
+            progressBar.style.opacity = '1';
+            progressBar.style.width = '0%';
+
+            let width = 0;
+            const animate = (): void => {
+                if (width < 90) {
+                    // Quick start, then gradually slow down
+                    const increment = width < 30 ? 3 : width < 60 ? 1 : 0.5;
+                    width += increment;
+                    progressBar.style.width = `${width}%`;
+                    animationFrame = requestAnimationFrame(animate);
+                }
+            };
+            animationFrame = requestAnimationFrame(animate);
+        }
+
+        function completeProgress(): void {
+            if (!progressBar) return;
+            if (animationFrame) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = null;
+            }
+            progressBar.style.width = '100%';
+            setTimeout(() => {
+                if (!progressBar) return;
+                progressBar.style.opacity = '0';
+                setTimeout(() => {
+                    if (!progressBar) return;
+                    progressBar.style.width = '0%';
+                }, 300);
+            }, 200);
+        }
+
+        // Astro View Transitions lifecycle events
+        document.addEventListener('astro:before-preparation', startProgress);
+        document.addEventListener('astro:after-swap', completeProgress);
+
+        // Fallback for non-View Transitions internal link clicks
+        document.addEventListener('click', (event: MouseEvent) => {
+            const target = event.target as HTMLElement;
+            const anchor = target.closest('a');
+            if (
+                anchor &&
+                anchor.href &&
+                !anchor.href.startsWith('#') &&
+                !anchor.target &&
+                anchor.origin === window.location.origin
+            ) {
+                startProgress();
+            }
+        });
+
+        // Complete the bar when a regular (non-VT) navigation finishes
+        window.addEventListener('pageshow', completeProgress);
+    }
+</script>
+
+<style>
+    .nav-progress {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 3px;
+        background-color: var(--brand-accent);
+        z-index: var(--z-modal);
+        transition: width var(--duration-fast) ease-out,
+                    opacity 0.3s ease-out;
+        pointer-events: none;
+    }
+</style>

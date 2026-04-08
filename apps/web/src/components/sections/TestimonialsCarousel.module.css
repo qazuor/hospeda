@@ -1,0 +1,190 @@
+/* TestimonialsCarousel.module.css — Peek-layout carousel for testimonials */
+
+/* -------------------------------------------------------------------------
+   Wrapper
+   ------------------------------------------------------------------------- */
+
+.wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    align-items: center;
+    width: 100%;
+    position: relative;
+}
+
+/* -------------------------------------------------------------------------
+   Carousel area — viewport with prev/next arrows
+   ------------------------------------------------------------------------- */
+
+.carouselArea {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+/* -------------------------------------------------------------------------
+   Prev / Next arrows
+   ------------------------------------------------------------------------- */
+
+.arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-pill);
+    border: none;
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-card);
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition: box-shadow var(--duration-normal) ease, opacity var(--duration-normal) ease;
+}
+
+.arrow:hover {
+    box-shadow: var(--shadow-card-hover);
+}
+
+.arrow:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.arrow:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.arrowPrev {
+    left: 0.5rem;
+}
+
+.arrowNext {
+    right: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .arrowPrev {
+        left: 1rem;
+    }
+
+    .arrowNext {
+        right: 1rem;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   Main carousel — peek layout
+   ------------------------------------------------------------------------- */
+
+.mainViewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+.mainTrack {
+    display: flex;
+    touch-action: pan-y;
+}
+
+/* Mobile: 88% width so next/prev slightly peek */
+.mainSlide {
+    min-width: 0;
+    flex: 0 0 88%;
+    padding-left: 0.625rem;
+    padding-right: 0.625rem;
+    transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease, filter
+        var(--duration-normal) ease;
+    /* Non-active (peek) slides are dimmed, scaled down, and blurred */
+    opacity: 0.35;
+    transform: scale(0.95);
+    filter: blur(2px);
+}
+
+/* Desktop: ~38% width so 2 cards are fully visible with peek on both sides */
+@media (min-width: 768px) {
+    .mainSlide {
+        flex: 0 0 38%;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+}
+
+/* Active slide: full opacity, scale, and no blur */
+.mainSlideActive {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0);
+}
+
+.slideCard {
+    background-color: var(--core-card);
+    border-radius: var(--radius-card);
+    padding: 1.5rem 1.25rem 1.25rem;
+    box-shadow: var(--shadow-card);
+    height: 100%;
+    min-height: 160px;
+    transition: box-shadow var(--duration-normal) ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.slideCard:hover {
+    box-shadow: var(--shadow-card-hover);
+}
+
+@media (min-width: 768px) {
+    .slideCard {
+        padding: 1.75rem 1.5rem 1.5rem;
+    }
+}
+
+/* -------------------------------------------------------------------------
+   Spacer between carousel and dots
+   ------------------------------------------------------------------------- */
+
+.dotsWrapper {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* -------------------------------------------------------------------------
+   Modern pill dots navigation
+   ------------------------------------------------------------------------- */
+
+.dot {
+    display: block;
+    height: 0.5rem;
+    /* Default width for inactive dots */
+    width: 0.5rem;
+    border-radius: var(--radius-pill);
+    background-color: var(--brand-secondary-foreground);
+    opacity: 0.35;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: width var(--duration-normal) ease, opacity var(--duration-normal) ease,
+        background-color var(--duration-normal) ease;
+}
+
+.dot:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+/* Active dot stretches into a pill */
+.dotActive {
+    width: 1.5rem;
+    background-color: var(--brand-accent);
+    opacity: 1;
+}

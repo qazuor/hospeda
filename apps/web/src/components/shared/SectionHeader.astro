@@ -1,0 +1,111 @@
+---
+/**
+ * @file SectionHeader.astro
+ * @description Reusable section header with tagline, title, and optional subtitle.
+ * Supports center (default) and left alignment variants. When `actionLabel` and
+ * `actionHref` are provided the header renders as a flex row with the text block
+ * on the left and a pill action button on the right.
+ */
+
+interface Props {
+  /** Decorative tagline rendered in the Caveat handwritten font above the title. */
+  readonly tagline: string;
+  /** Main section title rendered in the Geologica heading font. */
+  readonly title: string;
+  /** Optional supporting text below the title. */
+  readonly subtitle?: string;
+  /** Text alignment for the header block. Defaults to 'center'. */
+  readonly alignment?: 'center' | 'left';
+  /**
+   * Color variant. Use 'dark' when placed on dark/surface-dark backgrounds
+   * to ensure title and subtitle text is legible.
+   */
+  readonly variant?: 'light' | 'dark';
+  /**
+   * Label for an optional pill action button rendered to the right of the header.
+   * Requires `actionHref`. Only rendered when `alignment` is 'left'.
+   */
+  readonly actionLabel?: string;
+  /** Destination URL for the optional action button. */
+  readonly actionHref?: string;
+}
+
+const {
+  tagline,
+  title,
+  subtitle,
+  alignment = 'center',
+  variant = 'light',
+  actionLabel,
+  actionHref,
+} = Astro.props;
+
+const hasAction = Boolean(actionLabel && actionHref && alignment === 'left');
+---
+
+<div
+  class:list={[
+    'section-header',
+    {
+      'section-header--left': alignment === 'left',
+      'section-header--dark': variant === 'dark',
+      'section-header--with-action': hasAction,
+    },
+  ]}
+>
+  <div class="section-header__text">
+    <p class="section-header__tagline">{tagline}</p>
+    <h2 class="section-header__title">{title}</h2>
+    {subtitle && <p class="section-header__subtitle">{subtitle}</p>}
+  </div>
+  {
+    hasAction && (
+      <a href={actionHref} class="section-header__action">
+        {actionLabel}
+      </a>
+    )
+  }
+</div>
+
+<style>
+  .section-header--with-action {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header--with-action .section-header__text {
+    flex: 1 1 auto;
+  }
+
+  .section-header__action {
+    flex-shrink: 0;
+    margin-top: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 12px 24px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: linear-gradient(135deg, oklch(0.25 0.03 220), oklch(0.18 0.03 200));
+    color: oklch(0.95 0.01 210);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity var(--duration-normal) ease;
+    margin-bottom: var(--space-section-header-mb);
+  }
+
+  .section-header__action:hover {
+    opacity: 0.85;
+  }
+
+  .section-header__action:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+</style>

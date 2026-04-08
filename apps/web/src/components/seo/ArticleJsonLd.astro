@@ -1,0 +1,66 @@
+---
+/**
+ * @file ArticleJsonLd.astro
+ * @description Article JSON-LD component for blog posts.
+ * Generates schema.org Article structured data.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Article author interface */
+export interface ArticleAuthor {
+  /** Author name */
+  readonly name: string;
+  /** Author profile URL */
+  readonly url?: string;
+}
+
+/** Props interface for ArticleJsonLd component. */
+interface Props {
+  /** Article headline/title */
+  readonly headline: string;
+  /** Article description */
+  readonly description: string;
+  /** URL of the article page */
+  readonly url: string;
+  /** Image URL for the article */
+  readonly image?: string;
+  /** Publication date in ISO 8601 format */
+  readonly datePublished: string;
+  /** Last modification date in ISO 8601 format */
+  readonly dateModified?: string;
+  /** Article author information */
+  readonly author: ArticleAuthor;
+}
+
+const { headline, description, url, image, datePublished, dateModified, author } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'Article',
+  headline,
+  description,
+  url,
+  datePublished,
+  author: {
+    '@type': 'Person',
+    name: author.name,
+    ...(author.url && { url: author.url }),
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'Hospeda',
+    url: 'https://hospeda.com',
+  },
+};
+
+if (image) {
+  structuredData.image = image;
+}
+
+if (dateModified) {
+  structuredData.dateModified = dateModified;
+}
+---
+
+<JsonLd data={structuredData} />

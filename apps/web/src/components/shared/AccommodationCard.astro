@@ -1,0 +1,653 @@
+---
+/**
+ * @file AccommodationCard.astro
+ * @description Accommodation card matching Figma node 965:102 (ACCOMMODATION CARD V2).
+ * Features: image with wave separator, status corner badge, featured badge,
+ * favorite + photo count, category pill, location bar, amenities, stars, price + CTA.
+ */
+
+import {
+	FavoriteIcon,
+	GalleryIcon,
+	LocationIcon,
+	StarIcon,
+	WifiIcon,
+	WifiHighIcon,
+	PoolIcon,
+	ParkingIcon,
+	BbqGrillIcon,
+	CoffeeIcon,
+	CarIcon,
+	KitchenIcon,
+	SharedKitchenIcon,
+	AirConditioningIcon,
+	BreakfastIcon,
+	SpaServicesIcon,
+	RestaurantIcon,
+	ThermalPoolsIcon,
+} from '@repo/icons';
+import { getAccommodationTypeColor } from '@/lib/colors';
+import { formatPrice } from '@/lib/format-utils';
+import { buildUrl } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
+import type { AccommodationCardData, CardAmenityFeature } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly data: AccommodationCardData;
+	readonly locale: SupportedLocale;
+}
+
+const { data, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const detailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
+const formattedPrice = data.price
+	? formatPrice({ amount: data.price.amount, currency: data.price.currency, locale })
+	: null;
+
+/** Maximum number of amenity icons shown in the card row. */
+const MAX_AMENITIES = 4;
+const visibleAmenities = (data.amenities ?? []).slice(0, MAX_AMENITIES);
+const extraAmenities = Math.max(0, (data.amenities?.length ?? 0) - MAX_AMENITIES);
+const fullStars = Math.floor(data.averageRating);
+const hasHalfStar = data.averageRating - fullStars >= 0.5;
+
+/** Accommodation is "new" if created less than 30 days ago. */
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = data.createdAt
+	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
+	: false;
+
+/**
+ * Resolves the Phosphor icon name stored in amenity data to the corresponding
+ * `@repo/icons` component. Unknown names fall back to `WifiIcon`.
+ *
+ * @param amenity - The amenity item containing the `icon` field.
+ * @returns The resolved icon component.
+ */
+function resolveAmenityIcon(amenity: CardAmenityFeature): typeof WifiIcon {
+	/** Map from icon identifiers to imported components.
+	 *  Supports both raw names ("Wifi") and seed-style suffixed names ("WifiIcon"). */
+	const iconNameMap: Record<string, typeof WifiIcon> = {
+		WifiHigh: WifiHighIcon,
+		WifiHighIcon: WifiHighIcon,
+		Wifi: WifiIcon,
+		WifiIcon: WifiIcon,
+		Waves: PoolIcon,
+		Pool: PoolIcon,
+		PoolIcon: PoolIcon,
+		Car: CarIcon,
+		CarIcon: CarIcon,
+		Parking: ParkingIcon,
+		ParkingIcon: ParkingIcon,
+		FireSimple: BbqGrillIcon,
+		Bbq: BbqGrillIcon,
+		BbqGrill: BbqGrillIcon,
+		BbqGrillIcon: BbqGrillIcon,
+		Coffee: CoffeeIcon,
+		CoffeeIcon: CoffeeIcon,
+		CoffeeMaker: CoffeeIcon,
+		CoffeeMakerIcon: CoffeeIcon,
+		Breakfast: BreakfastIcon,
+		BreakfastIcon: BreakfastIcon,
+		CookingPot: KitchenIcon,
+		Kitchen: KitchenIcon,
+		KitchenIcon: KitchenIcon,
+		SharedKitchen: SharedKitchenIcon,
+		SharedKitchenIcon: SharedKitchenIcon,
+		Snowflake: AirConditioningIcon,
+		AirConditioning: AirConditioningIcon,
+		AirConditioningIcon: AirConditioningIcon,
+		Heating: AirConditioningIcon,
+		HeatingIcon: AirConditioningIcon,
+		Sparkle: SpaServicesIcon,
+		Spa: SpaServicesIcon,
+		SpaServices: SpaServicesIcon,
+		SpaServicesIcon: SpaServicesIcon,
+		ForkKnife: RestaurantIcon,
+		Restaurant: RestaurantIcon,
+		RestaurantIcon: RestaurantIcon,
+		ThermalPool: ThermalPoolsIcon,
+		ThermalPools: ThermalPoolsIcon,
+		ThermalPoolsIcon: ThermalPoolsIcon,
+		Lightning: WifiHighIcon,
+		Shower: PoolIcon,
+		Lock: ParkingIcon,
+	};
+
+	/** Fallback map from amenity key/slug to icon component. */
+	const keyMap: Record<string, typeof WifiIcon> = {
+		wifi: WifiHighIcon,
+		pool: PoolIcon,
+		parking: ParkingIcon,
+		bbq: BbqGrillIcon,
+		breakfast: BreakfastIcon,
+		coffee: CoffeeIcon,
+		kitchen: KitchenIcon,
+		'shared-kitchen': SharedKitchenIcon,
+		ac: AirConditioningIcon,
+		'air-conditioning': AirConditioningIcon,
+		spa: SpaServicesIcon,
+		restaurant: RestaurantIcon,
+		'thermal-pool': ThermalPoolsIcon,
+		'beach-access': PoolIcon,
+		bathrooms: PoolIcon,
+		electricity: WifiHighIcon,
+		locker: ParkingIcon,
+	};
+
+	return iconNameMap[amenity.icon ?? ''] ?? keyMap[amenity.key] ?? WifiIcon;
+}
+---
+
+<article class="acc-card">
+	<a href={detailUrl} class="acc-card__link" aria-label={data.name}>
+		<!-- IMAGE AREA -->
+		<div class="acc-card__image-area">
+			<img
+				src={data.featuredImage || '/assets/images/placeholder-accommodation.svg'}
+				alt={data.name}
+				loading="lazy"
+				decoding="async"
+				class="acc-card__img"
+				width="432"
+				height="220"
+				onerror="this.onerror=null;this.src='/assets/images/placeholder-accommodation.svg';"
+			/>
+
+			<!-- Status corner (diagonal) - shown for accommodations created in the last 30 days -->
+			{isNew && (
+				<div class="acc-card__status-corner" aria-hidden="true">
+					<span class="acc-card__status-text">{t('home.accommodations.badge.new', 'Nuevo')}</span>
+				</div>
+			)}
+
+			<!-- Featured badge -->
+			{data.isFeatured && (
+				<div class="acc-card__featured-badge">
+					<span>{t('home.accommodations.badge.featured', 'Destacado')}</span>
+				</div>
+			)}
+
+			<!-- Wave separator -->
+			<div class="acc-card__wave" aria-hidden="true">
+				<svg viewBox="0 0 432 40" preserveAspectRatio="none" fill="var(--core-card, white)">
+					<path d="M0 40V22C72 8 144 0 216 6C288 12 360 24 432 22V40H0Z" />
+				</svg>
+			</div>
+
+			<!-- Top right actions -->
+			<div class="acc-card__actions">
+				<button type="button" class="acc-card__fav-btn" aria-label={`Guardar ${data.name}`}>
+					<FavoriteIcon size={16} weight="regular" aria-hidden="true" />
+				</button>
+				<div class="acc-card__photo-count">
+					<GalleryIcon size={16} weight="fill" aria-hidden="true" />
+					<span>5</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- CONTENT AREA -->
+		<div class="acc-card__content">
+			<!-- Category + Location row -->
+			<div class="acc-card__category-row">
+				<span class="acc-card__category-badge">
+					{t(`common.enums.accommodationType.${data.type.toLowerCase()}`, data.type).toUpperCase()}
+				</span>
+				<div class="acc-card__location-bar">
+					<LocationIcon size={12} weight="fill" aria-hidden="true" />
+					<span>{data.location.city}</span>
+				</div>
+			</div>
+
+			<!-- Name -->
+			<h3 class="acc-card__name">{data.name}</h3>
+
+			<!-- Description -->
+			<p class="acc-card__description">{data.summary}</p>
+
+			<!-- Amenities row: dynamic loop over actual amenities data -->
+			{visibleAmenities.length > 0 && (
+				<div class="acc-card__amenities" aria-label={t('home.accommodations.amenities.label', 'Amenidades')}>
+					{visibleAmenities.map((amenity) => {
+						const IconComponent = resolveAmenityIcon(amenity);
+						return (
+							<span class="acc-card__amenity-icon" data-tooltip={amenity.label}>
+								<IconComponent size={16} weight="regular" aria-hidden="true" />
+							</span>
+						);
+					})}
+					{extraAmenities > 0 && (
+						<span class="acc-card__amenities-more">+{extraAmenities}</span>
+					)}
+				</div>
+			)}
+
+			<!-- Stars + rating row -->
+			{data.averageRating > 0 && (
+				<div class="acc-card__stars">
+					{Array.from({ length: 5 }).map((_, i) => (
+						<span class={i < fullStars ? 'acc-card__star--filled' : 'acc-card__star--empty'}>
+							<StarIcon size={14} weight={i < fullStars ? 'fill' : 'regular'} aria-hidden="true" />
+						</span>
+					))}
+					<span class="acc-card__rating-value">{data.averageRating.toFixed(1)}</span>
+					{data.reviewsCount > 0 && (
+						<span class="acc-card__reviews-count">({data.reviewsCount} {t('common.reviews', 'reseñas')})</span>
+					)}
+				</div>
+			)}
+
+			<!-- Divider -->
+			<div class="acc-card__divider"></div>
+
+			<!-- Price + CTA row -->
+			<div class="acc-card__price-row">
+				{formattedPrice ? (
+					<div class="acc-card__price-block">
+						<span class="acc-card__price-label">{t('home.accommodations.price.from', 'Desde')}</span>
+						<span class="acc-card__price-value">{formattedPrice}</span>
+						<span class="acc-card__price-label">{t('home.accommodations.price.perNight', '/noche')}</span>
+					</div>
+				) : (
+					<div></div>
+				)}
+				<span class="acc-card__cta-btn">
+					{t('common.readMore', 'Ver más')} →
+				</span>
+			</div>
+		</div>
+	</a>
+</article>
+
+<style>
+	.acc-card {
+		background-color: var(--core-card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-md, 12px);
+		box-shadow: var(--shadow-card);
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+		transition: box-shadow 200ms ease-out;
+	}
+
+	.acc-card:hover {
+		box-shadow: var(--shadow-card-hover);
+	}
+
+	.acc-card__link {
+		text-decoration: none;
+		color: inherit;
+		display: flex;
+		flex-direction: column;
+		height: 100%;
+	}
+
+	.acc-card__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+		border-radius: var(--radius-md, 12px);
+	}
+
+	/* IMAGE AREA */
+	.acc-card__image-area {
+		position: relative;
+		height: 220px;
+		overflow: hidden;
+		border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+		background-color: var(--muted);
+	}
+
+	.acc-card__img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		transition: transform 200ms ease-out;
+	}
+
+	.acc-card:hover .acc-card__img {
+		transform: scale(1.08);
+	}
+
+	/* Status corner badge (diagonal) */
+	.acc-card__status-corner {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 80px;
+		height: 80px;
+		overflow: hidden;
+	}
+
+	.acc-card__status-corner::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 0;
+		height: 0;
+		border-top: 80px solid var(--brand-accent);
+		border-right: 80px solid transparent;
+	}
+
+	.acc-card__status-text {
+		position: absolute;
+		top: 16px;
+		left: 4px;
+		transform: rotate(-45deg);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 14px;
+		line-height: 22.4px;
+		color: var(--primary-foreground);
+		white-space: nowrap;
+	}
+
+	/* Featured badge */
+	.acc-card__featured-badge {
+		position: absolute;
+		bottom: 48px;
+		right: 16px;
+		background-color: var(--brand-accent);
+		color: var(--primary-foreground);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 14px;
+		line-height: 22.4px;
+		padding: 4px 10px;
+		border-radius: 9999px;
+	}
+
+	/* Wave separator */
+	.acc-card__wave {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 40px;
+		pointer-events: none;
+	}
+
+	.acc-card__wave svg {
+		width: 100%;
+		height: 100%;
+		display: block;
+	}
+
+	/* Actions (favorite + photo count) */
+	.acc-card__actions {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		align-items: center;
+	}
+
+	.acc-card__fav-btn {
+		width: 36px;
+		height: 36px;
+		border-radius: 9999px;
+		background-color: oklch(from var(--core-card) l c h / 0.85);
+		border: none;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--core-foreground);
+		transition: color 200ms ease-out;
+	}
+
+	.acc-card__fav-btn:hover {
+		color: var(--brand-accent);
+	}
+
+	.acc-card__fav-btn:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	.acc-card__photo-count {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		background-color: oklch(from var(--core-foreground) l c h / 0.55);
+		padding: 4px 8px;
+		border-radius: 9999px;
+		color: var(--primary-foreground);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 11px;
+		line-height: 16px;
+	}
+
+	/* CONTENT AREA */
+	.acc-card__content {
+		background-color: var(--core-card);
+		padding: 0 16px 20px;
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+		flex: 1;
+	}
+
+	/* Category + Location row */
+	.acc-card__category-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.acc-card__category-badge {
+		background-color: var(--brand-primary);
+		color: var(--core-background);
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 10px;
+		line-height: 14px;
+		padding: 4px 10px;
+		border-radius: 9999px;
+		white-space: nowrap;
+	}
+
+	.acc-card__location-bar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		background-color: var(--surface-warm, oklch(0.96 0.02 60));
+		padding: 8px 24px 8px 16px;
+		border-radius: var(--radius-sm, 8px);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 12px;
+		line-height: 19.2px;
+		color: var(--core-foreground);
+		white-space: nowrap;
+	}
+
+	/* Name */
+	.acc-card__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: 20px;
+		line-height: 28px;
+		color: var(--core-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		margin: 0;
+	}
+
+	/* Description */
+	.acc-card__description {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 13px;
+		line-height: 20.8px;
+		color: var(--core-muted-foreground);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
+
+	/* Amenities */
+	.acc-card__amenities {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		color: var(--core-muted-foreground);
+	}
+
+	.acc-card__amenity-icon {
+		position: relative;
+		display: inline-flex;
+		cursor: default;
+	}
+
+	.acc-card__amenity-icon::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		bottom: calc(100% + 6px);
+		left: 50%;
+		transform: translateX(-50%) scale(0.9);
+		background-color: var(--core-foreground);
+		color: var(--core-background);
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 11px;
+		line-height: 1.3;
+		padding: 4px 8px;
+		border-radius: 6px;
+		white-space: nowrap;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 150ms ease-out, transform 150ms ease-out;
+		z-index: 10;
+	}
+
+	.acc-card__amenity-icon::before {
+		content: '';
+		position: absolute;
+		bottom: calc(100% + 2px);
+		left: 50%;
+		transform: translateX(-50%) scale(0.9);
+		border: 4px solid transparent;
+		border-top-color: var(--core-foreground);
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 150ms ease-out, transform 150ms ease-out;
+		z-index: 10;
+	}
+
+	.acc-card__amenity-icon:hover::after,
+	.acc-card__amenity-icon:hover::before {
+		opacity: 1;
+		transform: translateX(-50%) scale(1);
+	}
+
+	.acc-card__amenities-more {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 11px;
+		line-height: 17.6px;
+		color: var(--core-muted-foreground);
+	}
+
+	/* Stars */
+	.acc-card__stars {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+
+	.acc-card__star--filled {
+		color: var(--rating-star);
+		display: inline-flex;
+	}
+
+	.acc-card__star--empty {
+		color: var(--core-muted-foreground);
+		opacity: 0.4;
+		display: inline-flex;
+	}
+
+	.acc-card__rating-value {
+		font-family: var(--font-sans);
+		font-weight: 700;
+		font-size: 13px;
+		line-height: 19.2px;
+		color: var(--core-foreground);
+		margin-left: 4px;
+	}
+
+	.acc-card__reviews-count {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 19.2px;
+		color: var(--core-muted-foreground);
+	}
+
+	/* Divider */
+	.acc-card__divider {
+		height: 1px;
+		background-color: var(--border);
+		width: 100%;
+	}
+
+	/* Price + CTA row */
+	.acc-card__price-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 4px;
+	}
+
+	.acc-card__price-block {
+		display: flex;
+		align-items: baseline;
+		gap: 4px;
+		white-space: nowrap;
+	}
+
+	.acc-card__price-label {
+		font-family: var(--font-sans);
+		font-weight: 400;
+		font-size: 11px;
+		line-height: 17.6px;
+		color: var(--core-muted-foreground);
+	}
+
+	.acc-card__price-value {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: 16px;
+		line-height: 24px;
+		color: var(--brand-accent);
+	}
+
+	.acc-card__cta-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 8px 16px;
+		border-radius: 9999px;
+		font-family: var(--font-sans);
+		font-weight: 500;
+		font-size: 12px;
+		line-height: 19.2px;
+		color: var(--core-foreground);
+		background: linear-gradient(135deg, var(--brand-secondary) 0%, var(--core-background) 100%);
+		white-space: nowrap;
+		transition: opacity 200ms ease-out;
+	}
+
+	.acc-card:hover .acc-card__cta-btn {
+		opacity: 0.85;
+	}
+</style>

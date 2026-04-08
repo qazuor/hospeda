@@ -1,0 +1,232 @@
+---
+/**
+ * @file ScrollToTop.astro
+ * @description Fixed scroll-to-top button with SVG progress ring.
+ * Hidden when scrollY < 300px, fades in with opacity transition.
+ * The progress ring stroke-dashoffset reflects current scroll percentage.
+ * Uses requestAnimationFrame for smooth ring updates.
+ * Respects prefers-reduced-motion: disables ring animation but still shows/hides.
+ * All interactivity is vanilla JS in an inline script tag (no React island).
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+  readonly locale?: SupportedLocale;
+}
+
+const { locale = 'es' } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<button
+  id="scroll-to-top"
+  aria-label={t('common.scrollToTop')}
+  class="scroll-to-top"
+>
+  <!-- SVG progress ring -->
+  <svg
+    class="scroll-to-top__ring-svg"
+    viewBox="0 0 40 40"
+    fill="none"
+    aria-hidden="true"
+  >
+    <!-- Track ring (r=18, stroke-width 2) -->
+    <circle
+      cx="20"
+      cy="20"
+      r="18"
+      stroke-width="2"
+      class="scroll-to-top__track"
+    />
+    <!-- Progress ring (r=18, stroke-width 2) -->
+    <circle
+      id="scroll-progress-ring"
+      cx="20"
+      cy="20"
+      r="18"
+      stroke-width="2"
+      stroke-linecap="round"
+      class="scroll-to-top__progress"
+    />
+  </svg>
+
+  <!-- Up arrow icon (chevron up) -->
+  <svg
+    class="scroll-to-top__arrow"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    aria-hidden="true"
+  >
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+</button>
+
+<style>
+  .scroll-to-top {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 50;
+    display: flex;
+    height: 48px;
+    width: 48px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9999px;
+    border: none;
+    background-color: var(--core-card);
+    box-shadow: var(--shadow-card);
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--duration-normal) ease,
+      background-color var(--duration-normal) ease;
+  }
+
+  .scroll-to-top--visible {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .scroll-to-top:hover {
+    background-color: var(--brand-primary);
+  }
+
+  .scroll-to-top:hover .scroll-to-top__arrow {
+    color: white;
+  }
+
+  .scroll-to-top:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+
+  .scroll-to-top__ring-svg {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .scroll-to-top__track {
+    fill: none;
+    stroke: var(--core-muted-foreground);
+    opacity: 0.2;
+  }
+
+  .scroll-to-top__progress {
+    fill: none;
+    stroke: var(--brand-primary);
+    transition: stroke-dashoffset 0.1s ease;
+  }
+
+  .scroll-to-top__arrow {
+    position: relative;
+    height: 1.25rem;
+    width: 1.25rem;
+    color: var(--core-foreground);
+    transition: color var(--duration-normal) ease;
+  }
+
+  /* Mobile: 40px size */
+  @media (max-width: 767px) {
+    .scroll-to-top {
+      height: 40px;
+      width: 40px;
+      bottom: 1rem;
+      right: 1rem;
+    }
+
+    .scroll-to-top__arrow {
+      height: 1rem;
+      width: 1rem;
+    }
+  }
+
+  /* Reduced motion: disable ring animation, still show/hide button */
+  @media (prefers-reduced-motion: reduce) {
+    .scroll-to-top {
+      transition: none;
+    }
+
+    .scroll-to-top__progress {
+      transition: none;
+    }
+
+    .scroll-to-top__arrow {
+      transition: none;
+    }
+  }
+</style>
+
+<script>
+  (function () {
+    const button = document.getElementById('scroll-to-top') as HTMLButtonElement | null;
+    const ring = document.getElementById('scroll-progress-ring') as SVGCircleElement | null;
+
+    if (!button || !ring) return;
+
+    /** Radius of the progress circle. */
+    const RADIUS = 18;
+    /** Circumference: 2 * PI * 18 ≈ 113.097 */
+    const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
+
+    /** Scroll threshold in pixels before the button appears. */
+    const SHOW_THRESHOLD = 300;
+
+    // Initialize stroke-dasharray and offset
+    ring.style.strokeDasharray = String(CIRCUMFERENCE);
+    ring.style.strokeDashoffset = String(CIRCUMFERENCE);
+
+    /** Check if user prefers reduced motion. */
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    let ticking = false;
+
+    function updateScrollState(): void {
+      const scrollY = window.scrollY;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+
+      // Show or hide the button based on 300px threshold
+      if (scrollY > SHOW_THRESHOLD) {
+        button!.classList.add('scroll-to-top--visible');
+      } else {
+        button!.classList.remove('scroll-to-top--visible');
+      }
+
+      // Update progress ring stroke-dashoffset based on scroll percentage
+      if (!prefersReducedMotion) {
+        const progress = docHeight > 0 ? Math.min(scrollY / docHeight, 1) : 0;
+        const offset = CIRCUMFERENCE * (1 - progress);
+        ring!.style.strokeDashoffset = String(offset);
+      }
+
+      ticking = false;
+    }
+
+    function onScroll(): void {
+      if (!ticking) {
+        requestAnimationFrame(updateScrollState);
+        ticking = true;
+      }
+    }
+
+    function handleClick(): void {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    button.addEventListener('click', handleClick);
+
+    // Initialize on page load
+    updateScrollState();
+  })();
+</script>

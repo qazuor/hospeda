@@ -1,0 +1,141 @@
+---
+/**
+ * @file NewsletterForm.astro
+ * @description Newsletter subscription form banner with a dark card surface.
+ * Visual only — no form submission or event handlers.
+ * Uses a two-column responsive layout: title/subtitle on the left,
+ * email input + submit button on the right.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+---
+
+<div class="newsletter">
+    <div class="newsletter__layout">
+        <!-- Left column: title and subtitle -->
+        <div class="newsletter__info">
+            <h2 class="newsletter__title">
+                {t('footer.newsletterTitle')}
+            </h2>
+            <p class="newsletter__subtitle">
+                {t('footer.newsletterDescription')}
+            </p>
+        </div>
+
+        <!-- Right column: email input + submit button -->
+        <div class="newsletter__form">
+            <input
+                type="email"
+                placeholder={t('footer.newsletterPlaceholder', 'Tu email o WhatsApp')}
+                class="newsletter__input"
+                aria-label={t('footer.newsletterPlaceholder', 'Tu email o WhatsApp')}
+            />
+            <button
+                type="submit"
+                class="newsletter__button"
+            >
+                {t('common.submit', 'Enviar')}
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .newsletter {
+        background-color: var(--surface-dark);
+        border-radius: var(--radius-card);
+        padding: 2.5rem;
+    }
+
+    .newsletter__layout {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    @media (min-width: 768px) {
+        .newsletter__layout {
+            flex-direction: row;
+            align-items: center;
+        }
+    }
+
+    .newsletter__info {
+        flex: 1;
+    }
+
+    .newsletter__title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-h2);
+        color: var(--surface-dark-foreground);
+    }
+
+    .newsletter__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--surface-dark-foreground);
+        margin-top: 0.75rem;
+        opacity: 0.8;
+    }
+
+    .newsletter__form {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    @media (min-width: 640px) {
+        .newsletter__form {
+            flex-direction: row;
+        }
+    }
+
+    .newsletter__input {
+        flex: 1;
+        background-color: transparent;
+        border: 1px solid oklch(from var(--surface-dark-foreground) l c h / 0.4);
+        color: var(--surface-dark-foreground);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        padding: 0.75rem 1rem;
+        border-radius: var(--radius-button);
+        transition: border-color var(--duration-normal) ease;
+    }
+
+    .newsletter__input::placeholder {
+        color: oklch(from var(--surface-dark-foreground) l c h / 0.5);
+    }
+
+    .newsletter__input:focus {
+        outline: none;
+        border-color: var(--brand-accent);
+    }
+
+    .newsletter__button {
+        background-color: var(--brand-accent);
+        color: var(--accent-foreground);
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: var(--text-body);
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: var(--radius-button);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity var(--duration-slow) ease;
+    }
+
+    .newsletter__button:hover {
+        opacity: 0.9;
+    }
+</style>

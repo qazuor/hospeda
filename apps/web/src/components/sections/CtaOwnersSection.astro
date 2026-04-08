@@ -1,0 +1,317 @@
+---
+/**
+ * @file CtaOwnersSection.astro
+ * @description CTA section for property owners matching Figma node 22:1890.
+ * Sage/green background panel with traveler image on left and feature list on right.
+ * White brush stroke decoratives behind the person image.
+ * Includes pill CTA button and 3 feature items with blue icon circles.
+ */
+
+import { ctaFeatures } from "@/data/homepage-features";
+import type { SupportedLocale } from "@/lib/i18n";
+import { createTranslations } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
+import { SearchIcon, ShieldIcon, SparkleIcon } from "@repo/icons";
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/** Map feature icon names to actual components */
+const iconMap: Record<string, typeof SparkleIcon> = {
+    SparkleIcon,
+    SearchIcon,
+    ShieldIcon,
+};
+---
+
+<section class="best-features-banner" data-reveal="up">
+    <!-- Sage/green rounded background panel -->
+    <div class="best-features-banner__panel" aria-hidden="true"></div>
+
+    <div class="best-features-banner__container">
+        <div class="best-features-banner__layout">
+            <!-- LEFT: Person image (includes brush strokes baked in) -->
+            <div class="best-features-banner__media" data-reveal="left">
+                <div class="best-features-banner__person bf-person-float">
+                    <img
+                        src="/assets/images/resources/feature-3-1.png"
+                        alt=""
+                        class="best-features-banner__person-img"
+                        loading="lazy"
+                    />
+                </div>
+            </div>
+
+            <!-- RIGHT: Content sitting directly on the sage background -->
+            <div class="best-features-banner__content" data-reveal="right">
+                <div class="best-features-banner__header">
+                    <span class="best-features-banner__tagline">
+                        {t("home.ownerCta.accentSubtitle", "Para propietarios")}
+                    </span>
+                    <h2 class="best-features-banner__title">
+                        {t("home.ownerCta.title", "Publicá tu alojamiento")}
+                    </h2>
+
+                    <a
+                        href={buildUrl({ locale, path: "/suscriptores/propietarios/" })}
+                        class="best-features-banner__cta-pill"
+                    >
+                        {t("home.ownerCta.ctaButton", "Publicá tu alojamiento →")}
+                    </a>
+                </div>
+
+                <ul class="best-features-banner__list">
+                    {
+                        ctaFeatures.map((feature) => {
+                            const IconComponent = iconMap[feature.icon];
+                            return (
+                                <li class="best-features-banner__item">
+                                    <div class="best-features-banner__icon-circle" aria-hidden="true">
+                                        {IconComponent ? (
+                                            <IconComponent size={24} weight="duotone" color="var(--brand-primary)" />
+                                        ) : (
+                                            <span class="best-features-banner__icon-fallback">?</span>
+                                        )}
+                                    </div>
+                                    <div class="best-features-banner__item-text">
+                                        <h5 class="best-features-banner__item-title">{t(feature.titleKey)}</h5>
+                                        <p class="best-features-banner__item-desc">{t(feature.descriptionKey)}</p>
+                                    </div>
+                                </li>
+                            );
+                        })
+                    }
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<style>
+    /* ─── Section wrapper ────────────────────────────────────────────── */
+    .best-features-banner {
+        position: relative;
+        background-color: var(--core-background);
+        padding: 24px;
+        z-index: 1;
+    }
+
+    /* ─── Sage/green rounded panel (full-bleed inside padding) ──────── */
+    .best-features-banner__panel {
+        position: absolute;
+        inset: 24px;
+        background-color: var(--brand-tertiary);
+        border-radius: 24px;
+        z-index: 0;
+    }
+
+    /* ─── Container ─────────────────────────────────────────────────── */
+    .best-features-banner__container {
+        position: relative;
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+        max-width: var(--container-max);
+        z-index: 2;
+    }
+
+    /* ─── Two-column grid ────────────────────────────────────────────── */
+    .best-features-banner__layout {
+        display: grid;
+        grid-template-columns: 1fr;
+        align-items: center;
+    }
+
+    @media (min-width: 768px) {
+        .best-features-banner__layout {
+            grid-template-columns: minmax(0, 45%) minmax(0, 55%);
+        }
+    }
+
+    /* ─── LEFT: Media column ─────────────────────────────────────────── */
+    .best-features-banner__media {
+        position: relative;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        height: 100%;
+    }
+
+    @media (min-width: 768px) {
+        .best-features-banner__media {
+            display: flex;
+        }
+    }
+
+    /* Person image — large, overflows the panel top */
+    .best-features-banner__person {
+        position: absolute;
+        z-index: 2;
+        width: 100%;
+        max-width: 480px;
+        top: -50px;
+        margin-left: -60px;
+    }
+
+    .best-features-banner__person-img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        display: block;
+    }
+
+    /* Gentle float animation */
+    @keyframes bf-person-float {
+        0%,
+        100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .bf-person-float {
+        animation: bf-person-float 5s ease-in-out infinite;
+    }
+
+    /* ─── RIGHT: Content column ──────────────────────────────────────── */
+    .best-features-banner__content {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding-block: 1.75rem;
+        padding-inline: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+        .best-features-banner__content {
+            padding-block: 2rem;
+            padding-left: 1.5rem;
+            padding-right: 2rem;
+        }
+    }
+
+    .best-features-banner__header {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    /* "Para propietarios" — handwritten decorative tagline */
+    .best-features-banner__tagline {
+        font-family: var(--font-decorative);
+        font-style: italic;
+        font-weight: 700;
+        color: var(--core-foreground);
+        font-size: var(--text-tagline);
+        line-height: 1.2;
+    }
+
+    /* "Publicá tu alojamiento" — large bold heading */
+    .best-features-banner__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--core-foreground);
+        text-wrap: balance;
+        font-size: var(--text-h2);
+        line-height: 1.15;
+        margin: 0;
+    }
+
+    /* Small pill CTA button with thin border */
+    .best-features-banner__cta-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        margin-top: 0.75rem;
+        padding: 8px 18px;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--core-foreground);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-decoration: none;
+        white-space: nowrap;
+        align-self: flex-start;
+        transition:
+            background-color var(--duration-normal) ease,
+            color var(--duration-normal) ease;
+    }
+
+    .best-features-banner__cta-pill:hover {
+        background-color: var(--core-foreground);
+        color: var(--brand-tertiary);
+    }
+
+    /* ─── Feature list ───────────────────────────────────────────────── */
+    .best-features-banner__list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .best-features-banner__item {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    /* Blue circle with icon */
+    .best-features-banner__icon-circle {
+        flex-shrink: 0;
+        width: 52px;
+        height: 52px;
+        border-radius: 9999px;
+        background-color: oklch(from var(--brand-primary) l c h / 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .best-features-banner__icon-fallback {
+        color: var(--brand-primary);
+        font-size: 1rem;
+        font-weight: 700;
+    }
+
+    .best-features-banner__item-text {
+        flex: 1;
+    }
+
+    .best-features-banner__item-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        font-size: var(--text-h4);
+        margin: 0 0 0.25rem;
+    }
+
+    .best-features-banner__item-desc {
+        color: var(--core-muted-foreground);
+        font-size: var(--text-body-sm);
+        line-height: 1.5;
+        margin: 0;
+    }
+
+    /* ─── Mobile: hide media column, adjust panel ────────────────────── */
+    @media (max-width: 767px) {
+        .best-features-banner__panel {
+            border-radius: 20px;
+        }
+    }
+
+    /* ─── Reduced motion ─────────────────────────────────────────────── */
+    @media (prefers-reduced-motion: reduce) {
+        .bf-person-float {
+            animation: none;
+        }
+    }
+</style>

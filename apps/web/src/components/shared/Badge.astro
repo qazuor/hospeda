@@ -1,0 +1,85 @@
+---
+/**
+ * @file Badge.astro
+ * @description Pill-shaped badge component. Renders as an anchor when href is
+ * provided, otherwise as a plain span. Color scheme is applied via inline
+ * style using tokenized CSS values from colors.ts.
+ *
+ * Variants:
+ * - 'default' (implicit): uses `colorScheme` for per-type colors.
+ * - 'filled-dark': uniform dark pill (dark background, white text) used in
+ *   homepage filter rows where all badges must look identical regardless of type.
+ */
+
+/** Color scheme applied to the badge surface, text, and border. */
+export interface BadgeColorScheme {
+  /** CSS background-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.15)'). */
+  readonly bg: string;
+  /** CSS color value (e.g. 'var(--brand-accent)'). */
+  readonly text: string;
+  /** CSS border-color value (e.g. 'oklch(from var(--brand-accent) l c h / 0.30)'). */
+  readonly border: string;
+}
+
+interface Props {
+  /** Text label displayed inside the badge. */
+  readonly label: string;
+  /** Optional href. When provided the badge renders as an <a> element. */
+  readonly href?: string;
+  /** Color scheme object controlling badge appearance (ignored when variant is 'filled-dark'). */
+  readonly colorScheme: BadgeColorScheme;
+  /** Size variant. 'sm' uses tighter padding; 'md' is the default. */
+  readonly size?: 'sm' | 'md';
+  /**
+   * Visual variant.
+   * - 'default': per-type color from colorScheme (default behavior).
+   * - 'filled-dark': uniform dark fill with white text and uppercase label.
+   */
+  readonly variant?: 'default' | 'filled-dark';
+}
+
+const { label, href, colorScheme, size = 'md', variant = 'default' } = Astro.props;
+
+const paddingValue = size === 'sm' ? '2px 8px' : '4px 12px';
+
+const inlineStyle =
+  variant === 'filled-dark'
+    ? `padding: ${paddingValue};`
+    : `background-color: ${colorScheme.bg}; color: ${colorScheme.text}; border: 1px solid ${colorScheme.border}; padding: ${paddingValue};`;
+
+const classes = ['badge', variant === 'filled-dark' ? 'badge--filled-dark' : ''].filter(Boolean).join(' ');
+---
+
+{
+  href ? (
+    <a href={href} class={classes} style={inlineStyle}>
+      {label}
+    </a>
+  ) : (
+    <span class={classes} style={inlineStyle}>
+      {label}
+    </span>
+  )
+}
+
+<style>
+  .badge--filled-dark {
+    background-color: var(--core-foreground);
+    color: var(--core-background);
+    border: none;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+
+  .badge--filled-dark:hover {
+    background-color: oklch(from var(--core-foreground) calc(l * 1.15) c h);
+    color: var(--core-background);
+  }
+
+  .badge:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+</style>

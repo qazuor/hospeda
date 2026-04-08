@@ -1,0 +1,173 @@
+---
+/**
+ * @file LatestArticlesSection.astro
+ * @description Homepage latest articles section.
+ * Layout: 1 FeaturedArticleCard full-width on top, then 3 equal ArticleCards in a row.
+ * Staggered scroll-reveal on each card. Links to full posts listing page.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import SectionHeader from '@/components/shared/SectionHeader.astro';
+import FeaturedArticleCard from '@/components/shared/FeaturedArticleCard.astro';
+import ArticleCard from '@/components/shared/ArticleCard.astro';
+import { postsApi, toPostCardProps } from '@/lib/api';
+import type { BlogPostCardData } from '@/lib/api/transforms';
+import { webLogger } from '@/lib/logger';
+
+interface Props {
+    /** Active locale used to resolve translations and URLs. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Fetch 4 posts: 1 featured + 3 secondary
+let posts: BlogPostCardData[] = [];
+try {
+    const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
+    if (result.ok) {
+        posts = result.data.items.map((raw) => toPostCardProps({ item: raw as Record<string, unknown> }));
+    }
+} catch (err) {
+    webLogger.error('API fetch failed', {
+        endpoint: 'posts',
+        error: err instanceof Error ? err.message : err,
+    });
+}
+
+const [featured, ...secondaryPosts] = posts;
+const secondary = secondaryPosts.slice(0, 3);
+---
+
+<section class="section" aria-label={t('home.latestPosts.title', 'Últimas publicaciones')}>
+    <div class="section__container">
+
+        <SectionHeader
+            tagline={t('home.latestPosts.tagline', 'Informate, Inspirate, Conoce')}
+            title={t('home.latestPosts.title', 'Últimos artículos')}
+            subtitle={t('home.latestPosts.subtitle', 'Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.')}
+        />
+
+        {posts.length === 0 ? (
+            <p class="articles__empty">{t('home.latestPosts.emptyState')}</p>
+        ) : (
+            <div class="articles__layout">
+                <!-- Featured card: full-width top row -->
+                {featured && (
+                    <div class="articles__featured-row" data-reveal="up" style="transition-delay: 0ms">
+                        <FeaturedArticleCard data={featured} locale={locale} isTrending={true} />
+                    </div>
+                )}
+
+                <!-- Secondary cards: 3-column row -->
+                {secondary.length > 0 && (
+                    <div class="articles__secondary-row">
+                        {secondary.map((post, i) => (
+                            <div
+                                class="articles__secondary-item"
+                                data-reveal="up"
+                                style={`transition-delay: ${(i + 1) * 100}ms`}
+                            >
+                                <ArticleCard data={post} locale={locale} />
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        )}
+
+        <!-- CTA button -->
+        <div class="posts__cta">
+            <a href={buildUrl({ locale, path: 'publicaciones' })} class="posts__cta-btn">
+                {t('home.latestPosts.viewAll', 'Ver todos los artículos →')}
+            </a>
+        </div>
+
+    </div>
+</section>
+
+<style>
+    /* Main layout container */
+    .articles__layout {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-card-gap);
+    }
+
+    /* Featured row: always full width */
+    .articles__featured-row {
+        width: 100%;
+    }
+
+    /* Secondary row: 3 equal columns on desktop */
+    .articles__secondary-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-card-gap);
+    }
+
+    .articles__secondary-item {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    /* Tablet: 2 columns */
+    @media (max-width: 1024px) and (min-width: 768px) {
+        .articles__secondary-row {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    /* Mobile: single column */
+    @media (max-width: 767px) {
+        .articles__secondary-row {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Empty state */
+    .articles__empty {
+        text-align: center;
+        color: var(--core-muted-foreground);
+        font-family: var(--font-sans);
+        padding: var(--space-48) 0;
+    }
+
+    /* CTA */
+    .posts__cta {
+        display: flex;
+        justify-content: center;
+        margin-top: 3rem;
+    }
+
+    .posts__cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 12px 28px;
+        border-radius: var(--radius-pill);
+        background-color: var(--brand-secondary-foreground);
+        color: var(--core-background);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+            background-color var(--duration-normal) ease,
+            transform var(--duration-normal) ease;
+    }
+
+    .posts__cta-btn:hover {
+        background-color: var(--core-foreground);
+        transform: translateY(-1px);
+    }
+
+    .posts__cta-btn:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

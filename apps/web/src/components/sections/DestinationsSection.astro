@@ -1,0 +1,76 @@
+---
+/**
+ * @file DestinationsSection.astro
+ * @description Homepage featured destinations section.
+ *
+ * Fetches destination data on the server and passes it to the
+ * DestinationsIsland React client island, which handles both the interactive
+ * SVG map and the Embla carousel in a single hydration boundary.
+ * If the API is unavailable or returns no data, the section is not rendered.
+ *
+ * Layout: subtle warm-gradient background to differentiate from adjacent
+ * white sections. The island itself provides the two-column map + carousel
+ * layout on desktop, carousel-only on mobile.
+ */
+
+import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { destinationsApi, toDestinationCardProps } from '@/lib/api';
+import type { DestinationCardData } from '@/lib/api/transforms';
+import { webLogger } from '@/lib/logger';
+
+interface Props {
+    /** Active locale used to resolve translations and build internal URLs. */
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Fetch from API - empty array if unavailable
+let destinations: DestinationCardData[] = [];
+try {
+    const result = await destinationsApi.list({ destinationType: 'CITY', pageSize: 50 });
+    if (result.ok) {
+        destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown> }));
+    }
+} catch (err) {
+    webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });
+}
+---
+
+{destinations.length > 0 && (
+<section
+    class="section destinations-section"
+    aria-label={t('home.featuredDestinations.title', 'Destinos populares')}
+>
+    <div class="destinations-section__container">
+        <DestinationsIsland
+            client:visible
+            destinations={destinations}
+            locale={locale}
+        />
+    </div>
+</section>
+)}
+
+<style>
+    .destinations-section {
+        background: linear-gradient(
+            160deg,
+            var(--core-background) 0%,
+            var(--surface-warm) 50%,
+            var(--core-background) 100%
+        );
+        padding-block: var(--space-section);
+        overflow: visible;
+    }
+
+    .destinations-section__container {
+        position: relative;
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+        max-width: var(--container-max);
+    }
+</style>

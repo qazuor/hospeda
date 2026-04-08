@@ -1,0 +1,527 @@
+/* SearchBar.module.css — Interactive hero search bar island */
+
+/* === Bar layout === */
+.searchBar {
+    width: 100%;
+    position: relative;
+}
+
+.inner {
+    display: flex;
+    align-items: center;
+    background: var(--core-background);
+    border-radius: 24px;
+    box-shadow: var(--shadow-search);
+    padding: 0 24px 0 16px;
+    gap: 0;
+}
+
+/* === Column triggers === */
+.col {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 6px;
+    padding: 12px 20px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+    border-radius: 16px;
+    transition: background 0.2s ease;
+    position: relative;
+}
+
+.col:hover {
+    background: oklch(from var(--brand-primary) l c h / 0.05);
+}
+
+.colDivider {
+    border-right: 1px solid var(--border);
+}
+
+.colActive {
+    background: oklch(from var(--brand-primary) l c h / 0.08);
+}
+
+.icon {
+    color: var(--core-muted-foreground);
+    opacity: 0.66;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--brand-secondary-foreground);
+    line-height: 1.6;
+    white-space: nowrap;
+}
+
+.value {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--core-muted-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.valueSelected {
+    color: var(--core-foreground);
+    font-weight: 500;
+}
+
+/* === Search button === */
+.button {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: var(--brand-primary);
+    color: var(--primary-foreground);
+    border: none;
+    border-radius: 24px;
+    padding: 10px 14px 10px 24px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background 0.3s ease;
+}
+
+.button:hover {
+    background: oklch(from var(--brand-primary) calc(l * 0.9) c h);
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+.buttonIcon {
+    opacity: 0.44;
+    display: flex;
+    align-items: center;
+}
+
+/* === Dropdown panels (shared) === */
+.panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    z-index: 50;
+    background: var(--core-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    box-shadow:
+        0 8px 30px oklch(from var(--core-foreground) l c h / 0.1),
+        0 2px 8px oklch(from var(--core-foreground) l c h / 0.06);
+    padding: 8px 0;
+    min-width: 260px;
+    max-height: 360px;
+    overflow-y: auto;
+    animation: panelIn 0.2s ease-out;
+}
+
+@keyframes panelIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Panel opens upward when not enough viewport space below */
+.panelUp {
+    top: auto;
+    bottom: calc(100% + 8px);
+    animation: panelInUp 0.2s ease-out;
+}
+
+@keyframes panelInUp {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.panelUp.calendarPanel {
+    transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel,
+    .panelUp {
+        animation: none;
+    }
+}
+
+/* === Destination dropdown === */
+.destinationPanel {
+    min-width: 280px;
+}
+
+.dropdownItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.dropdownItem:hover {
+    background: oklch(from var(--brand-primary) l c h / 0.06);
+}
+
+.dropdownItem:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+.dropdownItemActive {
+    background: oklch(from var(--brand-primary) l c h / 0.1);
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.dropdownItemClear {
+    color: var(--core-muted-foreground);
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+    padding-bottom: 10px;
+}
+
+/* === Type multi-select dropdown === */
+.typePanel {
+    min-width: 300px;
+    padding: 0;
+}
+
+.typeActions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.typeActionButton {
+    font-size: 13px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--brand-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.typeActionButton:hover {
+    background: oklch(from var(--brand-primary) l c h / 0.08);
+}
+
+.typeActionButton:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+.typeList {
+    padding: 6px 0;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.typeItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    transition: background 0.15s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+}
+
+.typeItem:hover {
+    background: oklch(from var(--brand-primary) l c h / 0.06);
+}
+
+.typeItem:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: -2px;
+    border-radius: 4px;
+}
+
+.checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.checkboxChecked {
+    background: var(--brand-primary);
+    border-color: var(--brand-primary);
+    color: var(--primary-foreground);
+}
+
+.typeItemIcon {
+    color: var(--core-muted-foreground);
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.typeItemLabel {
+    flex: 1;
+}
+
+/* === Calendar panel === */
+.calendarPanel {
+    min-width: 620px;
+    padding: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    max-height: none;
+    overflow: visible;
+    animation: panelIn 0.2s ease-out;
+}
+
+/* react-day-picker v9 overrides via classNames prop */
+.calendarRoot {
+    --rdp-accent-color: var(--brand-primary);
+    --rdp-accent-background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    --rdp-range_middle-background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    --rdp-range_start-color: var(--primary-foreground);
+    --rdp-range_end-color: var(--primary-foreground);
+    --rdp-range_start-background: var(--brand-primary);
+    --rdp-range_end-background: var(--brand-primary);
+    --rdp-day_button-border-radius: 8px;
+    --rdp-day-height: 36px;
+    --rdp-day-width: 36px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.calendarMonths {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 24px;
+}
+
+.calendarCaption {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--core-foreground);
+    text-transform: capitalize;
+}
+
+.calendarWeekday {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+}
+
+.calendarNav button {
+    color: var(--core-muted-foreground);
+    border-radius: 8px;
+    width: 30px;
+    height: 30px;
+}
+
+.calendarNav button:hover {
+    background: oklch(from var(--brand-primary) l c h / 0.08);
+    color: var(--brand-primary);
+}
+
+.calendarDayButton {
+    border-radius: 8px;
+    font-family: var(--font-sans);
+    font-size: 14px;
+}
+
+.calendarToday .calendarDayButton {
+    font-weight: 700;
+    color: var(--brand-primary);
+}
+
+.calendarDisabled .calendarDayButton {
+    color: var(--core-muted-foreground);
+    opacity: 0.4;
+}
+
+/* === Guests panel === */
+.guestsPanel {
+    min-width: 280px;
+    padding: 16px;
+    right: 0;
+    left: auto;
+}
+
+.guestRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+}
+
+.guestRow + .guestRow {
+    border-top: 1px solid var(--border);
+}
+
+.guestLabel {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+}
+
+.stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.stepperButton {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    padding: 0;
+    line-height: 1;
+}
+
+.stepperButton:hover:not(:disabled) {
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+    background: oklch(from var(--brand-primary) l c h / 0.05);
+}
+
+.stepperButton:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.stepperButton:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+}
+
+.stepperValue {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--core-foreground);
+    min-width: 24px;
+    text-align: center;
+    font-family: var(--font-sans);
+}
+
+/* === Mobile (<=767px) === */
+@media (max-width: 767px) {
+    .inner {
+        flex-direction: column;
+        padding: 16px;
+        gap: 0;
+    }
+
+    .col {
+        padding: 12px 0;
+        width: 100%;
+        border-radius: 0;
+    }
+
+    .colDivider {
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .col:last-of-type {
+        border-bottom: none;
+    }
+
+    .button {
+        border-radius: 8px;
+        margin-top: 12px;
+        padding: 14px 24px;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .panel {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        border-radius: 16px 16px 0 0;
+        max-height: 70vh;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .calendarPanel {
+        min-width: 0;
+        transform: none;
+        left: 0;
+        overflow-y: auto;
+    }
+
+    .calendarMonths {
+        flex-direction: column !important;
+        gap: 16px;
+    }
+
+    .guestsPanel {
+        right: 0;
+        left: 0;
+    }
+}

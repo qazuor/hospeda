@@ -1,0 +1,58 @@
+---
+/**
+ * @file PlaceJsonLd.astro
+ * @description TouristDestination JSON-LD component for destination pages.
+ * Generates schema.org TouristDestination structured data.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Address interface for destination structured data. */
+export interface PlaceAddress {
+  /** City or locality name */
+  readonly addressLocality: string;
+  /** State or region name */
+  readonly addressRegion?: string;
+  /** Country code (ISO 3166-1 alpha-2) */
+  readonly addressCountry: string;
+}
+
+/** Props interface for PlaceJsonLd component. */
+interface Props {
+  /** Name of the destination */
+  readonly name: string;
+  /** Description of the destination */
+  readonly description: string;
+  /** Canonical URL of the destination page */
+  readonly url: string;
+  /** Hero image URL for the destination */
+  readonly image?: string;
+  /** Address information for the destination */
+  readonly address?: PlaceAddress;
+}
+
+const { name, description, url, image, address } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'TouristDestination',
+  name,
+  description,
+  url,
+};
+
+if (image) {
+  structuredData.image = image;
+}
+
+if (address) {
+  structuredData.address = {
+    '@type': 'PostalAddress',
+    addressLocality: address.addressLocality,
+    addressCountry: address.addressCountry,
+    ...(address.addressRegion && { addressRegion: address.addressRegion }),
+  };
+}
+---
+
+<JsonLd data={structuredData} />

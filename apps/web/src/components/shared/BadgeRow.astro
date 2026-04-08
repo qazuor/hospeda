@@ -1,0 +1,58 @@
+---
+/**
+ * @file BadgeRow.astro
+ * @description Renders a centered, wrapping row of Badge components with
+ * consistent spacing. Intended for displaying a list of tags, categories,
+ * or filters at the top of a section or card.
+ *
+ * When `uniformDark` is true all badges render with the 'filled-dark' variant
+ * (dark background, white uppercase text) ignoring per-type colorScheme values.
+ * Use this for homepage filter rows where visual uniformity is required.
+ */
+
+import Badge from './Badge.astro';
+import type { BadgeColorScheme } from './Badge.astro';
+
+/** A single badge descriptor used in the badges array. */
+export interface BadgeRowItem {
+  /** Text label for the badge. */
+  readonly label: string;
+  /** Optional href. When provided the badge renders as an anchor. */
+  readonly href?: string;
+  /** Color scheme for the badge surface. Ignored when `uniformDark` is true. */
+  readonly colorScheme: BadgeColorScheme;
+}
+
+interface Props {
+  /** List of badge descriptors to render. */
+  readonly badges: ReadonlyArray<BadgeRowItem>;
+  /**
+   * When true, all badges use the 'filled-dark' variant (uniform dark pill).
+   * Defaults to false (per-type color from colorScheme).
+   */
+  readonly uniformDark?: boolean;
+}
+
+const { badges, uniformDark = false } = Astro.props;
+---
+
+<div class="badge-row">
+  {badges.map((badge) => (
+    <Badge
+      label={badge.label}
+      href={badge.href}
+      colorScheme={badge.colorScheme}
+      variant={uniformDark ? 'filled-dark' : 'default'}
+    />
+  ))}
+</div>
+
+<style>
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
+</style>

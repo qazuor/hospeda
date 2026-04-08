@@ -1,0 +1,86 @@
+---
+/**
+ * @file LodgingBusinessJsonLd.astro
+ * @description LodgingBusiness JSON-LD component for accommodations.
+ * Generates schema.org LodgingBusiness structured data.
+ */
+
+import JsonLd from './JsonLd.astro';
+
+/** Address interface for structured data */
+export interface Address {
+  /** Street address */
+  readonly streetAddress: string;
+  /** City or locality */
+  readonly addressLocality: string;
+  /** State or region */
+  readonly addressRegion: string;
+  /** Postal code */
+  readonly postalCode?: string;
+  /** Country code (ISO 3166-1 alpha-2) */
+  readonly addressCountry: string;
+}
+
+/** Props interface for LodgingBusinessJsonLd component. */
+interface Props {
+  /** Name of the lodging business */
+  readonly name: string;
+  /** Description of the lodging business */
+  readonly description: string;
+  /** URL of the lodging business page */
+  readonly url: string;
+  /** Image URL for the lodging business */
+  readonly image?: string;
+  /** Physical address of the lodging business */
+  readonly address: Address;
+  /** Price range indicator (e.g., "$", "$$", "$$$", "$$$$") */
+  readonly priceRange?: string;
+  /** Star rating (1-5) */
+  readonly starRating?: number;
+  /** List of amenities offered */
+  readonly amenities?: readonly string[];
+}
+
+const { name, description, url, image, address, priceRange, starRating, amenities } = Astro.props;
+
+const structuredData: Record<string, unknown> = {
+  '@context': 'https://schema.org',
+  '@type': 'LodgingBusiness',
+  name,
+  description,
+  url,
+  address: {
+    '@type': 'PostalAddress',
+    streetAddress: address.streetAddress,
+    addressLocality: address.addressLocality,
+    addressRegion: address.addressRegion,
+    addressCountry: address.addressCountry,
+    ...(address.postalCode && { postalCode: address.postalCode }),
+  },
+};
+
+if (image) {
+  structuredData.image = image;
+}
+
+if (priceRange) {
+  structuredData.priceRange = priceRange;
+}
+
+if (starRating !== undefined) {
+  structuredData.starRating = {
+    '@type': 'Rating',
+    ratingValue: starRating,
+    bestRating: 5,
+  };
+}
+
+if (amenities && amenities.length > 0) {
+  structuredData.amenityFeature = amenities.map((amenity) => ({
+    '@type': 'LocationFeatureSpecification',
+    name: amenity,
+  }));
+}
+---
+
+<JsonLd data={structuredData} />
