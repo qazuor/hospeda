@@ -3859,6 +3859,7 @@ export type TranslationKey =
     | 'home.statistics.accentSubtitle'
     | 'home.statistics.accommodations'
     | 'home.statistics.destinations'
+    | 'home.statistics.events'
     | 'home.statistics.experience'
     | 'home.statistics.posts'
     | 'home.statistics.reviews'

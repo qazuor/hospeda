@@ -53,7 +53,7 @@
     "no": "No",
     "optional": "Opcional",
     "pricePerNight": "por noche",
-    "readMore": "Leer más",
+    "readMore": "Ver más",
     "required": "Requerido",
     "reviews": "reseñas",
     "search": "Buscar",
@@ -62,6 +62,12 @@
     "submit": "Enviar",
     "viewAll": "Ver todo",
     "yes": "Sí",
+    "carousel": {
+        "previousSlide": "Diapositiva anterior",
+        "nextSlide": "Siguiente diapositiva"
+    },
+    "skipToContent": "Saltar al contenido principal",
+    "scrollToTop": "Volver arriba",
     "sitemap": {
         "title": "Mapa del Sitio",
         "description": "Mapa del sitio de Hospeda. Encuentra rápidamente todas las páginas, alojamientos, destinos, eventos y recursos disponibles en nuestra plataforma",

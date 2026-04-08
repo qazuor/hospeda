@@ -4,32 +4,65 @@
     "hero": {
         "title": "Sua escapada comeca aqui",
         "subtitle": "Descubra as melhores hospedagens, destinos e experiencias do litoral.",
+        "tagline": "Sua proxima escapada",
+        "secondaryCta": "Conheca nossos destinos",
+        "imageAlt": "Hospedagem em destaque no Litoral",
         "destination": {
             "title": "Destino",
             "placeHolder": "Para onde voce vai?"
         },
         "checkin": "Chegada",
         "checkout": "Saida",
-        "search": "Buscar"
+        "search": "Buscar",
+        "socialProof": {
+            "count": "500+",
+            "rating": "4.8/5",
+            "ratingOf": "de 500+",
+            "subtext": "viajantes que ja encontraram seu lugar"
+        }
     },
     "search": {
         "placeholder": "Para onde voce vai?"
     },
     "featuredAccommodations": {
         "title": "Hospedagens em destaque",
-        "description": "Os melhores lugares para se hospedar na costa do rio Uruguay, selecionados pelos nossos usuarios. "
+        "description": "Os melhores lugares para se hospedar na costa do rio Uruguay, selecionados pelos nossos usuarios. ",
+        "accentSubtitle": "O melhor do Litoral",
+        "emptyState": "Nenhuma hospedagem disponivel no momento",
+        "noReviews": "Sem avaliacoes",
+        "seeAllAction": "Ver todas as hospedagens →"
+    },
+    "accommodations": {
+        "badge": {
+            "new": "Novo",
+            "featured": "Destaque"
+        },
+        "price": {
+            "from": "A partir de",
+            "perNight": "/noite"
+        },
+        "amenities": {
+            "label": "Comodidades"
+        }
     },
     "featuredDestinations": {
         "title": "Destinos populares",
-        "description": "Explore os lugares mais atrativos da costa do rio Uruguay em Entre Rios e encontre a hospedagem perfeita para as suas ferias. "
+        "description": "Explore os lugares mais atrativos da costa do rio Uruguay em Entre Rios e encontre a hospedagem perfeita para as suas ferias. ",
+        "accentSubtitle": "Explore a regiao",
+        "ariaLabel": "Destinos em destaque",
+        "emptyState": "Nenhum destino disponivel no momento"
     },
     "upcomingEvents": {
         "title": "Proximos eventos",
-        "description": "Nao perca os eventos mais importantes da regiao."
+        "description": "Nao perca os eventos mais importantes da regiao.",
+        "accentSubtitle": "Nao perca",
+        "emptyState": "Nenhum evento proximo no momento"
     },
     "latestPosts": {
         "title": "Ultimos artigos",
-        "description": "Saiba mais sobre Entre Rios e seus arredores."
+        "description": "Saiba mais sobre Entre Rios e seus arredores.",
+        "accentSubtitle": "Nosso blog",
+        "emptyState": "Nenhum artigo disponivel no momento"
     },
     "testimonials": {
         "title": "O que dizem nossos usuarios",
@@ -47,7 +80,9 @@
         "accommodations": "Hospedagens",
         "destinations": "Destinos",
         "reviews": "Avaliacoes",
-        "experience": "Anos de experiencia"
+        "experience": "Anos de experiencia",
+        "posts": "Publicaciones",
+        "events": "Eventos e atividades"
     },
     "categories": {
         "title": "Tipos de hospedagem",
@@ -70,11 +105,37 @@
         "accentSubtitle": "Fique informado",
         "alreadySubscribed": "Voce ja esta inscrito em nossa newsletter."
     },
+    "about": {
+        "feature1": {
+            "title": "Hospedagens verificadas e seguras",
+            "description": "Todas as hospedagens da plataforma sao verificadas para garantir uma experiencia de qualidade."
+        },
+        "feature2": {
+            "title": "Disponibilidade em tempo real",
+            "description": "Consulte disponibilidade e reserve instantaneamente, sem intermediarios ou ligacoes."
+        }
+    },
     "ownerCta": {
         "accentSubtitle": "Para proprietarios",
         "title": "Publique sua hospedagem no Hospeda",
         "description": "Alcance milhares de viajantes que buscam hospedagens no Litoral argentino. Simples, rapido e eficaz.",
-        "button": "Comecar agora"
+        "button": "Comecar agora",
+        "feature1": {
+            "title": "Hospedagens personalizadas para cada viajante",
+            "description": "Encontre opcoes unicas que combinam com seu estilo de viagem"
+        },
+        "feature2": {
+            "title": "Guias especializados do Litoral",
+            "description": "Conhecimento local para descobrir os melhores lugares"
+        },
+        "feature3": {
+            "title": "Planejamento simples e rapido",
+            "description": "Reserve sua hospedagem em poucos passos"
+        },
+        "statsLabel": "viajeros satisfechos"
+    },
+    "partners": {
+        "title": "Confían en nosotros"
     },
     "page": {
         "title": "Inicio",
@@ -128,6 +189,20 @@
         "searchAriaLabel": "Buscar acomodações",
         "closePanelAriaLabel": "Fechar painel",
         "moreSelected_one": "& {{count}} mais",
-        "moreSelected_other": "& {{count}} mais"
+        "moreSelected_other": "& {{count}} mais",
+        "allTypes": "Todos os tipos",
+        "clearTypes": "Limpar",
+        "types": {
+            "HOTEL": "Hotel",
+            "APARTMENT": "Apartamento",
+            "HOUSE": "Casa",
+            "COUNTRY_HOUSE": "Casa de campo",
+            "CABIN": "Cabana",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Quarto",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }

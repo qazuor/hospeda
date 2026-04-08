@@ -4,32 +4,65 @@
     "hero": {
         "title": "Your getaway starts here",
         "subtitle": "Discover the best accommodations, destinations and experiences in the litoral.",
+        "tagline": "Your next getaway",
+        "secondaryCta": "Explore our destinations",
+        "imageAlt": "Featured accommodation in the Litoral region",
         "destination": {
             "title": "Destination",
             "placeHolder": "Where are you going?"
         },
         "checkin": "Check-in",
         "checkout": "Check-out",
-        "search": "Search"
+        "search": "Search",
+        "socialProof": {
+            "count": "500+",
+            "rating": "4.8/5",
+            "ratingOf": "of 500+",
+            "subtext": "travelers who already found their place"
+        }
     },
     "search": {
         "placeholder": "Where are you going?"
     },
     "featuredAccommodations": {
         "title": "Featured accommodations",
-        "description": "The best places to stay along the Uruguay River, selected by our users. "
+        "description": "The best places to stay along the Uruguay River, selected by our users. ",
+        "accentSubtitle": "The best of the Litoral",
+        "emptyState": "No accommodations available at this time",
+        "noReviews": "No reviews",
+        "seeAllAction": "View all accommodations →"
+    },
+    "accommodations": {
+        "badge": {
+            "new": "New",
+            "featured": "Featured"
+        },
+        "price": {
+            "from": "From",
+            "perNight": "/night"
+        },
+        "amenities": {
+            "label": "Amenities"
+        }
     },
     "featuredDestinations": {
         "title": "Popular destinations",
-        "description": "Explore the most attractive spots along the Uruguay River in Entre Rios and find the perfect accommodation for your vacation. "
+        "description": "Explore the most attractive spots along the Uruguay River in Entre Rios and find the perfect accommodation for your vacation. ",
+        "accentSubtitle": "Explore the region",
+        "ariaLabel": "Featured destinations",
+        "emptyState": "No destinations available at this time"
     },
     "upcomingEvents": {
         "title": "Upcoming events",
-        "description": "Don't miss the most important events in the region."
+        "description": "Don't miss the most important events in the region.",
+        "accentSubtitle": "Don't miss out",
+        "emptyState": "No upcoming events at this time"
     },
     "latestPosts": {
         "title": "Latest articles",
-        "description": "Learn more about Entre Rios and its surroundings."
+        "description": "Learn more about Entre Rios and its surroundings.",
+        "accentSubtitle": "Our blog",
+        "emptyState": "No articles available at this time"
     },
     "testimonials": {
         "title": "What our users say",
@@ -47,7 +80,9 @@
         "accommodations": "Accommodations",
         "destinations": "Destinations",
         "reviews": "Reviews",
-        "experience": "Years of experience"
+        "experience": "Years of experience",
+        "posts": "Publicaciones",
+        "events": "Events & activities"
     },
     "categories": {
         "title": "Accommodation types",
@@ -70,11 +105,37 @@
         "accentSubtitle": "Stay informed",
         "alreadySubscribed": "You are already subscribed to our newsletter."
     },
+    "about": {
+        "feature1": {
+            "title": "Verified and safe accommodations",
+            "description": "All accommodations on the platform are verified to ensure a quality experience."
+        },
+        "feature2": {
+            "title": "Real-time availability",
+            "description": "Check availability and book instantly, without intermediaries or phone calls."
+        }
+    },
     "ownerCta": {
         "accentSubtitle": "For property owners",
         "title": "List your accommodation on Hospeda",
         "description": "Reach thousands of travelers looking for accommodations in the Argentine Litoral. Simple, fast and effective.",
-        "button": "Get started"
+        "button": "Get started",
+        "feature1": {
+            "title": "Personalized accommodations for every traveler",
+            "description": "Find unique options that match your travel style"
+        },
+        "feature2": {
+            "title": "Expert Litoral guides",
+            "description": "Local knowledge to discover the best hidden gems"
+        },
+        "feature3": {
+            "title": "Simple and fast planning",
+            "description": "Book your accommodation in just a few steps"
+        },
+        "statsLabel": "viajeros satisfechos"
+    },
+    "partners": {
+        "title": "Confían en nosotros"
     },
     "page": {
         "title": "Home",
@@ -128,6 +189,20 @@
         "searchAriaLabel": "Search accommodations",
         "closePanelAriaLabel": "Close panel",
         "moreSelected_one": "& {{count}} more",
-        "moreSelected_other": "& {{count}} more"
+        "moreSelected_other": "& {{count}} more",
+        "allTypes": "All types",
+        "clearTypes": "Clear",
+        "types": {
+            "HOTEL": "Hotel",
+            "APARTMENT": "Apartment",
+            "HOUSE": "House",
+            "COUNTRY_HOUSE": "Country house",
+            "CABIN": "Cabin",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Campsite",
+            "ROOM": "Room",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }

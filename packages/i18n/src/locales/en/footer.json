@@ -27,5 +27,8 @@
     "destinationFederation": "Federación",
     "contactEmail": "info@hospeda.tur.ar",
     "contactPhone": "+54 3442 000000",
-    "followUs": "Follow us"
+    "followUs": "Follow us",
+    "contactTitle": "Contact",
+    "newsletterPlaceholder": "Your email or WhatsApp",
+    "newsletterErrorMessage": "Please enter a valid email"
 }

@@ -2,39 +2,77 @@
     "title": "Alojamientos en Entre Ríos",
     "description": "Descubrí los mejores alojamientos en Entre Ríos, Argentina. Desde cabañas hasta hoteles, tenemos opciones para todos los gustos y presupuestos.",
     "hero": {
-        "title": "Tu escapada empieza aca",
-        "subtitle": "Descubri los mejores alojamientos, destinos y experiencias del litoral.",
+        "title": "Tu escapada empieza acá",
+        "subtitle": "Descubrí los mejores alojamientos, destinos y experiencias del litoral.",
+        "tagline": "Descubrí el Litoral",
+        "secondaryCta": "¿No sabés qué buscar? Explorá los destinos",
+        "imageAlt": "Alojamiento destacado en el Litoral Entrerriano",
         "destination": {
             "title": "Destino",
             "placeHolder": "¿Adónde vas?"
         },
         "checkin": "Llegada",
         "checkout": "Salida",
-        "search": "Buscar"
+        "search": "Buscar",
+        "socialProof": {
+            "count": "500+",
+            "rating": "4.8/5",
+            "ratingOf": "de 500+",
+            "subtext": "viajeros que ya encontraron su lugar"
+        }
     },
     "search": {
         "placeholder": "¿Adónde vas?"
     },
     "featuredAccommodations": {
         "title": "Alojamientos destacados",
-        "description": "Los mejores lugares para hospedarte en la costa del río Uruguay, seleccionados por nuestros usuarios. "
+        "description": "Los mejores lugares para hospedarte en la costa del río Uruguay, seleccionados por nuestros usuarios. ",
+        "accentSubtitle": "Lo mejor del Litoral",
+        "emptyState": "No hay alojamientos disponibles en este momento",
+        "noReviews": "Sin resenas",
+        "seeAllAction": "Ver todos los alojamientos →"
+    },
+    "accommodations": {
+        "badge": {
+            "new": "Nuevo",
+            "featured": "Destacado"
+        },
+        "price": {
+            "from": "Desde",
+            "perNight": "/noche"
+        },
+        "amenities": {
+            "label": "Amenidades"
+        }
     },
     "featuredDestinations": {
         "title": "Destinos populares",
-        "description": "Explora los lugares más atractivos de la costa del río Uruguay en Entre Ríos y encuentra el alojamiento perfecto para tus vacaciones. "
+        "description": "Explora los lugares más atractivos de la costa del río Uruguay en Entre Ríos y encuentra el alojamiento perfecto para tus vacaciones. ",
+        "accentSubtitle": "Explorá la región",
+        "ariaLabel": "Destinos destacados",
+        "emptyState": "No hay destinos disponibles en este momento"
     },
     "upcomingEvents": {
         "title": "Próximos eventos",
-        "description": "No te pierdas los eventos más importantes de la región."
+        "description": "No te pierdas las fiestas, festivales y competencias que hacen única a nuestra región.",
+        "accentSubtitle": "Agenda Litoral",
+        "viewAll": "Ver todos los eventos →",
+        "emptyState": "No hay eventos proximos en este momento"
     },
     "latestPosts": {
+        "tagline": "Informate, Inspirate, Conoce",
         "title": "Últimos artículos",
-        "description": "Conocé más sobre Entre Ríos y sus alrededores."
+        "subtitle": "Historias, guías y secretos del litoral entrerriano para inspirar tu próxima aventura.",
+        "description": "Conocé más sobre Entre Ríos y sus alrededores.",
+        "accentSubtitle": "Nuestro blog",
+        "viewAll": "Ver todos los artículos →",
+        "emptyState": "No hay articulos disponibles en este momento"
     },
     "testimonials": {
-        "title": "Lo que dicen nuestros usuarios",
-        "description": "Historias de quienes ya disfrutaron de nuestros alojamientos.",
-        "accentSubtitle": "Experiencias reales",
+        "title": "Nuestros turistas",
+        "tagline": "Testimonios",
+        "description": "Últimas reviews y opiniones que dejaron nuestros turistas sobre los destinos y alojamientos que se publican en nuestro portal.",
+        "accentSubtitle": "Testimonios",
         "prevAriaLabel": "Testimonial anterior",
         "nextAriaLabel": "Siguiente testimonial",
         "dotAriaLabel": "Ir a testimonial {{index}}",
@@ -42,12 +80,15 @@
         "starsAriaLabel": "{{rating}} de 5 estrellas"
     },
     "statistics": {
-        "title": "Numeros que hablan por si solos",
-        "accentSubtitle": "Nuestra plataforma",
-        "accommodations": "Alojamientos",
-        "destinations": "Destinos",
-        "reviews": "Resenas",
-        "experience": "Anos de experiencia"
+        "title": "Nuestros números",
+        "accentSubtitle": "Estadísticas",
+        "subtitle": "La comunidad de turismo más grande del Litoral",
+        "accommodations": "Alojamientos verificados",
+        "destinations": "Destinos en Entre Ríos",
+        "reviews": "Reseñas de viajeros",
+        "posts": "Tipos de experiencias",
+        "experience": "Turistas conectados",
+        "events": "Eventos y actividades"
     },
     "categories": {
         "title": "Tipos de alojamiento",
@@ -70,11 +111,44 @@
         "accentSubtitle": "Mantenete informado",
         "alreadySubscribed": "Ya estas suscripto a nuestro newsletter."
     },
+    "about": {
+        "accentSubtitle": "Acerca de nosotros",
+        "title": "Los mejores alojamientos e información para tus vacaciones",
+        "description": "Desde 2022, conectamos viajeros con los mejores alojamientos de Concepción del Uruguay y el litoral entrerriano. Nuestro equipo trabaja para que descubras los rincones más auténticos de la región, con información actualizada y experiencias verificadas por nuestra comunidad.",
+        "experienceBadge": "2 años de experiencia",
+        "primaryPhotoAlt": "Alojamientos y paisajes del Litoral argentino",
+        "travelerPhotoAlt": "Viajeros disfrutando del Litoral entrerriano",
+        "feature1": {
+            "title": "Alojamientos verificados y seguros",
+            "description": "Todos los alojamientos de la plataforma son verificados para garantizar una experiencia de calidad."
+        },
+        "feature2": {
+            "title": "Disponibilidad en tiempo real",
+            "description": "Consultá disponibilidad y reservá al instante, sin intermediarios ni llamadas telefónicas."
+        }
+    },
     "ownerCta": {
         "accentSubtitle": "Para propietarios",
-        "title": "Publica tu alojamiento en Hospeda",
-        "description": "Llega a miles de viajeros que buscan alojamientos en el Litoral argentino. Simple, rapido y efectivo.",
-        "button": "Comenzar ahora"
+        "title": "Publica tu alojamiento",
+        "description": "Llega a miles de viajeros que buscan alojamientos en el Litoral argentino.",
+        "button": "Publicá tu alojamiento →",
+        "feature1": {
+            "title": "Publicación en minutos",
+            "description": "Creá tu perfil, subí fotos y empezá a recibir consultas sin trámites ni complicaciones"
+        },
+        "feature2": {
+            "title": "Visibilidad donde importa",
+            "description": "Tu alojamiento aparece en búsquedas de turistas que ya decidieron viajar al litoral entrerriano"
+        },
+        "feature3": {
+            "title": "Sin comisiones ocultas",
+            "description": "Planes claros con precio fijo mensual. Sin porcentaje por reserva ni sorpresas en la facturación"
+        },
+        "statsLabel": "viajeros satisfechos"
+    },
+    "partners": {
+        "tagline": "Nuestros partners",
+        "title": "Empresas e instituciones que confían y apoyan"
     },
     "page": {
         "title": "Inicio",
@@ -114,10 +188,14 @@
         }
     },
     "searchBar": {
-        "typePlaceholder": "Tipo de alojamiento",
+        "destinationLabel": "Destino",
         "destinationPlaceholder": "¿Dónde querés ir?",
-        "datesPlaceholder": "Fechas",
-        "guestsPlaceholder": "Huéspedes",
+        "typeLabel": "Tipo",
+        "typePlaceholder": "¿Tipo de alojamiento?",
+        "datesLabel": "Fechas",
+        "datesPlaceholder": "¿Cuándo querés venir?",
+        "guestsLabel": "Huéspedes",
+        "guestsPlaceholder": "¿Cuántas personas son?",
         "checkInLabel": "Llegada",
         "checkOutLabel": "Salida",
         "adultsLabel": "Adultos",
@@ -128,6 +206,20 @@
         "searchAriaLabel": "Buscar alojamientos",
         "closePanelAriaLabel": "Cerrar panel",
         "moreSelected_one": "& {{count}} más",
-        "moreSelected_other": "& {{count}} más"
+        "moreSelected_other": "& {{count}} más",
+        "allTypes": "Todos los tipos",
+        "clearTypes": "Limpiar",
+        "types": {
+            "HOTEL": "Hotel",
+            "APARTMENT": "Departamento",
+            "HOUSE": "Casa",
+            "COUNTRY_HOUSE": "Casa de campo",
+            "CABIN": "Cabaña",
+            "HOSTEL": "Hostel",
+            "CAMPING": "Camping",
+            "ROOM": "Habitación",
+            "MOTEL": "Motel",
+            "RESORT": "Resort"
+        }
     }
 }

@@ -62,6 +62,12 @@
     "submit": "Submit",
     "viewAll": "View all",
     "yes": "Yes",
+    "carousel": {
+        "previousSlide": "Previous slide",
+        "nextSlide": "Next slide"
+    },
+    "skipToContent": "Skip to main content",
+    "scrollToTop": "Back to top",
     "sitemap": {
         "title": "Sitemap",
         "description": "Hospeda sitemap. Quickly find all pages, accommodations, destinations, events and resources available on our platform",

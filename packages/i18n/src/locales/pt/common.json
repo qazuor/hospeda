@@ -62,6 +62,12 @@
     "submit": "Enviar",
     "viewAll": "Ver tudo",
     "yes": "Sim",
+    "carousel": {
+        "previousSlide": "Slide anterior",
+        "nextSlide": "Proximo slide"
+    },
+    "skipToContent": "Pular para o conteudo principal",
+    "scrollToTop": "Voltar ao topo",
     "sitemap": {
         "title": "Mapa do Site",
         "description": "Mapa do site da Hospeda. Encontre rapidamente todas as páginas, acomodações, destinos, eventos e recursos disponíveis em nossa plataforma",
