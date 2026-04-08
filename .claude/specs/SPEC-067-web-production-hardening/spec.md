@@ -1,6 +1,6 @@
 # SPEC-067: Web App Production Hardening
 
-> **Status**: draft
+> **Status**: completed
 > **Priority**: P1 (high)
 > **Complexity**: XL
 > **Origin**: Production readiness audit of `apps/web`
