@@ -17,6 +17,7 @@ const TestimonialItemSchema = z.object({
     type: z.enum(['accommodation', 'destination']),
     entityId: z.string().uuid(),
     entityName: z.string(),
+    entitySlug: z.string().optional(),
     userName: z.string(),
     avatarUrl: z.string().url().optional(),
     rating: z.number(),
@@ -35,6 +36,7 @@ function transformAccommodationReview(review: AccommodationReviewWithUser): Test
     const name =
         (review as unknown as { accommodation?: { name: string } }).accommodation?.name ??
         'Alojamiento';
+    const slug = (review as unknown as { accommodation?: { slug: string } }).accommodation?.slug;
     const userName = review.user
         ? ((`${review.user.firstName ?? ''} ${review.user.lastName ?? ''}`.trim() ||
               review.user.displayName) ??
@@ -46,6 +48,7 @@ function transformAccommodationReview(review: AccommodationReviewWithUser): Test
         type: 'accommodation',
         entityId: review.accommodationId,
         entityName: name,
+        entitySlug: slug,
         userName,
         avatarUrl: review.user?.avatar,
         rating: review.averageRating,
@@ -60,6 +63,7 @@ function transformAccommodationReview(review: AccommodationReviewWithUser): Test
 function transformDestinationReview(review: DestinationReviewWithUser): TestimonialItem {
     const name =
         (review as unknown as { destination?: { name: string } }).destination?.name ?? 'Destino';
+    const slug = (review as unknown as { destination?: { slug: string } }).destination?.slug;
     const userName = review.user
         ? ((`${review.user.firstName ?? ''} ${review.user.lastName ?? ''}`.trim() ||
               review.user.displayName) ??
@@ -71,6 +75,7 @@ function transformDestinationReview(review: DestinationReviewWithUser): Testimon
         type: 'destination',
         entityId: review.destinationId,
         entityName: name,
+        entitySlug: slug,
         userName,
         avatarUrl: review.user?.avatar,
         rating: review.averageRating,

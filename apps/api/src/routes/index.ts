@@ -72,6 +72,7 @@ import {
     adminSponsorshipPackageRoutes,
     publicSponsorshipPackageRoutes
 } from './sponsorship-package';
+import { publicStatsRoutes } from './stats/public';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes } from './user-bookmark';
@@ -153,6 +154,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/plans', publicBillingRoutes);
         app.route('/api/v1/public', contactRoutes);
         app.route('/api/v1/public/feedback', publicFeedbackRoutes);
+
+        // Platform statistics
+        app.route('/api/v1/public/stats', publicStatsRoutes);
 
         // Testimonials
         app.route('/api/v1/public/testimonials', publicTestimonialRoutes);
