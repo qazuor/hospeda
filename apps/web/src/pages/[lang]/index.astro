@@ -72,7 +72,7 @@ const platformStats: readonly StatItemData[] = statsResult.ok
         slot="head"
         title="Inicio"
         description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
-        canonical={`https://hospeda.com.ar/${locale}/`}
+        canonical={`${import.meta.env.SITE ?? 'https://hospeda.com.ar'}/${locale}/`}
         locale={locale}
     />
     <!-- 1. Hero -->

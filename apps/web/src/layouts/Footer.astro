@@ -9,10 +9,12 @@
  * Rendering: Static (no client JavaScript).
  */
 
+import { Image } from "astro:assets";
 import SocialLinks from "@/components/shared/SocialLinks.astro";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import logoSrc from "@/assets/images/logo.webp";
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -72,11 +74,11 @@ const companyLinks = [
             <!-- LEFT BLOCK: logo + description + social -->
             <div class="footer__left">
                 <div class="footer__logo">
-                    <img
-                        src="/src/assets/images/logo.webp"
+                    <Image
+                        src={logoSrc}
                         alt="Hospeda logo"
-                        width="58"
-                        height="63"
+                        width={58}
+                        height={63}
                         class="footer__logo-icon"
                         loading="lazy"
                     />
@@ -100,7 +102,9 @@ const companyLinks = [
                     </div>
                     <div class="footer__newsletter-form">
                         <input
-                            type="text"
+                            type="email"
+                            name="email"
+                            autocomplete="email"
                             class="footer__newsletter-input"
                             placeholder={t("footer.newsletterPlaceholder")}
                             aria-label={t("footer.newsletterPlaceholder")}
@@ -112,7 +116,7 @@ const companyLinks = [
                 </div>
 
                 <!-- Navigation columns -->
-                <nav class="footer__nav" aria-label="Footer navigation">
+                <nav class="footer__nav" aria-label={t("footer.navigation", "Footer navigation")}>
                     <div class="footer__nav-col">
                         <h4 class="footer__nav-heading">{t("footer.exploreTitle")}</h4>
                         <ul class="footer__nav-list">

@@ -5,12 +5,15 @@
  * White bg, 110px height, logo (icon + wordmark) + nav links (uppercase + dividers) + user area.
  */
 
+import { Image } from "astro:assets";
 import { HamburgerIcon } from "@repo/icons";
+import LanguageSwitcher from '@/components/shared/LanguageSwitcher.astro';
 import { MobileMenu } from "@/components/shared/MobileMenu.client";
 import AuthSection from '@/components/shared/AuthSection.astro';
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import logoSrc from "@/assets/images/logo.webp";
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -20,11 +23,11 @@ const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const navLinks = [
-    { label: "ALOJAMIENTOS", href: buildUrl({ locale, path: "/alojamientos/" }) },
-    { label: "DESTINOS", href: buildUrl({ locale, path: "/destinos/" }) },
-    { label: "EVENTOS", href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: "PUBLICACIONES", href: buildUrl({ locale, path: "/publicaciones/" }) },
-    { label: "CONTACTO", href: buildUrl({ locale, path: "/contacto/" }) },
+    { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
+    { label: t("nav.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
+    { label: t("nav.events"), href: buildUrl({ locale, path: "/eventos/" }) },
+    { label: t("nav.blog"), href: buildUrl({ locale, path: "/publicaciones/" }) },
+    { label: t("nav.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
 ] as const;
 
 const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
@@ -33,19 +36,20 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
 <header data-header class="header" role="banner">
     <div class="header__inner">
         <!-- LOGO -->
-        <a href={buildUrl({ locale, path: "/" })} class="header__logo" aria-label="Hospeda - Ir al inicio">
-            <img
+        <a href={buildUrl({ locale, path: "/" })} class="header__logo" aria-label={t("nav.goHome", "Hospeda - Go to home")}>
+            <Image
                 class="header__logo-icon"
-                src="/src/assets/images/logo.webp"
+                src={logoSrc}
                 alt="Hospeda logo"
-                width="60"
+                width={60}
+                height={65}
                 loading="eager"
             />
             <span class="header__logo-text">Hospeda</span>
         </a>
 
         <!-- NAVIGATION -->
-        <nav class="header__nav" aria-label="Navegacion principal">
+        <nav class="header__nav" aria-label={t("nav.mainNavigation", "Main navigation")}>
             {
                 navLinks.map((link, i) => (
                     <>
@@ -62,7 +66,7 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         <button
             data-mobile-toggle
             class="header__hamburger"
-            aria-label="Abrir menu de navegacion"
+            aria-label={t("nav.openMenu", "Open navigation menu")}
             aria-expanded="false"
             type="button"
         >
@@ -71,6 +75,7 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
 
         <!-- USER AREA (dynamic auth state via Server Island) -->
         <div class="header__right">
+            <LanguageSwitcher locale={locale} currentPath={Astro.url.pathname} />
             <AuthSection server:defer locale={locale} variant="scrolled">
                 <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
             </AuthSection>
@@ -269,28 +274,42 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
 </style>
 
 <script>
-    const SCROLL_THRESHOLD = 10;
-    const header = document.querySelector("[data-header]");
+    /** Track the scroll handler to remove it on re-init (View Transitions) */
+    let currentScrollHandler: (() => void) | null = null;
 
-    if (header) {
-        const updateHeader = () => {
-            header.classList.toggle("navbar--scrolled", window.scrollY > SCROLL_THRESHOLD);
-        };
+    function initHeaderScroll(): void {
+        const SCROLL_THRESHOLD = 10;
+        const header = document.querySelector("[data-header]");
 
-        /* Ensure correct state on load (no flash) */
-        updateHeader();
-        window.addEventListener("scroll", updateHeader, { passive: true });
+        // Clean up previous listener to prevent accumulation
+        if (currentScrollHandler) {
+            window.removeEventListener("scroll", currentScrollHandler);
+            currentScrollHandler = null;
+        }
+
+        if (header) {
+            const updateHeader = (): void => {
+                header.classList.toggle("navbar--scrolled", window.scrollY > SCROLL_THRESHOLD);
+            };
+
+            currentScrollHandler = updateHeader;
+            updateHeader();
+            window.addEventListener("scroll", updateHeader, { passive: true });
+        }
+
+        document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+            anchor.addEventListener("click", (e) => {
+                const href = anchor.getAttribute("href");
+                if (!href || href === "#") return;
+                const target = document.querySelector(href);
+                if (target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: "smooth" });
+                }
+            });
+        });
     }
 
-    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-        anchor.addEventListener("click", (e) => {
-            const href = anchor.getAttribute("href");
-            if (!href || href === "#") return;
-            const target = document.querySelector(href);
-            if (target) {
-                e.preventDefault();
-                target.scrollIntoView({ behavior: "smooth" });
-            }
-        });
-    });
+    // Runs on initial load AND after every client-side navigation
+    document.addEventListener("astro:page-load", initHeaderScroll);
 </script>

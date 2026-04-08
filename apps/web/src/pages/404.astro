@@ -1,0 +1,121 @@
+---
+/**
+ * @file 404.astro
+ * @description Custom 404 error page. Rendered by middleware rewrite when a page is not found.
+ * Uses i18n for all text, matching the site's visual identity.
+ */
+
+export const prerender = false;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const homeUrl = buildUrl({ locale, path: '/' });
+---
+
+<BaseLayout locale={locale} title={t('error.404.title')}>
+    <SEOHead
+        slot="head"
+        title={t('error.404.title')}
+        description={t('error.404.description')}
+        canonical={Astro.url.href}
+        locale={locale}
+        noindex={true}
+    />
+
+    <section class="error-page">
+        <div class="error-page__container">
+            <!-- Decorative illustration -->
+            <div class="error-page__illustration" aria-hidden="true">
+                <svg width="280" height="200" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="60" width="240" height="120" rx="24" fill="var(--surface-warm)" />
+                    <circle cx="100" cy="100" r="30" fill="var(--accent)" opacity="0.2" />
+                    <circle cx="180" cy="90" r="20" fill="var(--primary)" opacity="0.15" />
+                    <text x="140" y="130" text-anchor="middle" font-family="var(--font-heading)" font-size="48" font-weight="700" fill="var(--muted-foreground)" opacity="0.4">404</text>
+                </svg>
+            </div>
+
+            <h1 class="error-page__title">{t('error.404.heading')}</h1>
+            <p class="error-page__message">{t('error.404.message')}</p>
+
+            <div class="error-page__actions">
+                <a href={homeUrl} class="error-page__btn error-page__btn--primary">
+                    {t('error.404.goHome')}
+                </a>
+            </div>
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .error-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        padding: var(--space-section) var(--space-container-x);
+    }
+
+    .error-page__container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 520px;
+        gap: 24px;
+    }
+
+    .error-page__illustration {
+        margin-bottom: 8px;
+    }
+
+    .error-page__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--foreground);
+        line-height: 1.2;
+    }
+
+    .error-page__message {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--muted-foreground);
+        line-height: 1.6;
+    }
+
+    .error-page__actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+    }
+
+    .error-page__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        border-radius: var(--radius-button);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        font-weight: 600;
+        text-decoration: none;
+        transition: all var(--duration-normal) ease;
+    }
+
+    .error-page__btn--primary {
+        background-color: var(--accent);
+        color: var(--accent-foreground, #fff);
+    }
+
+    .error-page__btn--primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+</style>

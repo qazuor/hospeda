@@ -1,0 +1,141 @@
+---
+/**
+ * @file 500.astro
+ * @description Custom 500 error page. Shown when an internal server error occurs.
+ * Uses i18n for all text, matching the site's visual identity.
+ */
+
+export const prerender = false;
+
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const homeUrl = buildUrl({ locale, path: '/' });
+---
+
+<BaseLayout locale={locale} title={t('error.500.title')}>
+    <SEOHead
+        slot="head"
+        title={t('error.500.title')}
+        description={t('error.500.description')}
+        canonical={Astro.url.href}
+        locale={locale}
+        noindex={true}
+    />
+
+    <section class="error-page">
+        <div class="error-page__container">
+            <!-- Decorative illustration -->
+            <div class="error-page__illustration" aria-hidden="true">
+                <svg width="280" height="200" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="20" y="60" width="240" height="120" rx="24" fill="var(--surface-warm)" />
+                    <circle cx="140" cy="100" r="35" fill="var(--primary)" opacity="0.15" />
+                    <path d="M125 95 L155 95 M125 110 L145 110" stroke="var(--muted-foreground)" stroke-width="3" stroke-linecap="round" opacity="0.3" />
+                    <text x="140" y="135" text-anchor="middle" font-family="var(--font-heading)" font-size="48" font-weight="700" fill="var(--muted-foreground)" opacity="0.4">500</text>
+                </svg>
+            </div>
+
+            <h1 class="error-page__title">{t('error.500.heading')}</h1>
+            <p class="error-page__message">{t('error.500.message')}</p>
+
+            <div class="error-page__actions">
+                <button type="button" class="error-page__btn error-page__btn--primary" id="retry-btn">
+                    {t('error.500.retry')}
+                </button>
+                <a href={homeUrl} class="error-page__btn error-page__btn--secondary">
+                    {t('error.500.goHome')}
+                </a>
+            </div>
+        </div>
+    </section>
+</BaseLayout>
+
+<script>
+    document.getElementById('retry-btn')?.addEventListener('click', () => {
+        window.location.reload();
+    });
+</script>
+
+<style>
+    .error-page {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 60vh;
+        padding: var(--space-section) var(--space-container-x);
+    }
+
+    .error-page__container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 520px;
+        gap: 24px;
+    }
+
+    .error-page__illustration {
+        margin-bottom: 8px;
+    }
+
+    .error-page__title {
+        font-family: var(--font-heading);
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        font-weight: 700;
+        color: var(--foreground);
+        line-height: 1.2;
+    }
+
+    .error-page__message {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg);
+        color: var(--muted-foreground);
+        line-height: 1.6;
+    }
+
+    .error-page__actions {
+        display: flex;
+        gap: 16px;
+        margin-top: 8px;
+    }
+
+    .error-page__btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 32px;
+        border-radius: var(--radius-button);
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all var(--duration-normal) ease;
+        border: none;
+    }
+
+    .error-page__btn--primary {
+        background-color: var(--accent);
+        color: var(--accent-foreground, #fff);
+    }
+
+    .error-page__btn--primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .error-page__btn--secondary {
+        background-color: var(--muted);
+        color: var(--foreground);
+    }
+
+    .error-page__btn--secondary:hover {
+        background-color: var(--border);
+    }
+</style>
