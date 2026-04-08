@@ -23,12 +23,9 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('StarIcon');
         });
 
-        it('should import amenity-related icons', () => {
-            expect(src).toContain('WifiIcon');
-            expect(src).toContain('WifiHighIcon');
-            expect(src).toContain('PoolIcon');
-            expect(src).toContain('ParkingIcon');
-            expect(src).toContain('BbqGrillIcon');
+        it('should import resolveAmenityIcon from extracted icon module', () => {
+            expect(src).toContain('resolveAmenityIcon');
+            expect(src).toContain("from './accommodation-card-icons'");
         });
 
         it('should import getAccommodationTypeColor from @/lib/colors', () => {
@@ -50,8 +47,8 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('AccommodationCardData');
         });
 
-        it('should import CardAmenityFeature type', () => {
-            expect(src).toContain('CardAmenityFeature');
+        it('should import AccommodationCardData type', () => {
+            expect(src).toContain('AccommodationCardData');
         });
 
         it('should import SupportedLocale type', () => {
@@ -73,29 +70,34 @@ describe('AccommodationCard.astro', () => {
         });
     });
 
-    describe('amenity icon resolver', () => {
-        it('should define resolveAmenityIcon function', () => {
+    describe('amenity icon resolver (extracted to accommodation-card-icons.ts)', () => {
+        const iconsSrc = readFileSync(
+            resolve(__dirname, '../../../src/components/shared/accommodation-card-icons.ts'),
+            'utf8'
+        );
+
+        it('should import resolveAmenityIcon in the card', () => {
             expect(src).toContain('resolveAmenityIcon');
         });
 
         it('should map WifiHigh to WifiHighIcon', () => {
-            expect(src).toContain('WifiHigh: WifiHighIcon');
+            expect(iconsSrc).toContain('WifiHigh: WifiHighIcon');
         });
 
         it('should map Waves to PoolIcon', () => {
-            expect(src).toContain('Waves: PoolIcon');
+            expect(iconsSrc).toContain('Waves: PoolIcon');
         });
 
         it('should map Car to CarIcon', () => {
-            expect(src).toContain('Car: CarIcon');
+            expect(iconsSrc).toContain('Car: CarIcon');
         });
 
         it('should map FireSimple to BbqGrillIcon', () => {
-            expect(src).toContain('FireSimple: BbqGrillIcon');
+            expect(iconsSrc).toContain('FireSimple: BbqGrillIcon');
         });
 
         it('should have a fallback icon (WifiIcon)', () => {
-            expect(src).toContain('?? WifiIcon');
+            expect(iconsSrc).toContain('?? WifiIcon');
         });
 
         it('should use a MAX_AMENITIES constant limiting to 4', () => {
@@ -204,8 +206,8 @@ describe('AccommodationCard.astro', () => {
             expect(src).toContain('acc-card__fav-btn:focus-visible');
         });
 
-        it('should have aria-label on favorite button', () => {
-            expect(src).toContain('aria-label={`Guardar');
+        it('should have i18n aria-label on favorite button', () => {
+            expect(src).toContain("t('ui.saveItem'");
         });
     });
 });

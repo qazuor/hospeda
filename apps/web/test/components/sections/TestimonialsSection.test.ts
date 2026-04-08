@@ -1,7 +1,7 @@
 /**
  * @file TestimonialsSection.test.ts
  * @description Unit tests for TestimonialsSection.astro component.
- * Follows Astro testing pattern: read source file and assert on content.
+ * Updated after SPEC-048: star ratings are now delegated to TestimonialsCarousel island.
  */
 
 import { readFileSync } from 'node:fs';
@@ -14,18 +14,21 @@ const src = readFileSync(
 );
 
 describe('TestimonialsSection.astro', () => {
-    describe('star rating aria-label', () => {
-        it('should NOT use broken .replace() pattern for aria-label', () => {
-            expect(src).not.toContain('.replace(');
+    describe('carousel delegation', () => {
+        it('should NOT render star ratings inline (delegated to carousel island)', () => {
+            expect(src).not.toContain('parseStars');
+            expect(src).not.toContain('★');
+            expect(src).not.toContain('☆');
         });
 
-        it('should interpolate rating value directly in aria-label', () => {
-            expect(src).toContain('review.rating');
-            expect(src).toContain('starsAriaLabelSuffix');
+        it('should import and render TestimonialsCarousel island', () => {
+            expect(src).toContain('TestimonialsCarousel');
+            expect(src).toContain('client:visible');
         });
 
-        it('should build aria-label with template literal using review.rating', () => {
-            expect(src).toContain('`${review.rating}');
+        it('should pass reviews and locale props to the carousel', () => {
+            expect(src).toContain('reviews={reviews}');
+            expect(src).toContain('locale={locale}');
         });
     });
 
@@ -42,22 +45,18 @@ describe('TestimonialsSection.astro', () => {
             expect(src).toContain('SectionHeader');
         });
 
-        it('should render testimonial cards', () => {
-            expect(src).toContain('testimonial-card');
+        it('should apply testimonials-section BEM class', () => {
+            expect(src).toContain('testimonials-section');
         });
     });
 
-    describe('rating display', () => {
-        it('should render star characters for filled stars', () => {
-            expect(src).toContain('★');
+    describe('API integration', () => {
+        it('should import testimonialsApi', () => {
+            expect(src).toContain('testimonialsApi');
         });
 
-        it('should render empty star characters', () => {
-            expect(src).toContain('☆');
-        });
-
-        it('should use parseStars function', () => {
-            expect(src).toContain('parseStars');
+        it('should guard rendering when reviews array is empty', () => {
+            expect(src).toContain('reviews.length > 0');
         });
     });
 });

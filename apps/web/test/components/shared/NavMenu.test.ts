@@ -19,14 +19,16 @@ describe('NavMenu.astro', () => {
             expect(src).toContain('<nav');
         });
 
-        it('should have aria-label "Main navigation"', () => {
-            expect(src).toContain('aria-label="Main navigation"');
+        it('should use i18n for aria-label', () => {
+            expect(src).toContain("t('nav.mainNavigation'");
         });
     });
 
     describe('visibility', () => {
-        it('should be hidden by default and visible on md breakpoint', () => {
-            expect(src).toContain('hidden md:flex');
+        it('should be hidden by default and visible on md breakpoint via CSS media query', () => {
+            expect(src).toContain('display: none');
+            expect(src).toContain('@media');
+            expect(src).toContain('display: flex');
         });
     });
 
@@ -111,12 +113,12 @@ describe('NavMenu.astro', () => {
     });
 
     describe('active state', () => {
-        it('should apply text-accent class for active items', () => {
-            expect(src).toContain('text-accent');
+        it('should apply brand-accent color for active items via CSS', () => {
+            expect(src).toContain('var(--brand-accent)');
         });
 
-        it('should apply font-semibold class for active items', () => {
-            expect(src).toContain('font-semibold');
+        it('should apply font-weight 600 for active items', () => {
+            expect(src).toContain('font-weight: 600');
         });
 
         it('should set aria-current="page" on active links', () => {
@@ -152,8 +154,8 @@ describe('NavMenu.astro', () => {
     });
 
     describe('accessibility', () => {
-        it('should use focus-visible for keyboard navigation styles', () => {
-            expect(src).toContain('focus-visible:outline');
+        it('should use focus-visible CSS selector for keyboard navigation', () => {
+            expect(src).toContain(':focus-visible');
         });
 
         it('should use class:list for conditional classes', () => {

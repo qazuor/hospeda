@@ -178,8 +178,8 @@ describe('EventCard.astro', () => {
             expect(src).toContain('aria-hidden="true"');
         });
 
-        it('should use text-muted-foreground for secondary content', () => {
-            expect(src).toContain('text-muted-foreground');
+        it('should use muted-foreground CSS variable for secondary content', () => {
+            expect(src).toContain('muted-foreground');
         });
     });
 });
