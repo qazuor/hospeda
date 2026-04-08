@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /*/mi-cuenta/
+Disallow: /*/signin
+Disallow: /*/signup
+Disallow: /*/forgot-password
+Disallow: /_server-islands/
+
+Sitemap: https://hospeda.com.ar/sitemap-index.xml

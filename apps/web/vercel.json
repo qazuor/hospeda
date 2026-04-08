@@ -4,6 +4,13 @@
     "buildCommand": "cd ../.. && pnpm turbo run build --filter=hospeda-web",
     "outputDirectory": "dist",
     "installCommand": "pnpm install --frozen-lockfile",
+    "redirects": [
+        {
+            "source": "/",
+            "destination": "/es/",
+            "permanent": true
+        }
+    ],
     "headers": [
         {
             "source": "/(.*)",

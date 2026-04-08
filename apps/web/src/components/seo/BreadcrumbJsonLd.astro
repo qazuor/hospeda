@@ -1,0 +1,45 @@
+---
+/**
+ * @file BreadcrumbJsonLd.astro
+ * @description Renders BreadcrumbList structured data (JSON-LD) for search engines.
+ * Accepts an array of breadcrumb items with name and absolute URL.
+ *
+ * @example
+ * ```astro
+ * <BreadcrumbJsonLd items={[
+ *   { name: 'Inicio', url: 'https://hospeda.com.ar/es/' },
+ *   { name: 'Alojamientos', url: 'https://hospeda.com.ar/es/alojamientos/' },
+ *   { name: 'Casa del Río', url: 'https://hospeda.com.ar/es/alojamientos/casa-del-rio/' },
+ * ]} />
+ * ```
+ */
+
+interface BreadcrumbItem {
+    /** Display name for this breadcrumb level */
+    readonly name: string;
+    /** Absolute URL for this breadcrumb level */
+    readonly url: string;
+}
+
+interface Props {
+    /** Ordered list of breadcrumb items (first = root, last = current page) */
+    readonly items: readonly BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+
+const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: items.map((item, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: item.name,
+        item: item.url,
+    })),
+};
+
+const jsonLdContent = JSON.stringify(jsonLd, null, 0).replace(/</g, '\\u003c');
+---
+
+<script type="application/ld+json" set:html={jsonLdContent} />
