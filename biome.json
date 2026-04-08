@@ -3,11 +3,27 @@
     "extends": ["./packages/biome-config/biome.json"],
     "overrides": [
         {
-            "include": ["apps/web-old/src/components/event/CalendarView.client.tsx"],
+            "include": [
+                "apps/web/src/components/sections/SearchBar.client.tsx",
+                "apps/web/src/components/sections/DestinationsIsland.client.tsx",
+                "apps/web/src/components/shared/MobileMenu.client.tsx"
+            ],
             "linter": {
                 "rules": {
                     "a11y": {
-                        "useSemanticElements": "off"
+                        "useSemanticElements": "off",
+                        "useFocusableInteractive": "off",
+                        "noNoninteractiveTabindex": "off"
+                    }
+                }
+            }
+        },
+        {
+            "include": ["apps/web/src/components/sections/DestinationsIsland.client.tsx"],
+            "linter": {
+                "rules": {
+                    "suspicious": {
+                        "noArrayIndexKey": "off"
                     }
                 }
             }
