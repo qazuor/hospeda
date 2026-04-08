@@ -1,0 +1,158 @@
+---
+/**
+ * @file signin.astro
+ * @description Sign-in page — allows users to log in to their account.
+ *
+ * Authenticated users are immediately redirected to /mi-cuenta/.
+ * The `returnUrl` query param is read server-side and passed to the React island
+ * so the user returns to the page they were on after a successful sign-in.
+ *
+ * @route    /[lang]/auth/signin/
+ * @rendering SSR (reads `returnUrl` from query params; reads auth state from locals)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { getSiteUrl } from '@/lib/env';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { SignIn } from '@/components/auth/SignIn.client';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Redirect authenticated users to their account dashboard.
+if (Astro.locals.user) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const t = createT(locale);
+
+const title = t('auth-ui.pages.signin.title', 'Iniciar sesion');
+const description = t(
+    'auth-ui.pages.signin.description',
+    'Inicia sesion en tu cuenta de Hospeda'
+);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Determine post-login redirect target from `returnUrl` query param.
+const returnPath =
+    Astro.url.searchParams.get('returnUrl') || buildUrl({ locale, path: 'mi-cuenta' });
+const siteOrigin = getSiteUrl();
+const redirectTo = new URL(returnPath, siteOrigin).href;
+
+// Localized secondary link labels
+const labels = {
+    es: {
+        noAccount: 'No tienes cuenta?',
+        signUp: 'Registrarse',
+        forgotPassword: 'Olvidaste tu contrasena?'
+    },
+    en: {
+        noAccount: "Don't have an account?",
+        signUp: 'Sign Up',
+        forgotPassword: 'Forgot password?'
+    },
+    pt: {
+        noAccount: 'Nao tem uma conta?',
+        signUp: 'Registrar',
+        forgotPassword: 'Esqueceu a senha?'
+    }
+} as const satisfies Record<SupportedLocale, unknown>;
+
+const l = labels[locale];
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        canonical={canonicalUrl}
+        locale={locale}
+        noindex={true}
+    />
+
+    <div class="auth-page">
+        <div class="auth-page__card">
+            <SignIn client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
+
+            <div class="auth-page__links">
+                <a
+                    href={buildUrl({ locale, path: 'auth/forgot-password' })}
+                    class="auth-page__link"
+                >
+                    {l.forgotPassword}
+                </a>
+            </div>
+
+            <div class="auth-page__footer">
+                <span class="auth-page__footer-text">{l.noAccount}</span>
+                {' '}
+                <a
+                    href={buildUrl({ locale, path: 'auth/signup' })}
+                    class="auth-page__link auth-page__link--strong"
+                >
+                    {l.signUp}
+                </a>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style>
+    .auth-page {
+        display: flex;
+        min-height: calc(100vh - var(--header-height, 5rem));
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-section) var(--space-4, 1rem);
+    }
+
+    .auth-page__card {
+        width: 100%;
+        max-width: 28rem;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-8, 2rem);
+        box-shadow: var(--shadow-card);
+    }
+
+    .auth-page__links {
+        margin-top: var(--space-4, 1rem);
+        text-align: center;
+    }
+
+    .auth-page__footer {
+        margin-top: var(--space-4, 1rem);
+        text-align: center;
+    }
+
+    .auth-page__footer-text {
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+
+    .auth-page__link {
+        font-size: var(--text-body-sm);
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .auth-page__link:hover {
+        color: oklch(from var(--brand-primary) calc(l * 0.85) c h);
+    }
+
+    .auth-page__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .auth-page__link--strong {
+        font-weight: 600;
+    }
+</style>

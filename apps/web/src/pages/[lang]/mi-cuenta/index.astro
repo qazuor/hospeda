@@ -1,0 +1,672 @@
+---
+/**
+ * @file mi-cuenta/index.astro
+ * @description Account dashboard — shows user info and navigation to sub-sections.
+ *
+ * Auth protection: both the middleware AND this page check for a valid user.
+ * Middleware redirects before the page renders; the in-page guard is a safety net
+ * for any SSR edge case where middleware did not run.
+ *
+ * Quick stats (bookmarks, reviews, subscription) are fetched client-side so that
+ * we avoid SSR cookie-forwarding complexity and the page can show a skeleton first.
+ *
+ * @route    /[lang]/mi-cuenta/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import {
+    UserIcon,
+    FavoriteIcon,
+    StarIcon,
+    CreditCardIcon,
+    SettingsIcon
+} from '@repo/icons';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Auth guard: middleware should have redirected already, but this is the safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const t = createT(locale);
+
+const title = t('account.pages.dashboard.title', 'Mi Cuenta');
+const description = t(
+    'account.pages.dashboard.description',
+    'Gestiona tu perfil, favoritos, resenas y suscripcion'
+);
+const greeting = t('account.pages.dashboard.greeting', 'Hola');
+const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de control');
+const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
+const sectionsLabel = t('account.pages.dashboard.sectionsLabel', 'Secciones');
+
+// Generate user initials (up to 2 characters) for the avatar placeholder.
+const initials = user.name
+    .split(' ')
+    .map((word: string) => word[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+// Navigation cards (sidebar + main grid).
+const navItems = [
+    {
+        label: t('account.pages.dashboard.nav.editProfile', 'Editar perfil'),
+        href: buildUrl({ locale, path: 'mi-cuenta/editar' }),
+        description: t(
+            'account.pages.dashboard.nav.editProfileDesc',
+            'Actualizá tu información personal y foto de perfil'
+        ),
+        Icon: UserIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.myFavorites', 'Mis favoritos'),
+        href: buildUrl({ locale, path: 'mi-cuenta/favoritos' }),
+        description: t(
+            'account.pages.dashboard.nav.myFavoritesDesc',
+            'Alojamientos que guardaste para consultar más tarde'
+        ),
+        Icon: FavoriteIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.myReviews', 'Mis resenas'),
+        href: buildUrl({ locale, path: 'mi-cuenta/resenas' }),
+        description: t(
+            'account.pages.dashboard.nav.myReviewsDesc',
+            'Resenas que escribiste sobre alojamientos visitados'
+        ),
+        Icon: StarIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.mySubscription', 'Mi suscripcion'),
+        href: buildUrl({ locale, path: 'mi-cuenta/suscripcion' }),
+        description: t(
+            'account.pages.dashboard.nav.mySubscriptionDesc',
+            'Administrá tu plan y método de pago'
+        ),
+        Icon: CreditCardIcon
+    },
+    {
+        label: t('account.pages.dashboard.nav.preferences', 'Preferencias'),
+        href: buildUrl({ locale, path: 'mi-cuenta/preferencias' }),
+        description: t(
+            'account.pages.dashboard.nav.preferencesDesc',
+            'Configurá notificaciones, idioma y privacidad'
+        ),
+        Icon: SettingsIcon
+    }
+] as const;
+
+// Stat card labels (also used as data-label-* attributes for client-side update)
+const statFavoritesLabel = t('account.pages.dashboard.stats.favorites', 'Favoritos');
+const statReviewsLabel = t('account.pages.dashboard.stats.reviews', 'Resenas');
+const statSubscriptionLabel = t('account.pages.dashboard.stats.subscription', 'Suscripcion');
+const statFavoritesDesc = t('account.pages.dashboard.stats.favoritesDesc', 'Alojamientos guardados');
+const statReviewsDesc = t('account.pages.dashboard.stats.reviewsDesc', 'Resenas escritas');
+const statSubscriptionDesc = t('account.pages.dashboard.stats.subscriptionDesc', 'Plan actual');
+const statSubscriptionStatus = t(
+    'account.pages.dashboard.stats.subscriptionStatus',
+    'Estado de la suscripcion'
+);
+const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
+const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
+const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        canonical={canonicalUrl}
+        locale={locale}
+        noindex={true}
+    />
+
+    <div class="account">
+        <!-- ── User header card ── -->
+        <article id="user-header" class="account__header-card">
+            <div class="account__header-inner">
+                <!-- Avatar with initials fallback -->
+                <div class="account__avatar" aria-hidden="true">
+                    {initials}
+                </div>
+
+                <!-- Name + email -->
+                <div class="account__user-info">
+                    <h1 class="account__user-name">{greeting}, {user.name}</h1>
+                    <p class="account__user-email">{user.email}</p>
+                </div>
+            </div>
+        </article>
+
+        <!-- ── Two-column layout: sidebar + main ── -->
+        <div class="account__body">
+            <!-- Navigation sidebar -->
+            <aside id="account-nav" class="account__sidebar" aria-label="Navegación de cuenta">
+                <nav>
+                    <ul class="account__nav-list" role="list">
+                        {navItems.map(({ label, href, description: desc, Icon }) => (
+                            <li>
+                                <a href={href} class="account__nav-link">
+                                    <Icon
+                                        size={20}
+                                        weight="regular"
+                                        className="account__nav-icon"
+                                        aria-hidden="true"
+                                    />
+                                    <div>
+                                        <div class="account__nav-label">{label}</div>
+                                        <div class="account__nav-desc">{desc}</div>
+                                    </div>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                </nav>
+            </aside>
+
+            <!-- Main content: quick stats -->
+            <div id="account-stats" class="account__main">
+                <h2 class="account__section-title">{dashboardLabel}</h2>
+
+                <!-- Stat cards row -->
+                <div class="account__stats-grid">
+                    <!-- Favorites stat -->
+                    <article class="account__stat-card">
+                        <div class="account__stat-card-header">
+                            <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
+                            <FavoriteIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+                        </div>
+                        <p id="stat-favorites" class="account__stat-value" aria-live="polite">0</p>
+                        <p class="account__stat-desc">{statFavoritesDesc}</p>
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })}
+                            class="account__stat-link"
+                        >
+                            {viewLabel} {statFavoritesLabel.toLowerCase()} &rarr;
+                        </a>
+                    </article>
+
+                    <!-- Reviews stat -->
+                    <article class="account__stat-card">
+                        <div class="account__stat-card-header">
+                            <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
+                            <StarIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+                        </div>
+                        <p id="stat-reviews" class="account__stat-value" aria-live="polite">0</p>
+                        <p class="account__stat-desc">{statReviewsDesc}</p>
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/resenas' })}
+                            class="account__stat-link"
+                        >
+                            {viewLabel} {statReviewsLabel.toLowerCase()} &rarr;
+                        </a>
+                    </article>
+
+                    <!-- Subscription stat -->
+                    <article class="account__stat-card">
+                        <div class="account__stat-card-header">
+                            <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
+                            <CreditCardIcon size={24} weight="regular" className="account__stat-icon" aria-hidden="true" />
+                        </div>
+                        <p id="stat-subscription" class="account__stat-value" aria-live="polite">
+                            {statSubscriptionDesc}
+                        </p>
+                        <p
+                            id="stat-subscription-status"
+                            class="account__stat-desc"
+                            data-label-active={statActiveStatus}
+                            data-label-trial={statTrialStatus}
+                            data-label-free={statFreeStatus}
+                            aria-live="polite"
+                        >
+                            {statSubscriptionStatus}
+                        </p>
+                        <a
+                            href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}
+                            class="account__stat-link"
+                        >
+                            {viewLabel} {statSubscriptionLabel.toLowerCase()} &rarr;
+                        </a>
+                    </article>
+                </div>
+
+                <!-- Navigation cards grid (secondary) -->
+                <section class="account__sections" aria-label="Secciones de cuenta">
+                    <h2 class="account__section-subtitle">{sectionsLabel}</h2>
+                    <div class="account__sections-grid">
+                        {navItems.map(({ label, href, description: desc, Icon }) => (
+                            <a href={href} class="account__section-card">
+                                <div class="account__section-card-header">
+                                    <div class="account__section-icon-wrapper">
+                                        <Icon size={20} weight="regular" aria-hidden="true" />
+                                    </div>
+                                    <span class="account__section-card-label">{label}</span>
+                                </div>
+                                <p class="account__section-card-desc">{desc}</p>
+                            </a>
+                        ))}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</BaseLayout>
+
+<style>
+    /* ── Page container ── */
+    .account {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding: var(--space-8, 2rem) var(--space-4, 1rem);
+    }
+
+    /* ── User header card ── */
+    .account__header-card {
+        margin-bottom: var(--space-8, 2rem);
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+    }
+
+    .account__header-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-6, 1.5rem);
+        padding: var(--space-8, 2rem);
+    }
+
+    @media (min-width: 640px) {
+        .account__header-inner {
+            flex-direction: row;
+        }
+    }
+
+    .account__avatar {
+        flex-shrink: 0;
+        display: flex;
+        width: 6rem;
+        height: 6rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-pill);
+        background-color: var(--brand-primary);
+        color: var(--core-card);
+        font-size: 1.875rem;
+        font-weight: 700;
+        font-family: var(--font-heading);
+    }
+
+    .account__user-info {
+        flex: 1;
+        text-align: center;
+    }
+
+    @media (min-width: 640px) {
+        .account__user-info {
+            text-align: left;
+        }
+    }
+
+    .account__user-name {
+        margin: 0 0 0.25rem;
+        font-size: var(--text-h2, 1.875rem);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .account__user-email {
+        margin: 0;
+        font-size: var(--text-body, 1.125rem);
+        color: var(--core-muted-foreground);
+    }
+
+    /* ── Two-column layout ── */
+    .account__body {
+        display: grid;
+        gap: var(--space-8, 2rem);
+    }
+
+    @media (min-width: 1024px) {
+        .account__body {
+            grid-template-columns: 17.5rem 1fr;
+        }
+    }
+
+    /* ── Sidebar navigation ── */
+    .account__sidebar {
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-6, 1.5rem);
+    }
+
+    .account__nav-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .account__nav-link {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        border-radius: var(--radius-button);
+        padding: 0.75rem 1rem;
+        color: var(--core-foreground);
+        text-decoration: none;
+        transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    }
+
+    .account__nav-link:hover {
+        background-color: var(--surface-warm);
+    }
+
+    .account__nav-link:hover .account__nav-label {
+        color: var(--brand-primary);
+    }
+
+    .account__nav-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .account__nav-icon {
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+        color: var(--core-muted-foreground);
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__nav-link:hover .account__nav-icon {
+        color: var(--brand-primary);
+    }
+
+    .account__nav-label {
+        font-weight: 600;
+        font-size: var(--text-body-sm);
+        color: var(--core-foreground);
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__nav-desc {
+        font-size: var(--text-caption);
+        color: var(--core-muted-foreground);
+        margin-top: 0.125rem;
+    }
+
+    /* ── Main content ── */
+    .account__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6, 1.5rem);
+    }
+
+    .account__section-title {
+        margin: 0;
+        font-size: var(--text-h3, 1.5rem);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    /* ── Stats grid ── */
+    .account__stats-grid {
+        display: grid;
+        gap: var(--space-6, 1.5rem);
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+        .account__stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .account__stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .account__stat-card {
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-6, 1.5rem);
+        box-shadow: var(--shadow-card);
+        transition: box-shadow var(--duration-normal) ease;
+    }
+
+    .account__stat-card:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .account__stat-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .account__stat-card-title {
+        margin: 0;
+        font-size: var(--text-body, 1.125rem);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .account__stat-icon {
+        color: var(--brand-primary);
+    }
+
+    .account__stat-value {
+        margin: 0 0 0.5rem;
+        font-size: 1.875rem;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .account__stat-desc {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+
+    .account__stat-link {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 1rem;
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__stat-link:hover {
+        text-decoration: underline;
+    }
+
+    /* ── Sections cards grid ── */
+    .account__sections {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .account__section-subtitle {
+        margin: 0;
+        font-size: var(--text-body, 1.125rem);
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .account__sections-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+        .account__sections-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .account__sections-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .account__section-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-5, 1.25rem);
+        box-shadow: var(--shadow-card);
+        text-decoration: none;
+        transition: border-color var(--duration-normal) ease,
+            box-shadow var(--duration-normal) ease;
+    }
+
+    .account__section-card:hover {
+        border-color: oklch(from var(--brand-primary) l c h / 0.4);
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .account__section-card:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .account__section-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .account__section-icon-wrapper {
+        flex-shrink: 0;
+        display: flex;
+        width: 2.5rem;
+        height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-button);
+        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        color: var(--brand-primary);
+        transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    }
+
+    .account__section-card:hover .account__section-icon-wrapper {
+        background-color: var(--brand-primary);
+        color: var(--core-card);
+    }
+
+    .account__section-card-label {
+        font-weight: 600;
+        font-size: var(--text-body-sm);
+        color: var(--core-foreground);
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__section-card:hover .account__section-card-label {
+        color: var(--brand-primary);
+    }
+
+    .account__section-card-desc {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+</style>
+
+<script>
+    import { getApiUrl } from '@/lib/env';
+
+    /**
+     * Fetch user stats from the protected API and update the dashboard counters.
+     * Runs client-side to avoid SSR cookie-forwarding complexity.
+     * Falls back gracefully — default zeros are already rendered server-side.
+     */
+    async function loadStats(): Promise<void> {
+        const base = `${getApiUrl()}/api/v1/protected`;
+
+        try {
+            const [statsRes, reviewsRes] = await Promise.all([
+                fetch(`${base}/users/me/stats`, { credentials: 'include' }),
+                fetch(`${base}/users/me/reviews?pageSize=1`, { credentials: 'include' })
+            ]);
+
+            if (statsRes.ok) {
+                const statsData = (await statsRes.json()) as {
+                    data?: {
+                        bookmarkCount?: number;
+                        plan?: { name?: string; status?: string };
+                    };
+                };
+
+                const favEl = document.getElementById('stat-favorites');
+                if (favEl && statsData.data?.bookmarkCount !== undefined) {
+                    favEl.textContent = String(statsData.data.bookmarkCount);
+                }
+
+                const subEl = document.getElementById('stat-subscription');
+                if (subEl && statsData.data?.plan?.name) {
+                    subEl.textContent = statsData.data.plan.name;
+                }
+
+                const statusEl = document.getElementById('stat-subscription-status');
+                if (statusEl) {
+                    const plan = statsData.data?.plan;
+                    if (plan?.status) {
+                        const label = statusEl.getAttribute(`data-label-${plan.status}`);
+                        if (label) statusEl.textContent = label;
+                    } else {
+                        const freeLabel = statusEl.getAttribute('data-label-free');
+                        if (freeLabel) statusEl.textContent = freeLabel;
+                    }
+                }
+            }
+
+            if (reviewsRes.ok) {
+                const reviewsData = (await reviewsRes.json()) as {
+                    data?: { totals?: { total?: number } };
+                };
+                const revEl = document.getElementById('stat-reviews');
+                if (revEl && reviewsData.data?.totals?.total !== undefined) {
+                    revEl.textContent = String(reviewsData.data.totals.total);
+                }
+            }
+        } catch {
+            // Silently fail — default values are already displayed.
+        }
+    }
+
+    void loadStats();
+</script>

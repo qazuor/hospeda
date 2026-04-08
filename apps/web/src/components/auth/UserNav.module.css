@@ -1,0 +1,203 @@
+/**
+ * Styles for the UserNav island.
+ * All values use CSS custom properties from global.css — never hardcoded.
+ */
+
+.wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+/* ---- Trigger button ---- */
+
+.button {
+    display: inline-flex;
+    height: 2.5rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-inline: 1.25rem;
+    border-radius: var(--radius-pill);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease,
+        border-color var(--duration-normal) ease;
+    /* default (hero / transparent) variant */
+    border: 1px solid rgba(255 255 255 / 0.35);
+    color: #fff;
+    background-color: rgba(255 255 255 / 0.12);
+}
+
+.button:hover {
+    background-color: rgba(255 255 255 / 0.18);
+}
+
+.button--scrolled {
+    border: 1px solid oklch(from var(--core-foreground) l c h / 0.2);
+    color: var(--core-foreground);
+    background-color: transparent;
+}
+
+.button--scrolled:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.button:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ---- Avatar / initials ---- */
+
+.avatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: var(--radius-pill);
+    object-fit: cover;
+}
+
+.initials {
+    display: flex;
+    width: 1.5rem;
+    height: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-pill);
+    background-color: var(--accent);
+    color: var(--core-foreground);
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+/* ---- Display name ---- */
+
+.name {
+    display: none;
+    max-width: 8rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+    .name {
+        display: inline;
+    }
+}
+
+/* ---- Chevron ---- */
+
+.chevron {
+    transition: transform 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/* ---- Dropdown menu ---- */
+
+.menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    z-index: 50;
+    min-width: 16rem;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border);
+    background-color: var(--core-card);
+    padding-block: 0.5rem;
+    box-shadow: var(--shadow-card);
+}
+
+/* ---- User info header ---- */
+
+.menuHeader {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.menuHeaderName {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.menuHeaderEmail {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: var(--text-caption);
+    color: oklch(from var(--core-foreground) l c h / 0.6);
+}
+
+/* ---- Menu links ---- */
+
+.menuLinks {
+    padding-block: 0.25rem;
+}
+
+.menuLink {
+    display: block;
+    padding: 0.5rem 1rem;
+    font-size: var(--text-body-sm);
+    color: oklch(from var(--core-foreground) l c h / 0.8);
+    text-decoration: none;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.menuLink:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--core-foreground);
+}
+
+.menuLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+}
+
+/* ---- Divider ---- */
+
+.divider {
+    margin-block: 0.25rem;
+    border: none;
+    border-top: 1px solid var(--border);
+}
+
+/* ---- Sign-out button ---- */
+
+.signOutSection {
+    padding-block: 0.25rem;
+}
+
+.signOutButton {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    text-align: left;
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+    color: var(--destructive);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.signOutButton:hover {
+    background-color: oklch(from var(--destructive) l c h / 0.1);
+}
+
+.signOutButton:focus-visible {
+    outline: 2px solid var(--destructive);
+    outline-offset: -2px;
+}

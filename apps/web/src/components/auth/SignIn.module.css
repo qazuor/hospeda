@@ -1,0 +1,181 @@
+/* SignIn.module.css — Scoped styles for the SignIn React island */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.label {
+    display: block;
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    color: var(--core-foreground);
+    margin-bottom: 0.375rem;
+}
+
+.input {
+    width: 100%;
+    padding: 0.625rem 0.875rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    font-size: var(--text-body);
+    font-family: var(--font-sans);
+    color: var(--core-foreground);
+    background-color: var(--core-card);
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    box-sizing: border-box;
+}
+
+.input:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px oklch(from var(--brand-primary) l c h / 0.15);
+}
+
+.input::placeholder {
+    color: var(--core-muted-foreground);
+}
+
+.input:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.submitButton {
+    width: 100%;
+    padding: 0.625rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-button);
+    font-size: var(--text-body);
+    font-weight: 600;
+    font-family: var(--font-sans);
+    color: var(--primary-foreground, #fff);
+    background-color: var(--brand-primary);
+    cursor: pointer;
+    transition: filter var(--duration-fast) ease;
+}
+
+.submitButton:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.submitButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.oauthButton {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    font-size: var(--text-body-sm);
+    font-weight: 500;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease;
+}
+
+.oauthButton:hover:not(:disabled) {
+    background-color: var(--muted, oklch(from var(--core-card) calc(l * 0.97) c h));
+}
+
+.oauthButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.error {
+    padding: 0.75rem;
+    border-radius: var(--radius-button);
+    background-color: oklch(from var(--destructive) l c h / 0.1);
+    color: var(--destructive);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-sm);
+    font-family: var(--font-sans);
+}
+
+.dividerLine {
+    flex: 1;
+    height: 1px;
+    background-color: var(--border);
+}
+
+/* Skeleton loading state */
+.skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.skeletonLine {
+    background: linear-gradient(
+        90deg,
+        var(--muted, oklch(0.93 0 0)) 25%,
+        oklch(from var(--muted, oklch(0.93 0 0)) calc(l * 1.05) c h) 50%,
+        var(--muted, oklch(0.93 0 0)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+    border-radius: var(--radius-button);
+}
+
+.skeletonTitle {
+    height: 1.5rem;
+    width: 60%;
+}
+
+.skeletonField {
+    height: 5rem;
+    border-radius: var(--radius-button);
+    background: linear-gradient(
+        90deg,
+        var(--muted, oklch(0.93 0 0)) 25%,
+        oklch(from var(--muted, oklch(0.93 0 0)) calc(l * 1.05) c h) 50%,
+        var(--muted, oklch(0.93 0 0)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+.skeletonButton {
+    height: 2.5rem;
+    border-radius: var(--radius-button);
+    background: linear-gradient(
+        90deg,
+        var(--muted, oklch(0.93 0 0)) 25%,
+        oklch(from var(--muted, oklch(0.93 0 0)) calc(l * 1.05) c h) 50%,
+        var(--muted, oklch(0.93 0 0)) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}

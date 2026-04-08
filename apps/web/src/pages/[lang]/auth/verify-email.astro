@@ -1,0 +1,76 @@
+---
+/**
+ * @file verify-email.astro
+ * @description Email-verification page — handles the token link from a verification email.
+ *
+ * The verification token is extracted from the `?token=` query string server-side
+ * and passed as a prop to the React island so the island never reads the URL itself.
+ * On success the user is redirected to the sign-in page.
+ *
+ * @route    /[lang]/auth/verify-email/
+ * @rendering SSR (reads `token` from query params)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { VerifyEmail } from '@/components/auth/VerifyEmail.client';
+
+// Locale is injected by middleware — always a valid SupportedLocale.
+const locale = Astro.locals.locale as SupportedLocale;
+
+const t = createT(locale);
+
+const title = t('auth-ui.pages.verifyEmail.title', 'Verificar correo');
+const description = t(
+    'auth-ui.pages.verifyEmail.description',
+    'Verificacion de correo electronico'
+);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+// Extract the verification token from the URL query string.
+const token = Astro.url.searchParams.get('token') ?? '';
+
+// After successful verification, redirect the user to sign in.
+const redirectTo = buildUrl({ locale, path: 'auth/signin' });
+---
+
+<BaseLayout locale={locale} title={title} description={description}>
+    <SEOHead
+        slot="head"
+        title={title}
+        description={description}
+        canonical={canonicalUrl}
+        locale={locale}
+        noindex={true}
+    />
+
+    <div class="auth-page">
+        <div class="auth-page__card">
+            <VerifyEmail client:load locale={locale} token={token} redirectTo={redirectTo} />
+        </div>
+    </div>
+</BaseLayout>
+
+<style>
+    .auth-page {
+        display: flex;
+        min-height: calc(100vh - var(--header-height, 5rem));
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-section) var(--space-4, 1rem);
+    }
+
+    .auth-page__card {
+        width: 100%;
+        max-width: 28rem;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-8, 2rem);
+        box-shadow: var(--shadow-card);
+    }
+</style>
