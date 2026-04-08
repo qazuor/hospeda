@@ -257,28 +257,6 @@ export function createT(locale: SupportedLocale): TranslationFn {
 }
 
 /**
- * Legacy object-style translation function.
- * Kept for backward compatibility during migration.
- *
- * @deprecated Use createT() or createTranslations() instead
- */
-export function t({
-    locale,
-    namespace,
-    key,
-    fallback,
-    params
-}: {
-    locale: SupportedLocale;
-    namespace: Namespace;
-    key: string;
-    fallback?: string;
-    params?: Record<string, unknown>;
-}): string {
-    return resolve({ locale, fullKey: `${namespace}.${key}`, fallback, params });
-}
-
-/**
  * Re-export namespaces from @repo/i18n for convenience.
  */
 export { namespaces };

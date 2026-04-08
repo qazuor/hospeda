@@ -1,0 +1,164 @@
+---
+/**
+ * @file AccountStatsGrid.astro
+ * @description Quick stats grid for the account dashboard.
+ * Shows favorites count, reviews count, and subscription status.
+ * Values are updated client-side via DOM id references from the parent page script.
+ */
+
+import { FavoriteIcon, StarIcon, CreditCardIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
+const statFavoritesLabel = t('account.pages.dashboard.stats.favorites', 'Favoritos');
+const statReviewsLabel = t('account.pages.dashboard.stats.reviews', 'Reseñas');
+const statSubscriptionLabel = t('account.pages.dashboard.stats.subscription', 'Suscripción');
+const statFavoritesDesc = t('account.pages.dashboard.stats.favoritesDesc', 'Alojamientos guardados');
+const statReviewsDesc = t('account.pages.dashboard.stats.reviewsDesc', 'Reseñas escritas');
+const statSubscriptionDesc = t('account.pages.dashboard.stats.subscriptionDesc', 'Plan actual');
+const statSubscriptionStatus = t('account.pages.dashboard.stats.subscriptionStatus', 'Estado de la suscripción');
+const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
+const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
+const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
+---
+
+<div class="account__stats-grid">
+    <!-- Favorites stat -->
+    <article class="account__stat-card">
+        <div class="account__stat-card-header">
+            <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
+            <FavoriteIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+        </div>
+        <p id="stat-favorites" class="account__stat-value" aria-live="polite">0</p>
+        <p class="account__stat-desc">{statFavoritesDesc}</p>
+        <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
+            {viewLabel} {statFavoritesLabel.toLowerCase()} &rarr;
+        </a>
+    </article>
+
+    <!-- Reviews stat -->
+    <article class="account__stat-card">
+        <div class="account__stat-card-header">
+            <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
+            <StarIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
+        </div>
+        <p id="stat-reviews" class="account__stat-value" aria-live="polite">0</p>
+        <p class="account__stat-desc">{statReviewsDesc}</p>
+        <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
+            {viewLabel} {statReviewsLabel.toLowerCase()} &rarr;
+        </a>
+    </article>
+
+    <!-- Subscription stat -->
+    <article class="account__stat-card">
+        <div class="account__stat-card-header">
+            <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
+            <CreditCardIcon size={24} weight="regular" className="account__stat-icon" aria-hidden="true" />
+        </div>
+        <p id="stat-subscription" class="account__stat-value" aria-live="polite">
+            {statSubscriptionDesc}
+        </p>
+        <p
+            id="stat-subscription-status"
+            class="account__stat-desc"
+            data-label-active={statActiveStatus}
+            data-label-trial={statTrialStatus}
+            data-label-free={statFreeStatus}
+            aria-live="polite"
+        >
+            {statSubscriptionStatus}
+        </p>
+        <a href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })} class="account__stat-link">
+            {viewLabel} {statSubscriptionLabel.toLowerCase()} &rarr;
+        </a>
+    </article>
+</div>
+
+<style>
+    .account__stats-grid {
+        display: grid;
+        gap: var(--space-6, 1.5rem);
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+        .account__stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .account__stats-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .account__stat-card {
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-6, 1.5rem);
+        box-shadow: var(--shadow-card);
+        transition: box-shadow var(--duration-normal) ease;
+    }
+
+    .account__stat-card:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .account__stat-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.75rem;
+    }
+
+    .account__stat-card-title {
+        margin: 0;
+        font-size: var(--text-body, 1.125rem);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .account__stat-icon {
+        color: var(--brand-primary);
+    }
+
+    .account__stat-value {
+        margin: 0 0 0.5rem;
+        font-size: 1.875rem;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .account__stat-desc {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+
+    .account__stat-link {
+        display: inline-flex;
+        align-items: center;
+        margin-top: 1rem;
+        font-size: var(--text-body-sm);
+        font-weight: 500;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__stat-link:hover {
+        text-decoration: underline;
+    }
+</style>

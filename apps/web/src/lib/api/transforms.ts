@@ -1,4 +1,3 @@
-import type { ReviewCardData } from '@/data/types';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -7,59 +6,34 @@ import type { ReviewCardData } from '@/data/types';
  * props interface. Components MUST NOT consume raw API data directly.
  *
  * Pipeline: API Response (raw) → transforms.ts → Component Props (clean)
+ *
+ * Type definitions live in `@/data/types` (single source of truth).
+ * Re-exported here for backward compatibility with existing importers.
  */
+import type {
+    AccommodationCardData,
+    BlogPostCardData,
+    CardAmenityFeature,
+    DestinationCardData,
+    EventCardData,
+    ReviewCardData
+} from '@/data/types';
 import { extractFeaturedImageUrl, extractGalleryUrls } from '../media';
 
-// --- Shared sub-types ---
+// Re-export types from canonical source for backward compatibility
+export type {
+    AccommodationCardData,
+    BlogPostCardData,
+    CardAmenityFeature,
+    CardLocation,
+    CardPrice,
+    DestinationCardData,
+    EventCardData,
+    EventLocation,
+    ReviewCardData
+} from '@/data/types';
 
-/** Amenity or feature item extracted from a relation join. */
-export interface CardAmenityFeature {
-    readonly key: string;
-    readonly label: string;
-    readonly icon?: string;
-    readonly displayWeight?: number;
-}
-
-/** Price information for accommodation cards. */
-export interface CardPrice {
-    readonly amount: number;
-    readonly currency: string;
-    readonly period: string;
-}
-
-/** Simple location with city/state. */
-export interface CardLocation {
-    readonly city: string;
-    readonly state: string;
-}
-
-/** Event location with name/city. */
-export interface EventLocation {
-    readonly name: string;
-    readonly city: string;
-}
-
-// --- Accommodation Card Data ---
-
-/** Props for AccommodationCard component. */
-export interface AccommodationCardData {
-    readonly id: string;
-    readonly slug: string;
-    readonly name: string;
-    readonly summary: string;
-    readonly type: string;
-    readonly featuredImage: string;
-    readonly averageRating: number;
-    readonly reviewsCount: number;
-    readonly location: CardLocation;
-    readonly isFeatured: boolean;
-    readonly createdAt?: string;
-    readonly price?: CardPrice;
-    readonly amenities?: readonly CardAmenityFeature[];
-    readonly features?: readonly CardAmenityFeature[];
-}
-
-// --- Accommodation Card Data (Detailed) ---
+// --- Accommodation Card Data (Detailed) --- unique to transforms
 
 /** Props for AccommodationCardDetailed component. */
 export interface AccommodationDetailedCardData {
@@ -77,62 +51,6 @@ export interface AccommodationDetailedCardData {
     readonly reviewsCount: number;
     readonly price?: { readonly amount: number; readonly currency: string };
     readonly isFeatured: boolean;
-}
-
-// --- Destination Card Data ---
-
-/** Props for DestinationCard component. */
-export interface DestinationCardData {
-    readonly slug: string;
-    readonly name: string;
-    readonly summary: string;
-    readonly featuredImage: string;
-    readonly accommodationsCount: number;
-    readonly isFeatured: boolean;
-    readonly path: string;
-    readonly averageRating: number;
-    readonly reviewsCount: number;
-    readonly eventsCount: number;
-    readonly attractions?: readonly {
-        id: string;
-        name: string;
-        icon?: string;
-        displayWeight?: number;
-    }[];
-    readonly gallery?: readonly { url: string; caption?: string }[];
-    readonly coordinates?: { lat: string; long: string };
-    readonly ratingDimensions?: Record<string, number>;
-}
-
-// --- Event Card Data ---
-
-/** Props for EventCard component. */
-export interface EventCardData {
-    readonly slug: string;
-    readonly name: string;
-    readonly summary: string;
-    readonly featuredImage: string;
-    readonly category: string;
-    readonly date: { readonly start: string; readonly end?: string };
-    readonly isFeatured: boolean;
-    readonly location?: EventLocation;
-}
-
-// --- Blog Post Card Data ---
-
-/** Props for BlogPostCard component. */
-export interface BlogPostCardData {
-    readonly slug: string;
-    readonly title: string;
-    readonly summary: string;
-    readonly featuredImage: string;
-    readonly category: string;
-    readonly publishedAt: string;
-    readonly readingTimeMinutes: number;
-    readonly authorName: string;
-    readonly authorAvatar?: string;
-    readonly isFeatured: boolean;
-    readonly tags?: readonly string[];
 }
 
 // --- Helper: extract relation items (amenities / features) ---

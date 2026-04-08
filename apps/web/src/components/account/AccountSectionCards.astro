@@ -1,0 +1,144 @@
+---
+/**
+ * @file AccountSectionCards.astro
+ * @description Navigation section cards grid for the account dashboard.
+ * Displays clickable cards linking to account sub-pages.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import type { ComponentType } from 'react';
+
+interface NavItem {
+    readonly label: string;
+    readonly href: string;
+    readonly description: string;
+    readonly Icon: ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>;
+}
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly navItems: readonly NavItem[];
+}
+
+const { locale, navItems } = Astro.props;
+const { t } = createTranslations(locale);
+
+const sectionsLabel = t('account.pages.dashboard.sectionsLabel', 'Secciones');
+---
+
+<section class="account__sections" aria-label={t('account.sections', 'Account sections')}>
+    <h2 class="account__section-subtitle">{sectionsLabel}</h2>
+    <div class="account__sections-grid">
+        {navItems.map(({ label, href, description: desc, Icon }) => (
+            <a href={href} class="account__section-card">
+                <div class="account__section-card-header">
+                    <div class="account__section-icon-wrapper">
+                        <Icon size={20} weight="regular" aria-hidden="true" />
+                    </div>
+                    <span class="account__section-card-label">{label}</span>
+                </div>
+                <p class="account__section-card-desc">{desc}</p>
+            </a>
+        ))}
+    </div>
+</section>
+
+<style>
+    .account__sections {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .account__section-subtitle {
+        margin: 0;
+        font-size: var(--text-body, 1.125rem);
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .account__sections-grid {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 640px) {
+        .account__sections-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1280px) {
+        .account__sections-grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .account__section-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        border-radius: var(--radius-card);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        padding: var(--space-5, 1.25rem);
+        box-shadow: var(--shadow-card);
+        text-decoration: none;
+        transition: border-color var(--duration-normal) ease,
+            box-shadow var(--duration-normal) ease;
+    }
+
+    .account__section-card:hover {
+        border-color: oklch(from var(--brand-primary) l c h / 0.4);
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .account__section-card:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .account__section-card-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .account__section-icon-wrapper {
+        flex-shrink: 0;
+        display: flex;
+        width: 2.5rem;
+        height: 2.5rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-button);
+        background-color: oklch(from var(--brand-primary) l c h / 0.1);
+        color: var(--brand-primary);
+        transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+    }
+
+    .account__section-card:hover .account__section-icon-wrapper {
+        background-color: var(--brand-primary);
+        color: var(--core-card);
+    }
+
+    .account__section-card-label {
+        font-weight: 600;
+        font-size: var(--text-body-sm);
+        color: var(--core-foreground);
+        transition: color var(--duration-fast) ease;
+    }
+
+    .account__section-card:hover .account__section-card-label {
+        color: var(--brand-primary);
+    }
+
+    .account__section-card-desc {
+        margin: 0;
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+    }
+</style>

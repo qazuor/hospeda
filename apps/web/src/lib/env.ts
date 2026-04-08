@@ -95,10 +95,12 @@ export function getRevalidationSecret(): string | undefined {
 /**
  * Check if client-side logging is explicitly enabled via the PUBLIC_ENABLE_LOGGING flag.
  *
- * Returns true when running in development mode (so developers always see logs locally).
+ * Returns true when running in development mode (so developers always see logs locally),
+ * or when PUBLIC_ENABLE_LOGGING is explicitly set to 'true' in production.
  *
  * @returns True if logging should be active in the browser
  */
 export function isLoggingEnabled(): boolean {
-    return import.meta.env.DEV === true;
+    if (import.meta.env.DEV === true) return true;
+    return import.meta.env.PUBLIC_ENABLE_LOGGING === 'true';
 }
