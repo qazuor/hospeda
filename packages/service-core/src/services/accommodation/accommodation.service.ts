@@ -50,6 +50,7 @@ import {
     AccommodationTopRatedParamsSchema,
     AccommodationUpdateInputSchema,
     type CountResponse,
+    type EntityFilters,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
     PermissionEnum,
@@ -90,6 +91,9 @@ import {
     checkCanUpdate,
     checkCanView
 } from './accommodation.permissions';
+
+/** Entity-specific filter fields for accommodation admin search. */
+type AccommodationEntityFilters = EntityFilters<typeof AccommodationAdminSearchSchema>;
 
 /**
  * Provides accommodation-specific business logic, including creation, updates,
@@ -272,14 +276,10 @@ export class AccommodationService extends BaseCrudService<
      * @returns A paginated list of matching accommodations.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<AccommodationEntityFilters>
     ): Promise<PaginatedListOutput<Accommodation>> {
         const { entityFilters, ...rest } = params;
-        const { minPrice, maxPrice, ...simpleFilters } = entityFilters as {
-            minPrice?: number;
-            maxPrice?: number;
-            [key: string]: unknown;
-        };
+        const { minPrice, maxPrice, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 

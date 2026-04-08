@@ -1,5 +1,5 @@
 import { UserModel, ilike, users as userTable } from '@repo/db';
-import type { User } from '@repo/schemas';
+import type { EntityFilters, User } from '@repo/schemas';
 import {
     PermissionEnum,
     ServiceErrorCode,
@@ -43,6 +43,9 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole } from './user.permissions';
+
+/** Entity-specific filter fields for user admin search. */
+type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
 
 /**
  * Service for managing users, roles, and permissions.
@@ -391,13 +394,10 @@ export class UserService extends BaseCrudService<
      * @returns A paginated list of users matching the criteria.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
         const { where, entityFilters, pagination, sort, search, extraConditions } = params;
-        const { email, ...simpleFilters } = entityFilters as {
-            email?: string;
-            [key: string]: unknown;
-        };
+        const { email, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
         if (search) additionalConditions.push(search);

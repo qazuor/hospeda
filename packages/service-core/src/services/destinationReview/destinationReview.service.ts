@@ -11,7 +11,8 @@ import {
     DestinationReviewSearchInputSchema,
     DestinationReviewUpdateInputSchema,
     type DestinationReviewsByUserInput,
-    DestinationReviewsByUserSchema
+    DestinationReviewsByUserSchema,
+    type EntityFilters
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -33,6 +34,9 @@ import {
     checkCanUpdateDestinationReview,
     checkCanViewDestinationReview
 } from './destinationReview.permissions';
+
+/** Entity-specific filter fields for destination review admin search. */
+type DestinationReviewEntityFilters = EntityFilters<typeof DestinationReviewAdminSearchSchema>;
 
 /**
  * Service for managing destination reviews.
@@ -160,14 +164,10 @@ export class DestinationReviewService extends BaseCrudService<
      * @returns A paginated list of destination reviews matching the filters.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<DestinationReviewEntityFilters>
     ): Promise<PaginatedListOutput<DestinationReview>> {
         const { entityFilters, ...rest } = params;
-        const { minRating, maxRating, ...simpleFilters } = entityFilters as {
-            minRating?: number;
-            maxRating?: number;
-            [key: string]: unknown;
-        };
+        const { minRating, maxRating, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 

@@ -15,6 +15,7 @@ import type {
     EventUpdateInput
 } from '@repo/schemas';
 import {
+    type EntityFilters,
     EventAdminSearchSchema,
     EventByAuthorInputSchema,
     EventByCategoryInputSchema,
@@ -53,6 +54,9 @@ import {
     checkCanUpdateEvent,
     checkCanViewEvent
 } from './event.permissions';
+
+/** Entity-specific filter fields for event admin search. */
+type EventEntityFilters = EntityFilters<typeof EventAdminSearchSchema>;
 
 /**
  * Service for managing events.
@@ -379,17 +383,11 @@ export class EventService extends BaseCrudService<
      * @returns A paginated list of events matching the criteria.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<EventEntityFilters>
     ): Promise<PaginatedListOutput<Event>> {
         const { entityFilters, ...rest } = params;
         const { startDateAfter, startDateBefore, endDateAfter, endDateBefore, ...simpleFilters } =
-            entityFilters as {
-                startDateAfter?: Date;
-                startDateBefore?: Date;
-                endDateAfter?: Date;
-                endDateBefore?: Date;
-                [key: string]: unknown;
-            };
+            entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 

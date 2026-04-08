@@ -1,5 +1,10 @@
 import { SponsorshipModel } from '@repo/db';
-import type { Sponsorship, SponsorshipCreateInput, SponsorshipSearchInput } from '@repo/schemas';
+import type {
+    EntityFilters,
+    Sponsorship,
+    SponsorshipCreateInput,
+    SponsorshipSearchInput
+} from '@repo/schemas';
 import {
     SponsorshipAdminSearchSchema,
     SponsorshipCreateInputSchema,
@@ -25,6 +30,9 @@ import {
     checkCanUpdateVisibility,
     checkCanView
 } from './sponsorship.permissions';
+
+/** Entity-specific filter fields for sponsorship admin search. */
+type SponsorshipEntityFilters = EntityFilters<typeof SponsorshipAdminSearchSchema>;
 
 /**
  * Service for managing sponsorships.
@@ -166,20 +174,14 @@ export class SponsorshipService extends BaseCrudService<
      * @returns A paginated list of matching sponsorships.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<SponsorshipEntityFilters>
     ): Promise<PaginatedListOutput<Sponsorship>> {
         const { entityFilters, ...rest } = params;
-
-        const { sponsorshipStatus, ...otherFilters } = entityFilters as {
-            sponsorshipStatus?: string;
-            [key: string]: unknown;
-        };
-
+        const { sponsorshipStatus, ...otherFilters } = entityFilters;
         const mappedFilters: Record<string, unknown> = { ...otherFilters };
         if (sponsorshipStatus) {
             mappedFilters.status = sponsorshipStatus;
         }
-
         return super._executeAdminSearch({ ...rest, entityFilters: mappedFilters });
     }
 

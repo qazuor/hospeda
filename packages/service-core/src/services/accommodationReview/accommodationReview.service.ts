@@ -23,6 +23,7 @@ import {
     type AccommodationReviewsByUserInput,
     AccommodationReviewsByUserSchema,
     type CountResponse,
+    type EntityFilters,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
@@ -46,6 +47,9 @@ import {
     checkCanUpdateAccommodationReview,
     checkCanViewAccommodationReview
 } from './accommodationReview.permissions';
+
+/** Entity-specific filter fields for accommodation review admin search. */
+type AccommodationReviewEntityFilters = EntityFilters<typeof AccommodationReviewAdminSearchSchema>;
 
 /**
  * Service for managing accommodation reviews.
@@ -177,14 +181,10 @@ export class AccommodationReviewService extends BaseCrudService<
      * @returns A paginated list of accommodation reviews matching the filters.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<AccommodationReviewEntityFilters>
     ): Promise<PaginatedListOutput<AccommodationReview>> {
         const { entityFilters, ...rest } = params;
-        const { minRating, maxRating, ...simpleFilters } = entityFilters as {
-            minRating?: number;
-            maxRating?: number;
-            [key: string]: unknown;
-        };
+        const { minRating, maxRating, ...simpleFilters } = entityFilters;
 
         const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
 
