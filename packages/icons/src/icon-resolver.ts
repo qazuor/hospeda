@@ -182,6 +182,16 @@ import { TwitterIcon } from './icons/social/TwitterIcon';
 import { WebIcon } from './icons/social/WebIcon';
 import { WhatsappIcon } from './icons/social/WhatsappIcon';
 
+// System icons (used in homepage features, stats, etc.)
+import { BuildingIcon } from './icons/system/BuildingIcon';
+import { CalendarDotsIcon } from './icons/system/CalendarDotsIcon';
+import { CompassIcon } from './icons/system/CompassIcon';
+import { LocationIcon } from './icons/system/LocationIcon';
+import { ShieldIcon } from './icons/system/ShieldIcon';
+import { SparkleIcon } from './icons/system/SparkleIcon';
+import { StarIcon } from './icons/system/StarIcon';
+import { UsersIcon } from './icons/system/UsersIcon';
+
 // Communication icons (stored in DB as contact channel types)
 import { ChatIcon } from './icons/communication/ChatIcon';
 import { ContactoIcon } from './icons/communication/ContactoIcon';
@@ -429,6 +439,16 @@ export const ICON_MAP: Record<string, IconComponent> = {
     NewsletterIcon,
     PhoneIcon,
     SmsIcon,
+
+    // System icons
+    BuildingIcon,
+    CalendarDotsIcon,
+    CompassIcon,
+    LocationIcon,
+    ShieldIcon,
+    SparkleIcon,
+    StarIcon,
+    UsersIcon,
 
     // Attraction icons
     AgriculturalCenterIcon,
