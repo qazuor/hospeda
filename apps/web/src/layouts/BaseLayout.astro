@@ -1,0 +1,156 @@
+---
+/**
+ * @file BaseLayout.astro
+ * @description Full HTML shell for all pages. Handles font loading, FOUC prevention,
+ * global styles, view transitions (ClientRouter), and page initialization.
+ *
+ * Renders: SkipToContent > Header > main#main-content > Footer > ScrollToTop
+ *
+ * Usage:
+ * ```astro
+ * <BaseLayout locale={locale} title="Page Title" description="Page description">
+ *   <slot />
+ * </BaseLayout>
+ * ```
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { ClientRouter } from 'astro:transitions';
+import Header from './Header.astro';
+import Footer from './Footer.astro';
+import SkipToContent from '@/components/shared/SkipToContent.astro';
+import ScrollToTop from '@/components/shared/ScrollToTop.astro';
+import NavigationProgress from '@/components/shared/NavigationProgress.astro';
+import '@/styles/global.css';
+import 'glightbox/dist/css/glightbox.min.css';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+}
+
+const {
+	locale,
+	title = 'Hospeda',
+	description = 'Descubrí alojamientos en el Litoral Entrerriano',
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang={locale}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="description" content={description} />
+		<title>{title} | Hospeda</title>
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+		<link rel="manifest" href="/site.webmanifest" />
+
+		<!-- Google Fonts: Geologica, Roboto, Caveat -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+			rel="stylesheet"
+		/>
+
+		<!-- FOUC prevention: hide text until fonts load.
+			 Guard with fonts.status check so client-side View Transition
+			 navigations (where fonts are already cached) never hide the body. -->
+		<script is:inline>
+			if (document.fonts.status !== 'loaded') {
+				document.documentElement.classList.add('fonts-loading');
+			}
+			document.fonts.ready.then(function() {
+				document.documentElement.classList.remove('fonts-loading');
+			});
+		</script>
+		<style is:inline>
+			.fonts-loading body {
+				opacity: 0;
+			}
+			body {
+				transition: opacity 0.2s ease;
+			}
+		</style>
+
+		<ClientRouter />
+
+		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
+		<slot name="head" />
+	</head>
+	<body>
+		<NavigationProgress />
+		<SkipToContent />
+		<Header locale={locale} />
+
+		<main id="main-content">
+			<slot />
+		</main>
+
+		<Footer locale={locale} />
+		<ScrollToTop />
+
+		<!-- Page initialization script -->
+		<script>
+			import { initScrollReveal } from '@/lib/scroll-reveal';
+			import GLightbox from 'glightbox';
+
+			function initParallax(): void {
+				if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+				const elements = document.querySelectorAll<HTMLElement>('[data-parallax-speed]');
+				if (elements.length === 0) return;
+
+				const observer = new IntersectionObserver((entries) => {
+					for (const entry of entries) {
+						const el = entry.target as HTMLElement;
+						if (entry.isIntersecting) {
+							el.dataset.parallaxActive = 'true';
+						} else {
+							delete el.dataset.parallaxActive;
+						}
+					}
+				}, { rootMargin: '100px' });
+
+				elements.forEach((el) => observer.observe(el));
+
+				let ticking = false;
+				window.addEventListener('scroll', () => {
+					if (ticking) return;
+					ticking = true;
+					requestAnimationFrame(() => {
+						for (const el of elements) {
+							if (el.dataset.parallaxActive !== 'true') continue;
+							const speed = parseFloat(el.dataset.parallaxSpeed || '0.1');
+							const rect = el.getBoundingClientRect();
+							const offset = (rect.top + rect.height / 2 - window.innerHeight / 2) * speed;
+							el.style.transform = `translateY(${offset}px)`;
+						}
+						ticking = false;
+					});
+				}, { passive: true });
+			}
+
+			function initPage(): void {
+				initScrollReveal();
+				initParallax();
+				// Initialize GLightbox for gallery and video elements
+				GLightbox({
+					selector: '[data-glightbox]',
+					touchNavigation: true,
+					loop: true,
+				});
+			}
+
+			// Runs on initial page load AND after every client-side navigation
+			document.addEventListener('astro:page-load', initPage);
+		</script>
+	</body>
+</html>

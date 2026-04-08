@@ -1,0 +1,502 @@
+---
+/**
+ * @file Footer.astro
+ * @description Site footer matching Figma design. Layout:
+ * - Wave SVG decoration overlapping the previous section
+ * - TOP ROW (flex): LEFT_BLOCK (logo + description + social) + RIGHT_BLOCK (newsletter card + nav grid)
+ * - BOTTOM BAR: contact info left, copyright right
+ *
+ * Rendering: Static (no client JavaScript).
+ */
+
+import SocialLinks from "@/components/shared/SocialLinks.astro";
+import type { SupportedLocale } from "@/lib/i18n";
+import { createTranslations } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const currentYear = new Date().getFullYear();
+
+/** EXPLORAR column */
+const exploreLinks = [
+    { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
+    { label: t("footer.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
+    { label: t("footer.events"), href: buildUrl({ locale, path: "/eventos/" }) },
+    { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
+    { label: t("footer.proprietors"), href: buildUrl({ locale, path: "/propietarios/" }) },
+] as const;
+
+/** DESTINOS column */
+const destinationLinks = [
+    { label: t("footer.destinationCdu"), href: buildUrl({ locale, path: "/destinos/concepcion-del-uruguay/" }) },
+    { label: t("footer.destinationColon"), href: buildUrl({ locale, path: "/destinos/colon/" }) },
+    { label: t("footer.destinationGualeguaychu"), href: buildUrl({ locale, path: "/destinos/gualeguaychu/" }) },
+    { label: t("footer.destinationSanJose"), href: buildUrl({ locale, path: "/destinos/san-jose/" }) },
+] as const;
+
+/** PROPIETARIOS column */
+const ownerLinks = [
+    { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/suscriptores/propietarios/" }) },
+    { label: t("footer.ownerPlans"), href: buildUrl({ locale, path: "/suscriptores/planes/" }) },
+    { label: t("footer.touristPlans"), href: buildUrl({ locale, path: "/suscriptores/turistas/" }) },
+    { label: t("footer.benefits"), href: buildUrl({ locale, path: "/beneficios/" }) },
+] as const;
+
+/** HOSPEDA column */
+const companyLinks = [
+    { label: t("footer.aboutUs"), href: buildUrl({ locale, path: "/nosotros/" }) },
+    { label: t("footer.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
+    { label: t("footer.terms"), href: buildUrl({ locale, path: "/legal/terminos/" }) },
+    { label: t("footer.privacy"), href: buildUrl({ locale, path: "/legal/privacidad/" }) },
+] as const;
+---
+
+<footer class="footer">
+    <!-- Wave decoration: overlaps the section above -->
+    <div class="footer__wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0,60 C240,120 480,0 720,60 C960,120 1200,0 1440,60 L1440,120 L0,120 Z" fill="var(--footer-bg)"
+            ></path>
+        </svg>
+    </div>
+
+    <!-- Top row: left block + right block -->
+    <div class="footer__top">
+        <div class="footer__container">
+            <!-- LEFT BLOCK: logo + description + social -->
+            <div class="footer__left">
+                <div class="footer__logo">
+                    <img
+                        src="/src/assets/images/logo.webp"
+                        alt="Hospeda logo"
+                        width="58"
+                        height="63"
+                        class="footer__logo-icon"
+                        loading="lazy"
+                    />
+                    <span class="footer__logo-wordmark">Hospeda</span>
+                </div>
+
+                <p class="footer__description">
+                    {t("footer.shortDescription")}
+                </p>
+
+                <SocialLinks variant="light" />
+            </div>
+
+            <!-- RIGHT BLOCK: newsletter card + nav grid -->
+            <div class="footer__right">
+                <!-- Newsletter card -->
+                <div class="footer__newsletter">
+                    <div class="footer__newsletter-text">
+                        <h3 class="footer__newsletter-title">{t("footer.newsletterTitle")}</h3>
+                        <p class="footer__newsletter-desc">{t("footer.newsletterDescription")}</p>
+                    </div>
+                    <div class="footer__newsletter-form">
+                        <input
+                            type="text"
+                            class="footer__newsletter-input"
+                            placeholder={t("footer.newsletterPlaceholder")}
+                            aria-label={t("footer.newsletterPlaceholder")}
+                        />
+                        <button type="button" class="footer__newsletter-btn">
+                            {t("footer.subscribe")}
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Navigation columns -->
+                <nav class="footer__nav" aria-label="Footer navigation">
+                    <div class="footer__nav-col">
+                        <h4 class="footer__nav-heading">{t("footer.exploreTitle")}</h4>
+                        <ul class="footer__nav-list">
+                            {
+                                exploreLinks.map(({ label, href }) => (
+                                    <li>
+                                        <a href={href} class="footer__nav-link">
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="footer__nav-col">
+                        <h4 class="footer__nav-heading">{t("footer.destinationsTitle")}</h4>
+                        <ul class="footer__nav-list">
+                            {
+                                destinationLinks.map(({ label, href }) => (
+                                    <li>
+                                        <a href={href} class="footer__nav-link">
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="footer__nav-col">
+                        <h4 class="footer__nav-heading">{t("footer.ownersTitle")}</h4>
+                        <ul class="footer__nav-list">
+                            {
+                                ownerLinks.map(({ label, href }) => (
+                                    <li>
+                                        <a href={href} class="footer__nav-link">
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+
+                    <div class="footer__nav-col">
+                        <h4 class="footer__nav-heading">{t("footer.hospedaTitle")}</h4>
+                        <ul class="footer__nav-list">
+                            {
+                                companyLinks.map(({ label, href }) => (
+                                    <li>
+                                        <a href={href} class="footer__nav-link">
+                                            {label}
+                                        </a>
+                                    </li>
+                                ))
+                            }
+                        </ul>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="footer__bottom">
+        <div class="footer__container footer__bottom-inner">
+            <p class="footer__bottom-contact">
+                {t("footer.contactEmail")}&nbsp;&nbsp;|&nbsp;&nbsp;{t("footer.contactPhone")}
+            </p>
+            <p class="footer__bottom-copy">
+                &copy; {currentYear} Hospeda. {t("footer.rights")}
+            </p>
+        </div>
+    </div>
+</footer>
+
+<style>
+    /* ========================================================
+       Footer — base
+       ======================================================== */
+    .footer {
+        position: relative;
+        background-color: var(--footer-bg);
+        color: var(--footer-fg);
+    }
+
+    /* ========================================================
+       Wave decoration
+       ======================================================== */
+    .footer__wave {
+        position: absolute;
+        top: -59px;
+        left: 0;
+        width: 100%;
+        height: 60px;
+        pointer-events: none;
+    }
+
+    .footer__wave svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* ========================================================
+       Shared container
+       ======================================================== */
+    .footer__container {
+        max-width: var(--container-max);
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+    }
+
+    /* ========================================================
+       Top row
+       ======================================================== */
+    .footer__top {
+        padding-top: 96px;
+    }
+
+    .footer__top .footer__container {
+        display: flex;
+        flex-direction: column;
+        gap: 48px;
+        padding-top: 48px;
+        padding-bottom: 48px;
+    }
+
+    /* ========================================================
+       Left block
+       ======================================================== */
+    .footer__left {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        flex-shrink: 0;
+    }
+
+    /* Logo: icon + wordmark (horizontal per Figma) */
+    .footer__logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-inline: 10px;
+    }
+
+    .footer__logo-icon {
+        width: 58px;
+        height: 63px;
+        object-fit: contain;
+    }
+
+    .footer__logo-wordmark {
+        font-family: var(--font-decorative);
+        font-size: 48px;
+        font-weight: 700;
+        color: var(--footer-fg);
+        line-height: 1;
+    }
+
+    /* Description */
+    .footer__description {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--footer-fg-muted);
+        text-align: center;
+        max-width: 205px;
+        line-height: 1.5;
+    }
+
+    /* ========================================================
+       Right block
+       ======================================================== */
+    .footer__right {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        flex: 1;
+    }
+
+    /* ========================================================
+       Newsletter card
+       ======================================================== */
+    .footer__newsletter {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background-color: var(--footer-newsletter-bg);
+        border: 1px solid var(--footer-newsletter-border);
+        border-radius: 24px;
+        padding: 16px 12px;
+    }
+
+    .footer__newsletter-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .footer__newsletter-title {
+        font-family: var(--font-heading);
+        font-size: 24px;
+        font-weight: 700;
+        color: var(--footer-newsletter-fg);
+        line-height: 1.2;
+    }
+
+    .footer__newsletter-desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--footer-newsletter-fg);
+        line-height: 1.5;
+    }
+
+    .footer__newsletter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .footer__newsletter-input {
+        background-color: var(--core-background, #f5f5f5);
+        border: 1px solid var(--border, #e0e0e0);
+        border-radius: 12px;
+        padding: 15px 16px;
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-foreground);
+        outline: none;
+        width: 100%;
+    }
+
+    .footer__newsletter-input:focus {
+        border-color: var(--footer-newsletter-fg);
+    }
+
+    .footer__newsletter-btn {
+        border-radius: var(--radius-pill, 9999px);
+        background: linear-gradient(135deg, oklch(0.25 0.03 220), oklch(0.18 0.03 200));
+        color: oklch(0.95 0.01 210);
+        border: none;
+        padding: 10px 24px;
+        font-family: var(--font-sans);
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: opacity var(--duration-normal) ease;
+        align-self: flex-start;
+    }
+
+    .footer__newsletter-btn:hover {
+        opacity: 0.85;
+    }
+
+    /* ========================================================
+       Navigation grid
+       ======================================================== */
+    .footer__nav {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        column-gap: 24px;
+        row-gap: 32px;
+        padding-left: 0;
+    }
+
+    .footer__nav-heading {
+        font-family: var(--font-heading);
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--footer-link);
+        margin-bottom: 12px;
+        line-height: 1.2;
+    }
+
+    .footer__nav-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        list-style: none;
+    }
+
+    .footer__nav-link {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--footer-fg-muted);
+        text-decoration: none;
+        transition: color var(--duration-normal) ease;
+        line-height: 1.4;
+    }
+
+    .footer__nav-link:hover {
+        color: var(--footer-fg);
+    }
+
+    /* ========================================================
+       Bottom bar
+       ======================================================== */
+    .footer__bottom {
+        border-top: 1px solid var(--footer-border);
+    }
+
+    .footer__bottom-inner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding-block: 16px;
+    }
+
+    .footer__bottom-contact,
+    .footer__bottom-copy {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--footer-fg-muted);
+        text-align: center;
+    }
+
+    /* ========================================================
+       Responsive: tablet (768px+)
+       ======================================================== */
+    @media (min-width: 768px) {
+        .footer__top .footer__container {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 64px;
+        }
+
+        .footer__newsletter {
+            flex-direction: row;
+            align-items: flex-start;
+            gap: 32px;
+        }
+
+        .footer__newsletter-text {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .footer__newsletter-form {
+            flex-direction: row;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .footer__newsletter-input {
+            width: 220px;
+        }
+
+        .footer__bottom-inner {
+            flex-direction: row;
+            justify-content: space-between;
+        }
+
+        .footer__bottom-contact,
+        .footer__bottom-copy {
+            text-align: left;
+        }
+    }
+
+    /* ========================================================
+       Responsive: desktop (1024px+)
+       ======================================================== */
+    @media (min-width: 1024px) {
+        .footer__top .footer__container {
+            gap: 64px;
+        }
+
+        .footer__newsletter {
+            gap: 48px;
+            padding: 16px 24px;
+        }
+
+        .footer__newsletter-input {
+            width: 260px;
+        }
+
+        .footer__nav {
+            grid-template-columns: repeat(4, 1fr);
+            column-gap: 46px;
+            row-gap: 19px;
+            padding-left: 48px;
+        }
+    }
+</style>

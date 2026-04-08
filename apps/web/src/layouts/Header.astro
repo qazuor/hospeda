@@ -1,0 +1,296 @@
+---
+/**
+ * @file Header.astro
+ * @description Site header matching Figma node 560:408.
+ * White bg, 110px height, logo (icon + wordmark) + nav links (uppercase + dividers) + user area.
+ */
+
+import { HamburgerIcon } from "@repo/icons";
+import { MobileMenu } from "@/components/shared/MobileMenu.client";
+import AuthSection from '@/components/shared/AuthSection.astro';
+import { createTranslations } from "@/lib/i18n";
+import type { SupportedLocale } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const navLinks = [
+    { label: "ALOJAMIENTOS", href: buildUrl({ locale, path: "/alojamientos/" }) },
+    { label: "DESTINOS", href: buildUrl({ locale, path: "/destinos/" }) },
+    { label: "EVENTOS", href: buildUrl({ locale, path: "/eventos/" }) },
+    { label: "PUBLICACIONES", href: buildUrl({ locale, path: "/publicaciones/" }) },
+    { label: "CONTACTO", href: buildUrl({ locale, path: "/contacto/" }) },
+] as const;
+
+const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
+---
+
+<header data-header class="header" role="banner">
+    <div class="header__inner">
+        <!-- LOGO -->
+        <a href={buildUrl({ locale, path: "/" })} class="header__logo" aria-label="Hospeda - Ir al inicio">
+            <img
+                class="header__logo-icon"
+                src="/src/assets/images/logo.webp"
+                alt="Hospeda logo"
+                width="60"
+                loading="eager"
+            />
+            <span class="header__logo-text">Hospeda</span>
+        </a>
+
+        <!-- NAVIGATION -->
+        <nav class="header__nav" aria-label="Navegacion principal">
+            {
+                navLinks.map((link, i) => (
+                    <>
+                        <a href={link.href} class="header__nav-link">
+                            {link.label}
+                        </a>
+                        {i < navLinks.length - 1 && <span class="header__nav-divider" aria-hidden="true" />}
+                    </>
+                ))
+            }
+        </nav>
+
+        <!-- HAMBURGER (Mobile) -->
+        <button
+            data-mobile-toggle
+            class="header__hamburger"
+            aria-label="Abrir menu de navegacion"
+            aria-expanded="false"
+            type="button"
+        >
+            <HamburgerIcon size={24} aria-hidden="true" />
+        </button>
+
+        <!-- USER AREA (dynamic auth state via Server Island) -->
+        <div class="header__right">
+            <AuthSection server:defer locale={locale} variant="scrolled">
+                <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
+            </AuthSection>
+        </div>
+    </div>
+</header>
+
+<MobileMenu client:media="(max-width: 1024px)" locale={locale} navItems={mobileNavItems} />
+
+<style>
+    /* Header bar — transparent at top, solid on scroll */
+    .header {
+        position: sticky;
+        top: 0;
+        z-index: var(--z-nav, 50);
+        width: 100%;
+        background-color: transparent;
+        transition:
+            background-color 300ms ease,
+            backdrop-filter 300ms ease,
+            box-shadow 300ms ease;
+    }
+
+    .header:global(.navbar--scrolled) {
+        background-color: oklch(from var(--core-card) l c h / 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .header__inner {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        max-width: 1440px;
+        margin: 0 auto;
+        padding: 8px 48px;
+    }
+
+    /* Logo */
+    .header__logo {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 10px;
+        overflow: hidden;
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
+    .header__logo:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+        border-radius: 4px;
+    }
+
+    .header__logo-icon {
+        width: 42px;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+
+    .header__logo-text {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: 32px;
+        line-height: 1.2;
+        color: var(--brand-secondary-foreground);
+        white-space: nowrap;
+    }
+
+    /* Navigation */
+    .header__nav {
+        display: none;
+        flex: 1 0 0;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 10px;
+    }
+
+    @media (min-width: 1024px) {
+        .header__nav {
+            display: flex;
+        }
+    }
+
+    .header__nav-link {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 13px;
+        line-height: 25.6px;
+        color: var(--core-foreground);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: color 0.2s ease;
+        border-radius: 2px;
+    }
+
+    .header__nav-link:hover {
+        color: var(--brand-primary);
+    }
+
+    .header__nav-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .header__nav-divider {
+        width: 1px;
+        height: 30px;
+        background-color: var(--border, #dee5eb);
+        flex-shrink: 0;
+    }
+
+    /* Right area */
+    .header__right {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        padding: 10px;
+        flex-shrink: 0;
+    }
+
+    @media (min-width: 1024px) {
+        .header__right {
+            display: flex;
+        }
+    }
+
+    .header__auth-skeleton {
+        display: inline-block;
+        width: 100px;
+        height: 2.5rem;
+        border-radius: var(--radius-pill);
+        background-color: oklch(from var(--core-foreground) l c h / 0.08);
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+    }
+
+    /* Hamburger (mobile) */
+    .header__hamburger {
+        display: none;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 4px;
+        color: var(--core-foreground);
+    }
+
+    .header__hamburger:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    @media (max-width: 1023px) {
+        .header__hamburger {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    }
+
+    /* Mobile */
+    @media (max-width: 767px) {
+        .header__inner {
+            padding: 12px 16px;
+            height: auto;
+            min-height: 64px;
+        }
+
+        .header__logo-icon {
+            width: 40px;
+            height: 44px;
+        }
+
+        .header__logo-text {
+            font-size: 28px;
+            line-height: 34px;
+        }
+    }
+
+    /* Tablet */
+    @media (min-width: 768px) and (max-width: 1023px) {
+        .header__inner {
+            padding: 12px 24px;
+        }
+    }
+</style>
+
+<script>
+    const SCROLL_THRESHOLD = 10;
+    const header = document.querySelector("[data-header]");
+
+    if (header) {
+        const updateHeader = () => {
+            header.classList.toggle("navbar--scrolled", window.scrollY > SCROLL_THRESHOLD);
+        };
+
+        /* Ensure correct state on load (no flash) */
+        updateHeader();
+        window.addEventListener("scroll", updateHeader, { passive: true });
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", (e) => {
+            const href = anchor.getAttribute("href");
+            if (!href || href === "#") return;
+            const target = document.querySelector(href);
+            if (target) {
+                e.preventDefault();
+                target.scrollIntoView({ behavior: "smooth" });
+            }
+        });
+    });
+</script>
