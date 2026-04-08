@@ -36,7 +36,7 @@ const { t } = createTranslations(locale);
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });
-const categoryLabel = getPostCategoryLabel({ category: data.category });
+const categoryLabel = getPostCategoryLabel({ category: data.category, t });
 const categoryEmoji = getPostCategoryEmoji({ category: data.category });
 const hasImage = Boolean(data.featuredImage);
 
@@ -91,7 +91,7 @@ const mutedColorScheme = {
                     class="featured-card__img"
                     width="800"
                     height="500"
-                    onerror="this.onerror=null;this.style.display='none';"
+                    data-hide-on-error
                 />
             )}
             {isTrending && (

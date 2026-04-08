@@ -15,10 +15,12 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import {
+    buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
     buildSentryReportUri,
     extractLocaleFromPath,
+    generateCspNonce,
     isAuthRoute,
     isProtectedRoute,
     isServerIslandRoute,
@@ -31,6 +33,10 @@ import {
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;
+
+    // Generate a CSP nonce for this request (used by BaseLayout for inline scripts/styles)
+    const cspNonce = generateCspNonce();
+    (context.locals as { cspNonce: string }).cspNonce = cspNonce;
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -109,25 +115,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
         const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only';
 
-        const directives = [
-            "default-src 'self'",
-            "script-src 'self' 'strict-dynamic' 'unsafe-inline'",
-            "style-src 'self' https://fonts.googleapis.com 'unsafe-inline'",
-            "font-src 'self' https://fonts.gstatic.com",
-            "img-src 'self' data: https:",
-            `connect-src 'self' ${import.meta.env.PUBLIC_API_URL ?? ''} https://*.sentry.io https://*.vercel.app`,
-            "worker-src 'self' blob:",
-            'child-src blob:',
-            "object-src 'none'",
-            "base-uri 'self'",
-            "form-action 'self'",
-            "frame-ancestors 'none'",
-            "media-src 'self'",
-            'upgrade-insecure-requests',
-            sentryReportUri ? `report-uri ${sentryReportUri}` : null
-        ]
-            .filter(Boolean)
-            .join('; ');
+        const directives = buildCspHeader({
+            nonce: cspNonce,
+            apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
+            sentryReportUri
+        });
 
         response.headers.set(CSP_HEADER_NAME, directives);
     }

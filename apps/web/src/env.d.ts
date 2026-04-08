@@ -26,5 +26,11 @@ declare namespace App {
             /** User's email address */
             readonly email: string;
         } | null;
+
+        /**
+         * Cryptographic nonce for Content Security Policy.
+         * Generated per-request by middleware. Applied to inline scripts/styles in BaseLayout.
+         */
+        cspNonce: string;
     }
 }

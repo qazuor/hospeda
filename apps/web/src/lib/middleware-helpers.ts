@@ -291,5 +291,56 @@ export async function parseSessionUser({
     }
 }
 
+/**
+ * Generates a cryptographic nonce for Content Security Policy.
+ * Produces a base64-encoded string from 16 random bytes.
+ *
+ * @returns A unique base64-encoded nonce string
+ */
+export function generateCspNonce(): string {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return btoa(String.fromCharCode(...bytes));
+}
+
+/**
+ * Builds a Content-Security-Policy header value using nonce-based script/style policy.
+ *
+ * @param params - Object with nonce, optional API URL, and optional Sentry report URI
+ * @returns Formatted CSP directive string
+ */
+export function buildCspHeader({
+    nonce,
+    apiUrl,
+    sentryReportUri
+}: {
+    readonly nonce: string;
+    readonly apiUrl?: string;
+    readonly sentryReportUri?: string | null;
+}): string {
+    const validApiUrl = apiUrl && apiUrl.trim().length > 0 ? apiUrl.trim() : null;
+
+    const directives = [
+        "default-src 'self'",
+        `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+        `style-src 'self' https://fonts.googleapis.com 'nonce-${nonce}'`,
+        "font-src 'self' https://fonts.gstatic.com",
+        `img-src 'self' data: blob: https://*.vercel-storage.com https://*.public.blob.vercel-storage.com${validApiUrl ? ` ${new URL(validApiUrl).origin}` : ''}`,
+        `connect-src 'self'${validApiUrl ? ` ${validApiUrl}` : ''} https://*.sentry.io https://*.vercel.app`,
+        "worker-src 'self' blob:",
+        'child-src blob:',
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+        "media-src 'self'",
+        'upgrade-insecure-requests',
+        sentryReportUri ? `report-uri ${sentryReportUri}` : null
+    ]
+        .filter(Boolean)
+        .join('; ');
+
+    return directives;
+}
+
 // Re-export from shared package for backward compatibility
 export { buildSentryReportUri } from '@repo/utils';

@@ -11,26 +11,13 @@ import {
 	GalleryIcon,
 	LocationIcon,
 	StarIcon,
-	WifiIcon,
-	WifiHighIcon,
-	PoolIcon,
-	ParkingIcon,
-	BbqGrillIcon,
-	CoffeeIcon,
-	CarIcon,
-	KitchenIcon,
-	SharedKitchenIcon,
-	AirConditioningIcon,
-	BreakfastIcon,
-	SpaServicesIcon,
-	RestaurantIcon,
-	ThermalPoolsIcon,
 } from '@repo/icons';
+import { resolveAmenityIcon } from './accommodation-card-icons';
 import { getAccommodationTypeColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
-import type { AccommodationCardData, CardAmenityFeature } from '@/data/types';
+import type { AccommodationCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
@@ -59,86 +46,6 @@ const isNew = data.createdAt
 	? (Date.now() - new Date(data.createdAt).getTime()) < THIRTY_DAYS_MS
 	: false;
 
-/**
- * Resolves the Phosphor icon name stored in amenity data to the corresponding
- * `@repo/icons` component. Unknown names fall back to `WifiIcon`.
- *
- * @param amenity - The amenity item containing the `icon` field.
- * @returns The resolved icon component.
- */
-function resolveAmenityIcon(amenity: CardAmenityFeature): typeof WifiIcon {
-	/** Map from icon identifiers to imported components.
-	 *  Supports both raw names ("Wifi") and seed-style suffixed names ("WifiIcon"). */
-	const iconNameMap: Record<string, typeof WifiIcon> = {
-		WifiHigh: WifiHighIcon,
-		WifiHighIcon: WifiHighIcon,
-		Wifi: WifiIcon,
-		WifiIcon: WifiIcon,
-		Waves: PoolIcon,
-		Pool: PoolIcon,
-		PoolIcon: PoolIcon,
-		Car: CarIcon,
-		CarIcon: CarIcon,
-		Parking: ParkingIcon,
-		ParkingIcon: ParkingIcon,
-		FireSimple: BbqGrillIcon,
-		Bbq: BbqGrillIcon,
-		BbqGrill: BbqGrillIcon,
-		BbqGrillIcon: BbqGrillIcon,
-		Coffee: CoffeeIcon,
-		CoffeeIcon: CoffeeIcon,
-		CoffeeMaker: CoffeeIcon,
-		CoffeeMakerIcon: CoffeeIcon,
-		Breakfast: BreakfastIcon,
-		BreakfastIcon: BreakfastIcon,
-		CookingPot: KitchenIcon,
-		Kitchen: KitchenIcon,
-		KitchenIcon: KitchenIcon,
-		SharedKitchen: SharedKitchenIcon,
-		SharedKitchenIcon: SharedKitchenIcon,
-		Snowflake: AirConditioningIcon,
-		AirConditioning: AirConditioningIcon,
-		AirConditioningIcon: AirConditioningIcon,
-		Heating: AirConditioningIcon,
-		HeatingIcon: AirConditioningIcon,
-		Sparkle: SpaServicesIcon,
-		Spa: SpaServicesIcon,
-		SpaServices: SpaServicesIcon,
-		SpaServicesIcon: SpaServicesIcon,
-		ForkKnife: RestaurantIcon,
-		Restaurant: RestaurantIcon,
-		RestaurantIcon: RestaurantIcon,
-		ThermalPool: ThermalPoolsIcon,
-		ThermalPools: ThermalPoolsIcon,
-		ThermalPoolsIcon: ThermalPoolsIcon,
-		Lightning: WifiHighIcon,
-		Shower: PoolIcon,
-		Lock: ParkingIcon,
-	};
-
-	/** Fallback map from amenity key/slug to icon component. */
-	const keyMap: Record<string, typeof WifiIcon> = {
-		wifi: WifiHighIcon,
-		pool: PoolIcon,
-		parking: ParkingIcon,
-		bbq: BbqGrillIcon,
-		breakfast: BreakfastIcon,
-		coffee: CoffeeIcon,
-		kitchen: KitchenIcon,
-		'shared-kitchen': SharedKitchenIcon,
-		ac: AirConditioningIcon,
-		'air-conditioning': AirConditioningIcon,
-		spa: SpaServicesIcon,
-		restaurant: RestaurantIcon,
-		'thermal-pool': ThermalPoolsIcon,
-		'beach-access': PoolIcon,
-		bathrooms: PoolIcon,
-		electricity: WifiHighIcon,
-		locker: ParkingIcon,
-	};
-
-	return iconNameMap[amenity.icon ?? ''] ?? keyMap[amenity.key] ?? WifiIcon;
-}
 ---
 
 <article class="acc-card">
@@ -153,7 +60,8 @@ function resolveAmenityIcon(amenity: CardAmenityFeature): typeof WifiIcon {
 				class="acc-card__img"
 				width="432"
 				height="220"
-				onerror="this.onerror=null;this.src='/assets/images/placeholder-accommodation.svg';"
+				data-fallback="/assets/images/placeholder-accommodation.svg"
+				transition:name={`accommodation-${data.slug}`}
 			/>
 
 			<!-- Status corner (diagonal) - shown for accommodations created in the last 30 days -->
@@ -179,7 +87,7 @@ function resolveAmenityIcon(amenity: CardAmenityFeature): typeof WifiIcon {
 
 			<!-- Top right actions -->
 			<div class="acc-card__actions">
-				<button type="button" class="acc-card__fav-btn" aria-label={`Guardar ${data.name}`}>
+				<button type="button" class="acc-card__fav-btn" aria-label={t('ui.saveItem', 'Save {{name}}', { name: data.name })}>
 					<FavoriteIcon size={16} weight="regular" aria-hidden="true" />
 				</button>
 				<div class="acc-card__photo-count">
