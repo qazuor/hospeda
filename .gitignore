@@ -125,7 +125,5 @@ scripts/ralph/snapshots/
 node_modules
 .playwright-mcp
 .claude/design-clones
-.claude/specs
-.claude/stats
 apps/web-test
 apps/web-old
