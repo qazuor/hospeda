@@ -174,6 +174,8 @@ interface DestinationsMapProps {
     readonly destinations: readonly DestinationCardData[];
     /** Accessible label for the map container. */
     readonly mapLabel?: string;
+    /** Formatter for individual pin aria-labels. Receives city name. */
+    readonly pinLabel?: (name: string) => string;
 }
 
 // ---------------------------------------------------------------------------
@@ -206,7 +208,8 @@ export function DestinationsMap({
     activeIndex,
     onSelectDestination,
     destinations,
-    mapLabel
+    mapLabel,
+    pinLabel
 }: DestinationsMapProps) {
     /**
      * Finds the destination index matching a given city slug.
@@ -304,7 +307,11 @@ export function DestinationsMap({
                                     }
                                 }}
                                 aria-pressed={isActive}
-                                aria-label={`Ver destino ${city.name.replace('\n', ' ')}`}
+                                aria-label={
+                                    pinLabel
+                                        ? pinLabel(city.name.replace('\n', ' '))
+                                        : `View destination ${city.name.replace('\n', ' ')}`
+                                }
                                 style={
                                     isClickable ? undefined : { cursor: 'default', opacity: 0.5 }
                                 }

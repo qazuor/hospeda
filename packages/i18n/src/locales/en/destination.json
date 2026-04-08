@@ -1,6 +1,7 @@
 {
     "map": {
-        "label": "Interactive map of destinations in Entre Ríos, Argentina"
+        "label": "Interactive map of destinations in Entre Ríos, Argentina",
+        "viewDestination": "View destination {{name}}"
     },
     "carousel": {
         "navigation": "Destination navigation",

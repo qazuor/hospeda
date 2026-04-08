@@ -156,6 +156,9 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                         'destination.map.label',
                         'Interactive map of destinations in Entre Ríos, Argentina'
                     )}
+                    pinLabel={(name) =>
+                        t('destination.map.viewDestination', 'View destination {{name}}', { name })
+                    }
                 />
             </div>
 
