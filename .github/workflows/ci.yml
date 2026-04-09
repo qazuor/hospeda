@@ -86,6 +86,9 @@ jobs:
       - name: Check CSP-incompatible patterns
         run: bash scripts/check-csp-patterns.sh
 
+      - name: Check for unsafe ilike() usage
+        run: bash scripts/check-unsafe-ilike.sh
+
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
