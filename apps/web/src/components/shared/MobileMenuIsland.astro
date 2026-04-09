@@ -9,6 +9,8 @@
 
 import { MobileMenu } from './MobileMenu.client';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 
 interface Props {
     /** Current locale for i18n. */
@@ -24,6 +26,7 @@ interface Props {
 }
 
 const { locale, navItems, currentPath, logoSrc, homeHref } = Astro.props;
+const { t } = createTranslations(locale);
 
 const serverUser = Astro.locals.user;
 const user = serverUser
@@ -40,4 +43,6 @@ const user = serverUser
     logoSrc={logoSrc}
     homeHref={homeHref}
     user={user}
+    ctaLabel={t("nav.ownerCta")}
+    ctaHref={buildUrl({ locale, path: "/suscriptores/" })}
 />

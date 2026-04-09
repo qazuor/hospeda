@@ -6,8 +6,7 @@
  */
 
 import { Image } from "astro:assets";
-import { HamburgerIcon } from "@repo/icons";
-import LanguageSwitcher from '@/components/shared/LanguageSwitcher.astro';
+import { BuildingIcon, HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/MobileMenuIsland.astro";
 import AuthSection from '@/components/shared/AuthSection.astro';
 import { createTranslations } from "@/lib/i18n";
@@ -91,9 +90,16 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
 
         <!-- USER AREA (dynamic auth state via Server Island) -->
         <div class="header__right">
-            <LanguageSwitcher locale={locale} currentPath={Astro.url.pathname} />
+            <a
+                href={buildUrl({ locale, path: "/suscriptores/" })}
+                class="header__cta"
+                aria-label={t("nav.ownerCta")}
+            >
+                <BuildingIcon size={16} weight="regular" aria-hidden="true" />
+                {t("nav.ownerCta")}
+            </a>
             {!isAuthPage && (
-                <AuthSection server:defer locale={locale} variant="scrolled">
+                <AuthSection server:defer locale={locale} variant="scrolled" currentPath={currentPath}>
                     <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
                 </AuthSection>
             )}
@@ -249,6 +255,42 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
     @media (min-width: 1025px) {
         .header__right {
             display: flex;
+        }
+    }
+
+    /* CTA button — owner listing link */
+    .header__cta {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-pill);
+        background-color: var(--brand-accent);
+        color: #fff;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: var(--text-nav);
+        text-decoration: none;
+        white-space: nowrap;
+        flex-shrink: 0;
+        transition:
+            opacity var(--duration-fast) ease,
+            transform var(--duration-fast) ease;
+    }
+
+    .header__cta:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .header__cta:focus-visible {
+        outline: 2px solid var(--brand-accent);
+        outline-offset: 2px;
+    }
+
+    @media (min-width: 1200px) {
+        .header__cta {
+            display: inline-flex;
         }
     }
 

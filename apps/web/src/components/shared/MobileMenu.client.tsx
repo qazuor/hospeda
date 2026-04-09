@@ -19,7 +19,16 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { ChevronDownIcon, CloseIcon, LogoutIcon, SearchIcon, UserIcon } from '@repo/icons';
+import {
+    BuildingIcon,
+    ChevronDownIcon,
+    CloseIcon,
+    LogoutIcon,
+    MoonIcon,
+    SearchIcon,
+    SunIcon,
+    UserIcon
+} from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './MobileMenu.module.css';
 
@@ -99,6 +108,10 @@ interface MobileMenuProps {
     readonly homeHref: string;
     /** Authenticated user data (null/undefined when not logged in). */
     readonly user?: MobileMenuUser | null;
+    /** Label for the owner CTA button. */
+    readonly ctaLabel?: string;
+    /** Destination href for the owner CTA button. */
+    readonly ctaHref?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,14 +142,36 @@ export function MobileMenu({
     currentPath,
     logoSrc,
     homeHref,
-    user
+    user,
+    ctaLabel,
+    ctaHref
 }: MobileMenuProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
     const [isAccountOpen, setIsAccountOpen] = useState(false);
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [isDark, setIsDark] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
+
+    // Read initial theme from localStorage on mount.
+    useEffect(() => {
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setIsDark(stored ? stored === 'dark' : prefersDark);
+    }, []);
+
+    const handleThemeToggle = useCallback(() => {
+        const next = !isDark;
+        setIsDark(next);
+        if (next) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDark]);
 
     // ------------------------------------------------------------------
     // Toggle handler .. wired to the external [data-mobile-toggle] button
@@ -291,6 +326,21 @@ export function MobileMenu({
 
             {/* Auth section */}
             <div className={styles.authSection}>
+                {ctaLabel && ctaHref && (
+                    <a
+                        href={ctaHref}
+                        onClick={handleClose}
+                        tabIndex={isOpen ? 0 : -1}
+                        className={styles.ctaLink}
+                    >
+                        <BuildingIcon
+                            size={18}
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                        {ctaLabel}
+                    </a>
+                )}
                 {user ? (
                     <>
                         {/* User profile row with expandable account menu */}
@@ -416,6 +466,27 @@ export function MobileMenu({
                         </a>
                     );
                 })}
+                <button
+                    type="button"
+                    onClick={handleThemeToggle}
+                    tabIndex={isOpen ? 0 : -1}
+                    aria-label={isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
+                    className={styles.themeToggle}
+                >
+                    {isDark ? (
+                        <MoonIcon
+                            size={18}
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                    ) : (
+                        <SunIcon
+                            size={18}
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                    )}
+                </button>
             </div>
 
             {/* Bottom search link */}
