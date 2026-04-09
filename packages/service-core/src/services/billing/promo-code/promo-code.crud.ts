@@ -15,12 +15,11 @@ import {
     count,
     desc,
     eq,
-    escapeLikePattern,
     getDb,
-    ilike,
     isNull,
     lte,
     or,
+    safeIlike,
     sql
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -368,7 +367,7 @@ export async function listPromoCodes(filters: ListPromoCodesFilters = {}) {
         }
 
         if (codeSearch) {
-            conditions.push(ilike(billingPromoCodes.code, `%${escapeLikePattern(codeSearch)}%`));
+            conditions.push(safeIlike(billingPromoCodes.code, codeSearch));
         }
 
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

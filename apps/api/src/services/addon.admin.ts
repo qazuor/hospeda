@@ -9,9 +9,9 @@
  */
 
 import { getAddonBySlug } from '@repo/billing';
-import { billingAddonPurchases, billingCustomers, escapeLikePattern, getDb } from '@repo/db';
+import { billingAddonPurchases, billingCustomers, getDb, safeIlike } from '@repo/db';
 import type { ServiceResult } from '@repo/service-core';
-import { type SQL, and, count, desc, eq, ilike, isNull } from 'drizzle-orm';
+import { type SQL, and, count, desc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { AddonEntitlementService } from './addon-entitlement.service';
 import { AddonExpirationService } from './addon-expiration.service';
@@ -121,9 +121,7 @@ export class AdminAddonService {
             }
 
             if (customerEmail) {
-                conditions.push(
-                    ilike(billingCustomers.email, `%${escapeLikePattern(customerEmail)}%`)
-                );
+                conditions.push(safeIlike(billingCustomers.email, customerEmail));
             }
 
             if (!includeDeleted) {
