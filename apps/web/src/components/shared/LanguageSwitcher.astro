@@ -8,6 +8,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { SUPPORTED_LOCALES, createTranslations } from '@/lib/i18n';
+import { ChevronDownIcon } from '@repo/icons';
 
 interface Props {
     readonly locale: SupportedLocale;
@@ -43,9 +44,9 @@ function buildLocaleUrl(targetLocale: SupportedLocale): string {
 <details class="lang-switcher" aria-label={t('nav.changeLanguage', 'Change language')}>
     <summary class="lang-switcher__trigger">
         <span class="lang-switcher__current">{LOCALE_LABELS[locale]}</span>
-        <svg class="lang-switcher__chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-            <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <span class="lang-switcher__chevron" aria-hidden="true">
+            <ChevronDownIcon size={12} weight="bold" />
+        </span>
     </summary>
 
     <ul class="lang-switcher__menu" role="list">
