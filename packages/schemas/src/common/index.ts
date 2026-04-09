@@ -43,6 +43,6 @@ export * from './tags.schema.js';
 export * from './visibility.schema.js';
 
 // Query helpers
-export { queryBooleanParam } from './query-helpers.js';
+export { queryBooleanParam, queryDateParam, queryNumberParam } from './query-helpers.js';
 
 // Migration completed ✅
