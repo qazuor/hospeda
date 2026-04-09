@@ -248,6 +248,7 @@ API_PORT=3001
 | Auth | Better Auth via `@repo/auth-ui` | Clerk, custom auth |
 | Money | integer (centavos) | numeric(), float |
 | HTTP | native fetch | axios |
+| LIKE search | `safeIlike()` from `@repo/db` | raw `ilike()` from `drizzle-orm` |
 
 Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.md)
 
@@ -263,6 +264,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **Legacy env var names**: `LEGACY_ENV_MAPPINGS` in `apps/api/src/utils/env.ts` maps old unprefixed names (e.g., `CRON_SECRET`) to their `HOSPEDA_*` equivalents for backward compat. New code must use only `HOSPEDA_*` names.
 - **Auth**: NEVER check roles directly.. always use `PermissionEnum`
 - **`drizzle-kit push` is not enough**: triggers, materialized views (`search_index`), and JSONB CHECK constraints on `billing_addon_purchases` are invisible to Drizzle. After any `drizzle-kit push` or `pnpm db:fresh-dev`, run `packages/db/scripts/apply-postgres-extras.sh`. See [ADR-017](docs/decisions/ADR-017-postgres-specific-features.md) and [triggers manifest](packages/db/docs/triggers-manifest.md).
+- **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
 
 ## Single Source of Truth
 

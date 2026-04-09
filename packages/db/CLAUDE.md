@@ -589,6 +589,7 @@ For full details, constraint definitions, and verification queries see:
 - Always use soft delete (deletedAt timestamp) by default
 - **`drizzle-kit push` alone is not enough** .. triggers, materialized views, and JSONB CHECK
   constraints are invisible to Drizzle. Always run `apply-postgres-extras.sh` afterward.
+- **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike(col, term)` from `@repo/db`, which automatically escapes `%`, `_`, and `\` before calling `ilike()`. The only file that may import `ilike` directly is `src/utils/drizzle-helpers.ts`. CI enforces this.
 
 ## Related Documentation
 
