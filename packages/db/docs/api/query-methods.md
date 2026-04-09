@@ -405,6 +405,10 @@ const items = await db
 
 ```typescript
 // Case-insensitive search
+// NOTE: 'smartphone' is a hardcoded literal here — safe as-is.
+// For user-provided input, always use safeIlike() from @repo/db to escape
+// LIKE wildcards (%, _, \) and prevent wildcard injection:
+//   safeIlike(products.name, userInput)  // auto-escapes + wraps with %
 const searchTerm = '%smartphone%';
 const items = await db
   .select()
@@ -442,7 +446,8 @@ export class ProductModel extends BaseModel<Product> {
 
     // Add conditions dynamically
     if (filters.q) {
-      const searchTerm = `%${filters.q}%`;
+      // escapeLikePattern escapes LIKE wildcards (%, _, \) — import from '@repo/db'
+      const searchTerm = `%${escapeLikePattern(filters.q)}%`;
       conditions.push(
         or(
           ilike(products.name, searchTerm),
@@ -988,7 +993,8 @@ import { or, ilike, sql } from 'drizzle-orm';
 export class ProductModel extends BaseModel<Product> {
   async search(query: string, options?: { page?: number; pageSize?: number }) {
     const db = this.getClient();
-    const searchTerm = `%${query.trim()}%`;
+    // escapeLikePattern escapes LIKE wildcards (%, _, \) — import from '@repo/db'
+    const searchTerm = `%${escapeLikePattern(query.trim())}%`;
 
     // Simple ILIKE search
     const whereClause = or(
@@ -1287,4 +1293,4 @@ export class ProductModel extends BaseModel<Product> {
 
 ---
 
-*Last updated: 2025-11-05*
+Last updated: 2025-11-05
