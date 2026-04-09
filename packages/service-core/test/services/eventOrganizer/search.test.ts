@@ -53,4 +53,19 @@ describe('EventOrganizerService.search', () => {
         const result = await service.search(actor, searchParams);
         expectInternalError(result);
     });
+
+    it('should pass additionalConditions to model.findAll when q is provided', async () => {
+        // Arrange
+        const entity = createMockEventOrganizer();
+        asMock(model.findAll).mockResolvedValueOnce({ items: [entity], total: 1 });
+
+        // Act
+        const result = await service.search(actor, { page: 1, pageSize: 10, q: 'test%org' });
+
+        // Assert -- model.findAll was called with a non-empty additionalConditions array (3rd arg)
+        expectSuccess(result);
+        const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
+        expect(Array.isArray(additionalConditions)).toBe(true);
+        expect((additionalConditions as unknown[]).length).toBeGreaterThan(0);
+    });
 });

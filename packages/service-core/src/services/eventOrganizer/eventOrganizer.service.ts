@@ -1,4 +1,4 @@
-import { EventOrganizerModel } from '@repo/db';
+import { EventOrganizerModel, escapeLikePattern, eventOrganizers, ilike } from '@repo/db';
 import type {
     EventOrganizer,
     EventOrganizerCreateInput,
@@ -15,6 +15,7 @@ import {
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { ServiceError } from '../../types';
@@ -129,11 +130,16 @@ export class EventOrganizerService extends BaseCrudService<
         const { page = 1, pageSize = 10, sortBy, sortOrder, q, name, ...otherFilters } = params;
         const where: Record<string, unknown> = { ...otherFilters };
         if (name) where.name = name;
+
+        const additionalConditions: SQL[] = [];
         if (q) {
-            // Partial search by name (case-insensitive)
-            where.name = { $ilike: `%${q}%` };
+            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(q)}%`));
         }
-        return this.model.findAll(where, { page, pageSize });
+        return this.model.findAll(
+            where,
+            { page, pageSize, sortBy, sortOrder },
+            additionalConditions
+        );
     }
 
     protected async _executeCount(
@@ -157,19 +163,20 @@ export class EventOrganizerService extends BaseCrudService<
         actor: Actor,
         params: EventOrganizerListInput
     ): Promise<{ items: EventOrganizer[]; total: number }> {
-        await this._canList(actor);
+        this._canList(actor);
         const { page = 1, pageSize = 10, q, name, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
+        const additionalConditions: SQL[] = [];
 
         if (name) {
-            where.name = { $ilike: `%${name}%` };
+            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(name)}%`));
         }
         if (q) {
-            where.$or = [{ name: { $ilike: `%${q}%` } }];
+            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(q)}%`));
         }
 
-        const result = await this.model.findAll(where, { page, pageSize });
+        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
         return {
             items: result.items,
             total: result.total
