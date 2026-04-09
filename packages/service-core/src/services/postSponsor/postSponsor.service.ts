@@ -1,5 +1,11 @@
 import type { PostSponsorModel } from '@repo/db';
-import { PostSponsorModel as RealPostSponsorModel } from '@repo/db';
+import {
+    PostSponsorModel as RealPostSponsorModel,
+    escapeLikePattern,
+    ilike,
+    or,
+    postSponsors
+} from '@repo/db';
 import type {
     PostSponsor,
     PostSponsorCreateInput,
@@ -12,6 +18,7 @@ import {
     PostSponsorSearchInputSchema,
     PostSponsorUpdateInputSchema
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
@@ -97,17 +104,23 @@ export class PostSponsorService extends BaseCrudService<
         if (type) {
             where.type = type;
         }
+
+        const additionalConditions: SQL[] = [];
         if (name) {
-            where.name = { $ilike: `%${name}%` };
+            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
         }
         if (q) {
-            // Search by name or description (case-insensitive)
-            where.$or = [{ name: { $ilike: `%${q}%` } }, { description: { $ilike: `%${q}%` } }];
+            const escaped = escapeLikePattern(q);
+            const orCondition = or(
+                ilike(postSponsors.name, `%${escaped}%`),
+                ilike(postSponsors.description, `%${escaped}%`)
+            );
+            if (orCondition) additionalConditions.push(orCondition);
         }
 
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 20;
-        const result = await this.model.findAll(where, { page, pageSize });
+        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
         return result;
     }
     protected async _executeCount(
@@ -119,13 +132,20 @@ export class PostSponsorService extends BaseCrudService<
         if (type) {
             where.type = type;
         }
+
+        const additionalConditions: SQL[] = [];
         if (name) {
-            where.name = { $ilike: `%${name}%` };
+            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
         }
         if (q) {
-            where.$or = [{ name: { $ilike: `%${q}%` } }, { description: { $ilike: `%${q}%` } }];
+            const escaped = escapeLikePattern(q);
+            const orCondition = or(
+                ilike(postSponsors.name, `%${escaped}%`),
+                ilike(postSponsors.description, `%${escaped}%`)
+            );
+            if (orCondition) additionalConditions.push(orCondition);
         }
-        const count = await this.model.count(where);
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
@@ -139,22 +159,28 @@ export class PostSponsorService extends BaseCrudService<
         actor: Actor,
         params: PostSponsorSearchInput
     ): Promise<PostSponsorListOutput> {
-        await this._canSearch(actor);
+        this._canSearch(actor);
         const { name, type, q, page = 1, pageSize = 10 } = params;
 
         const where: Record<string, unknown> = {};
-
         if (type) {
             where.type = type;
         }
+
+        const additionalConditions: SQL[] = [];
         if (name) {
-            where.name = { $ilike: `%${name}%` };
+            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
         }
         if (q) {
-            where.$or = [{ name: { $ilike: `%${q}%` } }, { description: { $ilike: `%${q}%` } }];
+            const escaped = escapeLikePattern(q);
+            const orCondition = or(
+                ilike(postSponsors.name, `%${escaped}%`),
+                ilike(postSponsors.description, `%${escaped}%`)
+            );
+            if (orCondition) additionalConditions.push(orCondition);
         }
 
-        const result = await this.model.findAll(where, { page, pageSize });
+        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
         return {
             items: result.items,
             total: result.total

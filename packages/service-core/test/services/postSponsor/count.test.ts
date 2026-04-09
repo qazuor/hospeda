@@ -63,4 +63,23 @@ describe('PostSponsorService.count', () => {
         expect(result.data).toEqual({ count: 0 });
         expect(result.error).toBeUndefined();
     });
+
+    it('should pass additionalConditions to model.count when q is provided', async () => {
+        // Arrange
+        modelMock.count.mockResolvedValue(3);
+
+        // Act -- q with wildcard to verify escaping path
+        const result = await service.count(actor, { page: 1, pageSize: 10, q: '50%off' });
+
+        // Assert -- model.count was called with options containing additionalConditions
+        expect(result.data).toBeDefined();
+        const [, options] = modelMock.count.mock.calls[0] ?? [];
+        expect(options).toBeDefined();
+        expect(
+            Array.isArray((options as { additionalConditions?: unknown[] }).additionalConditions)
+        ).toBe(true);
+        expect(
+            ((options as { additionalConditions?: unknown[] }).additionalConditions ?? []).length
+        ).toBeGreaterThan(0);
+    });
 });

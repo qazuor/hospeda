@@ -182,4 +182,33 @@ describe('PostSponsorService.search', () => {
         expect(result.error?.code).toBe('UNAUTHORIZED');
         expect(result.data).toBeUndefined();
     });
+
+    it('should pass additionalConditions to model.findAll when q is provided', async () => {
+        // Arrange
+        const items = [createMockPostSponsor({ id: getMockPostSponsorId('mock-id-1') })];
+        modelMock.findAll.mockResolvedValue({ items, total: 1, page: 1, pageSize: 10 });
+
+        // Act -- q with a wildcard character to verify escaping path is taken
+        const result = await service.search(actor, { page: 1, pageSize: 10, q: 'acme_corp' });
+
+        // Assert -- model.findAll called with non-empty additionalConditions (3rd arg)
+        expect(result.data).toBeDefined();
+        const [, , additionalConditions] = modelMock.findAll.mock.calls[0] ?? [];
+        expect(Array.isArray(additionalConditions)).toBe(true);
+        expect((additionalConditions as unknown[]).length).toBeGreaterThan(0);
+    });
+
+    it('should pass additionalConditions to model.findAll when name is provided', async () => {
+        // Arrange
+        const items = [createMockPostSponsor({ id: getMockPostSponsorId('mock-id-1') })];
+        modelMock.findAll.mockResolvedValue({ items, total: 1, page: 1, pageSize: 10 });
+
+        // Act
+        await service.search(actor, { name: 'Acme', page: 1, pageSize: 10 });
+
+        // Assert -- model.findAll called with non-empty additionalConditions (no $ilike object)
+        const [, , additionalConditions] = modelMock.findAll.mock.calls[0] ?? [];
+        expect(Array.isArray(additionalConditions)).toBe(true);
+        expect((additionalConditions as unknown[]).length).toBeGreaterThan(0);
+    });
 });
