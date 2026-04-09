@@ -1,4 +1,4 @@
-import { UserModel, escapeLikePattern, ilike, users as userTable } from '@repo/db';
+import { UserModel, safeIlike, users as userTable } from '@repo/db';
 import type { EntityFilters, User } from '@repo/schemas';
 import {
     PermissionEnum,
@@ -413,7 +413,7 @@ export class UserService extends BaseCrudService<
 
         // email partial match (ilike, not eq)
         if (email) {
-            additionalConditions.push(ilike(userTable.email, `%${escapeLikePattern(email)}%`));
+            additionalConditions.push(safeIlike(userTable.email, email));
         }
 
         return super._executeAdminSearch({

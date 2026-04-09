@@ -1,11 +1,4 @@
-import {
-    EventLocationModel,
-    EventModel,
-    escapeLikePattern,
-    eventLocations,
-    ilike,
-    or
-} from '@repo/db';
+import { EventLocationModel, EventModel, eventLocations, or, safeIlike } from '@repo/db';
 import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
     EventLocationAdminSearchSchema,
@@ -137,11 +130,10 @@ export class EventLocationService extends BaseCrudService<
 
             const additionalConditions: SQL[] = [];
             if (q) {
-                const escaped = escapeLikePattern(q);
                 const orCondition = or(
-                    ilike(eventLocations.city, `%${escaped}%`),
-                    ilike(eventLocations.placeName, `%${escaped}%`),
-                    ilike(eventLocations.department, `%${escaped}%`)
+                    safeIlike(eventLocations.city, q),
+                    safeIlike(eventLocations.placeName, q),
+                    safeIlike(eventLocations.department, q)
                 );
                 if (orCondition) additionalConditions.push(orCondition);
             }
@@ -177,11 +169,10 @@ export class EventLocationService extends BaseCrudService<
 
             const additionalConditions: SQL[] = [];
             if (q) {
-                const escaped = escapeLikePattern(q);
                 const orCondition = or(
-                    ilike(eventLocations.city, `%${escaped}%`),
-                    ilike(eventLocations.placeName, `%${escaped}%`),
-                    ilike(eventLocations.department, `%${escaped}%`)
+                    safeIlike(eventLocations.city, q),
+                    safeIlike(eventLocations.placeName, q),
+                    safeIlike(eventLocations.department, q)
                 );
                 if (orCondition) additionalConditions.push(orCondition);
             }
@@ -206,26 +197,29 @@ export class EventLocationService extends BaseCrudService<
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
         this._canSearch(actor);
-        const { page = 1, pageSize = 10, q, city, ...otherFilters } = params;
+        const { page = 1, pageSize = 10, q, city, sortBy, sortOrder, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
         const additionalConditions: SQL[] = [];
 
         if (city) {
-            additionalConditions.push(ilike(eventLocations.city, `%${escapeLikePattern(city)}%`));
+            additionalConditions.push(safeIlike(eventLocations.city, city));
         }
         if (q) {
-            const escaped = escapeLikePattern(q);
             const orCondition = or(
-                ilike(eventLocations.city, `%${escaped}%`),
-                ilike(eventLocations.placeName, `%${escaped}%`),
-                ilike(eventLocations.department, `%${escaped}%`),
-                ilike(eventLocations.neighborhood, `%${escaped}%`)
+                safeIlike(eventLocations.city, q),
+                safeIlike(eventLocations.placeName, q),
+                safeIlike(eventLocations.department, q),
+                safeIlike(eventLocations.neighborhood, q)
             );
             if (orCondition) additionalConditions.push(orCondition);
         }
 
-        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize, sortBy, sortOrder },
+            additionalConditions
+        );
         return {
             items: result.items,
             total: result.total

@@ -1,4 +1,4 @@
-import { EventOrganizerModel, escapeLikePattern, eventOrganizers, ilike } from '@repo/db';
+import { EventOrganizerModel, eventOrganizers, safeIlike } from '@repo/db';
 import type {
     EventOrganizer,
     EventOrganizerCreateInput,
@@ -133,7 +133,7 @@ export class EventOrganizerService extends BaseCrudService<
 
         const additionalConditions: SQL[] = [];
         if (q) {
-            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(q)}%`));
+            additionalConditions.push(safeIlike(eventOrganizers.name, q));
         }
         return this.model.findAll(
             where,
@@ -146,10 +146,23 @@ export class EventOrganizerService extends BaseCrudService<
         params: EventOrganizerSearchInput,
         _actor: Actor
     ): Promise<{ count: number }> {
-        const { page, pageSize, sortBy, sortOrder, q, name, ...otherFilters } = params;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            q,
+            name,
+            ...otherFilters
+        } = params;
         const where: Record<string, unknown> = { ...otherFilters };
         if (name) where.name = name;
-        const count = await this.model.count(where);
+
+        const additionalConditions: SQL[] = [];
+        if (q) {
+            additionalConditions.push(safeIlike(eventOrganizers.name, q));
+        }
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
@@ -164,19 +177,23 @@ export class EventOrganizerService extends BaseCrudService<
         params: EventOrganizerListInput
     ): Promise<{ items: EventOrganizer[]; total: number }> {
         this._canList(actor);
-        const { page = 1, pageSize = 10, q, name, ...otherFilters } = params;
+        const { page = 1, pageSize = 10, q, name, sortBy, sortOrder, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
         const additionalConditions: SQL[] = [];
 
         if (name) {
-            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(name)}%`));
+            additionalConditions.push(safeIlike(eventOrganizers.name, name));
         }
         if (q) {
-            additionalConditions.push(ilike(eventOrganizers.name, `%${escapeLikePattern(q)}%`));
+            additionalConditions.push(safeIlike(eventOrganizers.name, q));
         }
 
-        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize, sortBy, sortOrder },
+            additionalConditions
+        );
         return {
             items: result.items,
             total: result.total

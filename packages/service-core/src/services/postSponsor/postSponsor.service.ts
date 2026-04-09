@@ -1,11 +1,5 @@
 import type { PostSponsorModel } from '@repo/db';
-import {
-    PostSponsorModel as RealPostSponsorModel,
-    escapeLikePattern,
-    ilike,
-    or,
-    postSponsors
-} from '@repo/db';
+import { PostSponsorModel as RealPostSponsorModel, or, postSponsors, safeIlike } from '@repo/db';
 import type {
     PostSponsor,
     PostSponsorCreateInput,
@@ -98,7 +92,7 @@ export class PostSponsorService extends BaseCrudService<
         params: PostSponsorSearchInput,
         _actor: Actor
     ): Promise<PaginatedListOutput<PostSponsor>> {
-        const { name, type, q, ...pagination } = params;
+        const { name, type, q, page = 1, pageSize = 20, sortBy, sortOrder } = params;
         const where: Record<string, unknown> = {};
 
         if (type) {
@@ -107,20 +101,21 @@ export class PostSponsorService extends BaseCrudService<
 
         const additionalConditions: SQL[] = [];
         if (name) {
-            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
+            additionalConditions.push(safeIlike(postSponsors.name, name));
         }
         if (q) {
-            const escaped = escapeLikePattern(q);
             const orCondition = or(
-                ilike(postSponsors.name, `%${escaped}%`),
-                ilike(postSponsors.description, `%${escaped}%`)
+                safeIlike(postSponsors.name, q),
+                safeIlike(postSponsors.description, q)
             );
             if (orCondition) additionalConditions.push(orCondition);
         }
 
-        const page = pagination?.page ?? 1;
-        const pageSize = pagination?.pageSize ?? 20;
-        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize, sortBy, sortOrder },
+            additionalConditions
+        );
         return result;
     }
     protected async _executeCount(
@@ -135,13 +130,12 @@ export class PostSponsorService extends BaseCrudService<
 
         const additionalConditions: SQL[] = [];
         if (name) {
-            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
+            additionalConditions.push(safeIlike(postSponsors.name, name));
         }
         if (q) {
-            const escaped = escapeLikePattern(q);
             const orCondition = or(
-                ilike(postSponsors.name, `%${escaped}%`),
-                ilike(postSponsors.description, `%${escaped}%`)
+                safeIlike(postSponsors.name, q),
+                safeIlike(postSponsors.description, q)
             );
             if (orCondition) additionalConditions.push(orCondition);
         }
@@ -160,7 +154,7 @@ export class PostSponsorService extends BaseCrudService<
         params: PostSponsorSearchInput
     ): Promise<PostSponsorListOutput> {
         this._canSearch(actor);
-        const { name, type, q, page = 1, pageSize = 10 } = params;
+        const { name, type, q, page = 1, pageSize = 10, sortBy, sortOrder } = params;
 
         const where: Record<string, unknown> = {};
         if (type) {
@@ -169,18 +163,21 @@ export class PostSponsorService extends BaseCrudService<
 
         const additionalConditions: SQL[] = [];
         if (name) {
-            additionalConditions.push(ilike(postSponsors.name, `%${escapeLikePattern(name)}%`));
+            additionalConditions.push(safeIlike(postSponsors.name, name));
         }
         if (q) {
-            const escaped = escapeLikePattern(q);
             const orCondition = or(
-                ilike(postSponsors.name, `%${escaped}%`),
-                ilike(postSponsors.description, `%${escaped}%`)
+                safeIlike(postSponsors.name, q),
+                safeIlike(postSponsors.description, q)
             );
             if (orCondition) additionalConditions.push(orCondition);
         }
 
-        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize, sortBy, sortOrder },
+            additionalConditions
+        );
         return {
             items: result.items,
             total: result.total
