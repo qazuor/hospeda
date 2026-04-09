@@ -41,4 +41,23 @@ describe('EventLocationService.count', () => {
         const result = await service.count(actor, countParams);
         expectInternalError(result);
     });
+
+    it('should pass additionalConditions to model.count when q is provided', async () => {
+        // Arrange
+        asMock(model.count).mockResolvedValueOnce(5);
+
+        // Act
+        const result = await service.count(actor, { page: 1, pageSize: 10, q: 'plaza' });
+
+        // Assert -- model.count was called with options containing additionalConditions
+        expectSuccess(result);
+        const [, options] = asMock(model.count).mock.calls[0] ?? [];
+        expect(options).toBeDefined();
+        expect(
+            Array.isArray((options as { additionalConditions?: unknown[] }).additionalConditions)
+        ).toBe(true);
+        expect(
+            ((options as { additionalConditions?: unknown[] }).additionalConditions ?? []).length
+        ).toBeGreaterThan(0);
+    });
 });

@@ -1,4 +1,11 @@
-import { EventLocationModel, EventModel } from '@repo/db';
+import {
+    EventLocationModel,
+    EventModel,
+    escapeLikePattern,
+    eventLocations,
+    ilike,
+    or
+} from '@repo/db';
 import type { EventLocation, EventLocationSearchInput } from '@repo/schemas';
 import {
     EventLocationAdminSearchSchema,
@@ -7,6 +14,7 @@ import {
     EventLocationUpdateInputSchema,
     ServiceErrorCode
 } from '@repo/schemas';
+import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
 import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -17,8 +25,6 @@ import {
     checkCanDeleteEventLocation,
     checkCanUpdateEventLocation
 } from './eventLocation.permissions';
-
-type WhereWithOr = Record<string, unknown> & { or?: Array<Record<string, unknown>> };
 
 /**
  * Service for managing event locations. Implements business logic, permissions, and hooks for EventLocation entities.
@@ -125,30 +131,25 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<PaginatedListOutput<EventLocation>> {
         try {
-            const {
-                page = 1,
-                pageSize = 20,
-                sortBy,
-                sortOrder,
-                q,
-                city,
-                state,
-                country,
-                ...otherFilters
-            } = params;
-            const where: WhereWithOr = { ...otherFilters };
+            const { page = 1, pageSize = 20, sortBy, sortOrder, q, city, ...otherFilters } = params;
+            const where: Record<string, unknown> = { ...otherFilters };
             if (city) where.city = city;
-            if (state) where.state = state;
-            if (country) where.country = country;
-            // Free text search (q): busca en city, state y country (case-insensitive)
+
+            const additionalConditions: SQL[] = [];
             if (q) {
-                where.or = [
-                    { city: { $ilike: `%${q}%` } },
-                    { state: { $ilike: `%${q}%` } },
-                    { country: { $ilike: `%${q}%` } }
-                ];
+                const escaped = escapeLikePattern(q);
+                const orCondition = or(
+                    ilike(eventLocations.city, `%${escaped}%`),
+                    ilike(eventLocations.placeName, `%${escaped}%`),
+                    ilike(eventLocations.department, `%${escaped}%`)
+                );
+                if (orCondition) additionalConditions.push(orCondition);
             }
-            return await this.model.findAll(where, { page, pageSize });
+            return await this.model.findAll(
+                where,
+                { page, pageSize, sortBy, sortOrder },
+                additionalConditions
+            );
         } catch {
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
@@ -162,20 +163,29 @@ export class EventLocationService extends BaseCrudService<
         _actor: Actor
     ): Promise<{ count: number }> {
         try {
-            const { q, city, state, country, page, pageSize, sortBy, sortOrder, ...otherFilters } =
-                params;
-            const where: WhereWithOr = { ...otherFilters };
+            const {
+                q,
+                city,
+                page: _page,
+                pageSize: _pageSize,
+                sortBy: _sortBy,
+                sortOrder: _sortOrder,
+                ...otherFilters
+            } = params;
+            const where: Record<string, unknown> = { ...otherFilters };
             if (city) where.city = city;
-            if (state) where.state = state;
-            if (country) where.country = country;
+
+            const additionalConditions: SQL[] = [];
             if (q) {
-                where.or = [
-                    { city: { $ilike: `%${q}%` } },
-                    { state: { $ilike: `%${q}%` } },
-                    { country: { $ilike: `%${q}%` } }
-                ];
+                const escaped = escapeLikePattern(q);
+                const orCondition = or(
+                    ilike(eventLocations.city, `%${escaped}%`),
+                    ilike(eventLocations.placeName, `%${escaped}%`),
+                    ilike(eventLocations.department, `%${escaped}%`)
+                );
+                if (orCondition) additionalConditions.push(orCondition);
             }
-            const count = await this.model.count(where);
+            const count = await this.model.count(where, { additionalConditions });
             return { count };
         } catch {
             throw new ServiceError(
@@ -195,30 +205,27 @@ export class EventLocationService extends BaseCrudService<
         actor: Actor,
         params: EventLocationSearchInput
     ): Promise<{ items: EventLocation[]; total: number }> {
-        await this._canSearch(actor);
-        const { page = 1, pageSize = 10, q, city, state, country, ...otherFilters } = params;
+        this._canSearch(actor);
+        const { page = 1, pageSize = 10, q, city, ...otherFilters } = params;
 
         const where: Record<string, unknown> = { ...otherFilters };
+        const additionalConditions: SQL[] = [];
 
         if (city) {
-            where.city = { $ilike: `%${city}%` };
-        }
-        if (state) {
-            where.state = { $ilike: `%${state}%` };
-        }
-        if (country) {
-            where.country = { $ilike: `%${country}%` };
+            additionalConditions.push(ilike(eventLocations.city, `%${escapeLikePattern(city)}%`));
         }
         if (q) {
-            where.$or = [
-                { city: { $ilike: `%${q}%` } },
-                { state: { $ilike: `%${q}%` } },
-                { country: { $ilike: `%${q}%` } },
-                { placeName: { $ilike: `%${q}%` } }
-            ];
+            const escaped = escapeLikePattern(q);
+            const orCondition = or(
+                ilike(eventLocations.city, `%${escaped}%`),
+                ilike(eventLocations.placeName, `%${escaped}%`),
+                ilike(eventLocations.department, `%${escaped}%`),
+                ilike(eventLocations.neighborhood, `%${escaped}%`)
+            );
+            if (orCondition) additionalConditions.push(orCondition);
         }
 
-        const result = await this.model.findAll(where, { page, pageSize });
+        const result = await this.model.findAll(where, { page, pageSize }, additionalConditions);
         return {
             items: result.items,
             total: result.total
