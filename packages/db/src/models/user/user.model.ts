@@ -1,13 +1,12 @@
 import type { User } from '@repo/schemas';
-import { type SQL, and, count, ilike, or, sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { type SQL, and, count, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import type { schema } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
-import { buildWhereClause, escapeLikePattern } from '../../utils/drizzle-helpers.ts';
+import type { DrizzleClient } from '../../types.ts';
+import { buildWhereClause, safeIlike } from '../../utils/drizzle-helpers.ts';
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
@@ -17,7 +16,7 @@ export type UserWithCounts = User & {
 
 export class UserModel extends BaseModelImpl<User> {
     protected table = users;
-    protected entityName = 'users';
+    public entityName = 'users';
 
     protected getTableName(): string {
         return 'users';
@@ -38,7 +37,7 @@ export class UserModel extends BaseModelImpl<User> {
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number; sortBy?: string; sortOrder?: 'asc' | 'desc' },
         additionalConditions?: SQL[],
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{ items: User[]; total: number }> {
         const db = this.getClient(tx);
         const { q, ...otherFilters } = where;
@@ -52,11 +51,11 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim()) {
-            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
+            const trimmed = q.trim();
             searchClause = or(
-                ilike(users.displayName, searchTerm),
-                ilike(users.firstName, searchTerm),
-                ilike(users.lastName, searchTerm)
+                safeIlike(users.displayName, trimmed),
+                safeIlike(users.firstName, trimmed),
+                safeIlike(users.lastName, trimmed)
             );
         }
 
@@ -104,7 +103,7 @@ export class UserModel extends BaseModelImpl<User> {
      */
     async count(
         where: Record<string, unknown>,
-        options?: { additionalConditions?: SQL[]; tx?: NodePgDatabase<typeof schema> }
+        options?: { additionalConditions?: SQL[]; tx?: DrizzleClient }
     ): Promise<number> {
         // If no 'q' parameter, use parent implementation (which already handles additionalConditions)
         if (!where.q) {
@@ -121,11 +120,11 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim()) {
-            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
+            const trimmed = q.trim();
             searchClause = or(
-                ilike(users.displayName, searchTerm),
-                ilike(users.firstName, searchTerm),
-                ilike(users.lastName, searchTerm)
+                safeIlike(users.displayName, trimmed),
+                safeIlike(users.firstName, trimmed),
+                safeIlike(users.lastName, trimmed)
             );
         }
 
@@ -161,7 +160,7 @@ export class UserModel extends BaseModelImpl<User> {
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
         additionalConditions?: SQL[],
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{ items: UserWithCounts[]; total: number }> {
         const db = this.getClient(tx);
         const { q, ...otherFilters } = where;
@@ -175,11 +174,11 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for text search
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim() !== '') {
-            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
+            const trimmed = q.trim();
             searchClause = or(
-                ilike(users.displayName, searchTerm),
-                ilike(users.firstName, searchTerm),
-                ilike(users.lastName, searchTerm)
+                safeIlike(users.displayName, trimmed),
+                safeIlike(users.firstName, trimmed),
+                safeIlike(users.lastName, trimmed)
             );
         }
 

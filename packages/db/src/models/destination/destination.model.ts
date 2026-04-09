@@ -7,7 +7,6 @@ import {
     count,
     desc,
     eq,
-    ilike,
     inArray,
     isNull,
     like,
@@ -15,19 +14,19 @@ import {
     or,
     sql
 } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb, type schema } from '../../client.ts';
+import { getDb } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
-import { escapeLikePattern } from '../../utils/drizzle-helpers.ts';
+import type { DrizzleClient } from '../../types.ts';
+import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class DestinationModel extends BaseModelImpl<Destination> {
     protected table = destinations;
-    protected entityName = 'destinations';
+    public entityName = 'destinations';
 
     protected getTableName(): string {
         return 'destinations';
@@ -128,8 +127,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
-                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                const searchClauses = [safeIlike(destinations.name, filters.q)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );
 
@@ -292,8 +290,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
-                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                const searchClauses = [safeIlike(destinations.name, filters.q)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );
 
@@ -540,7 +537,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         parentId: string,
         oldPath: string,
         newPath: string,
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<void> {
         const db = this.getClient(tx);
         try {
@@ -598,8 +595,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
-                const searchClauses = [ilike(destinations.name, searchTerm)].filter(
+                const searchClauses = [safeIlike(destinations.name, filters.q)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );
 

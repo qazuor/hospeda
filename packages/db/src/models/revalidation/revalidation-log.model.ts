@@ -1,9 +1,9 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
-import { and, count, desc, eq, gte, ilike, lt, lte } from 'drizzle-orm';
+import { and, count, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.ts';
 import { revalidationLog } from '../../schemas/revalidation/revalidation-log.dbschema.ts';
-import { escapeLikePattern } from '../../utils/drizzle-helpers.ts';
+import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
 /**
  * Inferred row type for the revalidation_log table.
@@ -21,10 +21,10 @@ export type InsertRevalidationLog = InferInsertModel<typeof revalidationLog>;
  */
 export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
     protected table = revalidationLog;
-    protected entityName = 'revalidation_log';
+    public entityName = 'revalidation_log';
 
     protected getTableName(): string {
-        return 'revalidation_log';
+        return 'revalidationLog';
     }
 
     /**
@@ -86,7 +86,7 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
             clauses.push(eq(revalidationLog.status, filters.status));
         }
         if (filters.path) {
-            clauses.push(ilike(revalidationLog.path, `%${escapeLikePattern(filters.path)}%`));
+            clauses.push(safeIlike(revalidationLog.path, filters.path));
         }
         if (filters.fromDate) {
             clauses.push(gte(revalidationLog.createdAt, filters.fromDate));
