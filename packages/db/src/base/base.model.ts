@@ -10,7 +10,7 @@ import { logError, logQuery } from '../utils/logger.ts';
 /**
  * Maximum allowed page size to prevent memory issues with large datasets
  */
-const MAX_PAGE_SIZE = 100;
+const MAX_PAGE_SIZE = 200;
 
 /**
  * Default page size when pagination is not explicitly provided
@@ -63,7 +63,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     /**
      * The entity name (for logging and error context)
      */
-    protected abstract entityName: string;
+    public abstract entityName: string;
 
     /**
      * Get the table name for dynamic relation queries
@@ -83,7 +83,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * Returns the Drizzle table schema for this model.
      * Used by the service layer to build search conditions against table columns.
      */
-    public getTable() {
+    public getTable(): Table {
         return this.table;
     }
 
@@ -92,7 +92,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *
      * Pagination is ALWAYS applied to prevent unbounded queries:
      * - If no pagination options are provided, defaults to page=1, pageSize=DEFAULT_PAGE_SIZE
-     * - pageSize is capped at MAX_PAGE_SIZE (100) to prevent memory issues
+     * - pageSize is capped at MAX_PAGE_SIZE (200) to prevent memory issues
      *
      * @param where - The filter object to apply.
      * @param options - Optional pagination parameters: `{ page, pageSize }`.
@@ -168,6 +168,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * @returns Promise resolving to the entity or null if not found
      */
     async findById(id: string, tx?: DrizzleClient): Promise<T | null> {
+        if (id === null || id === undefined) return null;
         const db = this.getClient(tx);
         try {
             const whereClause = buildWhereClause({ id }, this.table);
@@ -223,7 +224,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             try {
                 logQuery(this.entityName, 'create', data, result);
             } catch {}
-            if (!result[0]) throw new Error('Insert failed');
+            if (!result[0]) throw new Error(`Insert failed for entity '${this.entityName}'`);
             return result[0] as T;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
@@ -246,9 +247,19 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         data: Partial<T>,
         tx?: DrizzleClient
     ): Promise<T | null> {
+        if (!where || Object.keys(where).length === 0) {
+            throw new DbError(
+                this.entityName,
+                'update',
+                where,
+                'where clause cannot be empty — this would update all records'
+            );
+        }
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         const safeData = data ?? {};
+
+        if (Object.keys(safeData).length === 0) return null;
 
         try {
             const whereClause = buildWhereClause(safeWhere, this.table);
@@ -293,7 +304,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
             if (baseWhereClause) allConditions.push(baseWhereClause);
             if (additionalConditions.length > 0) allConditions.push(...additionalConditions);
 
-            const finalWhereClause = allConditions.length > 0 ? and(...allConditions) : undefined;
+            const finalWhereClause =
+                allConditions.length === 0
+                    ? undefined
+                    : allConditions.length === 1
+                      ? allConditions[0]
+                      : and(...allConditions);
 
             const result = await db
                 .select({ count: count() })
@@ -345,6 +361,14 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * @returns Promise resolving to the number of deleted rows
      */
     async hardDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
+        if (!where || Object.keys(where).length === 0) {
+            throw new DbError(
+                this.entityName,
+                'hardDelete',
+                where,
+                'where clause cannot be empty — this would delete all records'
+            );
+        }
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -372,6 +396,22 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * @returns Promise resolving to the number of deleted rows
      */
     async softDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
+        if (!where || Object.keys(where).length === 0) {
+            throw new DbError(
+                this.entityName,
+                'softDelete',
+                where,
+                'where clause cannot be empty — this would soft-delete all records'
+            );
+        }
+        if (!('deletedAt' in this.table)) {
+            throw new DbError(
+                this.entityName,
+                'softDelete',
+                where,
+                `Table '${this.entityName}' does not have a deletedAt column — soft delete is not supported`
+            );
+        }
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -407,6 +447,22 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * @returns Promise resolving to the number of restored rows
      */
     async restore(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
+        if (!where || Object.keys(where).length === 0) {
+            throw new DbError(
+                this.entityName,
+                'restore',
+                where,
+                'where clause cannot be empty — this would restore all soft-deleted records'
+            );
+        }
+        if (!('deletedAt' in this.table)) {
+            throw new DbError(
+                this.entityName,
+                'restore',
+                where,
+                `Table '${this.entityName}' does not have a deletedAt column — restore is not supported`
+            );
+        }
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -495,7 +551,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      *
      * Pagination is ALWAYS applied to prevent unbounded queries:
      * - If no pagination options are provided, defaults to page=1, pageSize=DEFAULT_PAGE_SIZE
-     * - pageSize is capped at MAX_PAGE_SIZE (100) to prevent memory issues
+     * - pageSize is capped at MAX_PAGE_SIZE (200) to prevent memory issues
      *
      * @param relations Relations to include (e.g., { destination: true, sponsorship: { sponsor: true } })
      * @param where Filter conditions
