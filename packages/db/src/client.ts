@@ -4,6 +4,8 @@ import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import * as hospedaSchema from './schemas/index.ts';
 import type { DrizzleClient } from './types.ts';
+import { DbError } from './utils/error.ts';
+import { dbLogger } from './utils/logger.ts';
 
 /**
  * Combined schema including both Hospeda application schemas
@@ -41,6 +43,9 @@ let runtimeClient: NodePgDatabase<typeof schema> | null = null;
  */
 export function initializeDb(pool: Pool): NodePgDatabase<typeof schema> {
     if (runtimeClient) {
+        dbLogger.warn(
+            'initializeDb() called but database is already initialized — returning existing client'
+        );
         return runtimeClient;
     }
 
@@ -108,7 +113,18 @@ export function getDb(): NodePgDatabase<typeof schema> {
  */
 export async function withTransaction<T>(callback: (tx: DrizzleClient) => Promise<T>): Promise<T> {
     const db = getDb();
-    return await db.transaction(callback);
+    try {
+        return await db.transaction(callback);
+    } catch (error) {
+        const cause = error instanceof Error ? error : new Error(String(error));
+        throw new DbError(
+            'withTransaction',
+            'client',
+            undefined,
+            `Transaction failed: ${cause.message}`,
+            cause
+        );
+    }
 }
 
 // Export schema for reference

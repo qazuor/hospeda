@@ -65,18 +65,31 @@ export interface QueryContext {
  * When `tx` is omitted, methods use the default connection from `getDb()`.
  */
 export interface BaseModel<T extends Record<string, unknown>> {
-    /** Find a single entity by its primary key (UUID). */
+    /** The entity name used for logging and error context. */
+    readonly entityName: string;
+
+    /**
+     * Find a single entity by its primary key (UUID).
+     * @throws {DbError} When the database operation fails
+     */
     findById(id: string, tx?: DrizzleClient): Promise<T | null>;
 
-    /** Find a single entity matching the given filter conditions. */
+    /**
+     * Find a single entity matching the given filter conditions.
+     * @throws {DbError} When the database operation fails
+     */
     findOne(where: Record<string, unknown>, tx?: DrizzleClient): Promise<T | null>;
 
-    /** Insert a new entity and return the created record. */
+    /**
+     * Insert a new entity and return the created record.
+     * @throws {DbError} When the database operation fails
+     */
     create(data: Partial<T>, tx?: DrizzleClient): Promise<T>;
 
     /**
      * Update entities matching `where` conditions. Returns the first
      * updated entity, or null if no rows matched.
+     * @throws {DbError} When the database operation fails or where clause is empty
      */
     update(where: Record<string, unknown>, data: Partial<T>, tx?: DrizzleClient): Promise<T | null>;
 
@@ -84,16 +97,26 @@ export interface BaseModel<T extends Record<string, unknown>> {
      * Update a single entity by ID. Unlike `update()`, returns void.
      * Useful for fire-and-forget updates where the caller does not need the result.
      * Note: if the ID does not match any row, the update silently does nothing.
+     * @throws {DbError} When the database operation fails
      */
     updateById(id: string, data: Partial<T>, tx?: DrizzleClient): Promise<void>;
 
-    /** Soft-delete entities matching `where` (sets `deletedAt`). Returns count of affected rows. */
+    /**
+     * Soft-delete entities matching `where` (sets `deletedAt`). Returns count of affected rows.
+     * @throws {DbError} When the database operation fails, where clause is empty, or table lacks deletedAt
+     */
     softDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number>;
 
-    /** Restore soft-deleted entities matching `where` (clears `deletedAt`). Returns count of affected rows. */
+    /**
+     * Restore soft-deleted entities matching `where` (clears `deletedAt`). Returns count of affected rows.
+     * @throws {DbError} When the database operation fails, where clause is empty, or table lacks deletedAt
+     */
     restore(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number>;
 
-    /** Permanently delete entities matching `where`. Returns count of deleted rows. */
+    /**
+     * Permanently delete entities matching `where`. Returns count of deleted rows.
+     * @throws {DbError} When the database operation fails or where clause is empty
+     */
     hardDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number>;
 
     /**
@@ -101,6 +124,7 @@ export interface BaseModel<T extends Record<string, unknown>> {
      * NOTE: `tx` is nested inside `options` (not a positional parameter) to match
      * the implementation signature where `additionalConditions` and `tx` share
      * the same options object.
+     * @throws {DbError} When the database operation fails
      */
     count(
         where: Record<string, unknown>,
@@ -110,6 +134,7 @@ export interface BaseModel<T extends Record<string, unknown>> {
     /**
      * Find all entities matching `where` with pagination and optional sorting.
      * Returns `{ items: T[], total: number }`.
+     * @throws {DbError} When the database operation fails
      */
     findAll(
         where: Record<string, unknown>,
@@ -121,6 +146,7 @@ export interface BaseModel<T extends Record<string, unknown>> {
     /**
      * Find all entities with specified relations populated.
      * Uses Drizzle's relational query API (`db.query[table].findMany()`).
+     * @throws {DbError} When the database operation fails
      */
     findAllWithRelations(
         relations: Record<string, boolean | Record<string, unknown>>,
@@ -142,6 +168,7 @@ export interface BaseModel<T extends Record<string, unknown>> {
      * using Drizzle's relational query API.
      * The interface includes it because it IS part of the public API contract
      * and callers use it through the interface.
+     * @throws {DbError} When the database operation fails
      */
     findWithRelations(
         where: Record<string, unknown>,
@@ -153,6 +180,7 @@ export interface BaseModel<T extends Record<string, unknown>> {
      * Execute a raw SQL query against the database.
      * Use sparingly -- prefer typed query methods when possible.
      * Callers must use Drizzle's `sql` tagged template literal for parameterized queries.
+     * @throws {DbError} When the database operation fails
      */
     raw(query: SQL, tx?: DrizzleClient): Promise<unknown>;
 
