@@ -21,6 +21,7 @@ import { getDb, type schema } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
+import { escapeLikePattern } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -127,7 +128,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${filters.q}%`;
+                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
                 const searchClauses = [ilike(destinations.name, searchTerm)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );
@@ -291,7 +292,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${filters.q}%`;
+                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
                 const searchClauses = [ilike(destinations.name, searchTerm)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );
@@ -597,7 +598,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
 
             // Handle text search parameter 'q'
             if (filters.q && typeof filters.q === 'string') {
-                const searchTerm = `%${filters.q}%`;
+                const searchTerm = `%${escapeLikePattern(filters.q)}%`;
                 const searchClauses = [ilike(destinations.name, searchTerm)].filter(
                     (clause): clause is SQL<unknown> => clause !== undefined
                 );

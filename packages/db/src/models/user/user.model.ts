@@ -7,7 +7,7 @@ import { accommodations } from '../../schemas/accommodation/accommodation.dbsche
 import { events } from '../../schemas/event/event.dbschema.ts';
 import { posts } from '../../schemas/post/post.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
-import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
+import { buildWhereClause, escapeLikePattern } from '../../utils/drizzle-helpers.ts';
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
@@ -52,7 +52,7 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim()) {
-            const searchTerm = `%${q.trim()}%`;
+            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
             searchClause = or(
                 ilike(users.displayName, searchTerm),
                 ilike(users.firstName, searchTerm),
@@ -121,7 +121,7 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for 'q' parameter
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim()) {
-            const searchTerm = `%${q.trim()}%`;
+            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
             searchClause = or(
                 ilike(users.displayName, searchTerm),
                 ilike(users.firstName, searchTerm),
@@ -175,7 +175,7 @@ export class UserModel extends BaseModelImpl<User> {
         // Build search clause for text search
         let searchClause: SQL | undefined;
         if (q && typeof q === 'string' && q.trim() !== '') {
-            const searchTerm = `%${q.trim()}%`;
+            const searchTerm = `%${escapeLikePattern(q.trim())}%`;
             searchClause = or(
                 ilike(users.displayName, searchTerm),
                 ilike(users.firstName, searchTerm),
