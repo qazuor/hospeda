@@ -1,13 +1,13 @@
 import type { PostSponsorship } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { postSponsorships } from '../../schemas/post/post_sponsorship.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
     protected table = postSponsorships;
-    protected entityName = 'postSponsorships';
+    public entityName = 'postSponsorships';
 
     protected getTableName(): string {
         return 'postSponsorships';
@@ -21,9 +21,10 @@ export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<PostSponsorship | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of ['post', 'sponsor']) {
@@ -37,7 +38,7 @@ export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as PostSponsorship | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -51,3 +52,6 @@ export class PostSponsorshipModel extends BaseModelImpl<PostSponsorship> {
         }
     }
 }
+
+/** Singleton instance of PostSponsorshipModel for use across the application. */
+export const postSponsorshipModel = new PostSponsorshipModel();

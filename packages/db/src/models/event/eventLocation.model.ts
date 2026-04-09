@@ -4,9 +4,12 @@ import { eventLocations } from '../../schemas/event/event_location.dbschema.ts';
 
 export class EventLocationModel extends BaseModelImpl<EventLocation> {
     protected table = eventLocations;
-    protected entityName = 'eventLocations';
+    public entityName = 'eventLocations';
 
     protected getTableName(): string {
         return 'eventLocations';
     }
 }
+
+/** Singleton instance of EventLocationModel for use across the application. */
+export const eventLocationModel = new EventLocationModel();

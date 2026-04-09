@@ -1,8 +1,8 @@
 import type { OwnerPromotion } from '@repo/schemas';
 import { and, eq, gte, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { ownerPromotions } from '../../schemas/owner-promotion/owner_promotion.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -12,7 +12,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     protected table = ownerPromotions;
-    protected entityName = 'ownerPromotions';
+    public entityName = 'ownerPromotions';
 
     protected getTableName(): string {
         return 'ownerPromotions';
@@ -21,10 +21,11 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds an owner promotion by its unique slug.
      * @param slug - The slug to search for
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the owner promotion or null if not found
      */
-    async findBySlug(slug: string): Promise<OwnerPromotion | null> {
-        const db = getDb();
+    async findBySlug(slug: string, tx?: DrizzleClient): Promise<OwnerPromotion | null> {
+        const db = this.getClient(tx);
         try {
             const result = await db
                 .select()
@@ -43,14 +44,20 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds owner promotions by owner ID.
      * @param ownerId - The owner ID to filter by
+     * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
      */
-    async findByOwnerId(ownerId: string): Promise<{ items: OwnerPromotion[]; total: number }> {
+    async findByOwnerId(
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<{ items: OwnerPromotion[]; total: number }> {
         try {
-            const result = await this.findAll({
-                ownerId,
-                deletedAt: null
-            });
+            const result = await this.findAll(
+                { ownerId, deletedAt: null },
+                undefined,
+                undefined,
+                tx
+            );
 
             logQuery(this.entityName, 'findByOwnerId', { ownerId }, result);
             return result;
@@ -68,12 +75,14 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds active owner promotions by accommodation ID.
      * @param accommodationId - The accommodation ID to filter by
+     * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
      */
     async findActiveByAccommodationId(
-        accommodationId: string
+        accommodationId: string,
+        tx?: DrizzleClient
     ): Promise<{ items: OwnerPromotion[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const now = new Date();
             const result = await db
@@ -110,12 +119,14 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
     /**
      * Finds active owner promotions by owner ID.
      * @param ownerId - The owner ID to filter by
+     * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
      */
     async findActiveByOwnerId(
-        ownerId: string
+        ownerId: string,
+        tx?: DrizzleClient
     ): Promise<{ items: OwnerPromotion[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const now = new Date();
             const result = await db
@@ -148,17 +159,19 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
      * Finds an owner promotion with its related entities populated.
      * @param where - The filter object
      * @param relations - The relations to include
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the owner promotion with relations or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<OwnerPromotion | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
-            const withObj: Record<string, boolean> = {};
+            const withObj: Record<string, boolean | Record<string, unknown>> = {};
             for (const key of ['owner', 'accommodation', 'createdBy', 'updatedBy', 'deletedBy']) {
-                if (relations[key]) withObj[key] = true;
+                if (relations[key]) withObj[key] = relations[key];
             }
 
             if (Object.keys(withObj).length > 0) {
@@ -171,7 +184,7 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
                 return result as OwnerPromotion | null;
             }
 
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -185,3 +198,6 @@ export class OwnerPromotionModel extends BaseModelImpl<OwnerPromotion> {
         }
     }
 }
+
+/** Singleton instance of OwnerPromotionModel for use across the application. */
+export const ownerPromotionModel = new OwnerPromotionModel();

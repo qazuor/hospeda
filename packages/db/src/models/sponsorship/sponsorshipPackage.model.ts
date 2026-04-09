@@ -1,8 +1,8 @@
 import type { SponsorshipPackage } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { sponsorshipPackages } from '../../schemas/sponsorship/sponsorship_package.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -12,7 +12,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
     protected table = sponsorshipPackages;
-    protected entityName = 'sponsorshipPackages';
+    public entityName = 'sponsorshipPackages';
 
     protected getTableName(): string {
         return 'sponsorshipPackages';
@@ -21,10 +21,11 @@ export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
     /**
      * Finds a sponsorship package by its unique slug.
      * @param slug - The slug to search for
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the sponsorship package or null if not found
      */
-    async findBySlug(slug: string): Promise<SponsorshipPackage | null> {
-        const db = getDb();
+    async findBySlug(slug: string, tx?: DrizzleClient): Promise<SponsorshipPackage | null> {
+        const db = this.getClient(tx);
         try {
             const result = await db
                 .select()
@@ -42,14 +43,17 @@ export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
 
     /**
      * Finds all active sponsorship packages.
+     * @param tx - Optional transaction client
      * @returns Promise resolving to an object with items and total count
      */
-    async findActive(): Promise<{ items: SponsorshipPackage[]; total: number }> {
+    async findActive(tx?: DrizzleClient): Promise<{ items: SponsorshipPackage[]; total: number }> {
         try {
-            const result = await this.findAll({
-                isActive: true,
-                deletedAt: null
-            });
+            const result = await this.findAll(
+                { isActive: true, deletedAt: null },
+                undefined,
+                undefined,
+                tx
+            );
 
             logQuery(this.entityName, 'findActive', {}, result);
             return result;
@@ -63,13 +67,15 @@ export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
      * Finds a sponsorship package with its related entities populated.
      * @param where - The filter object
      * @param relations - The relations to include
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the sponsorship package with relations or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<SponsorshipPackage | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of ['eventLevel', 'createdBy', 'updatedBy', 'deletedBy']) {
@@ -86,7 +92,7 @@ export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
                 return result as SponsorshipPackage | null;
             }
 
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -100,3 +106,6 @@ export class SponsorshipPackageModel extends BaseModelImpl<SponsorshipPackage> {
         }
     }
 }
+
+/** Singleton instance of SponsorshipPackageModel for use across the application. */
+export const sponsorshipPackageModel = new SponsorshipPackageModel();

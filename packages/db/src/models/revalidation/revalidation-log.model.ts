@@ -1,8 +1,8 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { and, count, desc, eq, gte, lt, lte } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { revalidationLog } from '../../schemas/revalidation/revalidation-log.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
 /**
@@ -33,8 +33,8 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
      * @param date - Cutoff date; rows strictly before this date are removed
      * @returns Promise resolving to the count of deleted rows
      */
-    async deleteOlderThan(date: Date): Promise<number> {
-        const db = getDb();
+    async deleteOlderThan(date: Date, tx?: DrizzleClient): Promise<number> {
+        const db = this.getClient(tx);
         const deleted = await db
             .delete(revalidationLog)
             .where(lt(revalidationLog.createdAt, date))
@@ -63,9 +63,10 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
             readonly fromDate?: Date;
             readonly toDate?: Date;
         },
-        options: { readonly page?: number; readonly pageSize?: number } = {}
+        options: { readonly page?: number; readonly pageSize?: number } = {},
+        tx?: DrizzleClient
     ): Promise<{ items: RevalidationLogRecord[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
 
         const page = options.page ?? 1;
         const pageSize = Math.min(options.pageSize ?? 50, 100);
@@ -119,8 +120,11 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
      * @param entityType - The entity type key to look up
      * @returns Promise resolving to the latest cron log row, or undefined if none exists
      */
-    async findLastCronEntry(entityType: string): Promise<RevalidationLogRecord | undefined> {
-        const db = getDb();
+    async findLastCronEntry(
+        entityType: string,
+        tx?: DrizzleClient
+    ): Promise<RevalidationLogRecord | undefined> {
+        const db = this.getClient(tx);
         const results = await db
             .select()
             .from(revalidationLog)
@@ -132,3 +136,6 @@ export class RevalidationLogModel extends BaseModelImpl<RevalidationLogRecord> {
         return results[0];
     }
 }
+
+/** Singleton instance of RevalidationLogModel for use across the application. */
+export const revalidationLogModel = new RevalidationLogModel();

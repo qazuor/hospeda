@@ -1,8 +1,8 @@
 import type { SponsorshipLevel } from '@repo/schemas';
 import { eq } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { sponsorshipLevels } from '../../schemas/sponsorship/sponsorship_level.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
@@ -12,7 +12,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
     protected table = sponsorshipLevels;
-    protected entityName = 'sponsorshipLevels';
+    public entityName = 'sponsorshipLevels';
 
     protected getTableName(): string {
         return 'sponsorshipLevels';
@@ -21,10 +21,11 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
     /**
      * Finds a sponsorship level by its unique slug.
      * @param slug - The slug to search for
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the sponsorship level or null if not found
      */
-    async findBySlug(slug: string): Promise<SponsorshipLevel | null> {
-        const db = getDb();
+    async findBySlug(slug: string, tx?: DrizzleClient): Promise<SponsorshipLevel | null> {
+        const db = this.getClient(tx);
         try {
             const result = await db
                 .select()
@@ -43,17 +44,20 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
     /**
      * Finds active sponsorship levels by target type.
      * @param targetType - The target type to filter by
+     * @param tx - Optional transaction client
      * @returns Promise resolving to an array of active sponsorship levels
      */
     async findActiveByTargetType(
-        targetType: string
+        targetType: string,
+        tx?: DrizzleClient
     ): Promise<{ items: SponsorshipLevel[]; total: number }> {
         try {
-            const result = await this.findAll({
-                targetType,
-                isActive: true,
-                deletedAt: null
-            });
+            const result = await this.findAll(
+                { targetType, isActive: true, deletedAt: null },
+                undefined,
+                undefined,
+                tx
+            );
 
             logQuery(this.entityName, 'findActiveByTargetType', { targetType }, result);
             return result;
@@ -72,13 +76,15 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
      * Finds a sponsorship level with its creator, updater, and deleter relations populated.
      * @param where - The filter object
      * @param relations - The relations to include
+     * @param tx - Optional transaction client
      * @returns Promise resolving to the sponsorship level with relations or null if not found
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<SponsorshipLevel | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of ['createdBy', 'updatedBy', 'deletedBy']) {
@@ -95,7 +101,7 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
                 return result as unknown as SponsorshipLevel | null;
             }
 
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -109,3 +115,6 @@ export class SponsorshipLevelModel extends BaseModelImpl<SponsorshipLevel> {
         }
     }
 }
+
+/** Singleton instance of SponsorshipLevelModel for use across the application. */
+export const sponsorshipLevelModel = new SponsorshipLevelModel();

@@ -7,12 +7,12 @@ import type {
 import { and, count, desc, eq, gte, lte, max } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { exchangeRates } from '../../schemas/exchange-rate/exchange-rate.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 
 export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
     protected table = exchangeRates;
-    protected entityName = 'exchange_rates';
+    public entityName = 'exchange_rates';
 
     protected getTableName(): string {
         return 'exchange_rates';
@@ -37,12 +37,15 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
      * });
      * ```
      */
-    async findLatestRate(input: {
-        fromCurrency: PriceCurrencyEnum;
-        toCurrency: PriceCurrencyEnum;
-        rateType?: ExchangeRateTypeEnum;
-    }): Promise<ExchangeRate | null> {
-        const db = getDb();
+    async findLatestRate(
+        input: {
+            fromCurrency: PriceCurrencyEnum;
+            toCurrency: PriceCurrencyEnum;
+            rateType?: ExchangeRateTypeEnum;
+        },
+        tx?: DrizzleClient
+    ): Promise<ExchangeRate | null> {
+        const db = this.getClient(tx);
         const { fromCurrency, toCurrency, rateType } = input;
 
         const whereClauses = [
@@ -79,11 +82,14 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
      * const latestRates = await model.findLatestRates({ limit: 50 });
      * ```
      */
-    async findLatestRates(input?: {
-        limit?: number;
-        offset?: number;
-    }): Promise<ExchangeRate[]> {
-        const db = getDb();
+    async findLatestRates(
+        input?: {
+            limit?: number;
+            offset?: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<ExchangeRate[]> {
+        const db = this.getClient(tx);
         const { limit = 100, offset = 0 } = input ?? {};
 
         const subquery = db
@@ -138,14 +144,17 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
      * });
      * ```
      */
-    async findRateHistory(input: {
-        fromCurrency: PriceCurrencyEnum;
-        toCurrency: PriceCurrencyEnum;
-        rateType?: ExchangeRateTypeEnum;
-        limit?: number;
-        offset?: number;
-    }): Promise<ExchangeRate[]> {
-        const db = getDb();
+    async findRateHistory(
+        input: {
+            fromCurrency: PriceCurrencyEnum;
+            toCurrency: PriceCurrencyEnum;
+            rateType?: ExchangeRateTypeEnum;
+            limit?: number;
+            offset?: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<ExchangeRate[]> {
+        const db = this.getClient(tx);
         const { fromCurrency, toCurrency, rateType, limit = 20, offset = 0 } = input;
 
         const whereClauses = [
@@ -180,8 +189,8 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
      * const overrides = await model.findManualOverrides();
      * ```
      */
-    async findManualOverrides(): Promise<ExchangeRate[]> {
-        const db = getDb();
+    async findManualOverrides(tx?: DrizzleClient): Promise<ExchangeRate[]> {
+        const db = this.getClient(tx);
 
         const results = await db
             .select()
@@ -210,9 +219,10 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
      */
     async findAllWithDateRange(
         input: ExchangeRateSearchInput,
-        pagination: { page: number; pageSize: number }
+        pagination: { page: number; pageSize: number },
+        tx?: DrizzleClient
     ): Promise<{ items: ExchangeRate[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
         const { fromDate, toDate, ...eqFilters } = input;
         const { page, pageSize } = pagination;
         const offset = (page - 1) * pageSize;
@@ -261,3 +271,6 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
         };
     }
 }
+
+/** Singleton instance of ExchangeRateModel for use across the application. */
+export const exchangeRateModel = new ExchangeRateModel();

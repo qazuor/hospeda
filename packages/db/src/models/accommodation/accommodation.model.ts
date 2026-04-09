@@ -6,25 +6,28 @@ import type {
     UserSummary
 } from '@repo/schemas';
 import type { AnyColumn, SQL } from 'drizzle-orm';
-import { and, asc, count, desc, eq, isNull, ne, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, inArray, isNull, ne, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
+import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
+import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class AccommodationModel extends BaseModelImpl<Accommodation> {
     protected table = accommodations;
-    protected entityName = 'accommodations';
+    public entityName = 'accommodations';
 
     protected getTableName(): string {
         return 'accommodations';
     }
 
     public async countByFilters(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean }
+        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        tx?: DrizzleClient
     ): Promise<{ count: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
 
         const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
@@ -54,9 +57,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     }
 
     public async search(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean }
+        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        tx?: DrizzleClient
     ): Promise<{ items: Accommodation[]; total: number }> {
-        const db = getDb();
+        const db = this.getClient(tx);
 
         const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
@@ -77,8 +81,36 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
         }
-        // Note: Filtering by amenities would require a join and is more complex.
-        // This is a simplified example.
+        if (params.amenities && params.amenities.length > 0) {
+            whereClauses.push(
+                exists(
+                    db
+                        .select({ one: sql`1` })
+                        .from(rAccommodationAmenity)
+                        .where(
+                            and(
+                                eq(rAccommodationAmenity.accommodationId, accommodations.id),
+                                inArray(rAccommodationAmenity.amenityId, params.amenities)
+                            )
+                        )
+                )
+            );
+        }
+        if (params.features && params.features.length > 0) {
+            whereClauses.push(
+                exists(
+                    db
+                        .select({ one: sql`1` })
+                        .from(rAccommodationFeature)
+                        .where(
+                            and(
+                                eq(rAccommodationFeature.accommodationId, accommodations.id),
+                                inArray(rAccommodationFeature.featureId, params.features)
+                            )
+                        )
+                )
+            );
+        }
 
         const where = and(...whereClauses);
 
@@ -117,7 +149,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      * Search accommodations with destination and owner relations
      */
     public async searchWithRelations(
-        params: AccommodationSearchInput & { excludeRestricted?: boolean }
+        params: AccommodationSearchInput & { excludeRestricted?: boolean },
+        tx?: DrizzleClient
     ): Promise<{
         items: Array<
             Accommodation & {
@@ -127,7 +160,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         >;
         total: number;
     }> {
-        const db = getDb();
+        const db = this.getClient(tx);
 
         const whereClauses: SQL<unknown>[] = [isNull(accommodations.deletedAt)];
         if (params.ownerId) {
@@ -147,6 +180,36 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
         if (params.excludeRestricted) {
             whereClauses.push(ne(accommodations.visibility, 'RESTRICTED'));
+        }
+        if (params.amenities && params.amenities.length > 0) {
+            whereClauses.push(
+                exists(
+                    db
+                        .select({ one: sql`1` })
+                        .from(rAccommodationAmenity)
+                        .where(
+                            and(
+                                eq(rAccommodationAmenity.accommodationId, accommodations.id),
+                                inArray(rAccommodationAmenity.amenityId, params.amenities)
+                            )
+                        )
+                )
+            );
+        }
+        if (params.features && params.features.length > 0) {
+            whereClauses.push(
+                exists(
+                    db
+                        .select({ one: sql`1` })
+                        .from(rAccommodationFeature)
+                        .where(
+                            and(
+                                eq(rAccommodationFeature.accommodationId, accommodations.id),
+                                inArray(rAccommodationFeature.featureId, params.features)
+                            )
+                        )
+                )
+            );
         }
 
         const where = and(...whereClauses);
@@ -229,8 +292,9 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         type?: string;
         onlyFeatured?: boolean;
         excludeRestricted?: boolean;
+        tx?: DrizzleClient;
     }): Promise<Accommodation[]> {
-        const db = getDb();
+        const db = this.getClient(params.tx);
         const {
             limit = 10,
             destinationId,
@@ -266,7 +330,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      */
     async updateStats(
         accommodationId: string,
-        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput }
+        stats: { reviewsCount: number; averageRating: number; rating: AccommodationRatingInput },
+        tx?: DrizzleClient
     ): Promise<void> {
         await this.update(
             { id: accommodationId },
@@ -274,7 +339,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 reviewsCount: stats.reviewsCount,
                 averageRating: stats.averageRating,
                 rating: stats.rating
-            }
+            },
+            tx
         );
     }
 
@@ -286,9 +352,10 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<Accommodation | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             if (relations.destination) {
                 const result = await db.query.accommodations.findFirst({
@@ -298,7 +365,7 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as unknown as Accommodation | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -312,3 +379,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         }
     }
 }
+
+/** Singleton instance of AccommodationModel for use across the application. */
+export const accommodationModel = new AccommodationModel();

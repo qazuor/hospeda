@@ -1,13 +1,13 @@
 import type { DestinationAttractionRelation } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttractionRelation> {
     protected table = rDestinationAttraction;
-    protected entityName = 'rDestinationAttraction';
+    public entityName = 'rDestinationAttraction';
 
     protected getTableName(): string {
         return 'rDestinationAttractions';
@@ -21,9 +21,10 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<DestinationAttractionRelation | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['destination', 'attraction', 'destinationsWithAttraction']) {
@@ -38,7 +39,7 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as unknown as DestinationAttractionRelation | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -52,3 +53,6 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
         }
     }
 }
+
+/** Singleton instance of RDestinationAttractionModel for use across the application. */
+export const rDestinationAttractionModel = new RDestinationAttractionModel();

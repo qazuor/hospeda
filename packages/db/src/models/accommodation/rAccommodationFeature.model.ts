@@ -1,14 +1,14 @@
 import type { AccommodationFeature } from '@repo/schemas';
 import { count, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { rAccommodationFeature } from '../../schemas/accommodation/r_accommodation_feature.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeature> {
     protected table = rAccommodationFeature;
-    protected entityName = 'rAccommodationFeature';
+    public entityName = 'rAccommodationFeature';
 
     protected getTableName(): string {
         return 'rAccommodationFeatures';
@@ -21,12 +21,13 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
      * @returns Promise resolving to a Map of featureId to accommodation count
      */
     async countAccommodationsByFeatureIds(
-        featureIds: readonly string[]
+        featureIds: readonly string[],
+        tx?: DrizzleClient
     ): Promise<Map<string, number>> {
         if (featureIds.length === 0) {
             return new Map();
         }
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const rows = await db
                 .select({
@@ -67,9 +68,10 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<AccommodationFeature | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['accommodation', 'feature']) {
@@ -84,7 +86,7 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as unknown as AccommodationFeature | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -98,3 +100,6 @@ export class RAccommodationFeatureModel extends BaseModelImpl<AccommodationFeatu
         }
     }
 }
+
+/** Singleton instance of RAccommodationFeatureModel for use across the application. */
+export const rAccommodationFeatureModel = new RAccommodationFeatureModel();

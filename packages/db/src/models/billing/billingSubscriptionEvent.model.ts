@@ -11,9 +11,12 @@ type BillingSubscriptionEvent = typeof billingSubscriptionEvents.$inferSelect;
  */
 export class BillingSubscriptionEventModel extends BaseModelImpl<BillingSubscriptionEvent> {
     protected table = billingSubscriptionEvents;
-    protected entityName = 'billing_subscription_events';
+    public entityName = 'billing_subscription_events';
 
     protected getTableName(): string {
         return 'billing_subscription_events';
     }
 }
+
+/** Singleton instance of BillingSubscriptionEventModel for use across the application. */
+export const billingSubscriptionEventModel = new BillingSubscriptionEventModel();

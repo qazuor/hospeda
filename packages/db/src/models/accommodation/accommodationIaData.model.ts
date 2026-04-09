@@ -4,9 +4,12 @@ import { accommodationIaData } from '../../schemas/accommodation/accommodation_i
 
 export class AccommodationIaDataModel extends BaseModelImpl<AccommodationIaData> {
     protected table = accommodationIaData;
-    protected entityName = 'accommodationIaData';
+    public entityName = 'accommodationIaData';
 
     protected getTableName(): string {
         return 'accommodationIaData';
     }
 }
+
+/** Singleton instance of AccommodationIaDataModel for use across the application. */
+export const accommodationIaDataModel = new AccommodationIaDataModel();

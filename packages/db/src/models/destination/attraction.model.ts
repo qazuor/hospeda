@@ -4,9 +4,12 @@ import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 
 export class AttractionModel extends BaseModelImpl<Attraction> {
     protected table = attractions;
-    protected entityName = 'attractions';
+    public entityName = 'attractions';
 
     protected getTableName(): string {
         return 'attractions';
     }
 }
+
+/** Singleton instance of AttractionModel for use across the application. */
+export const attractionModel = new AttractionModel();

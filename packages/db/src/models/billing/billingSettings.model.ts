@@ -11,9 +11,12 @@ type BillingSettingsRow = typeof billingSettings.$inferSelect;
  */
 export class BillingSettingsModel extends BaseModelImpl<BillingSettingsRow> {
     protected table = billingSettings;
-    protected entityName = 'billing_settings';
+    public entityName = 'billing_settings';
 
     protected getTableName(): string {
         return 'billing_settings';
     }
 }
+
+/** Singleton instance of BillingSettingsModel for use across the application. */
+export const billingSettingsModel = new BillingSettingsModel();

@@ -11,9 +11,12 @@ type BillingDunningAttempt = typeof billingDunningAttempts.$inferSelect;
  */
 export class BillingDunningAttemptModel extends BaseModelImpl<BillingDunningAttempt> {
     protected table = billingDunningAttempts;
-    protected entityName = 'billing_dunning_attempts';
+    public entityName = 'billing_dunning_attempts';
 
     protected getTableName(): string {
         return 'billing_dunning_attempts';
     }
 }
+
+/** Singleton instance of BillingDunningAttemptModel for use across the application. */
+export const billingDunningAttemptModel = new BillingDunningAttemptModel();

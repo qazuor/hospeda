@@ -1,14 +1,14 @@
 import type { AccommodationAmenityRelation } from '@repo/schemas';
 import { count, inArray } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { rAccommodationAmenity } from '../../schemas/accommodation/r_accommodation_amenity.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmenityRelation> {
     protected table = rAccommodationAmenity;
-    protected entityName = 'rAccommodationAmenity';
+    public entityName = 'rAccommodationAmenity';
 
     protected getTableName(): string {
         return 'rAccommodationAmenities';
@@ -21,12 +21,13 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
      * @returns Promise resolving to a Map of amenityId to accommodation count
      */
     async countAccommodationsByAmenityIds(
-        amenityIds: readonly string[]
+        amenityIds: readonly string[],
+        tx?: DrizzleClient
     ): Promise<Map<string, number>> {
         if (amenityIds.length === 0) {
             return new Map();
         }
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const rows = await db
                 .select({
@@ -67,9 +68,10 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<AccommodationAmenityRelation | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['accommodation', 'amenity']) {
@@ -84,7 +86,7 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as AccommodationAmenityRelation | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -98,3 +100,6 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
         }
     }
 }
+
+/** Singleton instance of RAccommodationAmenityModel for use across the application. */
+export const rAccommodationAmenityModel = new RAccommodationAmenityModel();

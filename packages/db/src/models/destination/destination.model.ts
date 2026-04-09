@@ -15,7 +15,6 @@ import {
     sql
 } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { attractions } from '../../schemas/destination/attraction.dbschema.ts';
 import { destinations } from '../../schemas/destination/destination.dbschema.ts';
 import { rDestinationAttraction } from '../../schemas/destination/r_destination_attraction.dbschema.ts';
@@ -40,9 +39,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<Destination | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             // Dynamically build the 'with' object
             const withObj: Record<string, boolean> = {};
@@ -66,7 +66,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
                 return result as unknown as Destination | null;
             }
             // Fallback to base findOne if there are no relations
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -88,8 +88,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @returns Promise resolving to an array of DestinationType
      * @throws DbError if the database query fails
      */
-    async findAllByAttractionId(attractionId: string): Promise<Destination[]> {
-        const db = getDb();
+    async findAllByAttractionId(attractionId: string, tx?: DrizzleClient): Promise<Destination[]> {
+        const db = this.getClient(tx);
         try {
             const results = await db.query.destinations.findMany({
                 where: (fields, { eq }) => eq(fields.id, attractionId),
@@ -113,13 +113,16 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param params - Search parameters (filters, sort, pagination)
      * @returns Promise resolving to an object with items (including attraction names) and total count
      */
-    async searchWithAttractions(params: {
-        filters?: Record<string, unknown>;
-        orderBy?: Record<string, 'asc' | 'desc'>;
-        page?: number;
-        pageSize?: number;
-    }): Promise<{ items: DestinationWithAttractionNames[]; total: number }> {
-        const db = getDb();
+    async searchWithAttractions(
+        params: {
+            filters?: Record<string, unknown>;
+            orderBy?: Record<string, 'asc' | 'desc'>;
+            page?: number;
+            pageSize?: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<{ items: DestinationWithAttractionNames[]; total: number }> {
+        const db = this.getClient(tx);
         const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
         try {
             // Build Drizzle where clause from filters
@@ -213,7 +216,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param destIds - Array of destination UUIDs
      * @returns Map of destinationId to array of { id, name, icon } attraction objects
      */
-    async getAttractionsMap(destIds: readonly string[]): Promise<
+    async getAttractionsMap(
+        destIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<
         Map<
             string,
             Array<{
@@ -225,7 +231,7 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         >
     > {
         if (destIds.length === 0) return new Map();
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const results = await db
                 .select({
@@ -276,13 +282,16 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param params - Search parameters (filters, sort, pagination)
      * @returns Promise resolving to an object with items and total count
      */
-    async search(params: {
-        filters?: Record<string, unknown>;
-        orderBy?: Record<string, 'asc' | 'desc'>;
-        page?: number;
-        pageSize?: number;
-    }): Promise<{ items: Destination[]; total: number }> {
-        const db = getDb();
+    async search(
+        params: {
+            filters?: Record<string, unknown>;
+            orderBy?: Record<string, 'asc' | 'desc'>;
+            page?: number;
+            pageSize?: number;
+        },
+        tx?: DrizzleClient
+    ): Promise<{ items: Destination[]; total: number }> {
+        const db = this.getClient(tx);
         const { filters = {}, orderBy = { name: 'asc' }, page = 1, pageSize = 20 } = params;
         try {
             // Build Drizzle where clause from filters
@@ -349,8 +358,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param parentId - The ID of the parent destination
      * @returns Promise resolving to an array of child destinations
      */
-    async findChildren(parentId: string): Promise<Destination[]> {
-        const db = getDb();
+    async findChildren(parentId: string, tx?: DrizzleClient): Promise<Destination[]> {
+        const db = this.getClient(tx);
         try {
             const results = await db
                 .select()
@@ -383,11 +392,12 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      */
     async findDescendants(
         destinationId: string,
-        options?: { maxDepth?: number; destinationType?: DestinationType }
+        options?: { maxDepth?: number; destinationType?: DestinationType },
+        tx?: DrizzleClient
     ): Promise<Destination[]> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
-            const parent = await this.findOne({ id: destinationId });
+            const parent = await this.findOne({ id: destinationId }, tx);
             if (!parent) {
                 return [];
             }
@@ -439,10 +449,10 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param destinationId - The ID of the destination
      * @returns Promise resolving to an array of ancestor destinations
      */
-    async findAncestors(destinationId: string): Promise<Destination[]> {
-        const db = getDb();
+    async findAncestors(destinationId: string, tx?: DrizzleClient): Promise<Destination[]> {
+        const db = this.getClient(tx);
         try {
-            const destination = await this.findOne({ id: destinationId });
+            const destination = await this.findOne({ id: destinationId }, tx);
             if (!destination || !destination.pathIds) {
                 return [];
             }
@@ -476,8 +486,8 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param path - The materialized path (e.g., '/argentina/entre-rios/concepcion-del-uruguay')
      * @returns Promise resolving to the destination or null
      */
-    async findByPath(path: string): Promise<Destination | null> {
-        const db = getDb();
+    async findByPath(path: string, tx?: DrizzleClient): Promise<Destination | null> {
+        const db = this.getClient(tx);
         try {
             const results = await db
                 .select()
@@ -501,9 +511,13 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param ancestorId - ID of the potential ancestor
      * @returns Promise resolving to true if it is a descendant
      */
-    async isDescendant(potentialDescendantId: string, ancestorId: string): Promise<boolean> {
+    async isDescendant(
+        potentialDescendantId: string,
+        ancestorId: string,
+        tx?: DrizzleClient
+    ): Promise<boolean> {
         try {
-            const descendant = await this.findOne({ id: potentialDescendantId });
+            const descendant = await this.findOne({ id: potentialDescendantId }, tx);
             if (!descendant || !descendant.pathIds) {
                 return false;
             }
@@ -584,10 +598,13 @@ export class DestinationModel extends BaseModelImpl<Destination> {
      * @param params - Object with filters
      * @returns Promise resolving to an object with the count
      */
-    async countByFilters(params: { filters?: Record<string, unknown> }): Promise<{
+    async countByFilters(
+        params: { filters?: Record<string, unknown> },
+        tx?: DrizzleClient
+    ): Promise<{
         count: number;
     }> {
-        const db = getDb();
+        const db = this.getClient(tx);
         const { filters = {} } = params;
         try {
             // Build Drizzle where clause from filters
@@ -630,3 +647,6 @@ export class DestinationModel extends BaseModelImpl<Destination> {
         }
     }
 }
+
+/** Singleton instance of DestinationModel for use across the application. */
+export const destinationModel = new DestinationModel();

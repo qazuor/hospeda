@@ -1,8 +1,7 @@
 import type { DestinationReview } from '@repo/schemas';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import type { schema } from '../../client.ts';
 import { destinationReviews } from '../../schemas/destination/destination_review.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -17,7 +16,7 @@ type DestinationReviewWithRelations = DestinationReview & {
 
 export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
     protected table = destinationReviews;
-    protected entityName = 'destinationReviews';
+    public entityName = 'destinationReviews';
 
     protected getTableName(): string {
         return 'destinationReviews';
@@ -33,7 +32,7 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
     async findAllWithUser(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{
         items: DestinationReviewWithRelations[];
         total: number;
@@ -92,3 +91,6 @@ export class DestinationReviewModel extends BaseModelImpl<DestinationReview> {
         }
     }
 }
+
+/** Singleton instance of DestinationReviewModel for use across the application. */
+export const destinationReviewModel = new DestinationReviewModel();

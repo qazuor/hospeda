@@ -1,6 +1,5 @@
 import type { EventOrganizer } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { eventOrganizers } from '../../schemas/event/event_organizer.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
@@ -18,7 +17,7 @@ export class EventOrganizerModel extends BaseModelImpl<EventOrganizer> {
     /**
      * The entity name for logging and error context.
      */
-    protected entityName = 'eventOrganizers';
+    public entityName = 'eventOrganizers';
 
     /**
      * Returns the Drizzle query key for this model.
@@ -41,7 +40,7 @@ export class EventOrganizerModel extends BaseModelImpl<EventOrganizer> {
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<EventOrganizer | null> {
-        const db = tx ?? getDb();
+        const db = this.getClient(tx);
         try {
             // Supports 'events' relation
             if (relations.events) {

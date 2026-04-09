@@ -4,9 +4,12 @@ import { userBookmarks } from '../../schemas/user/user_bookmark.dbschema.ts';
 
 export class UserBookmarkModel extends BaseModelImpl<UserBookmark> {
     protected table = userBookmarks;
-    protected entityName = 'userBookmarks';
+    public entityName = 'userBookmarks';
 
     protected getTableName(): string {
         return 'userBookmarks';
     }
 }
+
+/** Singleton instance of UserBookmarkModel for use across the application. */
+export const userBookmarkModel = new UserBookmarkModel();

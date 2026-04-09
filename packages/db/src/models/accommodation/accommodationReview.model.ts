@@ -1,8 +1,7 @@
 import type { AccommodationReview } from '@repo/schemas';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import type { schema } from '../../client.ts';
 import { accommodationReviews } from '../../schemas/accommodation/accommodation_review.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { buildWhereClause } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -21,7 +20,7 @@ type AccommodationReviewWithRelations = AccommodationReview & {
  */
 export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview> {
     protected table = accommodationReviews;
-    protected entityName = 'accommodationReviews';
+    public entityName = 'accommodationReviews';
 
     protected getTableName(): string {
         return 'accommodationReviews';
@@ -37,7 +36,7 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
     async findAllWithUser(
         where: Record<string, unknown>,
         options?: { page?: number; pageSize?: number },
-        tx?: NodePgDatabase<typeof schema>
+        tx?: DrizzleClient
     ): Promise<{
         items: AccommodationReviewWithRelations[];
         total: number;
@@ -96,3 +95,6 @@ export class AccommodationReviewModel extends BaseModelImpl<AccommodationReview>
         }
     }
 }
+
+/** Singleton instance of AccommodationReviewModel for use across the application. */
+export const accommodationReviewModel = new AccommodationReviewModel();

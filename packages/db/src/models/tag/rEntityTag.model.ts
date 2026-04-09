@@ -1,15 +1,15 @@
 import type { EntityTag } from '@repo/schemas';
 import { type and, count, desc, eq } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { rEntityTag } from '../../schemas/tag/r_entity_tag.dbschema.ts';
 import { tags } from '../../schemas/tag/tag.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class REntityTagModel extends BaseModelImpl<EntityTag> {
     protected table = rEntityTag;
-    protected entityName = 'rEntityTag';
+    public entityName = 'rEntityTag';
 
     protected getTableName(): string {
         return 'rEntityTags';
@@ -23,9 +23,10 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<EntityTag | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, true> = {};
             for (const key of ['tag']) {
@@ -39,7 +40,7 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as EntityTag | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -59,8 +60,8 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
      * @param entityType - The entity type
      * @returns Array of { relation, tag }
      */
-    async findAllWithTags(entityId: string, entityType: string) {
-        const db = getDb();
+    async findAllWithTags(entityId: string, entityType: string, tx?: DrizzleClient) {
+        const db = this.getClient(tx);
         try {
             const result = await db.query.rEntityTag.findMany({
                 where: (fields, { eq, and }) =>
@@ -86,8 +87,8 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
      * @param entityType - (optional) The entity type
      * @returns Array of { relation, tag }
      */
-    async findAllWithEntities(tagId: string, entityType?: string) {
-        const db = getDb();
+    async findAllWithEntities(tagId: string, entityType?: string, tx?: DrizzleClient) {
+        const db = this.getClient(tx);
         try {
             const whereFn = (
                 fields: typeof rEntityTag._.columns,
@@ -123,8 +124,11 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
      * @param limit - Maximum number of tags to return (default: 10)
      * @returns Array of { tag, usageCount }
      */
-    async findPopularTags(limit = 10): Promise<Array<{ tag: unknown; usageCount: number }>> {
-        const db = getDb();
+    async findPopularTags(
+        limit = 10,
+        tx?: DrizzleClient
+    ): Promise<Array<{ tag: unknown; usageCount: number }>> {
+        const db = this.getClient(tx);
 
         const results = await db
             .select({
@@ -139,3 +143,6 @@ export class REntityTagModel extends BaseModelImpl<EntityTag> {
         return results;
     }
 }
+
+/** Singleton instance of REntityTagModel for use across the application. */
+export const rEntityTagModel = new REntityTagModel();

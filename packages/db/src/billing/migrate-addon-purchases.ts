@@ -30,6 +30,7 @@ import { createLogger } from '@repo/logger';
 import { sql } from 'drizzle-orm';
 import { getDb } from '../client.ts';
 import { billingAddonPurchases } from '../schemas/index.ts';
+import type { DrizzleClient } from '../types.ts';
 import { createBillingAdapter } from './drizzle-adapter.ts';
 import { billingSubscriptions } from './schemas.ts';
 
@@ -107,7 +108,7 @@ interface MigrationOptions {
  * @returns Configured QZPayBilling instance
  * @throws {Error} If the billing instance cannot be created
  */
-function initBillingInstance(db: ReturnType<typeof getDb>): QZPayBilling {
+function initBillingInstance(db: DrizzleClient): QZPayBilling {
     const storageAdapter = createBillingAdapter(db, {
         livemode: process.env.NODE_ENV === 'production'
     });

@@ -1,9 +1,8 @@
 import type { ExchangeRateConfig } from '@repo/schemas';
 import { ExchangeRateTypeEnum } from '@repo/schemas';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import type { schema } from '../../client.ts';
 import { exchangeRateConfig } from '../../schemas/exchange-rate/exchange-rate-config.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 
 /**
  * Default configuration values for exchange rate settings.
@@ -37,7 +36,7 @@ interface UpdateConfigInput {
  */
 export class ExchangeRateConfigModel extends BaseModelImpl<ExchangeRateConfig> {
     protected table = exchangeRateConfig;
-    protected entityName = 'exchange_rate_config';
+    public entityName = 'exchange_rate_config';
 
     protected getTableName(): string {
         return 'exchange_rate_config';
@@ -57,7 +56,7 @@ export class ExchangeRateConfigModel extends BaseModelImpl<ExchangeRateConfig> {
      * console.log(config.defaultRateType); // 'oficial'
      * ```
      */
-    async getConfig(tx?: NodePgDatabase<typeof schema>): Promise<ExchangeRateConfig> {
+    async getConfig(tx?: DrizzleClient): Promise<ExchangeRateConfig> {
         const result = await this.findAll({}, { page: 1, pageSize: 1 }, undefined, tx);
         const existingConfig = result.items[0];
 
@@ -99,10 +98,7 @@ export class ExchangeRateConfigModel extends BaseModelImpl<ExchangeRateConfig> {
      * console.log(updated.defaultRateType); // 'blue'
      * ```
      */
-    async updateConfig(
-        input: UpdateConfigInput,
-        tx?: NodePgDatabase<typeof schema>
-    ): Promise<ExchangeRateConfig> {
+    async updateConfig(input: UpdateConfigInput, tx?: DrizzleClient): Promise<ExchangeRateConfig> {
         const { data, updatedById } = input;
         const result = await this.findAll({}, { page: 1, pageSize: 1 }, undefined, tx);
         const existingConfig = result.items[0];
@@ -136,3 +132,6 @@ export class ExchangeRateConfigModel extends BaseModelImpl<ExchangeRateConfig> {
         return newConfig;
     }
 }
+
+/** Singleton instance of ExchangeRateConfigModel for use across the application. */
+export const exchangeRateConfigModel = new ExchangeRateConfigModel();

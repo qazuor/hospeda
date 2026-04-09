@@ -1,13 +1,13 @@
 import type { Event } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { events } from '../../schemas/event/event.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class EventModel extends BaseModelImpl<Event> {
     protected table = events;
-    protected entityName = 'events';
+    public entityName = 'events';
 
     protected getTableName(): string {
         return 'events';
@@ -21,9 +21,10 @@ export class EventModel extends BaseModelImpl<Event> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<Event | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             const withObj: Record<string, boolean> = {};
             for (const key of [
@@ -45,7 +46,7 @@ export class EventModel extends BaseModelImpl<Event> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as unknown as Event | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -59,3 +60,6 @@ export class EventModel extends BaseModelImpl<Event> {
         }
     }
 }
+
+/** Singleton instance of EventModel for use across the application. */
+export const eventModel = new EventModel();

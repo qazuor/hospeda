@@ -260,3 +260,6 @@ export class UserModel extends BaseModelImpl<User> {
         return { items: itemsWithCounts, total };
     }
 }
+
+/** Singleton instance of UserModel for use across the application. */
+export const userModel = new UserModel();

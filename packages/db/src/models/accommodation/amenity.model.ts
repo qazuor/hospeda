@@ -1,13 +1,13 @@
 import type { Amenity } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { getDb } from '../../client.ts';
 import { amenities } from '../../schemas/accommodation/amenity.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class AmenityModel extends BaseModelImpl<Amenity> {
     protected table = amenities;
-    protected entityName = 'amenities';
+    public entityName = 'amenities';
 
     protected getTableName(): string {
         return 'amenities';
@@ -21,9 +21,10 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<Amenity | null> {
-        const db = getDb();
+        const db = this.getClient(tx);
         try {
             if (relations.accommodations) {
                 const result = await db.query.amenities.findFirst({
@@ -33,7 +34,7 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
                 return result as Amenity | null;
             }
-            const result = await this.findOne(where);
+            const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
             return result;
         } catch (error) {
@@ -47,3 +48,6 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
         }
     }
 }
+
+/** Singleton instance of AmenityModel for use across the application. */
+export const amenityModel = new AmenityModel();

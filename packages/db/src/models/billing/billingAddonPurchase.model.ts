@@ -10,9 +10,12 @@ type BillingAddonPurchase = typeof billingAddonPurchases.$inferSelect;
  */
 export class BillingAddonPurchaseModel extends BaseModelImpl<BillingAddonPurchase> {
     protected table = billingAddonPurchases;
-    protected entityName = 'billing_addon_purchases';
+    public entityName = 'billing_addon_purchases';
 
     protected getTableName(): string {
         return 'billing_addon_purchases';
     }
 }
+
+/** Singleton instance of BillingAddonPurchaseModel for use across the application. */
+export const billingAddonPurchaseModel = new BillingAddonPurchaseModel();

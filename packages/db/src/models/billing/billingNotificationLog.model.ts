@@ -11,9 +11,12 @@ type BillingNotificationLogRow = typeof billingNotificationLog.$inferSelect;
  */
 export class BillingNotificationLogModel extends BaseModelImpl<BillingNotificationLogRow> {
     protected table = billingNotificationLog;
-    protected entityName = 'billing_notification_log';
+    public entityName = 'billing_notification_log';
 
     protected getTableName(): string {
         return 'billing_notification_log';
     }
 }
+
+/** Singleton instance of BillingNotificationLogModel for use across the application. */
+export const billingNotificationLogModel = new BillingNotificationLogModel();

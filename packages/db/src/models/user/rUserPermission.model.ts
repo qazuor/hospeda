@@ -1,14 +1,13 @@
 import type { UserPermissionAssignment } from '@repo/schemas';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import type { schema } from '../../client.ts';
 import { userPermission } from '../../schemas/user/r_user_permission.dbschema.ts';
+import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
 export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment> {
     protected table = userPermission;
-    protected entityName = 'userPermission';
+    public entityName = 'userPermission';
 
     protected getTableName(): string {
         return 'rUserPermissions';
@@ -23,8 +22,8 @@ export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment
      */
     async findWithRelations(
         where: Record<string, unknown>,
-        relations: Record<string, boolean>,
-        tx?: NodePgDatabase<typeof schema>
+        relations: Record<string, boolean | Record<string, unknown>>,
+        tx?: DrizzleClient
     ): Promise<UserPermissionAssignment | null> {
         const db = this.getClient(tx);
         try {
@@ -54,3 +53,6 @@ export class RUserPermissionModel extends BaseModelImpl<UserPermissionAssignment
         }
     }
 }
+
+/** Singleton instance of RUserPermissionModel for use across the application. */
+export const rUserPermissionModel = new RUserPermissionModel();
