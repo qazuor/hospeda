@@ -142,8 +142,6 @@ export const httpToDomainEventLocationSearch = (
         // Text search filters (only available fields)
         name: httpParams.name,
         city: httpParams.city,
-        state: httpParams.state,
-        country: httpParams.country,
 
         // Geographic filters
         latitude: httpParams.latitude,

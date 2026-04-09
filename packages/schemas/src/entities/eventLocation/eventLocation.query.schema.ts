@@ -28,8 +28,6 @@ export const EventLocationFiltersSchema = z.object({
     // Basic filters
     name: z.string().optional(),
     city: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
@@ -82,8 +80,6 @@ export const EventLocationSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from EventLocationFiltersSchema)
     name: z.string().optional(),
     city: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
@@ -225,8 +221,6 @@ const EventLocationCountInputInternalSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from EventLocationFiltersSchema)
     name: z.string().optional(),
     city: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
@@ -272,8 +266,6 @@ export const EventLocationCountInputSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from EventLocationFiltersSchema)
     name: z.string().optional(),
     city: z.string().optional(),
-    state: z.string().optional(),
-    country: z.string().optional(),
 
     // Address filters
     streetAddress: z.string().optional(),
@@ -316,7 +308,6 @@ export const HttpEventLocationSearchSchema = HttpPaginationSchema.merge(HttpSort
     q: z.string().optional(),
     name: z.string().optional(),
     city: z.string().optional(),
-    country: z.string().length(2).optional(),
     hasCoordinates: HttpQueryFields.hasCoordinates(),
     isActive: HttpQueryFields.isActive(),
     capacity: HttpQueryFields.capacity()
@@ -326,11 +317,10 @@ export const EVENT_LOCATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
     ref: 'EventLocationSearch',
     description: 'Schema for searching event locations',
     title: 'Event Location Search Parameters',
-    example: { page: 1, pageSize: 20, q: 'conference center', city: 'Barcelona', country: 'ES' },
+    example: { page: 1, pageSize: 20, q: 'conference center', city: 'Barcelona' },
     fields: {
         q: { description: 'Search query', example: 'conference center' },
-        city: { description: 'Filter by city', example: 'Barcelona' },
-        country: { description: 'Filter by country code', example: 'ES' }
+        city: { description: 'Filter by city', example: 'Barcelona' }
     },
     tags: ['event-locations', 'search']
 };

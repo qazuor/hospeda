@@ -20,8 +20,6 @@ describe('EventLocation Query Schemas', () => {
         it('should validate filters with multiple fields', () => {
             const filters = {
                 city: 'New York',
-                state: 'NY',
-                country: 'USA',
                 isActive: true,
                 isVerified: true
             };
@@ -30,8 +28,6 @@ describe('EventLocation Query Schemas', () => {
 
             const result = EventLocationFiltersSchema.parse(filters);
             expect(result.city).toBe('New York');
-            expect(result.state).toBe('NY');
-            expect(result.country).toBe('USA');
             expect(result.isActive).toBe(true);
             expect(result.isVerified).toBe(true);
         });
@@ -47,14 +43,11 @@ describe('EventLocation Query Schemas', () => {
             const result = EventLocationFiltersSchema.parse(filters);
             expect(result.city).toBe('New York');
             expect(result.name).toBe('park');
-            expect(result.state).toBeUndefined();
-            expect(result.country).toBeUndefined();
         });
 
         it('should allow filters with empty strings (no minimum length validation)', () => {
             const filters = {
-                city: '',
-                state: 'NY'
+                city: ''
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).not.toThrow();
@@ -62,8 +55,7 @@ describe('EventLocation Query Schemas', () => {
 
         it('should reject filters with invalid types', () => {
             const filters = {
-                city: 123, // Should be string
-                state: 'NY'
+                city: 123 // Should be string
             };
 
             expect(() => EventLocationFiltersSchema.parse(filters)).toThrow(ZodError);
