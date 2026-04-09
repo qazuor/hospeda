@@ -25,13 +25,15 @@ export class DbError extends Error {
      * @param method - The method or action name
      * @param params - The parameters used in the operation
      * @param message - The error message
+     * @param cause - Optional original error that caused this DbError
      */
-    constructor(entity: string, method: string, params: unknown, message: string) {
-        super(message);
+    constructor(entity: string, method: string, params: unknown, message: string, cause?: Error) {
+        super(message, { cause });
         this.name = 'DbError';
         this.entity = entity;
         this.method = method;
         this.params = params;
+        Object.setPrototypeOf(this, DbError.prototype);
     }
 }
 
