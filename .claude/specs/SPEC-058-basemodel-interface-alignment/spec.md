@@ -1,6 +1,6 @@
 # SPEC-058: Align BaseModel Interface with Implementation
 
-> **Status**: in-progress
+> **Status**: completed
 > **Priority**: P1
 > **Complexity**: Medium-High
 > **Origin**: SPEC-053 gaps (GAP-003, GAP-004, GAP-018, GAP-019, GAP-071, GAP-072)

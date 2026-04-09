@@ -110,5 +110,13 @@
         "complexity": "xl",
         "status": "completed",
         "path": "SPEC-067-web-production-hardening"
+    },
+    {
+        "specId": "SPEC-058",
+        "title": "Align BaseModel Interface with Implementation",
+        "type": "refactor",
+        "complexity": "medium",
+        "status": "completed",
+        "path": "SPEC-058-basemodel-interface-alignment"
     }
 ]
