@@ -85,7 +85,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         const [, opts] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -97,7 +97,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: 'organizer name' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: 'organizer name' });
 
         // Assert -- additionalConditions (3rd arg) should contain one ilike condition
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -110,7 +110,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'search term' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'search term' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -123,7 +123,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: 'Venue', q: 'fest' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: 'Venue', q: 'fest' });
 
         // Assert -- both name and q each produce one condition
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -147,7 +147,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: '50%off' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: '50%off' });
 
         // Assert -- condition still produced (escaping does not cause undefined/null)
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -159,7 +159,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'test_event' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'test_event' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -171,7 +171,9 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockRejectedValueOnce(new Error('DB connection lost'));
 
         // Act & Assert -- searchForList throws directly, does not return Result
-        await expect(service.searchForList(actor, {})).rejects.toThrow('DB connection lost');
+        await expect(service.searchForList(actor, { page: 1, pageSize: 10 })).rejects.toThrow(
+            'DB connection lost'
+        );
     });
 
     it('should call model.findAll exactly once per invocation', async () => {
@@ -190,7 +192,7 @@ describe('EventOrganizerService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: '%50_off\\path' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: '%50_off\\path' });
 
         // Assert -- condition produced (escaping does not swallow the term or cause undefined)
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];

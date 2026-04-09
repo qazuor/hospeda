@@ -44,7 +44,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        const result = await service.searchForList(actor, {});
+        const result = await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         expect(result.items).toHaveLength(0);
@@ -54,7 +54,7 @@ describe('PostSponsorService.searchForList', () => {
     it('should throw ServiceError when actor is null', async () => {
         // Act & Assert -- _canSearch throws immediately for null actor
         // @ts-expect-error intentional null
-        await expect(service.searchForList(null, {})).rejects.toThrow();
+        await expect(service.searchForList(null, { page: 1, pageSize: 10 })).rejects.toThrow();
     });
 
     it('should throw ServiceError when actor lacks POST_SPONSOR_MANAGE permission', async () => {
@@ -62,7 +62,9 @@ describe('PostSponsorService.searchForList', () => {
         const unprivilegedActor = createActor({ permissions: [] });
 
         // Act & Assert
-        await expect(service.searchForList(unprivilegedActor, {})).rejects.toThrow();
+        await expect(
+            service.searchForList(unprivilegedActor, { page: 1, pageSize: 10 })
+        ).rejects.toThrow();
     });
 
     it('should forward page and pageSize to model.findAll', async () => {
@@ -99,7 +101,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         const [, opts] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -111,7 +113,11 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { type: 'POST_SPONSOR' as never });
+        await service.searchForList(actor, {
+            page: 1,
+            pageSize: 10,
+            type: 'POST_SPONSOR' as never
+        });
 
         // Assert -- where clause (1st arg to findAll) contains type
         const [where] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -123,7 +129,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: 'acme sponsor' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: 'acme sponsor' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -136,7 +142,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'mega corp' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'mega corp' });
 
         // Assert -- q produces one or() wrapper
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -149,7 +155,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: 'acme', q: 'sponsor' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: 'acme', q: 'sponsor' });
 
         // Assert -- name + q = 2 conditions
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -161,7 +167,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -173,7 +179,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { name: '50%off' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, name: '50%off' });
 
         // Assert -- condition still produced after escaping
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -185,7 +191,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'test_sponsor' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'test_sponsor' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -197,7 +203,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: '%50_C:\\data' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: '%50_C:\\data' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -209,7 +215,9 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockRejectedValueOnce(new Error('DB error'));
 
         // Act & Assert -- searchForList throws directly, does not return Result
-        await expect(service.searchForList(actor, {})).rejects.toThrow('DB error');
+        await expect(service.searchForList(actor, { page: 1, pageSize: 10 })).rejects.toThrow(
+            'DB error'
+        );
     });
 
     it('should call model.findAll exactly once per invocation', async () => {
@@ -217,7 +225,7 @@ describe('PostSponsorService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         expect(asMock(model.findAll)).toHaveBeenCalledTimes(1);

@@ -44,7 +44,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        const result = await service.searchForList(actor, {});
+        const result = await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         expect(result.items).toHaveLength(0);
@@ -54,7 +54,7 @@ describe('EventLocationService.searchForList', () => {
     it('should throw ServiceError when actor is null', async () => {
         // Act & Assert -- _canSearch throws directly for null actor
         // @ts-expect-error intentional null
-        await expect(service.searchForList(null, {})).rejects.toThrow();
+        await expect(service.searchForList(null, { page: 1, pageSize: 10 })).rejects.toThrow();
     });
 
     it('should forward page and pageSize to model.findAll', async () => {
@@ -91,7 +91,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         const [, opts] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -103,7 +103,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { city: 'Buenos Aires' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'Buenos Aires' });
 
         // Assert -- city produces one ilike additionalCondition
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -116,7 +116,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'downtown' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'downtown' });
 
         // Assert -- q produces one or() wrapper as additionalCondition
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -129,7 +129,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { city: 'Rosario', q: 'park' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'Rosario', q: 'park' });
 
         // Assert -- city + q = 2 conditions
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -141,7 +141,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -153,7 +153,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { city: 'B.A. 100%' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, city: 'B.A. 100%' });
 
         // Assert -- condition produced despite metacharacter in input
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -165,7 +165,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: 'test_venue' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: 'test_venue' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -177,7 +177,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, { q: '%test_C:\\venue' });
+        await service.searchForList(actor, { page: 1, pageSize: 10, q: '%test_C:\\venue' });
 
         // Assert
         const [, , additionalConditions] = asMock(model.findAll).mock.calls[0] ?? [];
@@ -189,7 +189,9 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockRejectedValueOnce(new Error('DB connection lost'));
 
         // Act & Assert -- searchForList throws directly, does not return Result
-        await expect(service.searchForList(actor, {})).rejects.toThrow('DB connection lost');
+        await expect(service.searchForList(actor, { page: 1, pageSize: 10 })).rejects.toThrow(
+            'DB connection lost'
+        );
     });
 
     it('should call model.findAll exactly once per invocation', async () => {
@@ -197,7 +199,7 @@ describe('EventLocationService.searchForList', () => {
         asMock(model.findAll).mockResolvedValueOnce({ items: [], total: 0 });
 
         // Act
-        await service.searchForList(actor, {});
+        await service.searchForList(actor, { page: 1, pageSize: 10 });
 
         // Assert
         expect(asMock(model.findAll)).toHaveBeenCalledTimes(1);
