@@ -73,6 +73,16 @@ const cspNonce = Astro.locals.cspNonce ?? '';
 			/>
 		</noscript>
 
+		<!-- Theme FOUC prevention: apply saved theme before first paint -->
+		<script is:inline nonce={cspNonce}>
+			(function() {
+				var t = localStorage.getItem('theme');
+				if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+					document.documentElement.setAttribute('data-theme', 'dark');
+				}
+			})();
+		</script>
+
 		<!-- FOUC prevention: hide text until fonts load.
 			 Guard with fonts.status check so client-side View Transition
 			 navigations (where fonts are already cached) never hide the body. -->

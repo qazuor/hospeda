@@ -1,0 +1,46 @@
+/* ThemeToggle.module.css — Icon-only theme toggle button */
+
+.toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-pill);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--core-foreground);
+    transition:
+        background-color var(--duration-fast) ease,
+        color var(--duration-fast) ease;
+    flex-shrink: 0;
+}
+
+.toggle:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.08);
+}
+
+.toggle:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Hero variant: light text on transparent/dark navbar */
+.toggleHero {
+    color: oklch(from var(--primary-foreground) l c h / 0.85);
+}
+
+.toggleHero:hover {
+    background-color: oklch(from var(--primary-foreground) l c h / 0.12);
+    color: var(--primary-foreground);
+}
+
+/* Scrolled variant: dark text on opaque navbar */
+.toggleScrolled {
+    color: var(--core-foreground);
+}
+
+.toggleScrolled:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.08);
+}
