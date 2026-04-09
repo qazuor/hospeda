@@ -130,8 +130,8 @@ export function isStaticAssetRoute({ path }: { path: string }): boolean {
         return false;
     }
 
-    // Internal Astro/Vite paths and API routes
-    if (path.startsWith('/_')) {
+    // Internal Astro/Vite paths and API routes (except server islands which need session parsing)
+    if (path.startsWith('/_') && !path.startsWith('/_server-islands/')) {
         return true;
     }
 

@@ -3,7 +3,7 @@
 .overlay {
     position: fixed;
     inset: 0;
-    z-index: 40;
+    z-index: 60;
     background-color: var(--core-background);
     display: flex;
     flex-direction: column;
@@ -19,9 +19,38 @@
 .header {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     padding: 1rem 1.5rem;
     border-bottom: 1px solid var(--border);
+}
+
+.logoLink {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.logoLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.logoIcon {
+    width: 36px;
+    height: 39px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.logoText {
+    font-family: var(--font-decorative);
+    font-weight: 700;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    color: var(--brand-secondary-foreground);
+    white-space: nowrap;
 }
 
 .closeButton {
@@ -142,6 +171,138 @@
 .authButton:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+/* Authenticated user row */
+.userRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-button);
+    background-color: oklch(from var(--core-foreground) l c h / 0.04);
+    border: 1px solid oklch(from var(--border) l c h / 0.5);
+    cursor: pointer;
+    font-family: var(--font-sans);
+    transition: background-color 0.2s ease;
+}
+
+.userRow:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.07);
+}
+
+.userRow:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+.userAvatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.userInitials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.userName {
+    flex: 1;
+    text-align: left;
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.userChevron {
+    color: var(--muted-foreground);
+    transition: transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.userChevronOpen {
+    transform: rotate(180deg);
+}
+
+/* Account submenu links */
+.accountLinks {
+    display: flex;
+    flex-direction: column;
+    margin-top: 0.5rem;
+    padding-left: 0.5rem;
+}
+
+.accountLink {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    padding: 0.625rem 1rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: var(--core-foreground);
+    text-decoration: none;
+    border-radius: var(--radius-button);
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.accountLink:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--brand-primary);
+}
+
+.accountLink:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+.signOutButton {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    width: 100%;
+    padding: 0.625rem 1rem;
+    margin-top: 0.25rem;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--destructive);
+    background: none;
+    border: none;
+    border-radius: var(--radius-button);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.signOutButton:hover {
+    background-color: oklch(from var(--destructive) l c h / 0.08);
+}
+
+.signOutButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+.signOutButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 /* Language switcher */

@@ -22,7 +22,7 @@ export const AUTH_SEGMENTS = ['auth'] as const;
  * URL path prefixes that should bypass middleware entirely.
  * These are internal Astro/Vite asset routes and common static files.
  */
-export const STATIC_PREFIXES = ['/_astro/', '/_server-islands/', '/favicon', '/api/'] as const;
+export const STATIC_PREFIXES = ['/_astro/', '/favicon', '/api/'] as const;
 
 /** Type representing a protected route segment. */
 export type ProtectedSegment = (typeof PROTECTED_SEGMENTS)[number];

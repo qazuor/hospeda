@@ -1,0 +1,43 @@
+---
+/**
+ * @file MobileMenuIsland.astro
+ * @description Server Island wrapper that resolves auth state and renders MobileMenu.
+ *
+ * Uses `server:defer` so the auth session is always fresh, even on SSG pages.
+ * Passes the authenticated user data (or null) as props to the React island.
+ */
+
+import { MobileMenu } from './MobileMenu.client';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Current locale for i18n. */
+    readonly locale: SupportedLocale;
+    /** Navigation items for the menu. */
+    readonly navItems: readonly { label: string; href: string }[];
+    /** Current page path for locale switcher URLs. */
+    readonly currentPath: string;
+    /** Resolved logo image URL. */
+    readonly logoSrc: string;
+    /** Home URL for the logo link. */
+    readonly homeHref: string;
+}
+
+const { locale, navItems, currentPath, logoSrc, homeHref } = Astro.props;
+
+const serverUser = Astro.locals.user;
+const user = serverUser
+    ? { name: serverUser.name || 'Usuario', email: serverUser.email || '' }
+    : null;
+
+---
+
+<MobileMenu
+    client:media="(max-width: 1024px)"
+    locale={locale}
+    navItems={navItems}
+    currentPath={currentPath}
+    logoSrc={logoSrc}
+    homeHref={homeHref}
+    user={user}
+/>

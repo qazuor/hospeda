@@ -8,7 +8,7 @@
 import { Image } from "astro:assets";
 import { HamburgerIcon } from "@repo/icons";
 import LanguageSwitcher from '@/components/shared/LanguageSwitcher.astro';
-import { MobileMenu } from "@/components/shared/MobileMenu.client";
+import MobileMenuIsland from "@/components/shared/MobileMenuIsland.astro";
 import AuthSection from '@/components/shared/AuthSection.astro';
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
@@ -101,7 +101,7 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
     </div>
 </header>
 
-<MobileMenu client:media="(max-width: 1024px)" locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} />
+<MobileMenuIsland server:defer locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} logoSrc={logoSrc.src} homeHref={buildUrl({ locale, path: "/" })} />
 
 <style>
     /* Header bar — solid by default, transparent only on hero pages */
@@ -288,6 +288,11 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
             align-items: center;
             justify-content: center;
         }
+    }
+
+    /* Hide hamburger when mobile menu is open to prevent overlap with close button */
+    :global([data-mobile-menu-open]) .header__hamburger {
+        display: none;
     }
 
     /* Mobile */
