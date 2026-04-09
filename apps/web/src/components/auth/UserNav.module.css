@@ -173,6 +173,99 @@
     border-top: 1px solid var(--border);
 }
 
+/* ---- Preferences section (language + theme) ---- */
+
+.prefsSection {
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.prefsRow {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.prefsLabel {
+    font-size: var(--text-caption);
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    min-width: 3.5rem;
+    flex-shrink: 0;
+}
+
+.localeButtons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.localeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 10px;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: oklch(from var(--core-foreground) l c h / 0.7);
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease,
+        border-color var(--duration-fast) ease;
+}
+
+.localeButton:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--core-foreground);
+}
+
+.localeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.localeButtonActive {
+    color: var(--brand-primary);
+    background-color: oklch(from var(--brand-primary) l c h / 0.08);
+    border-color: oklch(from var(--brand-primary) l c h / 0.25);
+}
+
+.themeRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.themeButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 6px 10px;
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: oklch(from var(--core-foreground) l c h / 0.7);
+    background: none;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+}
+
+.themeButton:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+    color: var(--core-foreground);
+}
+
+.themeButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
 /* ---- Sign-out button ---- */
 
 .signOutSection {

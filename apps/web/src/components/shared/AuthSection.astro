@@ -12,18 +12,20 @@
  * - Server Island requests (/_server-islands/*) — always parsed
  *
  * Renders either:
- * - A `UserNav` dropdown when the user is authenticated
- * - A localized "Iniciar sesion" link when the user is not authenticated
+ * - A `UserNav` dropdown (with language + theme controls embedded) when authenticated
+ * - Standalone LanguageSwitcher + ThemeToggle + sign-in link when not authenticated
  *
  * @example
  * ```astro
- * <AuthSection server:defer locale={locale} variant="hero">
+ * <AuthSection server:defer locale={locale} variant="hero" currentPath={currentPath}>
  *   <span slot="fallback" class="auth-section__skeleton" aria-hidden="true" />
  * </AuthSection>
  * ```
  */
 
 import { UserNav } from '../auth/UserNav.client';
+import LanguageSwitcher from './LanguageSwitcher.astro';
+import { ThemeToggle } from '../ui/ThemeToggle.client';
 import { createT, type SupportedLocale } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 
@@ -37,9 +39,14 @@ interface Props {
      * - "scrolled": opaque navbar (dark text on light background)
      */
     readonly variant?: 'hero' | 'scrolled';
+    /**
+     * Current page pathname used to build locale-swap URLs.
+     * Required for the LanguageSwitcher (unauthenticated) and UserNav (authenticated).
+     */
+    readonly currentPath?: string;
 }
 
-const { locale = 'es', variant = 'hero' } = Astro.props;
+const { locale = 'es', variant = 'hero', currentPath = '/' } = Astro.props;
 const typedLocale = locale as SupportedLocale;
 
 const t = createT(typedLocale);
@@ -56,18 +63,23 @@ const isAuthenticated = !!user;
         }}
         locale={locale}
         variant={variant}
+        currentPath={currentPath}
     />
 ) : (
-    <a
-        href={buildUrl({ locale: typedLocale, path: 'auth/signin' })}
-        id="navbar-signin"
-        class:list={[
-            'auth-section__signin-link',
-            variant === 'scrolled' ? 'auth-section__signin-link--scrolled' : ''
-        ]}
-    >
-        {t('nav.iniciarSesion', 'Iniciar sesión')}
-    </a>
+    <>
+        <LanguageSwitcher locale={typedLocale} currentPath={currentPath} />
+        <ThemeToggle client:idle variant={variant} />
+        <a
+            href={buildUrl({ locale: typedLocale, path: 'auth/signin' })}
+            id="navbar-signin"
+            class:list={[
+                'auth-section__signin-link',
+                variant === 'scrolled' ? 'auth-section__signin-link--scrolled' : ''
+            ]}
+        >
+            {t('nav.iniciarSesion', 'Iniciar sesión')}
+        </a>
+    </>
 )}
 
 <style>

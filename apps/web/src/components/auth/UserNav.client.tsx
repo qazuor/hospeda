@@ -13,7 +13,7 @@
  * - Styled with CSS Modules using design tokens from global.css (no Tailwind)
  */
 
-import { ChevronDownIcon } from '@repo/icons';
+import { ChevronDownIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { signOut } from '../../lib/auth-client';
@@ -34,7 +34,11 @@ const LOCALIZED_TEXTS = {
         preferences: 'Preferencias',
         signOut: 'Cerrar sesion',
         userMenuFor: 'Menu de usuario para',
-        userAccountMenu: 'Menu de cuenta de usuario'
+        userAccountMenu: 'Menu de cuenta de usuario',
+        language: 'Idioma',
+        theme: 'Tema',
+        lightMode: 'Claro',
+        darkMode: 'Oscuro'
     },
     en: {
         myAccount: 'My account',
@@ -43,7 +47,11 @@ const LOCALIZED_TEXTS = {
         preferences: 'Preferences',
         signOut: 'Sign out',
         userMenuFor: 'User menu for',
-        userAccountMenu: 'User account menu'
+        userAccountMenu: 'User account menu',
+        language: 'Language',
+        theme: 'Theme',
+        lightMode: 'Light',
+        darkMode: 'Dark'
     },
     pt: {
         myAccount: 'Minha conta',
@@ -52,9 +60,17 @@ const LOCALIZED_TEXTS = {
         preferences: 'Preferencias',
         signOut: 'Sair',
         userMenuFor: 'Menu do usuario para',
-        userAccountMenu: 'Menu da conta do usuario'
+        userAccountMenu: 'Menu da conta do usuario',
+        language: 'Idioma',
+        theme: 'Tema',
+        lightMode: 'Claro',
+        darkMode: 'Escuro'
     }
 } as const;
+
+/** Supported locale codes for the language switcher inside the dropdown. */
+const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
+type DropdownLocale = (typeof SUPPORTED_LOCALES)[number];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -86,6 +102,11 @@ export interface UserNavProps {
      * - "scrolled": opaque navbar (dark text on light background)
      */
     readonly variant?: 'hero' | 'scrolled';
+    /**
+     * Current page pathname used to build locale-swap URLs inside the dropdown.
+     * Required so the language switcher preserves the current page when switching locale.
+     */
+    readonly currentPath?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -112,23 +133,51 @@ function getInitials({ name }: { readonly name: string }): string {
 // ---------------------------------------------------------------------------
 
 /**
+ * Builds a locale-swapped URL for the language switcher.
+ * Replaces the leading /{locale}/ prefix with the target locale.
+ *
+ * @param params.currentPath - The current page pathname (e.g. /es/destinos/)
+ * @param params.targetLocale - The target locale to swap into
+ * @returns The URL with the new locale prefix
+ */
+function buildLocaleUrl({
+    currentPath,
+    targetLocale
+}: {
+    readonly currentPath: string;
+    readonly targetLocale: DropdownLocale;
+}): string {
+    const pathWithoutLocale = currentPath.replace(/^\/(es|en|pt)(\/|$)/, '/');
+    return `/${targetLocale}${pathWithoutLocale}`;
+}
+
+/**
  * UserNav - interactive user menu island for the site header.
  *
  * @example
  * ```astro
- * <UserNav client:load user={user} locale={locale} variant="hero" />
+ * <UserNav client:load user={user} locale={locale} variant="hero" currentPath={currentPath} />
  * ```
  */
 export function UserNav({
     user,
     locale = 'es',
-    variant: initialVariant = 'hero'
+    variant: initialVariant = 'hero',
+    currentPath = '/'
 }: UserNavProps): JSX.Element {
     const [isOpen, setIsOpen] = useState(false);
     const [activeVariant, setActiveVariant] = useState<'hero' | 'scrolled'>(initialVariant);
+    const [isDark, setIsDark] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const buttonRef = useRef<HTMLButtonElement>(null);
     const initials = getInitials({ name: user.name });
+
+    // Read initial theme from localStorage on mount (client only).
+    useEffect(() => {
+        const stored = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setIsDark(stored ? stored === 'dark' : prefersDark);
+    }, []);
 
     // Sync button appearance with the navbar's scroll-state custom event.
     useEffect(() => {
@@ -179,6 +228,18 @@ export function UserNav({
         document.addEventListener('keydown', handleEscape);
         return () => document.removeEventListener('keydown', handleEscape);
     }, [isOpen]);
+
+    const handleThemeToggle = useCallback(() => {
+        const next = !isDark;
+        setIsDark(next);
+        if (next) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+            localStorage.setItem('theme', 'light');
+        }
+    }, [isDark]);
 
     const handleSignOut = useCallback(async () => {
         setIsOpen(false);
@@ -283,6 +344,58 @@ export function UserNav({
                         >
                             {texts.preferences}
                         </a>
+                    </div>
+
+                    <hr className={styles.divider} />
+
+                    {/* Preferences: language + theme */}
+                    <div className={styles.prefsSection}>
+                        {/* Language row */}
+                        <div className={styles.prefsRow}>
+                            <span className={styles.prefsLabel}>{texts.language}</span>
+                            <div className={styles.localeButtons}>
+                                {SUPPORTED_LOCALES.map((loc) => (
+                                    <a
+                                        key={loc}
+                                        href={buildLocaleUrl({ currentPath, targetLocale: loc })}
+                                        onClick={() => setIsOpen(false)}
+                                        className={cn(
+                                            styles.localeButton,
+                                            loc === typedLocale && styles.localeButtonActive
+                                        )}
+                                        aria-current={loc === typedLocale ? 'true' : undefined}
+                                    >
+                                        {loc.toUpperCase()}
+                                    </a>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Theme row */}
+                        <div className={styles.themeRow}>
+                            <span className={styles.prefsLabel}>{texts.theme}</span>
+                            <button
+                                type="button"
+                                onClick={handleThemeToggle}
+                                className={styles.themeButton}
+                                aria-label={isDark ? texts.lightMode : texts.darkMode}
+                            >
+                                {isDark ? (
+                                    <MoonIcon
+                                        size={16}
+                                        weight="regular"
+                                        aria-hidden="true"
+                                    />
+                                ) : (
+                                    <SunIcon
+                                        size={16}
+                                        weight="regular"
+                                        aria-hidden="true"
+                                    />
+                                )}
+                                <span>{isDark ? texts.darkMode : texts.lightMode}</span>
+                            </button>
+                        </div>
                     </div>
 
                     <hr className={styles.divider} />
