@@ -1,4 +1,5 @@
-import { billingNotificationLog, type getDb } from '@repo/db';
+import { billingNotificationLog } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import type { ILogger } from '@repo/logger';
 import type { ReactElement } from 'react';
 import { NOTIFICATION_CATEGORY_MAP } from '../config/notification-categories.js';
@@ -56,7 +57,7 @@ export interface NotificationServiceDeps {
     /** Retry service (optional, null if Redis unavailable) */
     retryService: RetryService | null;
     /** Database client for logging */
-    db: ReturnType<typeof getDb>;
+    db: DrizzleClient;
     /** Logger instance */
     logger: ILogger;
     /** Site base URL used in email CTA links (e.g. https://hospeda.com.ar) */

@@ -13,6 +13,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
@@ -51,7 +52,7 @@ export interface HandleCancellationAddonsInput {
     /** Initialised QZPay billing instance. */
     billing: QZPayBilling;
     /** Drizzle database instance (from `getDb()`). */
-    db: Awaited<ReturnType<typeof import('@repo/db/client').getDb>>;
+    db: DrizzleClient;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────

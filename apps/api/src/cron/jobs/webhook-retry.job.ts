@@ -27,6 +27,7 @@ import {
     isNull,
     lt
 } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
@@ -267,7 +268,7 @@ async function retryWebhookEvent(event: {
  * @param db - Database instance
  * @param eventId - Dead letter event ID
  */
-async function markAsResolved(db: ReturnType<typeof getDb>, eventId: string): Promise<void> {
+async function markAsResolved(db: DrizzleClient, eventId: string): Promise<void> {
     await db
         .update(billingWebhookDeadLetter)
         .set({
@@ -289,7 +290,7 @@ async function markAsResolved(db: ReturnType<typeof getDb>, eventId: string): Pr
  * @param currentAttempts - Current number of attempts
  */
 async function incrementAttempts(
-    db: ReturnType<typeof getDb>,
+    db: DrizzleClient,
     eventId: string,
     currentAttempts: number
 ): Promise<void> {

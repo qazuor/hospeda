@@ -25,10 +25,10 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import { ADDON_RECALC_SOURCE_ID } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
@@ -115,11 +115,8 @@ export interface PlanChangeRecalculationInput {
     billing: QZPayBilling;
     /**
      * Drizzle database instance for querying `billing_addon_purchases`.
-     * Typed with an open schema record to stay compatible with both the Hospeda
-     * combined schema and test injections, without creating a hard dependency on
-     * a specific schema bundle.
      */
-    db: NodePgDatabase<Record<string, unknown>>;
+    db: DrizzleClient;
 }
 
 // ─── Implementation ──────────────────────────────────────────────────────────
