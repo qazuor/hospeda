@@ -15,6 +15,7 @@ import {
     count,
     desc,
     eq,
+    escapeLikePattern,
     getDb,
     ilike,
     isNull,
@@ -367,7 +368,7 @@ export async function listPromoCodes(filters: ListPromoCodesFilters = {}) {
         }
 
         if (codeSearch) {
-            conditions.push(ilike(billingPromoCodes.code, `%${codeSearch}%`));
+            conditions.push(ilike(billingPromoCodes.code, `%${escapeLikePattern(codeSearch)}%`));
         }
 
         const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
