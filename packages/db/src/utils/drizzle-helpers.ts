@@ -13,6 +13,7 @@ import {
     or
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
+import { DbError } from './error.ts';
 import { dbLogger } from './logger.ts';
 
 /**
@@ -42,6 +43,32 @@ export function escapeLikePattern(term: string): string {
         .replace(/\\/g, '\\\\') // Escape backslash FIRST (order matters)
         .replace(/%/g, '\\%') // Escape percent
         .replace(/_/g, '\\_'); // Escape underscore
+}
+
+/**
+ * Safe wrapper around Drizzle's `ilike()` that automatically escapes LIKE
+ * wildcard metacharacters (`%`, `_`, `\`) in user-provided search terms.
+ *
+ * Equivalent to: `ilike(column, \`%${escapeLikePattern(term)}%\`)`
+ *
+ * Always use this instead of raw `ilike()` to prevent LIKE wildcard injection.
+ * The only place that should import `ilike` directly from `drizzle-orm` is this file.
+ *
+ * @param column - Drizzle column reference
+ * @param term - Raw user-provided search term (will be escaped and wrapped with %)
+ * @returns SQL condition for use in WHERE clauses
+ *
+ * @example
+ * ```ts
+ * // Before:
+ * ilike(users.name, `%${escapeLikePattern(q)}%`)
+ *
+ * // After:
+ * safeIlike(users.name, q)
+ * ```
+ */
+export function safeIlike(column: PgColumn, term: string): SQL {
+    return ilike(column, `%${escapeLikePattern(term)}%`);
 }
 
 /**
@@ -83,8 +110,7 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                 const columnName = key.slice(0, -5);
                 if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as SQLWrapper;
-                    const escapedValue = escapeLikePattern(value);
-                    return ilike(column as PgColumn, `%${escapedValue}%`);
+                    return safeIlike(column as PgColumn, value);
                 }
                 unknownKeys.push(key);
                 return undefined;
@@ -117,6 +143,18 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                 if (value === null) {
                     return isNull(column);
                 }
+                if (
+                    typeof value === 'object' &&
+                    !Array.isArray(value) &&
+                    !(value instanceof Date)
+                ) {
+                    throw new DbError(
+                        'unknown',
+                        'buildWhereClause',
+                        { key, value },
+                        `buildWhereClause: value for key "${key}" is a plain object. Use ilike()/eq() directly via additionalConditions instead of passing objects in the where clause.`
+                    );
+                }
                 return eq(column, value);
             }
             unknownKeys.push(key);
@@ -133,6 +171,15 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                 'buildWhereClause: key does not match any table column, skipping'
             );
         }
+    }
+
+    if (clauses.length === 0 && Object.keys(where).length > 0) {
+        throw new DbError(
+            'unknown',
+            'buildWhereClause',
+            where,
+            `All ${Object.keys(where).length} key(s) in where clause were unknown columns — likely a programming error. Keys: ${Object.keys(where).join(', ')}`
+        );
     }
 
     if (clauses.length === 0) return undefined;
@@ -182,13 +229,12 @@ export function buildSearchCondition(
 
     const tableRecord = table as unknown as Record<string, unknown>;
     const trimmedTerm = term.trim();
-    const escapedTerm = escapeLikePattern(trimmedTerm);
 
     const conditions = columns
         .filter((col) => Object.prototype.hasOwnProperty.call(tableRecord, col))
         .map((col) => {
             const column = tableRecord[col] as PgColumn;
-            return ilike(column, `%${escapedTerm}%`);
+            return safeIlike(column, trimmedTerm);
         });
 
     if (conditions.length === 0) return undefined;

@@ -3,8 +3,10 @@ import { describe, expect, it } from 'vitest';
 import {
     buildSearchCondition,
     buildWhereClause,
-    escapeLikePattern
+    escapeLikePattern,
+    safeIlike
 } from '../../src/utils/drizzle-helpers';
+import { DbError } from '../../src/utils/error';
 
 // Simple mock table using plain strings (sufficient for eq/isNull tests)
 const mockTable = {
@@ -115,6 +117,22 @@ describe('buildWhereClause', () => {
         expect(clause).toBeDefined();
     });
 
+    it('throws DbError when a plain object is passed as a value (guard against $ilike pattern)', () => {
+        // Arrange -- plain object value would produce broken SQL via eq()
+        const filters = { name: { $ilike: '%hotel%' } };
+
+        // Assert -- defensive guard catches this before eq() produces wrong SQL
+        expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
+    });
+
+    it('does not throw for Date values (Date objects are allowed in eq())', () => {
+        // Arrange -- Date is an object but is a valid eq() value
+        const filters = { createdAt: new Date('2026-01-01') };
+
+        // Assert -- Date should not trigger the plain-object guard
+        expect(() => buildWhereClause(filters, testTable)).not.toThrow();
+    });
+
     it('returns undefined when table is null', () => {
         const clause = buildWhereClause({ id: 1 }, null);
         expect(clause).toBeUndefined();
@@ -125,15 +143,12 @@ describe('buildWhereClause', () => {
         expect(clause).toBeUndefined();
     });
 
-    it('returns undefined when all keys are unknown (skipped and logged)', () => {
+    it('throws DbError when all keys are unknown columns', () => {
         // Arrange -- keys that don't exist in testTable
         const filters = { unknownField: 'value', anotherMissing: 123 };
 
-        // Act
-        const clause = buildWhereClause(filters, testTable);
-
-        // Assert -- all keys skipped, no clause produced
-        expect(clause).toBeUndefined();
+        // Assert -- all keys unknown = likely programming error
+        expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
     });
 
     describe('_like suffix (ILIKE comparison)', () => {
@@ -148,26 +163,20 @@ describe('buildWhereClause', () => {
             expect(clause).toBeDefined();
         });
 
-        it('silently skips when the base column does not exist in the table', () => {
+        it('throws DbError when the base column does not exist in the table', () => {
             // Arrange
             const filters = { nonExistent_like: 'test' };
 
-            // Act
-            const clause = buildWhereClause(filters, testTable);
-
-            // Assert
-            expect(clause).toBeUndefined();
+            // Assert -- all keys unknown = likely programming error
+            expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
         });
 
-        it('is not applied when value is not a string', () => {
-            // Arrange -- _like requires typeof value === 'string'
+        it('throws DbError when value is not a string (produces no conditions)', () => {
+            // Arrange -- _like requires typeof value === 'string'; name_like not a real column either
             const filters = { name_like: 123 };
 
-            // Act -- falls through _like check, tries as regular key 'name_like'
-            const clause = buildWhereClause(filters, testTable);
-
-            // Assert -- 'name_like' is not a real column, so undefined
-            expect(clause).toBeUndefined();
+            // Assert -- no valid clause produced from a single unknown key
+            expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
         });
     });
 
@@ -194,15 +203,12 @@ describe('buildWhereClause', () => {
             expect(clause).toBeDefined();
         });
 
-        it('silently skips when the base column does not exist in the table', () => {
+        it('throws DbError when the base column does not exist in the table', () => {
             // Arrange
             const filters = { nonExistentColumn_gte: new Date('2026-03-01') };
 
-            // Act
-            const clause = buildWhereClause(filters, testTable);
-
-            // Assert
-            expect(clause).toBeUndefined();
+            // Assert -- all keys unknown = likely programming error
+            expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
         });
     });
 
@@ -229,15 +235,12 @@ describe('buildWhereClause', () => {
             expect(clause).toBeDefined();
         });
 
-        it('silently skips when the base column does not exist in the table', () => {
+        it('throws DbError when the base column does not exist in the table', () => {
             // Arrange
             const filters = { nonExistentColumn_lte: new Date('2026-03-15') };
 
-            // Act
-            const clause = buildWhereClause(filters, testTable);
-
-            // Assert
-            expect(clause).toBeUndefined();
+            // Assert -- all keys unknown = likely programming error
+            expect(() => buildWhereClause(filters, testTable)).toThrow(DbError);
         });
     });
 
@@ -491,5 +494,75 @@ describe('buildWhereClause _like suffix wildcard escaping', () => {
 
         // Assert
         expect(clause).toBeDefined();
+    });
+});
+
+describe('safeIlike', () => {
+    it('returns a defined SQL condition for a normal string', () => {
+        // Arrange
+        const column = testTable.name;
+
+        // Act
+        const result = safeIlike(column, 'hotel paradise');
+
+        // Assert
+        expect(result).toBeDefined();
+    });
+
+    it('returns a defined condition when term contains percent wildcard', () => {
+        // Arrange -- percent must be escaped so it is treated as literal
+        const column = testTable.name;
+
+        // Act
+        const result = safeIlike(column, '50%off');
+
+        // Assert -- should not throw and should produce a valid SQL object
+        expect(result).toBeDefined();
+    });
+
+    it('returns a defined condition when term contains underscore wildcard', () => {
+        // Arrange
+        const column = testTable.name;
+
+        // Act
+        const result = safeIlike(column, 'test_case');
+
+        // Assert
+        expect(result).toBeDefined();
+    });
+
+    it('returns a defined condition when term contains backslash', () => {
+        // Arrange
+        const column = testTable.name;
+
+        // Act
+        const result = safeIlike(column, 'C:\\Users');
+
+        // Assert
+        expect(result).toBeDefined();
+    });
+
+    it('returns a defined condition for all three metacharacters combined', () => {
+        // Arrange
+        const column = testTable.name;
+
+        // Act
+        const result = safeIlike(column, '50%_C:\\data');
+
+        // Assert
+        expect(result).toBeDefined();
+    });
+
+    it('produces the same SQL structure as manual ilike+escapeLikePattern for normal terms', () => {
+        // Arrange -- safeIlike should internally apply escapeLikePattern
+        const column = testTable.name;
+        const term = 'hotel paradise';
+
+        // Act -- safeIlike is the recommended wrapper
+        const safeResult = safeIlike(column, term);
+
+        // Assert -- result is a SQL object (same as calling ilike directly)
+        expect(safeResult).toBeDefined();
+        expect(typeof safeResult).toBe('object');
     });
 });
