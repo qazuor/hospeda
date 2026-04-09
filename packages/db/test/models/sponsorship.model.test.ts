@@ -106,15 +106,36 @@ describe('SponsorshipModel', () => {
 
             expect(result.items).toHaveLength(1);
             expect(result.total).toBe(1);
-            expect(mockFindAll).toHaveBeenCalledWith({
-                sponsorUserId: 'user1',
-                deletedAt: null
-            });
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { sponsorUserId: 'user1', deletedAt: null },
+                undefined,
+                undefined,
+                undefined
+            );
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
                 'findBySponsorUserId',
                 { sponsorUserId: 'user1' },
                 expect.any(Object)
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should thread tx to findAll as 4th positional argument', async () => {
+            const mockTx = {} as never;
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [],
+                total: 0
+            });
+
+            await model.findBySponsorUserId('user1', mockTx);
+
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { sponsorUserId: 'user1', deletedAt: null },
+                undefined,
+                undefined,
+                mockTx
             );
 
             mockFindAll.mockRestore();
@@ -203,15 +224,36 @@ describe('SponsorshipModel', () => {
 
             expect(result.items).toHaveLength(1);
             expect(result.total).toBe(1);
-            expect(mockFindAll).toHaveBeenCalledWith({
-                status: 'active',
-                deletedAt: null
-            });
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { status: 'active', deletedAt: null },
+                undefined,
+                undefined,
+                undefined
+            );
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
                 'findByStatus',
                 { status: 'active' },
                 expect.any(Object)
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should thread tx to findAll as 4th positional argument', async () => {
+            const mockTx = {} as never;
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [],
+                total: 0
+            });
+
+            await model.findByStatus('active', mockTx);
+
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { status: 'active', deletedAt: null },
+                undefined,
+                undefined,
+                mockTx
             );
 
             mockFindAll.mockRestore();
@@ -270,7 +312,7 @@ describe('SponsorshipModel', () => {
             const result = await model.findWithRelations(where, relations);
 
             expect(result).toEqual({ id: 's2', status: 'active' });
-            expect(mockFindOne).toHaveBeenCalledWith(where);
+            expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
             expect(logQuery).toHaveBeenCalledWith(
                 'sponsorships',
                 'findWithRelations',

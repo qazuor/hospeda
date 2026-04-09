@@ -58,7 +58,7 @@ describe('EventModel', () => {
         mockFindOne.mockResolvedValue({ id: '2' });
         const result = await model.findWithRelations(where, relations);
         expect(result).toEqual({ id: '2' });
-        expect(mockFindOne).toHaveBeenCalledWith(where);
+        expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
         expect(logQuery).toHaveBeenCalledWith(
             'events',
             'findWithRelations',

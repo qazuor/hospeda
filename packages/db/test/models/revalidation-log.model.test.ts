@@ -12,6 +12,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { RevalidationLogModel } from '../../src/models/revalidation/revalidation-log.model';
+import type { DrizzleClient } from '../../src/types';
 
 vi.mock('../../src/client', () => ({
     getDb: vi.fn()
@@ -149,6 +150,31 @@ describe('RevalidationLogModel', () => {
 
             // Assert
             expect(count).toBe(0);
+        });
+
+        it('uses provided tx instead of getDb when tx is supplied', async () => {
+            // Arrange
+            const mockDelete = vi.fn().mockReturnThis();
+            const mockWhere = vi.fn().mockReturnThis();
+            const mockReturning = vi.fn().mockResolvedValue([{ id: cronLogOld.id }]);
+
+            const txMock = {
+                delete: mockDelete,
+                where: mockWhere,
+                returning: mockReturning
+            };
+            mockDelete.mockReturnValue({ where: mockWhere });
+            mockWhere.mockReturnValue({ returning: mockReturning });
+
+            const cutoff = new Date('2025-03-01T00:00:00Z');
+
+            // Act
+            const result = await model.deleteOlderThan(cutoff, txMock as unknown as DrizzleClient);
+
+            // Assert — tx.delete was called, getDb was NOT called
+            expect(result).toBe(1);
+            expect(mockDelete).toHaveBeenCalled();
+            expect(getDb).not.toHaveBeenCalled();
         });
     });
 

@@ -59,7 +59,7 @@ describe('AccommodationModel', () => {
         mockFindOne.mockResolvedValue({ id: '2' });
         const result = await model.findWithRelations(where, relations);
         expect(result).toEqual({ id: '2' });
-        expect(mockFindOne).toHaveBeenCalledWith(where);
+        expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
         expect(logQuery).toHaveBeenCalledWith(
             'accommodations',
             'findWithRelations',
@@ -204,6 +204,83 @@ describe('AccommodationModel', () => {
             );
 
             mockFindAll.mockRestore();
+        });
+    });
+
+    describe('countByFilters', () => {
+        it('should use global db when tx is not provided', async () => {
+            const mockSelect = vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockResolvedValue([{ count: 5 }])
+                })
+            });
+            getDb.mockReturnValue({ select: mockSelect });
+            const result = await model.countByFilters({});
+            expect(result).toEqual({ count: 5 });
+            expect(getDb).toHaveBeenCalled();
+        });
+
+        it('should use provided tx instead of global db', async () => {
+            const mockSelect = vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockResolvedValue([{ count: 3 }])
+                })
+            });
+            const tx = { select: mockSelect } as any;
+            const result = await model.countByFilters({}, tx);
+            expect(result).toEqual({ count: 3 });
+            expect(getDb).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('updateStats', () => {
+        it('should thread tx to update()', async () => {
+            const mockUpdate = vi.spyOn(model, 'update').mockResolvedValue(null);
+            const tx = {} as any;
+            const stats = { reviewsCount: 10, averageRating: 4.5, rating: {} as any };
+            await model.updateStats('acc-1', stats, tx);
+            expect(mockUpdate).toHaveBeenCalledWith(
+                { id: 'acc-1' },
+                {
+                    reviewsCount: 10,
+                    averageRating: 4.5,
+                    rating: {}
+                },
+                tx
+            );
+            mockUpdate.mockRestore();
+        });
+
+        it('should call update without tx when not provided', async () => {
+            const mockUpdate = vi.spyOn(model, 'update').mockResolvedValue(null);
+            const stats = { reviewsCount: 2, averageRating: 3.0, rating: {} as any };
+            await model.updateStats('acc-2', stats);
+            expect(mockUpdate).toHaveBeenCalledWith(
+                { id: 'acc-2' },
+                { reviewsCount: 2, averageRating: 3.0, rating: {} },
+                undefined
+            );
+            mockUpdate.mockRestore();
+        });
+    });
+
+    describe('findWithRelations with tx', () => {
+        it('should use tx when provided for destination branch', async () => {
+            const findFirst = vi.fn().mockResolvedValue({ id: '1', destination: { id: 'd1' } });
+            const tx = { query: { accommodations: { findFirst } } } as any;
+            const result = await model.findWithRelations({ id: '1' }, { destination: true }, tx);
+            expect(result).toEqual({ id: '1', destination: { id: 'd1' } });
+            expect(findFirst).toHaveBeenCalled();
+            expect(getDb).not.toHaveBeenCalled();
+        });
+
+        it('should thread tx to findOne in fallback branch', async () => {
+            const tx = {} as any;
+            const where = { id: '5' };
+            mockFindOne.mockResolvedValue({ id: '5' });
+            const result = await model.findWithRelations(where, { destination: false }, tx);
+            expect(result).toEqual({ id: '5' });
+            expect(mockFindOne).toHaveBeenCalledWith(where, tx);
         });
     });
 });

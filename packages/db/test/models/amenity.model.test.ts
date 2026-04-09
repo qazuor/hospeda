@@ -71,7 +71,7 @@ describe('AmenityModel', () => {
         mockFindOne.mockResolvedValue({ id: '2', name: 'Pool' });
         const result = await model.findWithRelations(where, relations);
         expect(result).toEqual({ id: '2', name: 'Pool' });
-        expect(mockFindOne).toHaveBeenCalledWith(where);
+        expect(mockFindOne).toHaveBeenCalledWith(where, undefined);
         expect(logQuery).toHaveBeenCalledWith(
             'amenities',
             'findWithRelations',

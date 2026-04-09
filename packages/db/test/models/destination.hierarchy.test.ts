@@ -217,7 +217,7 @@ describe('DestinationModel.findDescendants', () => {
 
         // Assert
         expect(result).toEqual(mockDescendants);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
         expect(logQuery).toHaveBeenCalledWith(
             'destinations',
             'findDescendants',
@@ -269,7 +269,7 @@ describe('DestinationModel.findDescendants', () => {
 
         // Assert
         expect(result).toEqual(mockDescendants);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
     });
 
     it('returns empty when parent not found', async () => {
@@ -282,7 +282,7 @@ describe('DestinationModel.findDescendants', () => {
 
         // Assert
         expect(result).toEqual([]);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
     });
 
     it('applies maxDepth filter', async () => {
@@ -490,7 +490,7 @@ describe('DestinationModel.findAncestors', () => {
 
         // Assert
         expect(result).toEqual(mockAncestors);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
         expect(logQuery).toHaveBeenCalledWith(
             'destinations',
             'findAncestors',
@@ -518,7 +518,7 @@ describe('DestinationModel.findAncestors', () => {
 
         // Assert
         expect(result).toEqual([]);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
     });
 
     it('returns empty when destination not found', async () => {
@@ -531,7 +531,7 @@ describe('DestinationModel.findAncestors', () => {
 
         // Assert
         expect(result).toEqual([]);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: destinationId }, undefined);
     });
 
     it('throws and logs error on DB failure', async () => {
@@ -707,7 +707,7 @@ describe('DestinationModel.isDescendant', () => {
 
         // Assert
         expect(result).toBe(true);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: potentialDescendantId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: potentialDescendantId }, undefined);
     });
 
     it('returns false when pathIds does not contain ancestorId', async () => {
@@ -744,7 +744,7 @@ describe('DestinationModel.isDescendant', () => {
 
         // Assert
         expect(result).toBe(false);
-        expect(mockFindOne).toHaveBeenCalledWith({ id: potentialDescendantId });
+        expect(mockFindOne).toHaveBeenCalledWith({ id: potentialDescendantId }, undefined);
     });
 
     it('returns false when pathIds is empty', async () => {

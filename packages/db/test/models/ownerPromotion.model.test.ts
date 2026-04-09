@@ -123,7 +123,19 @@ describe('OwnerPromotionModel', () => {
             const result = await model.findWithRelations({ id: '1' }, {});
 
             expect(result).toEqual(mockResult);
-            expect(mockFindOne).toHaveBeenCalledWith({ id: '1' });
+            expect(mockFindOne).toHaveBeenCalledWith({ id: '1' }, undefined);
+
+            mockFindOne.mockRestore();
+        });
+
+        it('should thread tx to findOne when no relations requested', async () => {
+            const mockResult = { id: '1', name: 'Promo' };
+            const mockTx = {} as never;
+            const mockFindOne = vi.spyOn(model, 'findOne').mockResolvedValue(mockResult as never);
+
+            await model.findWithRelations({ id: '1' }, {}, mockTx);
+
+            expect(mockFindOne).toHaveBeenCalledWith({ id: '1' }, mockTx);
 
             mockFindOne.mockRestore();
         });
@@ -205,6 +217,53 @@ describe('OwnerPromotionModel', () => {
             getDb.mockReturnValue(db);
 
             await expect(model.findActiveByOwnerId('o1')).rejects.toThrow(DbError);
+        });
+    });
+
+    describe('findByOwnerId', () => {
+        it('should delegate to findAll with correct where clause', async () => {
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [{ id: '1', ownerId: 'o1' } as never],
+                total: 1
+            });
+
+            const result = await model.findByOwnerId('o1');
+
+            expect(result.items).toHaveLength(1);
+            expect(result.total).toBe(1);
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { ownerId: 'o1', deletedAt: null },
+                undefined,
+                undefined,
+                undefined
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should thread tx to findAll as 4th positional argument', async () => {
+            const mockTx = {} as never;
+            const mockFindAll = vi.spyOn(model, 'findAll').mockResolvedValue({
+                items: [],
+                total: 0
+            });
+
+            await model.findByOwnerId('o1', mockTx);
+
+            expect(mockFindAll).toHaveBeenCalledWith(
+                { ownerId: 'o1', deletedAt: null },
+                undefined,
+                undefined,
+                mockTx
+            );
+
+            mockFindAll.mockRestore();
+        });
+
+        it('should throw DbError on database failure', async () => {
+            vi.spyOn(model, 'findAll').mockRejectedValue(new Error('db fail'));
+
+            await expect(model.findByOwnerId('o1')).rejects.toThrow(DbError);
         });
     });
 });

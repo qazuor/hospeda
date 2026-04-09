@@ -405,6 +405,33 @@ describe('ExchangeRateModel', () => {
         });
     });
 
+    describe('findLatestRates with tx propagation', () => {
+        it('should use the tx client for both subquery and outer query when tx is provided', async () => {
+            const mockSelect = vi.fn().mockReturnThis();
+            const mockFrom = vi.fn().mockReturnThis();
+            const mockGroupBy = vi.fn().mockReturnThis();
+            const mockAs = vi.fn().mockReturnThis();
+            const mockInnerJoin = vi.fn().mockReturnThis();
+            const mockLimit = vi.fn().mockReturnThis();
+            const mockOffset = vi.fn().mockResolvedValue([]);
+
+            const txClient = {
+                select: mockSelect,
+                from: mockFrom,
+                groupBy: mockGroupBy,
+                as: mockAs,
+                innerJoin: mockInnerJoin,
+                limit: mockLimit,
+                offset: mockOffset
+            } as unknown as import('../../../src/types').DrizzleClient;
+
+            await model.findLatestRates(undefined, txClient);
+
+            expect(getDb).not.toHaveBeenCalled();
+            expect(mockSelect).toHaveBeenCalled();
+        });
+    });
+
     describe('findManualOverrides', () => {
         it('should return all manual override rates', async () => {
             const mockRates = [

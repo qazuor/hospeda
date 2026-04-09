@@ -4,10 +4,11 @@ import * as dbUtils from '../../src/client';
 import { DbError } from '../../src/utils/error';
 import * as logger from '../../src/utils/logger';
 
-// Dummy table mock
+// Dummy table mock — includes deletedAt to support softDelete/restore tests
 const mockTable = {
     id: { count: () => ({ as: () => 'COUNT_COL' }) },
-    name: {}
+    name: {},
+    deletedAt: {}
 };
 
 type DummyType = { id: string; name?: string };
@@ -18,7 +19,7 @@ class DummyModel extends BaseModel<DummyType> {
         string,
         { count?: () => { as: () => string } } | object
     >;
-    protected entityName = 'dummy';
+    public entityName = 'dummy';
 
     protected getTableName(): string {
         throw new Error('getTableName not implemented in base test model');
@@ -30,7 +31,7 @@ class NoIdModel extends BaseModel<{ foo: string }> {
     protected table = {
         foo: { count: () => ({ as: () => 'COUNT_COL' }) }
     } as unknown as Record<string, { count: () => { as: () => string } }>;
-    protected entityName = 'noid';
+    public entityName = 'noid';
 
     protected getTableName(): string {
         throw new Error('getTableName not implemented in test model');
@@ -115,29 +116,25 @@ describe('BaseModel', () => {
         expect(logQuery).toHaveBeenCalled();
     });
 
-    it('hardDelete returns and logs', async () => {
-        getDb.mockReturnValue({ delete: () => ({ where: () => ({ returning: () => [{}, {}] }) }) });
-        const result = await model.hardDelete({});
-        expect(result).toBe(2);
-        expect(logQuery).toHaveBeenCalled();
+    it('hardDelete throws DbError when where is empty', async () => {
+        await expect(model.hardDelete({})).rejects.toThrow(DbError);
+        await expect(model.hardDelete({})).rejects.toThrow(
+            'where clause cannot be empty — this would delete all records'
+        );
     });
 
-    it('softDelete returns and logs', async () => {
-        getDb.mockReturnValue({
-            update: () => ({ set: () => ({ where: () => ({ returning: () => [{}, {}] }) }) })
-        });
-        const result = await model.softDelete({});
-        expect(result).toBe(2);
-        expect(logQuery).toHaveBeenCalled();
+    it('softDelete throws DbError when where is empty', async () => {
+        await expect(model.softDelete({})).rejects.toThrow(DbError);
+        await expect(model.softDelete({})).rejects.toThrow(
+            'where clause cannot be empty — this would soft-delete all records'
+        );
     });
 
-    it('restore returns and logs', async () => {
-        getDb.mockReturnValue({
-            update: () => ({ set: () => ({ where: () => ({ returning: () => [{}, {}] }) }) })
-        });
-        const result = await model.restore({});
-        expect(result).toBe(2);
-        expect(logQuery).toHaveBeenCalled();
+    it('restore throws DbError when where is empty', async () => {
+        await expect(model.restore({})).rejects.toThrow(DbError);
+        await expect(model.restore({})).rejects.toThrow(
+            'where clause cannot be empty — this would restore all soft-deleted records'
+        );
     });
 
     it('logs and throws DbError on DB error', async () => {
@@ -217,8 +214,11 @@ describe('BaseModel', () => {
         getDb.mockReturnValue({
             update: () => ({ set: () => ({ where: () => ({ returning: () => [{}] }) }) })
         });
+        // Empty data guard: update() returns null immediately without hitting the DB
         const result = await model.update({ id: '3' }, {});
-        expect(result).toEqual({});
+        expect(result).toBeNull();
+        // Data with undefined/null values still has keys, so it reaches the DB
+        // The mock returns [{}], so update returns {}
         const result2 = await model.update({ id: '3' }, { name: undefined });
         expect(result2).toEqual({});
         const result3 = await model.update({ id: '3' }, { name: null as unknown as string });

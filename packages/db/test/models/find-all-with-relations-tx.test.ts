@@ -155,7 +155,7 @@ describe('findAllWithRelations - transaction propagation', () => {
     // ========================================================================
     // GAP-045: MAX_PAGE_SIZE cap is respected
     // ========================================================================
-    it('caps pageSize at MAX_PAGE_SIZE (100) even when larger value is requested', async () => {
+    it('caps pageSize at MAX_PAGE_SIZE (200) even when larger value is requested', async () => {
         vi.spyOn(model as any, 'getClient').mockReturnValue(mockTxDb);
         vi.spyOn(model, 'count').mockResolvedValue(0);
 
@@ -167,7 +167,7 @@ describe('findAllWithRelations - transaction propagation', () => {
             mockTxDb
         );
 
-        expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 100 }));
+        expect(mockFindMany).toHaveBeenCalledWith(expect.objectContaining({ limit: 200 }));
     });
 
     // ========================================================================
