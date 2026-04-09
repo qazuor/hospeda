@@ -199,3 +199,16 @@ Los siguientes gaps requieren una spec separada por impacto transversal en todos
 - **Problema:** Spec define props como `type` pero implementación usa `export interface`. Sin impacto funcional.
 - **Razón de postergación:** Nit cosmético, no vale el churn.
 - **Fecha:** 2026-04-05
+
+---
+
+## SPEC-052 Gaps Postergados (sesión 2026-04-08)
+
+### GAP-052-021: Extraccion redundante de paginacion en los 16 route handlers de admin list
+
+- **Severidad:** LOW (P3)
+- **Origen:** GAP-052-021 de SPEC-052 gaps report
+- **Problema:** Los 16 admin list route handlers parsean la paginacion dos veces: `extractPaginationParams(query)` en el handler para los metadatos de respuesta, y `AdminSearchSchema.safeParse()` dentro del service para la query real. Si los defaults divergen, los metadatos de paginacion no coincidirian con los datos retornados.
+- **Razon de postergacion:** Riesgo bajo hoy (ambos parsean los mismos valores). La solucion limpia requiere cambiar el tipo de retorno de `adminList()` + 16 route handlers. No justifica el esfuerzo ahora.
+- **Considerar en:** Un refactor general de routes futuro, especialmente si se cambian los defaults de paginacion.
+- **Fecha:** 2026-04-08

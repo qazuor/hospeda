@@ -1,6 +1,6 @@
 # SPEC-052: Type-Safe Entity Filters via Generics
 
-> **Status**: draft
+> **Status**: completed
 > **Priority**: P2
 > **Complexity**: Medium
 > **Origin**: SPEC-049 GAP-049-036
@@ -485,17 +485,17 @@ These 10 services do NOT override `_executeAdminSearch()`. The base implementati
 
 ## Acceptance Criteria
 
-- [ ] `EntityFilters<TSchema>` utility type is exported from `@repo/schemas` and correctly computes `Omit<z.infer<TSchema>, AdminSearchBaseKeys>` for all 16 schemas
-- [ ] `AdminSearchExecuteParams<TEntityFilters>` is generic with default `= Record<string, unknown>`
-- [ ] `adminSearchSchema` property type is `ZodObject<ZodRawShape>` (not bare `ZodType`)
-- [ ] All 6 service overrides use `AdminSearchExecuteParams<EntityFilters<typeof XxxAdminSearchSchema>>` and compile WITHOUT `as` casts on `entityFilters`
-- [ ] IDE autocompletion works for entity filter fields in all 6 overrides
-- [ ] Accessing a non-existent property on `entityFilters` (e.g., `entityFilters.nonExistent`) produces a TS compile error in typed overrides
-- [ ] `super._executeAdminSearch()` calls from typed overrides compile without additional casts
-- [ ] All 10 non-override services continue to work unchanged
-- [ ] `pnpm typecheck` passes across the entire monorepo
-- [ ] `pnpm test` passes with no regressions (zero runtime behavior changes)
-- [ ] No new `as` type assertions introduced
+- [x] `EntityFilters<TSchema>` utility type is exported from `@repo/schemas` and correctly computes `Omit<z.infer<TSchema>, AdminSearchBaseKeys>` for all 16 schemas
+- [x] `AdminSearchExecuteParams<TEntityFilters>` is generic with default `= Record<string, unknown>`
+- [x] `adminSearchSchema` property type is `ZodObject<ZodRawShape>` (not bare `ZodType`)
+- [x] All 6 service overrides use `AdminSearchExecuteParams<EntityFilters<typeof XxxAdminSearchSchema>>` and compile WITHOUT `as` casts on `entityFilters`
+- [x] IDE autocompletion works for entity filter fields in all 6 overrides
+- [x] Accessing a non-existent property on `entityFilters` (e.g., `entityFilters.nonExistent`) produces a TS compile error in typed overrides
+- [x] `super._executeAdminSearch()` calls from typed overrides compile without additional casts
+- [x] All 10 non-override services continue to work unchanged
+- [x] `pnpm typecheck` passes across the entire monorepo
+- [x] `pnpm test` passes with no regressions (zero runtime behavior changes)
+- [x] No new `as` type assertions introduced
 
 ## Edge Cases and Gotchas
 

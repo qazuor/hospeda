@@ -72,6 +72,14 @@
         "path": "SPEC-049-admin-list-filtering"
     },
     {
+        "specId": "SPEC-052",
+        "title": "Type-Safe Entity Filters via Generics",
+        "type": "refactor",
+        "complexity": "medium",
+        "status": "completed",
+        "path": "SPEC-052-type-safe-entity-filters"
+    },
+    {
         "specId": "SPEC-062",
         "title": "Runtime Response Schema Enforcement",
         "type": "security",
@@ -118,5 +126,13 @@
         "complexity": "medium",
         "status": "completed",
         "path": "SPEC-058-basemodel-interface-alignment"
+    },
+    {
+        "specId": "SPEC-068",
+        "title": "Type-Safe list() Options via Generics",
+        "type": "refactor",
+        "complexity": "medium",
+        "status": "draft",
+        "path": "SPEC-068-list-execute-search-generics"
     }
 ]
