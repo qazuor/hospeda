@@ -29,17 +29,12 @@
     flex-shrink: 0;
 }
 
-@media (min-width: 768px) {
+/* C-2: Hide map at tablet (768-1023px) — labels are illegible at that size */
+@media (min-width: 1024px) {
     .mapColumn {
         display: flex;
         align-items: flex-start;
         justify-content: center;
-        width: 40%;
-    }
-}
-
-@media (min-width: 1024px) {
-    .mapColumn {
         width: 45%;
     }
 }
@@ -59,6 +54,13 @@
     overflow: hidden;
 }
 
+/* C-2: full width when map is hidden (below 1024px) */
+@media (max-width: 1024px) {
+    .contentColumn {
+        width: 100%;
+    }
+}
+
 /* ==========================================================================
    Section header (tagline + title + subtitle inside the island)
    ========================================================================== */
@@ -67,6 +69,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+/* M-29: ensure header is visible and has breathing room on mobile */
+@media (max-width: 1024px) {
+    .header {
+        margin-bottom: 1.5rem;
+    }
 }
 
 .tagline {
@@ -144,6 +153,7 @@
     overflow: hidden;
     border: 1px solid var(--border);
     cursor: pointer;
+    /* M-15: transition includes transform for scale-based active state */
     transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
     height: 463px;
     width: 100%;
@@ -152,7 +162,8 @@
 }
 
 .cardActive {
-    height: 503px;
+    /* M-15: scale instead of height shift — no layout reflow, no height jump */
+    transform: scale(1.06);
     border-color: var(--core-muted-foreground);
     box-shadow: 0 8px 32px -4px oklch(from var(--core-foreground) l c h / 0.45);
 }
@@ -170,6 +181,14 @@
     height: 100%;
     object-fit: cover;
     object-position: center;
+}
+
+/* M-26: consistent radius on mobile — organic shapes look like defects at small sizes */
+@media (max-width: 640px) {
+    .card,
+    .cardImage {
+        border-radius: 16px;
+    }
 }
 
 /* Gradient overlay (transparent top → light bottom, matching Figma) */
@@ -272,6 +291,9 @@
 .arrowButton {
     background: none;
     border: none;
+    /* H-11: minimum 44×44px touch target */
+    min-width: 44px;
+    min-height: 44px;
     padding: 0.25rem 0.5rem;
     font-size: 1.25rem; /* 20px */
     color: var(--core-foreground);
@@ -311,8 +333,11 @@
     background-color: var(--core-foreground);
     opacity: 0.25;
     border: none;
-    padding: 0;
+    /* H-10: 44px tap zone without changing visual size */
+    padding: 12px;
     cursor: pointer;
+    /* compensate padding so visual layout stays the same */
+    box-sizing: content-box;
     transition: width var(--duration-fast) ease, border-radius var(--duration-fast) ease,
         background-color var(--duration-fast) ease, opacity var(--duration-fast) ease;
     flex-shrink: 0;

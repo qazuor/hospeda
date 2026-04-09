@@ -65,7 +65,8 @@
 }
 
 .card:hover .contentBlock {
-    transform: translateY(-110px);
+    /* M-14: responsive translateY — fixed -110px overflows on small cards */
+    transform: translateY(clamp(-60px, -15vw, -110px));
 }
 
 .title {
@@ -101,8 +102,9 @@
     bottom: 0;
     left: 0;
     z-index: 3;
-    width: 102px;
-    height: 102px;
+    /* M-13: responsive circle CTA — shrinks gracefully on small viewports */
+    width: clamp(60px, 20vw, 102px);
+    height: clamp(60px, 20vw, 102px);
     border-radius: 50%;
     border: 9px solid white;
     background-color: var(--brand-accent);

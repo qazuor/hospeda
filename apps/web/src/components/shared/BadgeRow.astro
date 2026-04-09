@@ -55,4 +55,22 @@ const { badges, uniformDark = false } = Astro.props;
     gap: 0.5rem;
     margin-bottom: 2rem;
   }
+
+  @media (max-width: 767px) {
+    .badge-row {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      justify-content: flex-start;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+      mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, transparent 0%, black 3%, black 97%, transparent 100%);
+    }
+
+    .badge-row::-webkit-scrollbar {
+      display: none;
+    }
+  }
 </style>

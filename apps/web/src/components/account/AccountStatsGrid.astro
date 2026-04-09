@@ -38,7 +38,7 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
             <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
             <FavoriteIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
         </div>
-        <p id="stat-favorites" class="account__stat-value" aria-live="polite">0</p>
+        <p id="stat-favorites" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
         <p class="account__stat-desc">{statFavoritesDesc}</p>
         <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
             {viewLabel} {statFavoritesLabel.toLowerCase()} &rarr;
@@ -51,7 +51,7 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
             <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
             <StarIcon size={24} weight="fill" className="account__stat-icon" aria-hidden="true" />
         </div>
-        <p id="stat-reviews" class="account__stat-value" aria-live="polite">0</p>
+        <p id="stat-reviews" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
         <p class="account__stat-desc">{statReviewsDesc}</p>
         <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
             {viewLabel} {statReviewsLabel.toLowerCase()} &rarr;
@@ -64,7 +64,7 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
             <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
             <CreditCardIcon size={24} weight="regular" className="account__stat-icon" aria-hidden="true" />
         </div>
-        <p id="stat-subscription" class="account__stat-value" aria-live="polite">
+        <p id="stat-subscription" class="account__stat-value stat-value--loading" aria-live="polite">
             {statSubscriptionDesc}
         </p>
         <p

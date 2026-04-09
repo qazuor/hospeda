@@ -371,11 +371,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 const favEl = document.getElementById('stat-favorites');
                 if (favEl && statsData.data?.bookmarkCount !== undefined) {
                     favEl.textContent = String(statsData.data.bookmarkCount);
+                    favEl.classList.remove('stat-value--loading');
                 }
 
                 const subEl = document.getElementById('stat-subscription');
                 if (subEl && statsData.data?.plan?.name) {
                     subEl.textContent = statsData.data.plan.name;
+                    subEl.classList.remove('stat-value--loading');
                 }
 
                 const statusEl = document.getElementById('stat-subscription-status');
@@ -398,10 +400,15 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 const revEl = document.getElementById('stat-reviews');
                 if (revEl && reviewsData.data?.totals?.total !== undefined) {
                     revEl.textContent = String(reviewsData.data.totals.total);
+                    revEl.classList.remove('stat-value--loading');
                 }
             }
         } catch (error) {
             console.error('[account] Failed to load stats:', error);
+            // Remove shimmer on error so stats don't stay in loading state forever
+            for (const id of ['stat-favorites', 'stat-reviews', 'stat-subscription']) {
+                document.getElementById(id)?.classList.remove('stat-value--loading');
+            }
         }
     }
 

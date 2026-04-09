@@ -9,6 +9,7 @@
     flex-direction: column;
     transition: transform var(--duration-normal) ease-in-out;
     transform: translateX(100%);
+    contain: layout style paint;
 }
 
 .overlayOpen {
@@ -60,6 +61,7 @@
     display: flex;
     align-items: center;
     padding-block: 1rem;
+    padding-inline: clamp(1rem, 5vw, 1.5rem);
     border-bottom: 1px solid oklch(from var(--border) l c h / 0.5);
     font-family: var(--font-heading);
     font-weight: 500;
@@ -108,4 +110,75 @@
 .searchLabel {
     font-family: var(--font-sans);
     font-weight: 500;
+}
+
+/* Auth section */
+.authSection {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.authButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius-button);
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 1rem;
+    text-decoration: none;
+    transition: opacity var(--duration-normal) ease;
+}
+
+.authButton:hover {
+    opacity: 0.9;
+}
+
+.authButton:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
+}
+
+/* Language switcher */
+.langSection {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border);
+}
+
+.langOption {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-button);
+    border: 1px solid var(--border);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--core-foreground);
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.langOption:hover {
+    background-color: oklch(from var(--core-foreground) l c h / 0.05);
+}
+
+.langOptionActive {
+    background-color: oklch(from var(--brand-primary) l c h / 0.1);
+    border-color: var(--brand-primary);
+    color: var(--brand-primary);
+}
+
+.langOption:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--brand-accent);
 }

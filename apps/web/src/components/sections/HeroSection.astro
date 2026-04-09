@@ -259,7 +259,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 
 	.hero__tagline {
 		font-family: var(--font-decorative);
-		font-size: 48px;
+		font-size: clamp(1.75rem, 2.5vw + 0.5rem, 3rem);
 		font-weight: 700;
 		line-height: 1.2;
 		color: var(--brand-primary);
@@ -268,7 +268,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 
 	.hero__title {
 		font-family: var(--font-heading);
-		font-size: 96px;
+		font-size: clamp(2.25rem, 5vw + 1rem, 6rem);
 		font-weight: 700;
 		line-height: 0.896;
 		color: var(--core-foreground);
@@ -282,7 +282,7 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		font-weight: 400;
 		line-height: 1.5;
 		color: var(--core-foreground);
-		max-width: 520px;
+		max-width: min(520px, 100%);
 		margin-bottom: 24px;
 	}
 
@@ -538,21 +538,44 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 			gap: 32px;
 		}
 		.hero__content { padding-top: 32px; align-items: center; text-align: center; }
-		.hero__tagline { font-size: 48px; }
-		.hero__title { font-size: 56px; line-height: 1; }
-		.hero__description { max-width: 480px; }
+		.hero__title { line-height: 1; }
+		.hero__description { max-width: min(600px, 100%); }
 		.social-proof { align-items: center; margin-left: 0; }
 		.social-proof__deco-arrow { display: none; }
 		.hero__secondary-cta { align-self: center; }
-		.hero__visual { width: 100%; max-width: 500px; height: 500px; margin: 0 auto; }
+		.hero__visual { width: 100%; max-width: 500px; height: 500px; margin: 0 auto; max-height: 280px; overflow: hidden; }
 		.hero__blob-accent { left: auto; right: -20px; }
 	}
 
 	@media (max-width: 640px) {
-		.hero__tagline { font-size: 36px; }
-		.hero__title { font-size: 40px; }
 		.hero__description { font-size: 16px; }
 		.hero__visual { display: none; }
 		.floating-icon { display: none; }
+	}
+
+	@media (max-width: 480px) {
+		.hero__container {
+			padding: 0 16px;
+		}
+	}
+
+	@media (max-width: 1400px) {
+		.floating-icon--right {
+			right: 0;
+		}
+	}
+
+	@media (max-width: 374px) {
+		.social-proof {
+			display: none;
+		}
+	}
+
+	@media (min-width: 375px) and (max-width: 640px) {
+		.social-proof {
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: 8px;
+		}
 	}
 </style>

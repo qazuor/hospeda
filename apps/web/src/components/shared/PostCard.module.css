@@ -32,7 +32,7 @@
     display: flex;
     flex-direction: column;
     flex: 1;
-    padding: 1.25rem;
+    padding: clamp(0.75rem, 3vw, 1.25rem);
     gap: 0.75rem;
 }
 
@@ -93,7 +93,7 @@
 }
 
 .authorName {
-    font-size: var(--text-body-sm);
+    font-size: clamp(0.75rem, 2vw, 0.875rem);
     color: var(--core-foreground);
     font-weight: 500;
     overflow: hidden;
@@ -102,7 +102,7 @@
 }
 
 .date {
-    font-size: var(--text-meta);
+    font-size: clamp(0.625rem, 1.5vw, 0.75rem);
     color: var(--core-muted-foreground);
 }
 

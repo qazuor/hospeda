@@ -51,7 +51,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
 
         if (!token) {
             setError(
-                t('auth.resetPassword.tokenMissing', 'El enlace de recuperacion no es valido')
+                t('auth.resetPassword.tokenMissing', 'El enlace de recuperación no es válido')
             );
             return;
         }
@@ -60,14 +60,14 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             setError(
                 t(
                     'auth.resetPassword.passwordTooShort',
-                    'La contrasena debe tener al menos 8 caracteres'
+                    'La contraseña debe tener al menos 8 caracteres'
                 )
             );
             return;
         }
 
         if (password !== confirmPassword) {
-            setError(t('auth.resetPassword.passwordMismatch', 'Las contrasenas no coinciden'));
+            setError(t('auth.resetPassword.passwordMismatch', 'Las contraseñas no coinciden'));
             return;
         }
 
@@ -79,13 +79,13 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             if (result.error) {
                 setError(
                     result.error.message ??
-                        t('auth.resetPassword.error', 'No se pudo restablecer la contrasena')
+                        t('auth.resetPassword.error', 'No se pudo restablecer la contraseña')
                 );
             } else {
                 setIsComplete(true);
             }
         } catch {
-            setError(t('auth.resetPassword.error', 'No se pudo restablecer la contrasena'));
+            setError(t('auth.resetPassword.error', 'No se pudo restablecer la contraseña'));
         } finally {
             setIsLoading(false);
         }
@@ -104,7 +104,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     <CheckIcon />
                 </div>
                 <h2 className={styles.successTitle}>
-                    {t('auth.resetPassword.successTitle', 'Contrasena actualizada')}
+                    {t('auth.resetPassword.successTitle', 'Contraseña actualizada')}
                 </h2>
                 <p className={styles.successMessage}>
                     {t(
@@ -116,7 +116,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     href={signInUrl}
                     className={styles.signInLink}
                 >
-                    {t('auth.resetPassword.goToSignIn', 'Iniciar sesion')}
+                    {t('auth.resetPassword.goToSignIn', 'Iniciar sesión')}
                 </a>
             </output>
         );
@@ -127,7 +127,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
-            aria-label={t('auth.resetPassword.submit', 'Restablecer contrasena')}
+            aria-label={t('auth.resetPassword.submit', 'Restablecer contraseña')}
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
@@ -152,7 +152,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     htmlFor="reset-password"
                     className={styles.label}
                 >
-                    {t('auth.resetPassword.password', 'Nueva contrasena')}
+                    {t('auth.resetPassword.password', 'Nueva contraseña')}
                 </label>
                 <input
                     id="reset-password"
@@ -160,7 +160,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     className={styles.input}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.resetPassword.passwordPlaceholder', 'Minimo 8 caracteres')}
+                    placeholder={t('auth.resetPassword.passwordPlaceholder', 'Mínimo 8 caracteres')}
                     required
                     minLength={8}
                     autoComplete="new-password"
@@ -174,7 +174,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     htmlFor="reset-confirm-password"
                     className={styles.label}
                 >
-                    {t('auth.resetPassword.confirmPassword', 'Confirmar contrasena')}
+                    {t('auth.resetPassword.confirmPassword', 'Confirmar contraseña')}
                 </label>
                 <input
                     id="reset-confirm-password"
@@ -184,7 +184,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder={t(
                         'auth.resetPassword.confirmPasswordPlaceholder',
-                        'Repite tu contrasena'
+                        'Repite tu contraseña'
                     )}
                     required
                     minLength={8}
@@ -202,7 +202,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
             >
                 {isLoading
                     ? t('auth.resetPassword.loading', 'Actualizando...')
-                    : t('auth.resetPassword.submit', 'Restablecer contrasena')}
+                    : t('auth.resetPassword.submit', 'Restablecer contraseña')}
             </button>
 
             <div className={styles.footer}>
@@ -210,7 +210,7 @@ export function ResetPassword({ locale, token, signInUrl }: ResetPasswordProps) 
                     href={signInUrl}
                     className={styles.backLink}
                 >
-                    {t('auth.resetPassword.backToSignIn', 'Volver al inicio de sesion')}
+                    {t('auth.resetPassword.backToSignIn', 'Volver al inicio de sesión')}
                 </a>
             </div>
         </form>

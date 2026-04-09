@@ -31,9 +31,18 @@ const navLinks = [
 ] as const;
 
 const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.href }));
+
+/** Current pathname used to highlight the active nav link. */
+const currentPath = Astro.url.pathname;
+
+/** Hide the auth button when the user is already on an auth page to avoid redundancy. */
+const isAuthPage = currentPath.includes('/auth/');
+
+/** True when the page has a hero (homepage only). Header is transparent only on hero pages. */
+const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pathname);
 ---
 
-<header data-header class="header" role="banner">
+<header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
     <div class="header__inner">
         <!-- LOGO -->
         <a href={buildUrl({ locale, path: "/" })} class="header__logo" aria-label={t("nav.goHome", "Hospeda - Go to home")}>
@@ -41,8 +50,8 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
                 class="header__logo-icon"
                 src={logoSrc}
                 alt="Hospeda logo"
-                width={60}
-                height={65}
+                width={42}
+                height={45}
                 loading="eager"
             />
             <span class="header__logo-text">Hospeda</span>
@@ -51,14 +60,21 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         <!-- NAVIGATION -->
         <nav class="header__nav" aria-label={t("nav.mainNavigation", "Main navigation")}>
             {
-                navLinks.map((link, i) => (
-                    <>
-                        <a href={link.href} class="header__nav-link">
-                            {link.label}
-                        </a>
-                        {i < navLinks.length - 1 && <span class="header__nav-divider" aria-hidden="true" />}
-                    </>
-                ))
+                navLinks.map((link, i) => {
+                    const isActive = currentPath.includes(link.href.replace(/\/$/, '').split('/').pop() ?? '');
+                    return (
+                        <>
+                            <a
+                                href={link.href}
+                                class:list={['header__nav-link', { 'header__nav-link--active': isActive }]}
+                                aria-current={isActive ? 'page' : undefined}
+                            >
+                                {link.label}
+                            </a>
+                            {i < navLinks.length - 1 && <span class="header__nav-divider" aria-hidden="true" />}
+                        </>
+                    );
+                })
             }
         </nav>
 
@@ -76,27 +92,38 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         <!-- USER AREA (dynamic auth state via Server Island) -->
         <div class="header__right">
             <LanguageSwitcher locale={locale} currentPath={Astro.url.pathname} />
-            <AuthSection server:defer locale={locale} variant="scrolled">
-                <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
-            </AuthSection>
+            {!isAuthPage && (
+                <AuthSection server:defer locale={locale} variant="scrolled">
+                    <span slot="fallback" class="header__auth-skeleton" aria-hidden="true" />
+                </AuthSection>
+            )}
         </div>
     </div>
 </header>
 
-<MobileMenu client:media="(max-width: 1024px)" locale={locale} navItems={mobileNavItems} />
+<MobileMenu client:media="(max-width: 1024px)" locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} />
 
 <style>
-    /* Header bar — transparent at top, solid on scroll */
+    /* Header bar — solid by default, transparent only on hero pages */
     .header {
         position: sticky;
         top: 0;
         z-index: var(--z-nav, 50);
         width: 100%;
-        background-color: transparent;
+        background-color: oklch(from var(--core-card) l c h / 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         transition:
             background-color 300ms ease,
             backdrop-filter 300ms ease,
             box-shadow 300ms ease;
+    }
+
+    /* On hero pages: start transparent, JS adds navbar--scrolled on scroll */
+    .header--hero {
+        background-color: transparent;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
     }
 
     .header:global(.navbar--scrolled) {
@@ -109,12 +136,12 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
     .header__inner {
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
         gap: 10px;
         width: 100%;
         max-width: 1440px;
         margin: 0 auto;
-        padding: 8px 48px;
+        padding: clamp(0.5rem, 1.5vw, 0.75rem) clamp(1rem, 5vw, 3rem);
     }
 
     /* Logo */
@@ -123,7 +150,6 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         align-items: center;
         gap: 10px;
         padding: 0 10px;
-        overflow: hidden;
         flex-shrink: 0;
         text-decoration: none;
     }
@@ -136,14 +162,15 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
 
     .header__logo-icon {
         width: 42px;
-        object-fit: cover;
+        height: 45px;
+        object-fit: contain;
         flex-shrink: 0;
     }
 
     .header__logo-text {
         font-family: var(--font-decorative);
         font-weight: 700;
-        font-size: 32px;
+        font-size: clamp(1.5rem, 4vw, 2rem);
         line-height: 1.2;
         color: var(--brand-secondary-foreground);
         white-space: nowrap;
@@ -159,13 +186,14 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         padding: 10px;
     }
 
-    @media (min-width: 1024px) {
+    @media (min-width: 1025px) {
         .header__nav {
             display: flex;
         }
     }
 
     .header__nav-link {
+        position: relative;
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 13px;
@@ -186,10 +214,26 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         outline-offset: 2px;
     }
 
+    .header__nav-link--active {
+        color: var(--brand-primary);
+        font-weight: 700;
+    }
+
+    .header__nav-link--active::after {
+        content: '';
+        position: absolute;
+        bottom: -4px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--brand-primary);
+        border-radius: 1px;
+    }
+
     .header__nav-divider {
         width: 1px;
         height: 30px;
-        background-color: var(--border, #dee5eb);
+        background-color: var(--border);
         flex-shrink: 0;
     }
 
@@ -202,7 +246,7 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         flex-shrink: 0;
     }
 
-    @media (min-width: 1024px) {
+    @media (min-width: 1025px) {
         .header__right {
             display: flex;
         }
@@ -238,7 +282,7 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         outline-offset: 2px;
     }
 
-    @media (max-width: 1023px) {
+    @media (max-width: 1024px) {
         .header__hamburger {
             display: flex;
             align-items: center;
@@ -249,7 +293,6 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
     /* Mobile */
     @media (max-width: 767px) {
         .header__inner {
-            padding: 12px 16px;
             height: auto;
             min-height: 64px;
         }
@@ -257,18 +300,6 @@ const mobileNavItems = navLinks.map((link) => ({ label: link.label, href: link.h
         .header__logo-icon {
             width: 40px;
             height: 44px;
-        }
-
-        .header__logo-text {
-            font-size: 28px;
-            line-height: 34px;
-        }
-    }
-
-    /* Tablet */
-    @media (min-width: 768px) and (max-width: 1023px) {
-        .header__inner {
-            padding: 12px 24px;
         }
     }
 </style>

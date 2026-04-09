@@ -168,6 +168,8 @@ export function ReviewCard({ data, locale, className }: ReviewCardProps) {
                         src={data.reviewerAvatar}
                         alt={data.reviewerName}
                         className={styles.avatar}
+                        width={40}
+                        height={40}
                         loading="lazy"
                     />
                 ) : (

@@ -16,7 +16,7 @@
 /* === Section Layout === */
 .section {
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   padding-block: var(--space-section);
 }
 .section--warm { background-color: var(--surface-warm); }
@@ -255,6 +255,53 @@
 
 @media (prefers-reduced-motion: reduce) {
   [data-reveal] { opacity: 1; transform: none; transition: none; }
+}
+
+/* === Empty State (shared across sections) === */
+.section__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.5rem;
+  text-align: center;
+  color: var(--core-muted-foreground);
+}
+
+.section__empty-text {
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  max-width: 400px;
+  margin: 0;
+}
+
+/* === Stat shimmer skeleton === */
+.stat-value--loading {
+  display: inline-block;
+  min-width: 3rem;
+  background: linear-gradient(
+    90deg,
+    oklch(from var(--core-muted-foreground) l c h / 0.15) 25%,
+    oklch(from var(--core-background) l c h / 0.4) 50%,
+    oklch(from var(--core-muted-foreground) l c h / 0.15) 75%
+  );
+  background-size: 200% 100%;
+  animation: stat-shimmer 1.5s infinite;
+  border-radius: 4px;
+  color: transparent;
+  user-select: none;
+}
+
+@keyframes stat-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-value--loading {
+    animation: none;
+    background: oklch(from var(--core-muted-foreground) l c h / 0.15);
+  }
 }
 
 /* === Hero Word Split Animation === */

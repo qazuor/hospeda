@@ -146,7 +146,7 @@ const iconMap: Record<string, typeof SparkleIcon> = {
         }
     }
 
-    /* Person image — large, overflows the panel top */
+    /* Person image — large, overflows the panel top on wide desktop */
     .best-features-banner__person {
         position: absolute;
         z-index: 2;
@@ -154,6 +154,18 @@ const iconMap: Record<string, typeof SparkleIcon> = {
         max-width: 480px;
         top: -50px;
         margin-left: -60px;
+    }
+
+    /* At tablet (768–1023px) the left column is narrower: reset the negative  */
+    /* margin-left that causes overflow, and keep the image contained within    */
+    /* its column. Relative positioning drops it into normal flow at this size. */
+    @media (min-width: 768px) and (max-width: 1024px) {
+        .best-features-banner__person {
+            position: relative;
+            top: 0;
+            margin-left: 0;
+            max-width: 100%;
+        }
     }
 
     .best-features-banner__person-img {
@@ -295,7 +307,7 @@ const iconMap: Record<string, typeof SparkleIcon> = {
     }
 
     .best-features-banner__item-desc {
-        color: var(--core-muted-foreground);
+        color: var(--core-foreground);
         font-size: var(--text-body-sm);
         line-height: 1.5;
         margin: 0;

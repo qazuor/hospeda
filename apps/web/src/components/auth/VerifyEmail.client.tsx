@@ -59,7 +59,7 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
         async function verify(): Promise<void> {
             if (!token) {
                 setErrorMessage(
-                    t('auth.verifyEmail.tokenMissing', 'El enlace de verificacion no es valido')
+                    t('auth.verifyEmail.tokenMissing', 'El enlace de verificación no es válido')
                 );
                 setStatus('error');
                 return;
@@ -73,7 +73,7 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
                         result.error.message ??
                             t(
                                 'auth.verifyEmail.error',
-                                'La verificacion fallo. El enlace puede haber expirado.'
+                                'La verificación falló. El enlace puede haber expirado.'
                             )
                     );
                     setStatus('error');
@@ -87,7 +87,7 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
                 setErrorMessage(
                     t(
                         'auth.verifyEmail.error',
-                        'La verificacion fallo. El enlace puede haber expirado.'
+                        'La verificación falló. El enlace puede haber expirado.'
                     )
                 );
                 setStatus('error');
@@ -108,14 +108,14 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
             <output
                 className={styles.stateContainer}
                 aria-live="polite"
-                aria-label={t('auth.verifyEmail.verifying', 'Verificando correo electronico...')}
+                aria-label={t('auth.verifyEmail.verifying', 'Verificando correo electrónico...')}
             >
                 <div
                     className={styles.spinner}
                     aria-hidden="true"
                 />
                 <p className={styles.stateMessage}>
-                    {t('auth.verifyEmail.verifying', 'Verificando correo electronico...')}
+                    {t('auth.verifyEmail.verifying', 'Verificando correo electrónico...')}
                 </p>
             </output>
         );
@@ -159,15 +159,23 @@ export function VerifyEmail({ locale, token, redirectTo, redirectDelay = 3000 }:
                 <AlertCircleIcon />
             </div>
             <h2 className={styles.errorTitle}>
-                {t('auth.verifyEmail.errorTitle', 'Verificacion fallida')}
+                {t('auth.verifyEmail.errorTitle', 'Verificación fallida')}
             </h2>
             {errorMessage && <p className={styles.stateMessage}>{errorMessage}</p>}
             <p className={styles.hint}>
                 {t(
                     'auth.verifyEmail.hint',
-                    'El enlace puede haber expirado. Solicita uno nuevo desde la pagina de inicio de sesion.'
+                    'El enlace puede haber expirado. Solicita uno nuevo desde la página de inicio de sesión.'
                 )}
             </p>
+            <div className={styles.recoveryActions}>
+                <a
+                    href={redirectTo}
+                    className={styles.recoveryLink}
+                >
+                    {t('auth.verifyEmail.backToSignIn', 'Volver a iniciar sesión')}
+                </a>
+            </div>
         </div>
     );
 }

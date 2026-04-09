@@ -73,4 +73,10 @@ try {
         flex-direction: column;
         gap: var(--space-card-gap);
     }
+
+    @media (max-width: 480px) {
+        .testimonials-section :global(.section-header__subtitle) {
+            font-size: var(--text-body-sm, 0.875rem);
+        }
+    }
 </style>

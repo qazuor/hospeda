@@ -40,9 +40,10 @@ try {
 
 const [featured, ...secondaryPosts] = posts;
 const secondary = secondaryPosts.slice(0, 3);
+const isSparse = posts.length < 2;
 ---
 
-<section class="section" aria-label={t('home.latestPosts.title', 'Últimas publicaciones')}>
+<section class:list={['section', { 'latest-articles--sparse': isSparse }]} aria-label={t('home.latestPosts.title', 'Últimas publicaciones')}>
     <div class="section__container">
 
         <SectionHeader
@@ -52,7 +53,9 @@ const secondary = secondaryPosts.slice(0, 3);
         />
 
         {posts.length === 0 ? (
-            <p class="articles__empty">{t('home.latestPosts.emptyState')}</p>
+            <div class="section__empty-state">
+                <p class="section__empty-text">{t('home.latestPosts.emptyState')}</p>
+            </div>
         ) : (
             <div class="articles__layout">
                 <!-- Featured card: full-width top row -->
@@ -62,9 +65,9 @@ const secondary = secondaryPosts.slice(0, 3);
                     </div>
                 )}
 
-                <!-- Secondary cards: 3-column row -->
+                <!-- Secondary cards: adaptive columns based on count -->
                 {secondary.length > 0 && (
-                    <div class="articles__secondary-row">
+                    <div class:list={['articles__secondary-row', `articles__secondary-row--${secondary.length}col`]}>
                         {secondary.map((post, i) => (
                             <div
                                 class="articles__secondary-item"
@@ -102,10 +105,10 @@ const secondary = secondaryPosts.slice(0, 3);
         width: 100%;
     }
 
-    /* Secondary row: 3 equal columns on desktop */
+    /* Secondary row: adaptive columns based on item count */
     .articles__secondary-row {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: 1fr;
         gap: var(--space-card-gap);
     }
 
@@ -115,27 +118,27 @@ const secondary = secondaryPosts.slice(0, 3);
         height: 100%;
     }
 
-    /* Tablet: 2 columns */
-    @media (max-width: 1024px) and (min-width: 768px) {
-        .articles__secondary-row {
+    @media (min-width: 640px) {
+        .articles__secondary-row--2col {
+            grid-template-columns: repeat(2, 1fr);
+        }
+        .articles__secondary-row--3col {
             grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    /* Mobile: single column */
-    @media (max-width: 767px) {
-        .articles__secondary-row {
-            grid-template-columns: 1fr;
+    @media (min-width: 1024px) {
+        .articles__secondary-row--3col {
+            grid-template-columns: repeat(3, 1fr);
         }
     }
 
-    /* Empty state */
-    .articles__empty {
-        text-align: center;
-        color: var(--core-muted-foreground);
-        font-family: var(--font-sans);
-        padding: var(--space-48) 0;
+    /* Sparse section: fewer articles, reduce vertical padding */
+    .latest-articles--sparse {
+        padding-block: var(--space-section-sm);
     }
+
+    /* Empty state styles are in components.css (.section__empty-state, .section__empty-text) */
 
     /* CTA */
     .posts__cta {
@@ -162,8 +165,9 @@ const secondary = secondaryPosts.slice(0, 3);
     }
 
     .posts__cta-btn:hover {
-        background-color: var(--core-foreground);
-        transform: translateY(-1px);
+        background-color: var(--brand-primary);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px oklch(from var(--brand-primary) l c h / 0.25);
     }
 
     .posts__cta-btn:focus-visible {

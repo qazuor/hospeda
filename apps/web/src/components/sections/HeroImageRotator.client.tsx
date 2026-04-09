@@ -90,8 +90,8 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
                         transition: 'opacity 1.5s ease-in-out'
                     }}
                     loading={index === 0 ? 'eager' : 'lazy'}
-                    width="600"
-                    height="500"
+                    width="480"
+                    height="540"
                 />
             ))}
         </div>

@@ -26,7 +26,7 @@ const t = createT(locale);
 const title = t('auth-ui.pages.verifyEmail.title', 'Verificar correo');
 const description = t(
     'auth-ui.pages.verifyEmail.description',
-    'Verificacion de correo electronico'
+    'Verificación de correo electrónico'
 );
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -61,7 +61,7 @@ const redirectTo = buildUrl({ locale, path: 'auth/signin' });
         min-height: calc(100vh - var(--header-height, 5rem));
         align-items: center;
         justify-content: center;
-        padding: var(--space-section) var(--space-4, 1rem);
+        padding: var(--space-8, 2rem) var(--space-4, 1rem);
     }
 
     .auth-page__card {

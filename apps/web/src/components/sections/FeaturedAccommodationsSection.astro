@@ -75,7 +75,9 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     <!-- Cards grid: 3 columns (3×2), 6 cards -->
     <div class="grid-cards--3col accommodations__grid">
       {items.length === 0 ? (
-        <p class="accommodations__empty">{t('home.featuredAccommodations.emptyState')}</p>
+        <div class="section__empty-state">
+          <p class="section__empty-text">{t('home.featuredAccommodations.emptyState')}</p>
+        </div>
       ) : null}
       {items.map((accommodation, i) => (
         <div data-reveal="up" class="accommodations__card-wrapper" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>

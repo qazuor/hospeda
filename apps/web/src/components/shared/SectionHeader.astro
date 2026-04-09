@@ -70,7 +70,7 @@ const hasAction = Boolean(actionLabel && actionHref && alignment === 'left');
 <style>
   .section-header--with-action {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: space-between;
     gap: 1.5rem;
     flex-wrap: wrap;
@@ -82,15 +82,16 @@ const hasAction = Boolean(actionLabel && actionHref && alignment === 'left');
 
   .section-header__action {
     flex-shrink: 0;
-    margin-top: 2.5rem;
+    align-self: flex-start;
+    margin-top: clamp(0.25rem, 1vw, 0.75rem);
     display: inline-flex;
     align-items: center;
     gap: 0.25rem;
     padding: 12px 24px;
     border-radius: var(--radius-pill);
     border: none;
-    background: linear-gradient(135deg, oklch(0.25 0.03 220), oklch(0.18 0.03 200));
-    color: oklch(0.95 0.01 210);
+    background: linear-gradient(135deg, var(--brand-secondary-foreground), var(--core-foreground));
+    color: var(--core-background);
     font-family: var(--font-sans);
     font-size: 0.75rem;
     font-weight: 500;

@@ -55,7 +55,7 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
         setError(null);
 
         if (password.length < 8) {
-            setError(t('auth.signUp.passwordHint', 'Minimo 8 caracteres'));
+            setError(t('auth.signUp.passwordHint', 'Mínimo 8 caracteres'));
             return;
         }
 
@@ -151,7 +151,7 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
                     htmlFor="signup-email"
                     className={styles.label}
                 >
-                    {t('auth.signUp.email', 'Correo electronico')}
+                    {t('auth.signUp.email', 'Correo electrónico')}
                 </label>
                 <input
                     id="signup-email"
@@ -172,7 +172,7 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
                     htmlFor="signup-password"
                     className={styles.label}
                 >
-                    {t('auth.signUp.password', 'Contrasena')}
+                    {t('auth.signUp.password', 'Contraseña')}
                 </label>
                 <input
                     id="signup-password"
@@ -180,7 +180,7 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
                     className={styles.input}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contrasena')}
+                    placeholder={t('auth.signUp.passwordPlaceholder', 'Tu contraseña')}
                     required
                     minLength={8}
                     autoComplete="new-password"
@@ -192,7 +192,7 @@ export function SignUp({ locale, redirectTo, showOAuth = true }: SignUpProps) {
                     id="signup-password-hint"
                     className={styles.hint}
                 >
-                    {t('auth.signUp.passwordHint', 'Minimo 8 caracteres')}
+                    {t('auth.signUp.passwordHint', 'Mínimo 8 caracteres')}
                 </span>
             </div>
 

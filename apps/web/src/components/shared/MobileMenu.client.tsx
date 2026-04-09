@@ -39,6 +39,8 @@ interface MobileMenuProps {
     readonly locale: SupportedLocale;
     /** Navigation items rendered as vertical links. */
     readonly navItems: readonly NavItem[];
+    /** Current page path — used to build locale-swap URLs for the language switcher. */
+    readonly currentPath: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -63,7 +65,7 @@ interface MobileMenuProps {
  * <MobileMenu locale={locale} navItems={navItems} client:media="(max-width: 768px)" />
  * ```
  */
-export function MobileMenu({ locale, navItems }: MobileMenuProps) {
+export function MobileMenu({ locale, navItems, currentPath }: MobileMenuProps) {
     const { t } = createTranslations(locale);
     const [isOpen, setIsOpen] = useState(false);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
@@ -186,6 +188,41 @@ export function MobileMenu({ locale, navItems }: MobileMenuProps) {
                     ))}
                 </ul>
             </nav>
+
+            {/* Auth section */}
+            <div className={styles.authSection}>
+                <a
+                    href={`/${locale}/auth/signin/`}
+                    onClick={handleClose}
+                    tabIndex={isOpen ? 0 : -1}
+                    className={styles.authButton}
+                >
+                    {t('nav.signIn', 'Iniciar sesión')}
+                </a>
+            </div>
+
+            {/* Language switcher */}
+            <div className={styles.langSection}>
+                {(['es', 'en', 'pt'] as const).map((loc) => {
+                    const pathWithoutLocale = currentPath.replace(/^\/(es|en|pt)(\/|$)/, '/');
+                    const localeUrl = `/${loc}${pathWithoutLocale}`;
+                    return (
+                        <a
+                            key={loc}
+                            href={localeUrl}
+                            onClick={handleClose}
+                            tabIndex={isOpen ? 0 : -1}
+                            className={cn(
+                                styles.langOption,
+                                loc === locale && styles.langOptionActive
+                            )}
+                            aria-current={loc === locale ? 'true' : undefined}
+                        >
+                            {loc.toUpperCase()}
+                        </a>
+                    );
+                })}
+            </div>
 
             {/* Bottom search link */}
             <div className={styles.footer}>

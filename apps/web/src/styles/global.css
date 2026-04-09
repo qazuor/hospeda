@@ -99,20 +99,20 @@
     --radius-button: 8px;
 
     /* --- Spacing --- */
-    --space-section: 120px;
-    --space-section-sm: 80px;
-    --space-section-lg: 160px;
-    --space-container-x: 15px;
+    --space-section: clamp(3rem, 8vw, 7.5rem);
+    --space-section-sm: clamp(2.5rem, 5vw, 5rem);
+    --space-section-lg: clamp(4rem, 10vw, 10rem);
+    --space-container-x: clamp(0.75rem, 3vw, 1.5rem);
     --space-card-content: 27px 30px 26px;
-    --space-card-gap: 30px;
+    --space-card-gap: clamp(1rem, 3vw, 1.875rem);
     --space-section-header-mb: 50px;
 
     /* --- Typography scale --- */
     --text-hero: clamp(3rem, 2rem + 5vw, 5.75rem);
     --text-display: clamp(2rem, 1.5rem + 3vw, 3rem);
     --text-h2: clamp(1.75rem, 1.5rem + 1.75vw, 2.75rem);
-    --text-h3: clamp(1.125rem, 1rem + 0.5vw, 1.5rem);
-    --text-h4: clamp(1rem, 0.9rem + 0.3vw, 1.25rem);
+    --text-h3: clamp(1.25rem, 1rem + 0.75vw, 1.625rem);
+    --text-h4: clamp(0.9375rem, 0.875rem + 0.25vw, 1.125rem);
     --text-body: 1rem;
     --text-body-sm: 0.875rem;
     --text-meta: 0.8125rem;
@@ -131,7 +131,7 @@
     --duration-fast: 0.2s;
     --duration-normal: 0.4s;
     --duration-slow: 0.5s;
-    --duration-reveal: 1.5s;
+    --duration-reveal: 1s;
     --ease-bounce: cubic-bezier(0.1, 0, 0.3, 1);
 
     /* --- Z-index --- */
@@ -142,6 +142,12 @@
     /* --- Layout --- */
     --container-max: 1350px;
     --container-narrow: 900px;
+}
+
+@media (min-width: 1600px) {
+    :root {
+        --container-max: 1500px;
+    }
 }
 
 /* --- Dark mode overrides --- */
@@ -229,6 +235,10 @@
     border-radius: var(--radius-md, 10px);
 }
 
+html {
+    overflow-x: clip;
+}
+
 body {
     min-height: 100vh;
     font-family: var(--font-sans);
@@ -237,12 +247,26 @@ body {
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overflow-x: clip;
 }
 
 img,
 svg {
     display: block;
     max-width: 100%;
+}
+
+/* --- Accessibility utilities --- */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
 }
 
 /* --- Reduced motion: disable all decorative animations --- */

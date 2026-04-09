@@ -136,12 +136,12 @@ const { t } = createTranslations(locale);
     transition: color var(--duration-normal) ease;
   }
 
-  /* Mobile: 40px size */
+  /* Mobile: 40px size, pushed up to avoid hero overlap */
   @media (max-width: 767px) {
     .scroll-to-top {
       height: 40px;
       width: 40px;
-      bottom: 1rem;
+      bottom: 4rem;
       right: 1rem;
     }
 

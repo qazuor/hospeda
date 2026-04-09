@@ -72,3 +72,33 @@
     margin: 0;
     max-width: 22rem;
 }
+
+/* Recovery actions shown in error state */
+.recoveryActions {
+    margin-top: 0.5rem;
+}
+
+.recoveryLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.5rem;
+    border-radius: var(--radius-button);
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+}
+
+.recoveryLink:hover {
+    opacity: 0.9;
+}
+
+.recoveryLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}

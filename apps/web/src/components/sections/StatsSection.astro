@@ -201,8 +201,8 @@ const t = createT(locale);
   .stats-section {
     position: relative;
     overflow: clip;
-    padding-top: var(--space-48, 3rem);
-    padding-bottom: var(--space-48, 3rem);
+    padding-top: var(--space-section);
+    padding-bottom: var(--space-section);
     background: linear-gradient(
       to top,
       var(--brand-secondary) 0%,
@@ -216,10 +216,10 @@ const t = createT(locale);
     z-index: 2;
     max-width: var(--container-max, 1350px);
     margin-inline: auto;
-    padding-inline: var(--space-6, 1.5rem);
+    padding-inline: var(--space-container-x);
     display: flex;
     flex-direction: column;
-    gap: var(--space-8, 2rem);
+    gap: 2rem;
     align-items: flex-start;
   }
 
@@ -251,6 +251,13 @@ const t = createT(locale);
     width: 100%;
   }
 
+  /* Center the last card when it's orphaned in a 2-col grid */
+  .stats-section__cards > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    max-width: 50%;
+    margin-inline: auto;
+  }
+
   .stats-section__card {
     display: flex;
     flex-direction: column;
@@ -259,7 +266,10 @@ const t = createT(locale);
     min-width: 120px;
   }
 
-  /* ── Wavy line wrapper (desktop only) ────────────────────────── */
+  /* ── Wavy line wrapper: hidden by default, shown via CSS at 1024px+ ── */
+  /* This CSS rule is the canonical show/hide — the JS only draws the path  */
+  /* when width >= 1024, but CSS guarantees the element is truly hidden on  */
+  /* smaller viewports (including after orientation changes).               */
   .stats-section__wave-wrap {
     display: none;
   }
@@ -277,7 +287,7 @@ const t = createT(locale);
 
     .stats-section__cards {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: var(--space-32, 2rem);
+      gap: var(--space-card-gap);
     }
   }
 
@@ -286,7 +296,7 @@ const t = createT(locale);
     .stats-section__container {
       flex-direction: row;
       align-items: flex-start;
-      gap: var(--space-48, 3rem);
+      gap: var(--space-section);
     }
 
     .stats-section__traveler {
@@ -303,7 +313,7 @@ const t = createT(locale);
       display: flex;
       flex-direction: row;
       flex-wrap: nowrap;
-      gap: var(--space-32, 2rem);
+      gap: var(--space-card-gap);
       align-items: flex-start;
     }
 
@@ -320,7 +330,7 @@ const t = createT(locale);
       right: 0;
       height: 80px;
       transform: translateY(-50%);
-      color: oklch(0.15 0 0 / 0.3);
+      color: var(--border);
       pointer-events: none;
       z-index: 1;
     }

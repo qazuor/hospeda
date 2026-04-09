@@ -58,12 +58,12 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             const result = await signIn.email({ email, password });
 
             if (result.error) {
-                setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesion'));
+                setError(result.error.message ?? t('auth.signIn.error', 'Error al iniciar sesión'));
             } else {
                 window.location.replace(redirectTo);
             }
         } catch {
-            setError(t('auth.signIn.error', 'Error al iniciar sesion'));
+            setError(t('auth.signIn.error', 'Error al iniciar sesión'));
         } finally {
             setIsLoading(false);
         }
@@ -79,7 +79,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                 callbackURL: redirectTo || window.location.pathname
             });
         } catch {
-            setError(t('auth.signIn.error', 'Error al iniciar sesion'));
+            setError(t('auth.signIn.error', 'Error al iniciar sesión'));
             setOauthLoading(null);
         }
     }
@@ -104,7 +104,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
-            aria-label={t('auth.signIn.submit', 'Iniciar Sesion')}
+            aria-label={t('auth.signIn.submit', 'Iniciar Sesión')}
         >
             {error && (
                 <div
@@ -120,7 +120,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                     htmlFor="signin-email"
                     className={styles.label}
                 >
-                    {t('auth.signIn.email', 'Correo electronico')}
+                    {t('auth.signIn.email', 'Correo electrónico')}
                 </label>
                 <input
                     id="signin-email"
@@ -141,7 +141,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                     htmlFor="signin-password"
                     className={styles.label}
                 >
-                    {t('auth.signIn.password', 'Contrasena')}
+                    {t('auth.signIn.password', 'Contraseña')}
                 </label>
                 <input
                     id="signin-password"
@@ -149,7 +149,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
                     className={styles.input}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contrasena')}
+                    placeholder={t('auth.signIn.passwordPlaceholder', 'Tu contraseña')}
                     required
                     autoComplete="current-password"
                     aria-required="true"
@@ -165,7 +165,7 @@ export function SignIn({ locale, redirectTo, showOAuth = true }: SignInProps) {
             >
                 {isLoading
                     ? t('auth.signIn.loading', 'Ingresando...')
-                    : t('auth.signIn.submit', 'Iniciar Sesion')}
+                    : t('auth.signIn.submit', 'Iniciar Sesión')}
             </button>
 
             {showOAuth && (

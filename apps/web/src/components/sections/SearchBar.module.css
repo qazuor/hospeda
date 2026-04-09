@@ -58,7 +58,7 @@
 }
 
 .label {
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     font-weight: 600;
     color: var(--brand-secondary-foreground);
     line-height: 1.6;
@@ -66,7 +66,7 @@
 }
 
 .value {
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     font-weight: 400;
     color: var(--core-muted-foreground);
     white-space: nowrap;
@@ -92,7 +92,7 @@
     border-radius: 24px;
     padding: 10px 14px 10px 24px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -184,7 +184,7 @@
     gap: 10px;
     padding: 10px 16px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     font-family: var(--font-sans);
     color: var(--core-foreground);
     transition: background 0.15s ease;
@@ -212,7 +212,7 @@
 
 .dropdownItemClear {
     color: var(--core-muted-foreground);
-    font-size: 13px;
+    font-size: var(--text-meta, 0.8125rem);
     border-bottom: 1px solid var(--border);
     margin-bottom: 4px;
     padding-bottom: 10px;
@@ -233,7 +233,7 @@
 }
 
 .typeActionButton {
-    font-size: 13px;
+    font-size: var(--text-meta, 0.8125rem);
     font-family: var(--font-sans);
     font-weight: 500;
     color: var(--brand-primary);
@@ -266,7 +266,7 @@
     gap: 10px;
     padding: 10px 16px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     font-family: var(--font-sans);
     color: var(--core-foreground);
     transition: background 0.15s ease;
@@ -317,7 +317,8 @@
 
 /* === Calendar panel === */
 .calendarPanel {
-    min-width: 620px;
+    min-width: min(620px, 90vw);
+    max-width: 95vw;
     padding: 20px;
     left: 50%;
     transform: translateX(-50%);
@@ -339,7 +340,7 @@
     --rdp-day-height: 36px;
     --rdp-day-width: 36px;
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
 }
 
 .calendarMonths {
@@ -348,16 +349,23 @@
     gap: 24px;
 }
 
+@media (max-width: 900px) {
+    .calendarMonths {
+        flex-direction: column !important;
+        gap: 12px;
+    }
+}
+
 .calendarCaption {
     font-family: var(--font-heading);
     font-weight: 600;
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     color: var(--core-foreground);
     text-transform: capitalize;
 }
 
 .calendarWeekday {
-    font-size: 13px;
+    font-size: var(--text-meta, 0.8125rem);
     font-weight: 500;
     color: var(--core-muted-foreground);
 }
@@ -377,7 +385,7 @@
 .calendarDayButton {
     border-radius: 8px;
     font-family: var(--font-sans);
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
 }
 
 .calendarToday .calendarDayButton {
@@ -410,7 +418,7 @@
 }
 
 .guestLabel {
-    font-size: 14px;
+    font-size: var(--text-body-sm, 0.875rem);
     font-weight: 500;
     color: var(--core-foreground);
     font-family: var(--font-sans);
@@ -423,8 +431,10 @@
 }
 
 .stepperButton {
-    width: 32px;
-    height: 32px;
+    min-width: 44px;
+    min-height: 44px;
+    width: 44px;
+    height: 44px;
     border-radius: 8px;
     border: 1px solid var(--border);
     background: var(--core-background);
@@ -433,7 +443,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    font-size: 18px;
+    font-size: var(--text-body-lg, 1.125rem);
     font-weight: 500;
     transition: all 0.15s ease;
     padding: 0;
@@ -457,7 +467,7 @@
 }
 
 .stepperValue {
-    font-size: 16px;
+    font-size: var(--text-body, 1rem);
     font-weight: 600;
     color: var(--core-foreground);
     min-width: 24px;
@@ -465,8 +475,8 @@
     font-family: var(--font-sans);
 }
 
-/* === Mobile (<=767px) === */
-@media (max-width: 767px) {
+/* === Mobile (<=900px) === */
+@media (max-width: 900px) {
     .inner {
         flex-direction: column;
         padding: 16px;

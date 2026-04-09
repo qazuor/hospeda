@@ -101,7 +101,11 @@ const companyLinks = [
                         <p class="footer__newsletter-desc">{t("footer.newsletterDescription")}</p>
                     </div>
                     <div class="footer__newsletter-form">
+                        <label for="newsletter-email" class="sr-only">
+                            {t("footer.newsletterPlaceholder")}
+                        </label>
                         <input
+                            id="newsletter-email"
                             type="email"
                             name="email"
                             autocomplete="email"
@@ -209,7 +213,7 @@ const companyLinks = [
        ======================================================== */
     .footer__wave {
         position: absolute;
-        top: -59px;
+        top: clamp(-40px, -5vw, -59px);
         left: 0;
         width: 100%;
         height: 60px;
@@ -350,18 +354,24 @@ const companyLinks = [
         width: 100%;
     }
 
+    @media (min-width: 768px) {
+        .footer__newsletter-input {
+            width: clamp(200px, 30vw, 260px);
+        }
+    }
+
     .footer__newsletter-input:focus {
         border-color: var(--footer-newsletter-fg);
     }
 
     .footer__newsletter-btn {
         border-radius: var(--radius-pill, 9999px);
-        background: linear-gradient(135deg, oklch(0.25 0.03 220), oklch(0.18 0.03 200));
-        color: oklch(0.95 0.01 210);
+        background: linear-gradient(135deg, var(--brand-secondary-foreground), var(--core-foreground));
+        color: var(--core-background);
         border: none;
         padding: 10px 24px;
         font-family: var(--font-sans);
-        font-size: 12px;
+        font-size: clamp(0.75rem, 1.5vw, 0.875rem);
         font-weight: 500;
         cursor: pointer;
         white-space: nowrap;
@@ -386,7 +396,7 @@ const companyLinks = [
 
     .footer__nav-heading {
         font-family: var(--font-heading);
-        font-size: 20px;
+        font-size: clamp(1rem, 2vw, 1.25rem);
         font-weight: 700;
         color: var(--footer-link);
         margin-bottom: 12px;
@@ -424,7 +434,7 @@ const companyLinks = [
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 8px;
+        gap: clamp(0.5rem, 2vw, 1rem);
         padding-block: 16px;
     }
 
@@ -464,10 +474,6 @@ const companyLinks = [
             flex-shrink: 0;
         }
 
-        .footer__newsletter-input {
-            width: 220px;
-        }
-
         .footer__bottom-inner {
             flex-direction: row;
             justify-content: space-between;
@@ -482,6 +488,12 @@ const companyLinks = [
     /* ========================================================
        Responsive: desktop (1024px+)
        ======================================================== */
+    @media (min-width: 768px) {
+        .footer__nav {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
     @media (min-width: 1024px) {
         .footer__top .footer__container {
             gap: 64px;
@@ -490,10 +502,6 @@ const companyLinks = [
         .footer__newsletter {
             gap: 48px;
             padding: 16px 24px;
-        }
-
-        .footer__newsletter-input {
-            width: 260px;
         }
 
         .footer__nav {

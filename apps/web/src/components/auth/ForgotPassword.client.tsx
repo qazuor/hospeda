@@ -52,7 +52,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
         setError(null);
 
         if (!email.trim()) {
-            setError(t('auth.forgotPassword.emailRequired', 'Ingresa tu correo electronico'));
+            setError(t('auth.forgotPassword.emailRequired', 'Ingresa tu correo electrónico'));
             return;
         }
 
@@ -64,13 +64,13 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
             if (result.error) {
                 setError(
                     result.error.message ??
-                        t('auth.forgotPassword.error', 'Error al enviar el correo de recuperacion')
+                        t('auth.forgotPassword.error', 'Error al enviar el correo de recuperación')
                 );
             } else {
                 setIsSent(true);
             }
         } catch {
-            setError(t('auth.forgotPassword.error', 'Error al enviar el correo de recuperacion'));
+            setError(t('auth.forgotPassword.error', 'Error al enviar el correo de recuperación'));
         } finally {
             setIsLoading(false);
         }
@@ -94,14 +94,14 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                 <p className={styles.successMessage}>
                     {t(
                         'auth.forgotPassword.sentMessage',
-                        'Te enviamos un enlace para restablecer tu contrasena. Revisa tu bandeja de entrada.'
+                        'Te enviamos un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada.'
                     )}
                 </p>
                 <a
                     href={signInUrl}
                     className={styles.backLink}
                 >
-                    {t('auth.forgotPassword.backToSignIn', 'Volver al inicio de sesion')}
+                    {t('auth.forgotPassword.backToSignIn', 'Volver al inicio de sesión')}
                 </a>
             </output>
         );
@@ -112,16 +112,16 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
             className={styles.form}
             onSubmit={handleSubmit}
             noValidate
-            aria-label={t('auth.forgotPassword.submit', 'Recuperar contrasena')}
+            aria-label={t('auth.forgotPassword.submit', 'Recuperar contraseña')}
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
-                    {t('auth.forgotPassword.title', 'Recuperar contrasena')}
+                    {t('auth.forgotPassword.title', 'Recuperar contraseña')}
                 </h2>
                 <p className={styles.description}>
                     {t(
                         'auth.forgotPassword.description',
-                        'Ingresa tu correo y te enviaremos un enlace para restablecer tu contrasena.'
+                        'Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.'
                     )}
                 </p>
             </div>
@@ -140,7 +140,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                     htmlFor="forgot-email"
                     className={styles.label}
                 >
-                    {t('auth.forgotPassword.email', 'Correo electronico')}
+                    {t('auth.forgotPassword.email', 'Correo electrónico')}
                 </label>
                 <input
                     id="forgot-email"
@@ -164,7 +164,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
             >
                 {isLoading
                     ? t('auth.forgotPassword.loading', 'Enviando...')
-                    : t('auth.forgotPassword.submit', 'Enviar enlace de recuperacion')}
+                    : t('auth.forgotPassword.submit', 'Enviar enlace de recuperación')}
             </button>
 
             <div className={styles.footer}>
@@ -172,7 +172,7 @@ export function ForgotPassword({ locale, resetPasswordUrl, signInUrl }: ForgotPa
                     href={signInUrl}
                     className={styles.backLink}
                 >
-                    {t('auth.forgotPassword.backToSignIn', 'Volver al inicio de sesion')}
+                    {t('auth.forgotPassword.backToSignIn', 'Volver al inicio de sesión')}
                 </a>
             </div>
         </form>

@@ -58,8 +58,8 @@ const homeUrl = buildUrl({ locale, path: '/' });
         display: flex;
         align-items: center;
         justify-content: center;
-        min-height: 60vh;
-        padding: var(--space-section) var(--space-container-x);
+        min-height: calc(100vh - var(--header-height, 5rem));
+        padding: var(--space-8, 2rem) var(--space-container-x);
     }
 
     .error-page__container {

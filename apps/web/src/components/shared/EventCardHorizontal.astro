@@ -415,6 +415,11 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
         z-index: 1;
         transition: transform var(--duration-normal) ease;
         border: none;
+        background-color: var(--muted, #f0f0f0);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 256 256'%3E%3Cpath fill='%23999' d='M216 40H40a16 16 0 0 0-16 16v144a16 16 0 0 0 16 16h176a16 16 0 0 0 16-16V56a16 16 0 0 0-16-16Zm0 16v102.75l-26.07-26.06a16 16 0 0 0-22.63 0l-20 20-44-44a16 16 0 0 0-22.62 0L40 149.37V56ZM40 172l52-52 80 80H40Zm176 28h-21.37l-36-36 20-20L216 181.38V200ZM144 100a12 12 0 1 1 12 12 12 12 0 0 1-12-12Z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 48px;
     }
 
     .event-card-h:hover .event-card-h__photo {
@@ -583,8 +588,8 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
 
         .event-card-h__cta {
             margin-right: 0.75rem;
-            width: 36px;
-            height: 36px;
+            min-width: 44px;
+            min-height: 44px;
         }
     }
 </style>

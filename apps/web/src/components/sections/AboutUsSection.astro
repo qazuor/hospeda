@@ -14,6 +14,7 @@
 
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
+import { buildUrl } from "@/lib/urls";
 
 interface Props {
     /** Active locale used to resolve translations. */
@@ -106,6 +107,11 @@ const { t } = createTranslations(locale);
                         )
                     }
                 </p>
+
+                <a href={buildUrl({ locale, path: '/nosotros/' })} class="about-us__cta">
+                    {t('home.about.cta', 'Conocé más sobre nosotros')}
+                    <span aria-hidden="true">→</span>
+                </a>
             </div>
 
             <!-- ===== Zone 3: Side traveler photo ===== -->
@@ -331,6 +337,31 @@ const { t } = createTranslations(locale);
         max-width: 566px;
     }
 
+    /* CTA button */
+    .about-us__cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1.5rem;
+        padding: 12px 28px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, white);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+            opacity var(--duration-normal, 0.4s) ease,
+            transform var(--duration-normal, 0.4s) ease;
+        min-height: 44px;
+    }
+
+    .about-us__cta:hover {
+        opacity: 0.85;
+        transform: translateY(-1px);
+    }
+
     /* ===================================================
        Zone 3: Side traveler image
        align-self: stretch fills the full layout height so
@@ -361,7 +392,7 @@ const { t } = createTranslations(locale);
        Below 1024px: stack zones vertically, hide decorative
        elements that rely on absolute pixel positioning.
     =================================================== */
-    @media (max-width: 1023px) {
+    @media (max-width: 1024px) {
         .about-us__layout {
             flex-direction: column;
             gap: 2rem;
@@ -373,6 +404,20 @@ const { t } = createTranslations(locale);
             max-width: 432px;
             height: auto;
             min-height: 400px;
+        }
+
+        /* Center main photo: override absolute left offset so the collage   */
+        /* doesn't waste space on the left side at tablet widths.            */
+        .about-us__photo-main {
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Anchor secondary photo relative to right edge instead of a fixed  */
+        /* pixel offset that may overflow at narrower widths.                */
+        .about-us__photo-secondary {
+            left: auto;
+            right: 5%;
         }
 
         .about-us__content {
