@@ -15,9 +15,8 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug, getPlanBySlug } from '@repo/billing';
-import type { schema } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { and, eq, isNull } from 'drizzle-orm';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -63,7 +62,7 @@ export interface RecalculateAddonLimitsInput {
     /** Initialized QZPay billing instance for subscriptions and limits APIs. */
     billing: QZPayBilling;
     /** Drizzle database instance for querying `billing_addon_purchases`. */
-    db: NodePgDatabase<typeof schema>;
+    db: DrizzleClient;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────

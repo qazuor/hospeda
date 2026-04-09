@@ -15,7 +15,7 @@
  * @module services/billing-settings
  */
 
-import { billingAuditLogs, billingSettings, eq, getDb } from '@repo/db';
+import { billingAuditLogs, billingSettings, eq, getDb, withTransaction } from '@repo/db';
 
 /**
  * Billing settings configuration
@@ -166,38 +166,38 @@ export class BillingSettingsService {
 
         this.validateSettings(updatedSettings);
 
-        const db = getDb();
-
-        // Upsert into billing_settings (primary storage)
-        await db
-            .insert(billingSettings)
-            .values({
-                key: SETTINGS_KEY,
-                value: updatedSettings as unknown as Record<string, unknown>,
-                updatedBy: actorId ?? null,
-                updatedAt: new Date()
-            })
-            .onConflictDoUpdate({
-                target: billingSettings.key,
-                set: {
+        await withTransaction(async (tx) => {
+            // Upsert into billing_settings (primary storage)
+            await tx
+                .insert(billingSettings)
+                .values({
+                    key: SETTINGS_KEY,
                     value: updatedSettings as unknown as Record<string, unknown>,
                     updatedBy: actorId ?? null,
                     updatedAt: new Date()
-                }
-            });
+                })
+                .onConflictDoUpdate({
+                    target: billingSettings.key,
+                    set: {
+                        value: updatedSettings as unknown as Record<string, unknown>,
+                        updatedBy: actorId ?? null,
+                        updatedAt: new Date()
+                    }
+                });
 
-        // Record in audit log for trail (not as primary storage)
-        await db.insert(billingAuditLogs).values({
-            action: 'billing_settings_update',
-            entityType: 'settings',
-            entityId: 'global',
-            actorId: actorId || null,
-            actorType: actorId ? 'admin' : 'system',
-            changes: updatedSettings as unknown,
-            previousValues: currentSettings as unknown,
-            livemode: true,
-            ipAddress: null,
-            userAgent: null
+            // Record in audit log for trail (not as primary storage)
+            await tx.insert(billingAuditLogs).values({
+                action: 'billing_settings_update',
+                entityType: 'settings',
+                entityId: 'global',
+                actorId: actorId || null,
+                actorType: actorId ? 'admin' : 'system',
+                changes: updatedSettings as unknown,
+                previousValues: currentSettings as unknown,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
+            });
         });
 
         return updatedSettings;
@@ -211,38 +211,38 @@ export class BillingSettingsService {
      * @returns Default billing settings
      */
     async resetSettings(actorId?: string): Promise<BillingSettings> {
-        const db = getDb();
-
-        // Upsert defaults into billing_settings
-        await db
-            .insert(billingSettings)
-            .values({
-                key: SETTINGS_KEY,
-                value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
-                updatedBy: actorId ?? null,
-                updatedAt: new Date()
-            })
-            .onConflictDoUpdate({
-                target: billingSettings.key,
-                set: {
+        await withTransaction(async (tx) => {
+            // Upsert defaults into billing_settings
+            await tx
+                .insert(billingSettings)
+                .values({
+                    key: SETTINGS_KEY,
                     value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
                     updatedBy: actorId ?? null,
                     updatedAt: new Date()
-                }
-            });
+                })
+                .onConflictDoUpdate({
+                    target: billingSettings.key,
+                    set: {
+                        value: DEFAULT_SETTINGS as unknown as Record<string, unknown>,
+                        updatedBy: actorId ?? null,
+                        updatedAt: new Date()
+                    }
+                });
 
-        // Record in audit log
-        await db.insert(billingAuditLogs).values({
-            action: 'billing_settings_reset',
-            entityType: 'settings',
-            entityId: 'global',
-            actorId: actorId || null,
-            actorType: actorId ? 'admin' : 'system',
-            changes: DEFAULT_SETTINGS as unknown,
-            previousValues: null,
-            livemode: true,
-            ipAddress: null,
-            userAgent: null
+            // Record in audit log
+            await tx.insert(billingAuditLogs).values({
+                action: 'billing_settings_reset',
+                entityType: 'settings',
+                entityId: 'global',
+                actorId: actorId || null,
+                actorType: actorId ? 'admin' : 'system',
+                changes: DEFAULT_SETTINGS as unknown,
+                previousValues: null,
+                livemode: true,
+                ipAddress: null,
+                userAgent: null
+            });
         });
 
         return DEFAULT_SETTINGS;

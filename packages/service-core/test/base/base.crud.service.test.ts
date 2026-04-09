@@ -7,6 +7,7 @@ import type { Actor, ServiceContext } from '../../src/types';
 
 // Mock base model for testing
 class MockModel {
+    entityName = 'mock_entity';
     findAllWithRelations = vi.fn();
     findAll = vi.fn();
     findById = vi.fn();

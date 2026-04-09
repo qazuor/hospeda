@@ -139,7 +139,7 @@ export function createTypedModelMock<M extends new (...args: unknown[]) => unkno
  */
 export class MockBaseModel<T extends Record<string, unknown>> extends BaseModel<T> {
     protected table = {} as any;
-    protected entityName = 'mock_entity';
+    public entityName = 'mock_entity';
 
     protected getTableName(): string {
         return 'mockTable';
