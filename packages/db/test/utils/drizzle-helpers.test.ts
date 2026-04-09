@@ -1,6 +1,10 @@
 import { integer, pgTable, text, timestamp, varchar } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
-import { buildSearchCondition, buildWhereClause } from '../../src/utils/drizzle-helpers';
+import {
+    buildSearchCondition,
+    buildWhereClause,
+    escapeLikePattern
+} from '../../src/utils/drizzle-helpers';
 
 // Simple mock table using plain strings (sufficient for eq/isNull tests)
 const mockTable = {
@@ -21,6 +25,40 @@ const testTable = pgTable('test_items', {
     price: integer('price'),
     createdAt: timestamp('created_at'),
     updatedAt: timestamp('updated_at')
+});
+
+describe('escapeLikePattern', () => {
+    it('should escape percent character', () => {
+        expect(escapeLikePattern('10%')).toBe('10\\%');
+    });
+
+    it('should escape underscore character', () => {
+        expect(escapeLikePattern('test_data')).toBe('test\\_data');
+    });
+
+    it('should escape backslash character', () => {
+        expect(escapeLikePattern('C:\\Users')).toBe('C:\\\\Users');
+    });
+
+    it('should escape multiple wildcards in same string', () => {
+        expect(escapeLikePattern('100%_off')).toBe('100\\%\\_off');
+    });
+
+    it('should escape backslash before other metacharacters (order verification)', () => {
+        expect(escapeLikePattern('\\%')).toBe('\\\\\\%');
+    });
+
+    it('should return empty string unchanged', () => {
+        expect(escapeLikePattern('')).toBe('');
+    });
+
+    it('should return normal text unchanged', () => {
+        expect(escapeLikePattern('hotel paradise')).toBe('hotel paradise');
+    });
+
+    it('should handle string with only metacharacters', () => {
+        expect(escapeLikePattern('%_\\')).toBe('\\%\\_\\\\');
+    });
 });
 
 describe('buildWhereClause', () => {
@@ -394,5 +432,64 @@ describe('buildSearchCondition', () => {
 
         // Assert
         expect(result).toBeUndefined();
+    });
+
+    it('produces a defined condition when term contains percent wildcard', () => {
+        // Arrange -- % in the term should be escaped, not treated as SQL wildcard
+        const term = '50%off';
+        const columns = ['name'] as const;
+
+        // Act
+        const result = buildSearchCondition(term, columns, testTable);
+
+        // Assert -- condition still produced (escaping does not cause undefined)
+        expect(result).toBeDefined();
+    });
+
+    it('produces a defined condition when term contains underscore wildcard', () => {
+        // Arrange
+        const term = 'test_data';
+        const columns = ['name'] as const;
+
+        // Act
+        const result = buildSearchCondition(term, columns, testTable);
+
+        // Assert
+        expect(result).toBeDefined();
+    });
+});
+
+describe('buildWhereClause _like suffix wildcard escaping', () => {
+    it('produces a clause when _like value contains percent', () => {
+        // Arrange -- percent in value should be escaped before being sent to ILIKE
+        const filters = { name_like: '50%off' };
+
+        // Act
+        const clause = buildWhereClause(filters, testTable);
+
+        // Assert -- clause is still produced (escaping does not cause undefined)
+        expect(clause).toBeDefined();
+    });
+
+    it('produces a clause when _like value contains underscore', () => {
+        // Arrange
+        const filters = { name_like: 'test_case' };
+
+        // Act
+        const clause = buildWhereClause(filters, testTable);
+
+        // Assert
+        expect(clause).toBeDefined();
+    });
+
+    it('produces a clause when _like value contains backslash', () => {
+        // Arrange
+        const filters = { name_like: 'C:\\Users' };
+
+        // Act
+        const clause = buildWhereClause(filters, testTable);
+
+        // Assert
+        expect(clause).toBeDefined();
     });
 });

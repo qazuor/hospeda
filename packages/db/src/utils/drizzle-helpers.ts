@@ -16,6 +16,35 @@ import type { PgColumn } from 'drizzle-orm/pg-core';
 import { dbLogger } from './logger.ts';
 
 /**
+ * Escapes PostgreSQL LIKE/ILIKE wildcard metacharacters in a user-provided search term.
+ *
+ * PostgreSQL LIKE uses three metacharacters:
+ * - `%` matches zero or more characters
+ * - `_` matches exactly one character
+ * - `\` is the default escape character
+ *
+ * This function escapes all three so the term is matched literally.
+ * The backslash MUST be escaped first to avoid double-escaping.
+ *
+ * @param term - Raw user-provided search term
+ * @returns Escaped term safe for interpolation into a LIKE/ILIKE pattern
+ *
+ * @example
+ * ```ts
+ * escapeLikePattern('10%')      // '10\\%'
+ * escapeLikePattern('test_data') // 'test\\_data'
+ * escapeLikePattern('C:\\Users') // 'C:\\\\Users'
+ * escapeLikePattern('normal')    // 'normal' (unchanged)
+ * ```
+ */
+export function escapeLikePattern(term: string): string {
+    return term
+        .replace(/\\/g, '\\\\') // Escape backslash FIRST (order matters)
+        .replace(/%/g, '\\%') // Escape percent
+        .replace(/_/g, '\\_'); // Escape underscore
+}
+
+/**
  * Operator suffix convention for where clause values.
  * Keys ending with these suffixes trigger special operators instead of eq().
  *
@@ -54,7 +83,8 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
                 const columnName = key.slice(0, -5);
                 if (Object.prototype.hasOwnProperty.call(tableRecord, columnName)) {
                     const column = tableRecord[columnName] as SQLWrapper;
-                    return ilike(column as PgColumn, `%${value}%`);
+                    const escapedValue = escapeLikePattern(value);
+                    return ilike(column as PgColumn, `%${escapedValue}%`);
                 }
                 unknownKeys.push(key);
                 return undefined;
@@ -152,12 +182,13 @@ export function buildSearchCondition(
 
     const tableRecord = table as unknown as Record<string, unknown>;
     const trimmedTerm = term.trim();
+    const escapedTerm = escapeLikePattern(trimmedTerm);
 
     const conditions = columns
         .filter((col) => Object.prototype.hasOwnProperty.call(tableRecord, col))
         .map((col) => {
             const column = tableRecord[col] as PgColumn;
-            return ilike(column, `%${trimmedTerm}%`);
+            return ilike(column, `%${escapedTerm}%`);
         });
 
     if (conditions.length === 0) return undefined;
