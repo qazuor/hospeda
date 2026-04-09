@@ -102,3 +102,20 @@ export const canRemovePermission = (actor: Actor | undefined): void => {
         );
     }
 };
+
+/**
+ * Checks if the actor has permission to use admin list for users.
+ * Requires USER_READ_ALL permission in addition to admin access
+ * (admin access is verified by the base class default).
+ *
+ * @param actor - The user or system performing the action.
+ * @throws {ServiceError} If the actor lacks USER_READ_ALL permission.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: USER_READ_ALL required for admin list'
+        );
+    }
+}

@@ -19,6 +19,7 @@ import type {
     ServiceContext
 } from '../../types';
 import {
+    checkCanAdminList,
     checkCanCount,
     checkCanCreate,
     checkCanHardDelete,
@@ -160,6 +161,17 @@ export class SponsorshipService extends BaseCrudService<
         _newVisibility: unknown
     ): void {
         checkCanUpdateVisibility(actor, entity);
+    }
+
+    /**
+     * Permission hook: checks if the actor can use admin list for sponsorships.
+     * Requires admin access (base class) plus SPONSORSHIP_VIEW_ANY.
+     * Calls super to enforce ACCESS_PANEL_ADMIN / ACCESS_API_ADMIN first, then
+     * applies the entity-specific SPONSORSHIP_VIEW_ANY check.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     /**

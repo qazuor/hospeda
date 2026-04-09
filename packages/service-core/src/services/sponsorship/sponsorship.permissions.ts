@@ -206,3 +206,20 @@ export function checkCanUpdateVisibility(actor: Actor, entity: Sponsorship): voi
         'Permission denied: Insufficient permissions to update sponsorship visibility'
     );
 }
+
+/**
+ * Checks if the actor has permission to use admin list for sponsorships.
+ * Requires SPONSORSHIP_VIEW_ANY permission in addition to admin access
+ * (admin access is verified by the base class default).
+ *
+ * @param actor - The user or system performing the action.
+ * @throws {ServiceError} If the actor lacks SPONSORSHIP_VIEW_ANY permission.
+ */
+export function checkCanAdminList(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.SPONSORSHIP_VIEW_ANY)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SPONSORSHIP_VIEW_ANY required for admin list'
+        );
+    }
+}

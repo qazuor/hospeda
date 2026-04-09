@@ -42,7 +42,7 @@ import {
     normalizeUserInput,
     normalizeViewInput
 } from './user.normalizers';
-import { canAssignRole } from './user.permissions';
+import { canAssignRole, checkCanAdminList } from './user.permissions';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
@@ -209,6 +209,16 @@ export class UserService extends BaseCrudService<
                 'Requires USER_READ_ALL permission to update user visibility'
             );
         }
+    }
+
+    /**
+     * Permission: Requires admin access (base class) plus USER_READ_ALL for admin list.
+     * Calls super to enforce ACCESS_PANEL_ADMIN / ACCESS_API_ADMIN first, then
+     * applies the entity-specific USER_READ_ALL check.
+     */
+    protected async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        checkCanAdminList(actor);
     }
 
     // --- Lifecycle Hooks ---
@@ -387,8 +397,8 @@ export class UserService extends BaseCrudService<
      *
      * Overrides the base implementation to handle the `email` filter as a
      * case-insensitive partial match (ILIKE) instead of an exact equality check.
-     * Intentionally bypasses relations and calls `this.model.findAll()` directly
-     * for performance.
+     * Delegates all remaining query assembly (where, pagination, sort, search,
+     * relations) to `super._executeAdminSearch()`.
      *
      * @param params - The assembled admin search parameters.
      * @returns A paginated list of users matching the criteria.
@@ -396,23 +406,21 @@ export class UserService extends BaseCrudService<
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<UserEntityFilters>
     ): Promise<PaginatedListOutput<User>> {
-        const { where, entityFilters, pagination, sort, search, extraConditions } = params;
+        const { entityFilters, extraConditions, ...rest } = params;
         const { email, ...simpleFilters } = entityFilters;
 
         const additionalConditions: SQL[] = [...(extraConditions ?? [])];
-        if (search) additionalConditions.push(search);
 
         // email partial match (ilike, not eq)
         if (email) {
             additionalConditions.push(ilike(userTable.email, `%${email}%`));
         }
 
-        const mergedWhere = { ...where, ...simpleFilters };
-        return this.model.findAll(
-            mergedWhere,
-            { ...pagination, sortBy: sort.sortBy, sortOrder: sort.sortOrder },
-            additionalConditions.length > 0 ? additionalConditions : undefined
-        );
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: simpleFilters,
+            extraConditions: additionalConditions.length > 0 ? additionalConditions : undefined
+        });
     }
 
     /**
