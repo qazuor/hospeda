@@ -21,13 +21,16 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
  * Source of truth: `apps/web/src/pages/[lang]/alojamientos/tipo/[type]/index.astro`
  */
 export const ACCOMMODATION_TYPE_SLUGS = [
+    'apartment',
+    'house',
+    'country-house',
+    'cabin',
     'hotel',
     'hostel',
-    'cabin',
-    'apartment',
     'camping',
-    'estancia',
-    'posada'
+    'room',
+    'motel',
+    'resort'
 ] as const;
 
 export type AccommodationTypeSlug = (typeof ACCOMMODATION_TYPE_SLUGS)[number];
@@ -38,11 +41,15 @@ export type AccommodationTypeSlug = (typeof ACCOMMODATION_TYPE_SLUGS)[number];
  * Source of truth: `apps/web/src/pages/[lang]/eventos/categoria/[category]/index.astro`
  */
 export const EVENT_CATEGORY_SLUGS = [
+    'music',
+    'culture',
+    'sports',
+    'gastronomy',
     'festival',
-    'fair',
-    'sport',
-    'cultural',
-    'gastronomy'
+    'nature',
+    'theater',
+    'workshop',
+    'other'
 ] as const;
 
 export type EventCategorySlug = (typeof EVENT_CATEGORY_SLUGS)[number];
@@ -66,6 +73,10 @@ export type EntityChangeData =
            * When absent, all type-filter pages are revalidated.
            */
           readonly accommodationType?: string;
+          /** Amenity slugs whose filter pages should also be revalidated */
+          readonly amenitySlugs?: readonly string[];
+          /** Feature slugs whose filter pages should also be revalidated */
+          readonly featureSlugs?: readonly string[];
       }
     | {
           /** Accommodation entity changed (without slug context) */
@@ -73,17 +84,22 @@ export type EntityChangeData =
           readonly slug?: undefined;
           readonly destinationSlug?: string;
           readonly accommodationType?: string;
+          readonly amenitySlugs?: readonly string[];
+          readonly featureSlugs?: readonly string[];
       }
     | {
           /** Destination entity changed */
           readonly entityType: 'destination';
           /** Slug of the changed destination */
           readonly slug: string;
+          /** Attraction slugs whose pages should also be revalidated */
+          readonly attractionSlugs?: readonly string[];
       }
     | {
           /** Destination entity changed (without slug context) */
           readonly entityType: 'destination';
           readonly slug?: undefined;
+          readonly attractionSlugs?: readonly string[];
       }
     | {
           /** Event entity changed */
@@ -91,17 +107,23 @@ export type EntityChangeData =
           /** Slug of the changed event — triggers detail page revalidation */
           readonly slug: string;
           /**
-           * URL slug of the event category (e.g. 'festival', 'cultural').
+           * URL slug of the event category (e.g. 'festival', 'culture').
            * When provided, only that category page is revalidated.
            * When absent, all category pages are revalidated.
            */
           readonly category?: string;
+          /** Location slug for the event venue */
+          readonly locationSlug?: string;
+          /** Destination slug if event is tied to a destination */
+          readonly destinationSlug?: string;
       }
     | {
           /** Event entity changed (without slug context) */
           readonly entityType: 'event';
           readonly slug?: undefined;
           readonly category?: string;
+          readonly locationSlug?: string;
+          readonly destinationSlug?: string;
       }
     | {
           /** Post/article entity changed */
@@ -110,12 +132,18 @@ export type EntityChangeData =
           readonly slug: string;
           /** Tag slugs whose filter pages should also be revalidated */
           readonly tagSlugs?: readonly string[];
+          /** Category slug for the post */
+          readonly category?: string;
+          /** Author slug for the post */
+          readonly authorSlug?: string;
       }
     | {
           /** Post/article entity changed (without slug context) */
           readonly entityType: 'post';
           readonly slug?: undefined;
           readonly tagSlugs?: readonly string[];
+          readonly category?: string;
+          readonly authorSlug?: string;
       }
     | {
           /** Accommodation review changed — revalidates the parent accommodation page */
@@ -216,10 +244,36 @@ export function getAffectedPaths(
                     }
                 }
             }
-            // Parent destination page if provided
+            // Parent destination page and its accommodations sub-route
             if (event.destinationSlug) {
                 for (const locale of locales) {
                     paths.add(getLocalizedPath(`/destinos/${event.destinationSlug}/`, locale));
+                    paths.add(
+                        getLocalizedPath(`/destinos/${event.destinationSlug}/alojamientos/`, locale)
+                    );
+                }
+            }
+            // Amenity filter pages
+            if (event.amenitySlugs) {
+                for (const amenitySlug of event.amenitySlugs) {
+                    for (const locale of locales) {
+                        paths.add(
+                            getLocalizedPath(`/alojamientos/comodidades/${amenitySlug}/`, locale)
+                        );
+                    }
+                }
+            }
+            // Feature filter pages
+            if (event.featureSlugs) {
+                for (const featureSlug of event.featureSlugs) {
+                    for (const locale of locales) {
+                        paths.add(
+                            getLocalizedPath(
+                                `/alojamientos/caracteristicas/${featureSlug}/`,
+                                locale
+                            )
+                        );
+                    }
                 }
             }
             break;
@@ -230,6 +284,18 @@ export function getAffectedPaths(
             if (event.slug) {
                 for (const locale of locales) {
                     paths.add(getLocalizedPath(`/destinos/${event.slug}/`, locale));
+                    paths.add(getLocalizedPath(`/destinos/${event.slug}/alojamientos/`, locale));
+                    paths.add(getLocalizedPath(`/destinos/${event.slug}/eventos/`, locale));
+                }
+            }
+            // Attraction pages
+            if (event.attractionSlugs) {
+                for (const attractionSlug of event.attractionSlugs) {
+                    for (const locale of locales) {
+                        paths.add(
+                            getLocalizedPath(`/destinos/atraccion/${attractionSlug}/`, locale)
+                        );
+                    }
                 }
             }
             // Destination changes also affect accommodation listings
@@ -263,6 +329,20 @@ export function getAffectedPaths(
                     }
                 }
             }
+            // Location sub-route
+            if (event.locationSlug) {
+                for (const locale of locales) {
+                    paths.add(getLocalizedPath(`/eventos/en/${event.locationSlug}/`, locale));
+                }
+            }
+            // Destination events sub-route
+            if (event.destinationSlug) {
+                for (const locale of locales) {
+                    paths.add(
+                        getLocalizedPath(`/destinos/${event.destinationSlug}/eventos/`, locale)
+                    );
+                }
+            }
             break;
         }
 
@@ -283,6 +363,22 @@ export function getAffectedPaths(
                     for (const locale of locales) {
                         paths.add(getLocalizedPath(`/publicaciones/etiqueta/${tagSlug}/`, locale));
                     }
+                }
+            }
+            // Category filter page
+            if (event.category) {
+                for (const locale of locales) {
+                    paths.add(
+                        getLocalizedPath(`/publicaciones/categoria/${event.category}/`, locale)
+                    );
+                }
+            }
+            // Author filter page
+            if (event.authorSlug) {
+                for (const locale of locales) {
+                    paths.add(
+                        getLocalizedPath(`/publicaciones/autor/${event.authorSlug}/`, locale)
+                    );
                 }
             }
             break;

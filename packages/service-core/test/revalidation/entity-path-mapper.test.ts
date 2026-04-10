@@ -110,19 +110,21 @@ describe('getAffectedPaths — accommodation', () => {
         expect(paths.some((p) => p.includes('/alojamientos/tipo/hotel/'))).toBe(false);
     });
 
-    it('URL slugs use correct English/API slugs (hotel, hostel, cabin, apartment, camping, estancia, posada)', () => {
+    it('URL slugs match AccommodationTypeEnum (apartment, house, country-house, cabin, hotel, hostel, camping, room, motel, resort)', () => {
         const paths = getAffectedPaths({ entityType: 'accommodation' });
+        expect(paths).toContain('/alojamientos/tipo/apartment/');
+        expect(paths).toContain('/alojamientos/tipo/house/');
+        expect(paths).toContain('/alojamientos/tipo/country-house/');
+        expect(paths).toContain('/alojamientos/tipo/cabin/');
         expect(paths).toContain('/alojamientos/tipo/hotel/');
         expect(paths).toContain('/alojamientos/tipo/hostel/');
-        expect(paths).toContain('/alojamientos/tipo/cabin/');
-        expect(paths).toContain('/alojamientos/tipo/apartment/');
         expect(paths).toContain('/alojamientos/tipo/camping/');
-        expect(paths).toContain('/alojamientos/tipo/estancia/');
-        expect(paths).toContain('/alojamientos/tipo/posada/');
-        // Must NOT contain old incorrect slugs
-        expect(paths.some((p) => p.includes('/tipo/departamento/'))).toBe(false);
-        expect(paths.some((p) => p.includes('/tipo/cabana/'))).toBe(false);
-        expect(paths.some((p) => p.includes('/tipo/resort/'))).toBe(false);
+        expect(paths).toContain('/alojamientos/tipo/room/');
+        expect(paths).toContain('/alojamientos/tipo/motel/');
+        expect(paths).toContain('/alojamientos/tipo/resort/');
+        // Must NOT contain removed stale slugs
+        expect(paths.some((p) => p.includes('/tipo/estancia/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/tipo/posada/'))).toBe(false);
     });
 });
 
@@ -190,21 +192,25 @@ describe('getAffectedPaths — event', () => {
     it('includes ONLY the specific category page when category provided', () => {
         const paths = getAffectedPaths({ entityType: 'event', slug: 'fest', category: 'festival' });
         expect(paths).toContain('/eventos/categoria/festival/');
-        expect(paths.some((p) => p.includes('/categoria/fair/'))).toBe(false);
-        expect(paths.some((p) => p.includes('/categoria/sport/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/categoria/music/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/categoria/sports/'))).toBe(false);
     });
 
-    it('category pages use correct URL slugs (festival, fair, sport, cultural, gastronomy)', () => {
+    it('category pages use correct EventCategoryEnum slugs (music, culture, sports, gastronomy, festival, nature, theater, workshop, other)', () => {
         const paths = getAffectedPaths({ entityType: 'event' });
-        expect(paths).toContain('/eventos/categoria/festival/');
-        expect(paths).toContain('/eventos/categoria/fair/');
-        expect(paths).toContain('/eventos/categoria/sport/');
-        expect(paths).toContain('/eventos/categoria/cultural/');
+        expect(paths).toContain('/eventos/categoria/music/');
+        expect(paths).toContain('/eventos/categoria/culture/');
+        expect(paths).toContain('/eventos/categoria/sports/');
         expect(paths).toContain('/eventos/categoria/gastronomy/');
-        // Must NOT contain old incorrect slugs
-        expect(paths.some((p) => p.includes('/categoria/musica/'))).toBe(false);
-        expect(paths.some((p) => p.includes('/categoria/cultura/'))).toBe(false);
-        expect(paths.some((p) => p.includes('/categoria/deportes/'))).toBe(false);
+        expect(paths).toContain('/eventos/categoria/festival/');
+        expect(paths).toContain('/eventos/categoria/nature/');
+        expect(paths).toContain('/eventos/categoria/theater/');
+        expect(paths).toContain('/eventos/categoria/workshop/');
+        expect(paths).toContain('/eventos/categoria/other/');
+        // Must NOT contain removed stale slugs
+        expect(paths.some((p) => p.includes('/categoria/fair/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/categoria/sport/'))).toBe(false);
+        expect(paths.some((p) => p.includes('/categoria/cultural/'))).toBe(false);
     });
 
     it('category pages appear for all locales', () => {
