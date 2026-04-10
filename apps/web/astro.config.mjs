@@ -109,7 +109,19 @@ export default defineConfig({
         })
     ],
     vite: {
-        plugins: [],
+        plugins: [
+            {
+                name: 'fix-astro-image-trailing-slash',
+                configureServer(server) {
+                    server.middlewares.use((req, _res, next) => {
+                        if (req.url?.startsWith('/_image') && !req.url.startsWith('/_image/')) {
+                            req.url = req.url.replace('/_image', '/_image/');
+                        }
+                        next();
+                    });
+                }
+            }
+        ],
         envDir: appDir,
         resolve: {
             alias: {
