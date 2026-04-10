@@ -26,7 +26,7 @@ const url = Astro.url;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 12;
 
-const result = await destinationsApi.list({ page, pageSize });
+const result = await destinationsApi.list({ page, pageSize, destinationType: 'CITY' });
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -64,7 +64,7 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 
 		<div class="dest-listing__body">
 			<div class="dest-listing__container">
-				{hasError && <ErrorBanner locale={locale} />}
+				{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="destinos" />}
 
 				{!hasError && cards.length === 0 && (
 					<EmptyState locale={locale} variant="empty" />
@@ -110,7 +110,7 @@ const baseUrl = buildUrl({ locale, path: 'destinos' });
 	}
 
 	.dest-listing__header {
-		padding: var(--space-6) 0 var(--space-4);
+		padding: 3rem 0 1.5rem;
 	}
 
 	.dest-listing__wave { margin-top: -1px; line-height: 0; }
