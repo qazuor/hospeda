@@ -17,6 +17,7 @@ import { toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { Image } from 'astro:assets';
 import { LocationIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -106,7 +107,26 @@ const jsonLd = {
 	<div class="dest-detail">
 		<!-- Hero -->
 		<div class="dest-detail__hero">
-			<img src={featuredImage} alt={name} class="dest-detail__hero-img" />
+			{featuredImage && !featuredImage.includes('placeholder') ? (
+				<Image
+					src={featuredImage}
+					alt={name}
+					width={1200}
+					height={675}
+					format="webp"
+					loading="eager"
+					class="dest-detail__hero-img"
+				/>
+			) : (
+				<img
+					src={featuredImage}
+					alt={name}
+					loading="eager"
+					class="dest-detail__hero-img"
+					width="1200"
+					height="675"
+				/>
+			)}
 		</div>
 
 		<!-- Description -->

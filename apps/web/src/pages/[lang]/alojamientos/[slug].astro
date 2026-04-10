@@ -16,6 +16,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { formatPrice } from '@/lib/format-utils';
 import { getAccommodationTypeColor } from '@/lib/colors';
+import { Image } from 'astro:assets';
 import { StarIcon, LocationIcon, FavoriteIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -118,7 +119,26 @@ const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 	<div class="acc-detail">
 		<!-- Hero image -->
 		<div class="acc-detail__hero">
-			<img src={featuredImage} alt={name} class="acc-detail__hero-img" />
+			{featuredImage && !featuredImage.includes('placeholder') ? (
+				<Image
+					src={featuredImage}
+					alt={name}
+					width={1200}
+					height={675}
+					format="webp"
+					loading="eager"
+					class="acc-detail__hero-img"
+				/>
+			) : (
+				<img
+					src={featuredImage}
+					alt={name}
+					loading="eager"
+					class="acc-detail__hero-img"
+					width="1200"
+					height="675"
+				/>
+			)}
 			<!-- TODO: ImageGallery component (T-021) -->
 		</div>
 

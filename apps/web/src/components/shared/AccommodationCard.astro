@@ -17,6 +17,7 @@ import { getAccommodationTypeColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildUrl } from '@/lib/urls';
 import { createTranslations } from '@/lib/i18n';
+import { Image } from 'astro:assets';
 import type { AccommodationCardData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
 
@@ -52,17 +53,32 @@ const isNew = data.createdAt
 	<a href={detailUrl} class="acc-card__link" aria-label={data.name}>
 		<!-- IMAGE AREA -->
 		<div class="acc-card__image-area">
-			<img
-				src={data.featuredImage || '/assets/images/placeholder-accommodation.svg'}
-				alt={data.name}
-				loading="lazy"
-				decoding="async"
-				class="acc-card__img"
-				width="432"
-				height="220"
-				data-fallback="/assets/images/placeholder-accommodation.svg"
-				transition:name={`accommodation-${data.slug}`}
-			/>
+			{data.featuredImage && !data.featuredImage.includes('placeholder') ? (
+				<Image
+					src={data.featuredImage}
+					alt={data.name}
+					width={432}
+					height={220}
+					format="webp"
+					loading="lazy"
+					decoding="async"
+					class="acc-card__img"
+					data-fallback="/assets/images/placeholder-accommodation.svg"
+					transition:name={`accommodation-${data.slug}`}
+				/>
+			) : (
+				<img
+					src={data.featuredImage || '/assets/images/placeholder-accommodation.svg'}
+					alt={data.name}
+					loading="lazy"
+					decoding="async"
+					class="acc-card__img"
+					width="432"
+					height="220"
+					data-fallback="/assets/images/placeholder-accommodation.svg"
+					transition:name={`accommodation-${data.slug}`}
+				/>
+			)}
 
 			<!-- Status corner (diagonal) - shown for accommodations created in the last 30 days -->
 			{isNew && (

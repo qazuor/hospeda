@@ -15,6 +15,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { formatDate } from '@/lib/format-utils';
+import { Image } from 'astro:assets';
 import { getPostCategoryColor } from '@/lib/colors';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -97,15 +98,44 @@ const jsonLd = {
 	<article class="post-detail">
 		<!-- Cover image -->
 		<div class="post-detail__cover">
-			<img src={featuredImage} alt={title} class="post-detail__cover-img" />
+			{featuredImage && !featuredImage.includes('placeholder') ? (
+				<Image
+					src={featuredImage}
+					alt={title}
+					width={1200}
+					height={675}
+					format="webp"
+					loading="eager"
+					class="post-detail__cover-img"
+				/>
+			) : (
+				<img
+					src={featuredImage}
+					alt={title}
+					loading="eager"
+					class="post-detail__cover-img"
+					width="1200"
+					height="675"
+				/>
+			)}
 		</div>
 
 		<!-- Author -->
 		{authorName && (
 			<div class="post-detail__author">
-				{authorAvatar && (
-					<img src={authorAvatar} alt={authorName} class="post-detail__author-avatar" />
-				)}
+				{authorAvatar && !authorAvatar.includes('placeholder') && !authorAvatar.endsWith('.svg') ? (
+					<Image
+						src={authorAvatar}
+						alt={authorName}
+						class="post-detail__author-avatar"
+						width={40}
+						height={40}
+						format="webp"
+						loading="lazy"
+					/>
+				) : authorAvatar ? (
+					<img src={authorAvatar} alt={authorName} class="post-detail__author-avatar" width={40} height={40} loading="lazy" />
+				) : null}
 				<span class="post-detail__author-name">{authorName}</span>
 			</div>
 		)}

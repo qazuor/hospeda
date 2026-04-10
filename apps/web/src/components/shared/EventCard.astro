@@ -6,6 +6,7 @@
  * detail page.
  */
 
+import { Image } from 'astro:assets';
 import Badge from './Badge.astro';
 import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
 import { getEventCategoryColor } from '@/lib/colors';
@@ -42,15 +43,28 @@ const endDate = data.date.end ? formatDate({ date: data.date.end, locale }) : nu
   <!-- Image area -->
   <div class="card__image event-card__image">
     <a href={detailUrl} tabindex="-1" aria-hidden="true">
-      <img
-        src={data.featuredImage || '/assets/images/placeholder-event.svg'}
-        alt={data.name}
-        loading="lazy"
-        class="event-card__img"
-        style="border-radius: var(--radius-organic);"
-        width="400"
-        height="225"
-      />
+      {data.featuredImage && !data.featuredImage.includes('placeholder') ? (
+        <Image
+          src={data.featuredImage}
+          alt={data.name}
+          width={400}
+          height={225}
+          format="webp"
+          loading="lazy"
+          class="event-card__img"
+          style="border-radius: var(--radius-organic);"
+        />
+      ) : (
+        <img
+          src={data.featuredImage || '/assets/images/placeholder-event.svg'}
+          alt={data.name}
+          loading="lazy"
+          class="event-card__img"
+          style="border-radius: var(--radius-organic);"
+          width="400"
+          height="225"
+        />
+      )}
     </a>
   </div>
 

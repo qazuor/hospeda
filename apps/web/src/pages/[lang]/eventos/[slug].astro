@@ -15,6 +15,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { formatDate, formatPrice } from '@/lib/format-utils';
 import { getEventCategoryColor } from '@/lib/colors';
+import { Image } from 'astro:assets';
 import { LocationIcon, CalendarDotsIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -111,7 +112,26 @@ const jsonLd = {
 	<div class="event-detail">
 		<!-- Hero -->
 		<div class="event-detail__hero">
-			<img src={featuredImage} alt={name} class="event-detail__hero-img" />
+			{featuredImage && !featuredImage.includes('placeholder') ? (
+				<Image
+					src={featuredImage}
+					alt={name}
+					width={1200}
+					height={675}
+					format="webp"
+					loading="eager"
+					class="event-detail__hero-img"
+				/>
+			) : (
+				<img
+					src={featuredImage}
+					alt={name}
+					loading="eager"
+					class="event-detail__hero-img"
+					width="1200"
+					height="675"
+				/>
+			)}
 		</div>
 
 		<!-- Description -->

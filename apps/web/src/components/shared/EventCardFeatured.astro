@@ -18,6 +18,7 @@
  * ```
  */
 
+import { Image } from 'astro:assets';
 import {
   LocationIcon,
   ArrowRightIcon,
@@ -289,9 +290,12 @@ const badgeBgSolid = categoryColor.bg.replace('/ 0.15)', '/ 0.85)');
 
       <!-- Real image on top; when it loads it covers the fallback -->
       {hasRealImage && (
-        <img
+        <Image
           src={data.featuredImage}
           alt=""
+          width={600}
+          height={260}
+          format="webp"
           loading="lazy"
           class="event-card-featured__image"
           data-hide-on-error
