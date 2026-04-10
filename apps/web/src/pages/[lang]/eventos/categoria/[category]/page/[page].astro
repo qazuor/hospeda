@@ -1,0 +1,23 @@
+---
+/**
+ * @file [page].astro
+ * @description Pagination rewrite. Validates page param, redirects page 1
+ * to canonical URL, rewrites to parent listing with ?page=N.
+ */
+
+const { page: pageParam } = Astro.params;
+const page = Number(pageParam);
+
+// Must be a positive integer
+if (!Number.isInteger(page) || page < 1) {
+	return new Response(null, { status: 404 });
+}
+
+// Page 1 → redirect to canonical (no /page/1/ in URL)
+if (page === 1) {
+	return Astro.redirect(`/${Astro.params.lang}/eventos/categoria/${Astro.params.category}/`, 301);
+}
+
+// Rewrite to parent listing with page query param
+return Astro.rewrite(`/${Astro.params.lang}/eventos/categoria/${Astro.params.category}/?page=${page}`);
+---
