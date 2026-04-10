@@ -108,6 +108,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     minRating: z.number().min(0).max(5).optional(),
     maxRating: z.number().min(0).max(5).optional(),
     amenities: z.array(z.string().uuid()).optional(),
+    features: z.array(z.string().uuid()).optional(),
     ownerId: z.string().uuid().optional(),
     checkIn: z.date().optional(),
     checkOut: z.date().optional(),
