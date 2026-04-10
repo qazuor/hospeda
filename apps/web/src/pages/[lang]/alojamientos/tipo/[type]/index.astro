@@ -81,7 +81,7 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
 		totalCount={total}
 	/>
 
-	{hasError && <ErrorBanner locale={locale} />}
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 
 	{!hasError && cards.length === 0 && (
 		<EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />

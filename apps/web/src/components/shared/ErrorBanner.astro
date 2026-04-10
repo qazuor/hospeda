@@ -2,37 +2,174 @@
 /**
  * @file ErrorBanner.astro
  * @description User-visible error banner for failed API calls during SSR.
- * Shows an error message with a "Try again" button that reloads the page.
+ * Shows an illustrated, friendly error state with contextual message and retry button.
+ * In development mode, exposes an expandable details section with API error info.
  */
 
+import { RefreshIcon, ChatIcon } from '@repo/icons';
+import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
-	/** Custom error message. Falls back to i18n default. */
+	/** Custom user-facing error message. Falls back to i18n default. */
 	readonly message?: string;
+	/** The ApiError object from a failed API call, for detailed info. */
+	readonly error?: {
+		readonly status: number;
+		readonly message: string;
+		readonly code?: string;
+		readonly details?: unknown;
+	};
+	/** Human-readable entity name (e.g. "alojamientos", "destinos") for contextual message. */
+	readonly entityName?: string;
 	readonly class?: string;
 }
 
-const { locale, message, class: className } = Astro.props;
+const { locale, message, error, entityName, class: className } = Astro.props;
 const t = createT(locale);
 
-const resolvedMessage = message ?? t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
-const retryLabel = t('ui.errorBanner.retry', 'Intentar de nuevo');
+let resolvedMessage: string;
+if (message) {
+	resolvedMessage = message;
+} else if (entityName) {
+	const template = t('ui.errorBanner.messageWithEntity', 'No pudimos cargar {entity}. Intentá de nuevo en unos instantes.');
+	resolvedMessage = template.replace('{entity}', entityName);
+} else {
+	resolvedMessage = t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
+}
+
+const retryLabel = t('ui.errorBanner.retry', 'Recargar página');
+const reportLabel = t('ui.errorBanner.report', 'Reportar problema');
+const subtitle = t('ui.errorBanner.subtitle', 'Puede ser un problema temporal. Si el error persiste, ayudanos reportándolo.');
+
+const showDevDetails = isDevelopment() && error !== undefined;
+const detailsJson = showDevDetails && error?.details !== undefined
+	? JSON.stringify(error.details, null, 2)
+	: undefined;
 ---
 
-<div class:list={['error-banner', className]} role="alert">
+<div
+	class:list={['error-banner', className]}
+	role="alert"
+	data-error-status={error?.status}
+	data-error-code={error?.code}
+	data-error-message={error?.message}
+	data-error-entity={entityName}
+>
+	<!-- Illustrated icon -->
+	<div class="error-banner__illustration" aria-hidden="true">
+		<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<circle cx="40" cy="40" r="36" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.15" />
+			<circle cx="40" cy="40" r="26" stroke="var(--destructive, #ef4444)" stroke-width="1.5" opacity="0.1" />
+			<path
+				d="M40 22L54.5 50H25.5L40 22Z"
+				stroke="var(--destructive, #ef4444)"
+				stroke-width="2"
+				stroke-linejoin="round"
+				fill="oklch(from var(--destructive, #ef4444) l c h / 0.08)"
+			/>
+			<line x1="40" y1="32" x2="40" y2="41" stroke="var(--destructive, #ef4444)" stroke-width="2" stroke-linecap="round" />
+			<circle cx="40" cy="45" r="1.5" fill="var(--destructive, #ef4444)" />
+		</svg>
+	</div>
+
+	<!-- Message content -->
 	<p class="error-banner__message">{resolvedMessage}</p>
-	<button type="button" class="error-banner__retry" data-action="reload">
-		{retryLabel}
-	</button>
+	<p class="error-banner__subtitle">{subtitle}</p>
+
+	<!-- Actions -->
+	<div class="error-banner__actions">
+		<button type="button" class="error-banner__retry" data-action="reload">
+			<RefreshIcon size={16} />
+			{retryLabel}
+		</button>
+		<button type="button" class="error-banner__report" data-action="report">
+			<ChatIcon size={16} />
+			{reportLabel}
+		</button>
+	</div>
+
+	<!-- Dev details (only rendered in development) -->
+	{showDevDetails && (
+		<details class="error-banner__details">
+			<summary class="error-banner__details-summary">Detalles del error (dev)</summary>
+			<div class="error-banner__details-content">
+				<p class="error-banner__detail-line">
+					<span class="error-banner__detail-label">Status:</span> {error?.status}
+				</p>
+				{error?.code && (
+					<p class="error-banner__detail-line">
+						<span class="error-banner__detail-label">Code:</span> {error.code}
+					</p>
+				)}
+				<p class="error-banner__detail-line">
+					<span class="error-banner__detail-label">Message:</span> {error?.message}
+				</p>
+				{detailsJson && (
+					<pre class="error-banner__detail-pre">{detailsJson}</pre>
+				)}
+			</div>
+		</details>
+	)}
 </div>
 
 <script>
+	function buildFeedbackUrl(banner: HTMLElement): string {
+		const lang = document.documentElement.lang || 'es';
+		const params = new URLSearchParams();
+
+		params.set('type', 'bug-js');
+		params.set('source', 'error-banner');
+		params.set('url', window.location.href);
+
+		const entity = banner.closest('[data-error-entity]')?.getAttribute('data-error-entity');
+		const status = banner.closest('[data-error-status]')?.getAttribute('data-error-status');
+		const code = banner.closest('[data-error-code]')?.getAttribute('data-error-code');
+		const message = banner.closest('[data-error-message]')?.getAttribute('data-error-message');
+
+		const titleParts: string[] = [];
+		if (entity) titleParts.push(`Error cargando ${entity}`);
+		if (status && status !== 'undefined') titleParts.push(`(${status})`);
+		if (titleParts.length === 0) titleParts.push('Error en la página');
+		params.set('title', titleParts.join(' '));
+
+		const descParts: string[] = [];
+		descParts.push(`Página: ${window.location.pathname}`);
+		if (status && status !== 'undefined') descParts.push(`Status: ${status}`);
+		if (code && code !== 'undefined') descParts.push(`Código: ${code}`);
+		if (message && message !== 'undefined') descParts.push(`Mensaje: ${message}`);
+		params.set('description', descParts.join('\n'));
+
+		if (message && message !== 'undefined') params.set('error', message);
+
+		return `/${lang}/feedback/?${params.toString()}`;
+	}
+
 	function initErrorBanner(): void {
 		document.querySelectorAll<HTMLButtonElement>('[data-action="reload"]').forEach((btn) => {
 			btn.addEventListener('click', () => window.location.reload());
+		});
+		document.querySelectorAll<HTMLButtonElement>('[data-action="report"]').forEach((btn) => {
+			btn.addEventListener('click', () => {
+				const banner = btn.closest('.error-banner') as HTMLElement;
+
+				// Try to open the FeedbackFAB modal via custom event.
+				// If no listener responds within 500ms, navigate to the
+				// standalone feedback page as a resilient fallback.
+				let handled = false;
+				const onAck = () => { handled = true; };
+				window.addEventListener('feedback:ack', onAck, { once: true });
+				window.dispatchEvent(new CustomEvent('feedback:open'));
+
+				setTimeout(() => {
+					window.removeEventListener('feedback:ack', onAck);
+					if (!handled) {
+						window.location.href = buildFeedbackUrl(banner);
+					}
+				}, 500);
+			});
 		});
 	}
 	document.addEventListener('astro:page-load', initErrorBanner);
@@ -41,38 +178,154 @@ const retryLabel = t('ui.errorBanner.retry', 'Intentar de nuevo');
 <style>
 	.error-banner {
 		display: flex;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: var(--space-4);
-		padding: var(--space-4) var(--space-6);
-		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.1);
-		border: 1px solid oklch(from var(--destructive, #ef4444) l c h / 0.3);
-		border-radius: var(--radius-button);
-		margin-bottom: var(--space-6);
+		text-align: center;
+		padding: var(--space-12) var(--space-6);
+		gap: var(--space-3);
+	}
+
+	.error-banner__illustration {
+		margin-bottom: var(--space-2);
+		opacity: 0.9;
 	}
 
 	.error-banner__message {
-		font-family: var(--font-sans);
-		font-size: var(--text-body);
+		font-family: var(--font-heading);
+		font-size: var(--text-xl, 1.25rem);
+		font-weight: 600;
 		color: var(--foreground);
+		max-width: 36ch;
+		line-height: 1.4;
 		margin: 0;
 	}
 
-	.error-banner__retry {
-		padding: 0.5rem 1rem;
-		border-radius: var(--radius-button);
-		border: 1px solid var(--border);
-		background-color: var(--background);
+	.error-banner__subtitle {
 		font-family: var(--font-sans);
-		font-size: var(--text-body-sm);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		max-width: 44ch;
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.error-banner__actions {
+		display: flex;
+		align-items: center;
+		gap: var(--space-3);
+		margin-top: var(--space-3);
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.error-banner__retry {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-6);
+		border-radius: var(--radius-button);
+		border: none;
+		background-color: var(--primary);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
 		font-weight: 500;
-		color: var(--foreground);
+		color: var(--primary-foreground, #fff);
 		cursor: pointer;
 		white-space: nowrap;
-		transition: background-color var(--duration-fast) ease;
+		transition: opacity var(--duration-normal) ease, transform var(--duration-fast) ease;
 	}
 
 	.error-banner__retry:hover {
+		opacity: 0.9;
+		transform: translateY(-1px);
+	}
+
+	.error-banner__retry:active {
+		transform: translateY(0);
+	}
+
+	.error-banner__retry :global(svg) {
+		flex-shrink: 0;
+	}
+
+	.error-banner__report {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-2);
+		padding: var(--space-3) var(--space-6);
+		border-radius: var(--radius-button);
+		border: 1px solid var(--border);
+		background-color: transparent;
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		font-weight: 500;
+		color: var(--muted-foreground);
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background-color var(--duration-normal) ease, color var(--duration-normal) ease, border-color var(--duration-normal) ease;
+	}
+
+	.error-banner__report:hover {
 		background-color: var(--muted);
+		color: var(--foreground);
+		border-color: var(--foreground);
+	}
+
+	.error-banner__report :global(svg) {
+		flex-shrink: 0;
+	}
+
+	/* Dev details section */
+	.error-banner__details {
+		width: 100%;
+		max-width: 480px;
+		margin-top: var(--space-4);
+		text-align: left;
+	}
+
+	.error-banner__details-summary {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		cursor: pointer;
+		user-select: none;
+		padding: var(--space-2);
+		border-radius: var(--radius-button);
+		transition: background-color var(--duration-fast) ease;
+	}
+
+	.error-banner__details-summary:hover {
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.06);
+	}
+
+	.error-banner__details-content {
+		margin-top: var(--space-2);
+		padding: var(--space-3) var(--space-4);
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.05);
+		border: 1px solid oklch(from var(--destructive, #ef4444) l c h / 0.12);
+		border-radius: var(--radius-button);
+		font-family: var(--font-mono, monospace);
+		font-size: var(--text-body-xs, 0.75rem);
+		color: var(--muted-foreground);
+	}
+
+	.error-banner__detail-line {
+		margin: 0 0 var(--space-1);
+	}
+
+	.error-banner__detail-label {
+		font-weight: 600;
+		color: var(--foreground);
+	}
+
+	.error-banner__detail-pre {
+		margin: var(--space-2) 0 0;
+		padding: var(--space-2);
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.04);
+		border-radius: var(--radius-button);
+		white-space: pre-wrap;
+		word-break: break-all;
+		overflow-x: auto;
 	}
 </style>

@@ -106,7 +106,7 @@ const baseUrl = buildUrl({ locale, path: 'eventos' });
 		}}
 	/>
 
-	{hasError && <ErrorBanner locale={locale} />}
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 
 	{!hasError && cards.length === 0 && (
 		<EmptyState locale={locale} variant="no-results" actionUrl={baseUrl} />

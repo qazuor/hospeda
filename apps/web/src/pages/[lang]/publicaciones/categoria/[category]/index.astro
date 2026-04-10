@@ -48,7 +48,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlug}` })
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: catLabel }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byCategory.tagline', 'Categoría')} title={catLabel} totalCount={total} />
 
-	{hasError && <ErrorBanner locale={locale} />}
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'publicaciones' })} />}
 	{!hasError && cards.length > 0 && (
 		<div class="grid">

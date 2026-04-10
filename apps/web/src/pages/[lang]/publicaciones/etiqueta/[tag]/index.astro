@@ -43,7 +43,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
 <ListingLayout locale={locale} title={`#${tagName} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones con etiqueta ${tagName}`} showFilters={false}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: `#${tagName}` }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byTag.tagline', 'Etiqueta')} title={`#${tagName}`} totalCount={total} />
-	{hasError && <ErrorBanner locale={locale} />}
+	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="publicaciones" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'publicaciones' })} />}
 	{!hasError && cards.length > 0 && (
 		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}><ArticleCard data={card} locale={locale} /></div>))}</div>

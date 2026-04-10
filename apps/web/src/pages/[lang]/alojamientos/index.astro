@@ -156,8 +156,8 @@ const baseUrl = buildUrl({ locale, path: 'alojamientos' });
 		}}
 	/>
 
-	{hasError && (
-		<ErrorBanner locale={locale} />
+	{hasError && !result.ok && (
+		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
 	)}
 
 	{!hasError && cards.length === 0 && (
