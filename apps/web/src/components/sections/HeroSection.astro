@@ -6,10 +6,11 @@
  * CSS adapted from design-cloner output.
  */
 
-import { getImage } from 'astro:assets';
+import { getImage, Image } from 'astro:assets';
 import heroAtardecerRaw from '@/assets/images/hero/hero-atardecer.jpg';
 import heroIslaRaw from '@/assets/images/hero/hero-isla.jpg';
 import heroPlayaRaw from '@/assets/images/hero/hero-playa.jpg';
+import heroBlobAccent from '@/assets/images/shapes/hero-blob-accent.png';
 import { HeroImageRotator } from '@/components/sections/HeroImageRotator.client';
 import { SearchBar } from '@/components/sections/SearchBar.client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -92,11 +93,11 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 
 				<!-- Small decorative accent blob at top-right of the main blob -->
 				<div class="hero__blob-accent" aria-hidden="true">
-					<img
-						src="/assets/images/shapes/hero-blob-accent.png"
+					<Image
+						src={heroBlobAccent}
 						alt=""
-						width="104"
-						height="104"
+						width={104}
+						height={104}
 						loading="lazy"
 					/>
 				</div>

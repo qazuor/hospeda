@@ -12,6 +12,11 @@
  * - Zone 3 (347px): Transparent PNG traveler cutout anchored to the bottom.
  */
 
+import { Image } from 'astro:assets';
+import miscAp1 from '@/assets/images/shapes/misc-ap-1.png';
+import choose11 from '@/assets/images/resources/choose-1-1.png';
+import choose12 from '@/assets/images/resources/choose-1-2.jpg';
+import aboutUs from '@/assets/images/resources/about-us.png';
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
@@ -43,31 +48,36 @@ const { t } = createTranslations(locale);
                     #3 (small, right): airplane points upper-right at the end
                         of the path. This is the ARRIVAL airplane.
                 -->
-                <img
+                <Image
                     class="about-us__airplane about-us__airplane--1"
-                    src="/assets/images/shapes/misc-ap-1.png"
+                    src={miscAp1}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
                 />
-                <img
+                <Image
                     class="about-us__airplane about-us__airplane--2"
-                    src="/assets/images/shapes/misc-ap-1.png"
+                    src={miscAp1}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
                 />
-                <img
+                <Image
                     class="about-us__airplane about-us__airplane--3"
-                    src="/assets/images/shapes/misc-ap-1.png"
+                    src={miscAp1}
                     alt=""
                     aria-hidden="true"
+                    loading="lazy"
                 />
 
                 <!-- Main photo: 231x352px, positioned at left:111px top:63px, radius 24px -->
                 <div class="about-us__photo-main">
-                    <img
-                        src="/assets/images/resources/choose-1-1.png"
+                    <Image
+                        src={choose11}
                         alt={t("home.about.primaryPhotoAlt", "Alojamientos y paisajes del Litoral argentino")}
                         loading="lazy"
+                        width={231}
+                        height={352}
                     />
                 </div>
 
@@ -77,7 +87,7 @@ const { t } = createTranslations(locale);
                     with the section background, giving a floating effect.
                 -->
                 <div class="about-us__photo-secondary">
-                    <img src="/assets/images/resources/choose-1-2.jpg" alt="" loading="lazy" aria-hidden="true" />
+                    <Image src={choose12} alt="" loading="lazy" aria-hidden="true" width={135} height={195} />
                 </div>
 
                 <!--
@@ -120,11 +130,13 @@ const { t } = createTranslations(locale);
                 Container anchors the image to the bottom of its stretch height with 80px padding.
             -->
             <div class="about-us__side" data-reveal="right">
-                <img
-                    src="/assets/images/resources/about-us.png"
+                <Image
+                    src={aboutUs}
                     alt={t("home.about.travelerPhotoAlt", "Viajeros disfrutando del Litoral entrerriano")}
                     loading="lazy"
                     class="about-us__side-img"
+                    width={347}
+                    height={500}
                 />
             </div>
         </div>

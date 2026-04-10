@@ -9,6 +9,8 @@
  * Task: T-061
  */
 
+import { Image } from 'astro:assets';
+import statsTraveler from '@/assets/images/resources/stats-traveler.png';
 import { createT } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import SectionHeader from '@/components/shared/SectionHeader.astro';
@@ -38,14 +40,13 @@ const t = createT(locale);
 
     <!-- Traveler image (desktop only) -->
     <div class="stats-section__traveler" aria-hidden="true">
-      <img
-        src="/assets/images/resources/stats-traveler.png"
+      <Image
+        src={statsTraveler}
         alt=""
         class="stats-section__traveler-img"
         loading="lazy"
-        width="135"
-        height="339"
-        data-hide-on-error
+        width={135}
+        height={339}
       />
     </div>
 

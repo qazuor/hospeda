@@ -7,6 +7,8 @@
  * Includes pill CTA button and 3 feature items with blue icon circles.
  */
 
+import { Image } from 'astro:assets';
+import feature31 from '@/assets/images/resources/feature-3-1.png';
 import { ctaFeatures } from "@/data/homepage-features";
 import type { SupportedLocale } from "@/lib/i18n";
 import { createTranslations } from "@/lib/i18n";
@@ -37,11 +39,13 @@ const iconMap: Record<string, typeof SparkleIcon> = {
             <!-- LEFT: Person image (includes brush strokes baked in) -->
             <div class="best-features-banner__media" data-reveal="left">
                 <div class="best-features-banner__person bf-person-float">
-                    <img
-                        src="/assets/images/resources/feature-3-1.png"
+                    <Image
+                        src={feature31}
                         alt=""
                         class="best-features-banner__person-img"
                         loading="lazy"
+                        width={480}
+                        height={600}
                     />
                 </div>
             </div>
