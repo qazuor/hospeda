@@ -75,13 +75,8 @@ const jsonLd = {
 		]}
 	/>
 
-	<article class="post-detail">
-		<!-- Cover image -->
-		<div class="post-detail__cover">
-			<img src={featuredImage} alt={title} class="post-detail__cover-img" />
-		</div>
-
-		<!-- Meta -->
+	<Fragment slot="page-header">
+		<h1 class="post-detail__title">{title}</h1>
 		<div class="post-detail__meta">
 			<span class="post-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
 				{t(`blog.categories.${category.toLowerCase()}`, category)}
@@ -97,8 +92,13 @@ const jsonLd = {
 				</span>
 			)}
 		</div>
+	</Fragment>
 
-		<h1 class="post-detail__title">{title}</h1>
+	<article class="post-detail">
+		<!-- Cover image -->
+		<div class="post-detail__cover">
+			<img src={featuredImage} alt={title} class="post-detail__cover-img" />
+		</div>
 
 		<!-- Author -->
 		{authorName && (

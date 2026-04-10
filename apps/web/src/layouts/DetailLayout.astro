@@ -46,14 +46,29 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	/>
 	<slot name="head-extra" slot="head" />
 
-	<div class="detail-page">
-		<div class="detail-page__container">
+	<!-- Header area on warm background: breadcrumbs + title/meta -->
+	<div class="detail-header">
+		<div class="detail-header__container">
 			{showBreadcrumbs && (
-				<div class="detail-page__breadcrumbs">
+				<div class="detail-header__breadcrumbs">
 					<slot name="breadcrumbs" />
 				</div>
 			)}
+			<div class="detail-header__content">
+				<slot name="page-header" />
+			</div>
+		</div>
+	</div>
 
+	<!-- Decorative wave separator -->
+	<div class="detail-wave" aria-hidden="true">
+		<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+			<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+		</svg>
+	</div>
+
+	<div class="detail-page">
+		<div class="detail-page__container">
 			<div class:list={[
 				'detail-page__body',
 				{ 'detail-page__body--full': !showSidebar },
@@ -73,18 +88,46 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 </BaseLayout>
 
 <style>
+	.detail-header {
+		background-color: var(--surface-warm);
+		padding: 2rem 0 1.5rem;
+	}
+
+	.detail-header__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.detail-header__breadcrumbs {
+		margin-bottom: 1rem;
+	}
+
+	.detail-header__content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.detail-wave {
+		margin-top: -1px;
+		line-height: 0;
+	}
+
+	.detail-wave svg {
+		width: 100%;
+		height: 80px;
+		display: block;
+	}
+
 	.detail-page {
-		padding: var(--space-6) 0 var(--space-section-sm);
+		padding: 1.5rem 0 var(--space-section-sm);
 	}
 
 	.detail-page__container {
 		max-width: var(--container-max);
 		margin: 0 auto;
 		padding: 0 var(--space-container-x);
-	}
-
-	.detail-page__breadcrumbs {
-		margin-bottom: var(--space-4);
 	}
 
 	.detail-page__body {

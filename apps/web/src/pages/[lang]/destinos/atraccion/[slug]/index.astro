@@ -36,11 +36,19 @@ const destSlug = String(destObj?.slug || '');
 		{ label: name },
 	]} />
 
+	<Fragment slot="page-header">
+		<h1 class="attraction-detail__title">{name}</h1>
+		{destName && (
+			<span class="attraction-detail__dest">
+				{destName}
+			</span>
+		)}
+	</Fragment>
+
 	<div class="attraction-detail">
 		<div class="attraction-detail__hero">
 			<img src={featuredImage} alt={name} class="attraction-detail__hero-img" />
 		</div>
-		<h1 class="attraction-detail__title">{name}</h1>
 		<div class="attraction-detail__description" set:html={String(attraction.contentHtml || description)} />
 	</div>
 
