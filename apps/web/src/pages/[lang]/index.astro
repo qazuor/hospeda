@@ -14,9 +14,8 @@ import NextEventsSection from "@/components/sections/NextEventsSection.astro";
 import PartnersSection from "@/components/sections/PartnersSection.astro";
 import StatsSection from "@/components/sections/StatsSection.astro";
 import TestimonialsSection from "@/components/sections/TestimonialsSection.astro";
-import SEOHead from "@/components/seo/SEOHead.astro";
 import type { StatItemData } from "@/data/types";
-import BaseLayout from "@/layouts/BaseLayout.astro";
+import DefaultLayout from "@/layouts/DefaultLayout.astro";
 import { destinationsApi, statsApi } from "@/lib/api/endpoints";
 import type { SupportedLocale } from "@/lib/i18n";
 import type { GetStaticPaths } from "astro";
@@ -63,18 +62,12 @@ const platformStats: readonly StatItemData[] = statsResult.ok
     : [];
 ---
 
-<BaseLayout
+<DefaultLayout
     locale={locale}
     title="Inicio"
     description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
+    canonicalPath={`/${locale}/`}
 >
-    <SEOHead
-        slot="head"
-        title="Inicio"
-        description="Descubrí los mejores alojamientos, destinos y experiencias del Litoral Entrerriano."
-        canonical={`${import.meta.env.SITE ?? 'https://hospeda.com.ar'}/${locale}/`}
-        locale={locale}
-    />
     <!-- 1. Hero -->
     <HeroSection locale={locale} socialProof={socialProofMock} destinations={destinations} />
 
@@ -104,4 +97,4 @@ const platformStats: readonly StatItemData[] = statsResult.ok
 
     <!-- 10. Partners -->
     <PartnersSection locale={locale} />
-</BaseLayout>
+</DefaultLayout>

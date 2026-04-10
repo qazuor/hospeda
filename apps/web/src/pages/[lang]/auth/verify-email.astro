@@ -14,8 +14,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import { VerifyEmail } from '@/components/auth/VerifyEmail.client';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -38,22 +37,9 @@ const token = Astro.url.searchParams.get('token') ?? '';
 const redirectTo = buildUrl({ locale, path: 'auth/signin' });
 ---
 
-<BaseLayout locale={locale} title={title} description={description}>
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        canonical={canonicalUrl}
-        locale={locale}
-        noindex={true}
-    />
-
-    <div class="auth-page">
-        <div class="auth-page__card">
-            <VerifyEmail client:load locale={locale} token={token} redirectTo={redirectTo} />
-        </div>
-    </div>
-</BaseLayout>
+<AuthLayout locale={locale} title={title} description={description}>
+    <VerifyEmail client:load locale={locale} token={token} redirectTo={redirectTo} />
+</AuthLayout>
 
 <style>
     .auth-page {

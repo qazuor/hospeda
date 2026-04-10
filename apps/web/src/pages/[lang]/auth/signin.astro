@@ -15,8 +15,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getSiteUrl } from '@/lib/env';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignIn } from '@/components/auth/SignIn.client';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -49,18 +48,8 @@ const signUpLabel = t('auth-ui.signIn.signUpLink', 'Sign Up');
 const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?');
 ---
 
-<BaseLayout locale={locale} title={title} description={description}>
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        canonical={canonicalUrl}
-        locale={locale}
-        noindex={true}
-    />
-
-    <div class="auth-page">
-        <div class="auth-page__card">
+<AuthLayout locale={locale} title={title} description={description}>
+    <div class="auth-page-content">
             <SignIn client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
 
             <div class="auth-page__links">
@@ -82,9 +71,8 @@ const forgotPasswordLabel = t('auth-ui.signIn.forgotPassword', 'Forgot password?
                     {signUpLabel}
                 </a>
             </div>
-        </div>
     </div>
-</BaseLayout>
+</AuthLayout>
 
 <style>
     .auth-page {

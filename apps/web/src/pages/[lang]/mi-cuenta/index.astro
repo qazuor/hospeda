@@ -17,8 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
 import {
@@ -110,72 +109,34 @@ const navItems = [
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
 
-<BaseLayout locale={locale} title={title} description={description}>
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        canonical={canonicalUrl}
-        locale={locale}
-        noindex={true}
-    />
-
-    <div class="account">
-        <!-- ── User header card ── -->
-        <article id="user-header" class="account__header-card">
-            <div class="account__header-inner">
-                <!-- Avatar with initials fallback -->
-                <div class="account__avatar" aria-hidden="true">
-                    {initials}
-                </div>
-
-                <!-- Name + email -->
-                <div class="account__user-info">
-                    <h1 class="account__user-name">{greeting}, {user.name}</h1>
-                    <p class="account__user-email">{user.email}</p>
-                </div>
+<AccountLayout locale={locale} title={title} description={description} activeSection="mi-cuenta">
+    <!-- ── User header card ── -->
+    <article id="user-header" class="account__header-card">
+        <div class="account__header-inner">
+            <!-- Avatar with initials fallback -->
+            <div class="account__avatar" aria-hidden="true">
+                {initials}
             </div>
-        </article>
 
-        <!-- ── Two-column layout: sidebar + main ── -->
-        <div class="account__body">
-            <!-- Navigation sidebar -->
-            <aside id="account-nav" class="account__sidebar" aria-label={t('account.navigation', 'Account navigation')}>
-                <nav>
-                    <ul class="account__nav-list" role="list">
-                        {navItems.map(({ label, href, description: desc, Icon }) => (
-                            <li>
-                                <a href={href} class="account__nav-link">
-                                    <Icon
-                                        size={20}
-                                        weight="regular"
-                                        className="account__nav-icon"
-                                        aria-hidden="true"
-                                    />
-                                    <div>
-                                        <div class="account__nav-label">{label}</div>
-                                        <div class="account__nav-desc">{desc}</div>
-                                    </div>
-                                </a>
-                            </li>
-                        ))}
-                    </ul>
-                </nav>
-            </aside>
-
-            <!-- Main content: quick stats -->
-            <div id="account-stats" class="account__main">
-                <h2 class="account__section-title">{dashboardLabel}</h2>
-
-                <!-- Stat cards row -->
-                <AccountStatsGrid locale={locale} />
-
-                <!-- Navigation cards grid (secondary) -->
-                <AccountSectionCards locale={locale} navItems={navItems} />
+            <!-- Name + email -->
+            <div class="account__user-info">
+                <h1 class="account__user-name">{greeting}, {user.name}</h1>
+                <p class="account__user-email">{user.email}</p>
             </div>
         </div>
+    </article>
+
+    <!-- Main content: quick stats -->
+    <div id="account-stats" class="account__main">
+        <h2 class="account__section-title">{dashboardLabel}</h2>
+
+        <!-- Stat cards row -->
+        <AccountStatsGrid locale={locale} />
+
+        <!-- Navigation cards grid (secondary) -->
+        <AccountSectionCards locale={locale} navItems={navItems} />
     </div>
-</BaseLayout>
+</AccountLayout>
 
 <style>
     /* ── Page container ── */

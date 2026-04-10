@@ -7,8 +7,7 @@
 
 export const prerender = false;
 
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -19,15 +18,7 @@ const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
 ---
 
-<BaseLayout locale={locale} title={t('error.404.title')}>
-    <SEOHead
-        slot="head"
-        title={t('error.404.title')}
-        description={t('error.404.description')}
-        canonical={Astro.url.href}
-        locale={locale}
-        noindex={true}
-    />
+<ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')}>
 
     <section class="error-page">
         <div class="error-page__container">
@@ -51,7 +42,7 @@ const homeUrl = buildUrl({ locale, path: '/' });
             </div>
         </div>
     </section>
-</BaseLayout>
+</ErrorLayout>
 
 <style>
     .error-page {

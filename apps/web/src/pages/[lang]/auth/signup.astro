@@ -15,8 +15,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getSiteUrl } from '@/lib/env';
-import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
+import AuthLayout from '@/layouts/AuthLayout.astro';
 import { SignUp } from '@/components/auth/SignUp.client';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -43,33 +42,20 @@ const haveAccountLabel = t('auth-ui.signUp.alreadyHaveAccount', 'Already have an
 const signInLabel = t('auth-ui.signUp.signInLink', 'Sign In');
 ---
 
-<BaseLayout locale={locale} title={title} description={description}>
-    <SEOHead
-        slot="head"
-        title={title}
-        description={description}
-        canonical={canonicalUrl}
-        locale={locale}
-        noindex={true}
-    />
+<AuthLayout locale={locale} title={title} description={description}>
+    <SignUp client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
 
-    <div class="auth-page">
-        <div class="auth-page__card">
-            <SignUp client:load locale={locale} redirectTo={redirectTo} showOAuth={true} />
-
-            <div class="auth-page__footer">
-                <span class="auth-page__footer-text">{haveAccountLabel}</span>
-                {' '}
-                <a
-                    href={buildUrl({ locale, path: 'auth/signin' })}
-                    class="auth-page__link auth-page__link--strong"
-                >
-                    {signInLabel}
-                </a>
-            </div>
-        </div>
+    <div class="auth-page__footer">
+        <span class="auth-page__footer-text">{haveAccountLabel}</span>
+        {' '}
+        <a
+            href={buildUrl({ locale, path: 'auth/signin' })}
+            class="auth-page__link auth-page__link--strong"
+        >
+            {signInLabel}
+        </a>
     </div>
-</BaseLayout>
+</AuthLayout>
 
 <style>
     .auth-page {
