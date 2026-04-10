@@ -27,6 +27,7 @@ const result = await eventsApi.getBySlug({ slug });
 if (!result.ok) return new Response(null, { status: 404 });
 
 const event = result.data as Record<string, unknown>;
+
 const name = String(event.name || event.title || '');
 const description = String(event.summary || event.description || '');
 const category = String(event.category || '');
@@ -44,7 +45,7 @@ const organizerObj = event.organizer as Record<string, unknown> | undefined;
 
 // EventStatus mapping
 const eventStatus = isCancelled ? 'EventCancelled' : (isActive && !isCancelled) ? 'EventScheduled' : 'EventScheduled';
-const categoryColors = getEventCategoryColor(category.toLowerCase());
+const categoryColors = getEventCategoryColor({ category: category.toLowerCase() });
 
 const jsonLd = {
 	'@context': 'https://schema.org',
@@ -84,15 +85,8 @@ const jsonLd = {
 		]}
 	/>
 
-	<div class="event-detail">
-		<!-- Hero -->
-		<div class="event-detail__hero">
-			<img src={featuredImage} alt={name} class="event-detail__hero-img" />
-			{isPast && <span class="event-detail__past-badge">{t('events.detail.pastEvent', 'Evento pasado')}</span>}
-			{isCancelled && <span class="event-detail__cancelled-badge">{t('events.detail.cancelled', 'Cancelado')}</span>}
-		</div>
-
-		<!-- Meta -->
+	<Fragment slot="page-header">
+		<h1 class="event-detail__title">{name}</h1>
 		<div class="event-detail__meta">
 			<span class="event-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
 				{t(`events.categories.${category.toLowerCase()}`, category)}
@@ -109,9 +103,16 @@ const jsonLd = {
 					{locationName ? `${locationName}, ${locationCity}` : locationCity}
 				</span>
 			)}
+			{isPast && <span class="event-detail__past-badge">{t('events.detail.pastEvent', 'Evento pasado')}</span>}
+			{isCancelled && <span class="event-detail__cancelled-badge">{t('events.detail.cancelled', 'Cancelado')}</span>}
 		</div>
+	</Fragment>
 
-		<h1 class="event-detail__title">{name}</h1>
+	<div class="event-detail">
+		<!-- Hero -->
+		<div class="event-detail__hero">
+			<img src={featuredImage} alt={name} class="event-detail__hero-img" />
+		</div>
 
 		<!-- Description -->
 		<div class="event-detail__description" set:html={String(event.contentHtml || description)} />
