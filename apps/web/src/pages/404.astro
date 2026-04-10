@@ -1,112 +1,69 @@
 ---
 /**
  * @file 404.astro
- * @description Custom 404 error page. Rendered by middleware rewrite when a page is not found.
- * Uses i18n for all text, matching the site's visual identity.
+ * @description Custom 404 error page with friendly design and navigation actions.
+ * Rendered by middleware rewrite when a page is not found.
  */
 
 export const prerender = false;
 
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
-import { createTranslations } from '@/lib/i18n';
+import { SearchIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
-
 const homeUrl = buildUrl({ locale, path: '/' });
+const searchUrl = buildUrl({ locale, path: 'busqueda' });
+const feedbackUrl = buildUrl({ locale, path: 'feedback' });
+
+const feedbackParams = new URLSearchParams({
+	type: 'bug-ui-ux',
+	source: 'error-404',
+	url: Astro.url.href,
+	title: 'Página no encontrada (404)',
+	description: `URL: ${Astro.url.pathname}\nEsta página no existe o el enlace está roto.`,
+});
+const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---
 
-<ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')}>
+<ErrorLayout locale={locale} title="Página no encontrada" description="La página que buscás no existe">
+	<!-- Illustrated icon -->
+	<div class="err500-illustration" aria-hidden="true">
+		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+			<circle cx="60" cy="60" r="54" stroke="var(--primary, #3b82f6)" stroke-width="1.5" opacity="0.12" />
+			<circle cx="60" cy="60" r="40" stroke="var(--primary, #3b82f6)" stroke-width="1.5" opacity="0.08" />
+			<!-- Magnifying glass -->
+			<circle cx="54" cy="54" r="16" stroke="var(--primary, #3b82f6)" stroke-width="2.5" fill="oklch(from var(--primary, #3b82f6) l c h / 0.06)" />
+			<line x1="65" y1="65" x2="78" y2="78" stroke="var(--primary, #3b82f6)" stroke-width="2.5" stroke-linecap="round" />
+			<!-- Question mark inside lens -->
+			<text x="54" y="59" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="var(--primary, #3b82f6)" opacity="0.6">?</text>
+			<!-- Small decorative dots -->
+			<circle cx="60" cy="26" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
+			<circle cx="60" cy="94" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
+			<circle cx="26" cy="60" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
+			<circle cx="94" cy="60" r="3" fill="var(--primary, #3b82f6)" opacity="0.15" />
+		</svg>
+	</div>
 
-    <section class="error-page">
-        <div class="error-page__container">
-            <!-- Decorative illustration -->
-            <div class="error-page__illustration" aria-hidden="true">
-                <svg width="280" height="200" viewBox="0 0 280 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="20" y="60" width="240" height="120" rx="24" fill="var(--surface-warm)" />
-                    <circle cx="100" cy="100" r="30" fill="var(--accent)" opacity="0.2" />
-                    <circle cx="180" cy="90" r="20" fill="var(--primary)" opacity="0.15" />
-                    <text x="140" y="130" text-anchor="middle" font-family="var(--font-heading)" font-size="48" font-weight="700" fill="var(--muted-foreground)" opacity="0.4">404</text>
-                </svg>
-            </div>
+	<div class="err500-code" aria-hidden="true">404</div>
 
-            <h1 class="error-page__title">{t('error.404.heading')}</h1>
-            <p class="error-page__message">{t('error.404.message')}</p>
+	<h1 class="err500-title">Página no encontrada</h1>
+	<p class="err500-message">La página que buscás no existe o fue movida a otra dirección.</p>
+	<p class="err500-subtitle">Podés buscar lo que necesitás o volver al inicio.</p>
 
-            <div class="error-page__actions">
-                <a href={homeUrl} class="error-page__btn error-page__btn--primary">
-                    {t('error.404.goHome')}
-                </a>
-            </div>
-        </div>
-    </section>
+	<div class="err500-actions">
+		<a href={searchUrl} class="err500-btn err500-btn--primary">
+			<SearchIcon size={18} />
+			Buscar
+		</a>
+		<a href={feedbackWithParams} class="err500-btn err500-btn--secondary">
+			<ChatIcon size={18} />
+			Reportar enlace roto
+		</a>
+	</div>
+
+	<a href={homeUrl} class="err500-home-link">
+		← Volver al inicio
+	</a>
 </ErrorLayout>
-
-<style>
-    .error-page {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-height: calc(100vh - var(--header-height, 5rem));
-        padding: var(--space-8, 2rem) var(--space-container-x);
-    }
-
-    .error-page__container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        max-width: 520px;
-        gap: 24px;
-    }
-
-    .error-page__illustration {
-        margin-bottom: 8px;
-    }
-
-    .error-page__title {
-        font-family: var(--font-heading);
-        font-size: clamp(1.75rem, 4vw, 2.5rem);
-        font-weight: 700;
-        color: var(--foreground);
-        line-height: 1.2;
-    }
-
-    .error-page__message {
-        font-family: var(--font-sans);
-        font-size: var(--text-body-lg);
-        color: var(--muted-foreground);
-        line-height: 1.6;
-    }
-
-    .error-page__actions {
-        display: flex;
-        gap: 16px;
-        margin-top: 8px;
-    }
-
-    .error-page__btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 14px 32px;
-        border-radius: var(--radius-button);
-        font-family: var(--font-sans);
-        font-size: var(--text-body);
-        font-weight: 600;
-        text-decoration: none;
-        transition: all var(--duration-normal) ease;
-    }
-
-    .error-page__btn--primary {
-        background-color: var(--accent);
-        color: var(--accent-foreground, #fff);
-    }
-
-    .error-page__btn--primary:hover {
-        opacity: 0.9;
-        transform: translateY(-1px);
-    }
-</style>
