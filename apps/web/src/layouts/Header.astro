@@ -6,7 +6,7 @@
  */
 
 import { Image } from "astro:assets";
-import { BuildingIcon, HamburgerIcon } from "@repo/icons";
+import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/MobileMenuIsland.astro";
 import AuthSection from '@/components/shared/AuthSection.astro';
 import { createTranslations } from "@/lib/i18n";
@@ -88,8 +88,15 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
             <HamburgerIcon size={24} aria-hidden="true" />
         </button>
 
-        <!-- USER AREA (dynamic auth state via Server Island) -->
+        <!-- USER AREA (search + owner CTA + auth state via Server Island) -->
         <div class="header__right">
+            <a
+                href={buildUrl({ locale, path: "busqueda" })}
+                class="header__search-link"
+                aria-label={t("nav.search", "Buscar")}
+            >
+                <SearchIcon size={20} weight="regular" aria-hidden="true" />
+            </a>
             <a
                 href={buildUrl({ locale, path: "/suscriptores/" })}
                 class="header__cta"
@@ -259,6 +266,23 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
     }
 
     /* CTA button — owner listing link */
+    .header__search-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: var(--core-foreground);
+        text-decoration: none;
+        transition: background-color var(--duration-fast) ease;
+        flex-shrink: 0;
+    }
+
+    .header__search-link:hover {
+        background-color: var(--muted);
+    }
+
     .header__cta {
         display: none;
         align-items: center;

@@ -69,10 +69,7 @@ export default defineConfig({
                 /^(\/(?:en|pt))?\/mi-cuenta(\/.*)?$/,
                 /^(\/(?:en|pt))?\/auth(\/.*)?$/,
                 /^(\/(?:en|pt))?\/busqueda(\/.*)?$/,
-                /^(\/(?:en|pt))?\/alojamientos\/[^/]+(\/.*)?$/,
-                /^(\/(?:en|pt))?\/eventos\/[^/]+(\/.*)?$/,
-                /^(\/(?:en|pt))?\/destinos\/[^/]+(\/.*)?$/,
-                /^(\/(?:en|pt))?\/publicaciones\/[^/]+(\/.*)?$/
+                /^(\/(?:en|pt))?\/feedback(\/.*)?$/
             ]
         },
         imageService: true
@@ -106,7 +103,7 @@ export default defineConfig({
         react(),
         sitemap({
             filter: (page) => {
-                const excludePatterns = ['/auth/', '/mi-cuenta/'];
+                const excludePatterns = ['/auth/', '/mi-cuenta/', '/busqueda/', '/feedback/'];
                 return !excludePatterns.some((pattern) => page.includes(pattern));
             }
         })
