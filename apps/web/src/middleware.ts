@@ -24,6 +24,7 @@ import {
     isAuthRoute,
     isProtectedRoute,
     isServerIslandRoute,
+    isSessionOptionalRoute,
     isStaticAssetRoute,
     parseSessionUser
 } from './lib/middleware-helpers';
@@ -78,7 +79,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 6: Parse the session only for routes that actually need it.
     // Calling the auth API on every request would be wasteful; public pages
     // don't need the user object at all.
-    const needsSession = isProtectedRoute({ path }) || isAuthRoute({ path });
+    const needsSession =
+        isProtectedRoute({ path }) || isAuthRoute({ path }) || isSessionOptionalRoute({ path });
 
     if (needsSession) {
         const user = await parseSessionUser({

@@ -478,6 +478,9 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../../packages/config
+      '@repo/feedback':
+        specifier: workspace:*
+        version: link:../../packages/feedback
       '@repo/i18n':
         specifier: workspace:*
         version: link:../../packages/i18n

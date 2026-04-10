@@ -20,6 +20,7 @@
         "@astrojs/sitemap": "^3.7.0",
         "@astrojs/vercel": "^8.2.11",
         "@repo/config": "workspace:*",
+        "@repo/feedback": "workspace:*",
         "@repo/i18n": "workspace:*",
         "@repo/icons": "workspace:*",
         "@repo/logger": "workspace:*",

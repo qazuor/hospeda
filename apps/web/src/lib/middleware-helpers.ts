@@ -8,7 +8,12 @@
 
 import { DEFAULT_LOCALE, type SupportedLocale, isValidLocale } from './i18n';
 import { webLogger } from './logger';
-import { AUTH_SEGMENTS, PROTECTED_SEGMENTS, STATIC_PREFIXES } from './routes';
+import {
+    AUTH_SEGMENTS,
+    PROTECTED_SEGMENTS,
+    SESSION_OPTIONAL_SEGMENTS,
+    STATIC_PREFIXES
+} from './routes';
 
 /**
  * Result of extracting a locale from a URL path.
@@ -110,6 +115,28 @@ export function isAuthRoute({ path }: { path: string }): boolean {
     }
 
     return (AUTH_SEGMENTS as readonly string[]).includes(segments[1] ?? '');
+}
+
+/**
+ * Checks if a URL path is a session-optional route.
+ * These routes parse the session when available but do NOT require authentication.
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path wants session data without requiring it
+ */
+export function isSessionOptionalRoute({ path }: { path: string }): boolean {
+    if (!path) {
+        return false;
+    }
+
+    const trimmedPath = path.startsWith('/') ? path.slice(1) : path;
+    const segments = trimmedPath.split('/');
+
+    if (segments.length < 2) {
+        return false;
+    }
+
+    return (SESSION_OPTIONAL_SEGMENTS as readonly string[]).includes(segments[1] ?? '');
 }
 
 /**
