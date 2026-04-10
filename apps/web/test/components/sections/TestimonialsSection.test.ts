@@ -26,8 +26,8 @@ describe('TestimonialsSection.astro', () => {
             expect(src).toContain('client:visible');
         });
 
-        it('should pass reviews and locale props to the carousel', () => {
-            expect(src).toContain('reviews={reviews}');
+        it('should pass optimized reviews and locale props to the carousel', () => {
+            expect(src).toContain('reviews={optimizedReviews}');
             expect(src).toContain('locale={locale}');
         });
     });
