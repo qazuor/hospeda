@@ -1,0 +1,113 @@
+---
+/**
+ * @file alojamientos/tipo/[type]/index.astro
+ * @description Accommodations filtered by type (hotel, cabin, etc.).
+ * @route /{lang}/alojamientos/tipo/{type}/
+ * @rendering SSR + ISR 24h
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import AccommodationCard from '@/components/shared/AccommodationCard.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import { accommodationsApi } from '@/lib/api/endpoints';
+import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { type: typeSlug } = Astro.params;
+
+// Valid type slugs mapped to enum values
+const VALID_TYPES: Record<string, string> = {
+	'apartment': 'APARTMENT',
+	'house': 'HOUSE',
+	'country-house': 'COUNTRY_HOUSE',
+	'cabin': 'CABIN',
+	'hotel': 'HOTEL',
+	'hostel': 'HOSTEL',
+	'camping': 'CAMPING',
+	'room': 'ROOM',
+	'motel': 'MOTEL',
+	'resort': 'RESORT',
+};
+
+const typeEnum = typeSlug ? VALID_TYPES[typeSlug] : undefined;
+if (!typeEnum) {
+	return new Response(null, { status: 404 });
+}
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 9;
+
+const result = await accommodationsApi.list({ page, pageSize, type: typeEnum });
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+
+const typeLabel = t(`accommodations.types.${typeSlug}`, typeSlug ?? '');
+const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
+---
+
+<ListingLayout
+	locale={locale}
+	title={`${typeLabel} - ${t('accommodations.title', 'Alojamientos')}`}
+	description={t('accommodations.byType.description', `Alojamientos de tipo ${typeLabel} en el Litoral Entrerriano.`)}
+	showFilters={false}
+>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' },
+			{ label: typeLabel },
+		]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('accommodations.byType.tagline', 'Tipo de alojamiento')}
+		title={typeLabel}
+		totalCount={total}
+	/>
+
+	{hasError && <ErrorBanner locale={locale} />}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="acc-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<AccommodationCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
+	)}
+
+	{totalPages > 1 && (
+		<Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+	)}
+</ListingLayout>
+
+<style>
+	.acc-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
+	@media (max-width: 1024px) { .acc-grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 640px) { .acc-grid { grid-template-columns: 1fr; } }
+</style>

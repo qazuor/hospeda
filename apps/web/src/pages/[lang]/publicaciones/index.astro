@@ -1,0 +1,140 @@
+---
+/**
+ * @file publicaciones/index.astro
+ * @description Blog posts listing page with filter sidebar, ArticleCard grid, and pagination.
+ * @route /{lang}/publicaciones/
+ * @rendering SSR + ISR 24h
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import ArticleCard from '@/components/shared/ArticleCard.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/FilterSidebar.client';
+import { postsApi } from '@/lib/api/endpoints';
+import { toPostCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 9;
+const q = url.searchParams.get('q') ?? undefined;
+const category = url.searchParams.get('category') ?? undefined;
+const sortBy = url.searchParams.get('sortBy') ?? 'publishedAt';
+const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? 'desc';
+
+const result = await postsApi.list({ page, pageSize, q, category, sortBy, sortOrder });
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const cards = items.map((item) => toPostCardProps({ item: item as unknown as Record<string, unknown> }));
+
+const filterGroups = [
+	{
+		id: 'q',
+		label: t('blog.filters.search', 'Buscar'),
+		type: 'search' as const,
+	},
+	{
+		id: 'category',
+		label: t('blog.filters.category', 'Categoría'),
+		type: 'checkbox' as const,
+		options: [
+			{ value: 'CULTURE', label: t('blog.categories.culture', 'Cultura') },
+			{ value: 'GASTRONOMY', label: t('blog.categories.gastronomy', 'Gastronomía') },
+			{ value: 'NATURE', label: t('blog.categories.nature', 'Naturaleza') },
+			{ value: 'TOURISM', label: t('blog.categories.tourism', 'Turismo') },
+			{ value: 'SPORT', label: t('blog.categories.sport', 'Deporte') },
+			{ value: 'HISTORY', label: t('blog.categories.history', 'Historia') },
+			{ value: 'EVENTS', label: t('blog.categories.events', 'Eventos') },
+			{ value: 'CARNIVAL', label: t('blog.categories.carnival', 'Carnaval') },
+			{ value: 'WELLNESS', label: t('blog.categories.wellness', 'Bienestar') },
+			{ value: 'FAMILY', label: t('blog.categories.family', 'Familia') },
+			{ value: 'TIPS', label: t('blog.categories.tips', 'Consejos') },
+		],
+	},
+] as const;
+
+const sortOptions = [
+	{ value: 'publishedAt', label: t('blog.sort.newest', 'Más recientes') },
+	{ value: 'title', label: t('blog.sort.title', 'Título') },
+] as const;
+
+const baseUrl = buildUrl({ locale, path: 'publicaciones' });
+---
+
+<ListingLayout
+	locale={locale}
+	title={t('blog.title', 'Publicaciones')}
+	description={t('blog.description', 'Artículos sobre cultura, gastronomía, turismo y más del Litoral Entrerriano.')}
+	showFilters={true}
+	filterPosition="left"
+>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[{ label: t('blog.title', 'Publicaciones') }]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('blog.tagline', 'Descubrí historias')}
+		title={t('blog.title', 'Publicaciones')}
+		totalCount={total}
+	/>
+
+	<FilterSidebar
+		slot="filters"
+		client:visible
+		locale={locale}
+		filters={filterGroups}
+		sortOptions={sortOptions}
+		defaultSort="publishedAt"
+		onFiltersChange={(params) => {
+			const newUrl = new URL(window.location.href);
+			newUrl.search = params.toString();
+			window.location.href = newUrl.href;
+		}}
+	/>
+
+	{hasError && <ErrorBanner locale={locale} />}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState locale={locale} variant="no-results" actionUrl={baseUrl} />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="posts-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<ArticleCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
+	)}
+
+	{totalPages > 1 && (
+		<Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+	)}
+</ListingLayout>
+
+<style>
+	.posts-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
+	@media (max-width: 1024px) { .posts-grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 640px) { .posts-grid { grid-template-columns: 1fr; } }
+</style>

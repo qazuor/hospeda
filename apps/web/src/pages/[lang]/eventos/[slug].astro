@@ -1,0 +1,177 @@
+---
+/**
+ * @file eventos/[slug].astro
+ * @description Event detail page with Event JSON-LD and EventStatus mapping.
+ * @route /{lang}/eventos/{slug}/
+ * @rendering SSR + ISR 24h
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { eventsApi } from '@/lib/api/endpoints';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { formatDate, formatPrice } from '@/lib/format-utils';
+import { getEventCategoryColor } from '@/lib/colors';
+import { LocationIcon, CalendarDotsIcon } from '@repo/icons';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+const result = await eventsApi.getBySlug({ slug });
+if (!result.ok) return new Response(null, { status: 404 });
+
+const event = result.data as Record<string, unknown>;
+const name = String(event.name || event.title || '');
+const description = String(event.summary || event.description || '');
+const category = String(event.category || '');
+const startDate = String(event.startDate || '');
+const endDate = event.endDate ? String(event.endDate) : undefined;
+const featuredImage = String(event.featuredImage || '/assets/images/placeholder-event.svg');
+const locationObj = event.location as Record<string, unknown> | undefined;
+const locationName = String(locationObj?.name || locationObj?.venueName || '');
+const locationCity = String(locationObj?.city || '');
+const isCancelled = Boolean(event.isCancelled);
+const isActive = Boolean(event.isActive ?? true);
+const isPast = startDate ? new Date(startDate) < new Date() : false;
+const price = event.price as { amount?: number; currency?: string } | undefined;
+const organizerObj = event.organizer as Record<string, unknown> | undefined;
+
+// EventStatus mapping
+const eventStatus = isCancelled ? 'EventCancelled' : (isActive && !isCancelled) ? 'EventScheduled' : 'EventScheduled';
+const categoryColors = getEventCategoryColor(category.toLowerCase());
+
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'Event',
+	name,
+	description,
+	startDate,
+	...(endDate ? { endDate } : {}),
+	eventStatus: `https://schema.org/${eventStatus}`,
+	image: featuredImage,
+	url: `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`,
+	location: {
+		'@type': 'Place',
+		name: locationName || locationCity,
+		address: { '@type': 'PostalAddress', addressLocality: locationCity },
+	},
+	...(organizerObj ? { organizer: { '@type': 'Organization', name: String(organizerObj.name || '') } } : {}),
+	...(price?.amount ? { offers: { '@type': 'Offer', price: price.amount, priceCurrency: price.currency ?? 'ARS' } } : {}),
+};
+---
+
+<DetailLayout
+	locale={locale}
+	title={name}
+	description={description}
+	showBreadcrumbs={true}
+	showSidebar={true}
+>
+	<JsonLd slot="head-extra" data={jsonLd} />
+
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[
+			{ label: t('events.title', 'Eventos'), path: 'eventos' },
+			{ label: name },
+		]}
+	/>
+
+	<div class="event-detail">
+		<!-- Hero -->
+		<div class="event-detail__hero">
+			<img src={featuredImage} alt={name} class="event-detail__hero-img" />
+			{isPast && <span class="event-detail__past-badge">{t('events.detail.pastEvent', 'Evento pasado')}</span>}
+			{isCancelled && <span class="event-detail__cancelled-badge">{t('events.detail.cancelled', 'Cancelado')}</span>}
+		</div>
+
+		<!-- Meta -->
+		<div class="event-detail__meta">
+			<span class="event-detail__category" style={`background-color: ${categoryColors.bg}; color: ${categoryColors.text};`}>
+				{t(`events.categories.${category.toLowerCase()}`, category)}
+			</span>
+			{startDate && (
+				<span class="event-detail__date">
+					<CalendarDotsIcon size={16} aria-hidden="true" />
+					{formatDate({ date: startDate, locale })}
+				</span>
+			)}
+			{locationCity && (
+				<span class="event-detail__location">
+					<LocationIcon size={16} aria-hidden="true" />
+					{locationName ? `${locationName}, ${locationCity}` : locationCity}
+				</span>
+			)}
+		</div>
+
+		<h1 class="event-detail__title">{name}</h1>
+
+		<!-- Description -->
+		<div class="event-detail__description" set:html={String(event.contentHtml || description)} />
+
+		<!-- Map placeholder -->
+		<section class="event-detail__section">
+			<h2 class="event-detail__section-title">{t('events.detail.location', 'Ubicación')}</h2>
+			<!-- TODO: MapView island (T-022) -->
+			<div class="event-detail__placeholder">
+				<p>{t('events.detail.mapPlaceholder', 'Mapa interactivo próximamente')}</p>
+			</div>
+		</section>
+	</div>
+
+	<!-- Sidebar -->
+	<div slot="sidebar" class="event-sidebar">
+		<div class="event-sidebar__card">
+			{price?.amount ? (
+				<div class="event-sidebar__price">
+					<span class="event-sidebar__price-amount">{formatPrice({ amount: price.amount, currency: price.currency ?? 'ARS', locale })}</span>
+				</div>
+			) : (
+				<p class="event-sidebar__free">{t('events.detail.free', 'Evento gratuito')}</p>
+			)}
+		</div>
+
+		{organizerObj && (
+			<div class="event-sidebar__card">
+				<h3 class="event-sidebar__card-title">{t('events.detail.organizer', 'Organizador')}</h3>
+				<p class="event-sidebar__organizer-name">{String(organizerObj.name || '')}</p>
+			</div>
+		)}
+	</div>
+</DetailLayout>
+
+<style>
+	.event-detail__hero { position: relative; margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
+	.event-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+	.event-detail__past-badge, .event-detail__cancelled-badge {
+		position: absolute; top: var(--space-4); left: var(--space-4);
+		padding: 0.375rem 0.75rem; border-radius: var(--radius-pill);
+		font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600;
+	}
+	.event-detail__past-badge { background-color: var(--muted); color: var(--muted-foreground); }
+	.event-detail__cancelled-badge { background-color: oklch(from var(--destructive, #ef4444) l c h / 0.15); color: var(--destructive, #ef4444); }
+
+	.event-detail__meta { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-3); }
+	.event-detail__category { padding: 0.25rem 0.75rem; border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); font-weight: 600; }
+	.event-detail__date, .event-detail__location { display: inline-flex; align-items: center; gap: 0.25rem; font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--muted-foreground); }
+
+	.event-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--foreground); margin: 0 0 var(--space-6); }
+	.event-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--foreground); margin-bottom: var(--space-8); }
+	.event-detail__description :global(p) { margin-bottom: var(--space-4); }
+	.event-detail__section { margin-bottom: var(--space-8); }
+	.event-detail__section-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-xl); color: var(--foreground); margin: 0 0 var(--space-4); }
+	.event-detail__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-8); text-align: center; color: var(--muted-foreground); }
+
+	.event-sidebar__card { background-color: var(--card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); margin-bottom: var(--space-4); }
+	.event-sidebar__price-amount { font-family: var(--font-heading); font-weight: 700; font-size: var(--text-2xl); color: var(--brand-accent); }
+	.event-sidebar__free { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0; }
+	.event-sidebar__card-title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-2); }
+	.event-sidebar__organizer-name { font-family: var(--font-sans); color: var(--muted-foreground); margin: 0; }
+</style>

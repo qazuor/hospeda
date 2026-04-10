@@ -1,0 +1,66 @@
+---
+/**
+ * @file busqueda/index.astro
+ * @description Global search page with grouped results.
+ * @route /{lang}/busqueda/
+ * @rendering SSR (no ISR - dynamic)
+ */
+// TODO: Use GET /api/v1/public/search?q={query} when endpoint is created (T-017)
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const q = Astro.url.searchParams.get('q') ?? '';
+---
+
+<DefaultLayout locale={locale} title={q ? `${q} - ${t('search.title', 'Búsqueda')}` : t('search.title', 'Búsqueda')} noindex={true}>
+	<div class="search-page">
+		<div class="search-page__container">
+			<h1 class="search-page__title">{t('search.title', 'Búsqueda')}</h1>
+
+			<form class="search-page__form" action={buildUrl({ locale, path: 'busqueda' })} method="get">
+				<input type="text" name="q" value={q} placeholder={t('search.placeholder', 'Buscar alojamientos, destinos, eventos...')} class="search-page__input" autofocus />
+				<button type="submit" class="search-page__btn">{t('search.submit', 'Buscar')}</button>
+			</form>
+
+			{!q && (
+				<div class="search-page__suggestions">
+					<h2 class="search-page__subtitle">{t('search.popular', 'Búsquedas populares')}</h2>
+					<div class="search-page__tags">
+						{['Cabañas', 'Colón', 'Termas', 'Eventos', 'Carnaval'].map((tag) => (
+							<a href={buildUrl({ locale, path: `busqueda?q=${encodeURIComponent(tag)}` })} class="search-page__tag">{tag}</a>
+						))}
+					</div>
+				</div>
+			)}
+
+			{q && (
+				<div class="search-page__results">
+					<p class="search-page__results-info">{t('search.resultsFor', 'Resultados para')}: <strong>{q}</strong></p>
+					<!-- TODO: Grouped results from search API (T-017) -->
+					<div class="search-page__placeholder">
+						<p>{t('search.comingSoon', 'La búsqueda unificada estará disponible próximamente.')}</p>
+					</div>
+				</div>
+			)}
+		</div>
+	</div>
+</DefaultLayout>
+
+<style>
+	.search-page__container { max-width: var(--container-max); margin: 0 auto; padding: var(--space-section-sm) var(--space-container-x); }
+	.search-page__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-6); text-align: center; }
+	.search-page__form { display: flex; gap: var(--space-3); max-width: 600px; margin: 0 auto var(--space-8); }
+	.search-page__input { flex: 1; padding: 0.875rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-button); font-family: var(--font-sans); font-size: var(--text-body); background-color: var(--background); color: var(--foreground); }
+	.search-page__btn { padding: 0.875rem 1.5rem; background-color: var(--brand-accent); color: var(--accent-foreground, #fff); border: none; border-radius: var(--radius-button); font-family: var(--font-sans); font-weight: 600; cursor: pointer; }
+	.search-page__suggestions { text-align: center; }
+	.search-page__subtitle { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); color: var(--foreground); margin: 0 0 var(--space-4); }
+	.search-page__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
+	.search-page__tag { padding: 0.5rem 1rem; background-color: var(--muted); border-radius: var(--radius-pill); font-family: var(--font-sans); font-size: var(--text-body-sm); color: var(--foreground); text-decoration: none; }
+	.search-page__tag:hover { background-color: var(--border); }
+	.search-page__results-info { font-family: var(--font-sans); color: var(--muted-foreground); margin-bottom: var(--space-6); text-align: center; }
+	.search-page__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-8); text-align: center; color: var(--muted-foreground); }
+</style>

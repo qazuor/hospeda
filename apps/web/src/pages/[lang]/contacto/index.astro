@@ -1,0 +1,116 @@
+---
+/**
+ * @file contacto/index.astro
+ * @description Contact page with contact form placeholder.
+ * @route /{lang}/contacto/
+ * @rendering SSG (prerender)
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+---
+
+<DefaultLayout
+	locale={locale}
+	title={t('contact.title', 'Contacto')}
+	description={t('contact.description', 'Contactate con el equipo de Hospeda. Estamos para ayudarte.')}
+>
+	<section class="contact-page section">
+		<div class="contact-page__container">
+			<p class="contact-page__tagline" data-reveal="up">{t('contact.tagline', 'Escribinos')}</p>
+			<h1 class="contact-page__title" data-reveal="up">{t('contact.heading', 'Contacto')}</h1>
+			<p class="contact-page__subtitle" data-reveal="up">
+				{t('contact.subtitle', '¿Tenés alguna consulta o sugerencia? Completá el formulario y te responderemos a la brevedad.')}
+			</p>
+
+			<div class="contact-page__form-area" data-reveal="up">
+				<!-- TODO: ContactForm React island (client:visible) -->
+				<div class="contact-page__placeholder">
+					<p>{t('contact.formPlaceholder', 'El formulario de contacto estará disponible próximamente.')}</p>
+				</div>
+			</div>
+
+			<div class="contact-page__info" data-reveal="up">
+				<p class="contact-page__info-item">
+					<strong>{t('contact.email.label', 'Email')}:</strong> info@hospeda.com
+				</p>
+				<p class="contact-page__info-item">
+					<strong>{t('contact.phone.label', 'Teléfono')}:</strong> +54 3442 453797
+				</p>
+			</div>
+		</div>
+	</section>
+</DefaultLayout>
+
+<style>
+	.contact-page__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.contact-page__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.contact-page__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.contact-page__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		max-width: 55ch;
+		margin: 0 auto var(--space-8);
+		line-height: 1.6;
+	}
+
+	.contact-page__form-area {
+		max-width: 600px;
+		margin: 0 auto var(--space-8);
+	}
+
+	.contact-page__placeholder {
+		background-color: var(--card);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-card);
+		padding: var(--space-8);
+		color: var(--muted-foreground);
+	}
+
+	.contact-page__info {
+		display: flex;
+		gap: var(--space-6);
+		justify-content: center;
+		flex-wrap: wrap;
+	}
+
+	.contact-page__info-item {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--foreground);
+		margin: 0;
+	}
+</style>

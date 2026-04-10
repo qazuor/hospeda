@@ -1,0 +1,184 @@
+---
+/**
+ * @file beneficios/index.astro
+ * @description Benefits page showing tourist and owner benefits.
+ * @route /{lang}/beneficios/
+ * @rendering SSG (prerender)
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const touristBenefits = [
+	{ titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },
+	{ titleKey: 'benefits.tourist.2.title', titleFb: 'Precios transparentes', descKey: 'benefits.tourist.2.desc', descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.' },
+	{ titleKey: 'benefits.tourist.3.title', titleFb: 'Reseñas verificadas', descKey: 'benefits.tourist.3.desc', descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.' },
+	{ titleKey: 'benefits.tourist.4.title', titleFb: 'Información local', descKey: 'benefits.tourist.4.desc', descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.' },
+	{ titleKey: 'benefits.tourist.5.title', titleFb: 'Contacto directo', descKey: 'benefits.tourist.5.desc', descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.' },
+] as const;
+
+const ownerBenefits = [
+	{ titleKey: 'benefits.owner.1.title', titleFb: 'Visibilidad regional', descKey: 'benefits.owner.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.' },
+	{ titleKey: 'benefits.owner.2.title', titleFb: 'Gestión simple', descKey: 'benefits.owner.2.desc', descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.' },
+	{ titleKey: 'benefits.owner.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'benefits.owner.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.' },
+	{ titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
+	{ titleKey: 'benefits.owner.5.title', titleFb: 'Soporte dedicado', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte disponible para ayudarte con cualquier consulta.' },
+] as const;
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('benefits.title', 'Beneficios')}
+	description={t('benefits.description', 'Descubrí los beneficios de usar Hospeda como viajero o propietario.')}
+>
+	<!-- Tourist Benefits -->
+	<section class="benefits-section section">
+		<div class="benefits-section__container">
+			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.tourist.tagline', 'Para viajeros')}</p>
+			<h1 class="benefits-section__title" data-reveal="up">{t('benefits.tourist.title', 'Beneficios para turistas')}</h1>
+			<div class="benefits-section__grid">
+				{touristBenefits.map((b, i) => (
+					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<div class="benefits-card__icon" aria-hidden="true">
+							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
+							</svg>
+						</div>
+						<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
+						<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
+					</div>
+				))}
+			</div>
+			<div class="benefits-section__cta" data-reveal="up">
+				<a href={buildUrl({ locale, path: 'alojamientos' })} class="benefits-btn">
+					{t('benefits.tourist.cta', 'Explorar alojamientos')}
+				</a>
+			</div>
+		</div>
+	</section>
+
+	<!-- Owner Benefits -->
+	<section class="benefits-section section section--warm">
+		<div class="benefits-section__container">
+			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.owner.tagline', 'Para propietarios')}</p>
+			<h2 class="benefits-section__title" data-reveal="up">{t('benefits.owner.title', 'Beneficios para propietarios')}</h2>
+			<div class="benefits-section__grid">
+				{ownerBenefits.map((b, i) => (
+					<div class="benefits-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<div class="benefits-card__icon" aria-hidden="true">
+							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-accent) l c h / 0.1)" />
+							</svg>
+						</div>
+						<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
+						<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
+					</div>
+				))}
+			</div>
+			<div class="benefits-section__cta" data-reveal="up">
+				<a href={buildUrl({ locale, path: 'suscriptores/propietarios' })} class="benefits-btn benefits-btn--accent">
+					{t('benefits.owner.cta', 'Publicá tu alojamiento')}
+				</a>
+			</div>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.benefits-section__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.benefits-section__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.benefits-section__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-8);
+	}
+
+	.benefits-section__grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+		gap: var(--space-card-gap);
+		text-align: left;
+	}
+
+	.benefits-card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+	}
+
+	.benefits-card__icon {
+		margin-bottom: var(--space-4);
+	}
+
+	.benefits-card__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.benefits-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.benefits-section__cta {
+		margin-top: var(--space-8);
+	}
+
+	.benefits-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.875rem 2rem;
+		background-color: var(--brand-primary);
+		color: #fff;
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
+	}
+
+	.benefits-btn--accent {
+		background-color: var(--brand-accent);
+	}
+
+	.benefits-btn:hover {
+		opacity: 0.9;
+		transform: translateY(-2px);
+	}
+</style>

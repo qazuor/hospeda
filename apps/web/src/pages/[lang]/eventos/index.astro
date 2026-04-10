@@ -1,0 +1,138 @@
+---
+/**
+ * @file eventos/index.astro
+ * @description Events listing page with top filter bar, EventCard grid, and pagination.
+ * @route /{lang}/eventos/
+ * @rendering SSR + ISR 24h
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import EventCard from '@/components/shared/EventCard.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/FilterSidebar.client';
+import { eventsApi } from '@/lib/api/endpoints';
+import { toEventCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 9;
+const q = url.searchParams.get('q') ?? undefined;
+const category = url.searchParams.get('category') ?? undefined;
+const sortBy = url.searchParams.get('sortBy') ?? 'startDate';
+const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? 'asc';
+
+const result = await eventsApi.list({ page, pageSize, q, category, sortBy, sortOrder });
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+
+const filterGroups = [
+	{
+		id: 'q',
+		label: t('events.filters.search', 'Buscar'),
+		type: 'search' as const,
+	},
+	{
+		id: 'category',
+		label: t('events.filters.category', 'Categoría'),
+		type: 'checkbox' as const,
+		options: [
+			{ value: 'MUSIC', label: t('events.categories.music', 'Música') },
+			{ value: 'CULTURE', label: t('events.categories.culture', 'Cultura') },
+			{ value: 'SPORTS', label: t('events.categories.sports', 'Deportes') },
+			{ value: 'GASTRONOMY', label: t('events.categories.gastronomy', 'Gastronomía') },
+			{ value: 'FESTIVAL', label: t('events.categories.festival', 'Festival') },
+			{ value: 'NATURE', label: t('events.categories.nature', 'Naturaleza') },
+			{ value: 'THEATER', label: t('events.categories.theater', 'Teatro') },
+			{ value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') },
+			{ value: 'OTHER', label: t('events.categories.other', 'Otros') },
+		],
+	},
+] as const;
+
+const sortOptions = [
+	{ value: 'startDate', label: t('events.sort.date', 'Fecha') },
+	{ value: 'name', label: t('events.sort.name', 'Nombre') },
+] as const;
+
+const baseUrl = buildUrl({ locale, path: 'eventos' });
+---
+
+<ListingLayout
+	locale={locale}
+	title={t('events.title', 'Eventos')}
+	description={t('events.description', 'Descubrí eventos culturales, deportivos y gastronómicos del Litoral.')}
+	showFilters={true}
+	filterPosition="top"
+>
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[{ label: t('events.title', 'Eventos') }]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('events.tagline', 'No te pierdas nada')}
+		title={t('events.title', 'Eventos')}
+		totalCount={total}
+	/>
+
+	<FilterSidebar
+		slot="filters"
+		client:visible
+		locale={locale}
+		filters={filterGroups}
+		sortOptions={sortOptions}
+		defaultSort="startDate"
+		onFiltersChange={(params) => {
+			const newUrl = new URL(window.location.href);
+			newUrl.search = params.toString();
+			window.location.href = newUrl.href;
+		}}
+	/>
+
+	{hasError && <ErrorBanner locale={locale} />}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState locale={locale} variant="no-results" actionUrl={baseUrl} />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="events-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<EventCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
+	)}
+
+	{totalPages > 1 && (
+		<Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+	)}
+</ListingLayout>
+
+<style>
+	.events-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
+	@media (max-width: 1024px) { .events-grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 640px) { .events-grid { grid-template-columns: 1fr; } }
+</style>

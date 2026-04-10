@@ -1,0 +1,87 @@
+---
+/**
+ * @file legal/privacidad/index.astro
+ * @description Privacy policy page with 7 numbered sections and ToC.
+ * @route /{lang}/legal/privacidad/
+ * @rendering SSG (prerender)
+ */
+
+import LegalLayout from '@/layouts/LegalLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const sections = [
+	{ id: 'recopilacion', titleKey: 'privacy.section1.title', titleFb: 'Recopilación de datos', contentKey: 'privacy.section1.content', contentFb: 'Recopilamos información personal que nos proporcionás voluntariamente al registrarte, completar formularios o interactuar con nuestros servicios. Esto incluye nombre, correo electrónico, teléfono y datos de pago.' },
+	{ id: 'uso', titleKey: 'privacy.section2.title', titleFb: 'Uso de la información', contentKey: 'privacy.section2.content', contentFb: 'Utilizamos tu información para procesar reservas, mejorar nuestros servicios, enviar comunicaciones relevantes y garantizar la seguridad de la plataforma.' },
+	{ id: 'compartir', titleKey: 'privacy.section3.title', titleFb: 'Compartir información', contentKey: 'privacy.section3.content', contentFb: 'No vendemos ni alquilamos tu información personal. Solo la compartimos con proveedores de servicios necesarios para operar la plataforma y cuando la ley lo requiera.' },
+	{ id: 'cookies', titleKey: 'privacy.section4.title', titleFb: 'Cookies y tecnologías', contentKey: 'privacy.section4.content', contentFb: 'Utilizamos cookies y tecnologías similares para mejorar tu experiencia, analizar el uso del sitio y personalizar contenido. Podés gestionar las preferencias de cookies desde tu navegador.' },
+	{ id: 'seguridad', titleKey: 'privacy.section5.title', titleFb: 'Seguridad', contentKey: 'privacy.section5.content', contentFb: 'Implementamos medidas de seguridad técnicas y organizativas para proteger tu información contra accesos no autorizados, pérdida o alteración.' },
+	{ id: 'derechos', titleKey: 'privacy.section6.title', titleFb: 'Tus derechos', contentKey: 'privacy.section6.content', contentFb: 'Tenés derecho a acceder, rectificar, eliminar o limitar el uso de tus datos personales. Para ejercer estos derechos, contactanos a través de nuestro formulario de contacto.' },
+	{ id: 'contacto', titleKey: 'privacy.section7.title', titleFb: 'Contacto', contentKey: 'privacy.section7.content', contentFb: 'Para consultas sobre esta política de privacidad, podés escribirnos a info@hospeda.com o a través de nuestro formulario de contacto.' },
+] as const;
+---
+
+<LegalLayout
+	locale={locale}
+	title={t('privacy.title', 'Política de privacidad')}
+	description={t('privacy.description', 'Política de privacidad de Hospeda. Cómo recopilamos y usamos tu información.')}
+	lastUpdated="15 de marzo de 2026"
+	showToc={true}
+>
+	<Fragment slot="toc">
+		<ol class="toc-list">
+			{sections.map((section, i) => (
+				<li>
+					<a href={`#${section.id}`} class="toc-link">
+						{i + 1}. {t(section.titleKey, section.titleFb)}
+					</a>
+				</li>
+			))}
+		</ol>
+	</Fragment>
+
+	{sections.map((section, i) => (
+		<section id={section.id}>
+			<h2>{i + 1}. {t(section.titleKey, section.titleFb)}</h2>
+			<p>{t(section.contentKey, section.contentFb)}</p>
+		</section>
+	))}
+</LegalLayout>
+
+<style>
+	.toc-list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+	}
+
+	.toc-link {
+		display: block;
+		padding: var(--space-2) var(--space-3);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		text-decoration: none;
+		border-left: 2px solid transparent;
+		transition: color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+	}
+
+	.toc-link:hover {
+		color: var(--foreground);
+		border-left-color: var(--brand-accent);
+	}
+</style>

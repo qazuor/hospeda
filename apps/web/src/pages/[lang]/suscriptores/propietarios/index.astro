@@ -1,0 +1,404 @@
+---
+/**
+ * @file suscriptores/propietarios/index.astro
+ * @description Property owners landing page with hero, benefits, how-it-works, FAQ, and CTA.
+ * Matches Figma design: full-width marketing sections.
+ * @route /{lang}/suscriptores/propietarios/
+ * @rendering SSG (prerender)
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const benefits = [
+	{ titleKey: 'owners.benefits.1.title', titleFb: 'Visibilidad regional', descKey: 'owners.benefits.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay y el litoral entrerriano.' },
+	{ titleKey: 'owners.benefits.2.title', titleFb: 'Gestión simple', descKey: 'owners.benefits.2.desc', descFb: 'Publicá, editá y gestioná tus propiedades desde un solo lugar. Panel de control intuitivo y fácil de usar.' },
+	{ titleKey: 'owners.benefits.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'owners.benefits.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás, sin sorpresas en cada reserva.' },
+] as const;
+
+const steps = [
+	{ num: '01', titleKey: 'owners.steps.1.title', titleFb: 'Registrate', descKey: 'owners.steps.1.desc', descFb: 'Creá tu cuenta de propietario en menos de 2 minutos. Solo necesitás un email.' },
+	{ num: '02', titleKey: 'owners.steps.2.title', titleFb: 'Publicá', descKey: 'owners.steps.2.desc', descFb: 'Cargá fotos, descripción, servicios y precios de tu alojamiento.' },
+	{ num: '03', titleKey: 'owners.steps.3.title', titleFb: 'Recibí consultas', descKey: 'owners.steps.3.desc', descFb: 'Los viajeros te contactan directamente. Vos manejás las reservas.' },
+	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
+] as const;
+
+const faqs = [
+	{ qKey: 'owners.faq.1.q', qFb: '¿Cuánto cuesta publicar mi alojamiento?', aKey: 'owners.faq.1.a', aFb: 'Ofrecemos planes desde gratuitos hasta premium. El plan básico te permite publicar sin costo.' },
+	{ qKey: 'owners.faq.2.q', qFb: '¿Cómo recibo las reservas?', aKey: 'owners.faq.2.a', aFb: 'Los viajeros te contactan directamente por WhatsApp, email o teléfono. Vos manejás todo.' },
+	{ qKey: 'owners.faq.3.q', qFb: '¿Puedo publicar más de una propiedad?', aKey: 'owners.faq.3.a', aFb: 'Sí, podés publicar todas las propiedades que quieras desde una misma cuenta.' },
+	{ qKey: 'owners.faq.4.q', qFb: '¿Qué tipo de alojamientos puedo publicar?', aKey: 'owners.faq.4.a', aFb: 'Casas quintas, cabañas, departamentos, hoteles, apart hotels, campings y más.' },
+] as const;
+
+const faqJsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'FAQPage',
+	mainEntity: faqs.map((faq) => ({
+		'@type': 'Question',
+		name: t(faq.qKey, faq.qFb),
+		acceptedAnswer: {
+			'@type': 'Answer',
+			text: t(faq.aKey, faq.aFb),
+		},
+	})),
+};
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('owners.title', 'Publicá tu alojamiento')}
+	description={t('owners.description', 'Publicá tu propiedad en Hospeda y llegá a miles de viajeros del litoral entrerriano.')}
+>
+	<JsonLd slot="head-extra" data={faqJsonLd} />
+
+	<!-- Hero -->
+	<section class="owners-hero section section--warm">
+		<div class="owners-hero__container">
+			<div class="owners-hero__text" data-reveal="up">
+				<p class="owners-hero__tagline">{t('owners.hero.tagline', 'Para propietarios')}</p>
+				<h1 class="owners-hero__title">{t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros')}</h1>
+				<p class="owners-hero__desc">
+					{t('owners.hero.desc', 'Hospeda conecta tu propiedad con viajeros que buscan experiencias auténticas en el litoral entrerriano. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
+				</p>
+				<a href={buildUrl({ locale, path: 'auth/signup' })} class="owners-hero__btn">
+					{t('owners.hero.cta', 'Empezar ahora')} →
+				</a>
+			</div>
+			<div class="owners-hero__image" data-reveal="scale" aria-hidden="true">
+				<div class="owners-hero__image-placeholder"></div>
+			</div>
+		</div>
+	</section>
+
+	<!-- Benefits -->
+	<section class="owners-benefits section">
+		<div class="owners-benefits__container">
+			<p class="owners-benefits__tagline" data-reveal="up">{t('owners.benefits.tagline', '¿Por qué Hospeda?')}</p>
+			<h2 class="owners-benefits__title" data-reveal="up">{t('owners.benefits.title', 'Beneficios para propietarios')}</h2>
+			<div class="owners-benefits__grid">
+				{benefits.map((b, i) => (
+					<div class="owners-benefit-card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<div class="owners-benefit-card__icon" aria-hidden="true">
+							<svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+								<rect width="48" height="48" rx="12" fill="oklch(from var(--brand-primary) l c h / 0.1)" />
+							</svg>
+						</div>
+						<h3 class="owners-benefit-card__title">{t(b.titleKey, b.titleFb)}</h3>
+						<p class="owners-benefit-card__desc">{t(b.descKey, b.descFb)}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- How it works -->
+	<section class="owners-steps section section--warm">
+		<div class="owners-steps__container">
+			<p class="owners-steps__tagline" data-reveal="up">{t('owners.steps.tagline', 'Es así de fácil')}</p>
+			<h2 class="owners-steps__title" data-reveal="up">{t('owners.steps.title', '¿Cómo funciona?')}</h2>
+			<div class="owners-steps__grid">
+				{steps.map((s, i) => (
+					<div class="owners-step" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<span class="owners-step__num">{s.num}</span>
+						<h3 class="owners-step__title">{t(s.titleKey, s.titleFb)}</h3>
+						<p class="owners-step__desc">{t(s.descKey, s.descFb)}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- FAQ -->
+	<section class="owners-faq section">
+		<div class="owners-faq__container">
+			<p class="owners-faq__tagline" data-reveal="up">{t('owners.faq.tagline', 'Resolvé tus dudas')}</p>
+			<h2 class="owners-faq__title" data-reveal="up">{t('owners.faq.title', 'Preguntas frecuentes')}</h2>
+			<div class="owners-faq__list" data-reveal="up">
+				{faqs.map((faq) => (
+					<details class="owners-faq__item">
+						<summary class="owners-faq__question">{t(faq.qKey, faq.qFb)}</summary>
+						<p class="owners-faq__answer">{t(faq.aKey, faq.aFb)}</p>
+					</details>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- CTA -->
+	<section class="owners-cta">
+		<div class="owners-cta__container" data-reveal="up">
+			<p class="owners-cta__tagline">{t('owners.cta.tagline', '¿Listo para empezar?')}</p>
+			<h2 class="owners-cta__title">{t('owners.cta.title', 'Publicá tu alojamiento hoy')}</h2>
+			<p class="owners-cta__desc">
+				{t('owners.cta.desc', 'Unite a los cientos de propietarios que ya confían en Hospeda para mostrar sus alojamientos al mundo.')}
+			</p>
+			<a href={buildUrl({ locale, path: 'auth/signup' })} class="owners-cta__btn">
+				{t('owners.cta.button', 'Empezar ahora')} →
+			</a>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	/* Hero */
+	.owners-hero__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: var(--space-8);
+		align-items: center;
+	}
+
+	.owners-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.owners-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.75rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+		line-height: 1.2;
+	}
+
+	.owners-hero__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0 0 var(--space-6);
+	}
+
+	.owners-hero__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.875rem 2rem;
+		background-color: var(--surface-dark);
+		color: #fff;
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease;
+	}
+
+	.owners-hero__btn:hover { opacity: 0.85; }
+
+	.owners-hero__image-placeholder {
+		width: 100%;
+		aspect-ratio: 4/3;
+		background-color: oklch(from var(--brand-primary) l c h / 0.08);
+		border-radius: var(--radius-card);
+	}
+
+	/* Benefits */
+	.owners-benefits__container,
+	.owners-steps__container,
+	.owners-faq__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.owners-benefits__tagline,
+	.owners-steps__tagline,
+	.owners-faq__tagline,
+	.owners-cta__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.owners-benefits__title,
+	.owners-steps__title,
+	.owners-faq__title,
+	.owners-cta__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-8);
+	}
+
+	.owners-benefits__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+		text-align: left;
+	}
+
+	.owners-benefit-card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+	}
+
+	.owners-benefit-card__icon { margin-bottom: var(--space-4); }
+
+	.owners-benefit-card__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.owners-benefit-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/* Steps */
+	.owners-steps__grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	.owners-step__num {
+		font-family: var(--font-heading);
+		font-size: clamp(2rem, 4vw, 3rem);
+		font-weight: 700;
+		color: oklch(from var(--brand-primary) l c h / 0.2);
+		display: block;
+		margin-bottom: var(--space-3);
+	}
+
+	.owners-step__title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.owners-step__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	/* FAQ */
+	.owners-faq__list {
+		max-width: 700px;
+		margin: 0 auto;
+		text-align: left;
+	}
+
+	.owners-faq__item {
+		border-bottom: 1px solid var(--border);
+		padding: var(--space-4) 0;
+	}
+
+	.owners-faq__question {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-body-lg);
+		color: var(--foreground);
+		cursor: pointer;
+		list-style: none;
+		padding: var(--space-2) 0;
+	}
+
+	.owners-faq__question::-webkit-details-marker { display: none; }
+
+	.owners-faq__answer {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		padding: var(--space-2) 0 var(--space-4);
+		margin: 0;
+	}
+
+	/* CTA */
+	.owners-cta {
+		background-color: var(--surface-dark);
+		padding: var(--space-section) 0;
+		text-align: center;
+	}
+
+	.owners-cta__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.owners-cta__tagline { color: oklch(from var(--brand-accent) l c h / 0.8); }
+
+	.owners-cta__title {
+		color: #fff;
+		margin: 0 0 var(--space-4);
+	}
+
+	.owners-cta__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: oklch(1 0 0 / 0.7);
+		max-width: 55ch;
+		margin: 0 auto var(--space-6);
+		line-height: 1.6;
+	}
+
+	.owners-cta__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.875rem 2rem;
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground, #fff);
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
+	}
+
+	.owners-cta__btn:hover {
+		opacity: 0.9;
+		transform: translateY(-2px);
+	}
+
+	/* Responsive */
+	@media (max-width: 768px) {
+		.owners-hero__container { grid-template-columns: 1fr; }
+		.owners-hero__image { order: -1; }
+		.owners-benefits__grid { grid-template-columns: 1fr; }
+		.owners-steps__grid { grid-template-columns: repeat(2, 1fr); }
+	}
+
+	@media (max-width: 480px) {
+		.owners-steps__grid { grid-template-columns: 1fr; }
+	}
+</style>

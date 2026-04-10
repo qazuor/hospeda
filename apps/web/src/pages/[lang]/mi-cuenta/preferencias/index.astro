@@ -1,0 +1,50 @@
+---
+/**
+ * @file mi-cuenta/preferencias/index.astro
+ * @description Account preferences page.
+ * @route /{lang}/mi-cuenta/preferencias/
+ * @rendering SSR
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const user = Astro.locals.user;
+
+if (!user) {
+	return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const { t } = createTranslations(locale);
+const title = t('account.pages.preferences.title', 'Preferencias');
+---
+
+<AccountLayout locale={locale} title={title} activeSection="preferencias">
+	<h2 class="account-section__title">{title}</h2>
+
+	<!-- TODO: PreferenceToggles React island (client:load) -->
+	<div class="account-section__placeholder">
+		<p>{t('account.pages.preferences.placeholder', 'Contenido en desarrollo')}</p>
+	</div>
+</AccountLayout>
+
+<style>
+	.account-section__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.5rem, 3vw, 2rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-6);
+	}
+	.account-section__placeholder {
+		background-color: var(--card);
+		border: 1px dashed var(--border);
+		border-radius: var(--radius-card);
+		padding: var(--space-8);
+		text-align: center;
+		color: var(--muted-foreground);
+	}
+</style>

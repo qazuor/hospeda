@@ -1,0 +1,198 @@
+---
+/**
+ * @file nosotros/index.astro
+ * @description About us page with hero, mission, values, and regional section.
+ * @route /{lang}/nosotros/
+ * @rendering SSG (prerender)
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+---
+
+<DefaultLayout
+	locale={locale}
+	title={t('about.title', 'Quiénes somos')}
+	description={t('about.description', 'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.')}
+>
+	<!-- Hero -->
+	<section class="about-hero section section--warm">
+		<div class="about-hero__container" data-reveal="up">
+			<p class="about-hero__tagline">{t('about.hero.tagline', 'Nuestra historia')}</p>
+			<h1 class="about-hero__title">{t('about.hero.title', 'Conectamos viajeros con el Litoral')}</h1>
+			<p class="about-hero__subtitle">
+				{t('about.hero.subtitle', 'Hospeda nació con la misión de hacer visible la riqueza turística de Concepción del Uruguay y el Litoral Entrerriano.')}
+			</p>
+		</div>
+	</section>
+
+	<!-- Mission -->
+	<section class="about-mission section">
+		<div class="about-mission__container">
+			<p class="about-mission__tagline" data-reveal="up">{t('about.mission.tagline', 'Nuestra misión')}</p>
+			<h2 class="about-mission__title" data-reveal="up">{t('about.mission.title', '¿Qué hacemos?')}</h2>
+			<p class="about-mission__text" data-reveal="up">
+				{t('about.mission.text', 'Facilitamos la conexión entre propietarios de alojamientos turísticos y viajeros que buscan experiencias auténticas en el litoral entrerriano, Argentina. Sin comisiones ocultas, con herramientas simples y soporte dedicado.')}
+			</p>
+		</div>
+	</section>
+
+	<!-- Values -->
+	<section class="about-values section section--warm">
+		<div class="about-values__container">
+			<p class="about-values__tagline" data-reveal="up">{t('about.values.tagline', 'Lo que nos define')}</p>
+			<h2 class="about-values__title" data-reveal="up">{t('about.values.title', 'Nuestros valores')}</h2>
+			<div class="about-values__grid">
+				{[
+					{ titleKey: 'about.values.transparency.title', titleFb: 'Transparencia', descKey: 'about.values.transparency.desc', descFb: 'Sin comisiones ocultas ni costos sorpresa. Precios claros desde el primer momento.' },
+					{ titleKey: 'about.values.simplicity.title', titleFb: 'Simplicidad', descKey: 'about.values.simplicity.desc', descFb: 'Herramientas fáciles de usar tanto para viajeros como para propietarios.' },
+					{ titleKey: 'about.values.community.title', titleFb: 'Comunidad', descKey: 'about.values.community.desc', descFb: 'Creemos en el turismo como motor de desarrollo local y regional.' },
+				].map((value, i) => (
+					<div class="about-values__card" data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<h3 class="about-values__card-title">{t(value.titleKey, value.titleFb)}</h3>
+						<p class="about-values__card-desc">{t(value.descKey, value.descFb)}</p>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+
+	<!-- Regional -->
+	<section class="about-region section">
+		<div class="about-region__container" data-reveal="up">
+			<p class="about-region__tagline">{t('about.region.tagline', 'Nuestro hogar')}</p>
+			<h2 class="about-region__title">{t('about.region.title', 'Concepción del Uruguay')}</h2>
+			<p class="about-region__text">
+				{t('about.region.text', 'Ubicada a orillas del río Uruguay, Concepción del Uruguay es una ciudad con historia, naturaleza y gastronomía. Capital histórica de Entre Ríos, ofrece playas, termas, carnavales y una rica vida cultural.')}
+			</p>
+		</div>
+	</section>
+
+	<!-- CTA -->
+	<section class="about-cta section section--warm">
+		<div class="about-cta__container" data-reveal="up">
+			<p class="about-cta__tagline">{t('about.cta.tagline', '¿Listo para explorar?')}</p>
+			<h2 class="about-cta__title">{t('about.cta.title', 'Descubrí el Litoral')}</h2>
+			<a href={buildUrl({ locale, path: 'alojamientos' })} class="about-cta__btn">
+				{t('about.cta.button', 'Ver alojamientos')}
+			</a>
+		</div>
+	</section>
+</DefaultLayout>
+
+<style>
+	.about-hero__container,
+	.about-mission__container,
+	.about-values__container,
+	.about-region__container,
+	.about-cta__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.about-hero__tagline,
+	.about-mission__tagline,
+	.about-values__tagline,
+	.about-region__tagline,
+	.about-cta__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.about-hero__title,
+	.about-mission__title,
+	.about-values__title,
+	.about-region__title,
+	.about-cta__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.about-hero__subtitle,
+	.about-mission__text,
+	.about-region__text {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		max-width: 65ch;
+		margin: 0 auto;
+		line-height: 1.7;
+	}
+
+	.about-values__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+		margin-top: var(--space-8);
+	}
+
+	.about-values__card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-6);
+		box-shadow: var(--shadow-card);
+		text-align: left;
+	}
+
+	.about-values__card-title {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-3);
+	}
+
+	.about-values__card-desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.about-cta__btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.875rem 2rem;
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground, #fff);
+		border-radius: var(--radius-pill);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		transition: opacity var(--duration-normal) ease, transform var(--duration-normal) ease;
+	}
+
+	.about-cta__btn:hover {
+		opacity: 0.9;
+		transform: translateY(-2px);
+	}
+
+	@media (max-width: 768px) {
+		.about-values__grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

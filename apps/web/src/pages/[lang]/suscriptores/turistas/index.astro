@@ -1,0 +1,260 @@
+---
+/**
+ * @file suscriptores/turistas/index.astro
+ * @description Tourist pricing page showing tourist plan cards.
+ * Uses hardcoded fallback data until the plans API endpoint is connected.
+ * @route /{lang}/suscriptores/turistas/
+ * @rendering SSG + ISR 24h
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// Hardcoded fallback plans (pricing page must never be empty)
+const touristPlans = [
+	{
+		name: t('pricing.tourist.free.name', 'Explorador'),
+		price: 0,
+		period: t('pricing.tourist.period', '/mes'),
+		description: t('pricing.tourist.free.desc', 'Acceso básico a la plataforma'),
+		features: [
+			t('pricing.tourist.free.f1', 'Buscar alojamientos'),
+			t('pricing.tourist.free.f2', 'Ver destinos y eventos'),
+			t('pricing.tourist.free.f3', 'Contactar propietarios'),
+		],
+		highlighted: false,
+	},
+	{
+		name: t('pricing.tourist.plus.name', 'Viajero Plus'),
+		price: 1990,
+		period: t('pricing.tourist.period', '/mes'),
+		description: t('pricing.tourist.plus.desc', 'Para viajeros frecuentes'),
+		features: [
+			t('pricing.tourist.plus.f1', 'Todo lo del plan Explorador'),
+			t('pricing.tourist.plus.f2', 'Favoritos ilimitados'),
+			t('pricing.tourist.plus.f3', 'Alertas de ofertas'),
+			t('pricing.tourist.plus.f4', 'Reseñas destacadas'),
+		],
+		highlighted: true,
+	},
+	{
+		name: t('pricing.tourist.premium.name', 'Premium'),
+		price: 3990,
+		period: t('pricing.tourist.period', '/mes'),
+		description: t('pricing.tourist.premium.desc', 'La experiencia completa'),
+		features: [
+			t('pricing.tourist.premium.f1', 'Todo lo del plan Viajero Plus'),
+			t('pricing.tourist.premium.f2', 'Descuentos exclusivos'),
+			t('pricing.tourist.premium.f3', 'Soporte prioritario'),
+			t('pricing.tourist.premium.f4', 'Acceso anticipado a eventos'),
+		],
+		highlighted: false,
+	},
+] as const;
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('pricing.tourist.title', 'Planes para turistas')}
+	description={t('pricing.tourist.description', 'Elegí el plan ideal para tu próximo viaje al Litoral.')}
+>
+	<section class="pricing-hero section section--warm">
+		<div class="pricing-hero__container" data-reveal="up">
+			<p class="pricing-hero__tagline">{t('pricing.tourist.tagline', 'Planes y precios')}</p>
+			<h1 class="pricing-hero__title">{t('pricing.tourist.heading', 'Planes para turistas')}</h1>
+			<p class="pricing-hero__subtitle">
+				{t('pricing.tourist.subtitle', 'Elegí el plan que mejor se adapte a tu forma de viajar.')}
+			</p>
+		</div>
+	</section>
+
+	<section class="pricing-cards section">
+		<div class="pricing-cards__container">
+			<div class="pricing-cards__grid">
+				{touristPlans.map((plan, i) => (
+					<div class:list={['pricing-card', { 'pricing-card--highlighted': plan.highlighted }]} data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<h3 class="pricing-card__name">{plan.name}</h3>
+						<p class="pricing-card__desc">{plan.description}</p>
+						<div class="pricing-card__price">
+							<span class="pricing-card__amount">
+								{plan.price === 0 ? t('pricing.free', 'Gratis') : `$${plan.price.toLocaleString('es-AR')}`}
+							</span>
+							{plan.price > 0 && <span class="pricing-card__period">{plan.period}</span>}
+						</div>
+						<ul class="pricing-card__features">
+							{plan.features.map((f) => (
+								<li class="pricing-card__feature">✓ {f}</li>
+							))}
+						</ul>
+						<a href={buildUrl({ locale, path: 'auth/signup' })} class:list={['pricing-card__btn', { 'pricing-card__btn--primary': plan.highlighted }]}>
+							{t('pricing.cta', 'Empezar')}
+						</a>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.pricing-hero__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.pricing-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.pricing-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-hero__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		max-width: 50ch;
+		margin: 0 auto;
+	}
+
+	.pricing-cards__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.pricing-cards__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+		align-items: start;
+	}
+
+	.pricing-card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-8);
+		box-shadow: var(--shadow-card);
+		border: 2px solid transparent;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.pricing-card--highlighted {
+		border-color: var(--brand-accent);
+		position: relative;
+		transform: scale(1.02);
+	}
+
+	.pricing-card__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.pricing-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__price {
+		margin-bottom: var(--space-6);
+	}
+
+	.pricing-card__amount {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 3vw, 2.25rem);
+		color: var(--foreground);
+	}
+
+	.pricing-card__period {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+	}
+
+	.pricing-card__features {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex: 1;
+	}
+
+	.pricing-card__feature {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--foreground);
+	}
+
+	.pricing-card__btn {
+		display: block;
+		text-align: center;
+		padding: 0.75rem;
+		border-radius: var(--radius-button);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--border);
+		color: var(--foreground);
+		background-color: var(--background);
+		transition: all var(--duration-fast) ease;
+	}
+
+	.pricing-card__btn:hover {
+		background-color: var(--muted);
+	}
+
+	.pricing-card__btn--primary {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground, #fff);
+		border-color: var(--brand-accent);
+	}
+
+	.pricing-card__btn--primary:hover {
+		opacity: 0.9;
+	}
+
+	@media (max-width: 768px) {
+		.pricing-cards__grid {
+			grid-template-columns: 1fr;
+			max-width: 400px;
+			margin: 0 auto;
+		}
+
+		.pricing-card--highlighted {
+			transform: none;
+		}
+	}
+</style>

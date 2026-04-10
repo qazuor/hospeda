@@ -1,0 +1,252 @@
+---
+/**
+ * @file suscriptores/planes/index.astro
+ * @description Owner pricing page showing owner + complex plan cards.
+ * Uses hardcoded fallback data until the plans API endpoint is connected.
+ * @route /{lang}/suscriptores/planes/
+ * @rendering SSG + ISR 24h
+ */
+
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { GetStaticPaths } from 'astro';
+
+export const prerender = true;
+
+export const getStaticPaths = (() => {
+	return [{ params: { lang: 'es' } }, { params: { lang: 'en' } }, { params: { lang: 'pt' } }];
+}) satisfies GetStaticPaths;
+
+const { lang } = Astro.params;
+const locale = lang as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const ownerPlans = [
+	{
+		name: t('pricing.owner.basic.name', 'Básico'),
+		price: 0,
+		period: t('pricing.owner.period', '/mes'),
+		description: t('pricing.owner.basic.desc', 'Empezá a publicar gratis'),
+		features: [
+			t('pricing.owner.basic.f1', '1 propiedad'),
+			t('pricing.owner.basic.f2', 'Fotos limitadas (5)'),
+			t('pricing.owner.basic.f3', 'Contacto por email'),
+			t('pricing.owner.basic.f4', 'Estadísticas básicas'),
+		],
+		highlighted: false,
+	},
+	{
+		name: t('pricing.owner.pro.name', 'Profesional'),
+		price: 4990,
+		period: t('pricing.owner.period', '/mes'),
+		description: t('pricing.owner.pro.desc', 'Para propietarios activos'),
+		features: [
+			t('pricing.owner.pro.f1', 'Hasta 5 propiedades'),
+			t('pricing.owner.pro.f2', 'Fotos ilimitadas'),
+			t('pricing.owner.pro.f3', 'WhatsApp + email'),
+			t('pricing.owner.pro.f4', 'Estadísticas avanzadas'),
+			t('pricing.owner.pro.f5', 'Destacar publicación'),
+		],
+		highlighted: true,
+	},
+	{
+		name: t('pricing.owner.premium.name', 'Premium'),
+		price: 9990,
+		period: t('pricing.owner.period', '/mes'),
+		description: t('pricing.owner.premium.desc', 'Máxima visibilidad'),
+		features: [
+			t('pricing.owner.premium.f1', 'Propiedades ilimitadas'),
+			t('pricing.owner.premium.f2', 'Todo lo del plan Profesional'),
+			t('pricing.owner.premium.f3', 'Posición destacada'),
+			t('pricing.owner.premium.f4', 'Soporte prioritario'),
+			t('pricing.owner.premium.f5', 'Badge verificado'),
+		],
+		highlighted: false,
+	},
+] as const;
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('pricing.owner.title', 'Planes para propietarios')}
+	description={t('pricing.owner.description', 'Publicá tu alojamiento con el plan que mejor se adapte a tu negocio.')}
+>
+	<section class="pricing-hero section section--warm">
+		<div class="pricing-hero__container" data-reveal="up">
+			<p class="pricing-hero__tagline">{t('pricing.owner.tagline', 'Planes y precios')}</p>
+			<h1 class="pricing-hero__title">{t('pricing.owner.heading', 'Planes para propietarios')}</h1>
+			<p class="pricing-hero__subtitle">
+				{t('pricing.owner.subtitle', 'Elegí el plan que mejor se adapte a tu propiedad y objetivos.')}
+			</p>
+		</div>
+	</section>
+
+	<section class="pricing-cards section">
+		<div class="pricing-cards__container">
+			<div class="pricing-cards__grid">
+				{ownerPlans.map((plan, i) => (
+					<div class:list={['pricing-card', { 'pricing-card--highlighted': plan.highlighted }]} data-reveal="up" style={`transition-delay: ${i * 100}ms`}>
+						<h3 class="pricing-card__name">{plan.name}</h3>
+						<p class="pricing-card__desc">{plan.description}</p>
+						<div class="pricing-card__price">
+							<span class="pricing-card__amount">
+								{plan.price === 0 ? t('pricing.free', 'Gratis') : `$${plan.price.toLocaleString('es-AR')}`}
+							</span>
+							{plan.price > 0 && <span class="pricing-card__period">{plan.period}</span>}
+						</div>
+						<ul class="pricing-card__features">
+							{plan.features.map((f) => (
+								<li class="pricing-card__feature">✓ {f}</li>
+							))}
+						</ul>
+						<a href={buildUrl({ locale, path: 'auth/signup' })} class:list={['pricing-card__btn', { 'pricing-card__btn--primary': plan.highlighted }]}>
+							{t('pricing.cta', 'Empezar')}
+						</a>
+					</div>
+				))}
+			</div>
+		</div>
+	</section>
+</MarketingLayout>
+
+<style>
+	.pricing-hero__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+	}
+
+	.pricing-hero__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		font-style: italic;
+		margin: 0 0 var(--space-2);
+	}
+
+	.pricing-hero__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-hero__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		max-width: 50ch;
+		margin: 0 auto;
+	}
+
+	.pricing-cards__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.pricing-cards__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+		align-items: start;
+	}
+
+	.pricing-card {
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		padding: var(--space-8);
+		box-shadow: var(--shadow-card);
+		border: 2px solid transparent;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.pricing-card--highlighted {
+		border-color: var(--brand-accent);
+		transform: scale(1.02);
+	}
+
+	.pricing-card__name {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: var(--text-xl);
+		color: var(--foreground);
+		margin: 0 0 var(--space-2);
+	}
+
+	.pricing-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.pricing-card__price { margin-bottom: var(--space-6); }
+
+	.pricing-card__amount {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 3vw, 2.25rem);
+		color: var(--foreground);
+	}
+
+	.pricing-card__period {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+	}
+
+	.pricing-card__features {
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-6);
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2);
+		flex: 1;
+	}
+
+	.pricing-card__feature {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--foreground);
+	}
+
+	.pricing-card__btn {
+		display: block;
+		text-align: center;
+		padding: 0.75rem;
+		border-radius: var(--radius-button);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		text-decoration: none;
+		border: 1px solid var(--border);
+		color: var(--foreground);
+		background-color: var(--background);
+		transition: all var(--duration-fast) ease;
+	}
+
+	.pricing-card__btn:hover { background-color: var(--muted); }
+
+	.pricing-card__btn--primary {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground, #fff);
+		border-color: var(--brand-accent);
+	}
+
+	.pricing-card__btn--primary:hover { opacity: 0.9; }
+
+	@media (max-width: 768px) {
+		.pricing-cards__grid {
+			grid-template-columns: 1fr;
+			max-width: 400px;
+			margin: 0 auto;
+		}
+		.pricing-card--highlighted { transform: none; }
+	}
+</style>

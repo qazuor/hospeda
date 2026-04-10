@@ -1,0 +1,67 @@
+---
+/**
+ * @file destinos/atraccion/[slug]/index.astro
+ * @description Attraction detail page.
+ * @route /{lang}/destinos/atraccion/{slug}/
+ * @rendering SSR + ISR 24h
+ */
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import { attractionsApi } from '@/lib/api/endpoints';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+if (!slug) return new Response(null, { status: 404 });
+
+const result = await attractionsApi.getBySlug({ slug });
+if (!result.ok) return new Response(null, { status: 404 });
+const attraction = result.data as Record<string, unknown>;
+const name = String(attraction.name || '');
+const description = String(attraction.description || '');
+const featuredImage = String(attraction.featuredImage || '/assets/images/placeholder-destination.svg');
+const destObj = attraction.destination as Record<string, unknown> | undefined;
+const destName = String(destObj?.name || '');
+const destSlug = String(destObj?.slug || '');
+---
+
+<DetailLayout locale={locale} title={name} description={description} showBreadcrumbs={true} showSidebar={true}>
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[
+		{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
+		...(destSlug ? [{ label: destName, path: `destinos/${destSlug}` }] : []),
+		{ label: name },
+	]} />
+
+	<div class="attraction-detail">
+		<div class="attraction-detail__hero">
+			<img src={featuredImage} alt={name} class="attraction-detail__hero-img" />
+		</div>
+		<h1 class="attraction-detail__title">{name}</h1>
+		<div class="attraction-detail__description" set:html={String(attraction.contentHtml || description)} />
+	</div>
+
+	<div slot="sidebar" class="attraction-sidebar">
+		{destName && (
+			<div class="attraction-sidebar__card">
+				<h3 class="attraction-sidebar__title">{t('destinations.detail.parentDestination', 'Destino')}</h3>
+				<a href={buildUrl({ locale, path: `destinos/${destSlug}` })} class="attraction-sidebar__link">{destName}</a>
+			</div>
+		)}
+	</div>
+</DetailLayout>
+
+<style>
+	.attraction-detail__hero { margin-bottom: var(--space-6); border-radius: var(--radius-card); overflow: hidden; }
+	.attraction-detail__hero-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+	.attraction-detail__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.5rem, 3vw, 2.25rem); color: var(--foreground); margin: 0 0 var(--space-6); }
+	.attraction-detail__description { font-family: var(--font-sans); line-height: 1.7; color: var(--foreground); }
+	.attraction-detail__description :global(p) { margin-bottom: var(--space-4); }
+	.attraction-sidebar__card { background-color: var(--card); border-radius: var(--radius-card); padding: var(--space-6); box-shadow: var(--shadow-card); }
+	.attraction-sidebar__title { font-family: var(--font-heading); font-weight: 600; font-size: var(--text-lg); margin: 0 0 var(--space-2); }
+	.attraction-sidebar__link { color: var(--brand-accent); text-decoration: none; font-family: var(--font-sans); }
+	.attraction-sidebar__link:hover { text-decoration: underline; }
+</style>

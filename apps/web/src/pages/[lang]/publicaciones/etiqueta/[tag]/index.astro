@@ -1,0 +1,58 @@
+---
+/**
+ * @file publicaciones/etiqueta/[tag]/index.astro
+ * @description Posts filtered by tag (resolved via slug).
+ * @route /{lang}/publicaciones/etiqueta/{tag}/
+ * @rendering SSR + ISR 24h
+ */
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import ArticleCard from '@/components/shared/ArticleCard.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import { postsApi, tagsApi } from '@/lib/api/endpoints';
+import { toPostCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { tag: tagSlug } = Astro.params;
+if (!tagSlug) return new Response(null, { status: 404 });
+
+// Resolve tag slug to ID
+const tagResult = await tagsApi.getBySlug({ slug: tagSlug });
+if (!tagResult.ok) return new Response(null, { status: 404 });
+const tagData = tagResult.data as Record<string, unknown>;
+const tagId = String(tagData.id || '');
+const tagName = String(tagData.name || tagSlug);
+
+const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
+const result = await postsApi.list({ page, pageSize: 9 });
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / 9) : 0;
+const cards = items.map((item) => toPostCardProps({ item: item as unknown as Record<string, unknown> }));
+const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
+---
+
+<ListingLayout locale={locale} title={`#${tagName} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones con etiqueta ${tagName}`} showFilters={false}>
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('blog.title', 'Publicaciones'), path: 'publicaciones' }, { label: `#${tagName}` }]} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('blog.byTag.tagline', 'Etiqueta')} title={`#${tagName}`} totalCount={total} />
+	{hasError && <ErrorBanner locale={locale} />}
+	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'publicaciones' })} />}
+	{!hasError && cards.length > 0 && (
+		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}><ArticleCard data={card} locale={locale} /></div>))}</div>
+	)}
+	{totalPages > 1 && <Pagination slot="pagination" currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />}
+</ListingLayout>
+
+<style>
+	.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-card-gap); }
+	@media (max-width: 1024px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
+</style>

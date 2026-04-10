@@ -1,0 +1,177 @@
+---
+/**
+ * @file destinos/index.astro
+ * @description Destinations listing page with card grid and pagination.
+ * Uses DefaultLayout (no filter sidebar - hierarchy serves as filter).
+ * @route /{lang}/destinos/
+ * @rendering SSR + ISR 24h
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import { toDestinationCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 12;
+
+const result = await destinationsApi.list({ page, pageSize });
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown> }));
+
+const baseUrl = buildUrl({ locale, path: 'destinos' });
+---
+
+<DefaultLayout
+	locale={locale}
+	title={t('destinations.title', 'Destinos')}
+	description={t('destinations.description', 'Explorá los destinos turísticos del Litoral Entrerriano.')}
+>
+	<div class="dest-listing">
+		<div class="dest-listing__header section section--warm">
+			<div class="dest-listing__header-container">
+				<Breadcrumbs locale={locale} items={[{ label: t('destinations.title', 'Destinos') }]} />
+				<ListingPageHeader
+					locale={locale}
+					tagline={t('destinations.tagline', 'Explorá la región')}
+					title={t('destinations.title', 'Destinos')}
+					totalCount={total}
+				/>
+			</div>
+		</div>
+
+		<!-- Wave separator -->
+		<div class="dest-listing__wave" aria-hidden="true">
+			<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+				<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+			</svg>
+		</div>
+
+		<div class="dest-listing__body">
+			<div class="dest-listing__container">
+				{hasError && <ErrorBanner locale={locale} />}
+
+				{!hasError && cards.length === 0 && (
+					<EmptyState locale={locale} variant="empty" />
+				)}
+
+				{!hasError && cards.length > 0 && (
+					<div class="dest-grid">
+						{cards.map((card, i) => (
+							<a href={buildUrl({ locale, path: `destinos/${card.slug}` })} class="dest-card" data-reveal="up" style={`transition-delay: ${Math.min(i, 8) * 80}ms`}>
+								<div class="dest-card__image-wrapper">
+									<img
+										src={card.featuredImage || '/assets/images/placeholder-destination.svg'}
+										alt={card.name}
+										loading="lazy"
+										class="dest-card__img"
+									/>
+								</div>
+								<div class="dest-card__content">
+									<h3 class="dest-card__name">{card.name}</h3>
+									{card.description && (
+										<p class="dest-card__desc">{card.description}</p>
+									)}
+								</div>
+							</a>
+						))}
+					</div>
+				)}
+
+				{totalPages > 1 && (
+					<Pagination currentPage={page} totalPages={totalPages} baseUrl={baseUrl.slice(0, -1)} locale={locale} />
+				)}
+			</div>
+		</div>
+	</div>
+</DefaultLayout>
+
+<style>
+	.dest-listing__header-container,
+	.dest-listing__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.dest-listing__header {
+		padding: var(--space-6) 0 var(--space-4);
+	}
+
+	.dest-listing__wave { margin-top: -1px; line-height: 0; }
+	.dest-listing__wave svg { width: 100%; height: 80px; display: block; }
+
+	.dest-listing__body { padding: var(--space-section-sm) 0; }
+
+	.dest-grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	.dest-card {
+		text-decoration: none;
+		color: inherit;
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		overflow: hidden;
+		box-shadow: var(--shadow-card);
+		transition: box-shadow var(--duration-normal) ease, transform var(--duration-normal) ease;
+	}
+
+	.dest-card:hover {
+		box-shadow: var(--shadow-card-hover);
+		transform: translateY(-4px);
+	}
+
+	.dest-card__image-wrapper { overflow: hidden; }
+
+	.dest-card__img {
+		width: 100%;
+		aspect-ratio: 3/2;
+		object-fit: cover;
+		transition: transform var(--duration-normal) ease;
+	}
+
+	.dest-card:hover .dest-card__img { transform: scale(1.05); }
+
+	.dest-card__content { padding: var(--space-4); }
+
+	.dest-card__name {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-1);
+	}
+
+	.dest-card__desc {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		margin: 0;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	@media (max-width: 1024px) { .dest-grid { grid-template-columns: repeat(3, 1fr); } }
+	@media (max-width: 768px) { .dest-grid { grid-template-columns: repeat(2, 1fr); } }
+	@media (max-width: 480px) { .dest-grid { grid-template-columns: 1fr; } }
+</style>

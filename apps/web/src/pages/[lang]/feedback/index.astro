@@ -1,0 +1,35 @@
+---
+/**
+ * @file feedback/index.astro
+ * @description Beta feedback form page.
+ * @route /{lang}/feedback/
+ * @rendering SSR (no ISR)
+ */
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+---
+
+<DefaultLayout locale={locale} title={t('feedback.title', 'Feedback')} noindex={true}>
+	<div class="feedback-page">
+		<div class="feedback-page__container">
+			<h1 class="feedback-page__title">{t('feedback.title', 'Enviar feedback')}</h1>
+			<p class="feedback-page__desc">{t('feedback.description', 'Ayudanos a mejorar Hospeda. Tu opinión es muy importante para nosotros.')}</p>
+
+			<!-- TODO: FeedbackForm React island (client:load) with multipart upload (T-050) -->
+			<div class="feedback-page__placeholder">
+				<p>{t('feedback.placeholder', 'El formulario de feedback estará disponible próximamente.')}</p>
+			</div>
+		</div>
+	</div>
+</DefaultLayout>
+
+<style>
+	.feedback-page__container { max-width: 700px; margin: 0 auto; padding: var(--space-section-sm) var(--space-container-x); text-align: center; }
+	.feedback-page__title { font-family: var(--font-heading); font-weight: 700; font-size: clamp(1.75rem, 4vw, 2.5rem); color: var(--foreground); margin: 0 0 var(--space-4); }
+	.feedback-page__desc { font-family: var(--font-sans); font-size: var(--text-body-lg); color: var(--muted-foreground); margin: 0 0 var(--space-8); line-height: 1.6; }
+	.feedback-page__placeholder { background-color: var(--card); border: 1px dashed var(--border); border-radius: var(--radius-card); padding: var(--space-12); color: var(--muted-foreground); }
+</style>

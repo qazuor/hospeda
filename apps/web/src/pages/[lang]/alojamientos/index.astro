@@ -1,0 +1,210 @@
+---
+/**
+ * @file alojamientos/index.astro
+ * @description Accommodations listing page with filter sidebar, card grid,
+ * pagination, and ItemList JSON-LD structured data.
+ * @route /{lang}/alojamientos/
+ * @rendering SSR + ISR 24h
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import AccommodationCard from '@/components/shared/AccommodationCard.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import ErrorBanner from '@/components/shared/ErrorBanner.astro';
+import Pagination from '@/components/shared/Pagination.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { FilterSidebar } from '@/components/shared/FilterSidebar.client';
+import { accommodationsApi } from '@/lib/api/endpoints';
+import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// Read pagination and filter params from URL
+const url = Astro.url;
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 9;
+
+// Extract filter params
+const q = url.searchParams.get('q') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
+const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const sortBy = url.searchParams.get('sortBy') ?? undefined;
+const sortOrder = (url.searchParams.get('sortOrder') as 'asc' | 'desc') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+
+// Fetch accommodations
+const result = await accommodationsApi.list({
+	page,
+	pageSize,
+	q,
+	type,
+	destinationId,
+	minPrice,
+	maxPrice,
+	sortBy,
+	sortOrder,
+	isFeatured,
+});
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.total : 0;
+const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+
+// Transform items for cards
+const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+
+// Filter configuration for sidebar
+const filterGroups = [
+	{
+		id: 'q',
+		label: t('accommodations.filters.search', 'Buscar'),
+		type: 'search' as const,
+	},
+	{
+		id: 'type',
+		label: t('accommodations.filters.type', 'Tipo de Alojamiento'),
+		type: 'checkbox' as const,
+		options: [
+			{ value: 'APARTMENT', label: t('accommodations.types.apartment', 'Departamento') },
+			{ value: 'HOUSE', label: t('accommodations.types.house', 'Casa') },
+			{ value: 'COUNTRY_HOUSE', label: t('accommodations.types.countryHouse', 'Casa Quinta') },
+			{ value: 'CABIN', label: t('accommodations.types.cabin', 'Cabaña') },
+			{ value: 'HOTEL', label: t('accommodations.types.hotel', 'Hotel') },
+			{ value: 'HOSTEL', label: t('accommodations.types.hostel', 'Hostel') },
+			{ value: 'CAMPING', label: t('accommodations.types.camping', 'Camping') },
+			{ value: 'ROOM', label: t('accommodations.types.room', 'Habitación') },
+			{ value: 'RESORT', label: t('accommodations.types.resort', 'Resort') },
+		],
+	},
+	{
+		id: 'price',
+		label: t('accommodations.filters.pricePerNight', 'Precio por noche'),
+		type: 'range' as const,
+		min: 5000,
+		max: 150000,
+		step: 1000,
+	},
+] as const;
+
+const sortOptions = [
+	{ value: 'relevance', label: t('accommodations.sort.relevance', 'Relevancia') },
+	{ value: 'price_asc', label: t('accommodations.sort.priceAsc', 'Precio: menor a mayor') },
+	{ value: 'price_desc', label: t('accommodations.sort.priceDesc', 'Precio: mayor a menor') },
+	{ value: 'rating', label: t('accommodations.sort.rating', 'Mejor valorados') },
+] as const;
+
+// ItemList JSON-LD
+const jsonLd = {
+	'@context': 'https://schema.org',
+	'@type': 'ItemList',
+	name: t('accommodations.title', 'Alojamientos'),
+	numberOfItems: total,
+	itemListElement: cards.map((card, i) => ({
+		'@type': 'ListItem',
+		position: (page - 1) * pageSize + i + 1,
+		url: `${Astro.site ?? Astro.url.origin}${buildUrl({ locale, path: `alojamientos/${card.slug}` })}`,
+		name: card.name,
+	})),
+};
+
+const baseUrl = buildUrl({ locale, path: 'alojamientos' });
+---
+
+<ListingLayout
+	locale={locale}
+	title={t('accommodations.title', 'Alojamientos')}
+	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
+	showFilters={true}
+	filterPosition="left"
+>
+	<JsonLd slot="head-extra" data={jsonLd} />
+
+	<Breadcrumbs
+		slot="breadcrumbs"
+		locale={locale}
+		items={[{ label: t('accommodations.title', 'Alojamientos') }]}
+	/>
+
+	<ListingPageHeader
+		slot="page-header"
+		locale={locale}
+		tagline={t('accommodations.tagline', 'Encontrá tu lugar ideal')}
+		title={t('accommodations.title', 'Alojamientos')}
+		totalCount={total}
+	/>
+
+	<FilterSidebar
+		slot="filters"
+		client:visible
+		locale={locale}
+		filters={filterGroups}
+		sortOptions={sortOptions}
+		defaultSort="relevance"
+		onFiltersChange={(params) => {
+			const newUrl = new URL(window.location.href);
+			newUrl.search = params.toString();
+			window.location.href = newUrl.href;
+		}}
+	/>
+
+	{hasError && (
+		<ErrorBanner locale={locale} />
+	)}
+
+	{!hasError && cards.length === 0 && (
+		<EmptyState
+			locale={locale}
+			variant="no-results"
+			actionUrl={baseUrl}
+		/>
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="acc-grid">
+			{cards.map((card, i) => (
+				<div data-reveal="up" style={`transition-delay: ${Math.min(i, 6) * 100}ms`}>
+					<AccommodationCard data={card} locale={locale} />
+				</div>
+			))}
+		</div>
+	)}
+
+	{totalPages > 1 && (
+		<Pagination
+			slot="pagination"
+			currentPage={page}
+			totalPages={totalPages}
+			baseUrl={baseUrl.slice(0, -1)}
+			locale={locale}
+		/>
+	)}
+</ListingLayout>
+
+<style>
+	.acc-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: var(--space-card-gap);
+	}
+
+	@media (max-width: 1024px) {
+		.acc-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.acc-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

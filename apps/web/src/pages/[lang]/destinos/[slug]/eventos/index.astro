@@ -1,0 +1,33 @@
+---
+/**
+ * @file destinos/[slug]/eventos/index.astro
+ * @description Events within a destination. Requires destinationId FK (T-015).
+ * @route /{lang}/destinos/{slug}/eventos/
+ * @rendering SSR + ISR 24h
+ */
+// TODO: Requires destinationId FK on events table (T-015)
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/ListingPageHeader.astro';
+import EmptyState from '@/components/shared/EmptyState.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+if (!slug) return new Response(null, { status: 404 });
+
+const destResult = await destinationsApi.getBySlug({ slug });
+if (!destResult.ok) return new Response(null, { status: 404 });
+const dest = destResult.data as Record<string, unknown>;
+const destName = String(dest.name || slug);
+---
+
+<ListingLayout locale={locale} title={`${t('events.title', 'Eventos')} en ${destName}`} showFilters={false}>
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('destinations.title', 'Destinos'), path: 'destinos' }, { label: destName, path: `destinos/${slug}` }, { label: t('events.title', 'Eventos') }]} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={destName} title={t('events.title', 'Eventos')} />
+	<EmptyState locale={locale} variant="empty" message={t('events.withinDestination.comingSoon', 'Eventos para este destino estarán disponibles próximamente.')} actionUrl={buildUrl({ locale, path: 'eventos' })} actionLabel={t('events.viewAll', 'Ver todos los eventos')} />
+</ListingLayout>
