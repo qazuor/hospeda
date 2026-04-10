@@ -40,8 +40,8 @@ const destinationObj = acc.destination as Record<string, unknown> | undefined;
 const city = String(locationObj?.city || destinationObj?.name || '');
 const images = Array.isArray(acc.images) ? acc.images.map(String) : [];
 const featuredImage = String(acc.featuredImage || images[0] || '/assets/images/placeholder-accommodation.svg');
-const amenities = Array.isArray(acc.amenities) ? acc.amenities : [];
-const features = Array.isArray(acc.features) ? acc.features : [];
+const amenities = (Array.isArray(acc.amenities) ? acc.amenities : []) as ReadonlyArray<Record<string, unknown>>;
+const features = (Array.isArray(acc.features) ? acc.features : []) as ReadonlyArray<Record<string, unknown>>;
 const latitude = Number(acc.latitude || 0);
 const longitude = Number(acc.longitude || 0);
 
@@ -92,15 +92,9 @@ const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 		]}
 	/>
 
-	<!-- Main Content -->
-	<div class="acc-detail">
-		<!-- Hero image -->
-		<div class="acc-detail__hero">
-			<img src={featuredImage} alt={name} class="acc-detail__hero-img" />
-			<!-- TODO: ImageGallery component (T-021) -->
-		</div>
-
-		<!-- Type badge + rating + location -->
+	<!-- Page header: title + meta in warm zone -->
+	<Fragment slot="page-header">
+		<h1 class="acc-detail__title">{name}</h1>
 		<div class="acc-detail__meta">
 			<span class="acc-detail__type-badge" style={`background-color: ${typeColors.bg}; color: ${typeColors.text};`}>
 				{t(`accommodations.types.${accType.toLowerCase()}`, accType)}
@@ -118,8 +112,15 @@ const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 				</span>
 			)}
 		</div>
+	</Fragment>
 
-		<h1 class="acc-detail__title">{name}</h1>
+	<!-- Main Content -->
+	<div class="acc-detail">
+		<!-- Hero image -->
+		<div class="acc-detail__hero">
+			<img src={featuredImage} alt={name} class="acc-detail__hero-img" />
+			<!-- TODO: ImageGallery component (T-021) -->
+		</div>
 
 		<!-- Description (TipTap content) -->
 		<div class="acc-detail__description" set:html={String(acc.contentHtml || acc.description || description)} />
@@ -129,7 +130,7 @@ const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 			<section class="acc-detail__section">
 				<h2 class="acc-detail__section-title">{t('accommodations.detail.amenities', 'Comodidades')}</h2>
 				<div class="acc-detail__amenities-grid">
-					{amenities.map((amenity: Record<string, unknown>) => (
+					{amenities.map((amenity) => (
 						<div class="acc-detail__amenity">
 							{String(amenity.name || amenity.amenityName || '')}
 						</div>
@@ -143,7 +144,7 @@ const typeColors = getAccommodationTypeColor(accType.toLowerCase());
 			<section class="acc-detail__section">
 				<h2 class="acc-detail__section-title">{t('accommodations.detail.features', 'Características')}</h2>
 				<ul class="acc-detail__features-list">
-					{features.map((feature: Record<string, unknown>) => (
+					{features.map((feature) => (
 						<li class="acc-detail__feature">
 							{String(feature.name || feature.featureName || '')}
 						</li>
