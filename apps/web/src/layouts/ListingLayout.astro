@@ -1,0 +1,178 @@
+---
+/**
+ * @file ListingLayout.astro
+ * @description Layout for entity listing pages with optional filter sidebar,
+ * content grid, and pagination. Wraps BaseLayout.
+ *
+ * Used by: accommodations, events, posts listings, destination sub-pages.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import BaseLayout from './BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+	readonly canonicalPath?: string;
+	readonly showFilters?: boolean;
+	readonly filterPosition?: 'left' | 'top';
+}
+
+const {
+	locale,
+	title,
+	description,
+	canonicalPath = Astro.url.pathname,
+	showFilters = false,
+	filterPosition = 'left',
+} = Astro.props;
+
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteBase).href;
+
+const resolvedTitle = title ?? 'Hospeda';
+const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
+
+const hasLeftFilters = showFilters && filterPosition === 'left';
+const hasTopFilters = showFilters && filterPosition === 'top';
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+	/>
+	<slot name="head-extra" slot="head" />
+
+	<!-- Page header area (breadcrumbs + title) -->
+	<div class="listing-header">
+		<div class="listing-header__container">
+			<slot name="breadcrumbs" />
+			<slot name="page-header" />
+		</div>
+	</div>
+
+	<!-- Decorative wave separator -->
+	<div class="listing-wave" aria-hidden="true">
+		<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+			<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+		</svg>
+	</div>
+
+	<!-- Main content area -->
+	<div class="listing-body">
+		<div class="listing-body__container">
+			{/* Top filters (events use this) */}
+			{hasTopFilters && (
+				<div class="listing-filters-top">
+					<slot name="filters" />
+				</div>
+			)}
+
+			<div class:list={[
+				'listing-body__grid',
+				{ 'listing-body__grid--with-sidebar': hasLeftFilters },
+			]}>
+				{/* Left sidebar filters */}
+				{hasLeftFilters && (
+					<aside class="listing-sidebar" aria-label="Filtros">
+						<slot name="filters" />
+					</aside>
+				)}
+
+				{/* Content area */}
+				<div class="listing-content">
+					<slot />
+
+					<div class="listing-pagination">
+						<slot name="pagination" />
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</BaseLayout>
+
+<style>
+	.listing-header {
+		background-color: var(--surface-warm);
+		padding: var(--space-6) 0 var(--space-4);
+	}
+
+	.listing-header__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.listing-wave {
+		margin-top: -1px;
+		line-height: 0;
+	}
+
+	.listing-wave svg {
+		width: 100%;
+		height: 80px;
+		display: block;
+	}
+
+	.listing-body {
+		padding: var(--space-section-sm) 0;
+	}
+
+	.listing-body__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	/* Top filters layout (full-width above content) */
+	.listing-filters-top {
+		margin-bottom: var(--space-6);
+	}
+
+	/* Grid layout: sidebar + content */
+	.listing-body__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: var(--space-card-gap);
+	}
+
+	.listing-body__grid--with-sidebar {
+		grid-template-columns: 250px 1fr;
+	}
+
+	/* Sidebar */
+	.listing-sidebar {
+		position: sticky;
+		top: 130px;
+		align-self: start;
+	}
+
+	/* Content area */
+	.listing-content {
+		min-width: 0; /* Prevent grid blowout */
+	}
+
+	/* Pagination */
+	.listing-pagination {
+		margin-top: var(--space-8);
+	}
+
+	/* Mobile: sidebar hidden, single column */
+	@media (max-width: 768px) {
+		.listing-body__grid--with-sidebar {
+			grid-template-columns: 1fr;
+		}
+
+		.listing-sidebar {
+			position: static;
+			display: none; /* FilterSidebar component handles mobile toggle */
+		}
+	}
+</style>

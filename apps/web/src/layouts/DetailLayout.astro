@@ -1,0 +1,125 @@
+---
+/**
+ * @file DetailLayout.astro
+ * @description Two-column layout for entity detail pages with optional
+ * breadcrumbs and contextual sidebar. Wraps BaseLayout.
+ *
+ * Used by: accommodation detail, destination detail, event detail, post detail, attraction detail.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import BaseLayout from './BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+	readonly canonicalPath?: string;
+	readonly showBreadcrumbs?: boolean;
+	readonly showSidebar?: boolean;
+}
+
+const {
+	locale,
+	title,
+	description,
+	canonicalPath = Astro.url.pathname,
+	showBreadcrumbs = true,
+	showSidebar = true,
+} = Astro.props;
+
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteBase).href;
+
+const resolvedTitle = title ?? 'Hospeda';
+const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+	/>
+	<slot name="head-extra" slot="head" />
+
+	<div class="detail-page">
+		<div class="detail-page__container">
+			{showBreadcrumbs && (
+				<div class="detail-page__breadcrumbs">
+					<slot name="breadcrumbs" />
+				</div>
+			)}
+
+			<div class:list={[
+				'detail-page__body',
+				{ 'detail-page__body--full': !showSidebar },
+			]}>
+				<article class="detail-page__main">
+					<slot />
+				</article>
+
+				{showSidebar && (
+					<aside class="detail-page__sidebar">
+						<slot name="sidebar" />
+					</aside>
+				)}
+			</div>
+		</div>
+	</div>
+</BaseLayout>
+
+<style>
+	.detail-page {
+		padding: var(--space-6) 0 var(--space-section-sm);
+	}
+
+	.detail-page__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.detail-page__breadcrumbs {
+		margin-bottom: var(--space-4);
+	}
+
+	.detail-page__body {
+		display: grid;
+		grid-template-columns: 1fr 360px;
+		gap: var(--space-card-gap);
+		align-items: start;
+	}
+
+	.detail-page__body--full {
+		grid-template-columns: 1fr;
+	}
+
+	.detail-page__main {
+		min-width: 0; /* Prevent grid blowout */
+	}
+
+	.detail-page__sidebar {
+		position: sticky;
+		top: 130px;
+		align-self: start;
+	}
+
+	@media (max-width: 1024px) {
+		.detail-page__body {
+			grid-template-columns: 1fr;
+		}
+
+		.detail-page__sidebar {
+			position: static;
+			order: 2;
+		}
+
+		.detail-page__main {
+			order: 1;
+		}
+	}
+</style>

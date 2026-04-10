@@ -1,0 +1,232 @@
+---
+/**
+ * @file LegalLayout.astro
+ * @description Layout for legal/policy pages with table of contents sidebar
+ * and narrow prose content area optimized for readability.
+ *
+ * Used by: privacy policy, terms and conditions.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from './BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+	readonly lastUpdated?: string;
+	readonly showToc?: boolean;
+	readonly canonicalPath?: string;
+}
+
+const {
+	locale,
+	title,
+	description,
+	lastUpdated,
+	showToc = true,
+	canonicalPath = Astro.url.pathname,
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteBase).href;
+
+const resolvedTitle = title ?? 'Hospeda';
+const resolvedDescription = description ?? 'Información legal de Hospeda';
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+	/>
+	<slot name="head-extra" slot="head" />
+
+	<!-- Page header -->
+	<div class="legal-header">
+		<div class="legal-header__container">
+			<nav class="legal-breadcrumbs" aria-label="Breadcrumb">
+				<ol class="legal-breadcrumbs__list">
+					<li class="legal-breadcrumbs__item">
+						<a href={buildUrl({ locale })} class="legal-breadcrumbs__link">
+							{t('nav.home', 'Inicio')}
+						</a>
+					</li>
+					<li class="legal-breadcrumbs__item legal-breadcrumbs__item--current" aria-current="page">
+						{resolvedTitle}
+					</li>
+				</ol>
+			</nav>
+			<h1 class="legal-header__title">{resolvedTitle}</h1>
+			{lastUpdated && (
+				<p class="legal-header__date">
+					{t('legal.lastUpdated', 'Última actualización')}: {lastUpdated}
+				</p>
+			)}
+		</div>
+	</div>
+
+	<!-- Decorative wave separator -->
+	<div class="legal-wave" aria-hidden="true">
+		<svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+			<path d="M0,64 C288,120 576,0 864,64 C1152,128 1440,32 1440,32 L1440,0 L0,0 Z" fill="var(--surface-warm, #fdf6f0)" />
+		</svg>
+	</div>
+
+	<!-- Content area -->
+	<div class="legal-body">
+		<div class:list={['legal-body__container', { 'legal-body__container--no-toc': !showToc }]}>
+			{showToc && (
+				<aside class="legal-toc">
+					<h2 class="legal-toc__heading">{t('legal.toc', 'Contenido')}</h2>
+					<slot name="toc" />
+				</aside>
+			)}
+			<div class="legal-prose">
+				<slot />
+			</div>
+		</div>
+	</div>
+</BaseLayout>
+
+<style>
+	.legal-header {
+		background-color: var(--surface-warm);
+		padding: var(--space-6) 0 var(--space-4);
+	}
+
+	.legal-header__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+	}
+
+	.legal-breadcrumbs__list {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		list-style: none;
+		padding: 0;
+		margin: 0 0 var(--space-3) 0;
+		font-size: var(--text-sm);
+		color: var(--muted-foreground);
+	}
+
+	.legal-breadcrumbs__item:not(:last-child)::after {
+		content: '›';
+		margin-left: 0.5rem;
+		color: var(--muted-foreground);
+	}
+
+	.legal-breadcrumbs__link {
+		color: var(--muted-foreground);
+		text-decoration: none;
+	}
+
+	.legal-breadcrumbs__link:hover {
+		color: var(--foreground);
+		text-decoration: underline;
+	}
+
+	.legal-breadcrumbs__item--current {
+		color: var(--foreground);
+		font-weight: 500;
+	}
+
+	.legal-header__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0;
+	}
+
+	.legal-header__date {
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+		color: var(--muted-foreground);
+		margin: var(--space-2) 0 0;
+	}
+
+	.legal-wave {
+		margin-top: -1px;
+		line-height: 0;
+	}
+
+	.legal-wave svg {
+		width: 100%;
+		height: 80px;
+		display: block;
+	}
+
+	.legal-body {
+		padding: var(--space-section-sm) 0;
+	}
+
+	.legal-body__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		display: grid;
+		grid-template-columns: 220px 1fr;
+		gap: var(--space-8);
+		align-items: start;
+	}
+
+	.legal-body__container--no-toc {
+		grid-template-columns: 1fr;
+	}
+
+	.legal-toc {
+		position: sticky;
+		top: 130px;
+	}
+
+	.legal-toc__heading {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: var(--text-lg);
+		color: var(--foreground);
+		margin: 0 0 var(--space-4);
+	}
+
+	.legal-prose {
+		max-width: 65ch;
+		font-family: var(--font-sans);
+		line-height: 1.7;
+		color: var(--foreground);
+	}
+
+	.legal-prose :global(h2) {
+		font-family: var(--font-heading);
+		font-weight: 600;
+		font-size: clamp(1.25rem, 2.5vw, 1.5rem);
+		margin-top: var(--space-8);
+		margin-bottom: var(--space-4);
+		color: var(--foreground);
+	}
+
+	.legal-prose :global(p) {
+		margin-bottom: var(--space-4);
+	}
+
+	@media (max-width: 768px) {
+		.legal-body__container {
+			grid-template-columns: 1fr;
+		}
+
+		.legal-toc {
+			position: static;
+			margin-bottom: var(--space-6);
+			padding-bottom: var(--space-4);
+			border-bottom: 1px solid var(--border);
+		}
+	}
+</style>

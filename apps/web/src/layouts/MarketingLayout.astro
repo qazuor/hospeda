@@ -1,0 +1,48 @@
+---
+/**
+ * @file MarketingLayout.astro
+ * @description Full-width layout for marketing and landing pages.
+ * Wraps BaseLayout with NO container constraint on the content slot,
+ * allowing sections to span the full viewport width.
+ *
+ * Used by: propietarios landing, benefits, tourist pricing, owner pricing.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import BaseLayout from './BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+	readonly canonicalPath?: string;
+}
+
+const {
+	locale,
+	title,
+	description,
+	canonicalPath = Astro.url.pathname,
+} = Astro.props;
+
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const canonicalUrl = new URL(canonicalPath, siteBase).href;
+
+const resolvedTitle = title ?? 'Hospeda';
+const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+	/>
+	<slot name="head-extra" slot="head" />
+
+	<!-- No container wrapper: marketing pages manage their own section widths -->
+	<slot />
+</BaseLayout>

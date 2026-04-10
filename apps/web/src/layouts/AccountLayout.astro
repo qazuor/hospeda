@@ -1,0 +1,221 @@
+---
+/**
+ * @file AccountLayout.astro
+ * @description Two-panel layout for account pages with persistent sidebar navigation.
+ * Wraps BaseLayout. Auth is handled by existing middleware.
+ *
+ * Used by: mi-cuenta dashboard, edit profile, favorites, reviews, subscription, preferences.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from './BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+	readonly activeSection?: string;
+}
+
+const {
+	locale,
+	title,
+	description,
+	activeSection = 'mi-cuenta',
+} = Astro.props;
+
+const { t } = createTranslations(locale);
+const siteBase = import.meta.env.SITE ?? Astro.url.origin;
+const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
+
+const resolvedTitle = title ?? t('account.title', 'Mi cuenta');
+const resolvedDescription = description ?? t('account.description', 'Gestioná tu cuenta en Hospeda');
+
+const navLinks = [
+	{ section: 'mi-cuenta', label: t('account.nav.dashboard', 'Mi cuenta'), path: 'mi-cuenta' },
+	{ section: 'editar', label: t('account.nav.editProfile', 'Editar perfil'), path: 'mi-cuenta/editar' },
+	{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos' },
+	{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas' },
+	{ section: 'suscripcion', label: t('account.nav.subscription', 'Suscripción'), path: 'mi-cuenta/suscripcion' },
+	{ section: 'preferencias', label: t('account.nav.preferences', 'Preferencias'), path: 'mi-cuenta/preferencias' },
+] as const;
+---
+
+<BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>
+	<SEOHead
+		slot="head"
+		title={resolvedTitle}
+		description={resolvedDescription}
+		locale={locale}
+		canonical={canonicalUrl}
+		noindex={true}
+	/>
+
+	<div class="account-page">
+		<div class="account-page__container">
+			<!-- Mobile toggle -->
+			<button
+				class="account-page__toggle"
+				aria-expanded="false"
+				aria-controls="account-nav"
+				type="button"
+			>
+				<span class="account-page__toggle-label">{t('account.menu', 'Menú de cuenta')}</span>
+				<span class="account-page__toggle-icon" aria-hidden="true">▾</span>
+			</button>
+
+			<!-- Sidebar navigation -->
+			<nav id="account-nav" class="account-page__sidebar" aria-label="Account navigation">
+				<ul class="account-nav__list">
+					{navLinks.map((link) => (
+						<li class="account-nav__item">
+							<a
+								href={buildUrl({ locale, path: link.path })}
+								class:list={[
+									'account-nav__link',
+									{ 'account-nav__link--active': link.section === activeSection },
+								]}
+								aria-current={link.section === activeSection ? 'page' : undefined}
+							>
+								{link.label}
+							</a>
+						</li>
+					))}
+				</ul>
+			</nav>
+
+			<!-- Content area -->
+			<div class="account-page__content">
+				<slot />
+			</div>
+		</div>
+	</div>
+</BaseLayout>
+
+<script>
+	function initAccountToggle(): void {
+		const toggle = document.querySelector<HTMLButtonElement>('.account-page__toggle');
+		const nav = document.getElementById('account-nav');
+		if (!toggle || !nav) return;
+
+		toggle.addEventListener('click', () => {
+			const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
+			toggle.setAttribute('aria-expanded', String(!isExpanded));
+			nav.classList.toggle('account-page__sidebar--open');
+		});
+	}
+
+	document.addEventListener('astro:page-load', initAccountToggle);
+</script>
+
+<style>
+	.account-page {
+		padding: var(--space-section-sm) 0;
+	}
+
+	.account-page__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-container-x);
+		display: grid;
+		grid-template-columns: 250px 1fr;
+		gap: var(--space-card-gap);
+		align-items: start;
+	}
+
+	/* Mobile toggle */
+	.account-page__toggle {
+		display: none;
+		width: 100%;
+		padding: var(--space-3) var(--space-4);
+		background-color: var(--card);
+		border: 1px solid var(--border);
+		border-radius: var(--radius-button);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		font-weight: 500;
+		color: var(--foreground);
+		cursor: pointer;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.account-page__toggle-icon {
+		transition: transform var(--duration-fast) ease;
+	}
+
+	.account-page__toggle[aria-expanded="true"] .account-page__toggle-icon {
+		transform: rotate(180deg);
+	}
+
+	/* Sidebar */
+	.account-page__sidebar {
+		position: sticky;
+		top: 130px;
+	}
+
+	.account-nav__list {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-1);
+	}
+
+	.account-nav__link {
+		display: block;
+		padding: var(--space-3) var(--space-4);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		text-decoration: none;
+		border-radius: var(--radius-button);
+		border-left: 3px solid transparent;
+		transition: background-color var(--duration-fast) ease,
+					color var(--duration-fast) ease,
+					border-color var(--duration-fast) ease;
+	}
+
+	.account-nav__link:hover {
+		background-color: var(--muted);
+		color: var(--foreground);
+	}
+
+	.account-nav__link--active {
+		background-color: oklch(from var(--brand-accent) l c h / 0.1);
+		color: var(--brand-accent);
+		border-left-color: var(--brand-accent);
+		font-weight: 500;
+	}
+
+	/* Content */
+	.account-page__content {
+		min-width: 0;
+	}
+
+	/* Mobile */
+	@media (max-width: 768px) {
+		.account-page__container {
+			grid-template-columns: 1fr;
+		}
+
+		.account-page__toggle {
+			display: flex;
+			grid-column: 1;
+		}
+
+		.account-page__sidebar {
+			position: static;
+			display: none;
+		}
+
+		.account-page__sidebar--open {
+			display: block;
+			margin-bottom: var(--space-4);
+		}
+	}
+</style>

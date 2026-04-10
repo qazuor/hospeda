@@ -1,0 +1,147 @@
+---
+/**
+ * @file AuthLayout.astro
+ * @description Focused layout for authentication pages (signin, signup, forgot-password, etc.).
+ * Standalone HTML shell with minimal header (logo only) and centered card content.
+ * No footer, no nav, no distractions.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import Logo from '@/components/shared/Logo.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { ClientRouter } from 'astro:transitions';
+import '@/styles/global.css';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly title?: string;
+	readonly description?: string;
+}
+
+const {
+	locale,
+	title = 'Hospeda',
+	description = 'Ingresá a tu cuenta',
+} = Astro.props;
+
+const cspNonce = Astro.locals.cspNonce ?? '';
+const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).href;
+---
+
+<!doctype html>
+<html lang={locale}>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
+		<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+		<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+		<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+		<!-- Google Fonts (non-blocking) -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			rel="preload"
+			as="style"
+			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+		/>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+			rel="stylesheet"
+			media="print"
+			onload="this.media='all'"
+		/>
+		<noscript>
+			<link
+				href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Geologica:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap"
+				rel="stylesheet"
+			/>
+		</noscript>
+
+		<!-- Theme FOUC prevention -->
+		<script is:inline nonce={cspNonce}>
+			(function() {
+				var t = localStorage.getItem('theme');
+				if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+					document.documentElement.setAttribute('data-theme', 'dark');
+				}
+			})();
+		</script>
+
+		<ClientRouter />
+
+		<SEOHead
+			title={title}
+			description={description}
+			locale={locale}
+			canonical={canonical}
+			noindex={true}
+		/>
+	</head>
+	<body class="auth-body">
+		<!-- Minimal header: logo only, centered -->
+		<header class="auth-header">
+			<div class="auth-header__container">
+				<Logo locale={locale} size="md" />
+			</div>
+		</header>
+
+		<!-- Centered auth card -->
+		<main id="main-content" class="auth-content">
+			<div class="auth-card">
+				<slot />
+			</div>
+		</main>
+	</body>
+</html>
+
+<style>
+	.auth-body {
+		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
+		background-color: var(--background);
+	}
+
+	.auth-header {
+		padding: var(--space-4) 0;
+		background-color: var(--background);
+	}
+
+	.auth-header__container {
+		max-width: var(--container-max);
+		margin: 0 auto;
+		padding: 0 var(--space-6);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.auth-content {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-8) var(--space-6);
+	}
+
+	.auth-card {
+		width: 100%;
+		max-width: 480px;
+		background-color: var(--card);
+		border-radius: var(--radius-card);
+		box-shadow: var(--shadow-card);
+		padding: var(--space-8);
+	}
+
+	@media (max-width: 640px) {
+		.auth-card {
+			box-shadow: none;
+			background-color: transparent;
+			padding: var(--space-4);
+		}
+	}
+</style>
