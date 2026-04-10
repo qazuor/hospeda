@@ -23,6 +23,7 @@
  * ```
  */
 
+import { getImage } from 'astro:assets';
 import { UserNav } from '../auth/UserNav.client';
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import { ThemeToggle } from '../ui/ThemeToggle.client';
@@ -52,6 +53,22 @@ const typedLocale = locale as SupportedLocale;
 const t = createT(typedLocale);
 const user = Astro.locals.user;
 const isAuthenticated = !!user;
+
+/** Pre-optimized avatar URL for UserNav (64px @ 2x for retina). */
+let optimizedAvatarUrl: string | undefined;
+if (user && 'avatarUrl' in user && typeof user.avatarUrl === 'string' && user.avatarUrl) {
+    const raw = user.avatarUrl;
+    if (!raw.includes('placeholder') && !raw.endsWith('.svg')) {
+        try {
+            const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
+            optimizedAvatarUrl = optimized.src;
+        } catch {
+            optimizedAvatarUrl = raw;
+        }
+    } else {
+        optimizedAvatarUrl = raw;
+    }
+}
 ---
 
 {isAuthenticated && user ? (
@@ -59,7 +76,8 @@ const isAuthenticated = !!user;
         client:load
         user={{
             name: user.name || 'Usuario',
-            email: user.email || ''
+            email: user.email || '',
+            avatarUrl: optimizedAvatarUrl,
         }}
         locale={locale}
         variant={variant}

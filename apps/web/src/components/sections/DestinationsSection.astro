@@ -13,6 +13,7 @@
  * layout on desktop, carousel-only on mobile.
  */
 
+import { getImage } from 'astro:assets';
 import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -38,6 +39,23 @@ try {
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });
 }
+
+// Pre-optimize destination images before passing to the React island.
+// Skip SVG placeholders and fall back to the original URL on any failure.
+const optimizedDestinations = await Promise.all(
+    destinations.map(async (dest) => {
+        const img = dest.featuredImage;
+        if (!img || img.includes('placeholder') || img.endsWith('.svg')) {
+            return dest;
+        }
+        try {
+            const optimized = await getImage({ src: img, width: 300, format: 'webp' });
+            return { ...dest, featuredImage: optimized.src };
+        } catch {
+            return dest;
+        }
+    })
+);
 ---
 
 {destinations.length > 0 && (
@@ -48,7 +66,7 @@ try {
     <div class="destinations-section__container">
         <DestinationsIsland
             client:visible
-            destinations={destinations}
+            destinations={optimizedDestinations}
             locale={locale}
         />
     </div>

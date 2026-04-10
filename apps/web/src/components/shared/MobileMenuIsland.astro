@@ -7,6 +7,7 @@
  * Passes the authenticated user data (or null) as props to the React island.
  */
 
+import { getImage } from 'astro:assets';
 import { MobileMenu } from './MobileMenu.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -29,8 +30,25 @@ const { locale, navItems, currentPath, logoSrc, homeHref } = Astro.props;
 const { t } = createTranslations(locale);
 
 const serverUser = Astro.locals.user;
+
+/** Pre-optimized avatar image URL for MobileMenu (64px @ 2x for retina). */
+let optimizedUserImage: string | undefined;
+if (serverUser && 'image' in serverUser && typeof serverUser.image === 'string' && serverUser.image) {
+    const raw = serverUser.image;
+    if (!raw.includes('placeholder') && !raw.endsWith('.svg')) {
+        try {
+            const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
+            optimizedUserImage = optimized.src;
+        } catch {
+            optimizedUserImage = raw;
+        }
+    } else {
+        optimizedUserImage = raw;
+    }
+}
+
 const user = serverUser
-    ? { name: serverUser.name || 'Usuario', email: serverUser.email || '' }
+    ? { name: serverUser.name || 'Usuario', email: serverUser.email || '', image: optimizedUserImage }
     : null;
 
 ---

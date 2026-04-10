@@ -6,6 +6,7 @@
  * Staggered scroll-reveal on each card. Links to full posts listing page.
  */
 
+import { getImage } from 'astro:assets';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -29,7 +30,21 @@ let posts: BlogPostCardData[] = [];
 try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
-        posts = result.data.items.map((raw) => toPostCardProps({ item: raw as Record<string, unknown> }));
+        const rawPosts = result.data.items.map((raw) => toPostCardProps({ item: raw as Record<string, unknown> }));
+        posts = await Promise.all(
+            rawPosts.map(async (post) => {
+                const raw = post.authorAvatar;
+                if (raw && !raw.includes('placeholder') && !raw.endsWith('.svg')) {
+                    try {
+                        const optimized = await getImage({ src: raw, width: 64, format: 'webp' });
+                        return { ...post, authorAvatar: optimized.src };
+                    } catch {
+                        return post;
+                    }
+                }
+                return post;
+            })
+        );
     }
 } catch (err) {
     webLogger.error('API fetch failed', {

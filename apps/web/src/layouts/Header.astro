@@ -5,7 +5,7 @@
  * White bg, 110px height, logo (icon + wordmark) + nav links (uppercase + dividers) + user area.
  */
 
-import { Image } from "astro:assets";
+import { getImage, Image } from "astro:assets";
 import { BuildingIcon, HamburgerIcon, SearchIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/MobileMenuIsland.astro";
 import AuthSection from '@/components/shared/AuthSection.astro';
@@ -20,6 +20,16 @@ interface Props {
 
 const { locale } = Astro.props;
 const { t } = createTranslations(locale);
+
+// Pre-optimize logo for the mobile menu island (receives a plain string URL).
+// The desktop header uses <Image> directly; this covers the mobile path.
+let mobileLogoSrc = logoSrc.src;
+try {
+    const optimizedLogo = await getImage({ src: logoSrc, width: 100, format: 'webp' });
+    mobileLogoSrc = optimizedLogo.src;
+} catch {
+    // Fall back to the unprocessed asset path
+}
 
 const navLinks = [
     { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
@@ -114,7 +124,7 @@ const isHero = Astro.url.pathname === '/' || /^\/[a-z]{2}\/?$/.test(Astro.url.pa
     </div>
 </header>
 
-<MobileMenuIsland server:defer locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} logoSrc={logoSrc.src} homeHref={buildUrl({ locale, path: "/" })} />
+<MobileMenuIsland server:defer locale={locale} navItems={mobileNavItems} currentPath={Astro.url.pathname} logoSrc={mobileLogoSrc} homeHref={buildUrl({ locale, path: "/" })} />
 
 <style>
     /* Header bar — solid by default, transparent only on hero pages */

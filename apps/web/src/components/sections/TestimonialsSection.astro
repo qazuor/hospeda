@@ -8,6 +8,7 @@
  * the section is not rendered.
  */
 
+import { getImage } from 'astro:assets';
 import SectionHeader from '@/components/shared/SectionHeader.astro';
 import { TestimonialsCarousel } from '@/components/sections/TestimonialsCarousel.client';
 import { createTranslations } from '@/lib/i18n';
@@ -35,6 +36,23 @@ try {
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'testimonials', error: err instanceof Error ? err.message : err });
 }
+
+// Pre-optimize reviewer avatar images before passing to the React island.
+// Avatars are small (80px). Skip missing, SVG, or placeholder URLs.
+const optimizedReviews = await Promise.all(
+    reviews.map(async (review) => {
+        const avatar = review.reviewerAvatar;
+        if (!avatar || avatar.includes('placeholder') || avatar.endsWith('.svg')) {
+            return review;
+        }
+        try {
+            const optimized = await getImage({ src: avatar, width: 80, format: 'webp' });
+            return { ...review, reviewerAvatar: optimized.src };
+        } catch {
+            return review;
+        }
+    })
+);
 ---
 
 {reviews.length > 0 && (
@@ -52,7 +70,7 @@ try {
         
         <TestimonialsCarousel
             client:visible
-            reviews={reviews}
+            reviews={optimizedReviews}
             locale={locale}
         />
     </div>
