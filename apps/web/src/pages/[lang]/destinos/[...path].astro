@@ -25,9 +25,11 @@ const { path } = Astro.params;
 
 if (!path) return new Response(null, { status: 404 });
 
-// Destination by-path API requires leading slash
-const destinationPath = `/${path}`;
-const result = await destinationsApi.getByPath({ path: destinationPath });
+// Single segment = slug lookup, multi-segment = hierarchical path lookup
+const segments = path.split('/').filter(Boolean);
+const result = segments.length === 1
+	? await destinationsApi.getBySlug({ slug: segments[0] })
+	: await destinationsApi.getByPath({ path: `/${path}` });
 
 if (!result.ok) return new Response(null, { status: 404 });
 
@@ -40,17 +42,24 @@ const featuredImage = String(dest.featuredImage || '/assets/images/placeholder-d
 const destType = String(dest.destinationType || '');
 
 // Fetch previews (3 accommodations + 3 events)
-const [accResult, eventsResult] = await Promise.all([
-	accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
-	eventsApi.list({ pageSize: 3 }),
-]);
+let accCards: ReturnType<typeof toAccommodationCardProps>[] = [];
+let eventCards: ReturnType<typeof toEventCardProps>[] = [];
 
-const accCards = accResult.ok
-	? accResult.data.items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }))
-	: [];
-const eventCards = eventsResult.ok
-	? eventsResult.data.items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }))
-	: [];
+try {
+	const [accResult, eventsResult] = await Promise.all([
+		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
+		eventsApi.list({ pageSize: 3 }),
+	]);
+
+	accCards = accResult.ok
+		? accResult.data.items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }))
+		: [];
+	eventCards = eventsResult.ok
+		? eventsResult.data.items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }))
+		: [];
+} catch (err) {
+	console.error('[destinos/detail] Error fetching previews:', err);
+}
 
 // Build breadcrumb items from path segments
 const pathSegments = path.split('/').filter(Boolean);
@@ -84,20 +93,21 @@ const jsonLd = {
 
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbItems} />
 
-	<div class="dest-detail">
-		<!-- Hero -->
-		<div class="dest-detail__hero">
-			<img src={featuredImage} alt={name} class="dest-detail__hero-img" />
-		</div>
-
+	<Fragment slot="page-header">
 		<h1 class="dest-detail__title">{name}</h1>
-
 		{destType && (
 			<span class="dest-detail__type">
 				<LocationIcon size={16} aria-hidden="true" />
 				{t(`destinations.types.${destType.toLowerCase()}`, destType)}
 			</span>
 		)}
+	</Fragment>
+
+	<div class="dest-detail">
+		<!-- Hero -->
+		<div class="dest-detail__hero">
+			<img src={featuredImage} alt={name} class="dest-detail__hero-img" />
+		</div>
 
 		<!-- Description -->
 		<div class="dest-detail__description" set:html={String(dest.contentHtml || description)} />
