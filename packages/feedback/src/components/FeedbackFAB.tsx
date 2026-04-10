@@ -198,6 +198,21 @@ export function FeedbackFAB({
     useKeyboardShortcut({ onToggle: handleToggle });
 
     // ------------------------------------------------------------------
+    // Listen for external open requests via CustomEvent
+    // ------------------------------------------------------------------
+
+    useEffect(() => {
+        const handleExternalOpen = () => {
+            setIsOpen(true);
+            if (isMinimized) setIsMinimized(false);
+            // Acknowledge so the caller knows the FAB handled the request
+            window.dispatchEvent(new CustomEvent('feedback:ack'));
+        };
+        window.addEventListener('feedback:open', handleExternalOpen);
+        return () => window.removeEventListener('feedback:open', handleExternalOpen);
+    }, [isMinimized]);
+
+    // ------------------------------------------------------------------
     // Restore minimized state from localStorage after hydration
     // ------------------------------------------------------------------
 
