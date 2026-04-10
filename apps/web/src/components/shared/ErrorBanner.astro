@@ -1,0 +1,78 @@
+---
+/**
+ * @file ErrorBanner.astro
+ * @description User-visible error banner for failed API calls during SSR.
+ * Shows an error message with a "Try again" button that reloads the page.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Custom error message. Falls back to i18n default. */
+	readonly message?: string;
+	readonly class?: string;
+}
+
+const { locale, message, class: className } = Astro.props;
+const t = createT(locale);
+
+const resolvedMessage = message ?? t('ui.errorBanner.message', 'Ocurrió un error al cargar el contenido.');
+const retryLabel = t('ui.errorBanner.retry', 'Intentar de nuevo');
+---
+
+<div class:list={['error-banner', className]} role="alert">
+	<p class="error-banner__message">{resolvedMessage}</p>
+	<button type="button" class="error-banner__retry" data-action="reload">
+		{retryLabel}
+	</button>
+</div>
+
+<script>
+	function initErrorBanner(): void {
+		document.querySelectorAll<HTMLButtonElement>('[data-action="reload"]').forEach((btn) => {
+			btn.addEventListener('click', () => window.location.reload());
+		});
+	}
+	document.addEventListener('astro:page-load', initErrorBanner);
+</script>
+
+<style>
+	.error-banner {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-4);
+		padding: var(--space-4) var(--space-6);
+		background-color: oklch(from var(--destructive, #ef4444) l c h / 0.1);
+		border: 1px solid oklch(from var(--destructive, #ef4444) l c h / 0.3);
+		border-radius: var(--radius-button);
+		margin-bottom: var(--space-6);
+	}
+
+	.error-banner__message {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--foreground);
+		margin: 0;
+	}
+
+	.error-banner__retry {
+		padding: 0.5rem 1rem;
+		border-radius: var(--radius-button);
+		border: 1px solid var(--border);
+		background-color: var(--background);
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		font-weight: 500;
+		color: var(--foreground);
+		cursor: pointer;
+		white-space: nowrap;
+		transition: background-color var(--duration-fast) ease;
+	}
+
+	.error-banner__retry:hover {
+		background-color: var(--muted);
+	}
+</style>

@@ -1,0 +1,86 @@
+---
+/**
+ * @file Breadcrumbs.astro
+ * @description Visual breadcrumb trail for navigation context.
+ * Renders a semantic nav with ordered list of links.
+ * Separate from BreadcrumbJsonLd (which handles structured data).
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface BreadcrumbItem {
+	/** Display label for the breadcrumb link. */
+	readonly label: string;
+	/** URL path (without locale prefix). Empty string for current page. */
+	readonly path?: string;
+}
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly items: readonly BreadcrumbItem[];
+	readonly class?: string;
+}
+
+const { locale, items, class: className } = Astro.props;
+const t = createT(locale);
+
+const homeItem: BreadcrumbItem = { label: t('nav.home', 'Inicio'), path: '' };
+const allItems = [homeItem, ...items];
+---
+
+<nav class:list={['breadcrumbs', className]} aria-label="Breadcrumb">
+	<ol class="breadcrumbs__list">
+		{allItems.map((item, index) => {
+			const isLast = index === allItems.length - 1;
+			return (
+				<li class:list={['breadcrumbs__item', { 'breadcrumbs__item--current': isLast }]}>
+					{isLast ? (
+						<span aria-current="page">{item.label}</span>
+					) : (
+						<a href={buildUrl({ locale, path: item.path ?? '' })} class="breadcrumbs__link">
+							{item.label}
+						</a>
+					)}
+				</li>
+			);
+		})}
+	</ol>
+</nav>
+
+<style>
+	.breadcrumbs__list {
+		display: flex;
+		align-items: center;
+		flex-wrap: wrap;
+		gap: 0.25rem;
+		list-style: none;
+		padding: 0;
+		margin: 0;
+		font-family: var(--font-sans);
+		font-size: var(--text-sm);
+	}
+
+	.breadcrumbs__item:not(:last-child)::after {
+		content: '›';
+		margin-left: 0.25rem;
+		color: var(--muted-foreground);
+	}
+
+	.breadcrumbs__link {
+		color: var(--muted-foreground);
+		text-decoration: none;
+		transition: color var(--duration-fast) ease;
+	}
+
+	.breadcrumbs__link:hover {
+		color: var(--foreground);
+		text-decoration: underline;
+	}
+
+	.breadcrumbs__item--current {
+		color: var(--foreground);
+		font-weight: 500;
+	}
+</style>

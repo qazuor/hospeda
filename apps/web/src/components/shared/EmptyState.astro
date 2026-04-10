@@ -1,0 +1,115 @@
+---
+/**
+ * @file EmptyState.astro
+ * @description Empty state component shown when no results match filters
+ * or a collection is genuinely empty. Two variants: "no-results" and "empty".
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** "no-results" shows clear-filters link, "empty" shows a link to related content. */
+	readonly variant?: 'no-results' | 'empty';
+	/** Main message text. Falls back to i18n defaults per variant. */
+	readonly message?: string;
+	/** Link URL for the action button. */
+	readonly actionUrl?: string;
+	/** Link label for the action button. */
+	readonly actionLabel?: string;
+	readonly class?: string;
+}
+
+const {
+	locale,
+	variant = 'no-results',
+	message,
+	actionUrl,
+	actionLabel,
+	class: className,
+} = Astro.props;
+
+const t = createT(locale);
+
+const defaultMessages = {
+	'no-results': t('ui.emptyState.noResults', 'No se encontraron resultados para los filtros seleccionados.'),
+	'empty': t('ui.emptyState.empty', 'No hay contenido disponible en este momento.'),
+} as const;
+
+const defaultActions = {
+	'no-results': t('ui.emptyState.clearFilters', 'Limpiar filtros'),
+	'empty': t('ui.emptyState.explore', 'Explorar'),
+} as const;
+
+const resolvedMessage = message ?? defaultMessages[variant];
+const resolvedActionLabel = actionLabel ?? defaultActions[variant];
+---
+
+<div class:list={['empty-state', `empty-state--${variant}`, className]}>
+	<div class="empty-state__icon" aria-hidden="true">
+		<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+			{variant === 'no-results' ? (
+				<>
+					<circle cx="28" cy="28" r="18" stroke="var(--muted-foreground)" stroke-width="2" opacity="0.3" />
+					<line x1="40" y1="40" x2="54" y2="54" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+				</>
+			) : (
+				<>
+					<rect x="12" y="16" width="40" height="32" rx="8" stroke="var(--muted-foreground)" stroke-width="2" opacity="0.3" />
+					<line x1="24" y1="30" x2="40" y2="30" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+					<line x1="24" y1="38" x2="34" y2="38" stroke="var(--muted-foreground)" stroke-width="2" stroke-linecap="round" opacity="0.3" />
+				</>
+			)}
+		</svg>
+	</div>
+
+	<p class="empty-state__message">{resolvedMessage}</p>
+
+	{actionUrl && (
+		<a href={actionUrl} class="empty-state__action">
+			{resolvedActionLabel}
+		</a>
+	)}
+</div>
+
+<style>
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		text-align: center;
+		padding: var(--space-12) var(--space-6);
+		gap: var(--space-4);
+	}
+
+	.empty-state__message {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-lg);
+		color: var(--muted-foreground);
+		max-width: 40ch;
+		line-height: 1.6;
+		margin: 0;
+	}
+
+	.empty-state__action {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 1.5rem;
+		border-radius: var(--radius-button);
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		font-weight: 500;
+		text-decoration: none;
+		color: var(--brand-accent);
+		border: 1px solid var(--brand-accent);
+		transition: background-color var(--duration-fast) ease, color var(--duration-fast) ease;
+	}
+
+	.empty-state__action:hover {
+		background-color: var(--brand-accent);
+		color: var(--accent-foreground, #fff);
+	}
+</style>

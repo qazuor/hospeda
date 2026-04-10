@@ -1,0 +1,96 @@
+---
+/**
+ * @file ListingPageHeader.astro
+ * @description Reusable header area for listing pages with decorative tagline,
+ * bold title, optional subtitle, and result count.
+ * Matches Figma design: italic Caveat tagline above bold Geologica heading.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	/** Decorative tagline rendered in Caveat font (e.g., "Encontra tu lugar ideal"). */
+	readonly tagline?: string;
+	/** Main page title (e.g., "Alojamientos"). */
+	readonly title: string;
+	/** Optional subtitle below the title. */
+	readonly subtitle?: string;
+	/** Total result count displayed to the right. */
+	readonly totalCount?: number;
+	readonly class?: string;
+}
+
+const { locale, tagline, title, subtitle, totalCount, class: className } = Astro.props;
+const t = createT(locale);
+
+const countLabel = totalCount !== undefined
+	? `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`
+	: undefined;
+---
+
+<div class:list={['listing-page-header', className]}>
+	<div class="listing-page-header__text">
+		{tagline && (
+			<p class="listing-page-header__tagline">{tagline}</p>
+		)}
+		<h1 class="listing-page-header__title">{title}</h1>
+		{subtitle && (
+			<p class="listing-page-header__subtitle">{subtitle}</p>
+		)}
+	</div>
+
+	{countLabel && (
+		<p class="listing-page-header__count">{countLabel}</p>
+	)}
+</div>
+
+<style>
+	.listing-page-header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: var(--space-4);
+		flex-wrap: wrap;
+	}
+
+	.listing-page-header__tagline {
+		font-family: var(--font-decorative);
+		font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+		color: var(--brand-accent);
+		margin: 0 0 var(--space-1);
+		font-style: italic;
+	}
+
+	.listing-page-header__title {
+		font-family: var(--font-heading);
+		font-weight: 700;
+		font-size: clamp(1.75rem, 4vw, 2.5rem);
+		color: var(--foreground);
+		margin: 0;
+		line-height: 1.2;
+	}
+
+	.listing-page-header__subtitle {
+		font-family: var(--font-sans);
+		font-size: var(--text-body);
+		color: var(--muted-foreground);
+		margin: var(--space-2) 0 0;
+	}
+
+	.listing-page-header__count {
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--muted-foreground);
+		margin: 0;
+		white-space: nowrap;
+	}
+
+	@media (max-width: 640px) {
+		.listing-page-header {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>
