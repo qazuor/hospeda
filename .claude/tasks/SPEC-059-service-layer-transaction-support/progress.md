@@ -17,52 +17,17 @@
 | T-006 | Exports updated in `utils/index.ts` and `src/index.ts` | 2076825a |
 | T-007 | `idle_in_transaction_session_timeout: 30000` in PG Pool | 2076825a |
 
-**Key files changed:**
-- `packages/db/src/types.ts` — `QueryContext` interface added
-- `packages/db/src/index.ts` — `QueryContext` exported
-- `packages/service-core/src/types/index.ts` — `ServiceConfig` + `ServiceContext<T>`
-- `packages/service-core/src/utils/transaction.ts` — NEW: `withServiceTransaction`
-- All 21 concrete services — constructors use `ServiceConfig`
-- `apps/api/src/utils/database.ts` — Pool timeout configured
-
 ---
 
-## Next — Phase 2: Base class ctx threading (T-008 → T-012)
+## Completed — Phase 2: Base class ctx threading (T-008 → T-012) ✅
 
-**Start here: T-008** (most critical — error-swallowing fix)
-
-### T-008 — `runWithLoggingAndValidation` + error-swallowing fix
-**File**: `packages/service-core/src/base/base.service.ts`
-1. Add `ctx?: ServiceContext` param to `runWithLoggingAndValidation`
-2. Pass `resolvedCtx = ctx ?? { hookState: {} }` to `execute()`
-3. Fix catch Branch 1 (ServiceError): add `if (ctx?.tx) { throw error; }` before `return { error }`
-4. Fix catch Branch 3 (unknown): add `if (ctx?.tx) { throw serviceError; }` before `return { error }`
-5. Branch 2 (DbError) — leave unchanged (already rethrows)
-
-### T-009 — 20 lifecycle hooks in `base.crud.hooks.ts`
-Add `_ctx: ServiceContext` as LAST param to all 20 no-op hooks. Use `_ctx` (underscore = unused).
-
-### T-010 — `BaseCrudRead` 8 methods + `_executeAdminSearch`
-**File**: `packages/service-core/src/base/base.crud.read.ts`
-Pattern per method:
-```typescript
-async getById(actor: Actor, id: string, ctx?: ServiceContext): Promise<...> {
-  const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
-  return this.runWithLoggingAndValidation({ ..., ctx: resolvedCtx, execute: async (data, actor, execCtx) => {
-    await this._beforeGetByField(..., execCtx);
-    // ...
-    await this._afterGetByField(..., execCtx);
-  }});
-}
-```
-
-### T-011 — `BaseCrudWrite` 7 methods + `_getAndValidateEntity`
-**File**: `packages/service-core/src/base/base.crud.write.ts`
-Same pattern. Also update `_getAndValidateEntity` in `base.service.ts` to accept `ctx?`.
-
-### T-012 — `BaseCrudAdmin` + abstract `_executeSearch`/`_executeCount`
-- `base.crud.admin.ts`: add ctx to `getAdminInfo`, `setAdminInfo`
-- `base.crud.permissions.ts`: update ABSTRACT declarations (no `_` prefix — concrete impls use it)
+| Task | Description | Commit |
+|------|-------------|--------|
+| T-008 | `runWithLoggingAndValidation` ctx param + error-rethrow inside tx | 9edbaacf |
+| T-009 | 20 lifecycle hooks: `_tx?:DrizzleClient` → `_ctx:ServiceContext` | 9edbaacf |
+| T-010 | `BaseCrudRead` 8 methods + `_executeAdminSearch` (applied in Phase 1) | 2076825a |
+| T-011 | `BaseCrudWrite` 7 methods + `_getAndValidateEntity` ctx param | dc20cc0f |
+| T-012 | `getAdminInfo`/`setAdminInfo` + `_executeSearch`/`_executeCount` abstract decls | 9edbaacf |
 
 ---
 
@@ -80,19 +45,19 @@ Same pattern. Also update `_getAndValidateEntity` in `base.service.ts` to accept
 | T-022 | AccommodationReviewService hookState (2 mutable fields) | 4ecf23d6 |
 | T-023 | DestinationReviewService hookState (2 mutable fields) | 4ecf23d6 |
 
-**All mutable instance fields eliminated — zero shared state across requests.**
-
 ---
 
-## Completed — Phase 4: ctx.tx propagation (T-024–T-026) ✅
+## Completed — Phase 4: ctx.tx propagation (T-024 → T-026) ✅
 
 | Task | Description | Commit |
 |------|-------------|--------|
-| T-024 | DestinationService update() conditional ctx.tx (already implemented, comment cleanup) | a9ff7673 |
-| T-025 | AccommodationReviewService _afterSoftDelete/_afterHardDelete/_afterRestore pass ctx.tx | 6258ecce |
-| T-026 | DestinationReviewService already passing ctx.tx (no changes needed) | 4ecf23d6 |
+| T-024 | DestinationService update() conditional ctx.tx propagation | a9ff7673 |
+| T-025 | AccommodationReviewService stats recalculation pass ctx.tx | 6258ecce |
+| T-026 | DestinationReviewService already passing ctx.tx | 4ecf23d6 |
 
-### Completed — Testing (T-027–T-032) ✅
+---
+
+## Completed — Testing (T-027 → T-032) ✅
 
 | Task | Description | Commit |
 |------|-------------|--------|
@@ -107,9 +72,11 @@ Same pattern. Also update `_getAndValidateEntity` in `base.service.ts` to accept
 
 ---
 
-## Gotchas discovered
+## Post-audit fixes
 
-- Multi-line constructors: `grep -n 'constructor.*ServiceContext'` does NOT find them. Search for `ctx: ServiceContext` on its own line.
-- Pool is created in `apps/api/src/utils/database.ts`, not in `@repo/db` (db receives it via `initializeDb()`).
-- `destination.service.ts` needs BOTH `ServiceConfig` (constructor) and `ServiceContext` (future method signatures) in imports.
-- Biome auto-sorts imports — quotes style may change on commit (single → double), that's expected.
+| Fix | Description | Commit |
+|-----|-------------|--------|
+| Gap 1 | Write methods pass ctx to runWithLoggingAndValidation (6 methods) | dc20cc0f |
+| Gap 2 | `_getAndValidateEntity` accepts `_ctx?: ServiceContext` | dc20cc0f |
+| Gap 3 | HookState types exported from services barrel | dc20cc0f |
+| Gap 4 | `hardDelete()` passes ctx?.tx to model | 307c448b |

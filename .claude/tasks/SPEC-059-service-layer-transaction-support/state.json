@@ -265,1047 +265,1047 @@
             "id": "T-008",
             "title": "Add ctx to runWithLoggingAndValidation and fix error-swallowing catch block",
             "description": "This is the most critical change in Phase 2. File: packages/service-core/src/base/base.service.ts.\n\n1. Update runWithLoggingAndValidation signature to accept ctx:\n```typescript\nprotected async runWithLoggingAndValidation<TInput extends ZodTypeAny, TOutput>({\n  methodName, input, schema, ctx, execute\n}: {\n  methodName: string;\n  input: { actor: Actor } & Record<string, unknown>;\n  schema: TInput;\n  ctx?: ServiceContext;\n  execute: (data: z.infer<TInput>, actor: Actor, ctx: ServiceContext) => Promise<TOutput>;\n}): Promise<ServiceOutput<TOutput>>\n```\n\n2. Pass resolvedCtx to execute call (line ~100):\n```typescript\nconst resolvedCtx = ctx ?? { hookState: {} };\nconst result = await execute(validData, actor, resolvedCtx);\n```\n\n3. Fix the catch block (lines 103-121). TWO branches currently swallow errors that prevent tx rollback:\n- Branch 1 (ServiceError): add `if (ctx?.tx) { throw error; }` before `return { error }`\n- Branch 3 (unknown errors): add `if (ctx?.tx) { throw serviceError; }` before `return { error: serviceError }`\n- Branch 2 (DbError) already rethrows — leave unchanged\n\nTest requirements:\n- Test file: packages/service-core/test/base/base.service.test.ts (new or existing)\n- T-028 covers: ServiceError rethrows when ctx.tx present, returns { error } when no tx\n- T-028 covers: Unknown error wrapped in ServiceError, rethrows inside tx\n- T-028 covers: DbError always rethrows (unchanged)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003"],
             "blocks": ["T-009", "T-028"],
             "subtasks": [
                 {
                     "title": "Update runWithLoggingAndValidation signature to include ctx?: ServiceContext",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass resolvedCtx to execute call inside runWithLoggingAndValidation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix Branch 1 catch: rethrow ServiceError when ctx?.tx is truthy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix Branch 3 catch: rethrow wrapped ServiceError when ctx?.tx is truthy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify Branch 2 (DbError) is unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "base-classes", "error-handling", "transactions"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add _ctx: ServiceContext to all 20 lifecycle hook signatures in base.crud.hooks.ts",
             "description": "File: packages/service-core/src/base/base.crud.hooks.ts\n\nAdd `_ctx: ServiceContext` as the LAST parameter to all 20 default no-op hook implementations. The default implementations simply ignore the ctx. This establishes the contract for concrete service overrides.\n\nComplete list (all 20 hooks with new signatures — see spec Section 4 table):\n1. _beforeCreate(data, _actor, _ctx)\n2. _afterCreate(entity, _actor, _ctx)\n3. _beforeUpdate(data, _actor, _ctx)\n4. _afterUpdate(entity, _actor, _ctx)\n5. _beforeGetByField(field, value, _actor, _ctx)\n6. _afterGetByField(entity, _actor, _ctx)\n7. _beforeList(options, _actor, _ctx)\n8. _afterList(result, _actor, _ctx)\n9. _beforeSoftDelete(id, _actor, _ctx)\n10. _afterSoftDelete(result, _actor, _ctx)\n11. _beforeHardDelete(id, _actor, _ctx)\n12. _afterHardDelete(result, _actor, _ctx)\n13. _beforeRestore(id, _actor, _ctx)\n14. _afterRestore(result, _actor, _ctx)\n15. _beforeSearch(params, _actor, _ctx)\n16. _afterSearch(result, _actor, _ctx)\n17. _beforeCount(params, _actor, _ctx)\n18. _afterCount(result, _actor, _ctx)\n19. _beforeUpdateVisibility(_entity, newVisibility, _actor, _ctx)\n20. _afterUpdateVisibility(entity, _actor, _ctx)\n\nIMPORTANT: Prefix the parameter `_ctx` (underscore) in no-op implementations since it's unused. Concrete overrides may use `ctx` without underscore.\n\nTest requirements:\n- Verified by pnpm typecheck after T-010/T-011/T-012 pass the ctx parameter",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010", "T-011", "T-012"],
             "subtasks": [
                 {
                     "title": "Add _ctx to _before* hooks (create, update, getByField, list, softDelete, hardDelete, restore, search, count, updateVisibility)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add _ctx to _after* hooks (create, update, getByField, list, softDelete, hardDelete, restore, search, count, updateVisibility)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify all 20 hooks use _ctx prefix (underscore) since no-ops ignore it",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "base-classes", "hooks"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Add ctx to BaseCrudRead methods and _executeAdminSearch",
             "description": "File: packages/service-core/src/base/base.crud.read.ts\n\nAdd optional `ctx?: ServiceContext` as the LAST parameter to all 8 public read methods plus _executeAdminSearch.\n\nFor each method:\n1. Add `ctx?: ServiceContext` as last param\n2. Add ctx initialization at top of method body: `const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };`\n3. Pass resolvedCtx through runWithLoggingAndValidation (add `ctx: resolvedCtx` to the options object)\n4. Pass execCtx to all hook calls inside the execute callback\n\nMethods to update:\n- getByField(actor, field, value, ctx?)\n- getById(actor, id, ctx?)\n- getBySlug(actor, slug, ctx?)\n- getByName(actor, name, ctx?)\n- list(actor, options?, ctx?)\n- search(actor, params, ctx?)\n- adminList(actor, params, ctx?)\n- count(actor, params, ctx?)\n\nFor _executeAdminSearch: add `ctx: ServiceContext` as a SEPARATE second parameter (NOT inside AdminSearchExecuteParams). The method signature becomes: `protected async _executeAdminSearch(params: AdminSearchExecuteParams, ctx: ServiceContext)`\n\nFor adminList: build AdminSearchExecuteParams and call `this._executeAdminSearch(searchParams, execCtx)`.\n\nNote: ctx is threaded for hookState only in Phase 3. ctx.tx is NOT passed to model calls yet (Phase 4).\n\nTest requirements:\n- T-031 covers backward compat (calling without ctx)\n- T-032 covers hookState initialization edge case",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-009"],
             "blocks": ["T-013", "T-032"],
             "subtasks": [
                 {
                     "title": "Add ctx to getByField, getById, getBySlug, getByName with resolvedCtx initialization",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add ctx to list, search, count with resolvedCtx initialization",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add ctx to adminList with resolvedCtx initialization; pass execCtx to _executeAdminSearch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _executeAdminSearch signature: add ctx: ServiceContext as second param",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass execCtx to all hook calls inside execute callbacks",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "base-classes", "read-methods"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Add ctx to BaseCrudWrite methods and _getAndValidateEntity",
             "description": "File: packages/service-core/src/base/base.crud.write.ts\n\nAdd optional `ctx?: ServiceContext` as the LAST parameter to all 7 public write methods plus _getAndValidateEntity.\n\nFor each method:\n1. Add `ctx?: ServiceContext` as last param\n2. Add ctx initialization: `const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };`\n3. Pass resolvedCtx through runWithLoggingAndValidation\n4. Pass execCtx to all hook calls inside execute callback\n5. Pass execCtx to _getAndValidateEntity calls (6 locations)\n\nMethods: create, update, softDelete, hardDelete, restore, updateVisibility, setFeaturedStatus\n\nFor _getAndValidateEntity (base.service.ts:137):\n- Add `ctx?: ServiceContext` as last param\n- Update the TModel constraint: `TModel extends { findById: (id: string, tx?: DrizzleClient) => Promise<TEntity | null> }`\n- Phase 3 comment: `const entityOrNull = await model.findById(id); // Phase 4: pass ctx?.tx`\n\nAll 6 call sites in base.crud.write.ts must pass execCtx:\n```typescript\nconst entity = await this._getAndValidateEntity(\n  this.model, id, validActor, this.entityName,\n  this._canSoftDelete.bind(this),\n  execCtx  // <-- NEW\n);\n```\n\nTest requirements:\n- T-031 covers backward compat\n- T-032 covers hookState init with ctx.tx but no hookState",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-009"],
             "blocks": ["T-013", "T-032"],
             "subtasks": [
                 {
                     "title": "Add ctx to create, update with resolvedCtx init and hook threading",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add ctx to softDelete, hardDelete, restore with resolvedCtx init and hook threading",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add ctx to updateVisibility, setFeaturedStatus",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _getAndValidateEntity signature with ctx? and updated TModel constraint",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update all 6 _getAndValidateEntity call sites to pass execCtx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "base-classes", "write-methods"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Add ctx to BaseCrudAdmin methods and abstract _executeSearch/_executeCount declarations",
             "description": "Two files:\n\n1. packages/service-core/src/base/base.crud.admin.ts: Add ctx? to getAdminInfo and setAdminInfo using same pattern as T-010/T-011 (resolvedCtx initialization, pass through runWithLoggingAndValidation).\n\n2. packages/service-core/src/base/base.crud.permissions.ts: Update ABSTRACT declarations of _executeSearch and _executeCount:\n- `abstract _executeSearch(params: z.infer<TSearchSchema>, actor: Actor, ctx: ServiceContext): Promise<PaginatedListOutput<TEntity>>`\n- `abstract _executeCount(params: z.infer<TSearchSchema>, actor: Actor, ctx: ServiceContext): Promise<{ count: number }>`\n\nNote: ctx is NOT prefixed with underscore on abstract declarations since concrete implementations should actively use it in Phase 4.\n\nTest requirements:\n- pnpm typecheck will catch any concrete implementations that haven't added ctx (TypeScript abstract method enforcement)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-013", "T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "Add ctx to getAdminInfo and setAdminInfo in base.crud.admin.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _executeSearch abstract declaration in base.crud.permissions.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _executeCount abstract declaration in base.crud.permissions.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "base-classes", "admin-methods"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Update stateless concrete services (batch A): add ctx to _executeSearch/_executeCount",
             "description": "Update 13 stateless concrete services that only override _executeSearch and _executeCount (and permission hooks that do NOT receive ctx). These services extend BaseCrudRelatedService or BaseCrudService with NO lifecycle hook overrides.\n\nFiles to update:\n1. packages/service-core/src/services/amenity/amenity.service.ts\n2. packages/service-core/src/services/attraction/attraction.service.ts\n3. packages/service-core/src/services/feature/feature.service.ts\n4. packages/service-core/src/services/tag/tag.service.ts\n5. packages/service-core/src/services/eventLocation/eventLocation.service.ts\n6. packages/service-core/src/services/eventOrganizer/eventOrganizer.service.ts\n7. packages/service-core/src/services/postSponsor/postSponsor.service.ts\n8. packages/service-core/src/services/postSponsorship/postSponsorship.service.ts\n9. packages/service-core/src/services/owner-promotion/ownerPromotion.service.ts\n10. packages/service-core/src/services/sponsorship/sponsorship.service.ts\n11. packages/service-core/src/services/sponsorship/sponsorshipLevel.service.ts\n12. packages/service-core/src/services/sponsorship/sponsorshipPackage.service.ts\n13. packages/service-core/src/services/userBookmark/userBookmark.service.ts\n\nFor each file:\n- Add `ctx: ServiceContext` as last param to _executeSearch implementation\n- Add `ctx: ServiceContext` as last param to _executeCount implementation\n- If _executeAdminSearch is overridden, add `ctx: ServiceContext` as second param\n- Permission hooks (_can*) do NOT receive ctx — leave them unchanged\n\nTest requirements:\n- pnpm typecheck confirms all overrides match new abstract signatures\n- T-031 backward compat tests cover representative services from this batch",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-010", "T-011", "T-012"],
             "blocks": ["T-031"],
             "subtasks": [
                 {
                     "title": "Update amenity, attraction, feature, tag services: _executeSearch/_executeCount ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update eventLocation, eventOrganizer services: _executeSearch/_executeCount ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update postSponsor, postSponsorship, ownerPromotion services: _executeSearch/_executeCount ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update sponsorship, sponsorshipLevel, sponsorshipPackage services: _executeSearch/_executeCount ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update userBookmark service: _executeSearch/_executeCount ctx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "concrete-services", "stateless"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Update UserService, ExchangeRateService: ctx threading for hooks, methods, and custom public methods",
             "description": "Two services with special requirements:\n\n**UserService** (packages/service-core/src/services/user/user.service.ts):\n- Override _executeSearch/_executeCount: add ctx as last param\n- Override _beforeCreate (slug generation): add _ctx: ServiceContext as last param\n- Override _beforeUpdate (normalization): add _ctx: ServiceContext as last param\n- These hooks are stateless (no mutable state), so just signature update\n\n**ExchangeRateService** (packages/service-core/src/services/exchange-rate/exchange-rate.service.ts):\n- Override _executeSearch/_executeCount: add ctx as last param\n- 4 custom public methods need ctx as last optional param:\n  - getLatestRate(actor, params, ctx?): ServiceOutput\n  - getLatestRates(actor, ctx?): ServiceOutput\n  - createManualOverride(actor, data, ctx?): ServiceOutput\n  - removeManualOverride(actor, params, ctx?): ServiceOutput\n- Phase 3 note: ctx.tx is NOT passed to model calls yet. Just add the parameter for future Phase 4 use.\n\nTest requirements:\n- pnpm typecheck confirms correct signatures\n- No new test files needed (covered by T-031 backward compat)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "UserService: add ctx to _executeSearch, _executeCount, _beforeCreate, _beforeUpdate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ExchangeRateService: add ctx to _executeSearch, _executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "ExchangeRateService: add ctx? to getLatestRate, getLatestRates, createManualOverride, removeManualOverride",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "concrete-services", "user-service", "exchange-rate"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Update stateful services: add ctx to _executeSearch/_executeCount signatures only",
             "description": "Update the 6 stateful services to add ctx to their _executeSearch and _executeCount signatures. This is SIGNATURES ONLY — the hookState migration happens in T-016 through T-023.\n\nFiles:\n1. packages/service-core/src/services/accommodation/accommodation.service.ts\n2. packages/service-core/src/services/accommodationReview/accommodationReview.service.ts\n3. packages/service-core/src/services/destination/destination.service.ts\n4. packages/service-core/src/services/destinationReview/destinationReview.service.ts\n5. packages/service-core/src/services/event/event.service.ts\n6. packages/service-core/src/services/post/post.service.ts\n\nFor each file:\n- Add `ctx: ServiceContext` as last param to _executeSearch implementation\n- Add `ctx: ServiceContext` as last param to _executeCount implementation\n- If _executeAdminSearch is overridden, add `ctx: ServiceContext` as second param\n- DO NOT change lifecycle hook overrides yet (that is T-016 through T-023)\n- DO NOT change private mutable fields yet (that is T-016 through T-023)\n\nIMPORTANT NOTE for AccommodationReviewService and DestinationReviewService: Their _afterCreate and _afterUpdate hooks currently omit the _actor: Actor parameter. TypeScript allows fewer params in an override. When T-022/T-023 adds _ctx, they MUST add _actor first. Document this gotcha in the code comment.\n\nTest requirements:\n- pnpm typecheck passes after all 6 services updated",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-012"],
             "blocks": ["T-016", "T-018", "T-019", "T-021", "T-022", "T-023"],
             "subtasks": [
                 {
                     "title": "Update accommodation.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update accommodationReview.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update destination.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update destinationReview.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update event.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update post.service.ts: ctx on _executeSearch/_executeCount",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "concrete-services", "stateful"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Migrate DestinationService: create DestinationHookState and replace 4 mutable fields",
             "description": "The most complex service migration. File: packages/service-core/src/services/destination/destination.service.ts\n\n1. Create packages/service-core/src/services/destination/destination.types.ts:\n```typescript\nexport interface DestinationHookState {\n  updateId?: string;\n  pendingPathUpdate?: { parentId: string; oldPath: string; newPath: string };\n  deletedDestinationSlug?: string;\n  restoredDestinationSlug?: string;\n}\n```\n\n2. Delete 4 private mutable instance fields: _updateId, _pendingPathUpdate, _lastDeletedDestinationSlug, _lastRestoredDestinationSlug\n\n3. Update _beforeUpdate hook:\n- Signature: _beforeUpdate(data, _actor, ctx: ServiceContext<DestinationHookState>)\n- Replace `this._updateId` reads with `ctx.hookState?.updateId`\n- Replace `this._pendingPathUpdate` writes with `ctx.hookState!.pendingPathUpdate = ...`\n\n4. Update _beforeSoftDelete, _beforeHardDelete:\n- Add ctx param, write to ctx.hookState!.deletedDestinationSlug\n\n5. Update _afterSoftDelete, _afterHardDelete:\n- Add ctx param, read from ctx.hookState?.deletedDestinationSlug\n\n6. Update _beforeRestore:\n- Add ctx param, write to ctx.hookState!.restoredDestinationSlug\n\n7. Update _afterRestore:\n- Add ctx param, read from ctx.hookState?.restoredDestinationSlug\n\nPhase 3 note: model.findById calls inside hooks still use global db (no ctx.tx yet). Add TODO comment: // Phase 4: pass ctx.tx to model.findById\n\nTest requirements:\n- T-030 covers DestinationService hookState: updateId and pendingPathUpdate stored on ctx\n- T-029 covers concurrency isolation tests",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-015"],
             "blocks": ["T-017", "T-024", "T-030"],
             "subtasks": [
                 {
                     "title": "Create destination.types.ts with DestinationHookState interface",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete 4 private mutable fields from destination.service.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeUpdate to use ctx.hookState.updateId and ctx.hookState.pendingPathUpdate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete, _beforeHardDelete to write ctx.hookState.deletedDestinationSlug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete, _afterHardDelete to read ctx.hookState?.deletedDestinationSlug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore, _afterRestore to use ctx.hookState.restoredDestinationSlug",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "destination", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Update DestinationService.update() override to use ctx.hookState",
             "description": "File: packages/service-core/src/services/destination/destination.service.ts — the overridden update() method (destination.service.ts:516 area).\n\nUpdate the override to accept and initialize ctx:\n```typescript\npublic async update(\n  actor: Actor,\n  id: string,\n  data: DestinationUpdateInput,\n  ctx?: ServiceContext<DestinationHookState>\n): Promise<ServiceOutput<Destination>> {\n  const resolvedCtx: ServiceContext<DestinationHookState> = { hookState: {}, ...ctx };\n  resolvedCtx.hookState!.updateId = id;\n  resolvedCtx.hookState!.pendingPathUpdate = undefined;\n  try {\n    const result = await super.update(actor, id, data, resolvedCtx);\n    if (resolvedCtx.hookState?.pendingPathUpdate) {\n      const { parentId, oldPath, newPath } = resolvedCtx.hookState.pendingPathUpdate;\n      // Phase 3: separate withTransaction (Phase 4 will use ctx.tx)\n      await withTransaction(async (tx) => {\n        await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);\n      });\n    }\n    return result;\n  } finally {\n    if (resolvedCtx.hookState) {\n      resolvedCtx.hookState.updateId = undefined;\n      resolvedCtx.hookState.pendingPathUpdate = undefined;\n    }\n  }\n}\n```\n\nNote: The withTransaction wrapper here is intentional for Phase 3. Phase 4 (T-024) will replace it with ctx.tx propagation.\n\nTest requirements:\n- T-030: verify updateId is set on ctx.hookState (not as instance field)\n- T-030: verify _pendingPathUpdate is set on ctx.hookState (not as instance field)\n- T-030: verify instance fields no longer exist (`expect((service as any)._updateId).toBeUndefined()`)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016"],
             "blocks": ["T-024", "T-030"],
             "subtasks": [
                 {
                     "title": "Update override signature: add ctx?: ServiceContext<DestinationHookState>",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Initialize resolvedCtx with hookState and set updateId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call super.update with resolvedCtx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Execute pendingPathUpdate cascade using withTransaction (Phase 3)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Clean up hookState in finally block",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "destination", "hookstate", "transactions"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Migrate AccommodationService: create AccommodationHookState and replace 2 mutable fields",
             "description": "File: packages/service-core/src/services/accommodation/accommodation.service.ts\n\n1. Create packages/service-core/src/services/accommodation/accommodation.types.ts:\n```typescript\nexport interface AccommodationHookState {\n  deletedEntity?: { destinationId?: string; slug: string; type?: string };\n  restoredAccommodation?: { slug: string; destinationId?: string; type?: string };\n}\n```\n\n2. Delete 2 private mutable instance fields (line 160-163): _lastDeletedEntity, _lastRestoredAccommodation\n\n3. Update _beforeSoftDelete:\n- Signature: (id: string, _actor: Actor, ctx: ServiceContext<AccommodationHookState>)\n- Write to ctx.hookState!.deletedEntity (instead of this._lastDeletedEntity)\n- Phase 3: model.findById still uses global db\n\n4. Update _afterSoftDelete:\n- Read from ctx.hookState?.deletedEntity (instead of this._lastDeletedEntity)\n\n5. Update _beforeRestore:\n- Write to ctx.hookState!.restoredAccommodation\n\n6. Update _afterRestore:\n- Read from ctx.hookState?.restoredAccommodation\n\nTest requirements:\n- T-029: concurrency test — two concurrent softDelete calls, each revalidates correct entity\n- T-032: hookState init edge case — ctx with tx but no hookState should not crash",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-025", "T-029"],
             "subtasks": [
                 {
                     "title": "Create accommodation.types.ts with AccommodationHookState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete _lastDeletedEntity and _lastRestoredAccommodation instance fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete to write ctx.hookState.deletedEntity",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete to read ctx.hookState?.deletedEntity",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore to write ctx.hookState.restoredAccommodation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterRestore to read ctx.hookState?.restoredAccommodation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "accommodation", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Migrate PostService: create PostHookState and replace 3 mutable fields",
             "description": "File: packages/service-core/src/services/post/post.service.ts\n\n1. Create packages/service-core/src/services/post/post.types.ts:\n```typescript\nexport interface PostHookState {\n  updateId?: string;\n  restoredPost?: { slug: string; tagSlugs?: string[] };\n  deletedPost?: { slug: string; tagSlugs?: string[] };\n}\n```\n\n2. Delete 3 private mutable instance fields: _updateId, _lastDeletedPost, _lastRestoredPost\n\n3. Update _beforeUpdate (post.service.ts:184):\n- Add ctx: ServiceContext<PostHookState> as last param\n- Read from ctx.hookState?.updateId (instead of this._updateId)\n\n4. Update _beforeSoftDelete:\n- Write to ctx.hookState!.deletedPost\n\n5. Update _afterSoftDelete:\n- Read from ctx.hookState?.deletedPost\n\n6. Update _beforeRestore:\n- Write to ctx.hookState!.restoredPost\n\n7. Update _afterRestore:\n- Read from ctx.hookState?.restoredPost\n\nTest requirements:\n- pnpm typecheck confirms no remaining usages of this._updateId, this._lastDeletedPost, this._lastRestoredPost",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Create post.types.ts with PostHookState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete _updateId, _lastDeletedPost, _lastRestoredPost instance fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeUpdate to read ctx.hookState?.updateId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete/_afterSoftDelete to use ctx.hookState.deletedPost",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore/_afterRestore to use ctx.hookState.restoredPost",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "post", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Update PostService.update() override to use ctx.hookState",
             "description": "File: packages/service-core/src/services/post/post.service.ts — the overridden update() method (post.service.ts:980-991).\n\nUpdate:\n```typescript\npublic async update(\n  actor: Actor,\n  id: string,\n  data: z.infer<typeof PostUpdateSchema>,\n  ctx?: ServiceContext<PostHookState>\n): Promise<ServiceOutput<Post>> {\n  const resolvedCtx: ServiceContext<PostHookState> = { hookState: {}, ...ctx };\n  resolvedCtx.hookState!.updateId = id;\n  try {\n    return await super.update(actor, id, data, resolvedCtx);\n  } finally {\n    if (resolvedCtx.hookState) {\n      resolvedCtx.hookState.updateId = undefined;\n    }\n  }\n}\n```\n\nThe _beforeUpdate hook reads ctx.hookState?.updateId (set in T-019). This override simply ensures updateId is available on the ctx before calling super.update().\n\nTest requirements:\n- Verify _updateId instance field no longer exists: `expect((service as any)._updateId).toBeUndefined()`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update PostService.update() override signature to accept ctx?",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Initialize resolvedCtx and set hookState.updateId = id",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call super.update with resolvedCtx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Clean up hookState.updateId in finally block",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "post", "hookstate"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Migrate EventService: create EventHookState and replace 2 mutable fields",
             "description": "File: packages/service-core/src/services/event/event.service.ts\n\n1. Create packages/service-core/src/services/event/event.types.ts:\n```typescript\nexport interface EventHookState {\n  restoredEvent?: { slug: string; category?: string };\n  deletedEvent?: { slug: string; category?: string };\n}\n```\n\n2. Delete 2 private mutable instance fields: _lastRestoredEvent, _lastDeletedEvent\n\n3. Update _beforeSoftDelete:\n- Add ctx: ServiceContext<EventHookState> as last param\n- Write entity data to ctx.hookState!.deletedEvent\n\n4. Update _afterSoftDelete:\n- Read from ctx.hookState?.deletedEvent\n\n5. Update _beforeRestore:\n- Write to ctx.hookState!.restoredEvent\n\n6. Update _afterRestore:\n- Read from ctx.hookState?.restoredEvent\n\nTest requirements:\n- pnpm typecheck confirms removal of instance fields",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create event.types.ts with EventHookState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete _lastRestoredEvent and _lastDeletedEvent instance fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete/_afterSoftDelete hooks with ctx.hookState.deletedEvent",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore/_afterRestore hooks with ctx.hookState.restoredEvent",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "event", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Migrate AccommodationReviewService: create AccommodationReviewHookState and replace 2 mutable fields",
             "description": "File: packages/service-core/src/services/accommodationReview/accommodationReview.service.ts\n\n1. Create packages/service-core/src/services/accommodationReview/accommodationReview.types.ts:\n```typescript\nexport interface AccommodationReviewHookState {\n  deletedAccommodationId?: string;\n  restoredAccommodationId?: string;\n}\n```\n\n2. Delete 2 private mutable instance fields: _lastDeletedAccommodationId, _lastRestoredAccommodationId\n\n3. Update hooks:\n- _beforeSoftDelete and _beforeHardDelete: write to ctx.hookState!.deletedAccommodationId\n- _afterSoftDelete and _afterHardDelete: read from ctx.hookState?.deletedAccommodationId\n- _beforeRestore: write to ctx.hookState!.restoredAccommodationId\n- _afterRestore: read from ctx.hookState?.restoredAccommodationId\n\nIMPORTANT: AccommodationReviewService._afterCreate and _afterUpdate currently omit the _actor: Actor parameter. Before adding _ctx as last param to these hooks, add _actor: Actor first (TypeScript positional param rule). See spec Phase 3 caution note.\n\nTest requirements:\n- pnpm typecheck verifies correct parameter ordering\n- T-029 uses AccommodationService but same pattern — review service follows same isolation guarantee",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-025"],
             "subtasks": [
                 {
                     "title": "Create accommodationReview.types.ts with AccommodationReviewHookState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete _lastDeletedAccommodationId and _lastRestoredAccommodationId fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete/_beforeHardDelete to write ctx.hookState.deletedAccommodationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete/_afterHardDelete to read ctx.hookState?.deletedAccommodationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore/_afterRestore with ctx.hookState.restoredAccommodationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix _afterCreate/_afterUpdate: add _actor: Actor before _ctx: ServiceContext",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "accommodation-review", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Migrate DestinationReviewService: create DestinationReviewHookState and replace 2 mutable fields",
             "description": "File: packages/service-core/src/services/destinationReview/destinationReview.service.ts\n\n1. Create packages/service-core/src/services/destinationReview/destinationReview.types.ts:\n```typescript\nexport interface DestinationReviewHookState {\n  deletedDestinationId?: string;\n  restoredDestinationIdForReview?: string;\n}\n```\n\n2. Delete 2 private mutable instance fields: _lastDeletedDestinationId, _lastRestoredDestinationIdForReview\n\n3. Update hooks:\n- _beforeSoftDelete and _beforeHardDelete: write to ctx.hookState!.deletedDestinationId\n- _afterSoftDelete and _afterHardDelete: read from ctx.hookState?.deletedDestinationId\n- _beforeRestore: write to ctx.hookState!.restoredDestinationIdForReview\n- _afterRestore: read from ctx.hookState?.restoredDestinationIdForReview\n\nIMPORTANT: Same as AccommodationReviewService — _afterCreate and _afterUpdate currently omit _actor: Actor. Add _actor before adding _ctx to avoid positional type mismatch.\n\nTest requirements:\n- pnpm typecheck verifies no remaining this._lastDeletedDestinationId usages",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-015"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Create destinationReview.types.ts with DestinationReviewHookState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete _lastDeletedDestinationId and _lastRestoredDestinationIdForReview fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeSoftDelete/_beforeHardDelete with ctx.hookState.deletedDestinationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete/_afterHardDelete with ctx.hookState?.deletedDestinationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _beforeRestore/_afterRestore with ctx.hookState.restoredDestinationIdForReview",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix _afterCreate/_afterUpdate: add _actor: Actor before _ctx: ServiceContext",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "destination-review", "hookstate", "concurrency"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Phase 4: DestinationService.update() — replace withTransaction with ctx.tx for path cascade",
             "description": "⚠ EXTERNAL DEPENDENCY: Requires SPEC-060 model-layer tx support to be complete before this task can be implemented. SPEC-060 must add tx parameter support to DestinationModel.updateDescendantPaths().\n\nFile: packages/service-core/src/services/destination/destination.service.ts — the update() override.\n\nReplace the separate withTransaction call with ctx.tx propagation:\n```typescript\n// BEFORE (Phase 3 - T-017)\nawait withTransaction(async (tx) => {\n  await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);\n});\n\n// AFTER (Phase 4)\nif (resolvedCtx.tx) {\n  await this.model.updateDescendantPaths(parentId, oldPath, newPath, resolvedCtx.tx);\n} else {\n  await withTransaction(async (tx) => {\n    await this.model.updateDescendantPaths(parentId, oldPath, newPath, tx);\n  });\n}\n```\n\nThis ensures that when update() is called inside withServiceTransaction, the path cascade runs in the SAME transaction — no separate inner transaction.\n\nTest requirements:\n- Integration test: update destination inside withServiceTransaction → path cascade runs in same tx\n- Integration test: update destination outside withServiceTransaction → creates own withTransaction",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify DestinationModel.updateDescendantPaths accepts tx parameter (SPEC-060 prereq)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update DestinationService.update(): conditional ctx.tx propagation vs new withTransaction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove TODO comment from T-017 implementation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "destination", "transactions", "phase-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Phase 4: AccommodationReviewService — propagate ctx.tx to stats recalculation model calls",
             "description": "⚠ EXTERNAL DEPENDENCY: Requires SPEC-060 model-layer tx support (accommodation model must accept tx parameter in update/stats methods).\n\nFile: packages/service-core/src/services/accommodationReview/accommodationReview.service.ts\n\nUpdate these 4 hooks to propagate ctx.tx to accommodationModel calls:\n1. _afterCreate — stats recalculation\n2. _afterUpdate — stats recalculation\n3. _afterSoftDelete — stats recalculation\n4. _afterRestore — stats recalculation\n\nPattern for each:\n```typescript\n// BEFORE\nawait this.accommodationModel.updateStats(accommodationId, newStats);\n\n// AFTER\nawait this.accommodationModel.updateStats(accommodationId, newStats, ctx?.tx);\n```\n\nThis ensures review creation/deletion within a transaction keeps stats in the same atomic operation.\n\nTest requirements:\n- Integration test: create review inside withServiceTransaction → stats update in same tx\n- Integration test: delete review inside withServiceTransaction → stats rollback on error",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-022"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify accommodationModel stats methods accept tx parameter (SPEC-060 prereq)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterCreate hook to pass ctx?.tx to stats recalculation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterUpdate hook to pass ctx?.tx to stats recalculation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete hook to pass ctx?.tx to stats recalculation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterRestore hook to pass ctx?.tx to stats recalculation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "accommodation-review", "transactions", "phase-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "Phase 4: DestinationReviewService — propagate ctx.tx to stats recalculation model calls",
             "description": "⚠ EXTERNAL DEPENDENCY: Requires SPEC-060 model-layer tx support (destination model must accept tx parameter in stats methods).\n\nFile: packages/service-core/src/services/destinationReview/destinationReview.service.ts\n\nMirrors T-025 but for destination stats. Update 4 hooks:\n1. _afterCreate — pass ctx?.tx to destinationModel stats update\n2. _afterUpdate — pass ctx?.tx to destinationModel stats update\n3. _afterSoftDelete — pass ctx?.tx to destinationModel stats update\n4. _afterRestore — pass ctx?.tx to destinationModel stats update\n\nTest requirements:\n- Integration test: create destination review inside withServiceTransaction → stats in same tx",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Verify destinationModel stats methods accept tx parameter (SPEC-060 prereq)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterCreate/_afterUpdate to pass ctx?.tx to destination stats",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update _afterSoftDelete/_afterRestore to pass ctx?.tx to destination stats",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "destination-review", "transactions", "phase-4"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": "pass",
+                "typecheck": "pass",
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Write unit tests for withServiceTransaction (commit, rollback, timeout guard)",
             "description": "Create packages/service-core/test/utils/transaction.test.ts\n\nTest cases (from spec Section Testing Strategy):\n\n1. 'should commit when function succeeds':\n   - Call withServiceTransaction with fn that returns 'success'\n   - Assert ctx.tx is defined, ctx.hookState is {}\n   - Assert result is 'success'\n\n2. 'should rollback when function throws':\n   - withServiceTransaction with fn that throws Error('deliberate failure')\n   - Assert rejects with 'deliberate failure'\n\n3. 'should pass baseCtx through to fn':\n   - Call with baseCtx = { hookState: { existing: true } }\n   - Assert ctx.hookState.existing === true inside fn\n\n4. 'should use custom timeout when provided':\n   - Mock tx.execute to capture SQL\n   - Call with options: { timeoutMs: 5000 }\n   - Assert SET LOCAL statement_timeout = 5000 was executed\n\n5. 'should use 30000 default timeout when not provided':\n   - Same but without options\n   - Assert SET LOCAL statement_timeout = 30000\n\n6. 'should use sql.raw for timeout value (not parameterized)':\n   - Verify the SQL contains the timeout as a literal, not $1\n\nNote: For rollback test, use Vitest mocking — may need real DB or mock withTransaction.\n\nTest file: packages/service-core/test/utils/transaction.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create test file packages/service-core/test/utils/transaction.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: commits on success, returns fn result",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: rejects on throw (rollback trigger)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: baseCtx is merged into ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: custom timeoutMs is used in SET LOCAL statement",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: default 30000 timeout when options not provided",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "transactions", "utilities"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Write unit tests for runWithLoggingAndValidation tx error-rethrow behavior",
             "description": "Create or extend packages/service-core/test/base/base.service.test.ts\n\nTest cases (spec Testing Strategy #2 and #7):\n\n1. 'should rethrow ServiceError when ctx.tx is present':\n   - Create service with mocked model\n   - Call inside withServiceTransaction with invalid data\n   - Assert rejects (ServiceError propagates, triggers rollback)\n\n2. 'should return { error } when ctx.tx is absent (backward compat)':\n   - Call service.create with invalid data and NO ctx\n   - Assert result.error is defined\n   - Assert NO throw\n\n3. 'should rethrow unknown errors when ctx.tx is present':\n   - Mock model.create to throw TypeError (not ServiceError, not DbError)\n   - Call inside withServiceTransaction\n   - Assert rejects with wrapped ServiceError\n\n4. 'should return { error } for unknown errors when no tx':\n   - Same mock but NO ctx\n   - Assert result.error.code === ServiceErrorCode.INTERNAL_ERROR\n   - Assert NO throw\n\n5. 'should always rethrow DbError regardless of tx':\n   - Mock model to throw a DbError\n   - Call with AND without ctx\n   - Assert BOTH cases throw\n\nTest file: packages/service-core/test/base/base.service.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test: ServiceError rethrows when ctx.tx present",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: ServiceError returns { error } when no ctx.tx (backward compat)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: unknown error wrapped and rethrown inside tx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: unknown error wrapped and returned (no throw) outside tx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: DbError always rethrows regardless of tx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "error-handling", "transactions"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Write unit tests for hookState concurrency isolation — AccommodationService",
             "description": "Create packages/service-core/test/services/accommodation/accommodation.hookstate.test.ts\n\nTest cases (spec Testing Strategy #1):\n\n1. 'should not leak state between concurrent softDelete calls':\n   - Create AccommodationService with mocked model\n   - Mock model.findById to return entity1 for '1', entity2 for '2'\n   - Track revalidation calls (mock revalidation service/function)\n   - Execute Promise.all([service.softDelete(actor, '1'), service.softDelete(actor, '2')])\n   - Assert revalidationCalls contains 'hotel-a' and 'hotel-b' (exactly 2 calls)\n   - Assert each call targets the CORRECT entity\n\n2. 'should not leak state between concurrent restore calls':\n   - Same pattern but with restore\n\n3. 'instance fields _lastDeletedEntity and _lastRestoredAccommodation should not exist':\n   - Assert `(service as any)._lastDeletedEntity === undefined`\n   - Assert `(service as any)._lastRestoredAccommodation === undefined`\n\nNote: These tests demonstrate that the old singleton mutation bug is fixed. Previously, concurrent requests could cause entity1 to trigger entity2's revalidation.\n\nTest file: packages/service-core/test/services/accommodation/accommodation.hookstate.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create accommodation.hookstate.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: concurrent softDelete calls revalidate correct entities (no state leak)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: concurrent restore calls revalidate correct entities",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: verify instance fields no longer exist (type safety proof)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "concurrency", "hookstate", "accommodation"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Write unit tests for DestinationService hookState (updateId and pendingPathUpdate)",
             "description": "Create packages/service-core/test/services/destination/destination.hookstate.test.ts\n\nTest cases (spec Testing Strategy #4):\n\n1. 'should store updateId on ctx.hookState, not instance field':\n   - Mock model.findById and model.update\n   - Call service.update(actor, 'dest-id', data, ctx) with ctx = { hookState: {} }\n   - Assert (service as any)._updateId === undefined (field no longer exists)\n   - Assert (service as any)._pendingPathUpdate === undefined\n\n2. 'should execute path cascade when pendingPathUpdate is set':\n   - Mock _beforeUpdate to set ctx.hookState.pendingPathUpdate\n   - Mock model.updateDescendantPaths\n   - Call service.update()\n   - Assert model.updateDescendantPaths was called with correct args\n\n3. 'should clear hookState in finally block':\n   - After update completes (success or error)\n   - Assert ctx.hookState.updateId === undefined\n   - Assert ctx.hookState.pendingPathUpdate === undefined\n\n4. 'should not cascade when pendingPathUpdate is not set':\n   - Mock _beforeUpdate to NOT set pendingPathUpdate\n   - Call update\n   - Assert model.updateDescendantPaths was NOT called\n\nTest file: packages/service-core/test/services/destination/destination.hookstate.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create destination.hookstate.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: updateId stored on ctx.hookState not instance field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: pendingPathUpdate triggers cascade",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: hookState cleared in finally block",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: no cascade when pendingPathUpdate not set",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "hookstate", "destination"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Write unit tests for backward compatibility — all methods callable without ctx",
             "description": "Create packages/service-core/test/base/backward-compat.test.ts\n\nTest cases (spec Testing Strategy #5):\n\n1. 'getById should work without ctx parameter':\n   - Call service.getById(actor, 'some-id') — NO ctx\n   - Assert result.data is defined (or result.error if not found)\n   - Assert NO throw\n\n2. 'create should work without ctx — returns { error } for validation failure':\n   - Call service.create(actor, invalidData) — NO ctx\n   - Assert result.error is defined\n   - Assert result.error.code === ServiceErrorCode.VALIDATION_ERROR\n   - Assert NO throw (error returned, not thrown)\n\n3. 'softDelete should work without ctx':\n   - Mock model.findById and model.softDelete\n   - Call service.softDelete(actor, 'id') — NO ctx\n   - Assert result.data is defined\n\n4. 'list should work without ctx':\n   - Mock model.list\n   - Call service.list(actor) — NO ctx\n   - Assert result.data is defined\n\n5. 'adminList should work without ctx':\n   - Call service.adminList(actor, params) — NO ctx\n   - Assert no throw\n\nPurpose: Prove that all ctx parameters are optional and existing callers (all API routes) continue working without modification.\n\nTest file: packages/service-core/test/base/backward-compat.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create backward-compat.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: all read methods callable without ctx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: write methods callable without ctx; errors returned not thrown",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: adminList callable without ctx",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "backward-compatibility"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Write unit tests for hookState initialization edge cases",
             "description": "Create packages/service-core/test/base/hookstate-init.test.ts\n\nTest cases (spec Testing Strategy #6):\n\n1. 'should initialize hookState when ctx is provided without hookState':\n   - Create ctx = { tx: mockTx } (no hookState)\n   - Mock model.findById and model.softDelete\n   - Call service.softDelete(actor, 'id', ctx)\n   - Assert NO crash (hookState initialized via spread: { hookState: {}, ...ctx })\n   - Assert result.data is defined\n\n2. 'should preserve existing hookState when provided':\n   - Create ctx = { hookState: { customKey: 'value' } }\n   - Call any service method with this ctx\n   - Assert ctx.hookState.customKey is still 'value' after call\n\n3. 'should create fresh hookState when ctx is undefined':\n   - Call any service method without ctx\n   - Method must internally create { hookState: {} } without crashing\n\n4. 'resolvedCtx spread pattern: { hookState: {}, ...ctx } behavior':\n   - ctx with hookState: preserves existing hookState object\n   - ctx without hookState: adds empty {}\n   - ctx = undefined: defaults to { hookState: {} }\n\nTest file: packages/service-core/test/base/hookstate-init.test.ts",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create hookstate-init.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: ctx with tx but no hookState — no crash, hookState initialized",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: existing hookState is preserved through service call",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: undefined ctx defaults to { hookState: {} }",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "testing", "hookstate", "initialization"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-04-13T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-04-13T00:00:00.000Z",
+                "completed": "2026-04-13T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 32,
-        "pending": 32,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 32,
         "blocked": 0,
         "averageComplexity": 2.7
     }
