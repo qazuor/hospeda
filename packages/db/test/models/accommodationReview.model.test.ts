@@ -1,12 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AccommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model';
 import { DbError } from '../../src/utils/error';
 import * as logger from '../../src/utils/logger';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -25,10 +21,14 @@ describe('AccommodationReviewModel', () => {
 
     beforeEach(() => {
         model = new AccommodationReviewModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         _logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {

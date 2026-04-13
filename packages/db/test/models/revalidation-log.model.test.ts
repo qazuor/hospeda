@@ -9,14 +9,10 @@
  * @module test/models/revalidation-log.model.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { RevalidationLogModel } from '../../src/models/revalidation/revalidation-log.model';
 import type { DrizzleClient } from '../../src/types';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -72,8 +68,12 @@ describe('RevalidationLogModel', () => {
 
     beforeEach(() => {
         model = new RevalidationLogModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     // =========================================================================

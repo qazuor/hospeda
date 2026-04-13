@@ -1,11 +1,10 @@
 import type { AttractionIdType, DestinationIdType } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDb } from '../../src/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { RDestinationAttractionModel } from '../../src/models/destination/rDestinationAttraction.model';
 import { DbError } from '../../src/utils/error';
 import { createDrizzleRelationMock } from '../utils/drizzle-mock';
 
-vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RDestinationAttractionModel();
@@ -23,7 +22,12 @@ const asAttractionId = (id: string) => id as unknown as AttractionIdType;
 
 describe('RDestinationAttractionModel', () => {
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations - relación encontrada', async () => {
@@ -35,7 +39,7 @@ describe('RDestinationAttractionModel', () => {
                 attraction: {}
             })
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
@@ -69,7 +73,7 @@ describe('RDestinationAttractionModel', () => {
         const rDestinationAttractionMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue(null)
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
@@ -86,7 +90,7 @@ describe('RDestinationAttractionModel', () => {
         const rDestinationAttractionMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rDestinationAttraction: rDestinationAttractionMock
@@ -95,5 +99,51 @@ describe('RDestinationAttractionModel', () => {
         await expect(
             model.findWithRelations({ destinationId: asDestinationId('a') }, { destination: true })
         ).rejects.toThrow(DbError);
+    });
+
+    // ========================================================================
+    // T-049: tx propagation for RDestinationAttractionModel
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findWithRelations() uses tx when provided (with relations branch)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue(null);
+            const mockTx = { query: { rDestinationAttraction: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations(
+                { destinationId: asDestinationId('d1') },
+                { destination: true },
+                mockTx
+            );
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() threads tx to findOne in fallback branch', async () => {
+            // Arrange
+            const mockTx = {} as any;
+            const findOneSpy = vi.spyOn(model, 'findOne').mockResolvedValue(null);
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ destinationId: asDestinationId('d1') }, {}, mockTx);
+
+            // Assert
+            expect(findOneSpy).toHaveBeenCalledWith(
+                { destinationId: asDestinationId('d1') },
+                mockTx
+            );
+
+            spy.mockRestore();
+            findOneSpy.mockRestore();
+        });
     });
 });

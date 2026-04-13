@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AmenityModel } from '../../src/models/accommodation/amenity.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -22,12 +18,16 @@ describe('AmenityModel', () => {
 
     beforeEach(() => {
         model = new AmenityModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         // Mock findOne fallback
         model.findOne = mockFindOne;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations returns result with relations and logs', async () => {

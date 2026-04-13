@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { SponsorshipLevelModel } from '../../src/models/sponsorship/sponsorshipLevel.model';
 import type { DrizzleClient } from '../../src/types';
 import { DbError } from '../../src/utils/error';
 import * as logger from '../../src/utils/logger';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -22,10 +18,14 @@ describe('SponsorshipLevelModel', () => {
 
     beforeEach(() => {
         model = new SponsorshipLevelModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         _logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {

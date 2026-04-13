@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { SponsorshipModel } from '../../src/models/sponsorship/sponsorship.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -22,11 +18,15 @@ describe('SponsorshipModel', () => {
 
     beforeEach(() => {
         model = new SponsorshipModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         model.findOne = mockFindOne;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('getTableName', () => {
@@ -341,6 +341,75 @@ describe('SponsorshipModel', () => {
                 { where, relations },
                 expect.any(Error)
             );
+        });
+    });
+
+    // ========================================================================
+    // T-048: tx propagation — methods not yet covered
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findBySlug() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            limit: vi.fn().mockResolvedValue([{ id: 's1', slug: 'gold' }])
+                        })
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            const result = await model.findBySlug('gold', mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+            expect(result).toEqual({ id: 's1', slug: 'gold' });
+
+            spy.mockRestore();
+        });
+
+        it('findActiveByTarget() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([{ id: 's1' }])
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findActiveByTarget('post', 'p1', mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() uses tx for query branch (with relations)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue({ id: 's1', sponsorUser: { id: 'u1' } });
+            const mockTx = { query: { sponsorships: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ id: 's1' }, { sponsorUser: true }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
         });
     });
 

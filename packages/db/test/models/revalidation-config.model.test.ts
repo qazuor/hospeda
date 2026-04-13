@@ -8,13 +8,9 @@
  * @module test/models/revalidation-config.model.test
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { RevalidationConfigModel } from '../../src/models/revalidation/revalidation-config.model';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -50,8 +46,12 @@ describe('RevalidationConfigModel', () => {
 
     beforeEach(() => {
         model = new RevalidationConfigModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     // =========================================================================

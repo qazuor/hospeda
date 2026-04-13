@@ -1,11 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AttractionModel } from '../../src/models/destination/attraction.model';
 import * as logger from '../../src/utils/logger';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -20,10 +16,14 @@ describe('AttractionModel', () => {
 
     beforeEach(() => {
         model = new AttractionModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('getTableName', () => {
@@ -199,6 +199,67 @@ describe('AttractionModel', () => {
 
             await expect(model.findAll({})).rejects.toThrow('connection failed');
             expect(logError).toHaveBeenCalled();
+        });
+    });
+
+    // ========================================================================
+    // T-047/T-049: tx propagation for AttractionModel (base methods via getClient)
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findAll() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            $dynamic: vi.fn().mockReturnValue({
+                                orderBy: vi.fn().mockReturnValue({
+                                    limit: vi.fn().mockReturnValue({
+                                        offset: vi.fn().mockResolvedValue([{ id: 'a1' }])
+                                    })
+                                }),
+                                limit: vi.fn().mockReturnValue({
+                                    offset: vi.fn().mockResolvedValue([{ id: 'a1' }])
+                                })
+                            })
+                        })
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findAll({}, {}, undefined, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('count() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([{ count: 3 }])
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            const result = await model.count({}, { tx: mockTx });
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+            expect(result).toBe(3);
+
+            spy.mockRestore();
         });
     });
 

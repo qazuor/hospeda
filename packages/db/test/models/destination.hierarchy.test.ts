@@ -1,14 +1,10 @@
 import type { Destination } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { DestinationModel } from '../../src/models/destination/destination.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -29,10 +25,14 @@ describe('DestinationModel.findChildren', () => {
 
     beforeEach(() => {
         model = new DestinationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('returns children and logs query', async () => {
@@ -159,10 +159,10 @@ describe('DestinationModel.findDescendants', () => {
 
     beforeEach(() => {
         model = new DestinationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         model.findOne = mockFindOne;
     });
 
@@ -424,10 +424,10 @@ describe('DestinationModel.findAncestors', () => {
 
     beforeEach(() => {
         model = new DestinationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         model.findOne = mockFindOne;
     });
 
@@ -568,10 +568,10 @@ describe('DestinationModel.findByPath', () => {
 
     beforeEach(() => {
         model = new DestinationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
     });
 
     it('returns destination matching path', async () => {
@@ -804,10 +804,10 @@ describe('DestinationModel.updateDescendantPaths', () => {
 
     beforeEach(() => {
         model = new DestinationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
     });
 
     it('executes batch UPDATE for all descendants and logs success', async () => {

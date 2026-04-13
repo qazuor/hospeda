@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BaseModel } from '../../src/base/base.model';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BaseModelImpl as BaseModel } from '../../src/base/base.model';
 import * as dbUtils from '../../src/client';
 import { DbError } from '../../src/utils/error';
 import * as logger from '../../src/utils/logger';
@@ -38,10 +38,6 @@ class NoIdModel extends BaseModel<{ foo: string }> {
     }
 }
 
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
-
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
     logError: vi.fn()
@@ -55,10 +51,14 @@ describe('BaseModel', () => {
 
     beforeEach(() => {
         model = new DummyModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findAll returns and logs', async () => {
@@ -387,6 +387,271 @@ describe('BaseModel', () => {
     // which requires the mock to support both $dynamic() chaining and count queries
     // simultaneously. The shallow getDb mock cannot replicate this without becoming
     // a full Drizzle query-builder reimplementation. Covered by integration tests.
+
+    describe('tx propagation', () => {
+        /**
+         * Shared minimal mock for a DrizzleClient that supports all query shapes
+         * used by BaseModelImpl. Each test overrides only the methods it needs.
+         */
+        function buildMockTx(): ReturnType<typeof vi.fn> {
+            const selectChain = {
+                from: () => ({
+                    where: () => {
+                        const qb = {
+                            limit: () => ({ offset: () => Promise.resolve([]) }),
+                            $dynamic: () => qb
+                        };
+                        return qb;
+                    }
+                })
+            };
+            const updateChain = {
+                set: () => ({ where: () => ({ returning: () => [] }) })
+            };
+            const deleteChain = { where: () => ({ returning: () => [] }) };
+            const insertChain = { values: () => ({ returning: () => [{ id: 'tx-1' }] }) };
+            const countSelectChain = {
+                from: () => ({
+                    where: () => Promise.resolve([{ count: '0' }])
+                })
+            };
+
+            // select() is called with either undefined (items) or { count: count() } (count queries)
+            const selectFn = vi.fn((arg?: unknown) => {
+                if (arg && typeof arg === 'object' && 'count' in (arg as object)) {
+                    return countSelectChain;
+                }
+                return selectChain;
+            });
+
+            return {
+                select: selectFn,
+                update: vi.fn(() => updateChain),
+                delete: vi.fn(() => deleteChain),
+                insert: vi.fn(() => insertChain),
+                query: {}
+            } as unknown as ReturnType<typeof vi.fn>;
+        }
+
+        it('findAll() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+
+            // Make getClient return mockTx so the query chain resolves correctly
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.findAll(
+                {},
+                undefined,
+                undefined,
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('findById() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.findById(
+                '1',
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('findOne() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.findOne(
+                {},
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('count() passes tx to getClient() via options', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.count(
+                {},
+                { tx: mockTx as unknown as import('../../src/types.ts').DrizzleClient }
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('create() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.create(
+                { id: 'new-1' },
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('update() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.update(
+                { id: '1' },
+                { name: 'updated' },
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('hardDelete() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.hardDelete(
+                { id: '1' },
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('softDelete() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.softDelete(
+                { id: '1' },
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('restore() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.restore(
+                { id: '1' },
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('findWithRelations() passes tx to getClient()', async () => {
+            const mockTx = buildMockTx();
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            await model.findWithRelations(
+                {},
+                {},
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('findAllWithRelations() passes tx to getClient()', async () => {
+            class DummyModelWithTableNameTx extends DummyModel {
+                protected getTableName(): string {
+                    return 'dummies';
+                }
+            }
+            const modelTx = new DummyModelWithTableNameTx();
+
+            const mockTx = buildMockTx();
+            // Add query.dummies.findMany for the relations path
+            (mockTx as unknown as Record<string, unknown>).query = {
+                dummies: {
+                    findMany: vi.fn().mockResolvedValue([])
+                }
+            };
+
+            const getClientSpy = vi.spyOn(
+                modelTx as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+            vi.spyOn(modelTx, 'count').mockResolvedValue(0);
+
+            await modelTx.findAllWithRelations(
+                { destination: true },
+                {},
+                {},
+                undefined,
+                mockTx as unknown as import('../../src/types.ts').DrizzleClient
+            );
+
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+
+        it('getClient() returns tx when provided', () => {
+            const mockTx = buildMockTx();
+            // Access protected method via cast for unit verification
+            const result = (model as unknown as { getClient(tx?: unknown): unknown }).getClient(
+                mockTx
+            );
+            expect(result).toBe(mockTx);
+        });
+
+        it('getClient() returns getDb() result when tx is undefined', () => {
+            const mockDb = buildMockTx();
+            getDb.mockReturnValue(mockDb);
+            const result = (model as unknown as { getClient(tx?: unknown): unknown }).getClient(
+                undefined
+            );
+            expect(result).toBe(mockDb);
+            expect(getDb).toHaveBeenCalled();
+        });
+    });
 
     describe('findAllWithRelations', () => {
         // Add getTableName method to our dummy model for testing

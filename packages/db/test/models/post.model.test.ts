@@ -1,17 +1,14 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { PostModel } from '../../src/models/post/post.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
 
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
-
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
-    logError: vi.fn()
+    logError: vi.fn(),
+    dbLogger: { warn: vi.fn(), info: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
 describe('PostModel', () => {
@@ -22,11 +19,15 @@ describe('PostModel', () => {
 
     beforeEach(() => {
         model = new PostModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         model.findOne = mockFindOne;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations returns result with relations and logs', async () => {
@@ -99,5 +100,52 @@ describe('PostModel', () => {
             { where, relations },
             expect.any(Error)
         );
+    });
+
+    // ========================================================================
+    // T-047: tx propagation for PostModel custom methods
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('incrementLikes() uses tx when provided', async () => {
+            // Arrange
+            const whereMock = vi.fn().mockResolvedValue([]);
+            const mockTx = {
+                update: vi.fn().mockReturnValue({
+                    set: vi.fn().mockReturnValue({ where: whereMock })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.incrementLikes({ id: 'post-1' }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('decrementLikes() uses tx when provided', async () => {
+            // Arrange
+            const whereMock = vi.fn().mockResolvedValue([]);
+            const mockTx = {
+                update: vi.fn().mockReturnValue({
+                    set: vi.fn().mockReturnValue({ where: whereMock })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.decrementLikes({ id: 'post-1' }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
     });
 });

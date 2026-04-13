@@ -1,11 +1,10 @@
 import type { AccommodationIdType, AmenityIdType } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDb } from '../../src/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { RAccommodationAmenityModel } from '../../src/models/accommodation/rAccommodationAmenity.model';
 import { DbError } from '../../src/utils/error';
 import { createDrizzleRelationMock } from '../utils/drizzle-mock';
 
-vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RAccommodationAmenityModel();
@@ -20,7 +19,12 @@ const asAmenityId = (id: string) => id as unknown as AmenityIdType;
 
 describe('RAccommodationAmenityModel', () => {
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations - relación encontrada', async () => {
@@ -32,7 +36,7 @@ describe('RAccommodationAmenityModel', () => {
                 amenity: {}
             })
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
@@ -65,7 +69,7 @@ describe('RAccommodationAmenityModel', () => {
         const rAccommodationAmenityMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue(null)
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
@@ -82,7 +86,7 @@ describe('RAccommodationAmenityModel', () => {
         const rAccommodationAmenityMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rAccommodationAmenity: rAccommodationAmenityMock
@@ -94,5 +98,58 @@ describe('RAccommodationAmenityModel', () => {
                 { accommodation: true }
             )
         ).rejects.toThrow(DbError);
+    });
+
+    // ========================================================================
+    // T-049: tx propagation for RAccommodationAmenityModel
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('countAccommodationsByAmenityIds() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            groupBy: vi
+                                .fn()
+                                .mockResolvedValue([{ amenityId: asAmenityId('am1'), count: 3 }])
+                        })
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            const result = await model.countAccommodationsByAmenityIds(['am1'], mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+            expect(result.get('am1')).toBe(3);
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() uses tx when provided (with relations branch)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue(null);
+            const mockTx = { query: { rAccommodationAmenity: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations(
+                { accommodationId: asAccommodationId('a') },
+                { accommodation: true },
+                mockTx
+            );
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
     });
 });

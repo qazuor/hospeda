@@ -1,12 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { OwnerPromotionModel } from '../../src/models/owner-promotion/ownerPromotion.model';
 import { DbError } from '../../src/utils/error';
 import * as logger from '../../src/utils/logger';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -21,10 +17,14 @@ describe('OwnerPromotionModel', () => {
 
     beforeEach(() => {
         model = new OwnerPromotionModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         _logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {
@@ -153,6 +153,80 @@ describe('OwnerPromotionModel', () => {
             await expect(model.findWithRelations({ id: '1' }, { owner: true })).rejects.toThrow(
                 DbError
             );
+        });
+    });
+
+    // ========================================================================
+    // T-048: tx propagation — methods not yet covered
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findBySlug() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            limit: vi.fn().mockResolvedValue([{ id: '1', slug: 'promo-slug' }])
+                        })
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            const result = await model.findBySlug('promo-slug', mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+            expect(result).toEqual({ id: '1', slug: 'promo-slug' });
+
+            spy.mockRestore();
+        });
+
+        it('findActiveByAccommodationId() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([])
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findActiveByAccommodationId('acc-1', mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findActiveByOwnerId() uses tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([])
+                    })
+                })
+            } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findActiveByOwnerId('owner-1', mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
         });
     });
 

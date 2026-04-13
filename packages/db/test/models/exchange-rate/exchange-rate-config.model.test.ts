@@ -1,12 +1,8 @@
 import { ExchangeRateTypeEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../../src/client';
 import { ExchangeRateConfigModel } from '../../../src/models/exchange-rate/exchange-rate-config.model';
 import * as logger from '../../../src/utils/logger';
-
-vi.mock('../../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -21,10 +17,14 @@ describe('ExchangeRateConfigModel', () => {
 
     beforeEach(() => {
         model = new ExchangeRateConfigModel();
-        _getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         _logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         _logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        _getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('getTableName', () => {

@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { EventModel } from '../../src/models/event/event.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -22,11 +18,15 @@ describe('EventModel', () => {
 
     beforeEach(() => {
         model = new EventModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         model.findOne = mockFindOne;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations returns result with relations and logs', async () => {
@@ -85,5 +85,44 @@ describe('EventModel', () => {
             { where, relations },
             expect.any(Error)
         );
+    });
+
+    // ========================================================================
+    // T-047: tx propagation for EventModel custom methods
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findWithRelations() uses tx when provided (with relations branch)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue({ id: '1', author: { id: 'a1' } });
+            const mockTx = { query: { events: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ id: '1' }, { author: true }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() threads tx to findOne in fallback branch', async () => {
+            // Arrange
+            const mockTx = {} as any;
+            const findOneSpy = vi.spyOn(model, 'findOne').mockResolvedValue({ id: '1' } as any);
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ id: '1' }, { author: false }, mockTx);
+
+            // Assert
+            expect(findOneSpy).toHaveBeenCalledWith({ id: '1' }, mockTx);
+
+            spy.mockRestore();
+            findOneSpy.mockRestore();
+        });
     });
 });

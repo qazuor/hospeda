@@ -1,13 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as dbUtils from '../../src/client';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model';
 import * as logger from '../../src/utils/logger';
 
 const mockFindOne = vi.fn();
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -22,12 +18,16 @@ describe('AccommodationModel', () => {
 
     beforeEach(() => {
         model = new AccommodationModel();
-        getDb = dbUtils.getDb as ReturnType<typeof vi.fn>;
         logQuery = logger.logQuery as ReturnType<typeof vi.fn>;
         logError = logger.logError as ReturnType<typeof vi.fn>;
         vi.clearAllMocks();
+        getDb = vi.spyOn(dbUtils, 'getDb') as ReturnType<typeof vi.fn>;
         // Mock findOne fallback
         model.findOne = mockFindOne;
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations returns result with relations and logs', async () => {
@@ -261,6 +261,133 @@ describe('AccommodationModel', () => {
                 undefined
             );
             mockUpdate.mockRestore();
+        });
+    });
+
+    // ========================================================================
+    // T-054 (1): search() basic
+    // ========================================================================
+    describe('search', () => {
+        it('should return items and total', async () => {
+            // Arrange
+            const mockItems = [{ id: '1', name: 'Hotel Test' }];
+            const db = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            orderBy: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockReturnValue({
+                                    offset: vi.fn().mockResolvedValue(mockItems)
+                                })
+                            })
+                        })
+                    })
+                })
+            };
+            const countDb = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([{ count: 1 }])
+                    })
+                })
+            };
+            let callN = 0;
+            getDb.mockImplementation(() => {
+                callN++;
+                return callN === 1 ? db : countDb;
+            });
+
+            // Act
+            const result = await model.search({});
+
+            // Assert
+            expect(result).toHaveProperty('items');
+            expect(result).toHaveProperty('total');
+        });
+
+        it('should use tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            orderBy: vi.fn().mockReturnValue({
+                                limit: vi.fn().mockReturnValue({
+                                    offset: vi.fn().mockResolvedValue([])
+                                })
+                            })
+                        })
+                    })
+                })
+            };
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.search({}, mockTx as any);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+    });
+
+    // ========================================================================
+    // T-054 (2): searchWithRelations() basic
+    // ========================================================================
+    describe('searchWithRelations', () => {
+        it('should return items with relations and total', async () => {
+            // Arrange
+            const mockResults = [{ id: '1', name: 'Hotel', destination: { id: 'd1' } }];
+            const db = {
+                query: {
+                    accommodations: {
+                        findMany: vi.fn().mockResolvedValue(mockResults)
+                    }
+                },
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([{ count: 1 }])
+                    })
+                })
+            };
+            getDb.mockReturnValue(db);
+
+            // Act
+            const result = await model.searchWithRelations({});
+
+            // Assert
+            expect(result).toHaveProperty('items');
+            expect(result).toHaveProperty('total');
+        });
+
+        it('should use tx when provided', async () => {
+            // Arrange
+            const mockTx = {
+                query: {
+                    accommodations: {
+                        findMany: vi.fn().mockResolvedValue([])
+                    }
+                },
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockResolvedValue([{ count: 0 }])
+                    })
+                })
+            };
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.searchWithRelations({}, mockTx as any);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
         });
     });
 

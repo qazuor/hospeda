@@ -1,12 +1,11 @@
 import type { UserIdType, UserPermissionAssignment } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDb } from '../../src/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { RUserPermissionModel } from '../../src/models/user/rUserPermission.model';
 import { DbError } from '../../src/utils/error';
 import { createDrizzleRelationMock } from '../utils/drizzle-mock';
 
-vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new RUserPermissionModel();
@@ -23,7 +22,12 @@ const asUserId = (id: string) => id as unknown as UserIdType;
 
 describe('RUserPermissionModel', () => {
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations - relación encontrada', async () => {
@@ -34,7 +38,7 @@ describe('RUserPermissionModel', () => {
                 user: {}
             })
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 userPermission: userPermissionMock
@@ -60,7 +64,7 @@ describe('RUserPermissionModel', () => {
         const userPermissionMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue(null)
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 userPermission: userPermissionMock
@@ -74,7 +78,7 @@ describe('RUserPermissionModel', () => {
         const userPermissionMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 userPermission: userPermissionMock
@@ -83,5 +87,44 @@ describe('RUserPermissionModel', () => {
         await expect(
             model.findWithRelations({ userId: asUserId('a') }, { user: true })
         ).rejects.toThrow(DbError);
+    });
+
+    // ========================================================================
+    // T-049: tx propagation for RUserPermissionModel
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findWithRelations() uses tx when provided (with relations branch)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue(null);
+            const mockTx = { query: { userPermission: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ userId: asUserId('u1') }, { user: true }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() threads tx to findOne in fallback branch', async () => {
+            // Arrange
+            const mockTx = {} as any;
+            const findOneSpy = vi.spyOn(model, 'findOne').mockResolvedValue(null);
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ userId: asUserId('u1') }, {}, mockTx);
+
+            // Assert
+            expect(findOneSpy).toHaveBeenCalledWith({ userId: asUserId('u1') }, mockTx);
+
+            spy.mockRestore();
+            findOneSpy.mockRestore();
+        });
     });
 });

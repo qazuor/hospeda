@@ -9,6 +9,7 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 
 // ─── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -52,9 +53,7 @@ const mockDb = {
     insert: mockDbInsert
 };
 
-vi.mock('../../src/client.ts', () => ({
-    getDb: vi.fn(() => mockDb)
-}));
+// getDb is spied on in beforeEach to return mockDb
 
 // Mock schemas
 vi.mock('../../src/schemas/index.ts', () => ({
@@ -136,11 +135,13 @@ function createLimitSubscription(overrides: Record<string, unknown> = {}) {
 
 describe('migrateAddonPurchases', () => {
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb').mockReturnValue(mockDb as any);
         vi.clearAllMocks();
         setupDbChain();
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.clearAllMocks();
     });
 

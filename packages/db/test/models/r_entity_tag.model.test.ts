@@ -1,12 +1,11 @@
 import type { AccommodationIdType, EntityTag, TagIdType } from '@repo/schemas';
 import { EntityTypeEnum } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getDb } from '../../src/client';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { REntityTagModel } from '../../src/models/tag/rEntityTag.model';
 import { DbError } from '../../src/utils/error';
 import { createDrizzleRelationMock } from '../utils/drizzle-mock';
 
-vi.mock('../../src/client');
 vi.mock('../../src/utils/logger');
 
 const model = new REntityTagModel();
@@ -25,7 +24,12 @@ const asTagId = (id: string) => id as unknown as TagIdType;
 
 describe('REntityTagModel', () => {
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     it('findWithRelations - relation found', async () => {
@@ -37,7 +41,7 @@ describe('REntityTagModel', () => {
                 tag: {}
             })
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -64,7 +68,7 @@ describe('REntityTagModel', () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockResolvedValue(null)
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -78,7 +82,7 @@ describe('REntityTagModel', () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findFirst: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -106,7 +110,7 @@ describe('REntityTagModel', () => {
                 }
             ])
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -136,7 +140,7 @@ describe('REntityTagModel', () => {
                 }
             ])
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -153,7 +157,7 @@ describe('REntityTagModel', () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findMany: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
@@ -168,12 +172,68 @@ describe('REntityTagModel', () => {
         const rEntityTagMock = createDrizzleRelationMock({
             findMany: vi.fn().mockRejectedValue(new Error('fail'))
         });
-        vi.mocked(getDb).mockReturnValue({
+        vi.mocked(dbUtils.getDb).mockReturnValue({
             query: {
                 // @ts-ignore: mock Drizzle relation for test
                 rEntityTag: rEntityTagMock
             }
         });
         await expect(model.findAllWithEntities('t1')).rejects.toThrow(DbError);
+    });
+
+    // ========================================================================
+    // T-049: tx propagation for REntityTagModel
+    // ========================================================================
+    describe('tx propagation', () => {
+        it('findAllWithTags() uses tx when provided', async () => {
+            // Arrange
+            const findMany = vi.fn().mockResolvedValue([]);
+            const mockTx = { query: { rEntityTag: { findMany } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findAllWithTags('e1', EntityTypeEnum.ACCOMMODATION, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findAllWithEntities() uses tx when provided', async () => {
+            // Arrange
+            const findMany = vi.fn().mockResolvedValue([]);
+            const mockTx = { query: { rEntityTag: { findMany } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findAllWithEntities('t1', undefined, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
+
+        it('findWithRelations() uses tx when provided (with relations)', async () => {
+            // Arrange
+            const findFirst = vi.fn().mockResolvedValue(null);
+            const mockTx = { query: { rEntityTag: { findFirst } } } as any;
+            const spy = vi.spyOn(model as any, 'getClient');
+            spy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findWithRelations({ tagId: 'a' }, { tag: true }, mockTx);
+
+            // Assert
+            expect(spy).toHaveBeenCalledWith(mockTx);
+            expect(dbUtils.getDb).not.toHaveBeenCalled();
+
+            spy.mockRestore();
+        });
     });
 });

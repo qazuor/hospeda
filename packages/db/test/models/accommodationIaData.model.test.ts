@@ -1,9 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { AccommodationIaDataModel } from '../../src/models/accommodation/accommodationIaData.model';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -14,8 +11,13 @@ describe('AccommodationIaDataModel', () => {
     let model: AccommodationIaDataModel;
 
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         model = new AccommodationIaDataModel();
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {

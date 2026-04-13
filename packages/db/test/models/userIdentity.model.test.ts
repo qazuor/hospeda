@@ -1,9 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as dbUtils from '../../src/client';
 import { UserIdentityModel } from '../../src/models/user/userIdentity.model';
-
-vi.mock('../../src/client', () => ({
-    getDb: vi.fn()
-}));
 
 vi.mock('../../src/utils/logger', () => ({
     logQuery: vi.fn(),
@@ -14,8 +11,13 @@ describe('UserIdentityModel', () => {
     let model: UserIdentityModel;
 
     beforeEach(() => {
+        vi.spyOn(dbUtils, 'getDb');
         model = new UserIdentityModel();
         vi.clearAllMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
     });
 
     describe('constructor', () => {
