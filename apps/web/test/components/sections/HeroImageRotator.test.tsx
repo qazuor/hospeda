@@ -41,11 +41,11 @@ describe('HeroImageRotator.client.tsx', () => {
 
     describe('image dimensions', () => {
         it('should set explicit width on images', () => {
-            expect(src).toContain('width="600"');
+            expect(src).toContain('width="480"');
         });
 
         it('should set explicit height on images', () => {
-            expect(src).toContain('height="500"');
+            expect(src).toContain('height="540"');
         });
     });
 

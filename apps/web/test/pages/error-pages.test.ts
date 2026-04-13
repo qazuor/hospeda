@@ -12,12 +12,11 @@ const src404 = readFileSync(resolve(__dirname, '../../src/pages/404.astro'), 'ut
 const src500 = readFileSync(resolve(__dirname, '../../src/pages/500.astro'), 'utf8');
 
 describe('404.astro', () => {
-    it('should use BaseLayout', () => {
-        expect(src404).toContain('BaseLayout');
+    it('should use ErrorLayout (crash-resistant, not BaseLayout)', () => {
+        expect(src404).toContain('ErrorLayout');
     });
 
-    it('should use SEOHead with noindex', () => {
-        expect(src404).toContain('SEOHead');
+    it('should pass noindex to layout', () => {
         expect(src404).toContain('noindex={true}');
     });
 
@@ -42,12 +41,11 @@ describe('404.astro', () => {
 });
 
 describe('500.astro', () => {
-    it('should use BaseLayout', () => {
-        expect(src500).toContain('BaseLayout');
+    it('should use ErrorLayout (crash-resistant, not BaseLayout)', () => {
+        expect(src500).toContain('ErrorLayout');
     });
 
-    it('should use SEOHead with noindex', () => {
-        expect(src500).toContain('SEOHead');
+    it('should pass noindex to layout', () => {
         expect(src500).toContain('noindex={true}');
     });
 
