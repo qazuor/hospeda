@@ -10,9 +10,11 @@ export const prerender = false;
 import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import { SearchIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
 const searchUrl = buildUrl({ locale, path: 'busqueda' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
@@ -27,7 +29,7 @@ const feedbackParams = new URLSearchParams({
 const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 ---
 
-<ErrorLayout locale={locale} title="Página no encontrada" description="La página que buscás no existe">
+<ErrorLayout locale={locale} title={t('error.404.title')} description={t('error.404.description')} noindex={true}>
 	<!-- Illustrated icon -->
 	<div class="err500-illustration" aria-hidden="true">
 		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -48,9 +50,8 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 
 	<div class="err500-code" aria-hidden="true">404</div>
 
-	<h1 class="err500-title">Página no encontrada</h1>
-	<p class="err500-message">La página que buscás no existe o fue movida a otra dirección.</p>
-	<p class="err500-subtitle">Podés buscar lo que necesitás o volver al inicio.</p>
+	<h1 class="err500-title">{t('error.404.heading')}</h1>
+	<p class="err500-message">{t('error.404.message')}</p>
 
 	<div class="err500-actions">
 		<a href={searchUrl} class="err500-btn err500-btn--primary">
@@ -64,6 +65,6 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 	</div>
 
 	<a href={homeUrl} class="err500-home-link">
-		← Volver al inicio
+		{t('error.404.goHome')}
 	</a>
 </ErrorLayout>

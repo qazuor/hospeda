@@ -17,12 +17,15 @@ interface Props {
 	readonly locale: SupportedLocale;
 	readonly title?: string;
 	readonly description?: string;
+	/** Adds noindex robots meta tag. Defaults to true for all error pages. */
+	readonly noindex?: boolean;
 }
 
 const {
 	locale,
 	title = 'Error',
 	description = 'Ha ocurrido un error',
+	noindex = true,
 } = Astro.props;
 
 const { t } = createTranslations(locale);
@@ -80,7 +83,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site ?? Astro.url.origin).hr
 			description={description}
 			locale={locale}
 			canonical={canonical}
-			noindex={true}
+			noindex={noindex}
 		/>
 
 		<style is:inline>

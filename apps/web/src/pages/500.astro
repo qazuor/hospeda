@@ -11,9 +11,11 @@ import ErrorLayout from '@/layouts/ErrorLayout.astro';
 import { RefreshIcon, ChatIcon } from '@repo/icons';
 import { isDevelopment } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 const locale = (Astro.locals?.locale ?? 'es') as SupportedLocale;
+const { t } = createTranslations(locale);
 const homeUrl = buildUrl({ locale, path: '/' });
 const feedbackUrl = buildUrl({ locale, path: 'feedback' });
 
@@ -29,7 +31,7 @@ const feedbackWithParams = `${feedbackUrl}?${feedbackParams.toString()}`;
 const showDevDetails = isDevelopment();
 ---
 
-<ErrorLayout locale={locale} title="Error del servidor" description="Ocurrió un error interno">
+<ErrorLayout locale={locale} title={t('error.500.title')} description={t('error.500.description')} noindex={true}>
 	<!-- Illustrated icon -->
 	<div class="err500-illustration" aria-hidden="true">
 		<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -48,14 +50,13 @@ const showDevDetails = isDevelopment();
 
 	<div class="err500-code" aria-hidden="true">500</div>
 
-	<h1 class="err500-title">Algo salió mal</h1>
-	<p class="err500-message">Tuvimos un problema procesando tu solicitud. Puede ser algo temporal.</p>
-	<p class="err500-subtitle">Podés intentar recargar la página o reportar el problema para que lo solucionemos.</p>
+	<h1 class="err500-title">{t('error.500.heading')}</h1>
+	<p class="err500-message">{t('error.500.message')}</p>
 
 	<div class="err500-actions">
 		<button type="button" class="err500-btn err500-btn--primary" id="retry-btn">
 			<RefreshIcon size={18} />
-			Recargar página
+			{t('error.500.retry')}
 		</button>
 		<a href={feedbackWithParams} class="err500-btn err500-btn--secondary">
 			<ChatIcon size={18} />
@@ -64,7 +65,7 @@ const showDevDetails = isDevelopment();
 	</div>
 
 	<a href={homeUrl} class="err500-home-link">
-		← Volver al inicio
+		{t('error.500.goHome')}
 	</a>
 
 	{showDevDetails && (
