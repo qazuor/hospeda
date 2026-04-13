@@ -12,6 +12,7 @@
  */
 
 import { getDb, sql } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ServiceResult } from '@repo/service-core';
 import { env } from '../utils/env';
@@ -150,9 +151,13 @@ export class BillingMetricsService {
      * Cache is keyed by livemode to prevent mixing test/live data.
      *
      * @param livemode - Whether to fetch live or test mode data
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns Overview metrics
      */
-    async getOverviewMetrics(livemode = true): Promise<ServiceResult<BillingOverviewMetrics>> {
+    async getOverviewMetrics(
+        livemode = true,
+        tx?: DrizzleClient
+    ): Promise<ServiceResult<BillingOverviewMetrics>> {
         // Check cache first
         const cacheKey = `overview:${String(livemode)}`;
         const cached = this.overviewCache.get(cacheKey);
@@ -163,7 +168,7 @@ export class BillingMetricsService {
         }
 
         try {
-            const db = getDb();
+            const db = tx ?? getDb();
 
             // Get active subscriptions count
             const activeSubsResult = await db.execute(sql`
@@ -302,16 +307,18 @@ export class BillingMetricsService {
      *
      * @param months - Number of months to retrieve (default: 12)
      * @param livemode - Whether to fetch live or test mode data
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns Revenue data points by month
      */
     async getRevenueTimeSeries(
         months = 12,
-        livemode = true
+        livemode = true,
+        tx?: DrizzleClient
     ): Promise<ServiceResult<RevenueDataPoint[]>> {
         try {
             // Validate months is a positive integer within safe bounds
             const safeMonths = Math.max(1, Math.min(24, Math.floor(Number(months))));
-            const db = getDb();
+            const db = tx ?? getDb();
 
             const result = await db.execute(sql`
                 SELECT
@@ -367,14 +374,16 @@ export class BillingMetricsService {
      *
      * @param limit - Maximum number of items to return (default: 20)
      * @param livemode - Whether to fetch live or test mode data
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns Recent activity items
      */
     async getRecentActivity(
         limit = 20,
-        livemode = true
+        livemode = true,
+        tx?: DrizzleClient
     ): Promise<ServiceResult<RecentActivityItem[]>> {
         try {
-            const db = getDb();
+            const db = tx ?? getDb();
 
             const result = await db.execute(sql`
                 SELECT
@@ -427,11 +436,15 @@ export class BillingMetricsService {
      * Get subscription breakdown by plan
      *
      * @param livemode - Whether to fetch live or test mode data
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns Plan breakdown data
      */
-    async getSubscriptionBreakdown(livemode = true): Promise<ServiceResult<PlanBreakdown[]>> {
+    async getSubscriptionBreakdown(
+        livemode = true,
+        tx?: DrizzleClient
+    ): Promise<ServiceResult<PlanBreakdown[]>> {
         try {
-            const db = getDb();
+            const db = tx ?? getDb();
 
             const result = await db.execute(sql`
                 SELECT

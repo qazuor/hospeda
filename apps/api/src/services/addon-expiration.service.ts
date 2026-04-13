@@ -18,7 +18,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { getDb } from '@repo/db';
+import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -112,9 +112,11 @@ export class AddonExpirationService {
      * @param input - Purchase ID to expire.
      * @returns Expired add-on details or error.
      */
-    async expireAddon(input: ExpireAddonInput): Promise<ServiceResult<ExpireAddonResult>> {
+    async expireAddon(
+        input: ExpireAddonInput & { tx?: DrizzleClient }
+    ): Promise<ServiceResult<ExpireAddonResult>> {
         try {
-            const db = getDb();
+            const db = input.tx ?? getDb();
 
             // Find the add-on purchase
             const [purchase] = await db
@@ -211,19 +213,17 @@ export class AddonExpirationService {
                 );
             }
 
-            // TODO(SPEC-038): Add entitlement reconciliation cron to handle drift
-
-            // Update billing_addon_purchases row: status='expired'
+            // Update billing_addon_purchases row: status='expired'.
             // This ALWAYS runs regardless of whether entitlement removal succeeded.
+            // When entitlement removal failed, set the dedicated column so the
+            // reconciliation phase of the addon-expiry cron can retry it.
             const now = new Date();
             const updateResult = await db
                 .update(billingAddonPurchases)
                 .set({
                     status: 'expired',
                     updatedAt: now,
-                    ...(entitlementRemovalFailed
-                        ? { metadata: { entitlementRemovalPending: true } }
-                        : {})
+                    entitlementRemovalPending: entitlementRemovalFailed
                 })
                 .where(
                     and(

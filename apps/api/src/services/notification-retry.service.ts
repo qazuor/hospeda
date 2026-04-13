@@ -13,6 +13,7 @@
  */
 
 import { billingNotificationLog, getDb } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { type NotificationPayload, NotificationType } from '@repo/notifications';
 import { and, eq, gte, isNull, lt, sql } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
@@ -71,6 +72,7 @@ export interface RetryStats {
  * after max retries.
  *
  * @param dryRun - If true, only report what would be retried without sending
+ * @param tx - Optional transaction client; falls back to getDb() if not provided
  * @returns Retry statistics
  *
  * @example
@@ -79,7 +81,10 @@ export interface RetryStats {
  * console.log(`Retried ${stats.processed}, succeeded ${stats.succeeded}`);
  * ```
  */
-export async function processDbNotificationRetries(dryRun = false): Promise<RetryStats> {
+export async function processDbNotificationRetries(
+    dryRun = false,
+    tx?: DrizzleClient
+): Promise<RetryStats> {
     const stats: RetryStats = {
         processed: 0,
         succeeded: 0,
@@ -87,7 +92,7 @@ export async function processDbNotificationRetries(dryRun = false): Promise<Retr
         permanentlyFailed: 0
     };
 
-    const db = getDb();
+    const db = tx ?? getDb();
 
     try {
         // Calculate retry window
@@ -199,14 +204,19 @@ export async function processDbNotificationRetries(dryRun = false): Promise<Retr
                 // Attempt to send notification
                 await sendNotification(payload);
 
-                // Update status to sent
+                // Update status to sent — increment retryCount atomically inside SQL
+                // to avoid TOCTOU race when multiple workers process the same record
                 await db
                     .update(billingNotificationLog)
                     .set({
                         status: 'sent',
                         sentAt: new Date(),
                         errorMessage: null,
-                        metadata: sql`${billingNotificationLog.metadata} || '{"retriedSuccessfully": true, "retryCount": ${currentRetryCount + 1}}'::jsonb`
+                        metadata: sql`jsonb_set(
+                            ${billingNotificationLog.metadata} || '{"retriedSuccessfully": true}'::jsonb,
+                            '{retryCount}',
+                            (COALESCE((${billingNotificationLog.metadata}->>'retryCount')::int, 0) + 1)::text::jsonb
+                        )`
                     })
                     .where(eq(billingNotificationLog.id, notification.id));
 
@@ -221,11 +231,15 @@ export async function processDbNotificationRetries(dryRun = false): Promise<Retr
                     'Notification retry succeeded'
                 );
             } catch (error) {
-                // Update retry count
+                // Increment retryCount atomically inside SQL to avoid TOCTOU race
                 await db
                     .update(billingNotificationLog)
                     .set({
-                        metadata: sql`${billingNotificationLog.metadata} || '{"retryCount": ${currentRetryCount + 1}}'::jsonb`,
+                        metadata: sql`jsonb_set(
+                            ${billingNotificationLog.metadata},
+                            '{retryCount}',
+                            (COALESCE((${billingNotificationLog.metadata}->>'retryCount')::int, 0) + 1)::text::jsonb
+                        )`,
                         errorMessage: error instanceof Error ? error.message : 'Unknown retry error'
                     })
                     .where(eq(billingNotificationLog.id, notification.id));

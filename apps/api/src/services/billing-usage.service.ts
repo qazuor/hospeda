@@ -12,6 +12,7 @@
  */
 
 import { getDb, sql } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
@@ -73,11 +74,15 @@ export interface ApproachingLimitItem {
  * All eight queries are executed in parallel for minimal latency.
  *
  * @param livemode - Whether to fetch live or test mode data (default: true)
+ * @param tx - Optional transaction client; falls back to getDb() if not provided
  * @returns System usage statistics
  */
-export async function getSystemUsage(livemode = true): Promise<ServiceResult<SystemUsageStats>> {
+export async function getSystemUsage(
+    livemode = true,
+    tx?: DrizzleClient
+): Promise<ServiceResult<SystemUsageStats>> {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
 
         const [customersResult, customersByCategoryResult, planStatsResult] = await Promise.all([
             db.execute(sql`
@@ -172,14 +177,16 @@ export async function getSystemUsage(livemode = true): Promise<ServiceResult<Sys
  *
  * @param threshold - Minimum usage percentage to include (1-100, default 90)
  * @param livemode - Whether to fetch live or test mode data (default: true)
+ * @param tx - Optional transaction client; falls back to getDb() if not provided
  * @returns List of customer limit items at or above the threshold
  */
 export async function getApproachingLimits(
     threshold = 90,
-    livemode = true
+    livemode = true,
+    tx?: DrizzleClient
 ): Promise<ServiceResult<ApproachingLimitItem[]>> {
     try {
-        const db = getDb();
+        const db = tx ?? getDb();
 
         const result = await db.execute(sql`
             SELECT

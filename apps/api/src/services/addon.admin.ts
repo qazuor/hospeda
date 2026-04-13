@@ -9,7 +9,14 @@
  */
 
 import { getAddonBySlug } from '@repo/billing';
-import { billingAddonPurchases, billingCustomers, getDb, safeIlike } from '@repo/db';
+import {
+    type DrizzleClient,
+    billingAddonPurchases,
+    billingCustomers,
+    getDb,
+    safeIlike,
+    withTransaction
+} from '@repo/db';
 import type { ServiceResult } from '@repo/service-core';
 import { type SQL, and, count, desc, eq, isNull } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
@@ -103,9 +110,9 @@ export class AdminAddonService {
      * @returns Paginated list of customer add-on purchases
      */
     async listCustomerAddons(
-        input: ListCustomerAddonsInput
+        input: ListCustomerAddonsInput & { tx?: DrizzleClient }
     ): Promise<ServiceResult<ListCustomerAddonsResult>> {
-        const db = getDb();
+        const db = input.tx ?? getDb();
         const { page, pageSize, status, addonSlug, customerEmail, includeDeleted } = input;
         const offset = (page - 1) * pageSize;
 
@@ -261,18 +268,24 @@ export class AdminAddonService {
      *
      * This method:
      * 1. Validates the purchase exists and status is NOT 'active'
-     * 2. Updates status to 'active', clears canceledAt, sets new expiresAt if addon has duration
-     * 3. Re-applies entitlements via AddonEntitlementService
-     * 4. Returns the updated record
+     * 2. Wraps DB writes in a transaction: updates status to 'active', clears
+     *    canceledAt, resets needsEntitlementSync, sets new expiresAt if the
+     *    addon has a defined duration
+     * 3. Outside the transaction, attempts to re-apply entitlements in QZPay
+     * 4. If QZPay throws, marks the purchase with `needsEntitlementSync=true`
+     *    (best-effort UPDATE, does not roll back the activation)
+     * 5. Returns the updated record
      *
-     * @param input - Purchase ID to activate
+     * @param input - Purchase ID to activate, plus an optional outer transaction client
      * @returns The updated purchase record
      */
-    async activateAddon(input: ActivateAddonInput): Promise<ServiceResult<CustomerAddonRow>> {
+    async activateAddon(
+        input: ActivateAddonInput & { tx?: DrizzleClient }
+    ): Promise<ServiceResult<CustomerAddonRow>> {
         try {
-            const db = getDb();
+            const db = input.tx ?? getDb();
 
-            // Find the purchase
+            // ── 1. Read the purchase (outside the transaction — read-only) ──────
             const [purchase] = await db
                 .select()
                 .from(billingAddonPurchases)
@@ -314,7 +327,7 @@ export class AdminAddonService {
                 };
             }
 
-            // Calculate new expiresAt if the addon has a duration
+            // ── 2. Calculate new expiresAt ────────────────────────────────────
             const addon = getAddonBySlug(purchase.addonSlug);
             const now = new Date();
             let newExpiresAt: Date | null = null;
@@ -327,23 +340,30 @@ export class AdminAddonService {
                 newExpiresAt = new Date(now.getTime() + addon.durationDays * 24 * 60 * 60 * 1000);
             }
 
-            // Update the purchase
-            await db
-                .update(billingAddonPurchases)
-                .set({
-                    status: 'active',
-                    canceledAt: null,
-                    expiresAt: newExpiresAt,
-                    updatedAt: now
-                })
-                .where(
-                    and(
-                        eq(billingAddonPurchases.id, input.purchaseId),
-                        isNull(billingAddonPurchases.deletedAt)
-                    )
-                );
+            // ── 3. Transactional DB write ─────────────────────────────────────
+            // If an outer tx is passed in, withTransaction reuses it transparently.
+            await withTransaction(async (tx) => {
+                await tx
+                    .update(billingAddonPurchases)
+                    .set({
+                        status: 'active',
+                        canceledAt: null,
+                        expiresAt: newExpiresAt,
+                        needsEntitlementSync: false,
+                        updatedAt: now
+                    })
+                    .where(
+                        and(
+                            eq(billingAddonPurchases.id, input.purchaseId),
+                            isNull(billingAddonPurchases.deletedAt)
+                        )
+                    );
+            }, input.tx);
 
-            // Re-apply entitlements
+            // ── 4. Re-apply entitlements via QZPay (outside the transaction) ──
+            // Intentionally runs after commit so a QZPay failure does not roll
+            // back the activation. On failure we mark the row for async
+            // reconciliation instead.
             const entitlementService = new AddonEntitlementService(null);
             try {
                 await entitlementService.applyAddonEntitlements({
@@ -352,18 +372,41 @@ export class AdminAddonService {
                     purchaseId: purchase.id
                 });
             } catch (entitlementError) {
+                const entitlementMessage =
+                    entitlementError instanceof Error
+                        ? entitlementError.message
+                        : String(entitlementError);
+
                 apiLogger.warn(
                     {
-                        error:
-                            entitlementError instanceof Error
-                                ? entitlementError.message
-                                : String(entitlementError),
+                        error: entitlementMessage,
                         purchaseId: input.purchaseId,
                         customerId: purchase.customerId,
                         addonSlug: purchase.addonSlug
                     },
-                    'Entitlement re-application failed during activation; purchase status updated but entitlements may need manual reconciliation'
+                    'Entitlement re-application failed during activation; flagging purchase for async reconciliation'
                 );
+
+                // ── 5. Best-effort flag for reconciliation ────────────────────
+                // This UPDATE runs outside the already-committed transaction so
+                // it cannot roll back the activation. A failure here is logged
+                // but does not propagate — the reconciliation cron will retry
+                // based on the needsEntitlementSync flag.
+                try {
+                    await getDb()
+                        .update(billingAddonPurchases)
+                        .set({ needsEntitlementSync: true, updatedAt: new Date() })
+                        .where(eq(billingAddonPurchases.id, input.purchaseId));
+                } catch (flagError) {
+                    apiLogger.error(
+                        {
+                            error:
+                                flagError instanceof Error ? flagError.message : String(flagError),
+                            purchaseId: input.purchaseId
+                        },
+                        'Failed to set needsEntitlementSync flag; manual reconciliation required'
+                    );
+                }
             }
 
             apiLogger.info(
@@ -406,10 +449,11 @@ export class AdminAddonService {
      * @returns The purchase record with customer info
      */
     private async getAddonPurchaseById(
-        purchaseId: string
+        purchaseId: string,
+        tx?: DrizzleClient
     ): Promise<ServiceResult<CustomerAddonRow>> {
         try {
-            const db = getDb();
+            const db = tx ?? getDb();
 
             const results = await db
                 .select({

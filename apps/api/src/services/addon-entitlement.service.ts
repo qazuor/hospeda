@@ -15,7 +15,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, type EntitlementKey, type LimitKey, getAddonBySlug } from '@repo/billing';
-import { getDb } from '@repo/db';
+import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
@@ -507,7 +507,8 @@ export class AddonEntitlementService {
      * @returns List of add-on adjustments or error
      */
     async getCustomerAddonAdjustments(
-        customerId: string
+        customerId: string,
+        tx?: DrizzleClient
     ): Promise<ServiceResult<AddonAdjustment[]>> {
         if (!this.billing) {
             return {
@@ -524,7 +525,7 @@ export class AddonEntitlementService {
 
             // Query billing_addon_purchases table for active add-ons
             try {
-                const db = getDb();
+                const db = tx ?? getDb();
 
                 const addonPurchases = await db
                     .select()

@@ -14,6 +14,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
+import { withTransaction } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env';
@@ -185,19 +186,21 @@ export async function handleSubscriptionCancellationAddons(
             });
 
             // ── 4c SUCCESS: persist canceled status to DB ────────────────────
-            await db
-                .update(billingAddonPurchases)
-                .set({
-                    status: 'canceled',
-                    canceledAt: new Date(),
-                    updatedAt: new Date()
-                })
-                .where(
-                    and(
-                        eq(billingAddonPurchases.id, purchaseId),
-                        eq(billingAddonPurchases.status, 'active')
-                    )
-                );
+            await withTransaction(async (tx) => {
+                await tx
+                    .update(billingAddonPurchases)
+                    .set({
+                        status: 'canceled',
+                        canceledAt: new Date(),
+                        updatedAt: new Date()
+                    })
+                    .where(
+                        and(
+                            eq(billingAddonPurchases.id, purchaseId),
+                            eq(billingAddonPurchases.status, 'active')
+                        )
+                    );
+            }, db);
 
             apiLogger.info(
                 {
@@ -219,17 +222,19 @@ export async function handleSubscriptionCancellationAddons(
             const retryCount = typeof currentRetryCount === 'number' ? currentRetryCount + 1 : 1;
 
             try {
-                await db
-                    .update(billingAddonPurchases)
-                    .set({
-                        metadata: {
-                            ...existingMetadata,
-                            revocationRetryCount: retryCount,
-                            lastRevocationAttempt: new Date().toISOString()
-                        },
-                        updatedAt: new Date()
-                    })
-                    .where(eq(billingAddonPurchases.id, purchaseId));
+                await withTransaction(async (tx) => {
+                    await tx
+                        .update(billingAddonPurchases)
+                        .set({
+                            metadata: {
+                                ...existingMetadata,
+                                revocationRetryCount: retryCount,
+                                lastRevocationAttempt: new Date().toISOString()
+                            },
+                            updatedAt: new Date()
+                        })
+                        .where(eq(billingAddonPurchases.id, purchaseId));
+                }, db);
             } catch (metaErr) {
                 apiLogger.warn(
                     {

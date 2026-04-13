@@ -9,6 +9,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getAddonBySlug } from '@repo/billing';
+import { type DrizzleClient, withTransaction } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import {
     cancelAddonPurchaseRecord,
@@ -87,13 +88,13 @@ export async function getUserAddons(
 export async function cancelUserAddon(
     billing: QZPayBilling,
     entitlementService: AddonEntitlementService,
-    input: CancelAddonInput
+    input: CancelAddonInput & { tx?: DrizzleClient }
 ): Promise<ServiceResult<void>> {
     try {
         const { getDb } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
         const { and, eq, isNull } = await import('drizzle-orm');
-        const db = getDb();
+        const db = input.tx ?? getDb();
 
         // Fetch the purchase record by primary key to get the real addonSlug.
         const [purchase] = await db
@@ -439,39 +440,47 @@ export async function revokeAllAddonsForCustomer(
         'Revoking all active addon purchases for customer'
     );
 
-    let revokedCount = 0;
     const failedIds: string[] = [];
 
-    for (const purchase of activePurchases) {
-        try {
-            await cancelAddonPurchaseRecord({ purchaseId: purchase.id });
-            revokedCount++;
+    const revokedCount = await withTransaction(async (tx) => {
+        let count = 0;
 
-            apiLogger.info(
-                { customerId, purchaseId: purchase.id, addonSlug: purchase.addonSlug },
-                'Revoked addon purchase for customer account action'
-            );
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
+        for (const purchase of activePurchases) {
+            try {
+                await cancelAddonPurchaseRecord({ purchaseId: purchase.id, tx });
+                count++;
 
-            Sentry.captureException(err, {
-                tags: { subsystem: 'billing-addon-lifecycle', action: 'revoke-all-for-customer' },
-                extra: { customerId, purchaseId: purchase.id, addonSlug: purchase.addonSlug }
-            });
+                apiLogger.info(
+                    { customerId, purchaseId: purchase.id, addonSlug: purchase.addonSlug },
+                    'Revoked addon purchase for customer account action'
+                );
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
 
-            apiLogger.error(
-                {
-                    customerId,
-                    purchaseId: purchase.id,
-                    addonSlug: purchase.addonSlug,
-                    error: errorMessage
-                },
-                'Failed to revoke addon purchase during bulk customer revocation'
-            );
+                Sentry.captureException(err, {
+                    tags: {
+                        subsystem: 'billing-addon-lifecycle',
+                        action: 'revoke-all-for-customer'
+                    },
+                    extra: { customerId, purchaseId: purchase.id, addonSlug: purchase.addonSlug }
+                });
 
-            failedIds.push(purchase.id);
+                apiLogger.error(
+                    {
+                        customerId,
+                        purchaseId: purchase.id,
+                        addonSlug: purchase.addonSlug,
+                        error: errorMessage
+                    },
+                    'Failed to revoke addon purchase during bulk customer revocation'
+                );
+
+                failedIds.push(purchase.id);
+            }
         }
-    }
+
+        return count;
+    });
 
     apiLogger.info(
         { customerId, revokedCount, failedCount: failedIds.length },

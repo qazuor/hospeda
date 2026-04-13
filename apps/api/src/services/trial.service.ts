@@ -18,6 +18,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { billingSubscriptionEvents, getDb } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { NotificationType, type TrialEventPayload } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
@@ -48,6 +49,18 @@ export type {
  * Only one run should execute at a time to avoid double-cancelling subscriptions.
  */
 let blockExpiredTrialsRunning = false;
+
+/**
+ * Result of a reconciliation run for a single customer.
+ */
+export interface ReconcileResult {
+    /** Number of duplicate subscriptions that were cancelled */
+    cancelledCount: number;
+    /** IDs of the subscriptions that were cancelled */
+    cancelledIds: readonly string[];
+    /** ID of the subscription that was kept as the primary active one */
+    keptId: string | null;
+}
 
 /**
  * Reset the concurrent-run guard. Intended for testing only.
@@ -519,9 +532,13 @@ export class TrialService {
      * Converts an expired or active trial to a paid plan
      *
      * @param input - Reactivation parameters
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns New subscription ID
      */
-    async reactivateFromTrial(input: ReactivateFromTrialInput): Promise<string> {
+    async reactivateFromTrial(
+        input: ReactivateFromTrialInput,
+        tx?: DrizzleClient
+    ): Promise<string> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
         }
@@ -556,7 +573,7 @@ export class TrialService {
 
             // Record reactivation event in audit log (best-effort)
             try {
-                const db = getDb();
+                const db = tx ?? getDb();
                 await db.insert(billingSubscriptionEvents).values({
                     subscriptionId: newSubscription.id,
                     previousStatus: SubscriptionStatusEnum.TRIALING,
@@ -576,6 +593,7 @@ export class TrialService {
             }
 
             // Cancel existing trial subscriptions only after new subscription is created
+            let cancelFailed = false;
             if (existingSubscriptions && existingSubscriptions.length > 0) {
                 for (const sub of existingSubscriptions) {
                     if (sub.status === 'trialing') {
@@ -588,7 +606,9 @@ export class TrialService {
                                 'Cancelled trial subscription'
                             );
                         } catch (cancelError) {
-                            // Log but do not throw: the new subscription is already active
+                            // Log but do not throw: the new subscription is already active.
+                            // Set a flag so reconciliation runs below to clean up the duplicate.
+                            cancelFailed = true;
                             const cancelMsg =
                                 cancelError instanceof Error
                                     ? cancelError.message
@@ -599,6 +619,28 @@ export class TrialService {
                             );
                         }
                     }
+                }
+            }
+
+            // If any cancel call failed, attempt reconciliation immediately to avoid leaving
+            // the customer with two active subscriptions in QZPay.
+            if (cancelFailed) {
+                const reconcileResult = await this.reconcileDuplicateSubscriptions({ customerId });
+
+                if (reconcileResult.cancelledCount > 0) {
+                    apiLogger.info(
+                        {
+                            customerId,
+                            cancelledIds: reconcileResult.cancelledIds,
+                            keptId: reconcileResult.keptId
+                        },
+                        'Reconciliation resolved duplicate subscriptions after failed cancel'
+                    );
+                } else {
+                    apiLogger.warn(
+                        { customerId },
+                        'Reconciliation found no duplicates to cancel — manual review may be needed'
+                    );
                 }
             }
 
@@ -639,10 +681,12 @@ export class TrialService {
      * - No canceled subscription exists (nothing to reactivate)
      *
      * @param input - Reactivation parameters
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns New subscription ID and previous plan ID
      */
     async reactivateSubscription(
-        input: ReactivateSubscriptionInput
+        input: ReactivateSubscriptionInput,
+        tx?: DrizzleClient
     ): Promise<ReactivateSubscriptionResult> {
         if (!this.billing) {
             throw new Error('Billing not enabled');
@@ -694,7 +738,7 @@ export class TrialService {
 
             // Record reactivation event in audit log (best-effort)
             try {
-                const db = getDb();
+                const db = tx ?? getDb();
                 await db.insert(billingSubscriptionEvents).values({
                     subscriptionId: newSubscription.id,
                     previousStatus: SubscriptionStatusEnum.CANCELLED,
@@ -884,6 +928,121 @@ export class TrialService {
             );
 
             return [];
+        }
+    }
+
+    /**
+     * Detect and resolve duplicate active subscriptions for a customer.
+     *
+     * When a trial upgrade partially fails (new subscription created but the old
+     * trial cancel call throws), the customer ends up with two subscriptions whose
+     * combined statuses are `active` + `trialing` — or two `active` entries.  This
+     * method queries QZPay for all active/trialing subscriptions belonging to the
+     * customer and, when more than one is found, cancels every subscription except
+     * the most recently created one (determined by `createdAt` descending, falling
+     * back to insertion order).
+     *
+     * The method is intentionally idempotent: calling it when there is only one
+     * active subscription is a no-op.
+     *
+     * @param input - Parameters for the reconciliation
+     * @param input.customerId - Billing customer whose subscriptions to reconcile
+     * @returns Reconciliation result describing what was cancelled and what was kept
+     *
+     * @example
+     * ```ts
+     * const result = await trialService.reconcileDuplicateSubscriptions({ customerId });
+     * if (result.cancelledCount > 0) {
+     *   logger.warn({ result }, 'Duplicate subscriptions resolved');
+     * }
+     * ```
+     */
+    async reconcileDuplicateSubscriptions(input: {
+        customerId: string;
+    }): Promise<ReconcileResult> {
+        if (!this.billing) {
+            return { cancelledCount: 0, cancelledIds: [], keptId: null };
+        }
+
+        const { customerId } = input;
+
+        try {
+            const allSubscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
+
+            if (!allSubscriptions || allSubscriptions.length === 0) {
+                return { cancelledCount: 0, cancelledIds: [], keptId: null };
+            }
+
+            // Collect only subscriptions that are in a "live" state
+            const liveSubscriptions = allSubscriptions.filter(
+                (sub) => sub.status === 'active' || sub.status === 'trialing'
+            );
+
+            if (liveSubscriptions.length <= 1) {
+                const keptId = liveSubscriptions[0]?.id ?? null;
+                return { cancelledCount: 0, cancelledIds: [], keptId };
+            }
+
+            // Keep the newest subscription (highest createdAt, or last in array as fallback)
+            const sorted = [...liveSubscriptions].sort((a, b) => {
+                const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                // Descending: newest first
+                return bTime - aTime;
+            });
+
+            const [primary, ...duplicates] = sorted;
+            // sorted is guaranteed non-empty (liveSubscriptions.length > 1) but
+            // TypeScript's noUncheckedIndexedAccess requires a guard.
+            if (!primary) {
+                return { cancelledCount: 0, cancelledIds: [], keptId: null };
+            }
+
+            const cancelledIds: string[] = [];
+
+            for (const dup of duplicates) {
+                try {
+                    await this.billing.subscriptions.cancel(dup.id);
+                    cancelledIds.push(dup.id);
+
+                    apiLogger.warn(
+                        {
+                            customerId,
+                            cancelledSubscriptionId: dup.id,
+                            keptSubscriptionId: primary.id,
+                            dupStatus: dup.status
+                        },
+                        'Cancelled duplicate active subscription during reconciliation'
+                    );
+                } catch (cancelError) {
+                    const msg =
+                        cancelError instanceof Error ? cancelError.message : String(cancelError);
+
+                    apiLogger.error(
+                        { customerId, subscriptionId: dup.id, error: msg },
+                        'Failed to cancel duplicate subscription during reconciliation'
+                    );
+                }
+            }
+
+            if (cancelledIds.length > 0) {
+                clearEntitlementCache(customerId);
+            }
+
+            return {
+                cancelledCount: cancelledIds.length,
+                cancelledIds,
+                keptId: primary.id
+            };
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            apiLogger.error(
+                { customerId, error: errorMessage },
+                'Failed to reconcile duplicate subscriptions'
+            );
+
+            return { cancelledCount: 0, cancelledIds: [], keptId: null };
         }
     }
 }

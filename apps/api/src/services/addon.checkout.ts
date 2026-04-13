@@ -9,6 +9,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import type { DrizzleClient } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type {
     ConfirmPurchaseInput,
@@ -363,7 +364,7 @@ export async function createAddonCheckout(
 export async function confirmAddonPurchase(
     billing: QZPayBilling,
     entitlementService: AddonEntitlementService,
-    input: ConfirmPurchaseInput
+    input: ConfirmPurchaseInput & { tx?: DrizzleClient }
 ): Promise<ServiceResult<void>> {
     try {
         const addon = getAddonBySlug(input.addonSlug);
@@ -446,7 +447,7 @@ export async function confirmAddonPurchase(
 
         const { getDb } = await import('@repo/db/client');
         const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
-        const db = getDb();
+        const db = input.tx ?? getDb();
 
         // Re-verify the subscription is still active immediately before the DB
         // insert. The initial check at the top of this function happened earlier

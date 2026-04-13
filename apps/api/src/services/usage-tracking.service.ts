@@ -17,6 +17,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { LIMIT_METADATA, LimitKey } from '@repo/billing';
 import { getDb } from '@repo/db';
+import type { DrizzleClient } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { ServiceErrorCode } from '@repo/schemas';
 import {
@@ -479,12 +480,16 @@ export class UsageTrackingService {
      * no results (for subscriptions not yet migrated).
      *
      * @param subscription - The subscription object (must include customerId)
+     * @param tx - Optional transaction client; falls back to getDb() if not provided
      * @returns Array of add-on adjustments
      */
-    private async getAddonAdjustments(subscription: {
-        customerId: string;
-        metadata?: Record<string, unknown>;
-    }): Promise<
+    private async getAddonAdjustments(
+        subscription: {
+            customerId: string;
+            metadata?: Record<string, unknown>;
+        },
+        tx?: DrizzleClient
+    ): Promise<
         Array<{
             addonSlug: string;
             entitlement?: string;
@@ -495,7 +500,7 @@ export class UsageTrackingService {
     > {
         // Primary path: query billing_addon_purchases table
         try {
-            const db = getDb();
+            const db = tx ?? getDb();
             const purchases = await db
                 .select({
                     addonSlug: billingAddonPurchases.addonSlug,
