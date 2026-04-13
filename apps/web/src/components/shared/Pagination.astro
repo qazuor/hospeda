@@ -81,12 +81,11 @@ const labels = {
 /**
  * Build the href for a given page number.
  *
- * In query-param mode (`searchParams` provided):
- *   - Clones the URLSearchParams to avoid mutation.
- *   - Removes the `page` param for page 1 (canonical URL).
- *   - Appends `?qs` only when there are params remaining.
+ * In hybrid mode (`searchParams` provided):
+ *   - Page segment in the URL path (`/page/N/`) for page > 1, canonical (`/`) for page 1.
+ *   - Filter params preserved as query string (page param excluded from query).
  *
- * In segment mode (default):
+ * In pure segment mode (default, no `searchParams`):
  *   - Page 1 → `{base}/`
  *   - Page N → `{base}/page/{N}/`
  *
@@ -97,16 +96,19 @@ function buildPageUrl(page: number): string {
     const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
     if (searchParams) {
+        // Hybrid mode: segment-based page number + query params for filters
         const params = new URLSearchParams(searchParams);
-        if (page === 1) {
-            params.delete('page');
-        } else {
-            params.set('page', String(page));
-        }
+        params.delete('page'); // page goes in URL segment, not query
         const qs = params.toString();
-        return qs ? `${base}/?${qs}` : `${base}/`;
+        const suffix = qs ? `?${qs}` : '';
+
+        if (page === 1) {
+            return `${base}/${suffix}`;
+        }
+        return `${base}/page/${page}/${suffix}`;
     }
 
+    // Pure segment mode (no filters)
     if (page === 1) {
         return `${base}/`;
     }
