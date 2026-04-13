@@ -1,5 +1,5 @@
 import type { Feature, FeatureCreateInput, FeatureUpdateInput } from '@repo/schemas';
-import type { Actor } from '../../types';
+import type { Actor, ListOptions } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 
 /**
@@ -76,103 +76,12 @@ export const normalizeUpdateInput = (
 
 /**
  * Normalizes the parameters for listing features.
- * Sets default pagination values and normalizes filter values.
- *
- * @param params - The original listing parameters
- * @param _actor - The actor performing the action (unused in this normalization)
- * @returns The normalized parameters with defaults applied
- *
- * @example
- * ```typescript
- * const normalized = normalizeListInput({
- *   page: 1,
- *   name: '  Pool  ',
- *   isFeatured: true
- * }, actor);
- * // Returns: {
- * //   page: 1,
- * //   pageSize: 10,
- * //   name: 'Pool',
- * //   isFeatured: true
- * // }
- * ```
+ * @param params - The list options.
+ * @param _actor - The actor performing the action (unused in this normalization).
+ * @returns The (currently unmodified) parameters.
  */
-export const normalizeListInput = (
-    params: {
-        page?: number;
-        pageSize?: number;
-        name?: string;
-        slug?: string;
-        isFeatured?: boolean;
-        isBuiltin?: boolean;
-        category?: string;
-        [key: string]: unknown;
-    },
-    _actor: Actor
-): {
-    page: number;
-    pageSize: number;
-    name?: string;
-    slug?: string;
-    isFeatured?: boolean;
-    isBuiltin?: boolean;
-    category?: string;
-    [key: string]: unknown;
-} => {
-    // Set default pagination values
-    const page = params.page && params.page > 0 ? params.page : 1;
-    const pageSize =
-        params.pageSize && params.pageSize > 0 && params.pageSize <= 100 ? params.pageSize : 10;
-
-    // Normalize string filters (trim whitespace)
-    const name = typeof params.name === 'string' ? params.name.trim() : undefined;
-    const slug = typeof params.slug === 'string' ? params.slug.trim().toLowerCase() : undefined;
-    const category = typeof params.category === 'string' ? params.category.trim() : undefined;
-
-    // Build normalized params
-    const normalized: {
-        page: number;
-        pageSize: number;
-        name?: string;
-        slug?: string;
-        isFeatured?: boolean;
-        isBuiltin?: boolean;
-        category?: string;
-        [key: string]: unknown;
-    } = {
-        page,
-        pageSize
-    };
-
-    // Add optional filters only if they have meaningful values
-    if (name && name.length > 0) {
-        normalized.name = name;
-    }
-    if (slug && slug.length > 0) {
-        normalized.slug = slug;
-    }
-    if (category && category.length > 0) {
-        normalized.category = category;
-    }
-    if (typeof params.isFeatured === 'boolean') {
-        normalized.isFeatured = params.isFeatured;
-    }
-    if (typeof params.isBuiltin === 'boolean') {
-        normalized.isBuiltin = params.isBuiltin;
-    }
-
-    // Copy any other parameters as-is
-    for (const [key, value] of Object.entries(params)) {
-        if (
-            !['page', 'pageSize', 'name', 'slug', 'category', 'isFeatured', 'isBuiltin'].includes(
-                key
-            )
-        ) {
-            normalized[key] = value;
-        }
-    }
-
-    return normalized;
+export const normalizeListInput = (params: ListOptions, _actor: Actor): ListOptions => {
+    return params;
 };
 
 /**

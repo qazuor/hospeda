@@ -1,5 +1,5 @@
 import type { User, UserCreateInput, UserUpdateInput } from '@repo/schemas';
-import type { Actor } from '../../types';
+import type { Actor, ListOptions } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 import { generateUserSlug } from './user.helpers';
 
@@ -58,10 +58,7 @@ export const normalizeUpdateInput = (data: UserUpdateInput, _actor: Actor): User
  * @param _actor The actor performing the action (unused).
  * @returns The (currently unmodified) parameters.
  */
-export const normalizeListInput = (
-    params: Record<string, unknown>,
-    _actor: Actor
-): Record<string, unknown> => {
+export const normalizeListInput = (params: ListOptions, _actor: Actor): ListOptions => {
     return params;
 };
 

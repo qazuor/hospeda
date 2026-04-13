@@ -1,5 +1,5 @@
 import type { AttractionCreateInput, AttractionUpdateInput } from '@repo/schemas';
-import type { Actor } from '../../types';
+import type { Actor, ListOptions } from '../../types';
 import { normalizeAdminInfo } from '../../utils';
 
 /**
@@ -44,10 +44,7 @@ export const normalizeUpdateInput = (
  * @param _actor The actor performing the action (unused).
  * @returns The (currently unmodified) parameters.
  */
-export const normalizeListInput = (
-    params: { page?: number; pageSize?: number },
-    _actor: Actor
-): { page?: number; pageSize?: number } => {
+export const normalizeListInput = (params: ListOptions, _actor: Actor): ListOptions => {
     return params;
 };
 
