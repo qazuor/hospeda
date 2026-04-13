@@ -1,5 +1,4 @@
 import { buildSearchCondition } from '@repo/db';
-import type { ListRelationsConfig } from '@repo/schemas';
 import { ServiceErrorCode, parseAdminSort } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import type { ZodObject } from 'zod';
@@ -8,9 +7,12 @@ import {
     type Actor,
     type AdminSearchExecuteParams,
     type BaseModel,
+    type ListOptions,
     type PaginatedListOutput,
+    type ServiceContext,
     ServiceError,
-    type ServiceOutput
+    type ServiceOutput,
+    listOptionsSchema
 } from '../types';
 import { BaseCrudHooks } from './base.crud.hooks';
 
@@ -60,14 +62,21 @@ export abstract class BaseCrudRead<
     public async getByField(
         actor: Actor,
         field: string,
-        value: unknown
+        value: unknown,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<TEntity | null>> {
         const methodName = `getByField(field=${field}, value=${value})`;
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName,
             input: { actor, field, value },
             schema: z.object({ field: z.string(), value: z.unknown() }),
-            execute: async ({ field: validatedField, value: validatedValue }, validatedActor) => {
+            ctx: resolvedCtx,
+            execute: async (
+                { field: validatedField, value: validatedValue },
+                validatedActor,
+                execCtx
+            ) => {
                 const normalized = (await this.normalizers?.view?.(
                     validatedField,
                     validatedValue,
@@ -77,7 +86,8 @@ export abstract class BaseCrudRead<
                 const processed = await this._beforeGetByField(
                     normalized.field,
                     normalized.value,
-                    validatedActor
+                    validatedActor,
+                    execCtx
                 );
 
                 const where = { [processed.field]: processed.value };
@@ -93,7 +103,7 @@ export abstract class BaseCrudRead<
 
                 await this._canView(validatedActor, entity as TEntity);
 
-                return await this._afterGetByField(entity as TEntity, validatedActor);
+                return await this._afterGetByField(entity as TEntity, validatedActor, execCtx);
             }
         });
     }
@@ -105,8 +115,12 @@ export abstract class BaseCrudRead<
      * @param id - The ID of the entity.
      * @returns A `ServiceOutput` containing the entity or a `ServiceError`.
      */
-    public async getById(actor: Actor, id: string): Promise<ServiceOutput<TEntity | null>> {
-        return this.getByField(actor, 'id', id);
+    public async getById(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'id', id, ctx);
     }
 
     /**
@@ -116,8 +130,12 @@ export abstract class BaseCrudRead<
      * @param slug - The slug of the entity.
      * @returns A `ServiceOutput` containing the entity or a `ServiceError`.
      */
-    public async getBySlug(actor: Actor, slug: string): Promise<ServiceOutput<TEntity | null>> {
-        return this.getByField(actor, 'slug', slug);
+    public async getBySlug(
+        actor: Actor,
+        slug: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'slug', slug, ctx);
     }
 
     /**
@@ -127,8 +145,12 @@ export abstract class BaseCrudRead<
      * @param name - The name of the entity.
      * @returns A `ServiceOutput` containing the entity or a `ServiceError`.
      */
-    public async getByName(actor: Actor, name: string): Promise<ServiceOutput<TEntity | null>> {
-        return this.getByField(actor, 'name', name);
+    public async getByName(
+        actor: Actor,
+        name: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity | null>> {
+        return this.getByField(actor, 'name', name, ctx);
     }
 
     /**
@@ -147,37 +169,26 @@ export abstract class BaseCrudRead<
      */
     public async list(
         actor: Actor,
-        options: {
-            page?: number;
-            pageSize?: number;
-            search?: string;
-            relations?: ListRelationsConfig;
-            where?: Record<string, unknown>;
-            sortBy?: string;
-            sortOrder?: 'asc' | 'desc';
-        } = {}
+        options: ListOptions = {},
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'list',
             input: { actor, ...options },
-            schema: z.object({
-                page: z.number().optional(),
-                pageSize: z.number().optional(),
-                search: z.string().max(200).optional(),
-                relations: z
-                    .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
-                    .optional(),
-                where: z.record(z.string(), z.unknown()).optional(),
-                sortBy: z.string().optional(),
-                sortOrder: z.enum(['asc', 'desc']).optional()
-            }),
-            execute: async (validatedOptions, validatedActor) => {
+            schema: listOptionsSchema,
+            ctx: resolvedCtx,
+            execute: async (validatedOptions, validatedActor, execCtx) => {
                 await this._canList(validatedActor);
 
                 const normalized =
                     (await this.normalizers?.list?.(validatedOptions, validatedActor)) ??
                     validatedOptions;
-                const processedOptions = await this._beforeList(normalized, validatedActor);
+                const processedOptions = await this._beforeList(
+                    normalized,
+                    validatedActor,
+                    execCtx
+                );
 
                 const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
                 const whereClause = processedOptions.where ?? {};
@@ -221,7 +232,7 @@ export abstract class BaseCrudRead<
                           additionalConditions
                       );
 
-                return this._afterList(result, validatedActor);
+                return this._afterList(result, validatedActor, execCtx);
             }
         });
     }
@@ -243,22 +254,29 @@ export abstract class BaseCrudRead<
      */
     public async search(
         actor: Actor,
-        params: z.infer<TSearchSchema>
+        params: z.infer<TSearchSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'search',
             input: { actor, ...params },
             schema: this.searchSchema,
-            execute: async (validParams, validActor) => {
+            ctx: resolvedCtx,
+            execute: async (validParams, validActor, execCtx) => {
                 await this._canSearch(validActor);
 
                 const normalizedParams = this.normalizers?.search
                     ? await this.normalizers.search(validParams, validActor)
                     : validParams;
 
-                const processedParams = await this._beforeSearch(normalizedParams, validActor);
-                const result = await this._executeSearch(processedParams, validActor);
-                return this._afterSearch(result, validActor);
+                const processedParams = await this._beforeSearch(
+                    normalizedParams,
+                    validActor,
+                    execCtx
+                );
+                const result = await this._executeSearch(processedParams, validActor, execCtx);
+                return this._afterSearch(result, validActor, execCtx);
             }
         });
     }
@@ -286,13 +304,16 @@ export abstract class BaseCrudRead<
      */
     public async adminList(
         actor: Actor,
-        params: Record<string, unknown>
+        params: Record<string, unknown>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<TEntity>>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'adminList',
             input: { actor, ...params },
             schema: z.record(z.string(), z.unknown()),
-            execute: async (validatedPassthrough, validatedActor) => {
+            ctx: resolvedCtx,
+            execute: async (validatedPassthrough, validatedActor, execCtx) => {
                 await this._canAdminList(validatedActor);
 
                 if (!this.adminSearchSchema) {
@@ -382,7 +403,8 @@ export abstract class BaseCrudRead<
                     pagination: { page, pageSize },
                     sort: { sortBy, sortOrder },
                     search: searchCondition,
-                    actor: validatedActor
+                    actor: validatedActor,
+                    ctx: execCtx
                 });
             }
         });
@@ -469,17 +491,20 @@ export abstract class BaseCrudRead<
      */
     public async count(
         actor: Actor,
-        params: z.infer<TSearchSchema>
+        params: z.infer<TSearchSchema>,
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
+        const resolvedCtx: ServiceContext = { hookState: {}, ...ctx };
         return this.runWithLoggingAndValidation({
             methodName: 'count',
             input: { actor, ...params },
             schema: this.searchSchema,
-            execute: async (validParams, validActor) => {
+            ctx: resolvedCtx,
+            execute: async (validParams, validActor, execCtx) => {
                 await this._canCount(validActor);
-                const processedParams = await this._beforeCount(validParams, validActor);
-                const result = await this._executeCount(processedParams, validActor);
-                return this._afterCount(result, validActor);
+                const processedParams = await this._beforeCount(validParams, validActor, execCtx);
+                const result = await this._executeCount(processedParams, validActor, execCtx);
+                return this._afterCount(result, validActor, execCtx);
             }
         });
     }

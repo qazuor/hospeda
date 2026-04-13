@@ -4,7 +4,6 @@ import type {
     EntityPermissionReasonEnum,
     HttpPaginationSchema,
     HttpSortingSchema,
-    ListRelationsConfig,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -12,6 +11,7 @@ import type {
 import type { SQL } from 'drizzle-orm';
 import type { z } from 'zod';
 import type { ServiceLogger } from '../utils/service-logger';
+export { listOptionsSchema } from './schemas';
 
 export type { ServiceLogger };
 
@@ -205,15 +205,7 @@ export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
  * };
  * ```
  */
-export type ListOptions = {
-    readonly page?: number;
-    readonly pageSize?: number;
-    readonly search?: string;
-    readonly relations?: ListRelationsConfig;
-    readonly where?: Record<string, unknown>;
-    readonly sortBy?: string;
-    readonly sortOrder?: 'asc' | 'desc';
-};
+export type { ListOptions } from './schemas';
 
 /**
  * Parameter type for `_executeAdminSearch()` in BaseCrudRead and service overrides.
@@ -234,4 +226,6 @@ export type AdminSearchExecuteParams<TEntityFilters = Record<string, unknown>> =
     readonly extraConditions?: SQL[];
     /** The actor performing the action */
     readonly actor: Actor;
+    /** Service execution context carrying transaction and hookState */
+    readonly ctx?: ServiceContext;
 };

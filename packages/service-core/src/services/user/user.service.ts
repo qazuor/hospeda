@@ -22,7 +22,6 @@ import {
     UserUpdateInputSchema
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -34,7 +33,7 @@ import type {
     ServiceLogger,
     ServiceOutput
 } from '../../types';
-import { ServiceError } from '../../types';
+import { ServiceError, listOptionsSchema } from '../../types';
 import { serviceLogger } from '../../utils';
 import { hasPermission } from '../../utils/permission';
 import {
@@ -438,7 +437,7 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Paginated list of users matching the criteria
      */
-    protected async _executeSearch(params: UserSearch, _actor: Actor) {
+    protected async _executeSearch(params: UserSearch, _actor: Actor, _ctx: ServiceContext) {
         const { page, pageSize } = params;
         return this.model.findAll(params, { page, pageSize });
     }
@@ -448,7 +447,7 @@ export class UserService extends BaseCrudService<
      * @param params - The validated and processed search parameters (filters, pagination, etc.)
      * @returns Count of users matching the criteria
      */
-    protected async _executeCount(params: UserSearch, _actor: Actor) {
+    protected async _executeCount(params: UserSearch, _actor: Actor, _ctx: ServiceContext) {
         const count = await this.model.count(params);
         return { count };
     }
@@ -462,17 +461,7 @@ export class UserService extends BaseCrudService<
             methodName: 'list',
             input: { actor, ...options },
             ctx: resolvedCtx,
-            schema: z.object({
-                page: z.number().optional(),
-                pageSize: z.number().optional(),
-                search: z.string().max(200).optional(),
-                relations: z
-                    .record(z.string(), z.union([z.boolean(), z.record(z.string(), z.unknown())]))
-                    .optional(),
-                where: z.record(z.string(), z.unknown()).optional(),
-                sortBy: z.string().optional(),
-                sortOrder: z.enum(['asc', 'desc']).optional()
-            }),
+            schema: listOptionsSchema,
             execute: async (validatedOptions, validatedActor, execCtx) => {
                 await this._canList(validatedActor);
 
