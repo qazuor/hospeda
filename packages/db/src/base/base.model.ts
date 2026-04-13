@@ -6,6 +6,7 @@ import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
 import { DbError } from '../utils/error.ts';
 import { logError, logQuery } from '../utils/logger.ts';
+import { warnUnknownRelationKeys } from '../utils/relations-validator.ts';
 
 /**
  * Maximum allowed page size to prevent memory issues with large datasets
@@ -70,6 +71,13 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
      * This is required for the generic findAllWithRelations implementation
      */
     protected abstract getTableName(): string;
+
+    /**
+     * List of valid relation key names that this model's findWithRelations supports.
+     * Subclasses MUST override this with their actual supported relation keys.
+     * Used by warnUnknownRelationKeys to warn on unknown keys in findWithRelations calls.
+     */
+    protected readonly validRelationKeys: ReadonlyArray<string> = [];
 
     /**
      * Returns the provided tx if available, otherwise returns the default db connection from getDb().
@@ -502,6 +510,7 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         relations: Record<string, boolean | Record<string, unknown>>,
         tx?: DrizzleClient
     ): Promise<T | null> {
+        warnUnknownRelationKeys(relations, this.validRelationKeys, this.entityName);
         const db = this.getClient(tx);
         const safeWhere = where ?? {};
         try {
@@ -570,7 +579,6 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         additionalConditions?: SQL[],
         tx?: DrizzleClient
     ): Promise<{ items: T[]; total: number }> {
-        const db = this.getClient(tx);
         // Always apply pagination - default to page 1 with DEFAULT_PAGE_SIZE
         const page = options.page ?? 1;
         // Cap pageSize at MAX_PAGE_SIZE to prevent memory issues
@@ -604,6 +612,9 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 );
                 return this.findAll(where, options, additionalConditions, tx);
             }
+
+            // Only acquire db client when relations are actually needed
+            const db = this.getClient(tx);
 
             // Get table name for dynamic query
             const tableName = this.getTableName();
@@ -713,6 +724,3 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         }
     }
 }
-
-/** @deprecated Use BaseModelImpl directly. Alias kept for backward compatibility. */
-export { BaseModelImpl as BaseModel };

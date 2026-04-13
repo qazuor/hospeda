@@ -1,10 +1,9 @@
 import { qzpaySchema } from '@qazuor/qzpay-drizzle';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import type { Pool } from 'pg';
 import * as hospedaSchema from './schemas/index.ts';
 import type { DrizzleClient } from './types.ts';
-import { DbError } from './utils/error.ts';
+import { DbError, TransactionRollbackError } from './utils/error.ts';
 import { dbLogger } from './utils/logger.ts';
 
 /**
@@ -20,7 +19,7 @@ const schema = {
  * Database client instance. Set via initializeDb() at app startup
  * or via setDb() for test injection.
  */
-let runtimeClient: NodePgDatabase<typeof schema> | null = null;
+let runtimeClient: DrizzleClient | null = null;
 
 /**
  * Initializes the database connection with the provided connection pool.
@@ -41,7 +40,7 @@ let runtimeClient: NodePgDatabase<typeof schema> | null = null;
  * initializeDb(pool);
  * ```
  */
-export function initializeDb(pool: Pool): NodePgDatabase<typeof schema> {
+export function initializeDb(pool: Pool): DrizzleClient {
     if (runtimeClient) {
         dbLogger.warn(
             'initializeDb() called but database is already initialized — returning existing client'
@@ -72,7 +71,7 @@ export function initializeDb(pool: Pool): NodePgDatabase<typeof schema> {
  * setDb(drizzle(testPool, { schema }));
  * ```
  */
-export function setDb(client: NodePgDatabase<typeof schema>): void {
+export function setDb(client: DrizzleClient): void {
     runtimeClient = client;
 }
 
@@ -83,7 +82,7 @@ export function setDb(client: NodePgDatabase<typeof schema>): void {
  * @returns The database client instance
  * @throws {Error} If the database has not been initialized
  */
-export function getDb(): NodePgDatabase<typeof schema> {
+export function getDb(): DrizzleClient {
     if (!runtimeClient) {
         throw new Error(
             'Database not initialized. Call initializeDb() before using database operations.'
@@ -98,24 +97,56 @@ export function getDb(): NodePgDatabase<typeof schema> {
  * If the callback throws an error, the transaction is rolled back.
  * If the callback completes successfully, the transaction is committed.
  *
+ * Supports nested transaction passthrough: if `existingTx` is provided, the callback
+ * is called directly with that transaction client instead of opening a new one. This
+ * allows callers to propagate an outer transaction into nested operations without
+ * creating a savepoint or a new transaction boundary.
+ *
+ * Error handling preserves the original error type:
+ * - `TransactionRollbackError` is re-thrown as-is (intentional rollback sentinel).
+ * - `DbError` is re-thrown as-is (already wrapped with full context).
+ * - Unknown errors are wrapped in a new `DbError`.
+ *
  * @param callback - Function to execute within the transaction
+ * @param existingTx - Optional existing transaction client. When provided, the callback
+ *   is invoked with this client directly and no new transaction is started.
  * @returns Result of the callback function
- * @throws Error if database is not initialized or if transaction fails
+ * @throws {TransactionRollbackError} Re-thrown as-is when the callback throws one
+ * @throws {DbError} Re-thrown as-is or wrapping an unknown error
+ * @throws {Error} If the database has not been initialized
  *
  * @example
  * ```typescript
+ * // New transaction
  * const result = await withTransaction(async (tx) => {
  *   const user = await userModel.create(userData, tx);
  *   await profileModel.create({ userId: user.id, ...profileData }, tx);
  *   return user;
  * });
+ *
+ * // Nested — reuse an outer transaction
+ * await withTransaction(async (outerTx) => {
+ *   await withTransaction(async (tx) => {
+ *     await someModel.create(data, tx);
+ *   }, outerTx);
+ * });
  * ```
  */
-export async function withTransaction<T>(callback: (tx: DrizzleClient) => Promise<T>): Promise<T> {
+export async function withTransaction<T>(
+    callback: (tx: DrizzleClient) => Promise<T>,
+    existingTx?: DrizzleClient
+): Promise<T> {
+    if (existingTx) {
+        return callback(existingTx);
+    }
+
     const db = getDb();
     try {
         return await db.transaction(callback);
     } catch (error) {
+        if (error instanceof TransactionRollbackError || error instanceof DbError) {
+            throw error;
+        }
         const cause = error instanceof Error ? error : new Error(String(error));
         throw new DbError(
             'withTransaction',

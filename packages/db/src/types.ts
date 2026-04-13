@@ -33,30 +33,6 @@ export type DrizzleClient = PgDatabase<
 >;
 
 /**
- * Extensible context bag for propagating transaction handles and
- * request-scoped metadata through model and service methods.
- *
- * All new model and service methods accept `ctx?: QueryContext` as their
- * last parameter. When `ctx.tx` is provided, methods use that transaction
- * handle instead of the module-level db instance from `getDb()`.
- *
- * See ADR-018 for the full rationale behind the Context Object pattern.
- */
-export interface QueryContext {
-    /**
-     * Active transaction handle. When omitted (undefined), methods use `getDb()`.
-     *
-     * Semantics: `undefined` and `null` are treated identically (both fall back
-     * to `getDb()`). Callers should omit the property or pass `undefined` --
-     * never pass `null`. The implementation uses `tx ?? getDb()` internally.
-     *
-     * This interface is intentionally minimal. SPEC-059 extends it with
-     * `ServiceContext` (adding user, permissions, locale) for service-layer use.
-     */
-    tx?: DrizzleClient;
-}
-
-/**
  * Contract for all entity model classes. The concrete implementation
  * is `BaseModelImpl` in `./base/base.model.ts`.
  *
