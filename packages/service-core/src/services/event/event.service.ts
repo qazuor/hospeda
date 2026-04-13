@@ -38,7 +38,7 @@ import { getRevalidationService } from '../../revalidation/revalidation-init.js'
 import type {
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceContext,
+    ServiceConfig,
     ServiceOutput
 } from '../../types';
 import { type Actor, ServiceError } from '../../types';
@@ -91,7 +91,7 @@ export class EventService extends BaseCrudService<
         return ['name', 'description'];
     }
 
-    constructor(ctx: ServiceContext & { model?: EventModel }) {
+    constructor(ctx: ServiceConfig & { model?: EventModel }) {
         super(ctx, EventService.ENTITY_NAME);
         this.model = ctx.model ?? new EventModel();
         this.adminSearchSchema = EventAdminSearchSchema;

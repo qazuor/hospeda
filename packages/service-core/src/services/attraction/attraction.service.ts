@@ -30,7 +30,7 @@ import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import {
     type Actor,
     type PaginatedListOutput,
-    type ServiceContext,
+    type ServiceConfig,
     ServiceError,
     type ServiceOutput
 } from '../../types';
@@ -97,7 +97,7 @@ export class AttractionService extends BaseCrudRelatedService<
     };
 
     constructor(
-        ctx: ServiceContext,
+        ctx: ServiceConfig,
         model?: AttractionModel,
         relatedModel?: RDestinationAttractionModel,
         destinationModel?: DestinationModel

@@ -12,7 +12,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
-import type { AdminSearchExecuteParams, ServiceContext } from '../../../src/types';
+import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types';
 import { asMock } from '../../utils/test-utils';
 
 vi.mock('../../../src/services/accommodation/accommodation.service', () => ({
@@ -98,7 +98,7 @@ describe('AccommodationReviewService: _executeAdminSearch override', () => {
         vi.clearAllMocks();
         mockReviewModelInstance.findAll.mockResolvedValue(defaultPaginatedResult);
         mockReviewModelInstance.findAllWithRelations.mockResolvedValue(defaultPaginatedResult);
-        service = new AccommodationReviewService({} as ServiceContext);
+        service = new AccommodationReviewService({} as ServiceConfig);
     });
 
     // --- minRating ---

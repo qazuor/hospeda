@@ -1,7 +1,7 @@
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
-import type { Actor, ServiceContext } from '../../../src/types';
+import type { Actor, ServiceConfig } from '../../../src/types';
 
 // Mock EventModel
 class MockEventModel {
@@ -20,7 +20,7 @@ class MockEventModel {
 
 describe('EventService - Relations Support', () => {
     let service: EventService;
-    let mockContext: ServiceContext;
+    let mockContext: ServiceConfig;
     let mockModel: MockEventModel;
     let mockActor: Actor;
 
@@ -39,7 +39,7 @@ describe('EventService - Relations Support', () => {
 
     beforeEach(() => {
         // Create mocks
-        mockContext = {} as ServiceContext;
+        mockContext = {} as ServiceConfig;
 
         mockActor = {
             id: 'test-user',

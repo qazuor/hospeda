@@ -9,7 +9,7 @@ import { PermissionEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DestinationReviewService } from '../../../src/services/destinationReview/destinationReview.service';
-import type { ServiceContext } from '../../../src/types';
+import type { ServiceConfig } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { expectSuccess } from '../../helpers/assertions';
@@ -23,12 +23,12 @@ describe('list', () => {
     let service: DestinationReviewService;
     let reviewModel: DestinationReviewModel;
     let logger: ReturnType<typeof createLoggerMock>;
-    let ctx: ServiceContext;
+    let ctx: ServiceConfig;
 
     beforeEach(() => {
         reviewModel = createTypedModelMock(DestinationReviewModel, ['findAll']);
         logger = createLoggerMock();
-        ctx = { logger } as ServiceContext;
+        ctx = { logger } as ServiceConfig;
         service = new DestinationReviewService(ctx);
         // @ts-expect-error: override for test
         service.model = reviewModel;

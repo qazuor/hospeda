@@ -11,7 +11,7 @@ import {
     OwnerPromotionUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext } from '../../types';
+import type { Actor, ServiceConfig } from '../../types';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -61,7 +61,7 @@ export class OwnerPromotionService extends BaseCrudService<
         return ['title', 'description'];
     }
 
-    constructor(ctx: ServiceContext & { model?: OwnerPromotionModel }) {
+    constructor(ctx: ServiceConfig & { model?: OwnerPromotionModel }) {
         super(ctx, OwnerPromotionService.ENTITY_NAME);
         this.model = ctx.model ?? new OwnerPromotionModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */

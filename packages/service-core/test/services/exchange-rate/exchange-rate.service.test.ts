@@ -10,13 +10,13 @@ import {
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExchangeRateService } from '../../../src/services/exchange-rate/exchange-rate.service.js';
-import type { Actor, ServiceContext } from '../../../src/types/index.js';
+import type { Actor, ServiceConfig } from '../../../src/types/index.js';
 
 describe('ExchangeRateService', () => {
     let service: ExchangeRateService;
     let mockModel: ExchangeRateModel;
     let mockActor: Actor;
-    let ctx: ServiceContext;
+    let ctx: ServiceConfig;
 
     beforeEach(() => {
         // Mock context
@@ -26,7 +26,7 @@ describe('ExchangeRateService', () => {
                 error: vi.fn(),
                 warn: vi.fn(),
                 debug: vi.fn()
-            } as unknown as ServiceContext['logger']
+            } as unknown as ServiceConfig['logger']
         };
 
         // Mock actor with all permissions

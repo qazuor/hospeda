@@ -21,7 +21,7 @@ import {
     type UsersQueryOutput
 } from '@repo/schemas';
 import { BaseService } from '../../base/base.service';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import {
@@ -47,7 +47,7 @@ export class PermissionService extends BaseService {
      * @param models Object with rolePermissionModel and userPermissionModel
      */
     constructor(
-        ctx: ServiceContext,
+        ctx: ServiceConfig,
         models: {
             rolePermissionModel: RRolePermissionModel;
             userPermissionModel: RUserPermissionModel;

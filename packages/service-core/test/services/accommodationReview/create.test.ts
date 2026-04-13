@@ -10,7 +10,7 @@ import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
-import type { ServiceContext } from '../../../src/types';
+import type { ServiceConfig } from '../../../src/types';
 import { createActor } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
@@ -24,13 +24,13 @@ describe('create', () => {
     let reviewModel: AccommodationReviewModel;
     let accommodationModel: AccommodationModel;
     let logger: ReturnType<typeof createLoggerMock>;
-    let ctx: ServiceContext;
+    let ctx: ServiceConfig;
 
     beforeEach(() => {
         reviewModel = new AccommodationReviewModel();
         accommodationModel = new AccommodationModel();
         logger = createLoggerMock();
-        ctx = { logger } as ServiceContext;
+        ctx = { logger } as ServiceConfig;
         service = new AccommodationReviewService(ctx);
         // @ts-expect-error: override for test
         service.model = reviewModel;

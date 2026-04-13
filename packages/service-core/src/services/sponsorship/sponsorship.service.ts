@@ -16,7 +16,7 @@ import type {
     Actor,
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceContext
+    ServiceConfig
 } from '../../types';
 import {
     checkCanAdminList,
@@ -67,7 +67,7 @@ export class SponsorshipService extends BaseCrudService<
         return ['slug', 'couponCode'];
     }
 
-    constructor(ctx: ServiceContext & { model?: SponsorshipModel }) {
+    constructor(ctx: ServiceConfig & { model?: SponsorshipModel }) {
         super(ctx, SponsorshipService.ENTITY_NAME);
         this.model = ctx.model ?? new SponsorshipModel();
         this.adminSearchSchema = SponsorshipAdminSearchSchema;

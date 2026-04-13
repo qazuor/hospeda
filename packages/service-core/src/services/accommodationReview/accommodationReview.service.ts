@@ -34,7 +34,7 @@ import {
     type Actor,
     type AdminSearchExecuteParams,
     type PaginatedListOutput,
-    type ServiceContext,
+    type ServiceConfig,
     ServiceError,
     type ServiceOutput
 } from '../../types';
@@ -94,7 +94,7 @@ export class AccommodationReviewService extends BaseCrudService<
     private accommodationModel = new AccommodationModel();
     private accommodationService: AccommodationService;
 
-    constructor(ctx: ServiceContext) {
+    constructor(ctx: ServiceConfig) {
         super(ctx, AccommodationReviewService.ENTITY_NAME);
         this.model = new AccommodationReviewModel();
         this.accommodationService = new AccommodationService(ctx);

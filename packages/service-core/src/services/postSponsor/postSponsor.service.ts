@@ -14,7 +14,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceConfig } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsor.normalizers';
 import { checkCanManagePostSponsor } from './postSponsor.permissions';
 
@@ -46,7 +46,7 @@ export class PostSponsorService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
-    constructor(ctx: ServiceContext, model?: PostSponsorModel) {
+    constructor(ctx: ServiceConfig, model?: PostSponsorModel) {
         super(ctx, PostSponsorService.ENTITY_NAME);
         this.model = model ?? new RealPostSponsorModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */

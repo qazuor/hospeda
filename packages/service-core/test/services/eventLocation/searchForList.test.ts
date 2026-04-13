@@ -1,5 +1,5 @@
 import type { EventLocationModel } from '@repo/db';
-import type { ServiceContext } from '@repo/service-core';
+import type { ServiceConfig } from '@repo/service-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventLocationService } from '../../../src/services/eventLocation/eventLocation.service';
 import { createActor } from '../../factories/actorFactory';
@@ -18,7 +18,7 @@ describe('EventLocationService.searchForList', () => {
         model = createModelMock(['findAll']);
         loggerMock = createLoggerMock();
         service = new EventLocationService(
-            { logger: loggerMock } as unknown as ServiceContext,
+            { logger: loggerMock } as unknown as ServiceConfig,
             model as StandardModelMock as unknown as EventLocationModel
         );
         // EventLocation search is public (only guards against null actor)

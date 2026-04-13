@@ -2,9 +2,8 @@ import type { DrizzleClient } from '@repo/db';
 import type { VisibilityEnum } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
-import type { Actor, BaseModel, PaginatedListOutput } from '../types';
+import type { Actor, BaseModel, ListOptions, PaginatedListOutput } from '../types';
 import { BaseCrudPermissions } from './base.crud.permissions';
-import type { ListOptions } from './base.crud.types';
 
 /**
  * Abstract base class providing default lifecycle hook implementations for CRUD operations.

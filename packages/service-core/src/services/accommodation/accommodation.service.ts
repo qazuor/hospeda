@@ -67,7 +67,7 @@ import type {
     Actor,
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceContext,
+    ServiceConfig,
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
@@ -173,7 +173,7 @@ export class AccommodationService extends BaseCrudService<
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      */
-    constructor(ctx: ServiceContext, model?: AccommodationModel) {
+    constructor(ctx: ServiceConfig, model?: AccommodationModel) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
         this.adminSearchSchema = AccommodationAdminSearchSchema;

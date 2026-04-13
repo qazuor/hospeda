@@ -16,7 +16,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SponsorshipService } from '../../../src/services/sponsorship/sponsorship.service';
-import type { AdminSearchExecuteParams, ServiceContext } from '../../../src/types';
+import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types';
 import { asMock } from '../../utils/test-utils';
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -94,7 +94,7 @@ describe('SponsorshipService: _executeAdminSearch override', () => {
         mockModel = new MockSponsorshipModel();
         mockModel.findAll.mockResolvedValue(defaultPaginatedResult);
         mockModel.findAllWithRelations.mockResolvedValue(defaultPaginatedResult);
-        service = new SponsorshipService({ model: mockModel } as unknown as ServiceContext & {
+        service = new SponsorshipService({ model: mockModel } as unknown as ServiceConfig & {
             model?: never;
         });
     });

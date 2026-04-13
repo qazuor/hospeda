@@ -15,7 +15,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserService } from '../../../src/services/user/user.service';
-import type { AdminSearchExecuteParams, ServiceContext } from '../../../src/types';
+import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types';
 import { asMock } from '../../utils/test-utils';
 
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -94,7 +94,7 @@ describe('UserService: _executeAdminSearch override', () => {
         mockModel = new MockUserModel();
         mockModel.findAll.mockResolvedValue(defaultPaginatedResult);
         mockModel.findAllWithRelations.mockResolvedValue(defaultPaginatedResult);
-        service = new UserService({} as ServiceContext, mockModel as never);
+        service = new UserService({} as ServiceConfig, mockModel as never);
     });
 
     // --- email ILIKE condition ---
@@ -277,7 +277,7 @@ describe('UserService: _executeAdminSearch override', () => {
             // Arrange
             const expected = { items: [{ id: 'user-1' }], total: 1 };
             mockModel.findAll.mockResolvedValue(expected);
-            const localService = new UserService({} as ServiceContext, mockModel as never);
+            const localService = new UserService({} as ServiceConfig, mockModel as never);
 
             // Act
             const result = await callExecuteAdminSearch(localService, buildDefaultParams());

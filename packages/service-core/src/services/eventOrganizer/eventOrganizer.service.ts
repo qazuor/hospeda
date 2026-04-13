@@ -17,7 +17,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, PaginatedListOutput, ServiceContext } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceConfig } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils';
 import * as helpers from './eventOrganizer.helpers';
@@ -63,7 +63,7 @@ export class EventOrganizerService extends BaseCrudService<
     };
     protected readonly helpers = helpers;
 
-    constructor(ctx: ServiceContext, model?: EventOrganizerModel) {
+    constructor(ctx: ServiceConfig, model?: EventOrganizerModel) {
         super(ctx, EventOrganizerService.ENTITY_NAME);
         this.model = model ?? new EventOrganizerModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */

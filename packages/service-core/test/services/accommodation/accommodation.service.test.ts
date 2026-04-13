@@ -1,7 +1,7 @@
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
-import type { Actor, ServiceContext } from '../../../src/types';
+import type { Actor, ServiceConfig } from '../../../src/types';
 
 // Mock AccommodationModel
 class MockAccommodationModel {
@@ -25,7 +25,7 @@ vi.mock('../../../src/services/destination/destination.service', () => ({
 
 describe('AccommodationService - Relations Support', () => {
     let service: AccommodationService;
-    let mockContext: ServiceContext;
+    let mockContext: ServiceConfig;
     let mockModel: MockAccommodationModel;
     let mockActor: Actor;
 
@@ -44,7 +44,7 @@ describe('AccommodationService - Relations Support', () => {
 
     beforeEach(() => {
         // Create mocks
-        mockContext = {} as ServiceContext;
+        mockContext = {} as ServiceConfig;
 
         mockActor = {
             id: 'test-user',

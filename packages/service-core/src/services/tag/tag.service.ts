@@ -26,7 +26,7 @@ import {
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
@@ -101,7 +101,7 @@ export class TagService extends BaseCrudRelatedService<
      * @param model - Optional TagModel instance (for testing/mocking).
      * @param relatedModel - Optional REntityTagModel instance (for testing/mocking).
      */
-    constructor(ctx: ServiceContext, model?: TagModel, relatedModel?: REntityTagModel) {
+    constructor(ctx: ServiceConfig, model?: TagModel, relatedModel?: REntityTagModel) {
         super(ctx, TagService.ENTITY_NAME, relatedModel);
         this.model = model ?? new TagModel();
     }

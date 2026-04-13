@@ -9,7 +9,7 @@ import {
 } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { BaseCrudService } from '../../base';
-import type { Actor, PaginatedListOutput, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, PaginatedListOutput, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventLocation.normalizers';
 import {
@@ -55,7 +55,7 @@ export class EventLocationService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
-    constructor(ctx: ServiceContext, model?: EventLocationModel) {
+    constructor(ctx: ServiceConfig, model?: EventLocationModel) {
         super(ctx, EventLocationService.ENTITY_NAME);
         this.model = model ?? new EventLocationModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */

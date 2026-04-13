@@ -11,7 +11,7 @@
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Actor, ServiceContext } from '../../../src/types';
+import type { Actor, ServiceConfig } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { hasPermission } from '../../../src/utils/permission';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
@@ -27,7 +27,7 @@ class PermissionGuardedTestService extends TestService {
     private readonly requiredListPermission: PermissionEnum;
 
     constructor(
-        ctx: ServiceContext,
+        ctx: ServiceConfig,
         model: BaseModelDB<TestEntity>,
         requiredPermission: PermissionEnum
     ) {

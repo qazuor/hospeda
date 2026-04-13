@@ -7,7 +7,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseService } from '../../base/base.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import {
     checkCanUpdateExchangeRateConfig,
@@ -38,7 +38,7 @@ export class ExchangeRateConfigService extends BaseService {
     protected readonly entityName = ExchangeRateConfigService.ENTITY_NAME;
     protected readonly model: ExchangeRateConfigModel;
 
-    constructor(ctx: ServiceContext, model?: ExchangeRateConfigModel) {
+    constructor(ctx: ServiceConfig, model?: ExchangeRateConfigModel) {
         super(ctx, ExchangeRateConfigService.ENTITY_NAME);
         this.model = model ?? new ExchangeRateConfigModel();
     }

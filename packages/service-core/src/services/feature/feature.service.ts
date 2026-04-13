@@ -20,7 +20,7 @@ import {
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceContext, ServiceError } from '../../types';
+import { type Actor, type ServiceConfig, ServiceError } from '../../types';
 import { generateFeatureSlug } from './feature.helpers';
 import {
     checkCanAddFeatureToAccommodation,
@@ -67,7 +67,7 @@ export class FeatureService extends BaseCrudRelatedService<
     protected readonly accommodationModel: AccommodationModel;
 
     constructor(
-        ctx: ServiceContext,
+        ctx: ServiceConfig,
         model?: FeatureModel,
         relatedModel?: RAccommodationFeatureModel,
         accommodationModel?: AccommodationModel

@@ -3,7 +3,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@rep
 import type { ListRelationsConfig } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../../src/base/base.crud.service';
-import type { Actor, ServiceContext, ServiceLogger } from '../../../src/types';
+import type { Actor, ServiceConfig, ServiceLogger } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { serviceLogger } from '../../../src/utils';
 
@@ -58,7 +58,7 @@ export class TestService extends BaseCrudService<
      * @param ctx - Service context (must include logger)
      * @param model - Model instance (mock or real)
      */
-    constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
+    constructor(ctx: ServiceConfig, model?: BaseModelDB<TestEntity>) {
         super(ctx, 'testEntity');
         this.logger = ctx.logger ?? serviceLogger;
         if (model) {

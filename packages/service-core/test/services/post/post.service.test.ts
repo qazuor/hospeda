@@ -1,7 +1,7 @@
 import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
-import type { Actor, ServiceContext } from '../../../src/types';
+import type { Actor, ServiceConfig } from '../../../src/types';
 
 // Mock PostModel
 class MockPostModel {
@@ -20,7 +20,7 @@ class MockPostModel {
 
 describe('PostService - Relations Support', () => {
     let service: PostService;
-    let mockContext: ServiceContext;
+    let mockContext: ServiceConfig;
     let mockModel: MockPostModel;
     let mockActor: Actor;
 
@@ -39,7 +39,7 @@ describe('PostService - Relations Support', () => {
 
     beforeEach(() => {
         // Create mocks
-        mockContext = {} as ServiceContext;
+        mockContext = {} as ServiceConfig;
 
         mockActor = {
             id: 'test-user',

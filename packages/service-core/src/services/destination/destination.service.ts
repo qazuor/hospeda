@@ -38,7 +38,7 @@ import {
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceLogger, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils';
 import { generateDestinationSlug } from './destination.helpers';
@@ -115,7 +115,7 @@ export class DestinationService extends BaseCrudService<
     };
     private readonly accommodationModel: AccommodationModel = new AccommodationModel();
 
-    constructor(ctx: ServiceContext, model?: DestinationModel) {
+    constructor(ctx: ServiceConfig, model?: DestinationModel) {
         super(ctx, DestinationService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new DestinationModel();

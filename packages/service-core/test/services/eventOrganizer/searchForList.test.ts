@@ -1,5 +1,5 @@
 import type { EventOrganizerModel } from '@repo/db';
-import type { ServiceContext } from '@repo/service-core';
+import type { ServiceConfig } from '@repo/service-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventOrganizerService } from '../../../src/services/eventOrganizer/eventOrganizer.service';
 import { createActor } from '../../factories/actorFactory';
@@ -18,7 +18,7 @@ describe('EventOrganizerService.searchForList', () => {
         model = createModelMock(['findAll']);
         loggerMock = createLoggerMock();
         service = new EventOrganizerService(
-            { logger: loggerMock } as unknown as ServiceContext,
+            { logger: loggerMock } as unknown as ServiceConfig,
             model as StandardModelMock as unknown as EventOrganizerModel
         );
         // EventOrganizer list is public — any actor suffices

@@ -5,7 +5,7 @@ import {
     type Actor,
     type BaseModel,
     type PaginatedListOutput,
-    type ServiceContext,
+    type ServiceConfig,
     ServiceError
 } from '../types';
 import { hasPermission } from '../utils/permission';
@@ -70,8 +70,8 @@ export abstract class BaseCrudPermissions<
     >;
 
     // biome-ignore lint/complexity/noUselessConstructor: required for proper prototype chain
-    constructor(ctx: ServiceContext, entityName: string) {
-        super(ctx, entityName);
+    constructor(config: ServiceConfig, entityName: string) {
+        super(config, entityName);
     }
 
     // --- Abstract Permission Hooks ---

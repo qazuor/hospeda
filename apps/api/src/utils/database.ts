@@ -50,6 +50,10 @@ export const initializeDatabase = async (): Promise<void> => {
         // Create PostgreSQL connection pool with configurable settings
         pool = new Pool({
             connectionString: env.HOSPEDA_DATABASE_URL,
+            // Safety net: kill connections stuck in an open transaction for > 30s.
+            // This is the session-level guard; withServiceTransaction also sets
+            // SET LOCAL statement_timeout = 30000 at the transaction level.
+            idle_in_transaction_session_timeout: 30000,
             ...poolConfig
         });
 

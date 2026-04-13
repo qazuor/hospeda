@@ -3,7 +3,7 @@ import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseCrudService } from '../../src/base/base.crud.service';
-import type { Actor, ServiceContext } from '../../src/types';
+import type { Actor, ServiceConfig } from '../../src/types';
 
 // Mock base model for testing
 class MockModel {
@@ -32,7 +32,7 @@ class TestCrudService extends BaseCrudService<any, MockModel, any, any, any> {
     protected readonly updateSchema = z.object({ name: z.string().optional() });
     protected readonly searchSchema = z.object({ q: z.string().optional() });
 
-    constructor(ctx: ServiceContext, model?: MockModel) {
+    constructor(ctx: ServiceConfig, model?: MockModel) {
         super(ctx, 'test_entity');
         this.model = model || new MockModel();
     }
@@ -66,7 +66,7 @@ class TestCrudService extends BaseCrudService<any, MockModel, any, any, any> {
 
 describe('BaseCrudService - Relations Support', () => {
     let service: TestCrudService;
-    let mockContext: ServiceContext;
+    let mockContext: ServiceConfig;
     let mockModel: MockModel;
     let mockActor: Actor;
 
@@ -85,7 +85,7 @@ describe('BaseCrudService - Relations Support', () => {
 
     beforeEach(() => {
         // Create mocks
-        mockContext = {} as ServiceContext;
+        mockContext = {} as ServiceConfig;
 
         mockActor = {
             id: 'test-user',
@@ -215,7 +215,7 @@ describe('BaseCrudService - Relations Support', () => {
                 protected readonly updateSchema = z.object({ name: z.string().optional() });
                 protected readonly searchSchema = z.object({ q: z.string().optional() });
 
-                constructor(ctx: ServiceContext, model?: MockModel) {
+                constructor(ctx: ServiceConfig, model?: MockModel) {
                     super(ctx, 'legacy_entity');
                     this.model = model || new MockModel();
                 }

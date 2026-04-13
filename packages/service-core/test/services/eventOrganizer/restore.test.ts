@@ -1,6 +1,6 @@
 import type { EventOrganizerModel } from '@repo/db';
 import { PermissionEnum } from '@repo/schemas';
-import type { ServiceContext } from '@repo/service-core';
+import type { ServiceConfig } from '@repo/service-core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { EventOrganizerService } from '../../../src/services/eventOrganizer/eventOrganizer.service';
 import { createActor } from '../../factories/actorFactory';
@@ -22,7 +22,7 @@ describe('EventOrganizerService.restore', () => {
         model = createModelMock(['findById', 'restore']);
         loggerMock = createLoggerMock();
         service = new EventOrganizerService(
-            { logger: loggerMock } as unknown as ServiceContext,
+            { logger: loggerMock } as unknown as ServiceConfig,
             model as StandardModelMock as unknown as EventOrganizerModel
         );
         actor = createActor({ permissions: [PermissionEnum.EVENT_ORGANIZER_MANAGE] });

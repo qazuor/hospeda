@@ -33,6 +33,16 @@ export type DrizzleClient = PgDatabase<
 >;
 
 /**
+ * Runtime context for database operations. Carries an optional transaction
+ * client. When tx is present, all model operations should use it to
+ * participate in the same transaction.
+ */
+export interface QueryContext {
+    /** Optional Drizzle transaction client. When present, use for all DB ops. */
+    tx?: DrizzleClient;
+}
+
+/**
  * Contract for all entity model classes. The concrete implementation
  * is `BaseModelImpl` in `./base/base.model.ts`.
  *

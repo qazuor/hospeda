@@ -1,17 +1,7 @@
 import type { DrizzleClient } from '@repo/db';
-import type { ListRelationsConfig } from '@repo/schemas';
 import type { ZodObject } from 'zod';
 import type { z } from 'zod';
-import type { Actor } from '../types';
-
-/**
- * Pagination and relations options for list operations.
- */
-export type ListOptions = {
-    page?: number;
-    pageSize?: number;
-    relations?: ListRelationsConfig;
-};
+import type { Actor, ListOptions } from '../types';
 
 /**
  * Normalizer functions for CRUD operations.

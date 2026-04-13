@@ -21,4 +21,4 @@ export * from './client.ts';
 export * from './models/index.ts';
 export * from './schemas/index.ts';
 export * from './utils/index.ts';
-export type { BaseModel, DrizzleClient } from './types.ts';
+export type { BaseModel, DrizzleClient, QueryContext } from './types.ts';

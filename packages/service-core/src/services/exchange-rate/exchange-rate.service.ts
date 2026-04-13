@@ -14,7 +14,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types/index.js';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { calculateInverseRate } from './exchange-rate.helpers.js';
 import { normalizeCreateInput, normalizeUpdateInput } from './exchange-rate.normalizers.js';
@@ -77,7 +77,7 @@ export class ExchangeRateService extends BaseCrudService<
      * @param ctx - The service context, containing the logger.
      * @param model - Optional ExchangeRateModel instance (for testing/mocking).
      */
-    constructor(ctx: ServiceContext, model?: ExchangeRateModel) {
+    constructor(ctx: ServiceConfig, model?: ExchangeRateModel) {
         super(ctx, ExchangeRateService.ENTITY_NAME);
         this.model = model ?? new ExchangeRateModel();
     }

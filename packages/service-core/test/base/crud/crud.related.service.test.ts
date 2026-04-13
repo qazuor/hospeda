@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../../src/base/base.crud.related.service';
-import type { BaseModel, ServiceContext } from '../../../src/types';
+import type { BaseModel, ServiceConfig } from '../../../src/types';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
-const ctx: ServiceContext = { logger: createLoggerMock() };
+const ctx: ServiceConfig = { logger: createLoggerMock() };
 const DummySchema = z.object({ foo: z.string() });
 type DummyEntity = { id: string };
 

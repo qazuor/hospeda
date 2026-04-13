@@ -30,7 +30,7 @@ import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { ServiceOutput } from '../../types';
-import { type Actor, type ServiceContext, ServiceError } from '../../types';
+import { type Actor, type ServiceConfig, ServiceError } from '../../types';
 import { generateAmenitySlug } from './amenity.helpers';
 import {
     checkCanAddAmenityToAccommodation,
@@ -81,7 +81,7 @@ export class AmenityService extends BaseCrudRelatedService<
     protected readonly accommodationModel: AccommodationModel;
 
     constructor(
-        ctx: ServiceContext,
+        ctx: ServiceConfig,
         model?: AmenityModel,
         relatedModel?: RAccommodationAmenityModel,
         accommodationModel?: AccommodationModel

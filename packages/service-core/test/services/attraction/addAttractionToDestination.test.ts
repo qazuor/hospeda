@@ -2,7 +2,7 @@ import { AttractionModel, DestinationModel, RDestinationAttractionModel } from '
 import type { AttractionIdType, DestinationIdType } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { ServiceContext } from '../../../src';
+import type { ServiceConfig } from '../../../src';
 import { AttractionService } from '../../../src/services/attraction/attraction.service';
 import { createActor } from '../../factories/actorFactory';
 import { AttractionFactoryBuilder } from '../../factories/attractionFactory';
@@ -25,7 +25,7 @@ describe('AttractionService.addAttractionToDestination', () => {
     let model: AttractionModel;
     let relatedModel: RDestinationAttractionModel;
     let destinationModel: DestinationModel;
-    let ctx: ServiceContext;
+    let ctx: ServiceConfig;
 
     beforeEach(() => {
         model = createTypedModelMock(AttractionModel, ['findOne']);

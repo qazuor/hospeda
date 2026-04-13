@@ -180,14 +180,9 @@ export abstract class BaseCrudRead<
                 const processedOptions = await this._beforeList(normalized, validatedActor);
 
                 const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
-                const whereClause =
-                    ((processedOptions as Record<string, unknown>).where as
-                        | Record<string, unknown>
-                        | undefined) ?? {};
+                const whereClause = processedOptions.where ?? {};
 
-                const search = (processedOptions as Record<string, unknown>).search as
-                    | string
-                    | undefined;
+                const search = processedOptions.search;
                 let searchCondition: SQL | undefined;
                 if (search && search.trim().length > 0) {
                     const searchColumns = this.getSearchableColumns();
@@ -200,13 +195,8 @@ export abstract class BaseCrudRead<
 
                 const additionalConditions = searchCondition ? [searchCondition] : undefined;
 
-                const sortBy = (processedOptions as Record<string, unknown>).sortBy as
-                    | string
-                    | undefined;
-                const sortOrder = (processedOptions as Record<string, unknown>).sortOrder as
-                    | 'asc'
-                    | 'desc'
-                    | undefined;
+                const sortBy = processedOptions.sortBy;
+                const sortOrder = processedOptions.sortOrder;
 
                 const result = relationsToUse
                     ? await this.model.findAllWithRelations(

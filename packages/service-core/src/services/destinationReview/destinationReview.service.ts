@@ -22,7 +22,7 @@ import type {
     Actor,
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceContext,
+    ServiceConfig,
     ServiceOutput
 } from '../../types';
 import { DestinationService } from '../destination/destination.service';
@@ -77,7 +77,7 @@ export class DestinationReviewService extends BaseCrudService<
     private destinationModel = new DestinationModel();
     private destinationService: DestinationService;
 
-    constructor(ctx: ServiceContext) {
+    constructor(ctx: ServiceConfig) {
         super(ctx, DestinationReviewService.ENTITY_NAME);
         this.model = new DestinationReviewModel();
         this.destinationService = new DestinationService(ctx);

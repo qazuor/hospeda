@@ -1,6 +1,6 @@
 import { ServiceErrorCode } from '@repo/schemas';
 import type { ZodTypeAny, z } from 'zod';
-import type { Actor, ServiceContext, ServiceLogger, ServiceOutput } from '../types';
+import type { Actor, ServiceConfig, ServiceLogger, ServiceOutput } from '../types';
 import { ServiceError } from '../types';
 import {
     logError,
@@ -22,8 +22,8 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
     /** Nombre de la entidad (para logs, errores, etc.) */
     protected readonly entityName: string;
 
-    constructor(ctx: ServiceContext, entityName: string) {
-        this.logger = ctx.logger ?? serviceLogger;
+    constructor(config: ServiceConfig, entityName: string) {
+        this.logger = config.logger ?? serviceLogger;
         this.entityName = entityName;
     }
 

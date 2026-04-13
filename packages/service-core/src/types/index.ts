@@ -1,8 +1,10 @@
+import type { QueryContext } from '@repo/db';
 import type {
     BaseSearchSchema,
     EntityPermissionReasonEnum,
     HttpPaginationSchema,
     HttpSortingSchema,
+    ListRelationsConfig,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -14,12 +16,28 @@ import type { ServiceLogger } from '../utils/service-logger';
 export type { ServiceLogger };
 
 /**
- * Represents the shared context for all services.
- * @property {ServiceLogger} logger - The logger instance.
+ * Constructor configuration for all services. Carries optional logger.
  */
-export type ServiceContext = {
+export type ServiceConfig = {
     logger?: ServiceLogger;
 };
+
+/**
+ * Runtime context threaded through all service method calls.
+ * Extends QueryContext (from @repo/db) to carry an optional transaction
+ * client, plus a per-request hookState bag that replaces singleton mutable fields.
+ *
+ * @template THookState - Shape of the per-request state bag for lifecycle hooks.
+ *   Defaults to Record<string, unknown> for stateless services.
+ */
+export interface ServiceContext<THookState = Record<string, unknown>> extends QueryContext {
+    /**
+     * Per-request mutable state bag for lifecycle hooks.
+     * Replaces instance-level mutable fields to achieve concurrency safety.
+     * Initialized to {} by each public method before calling hooks.
+     */
+    hookState?: THookState;
+}
 
 /**
  * Represents an actor in the system (user or service) that can perform actions.
@@ -161,6 +179,41 @@ export type { BaseModel, DrizzleClient } from '@repo/db';
 export type SortingType = z.infer<typeof HttpSortingSchema>;
 export type PaginationType = z.infer<typeof HttpPaginationSchema>;
 export type BaseSearchType = z.infer<typeof BaseSearchSchema>;
+
+/**
+ * Options accepted by `BaseCrudRead.list()`.
+ *
+ * Used as the parameter type for `_beforeList` hooks and to eliminate
+ * `as Record<string, unknown>` casts inside `list()`.
+ *
+ * @property page - The page number for pagination (1-based).
+ * @property pageSize - The number of items per page.
+ * @property search - Optional full-text search string.
+ * @property relations - Optional relations configuration for eager loading.
+ * @property where - Optional base where-clause filters as a plain record.
+ * @property sortBy - Optional field name to sort by.
+ * @property sortOrder - Optional sort direction ('asc' | 'desc').
+ *
+ * @example
+ * ```ts
+ * const opts: ListOptions = {
+ *   page: 1,
+ *   pageSize: 20,
+ *   search: 'hotel',
+ *   sortBy: 'name',
+ *   sortOrder: 'asc',
+ * };
+ * ```
+ */
+export type ListOptions = {
+    readonly page?: number;
+    readonly pageSize?: number;
+    readonly search?: string;
+    readonly relations?: ListRelationsConfig;
+    readonly where?: Record<string, unknown>;
+    readonly sortBy?: string;
+    readonly sortOrder?: 'asc' | 'desc';
+};
 
 /**
  * Parameter type for `_executeAdminSearch()` in BaseCrudRead and service overrides.

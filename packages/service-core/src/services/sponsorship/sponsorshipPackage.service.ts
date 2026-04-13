@@ -12,7 +12,7 @@ import {
     SponsorshipPackageUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext } from '../../types';
+import type { Actor, ServiceConfig } from '../../types';
 import { ServiceError } from '../../types';
 
 /**
@@ -38,7 +38,7 @@ export class SponsorshipPackageService extends BaseCrudService<
         return { eventLevel: true };
     }
 
-    constructor(ctx: ServiceContext & { model?: SponsorshipPackageModel }) {
+    constructor(ctx: ServiceConfig & { model?: SponsorshipPackageModel }) {
         super(ctx, SponsorshipPackageService.ENTITY_NAME);
         this.model = ctx.model ?? new SponsorshipPackageModel();
     }

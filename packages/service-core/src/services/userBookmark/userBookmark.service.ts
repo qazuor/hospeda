@@ -17,7 +17,7 @@ import {
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './userBookmark.normalizers';
 import { canAccessBookmark, canCreateBookmark } from './userBookmark.permissions';
@@ -50,7 +50,7 @@ export class UserBookmarkService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
-    constructor(ctx: ServiceContext, model?: UserBookmarkModel) {
+    constructor(ctx: ServiceConfig, model?: UserBookmarkModel) {
         super(ctx, UserBookmarkService.ENTITY_NAME);
         this.model = model ?? new UserBookmarkModel();
     }

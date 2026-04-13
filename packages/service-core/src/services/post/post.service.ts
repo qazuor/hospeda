@@ -38,7 +38,7 @@ import {
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
-import type { Actor, ServiceContext, ServiceOutput } from '../../types';
+import type { Actor, ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { generatePostSlug } from './post.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
@@ -103,7 +103,7 @@ export class PostService extends BaseCrudService<
      * @param ctx - The service context, containing the logger.
      * @param model - Optional PostModel instance (for testing/mocking).
      */
-    constructor(ctx: ServiceContext, model?: PostModel) {
+    constructor(ctx: ServiceConfig, model?: PostModel) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
         /** Uses default _executeAdminSearch() - all filter fields map directly to table columns. */

@@ -19,7 +19,7 @@ import { ServiceErrorCode } from '@repo/schemas';
 import type { ListRelationsConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import type { AdminSearchExecuteParams, ServiceContext } from '../../../src/types';
+import type { AdminSearchExecuteParams, ServiceConfig } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createBaseModelMock } from '../../utils/modelMockFactory';
@@ -76,7 +76,7 @@ const fakeTableNoLifecycleNoDeleted = {
  * TestService extended with adminSearchSchema configured
  */
 class AdminListTestService extends TestService {
-    constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
+    constructor(ctx: ServiceConfig, model?: BaseModelDB<TestEntity>) {
         super(ctx, model);
         // Set adminSearchSchema via protected property
         (this as unknown as { adminSearchSchema: z.ZodType }).adminSearchSchema =

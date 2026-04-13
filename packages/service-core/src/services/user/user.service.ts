@@ -28,7 +28,7 @@ import type {
     Actor,
     AdminSearchExecuteParams,
     PaginatedListOutput,
-    ServiceContext,
+    ServiceConfig,
     ServiceLogger,
     ServiceOutput
 } from '../../types';
@@ -90,7 +90,7 @@ export class UserService extends BaseCrudService<
         return ['displayName', 'firstName', 'lastName', 'email'];
     }
 
-    constructor(ctx: ServiceContext, model?: UserModel) {
+    constructor(ctx: ServiceConfig, model?: UserModel) {
         super(ctx, UserService.ENTITY_NAME);
         this.logger = ctx.logger ?? serviceLogger;
         this.model = model ?? new UserModel();

@@ -1,5 +1,5 @@
 import type { ZodObject } from 'zod';
-import type { ServiceContext } from '../types';
+import type { ServiceConfig } from '../types';
 import type { BaseModel } from '../types';
 import { BaseCrudAdmin } from './base.crud.admin';
 
@@ -108,7 +108,7 @@ export abstract class BaseCrudService<
      * @param entityName - The name of the entity, used for logging and error messages.
      */
     // biome-ignore lint/complexity/noUselessConstructor: Required to document constructor params and maintain the public API surface.
-    constructor(ctx: ServiceContext, entityName: string) {
-        super(ctx, entityName);
+    constructor(config: ServiceConfig, entityName: string) {
+        super(config, entityName);
     }
 }

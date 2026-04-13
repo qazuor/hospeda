@@ -1,5 +1,5 @@
 import type { ZodObject } from 'zod';
-import type { BaseModel, ServiceContext } from '../types';
+import type { BaseModel, ServiceConfig } from '../types';
 import { BaseCrudService } from './base.crud.service';
 
 /**
@@ -28,12 +28,12 @@ export abstract class BaseCrudRelatedService<
     protected readonly relatedModel: TRelatedModel;
 
     /**
-     * @param ctx - Service context
+     * @param config - Service configuration
      * @param entityName - Name of the entity (homogeneous, passed to super)
      * @param relatedModel - Optional related model instance
      */
-    constructor(ctx: ServiceContext, entityName: string, relatedModel?: TRelatedModel) {
-        super(ctx, entityName);
+    constructor(config: ServiceConfig, entityName: string, relatedModel?: TRelatedModel) {
+        super(config, entityName);
         this.relatedModel = relatedModel ?? this.createDefaultRelatedModel();
     }
 

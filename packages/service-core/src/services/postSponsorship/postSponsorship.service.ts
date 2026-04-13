@@ -10,7 +10,7 @@ import {
     PostSponsorshipUpdateInputSchema
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base';
-import type { Actor, ServiceContext } from '../../types';
+import type { Actor, ServiceConfig } from '../../types';
 import { normalizeCreateInput, normalizeUpdateInput } from './postSponsorship.normalizers';
 import {
     checkCanCountPostSponsorship,
@@ -50,7 +50,7 @@ export class PostSponsorshipService extends BaseCrudService<
         update: normalizeUpdateInput
     };
 
-    constructor(ctx: ServiceContext, model?: PostSponsorshipModel) {
+    constructor(ctx: ServiceConfig, model?: PostSponsorshipModel) {
         super(ctx, PostSponsorshipService.ENTITY_NAME);
         this.model = model ?? new RealPostSponsorshipModel();
     }
