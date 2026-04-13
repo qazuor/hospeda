@@ -23,7 +23,7 @@ describe('PostService.like', () => {
     const postId = getMockId('post') as PostIdType;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(PostModel, ['findOne', 'update']);
+        modelMock = createTypedModelMock(PostModel, ['findOne', 'incrementLikes']);
         loggerMock = createLoggerMock();
         service = new PostService({ logger: loggerMock }, modelMock);
     });
@@ -31,11 +31,11 @@ describe('PostService.like', () => {
     it('should increment likes (success)', async () => {
         const post = createMockPost({ id: postId, likes: 2 });
         (modelMock.findOne as Mock).mockResolvedValue(post);
-        (modelMock.update as Mock).mockResolvedValue({ ...post, likes: 3 });
+        (modelMock.incrementLikes as Mock).mockResolvedValue(undefined);
         const result = await service.like(actor, { postId });
         expectSuccess(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: postId });
-        expect(modelMock.update).toHaveBeenCalledWith({ id: postId }, { likes: 3 });
+        expect(modelMock.incrementLikes).toHaveBeenCalledWith({ id: postId });
     });
 
     it('should return not found if post does not exist', async () => {

@@ -5,7 +5,7 @@
  * All mocks are strongly typed, extensible, and DRY.
  */
 
-import { BaseModel } from '@repo/db';
+import { BaseModelImpl as BaseModel } from '@repo/db';
 import { type Mock, vi } from 'vitest';
 import type { ServiceLogger } from '../../src/utils/service-logger';
 

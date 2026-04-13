@@ -66,6 +66,7 @@ describe('list', () => {
                 localEvents: 3,
                 weatherSatisfaction: 5
             },
+            averageRating: 0,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,
@@ -122,6 +123,7 @@ describe('list', () => {
                 localEvents: 4.0,
                 weatherSatisfaction: 4.7
             },
+            averageRating: 0,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,

@@ -4,7 +4,7 @@ import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
-import { expectForbiddenError, expectInternalError, expectSuccess } from '../../helpers/assertions';
+import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -40,14 +40,15 @@ describe('PostService.search', () => {
         expect(firstResult.id).toBe(firstPost.id);
     });
 
-    it('should return FORBIDDEN if actor is not authenticated', async () => {
-        const forbiddenActor = createActor({
+    it('should return UNAUTHORIZED if actor is not authenticated (no id)', async () => {
+        const unauthenticatedActor = createActor({
             permissions: [],
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const result = await service.search(forbiddenActor, { page: 1, pageSize: 10 });
-        expectForbiddenError(result);
+        const result = await service.search(unauthenticatedActor, { page: 1, pageSize: 10 });
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe('UNAUTHORIZED');
         expect(modelMock.findAll as Mock).not.toHaveBeenCalled();
     });
 

@@ -1,5 +1,6 @@
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import type { ListRelationsConfig } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../../src/base/base.crud.service';
 import type { Actor, ServiceContext, ServiceLogger } from '../../../src/types';
@@ -48,7 +49,7 @@ export class TestService extends BaseCrudService<
     protected searchSchema = SearchTestEntitySchema;
     protected logger: ServiceLogger = serviceLogger as ServiceLogger;
 
-    protected getDefaultListRelations() {
+    protected getDefaultListRelations(): ListRelationsConfig {
         return undefined;
     }
 
@@ -103,9 +104,9 @@ export class TestService extends BaseCrudService<
 
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
     }
-    protected _canList(): void {}
-    protected _canSearch(): void {}
-    protected _canCount(): void {}
+    protected _canList(_actor: Actor): void {}
+    protected _canSearch(_actor: Actor): void {}
+    protected _canCount(_actor: Actor): void {}
     protected _canUpdateVisibility(actor: Actor, entity: TestEntity): void {
         const isAdmin = actor.role === RoleEnum.ADMIN || actor.role === RoleEnum.SUPER_ADMIN;
         const isOwner = actor.id === entity.ownerId;

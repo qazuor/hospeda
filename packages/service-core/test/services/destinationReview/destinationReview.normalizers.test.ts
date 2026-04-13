@@ -40,6 +40,7 @@ const baseInput: DestinationReview = {
     rating: fullRating,
     title: 'Great place!',
     content: 'Very nice experience.',
+    averageRating: 0,
     isBusinessTravel: false,
     isVerified: false,
     isPublished: false,

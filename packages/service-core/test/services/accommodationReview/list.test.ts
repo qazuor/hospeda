@@ -5,7 +5,7 @@ import type {
     AccommodationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
@@ -54,6 +54,8 @@ describe('list', () => {
                 communication: 5,
                 location: 4
             },
+            averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,
@@ -91,6 +93,8 @@ describe('list', () => {
                 communication: 4.3,
                 location: 4.6
             },
+            averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: new Date(),
             updatedAt: new Date(),
             deletedAt: undefined,

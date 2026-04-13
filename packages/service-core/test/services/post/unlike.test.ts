@@ -21,7 +21,7 @@ describe('PostService.unlike', () => {
     const postId = getMockId('post') as PostIdType;
 
     beforeEach(() => {
-        modelMock = createTypedModelMock(PostModel, ['findOne', 'update']);
+        modelMock = createTypedModelMock(PostModel, ['findOne', 'decrementLikes']);
         loggerMock = createLoggerMock();
         service = new PostService({ logger: loggerMock }, modelMock);
     });
@@ -29,20 +29,20 @@ describe('PostService.unlike', () => {
     it('should decrement likes (success)', async () => {
         const post = createMockPost({ id: postId, likes: 2 });
         (modelMock.findOne as Mock).mockResolvedValue(post);
-        (modelMock.update as Mock).mockResolvedValue({ ...post, likes: 1 });
+        (modelMock.decrementLikes as Mock).mockResolvedValue(undefined);
         const result = await service.unlike(actor, { postId });
         expectSuccess(result);
         expect(modelMock.findOne).toHaveBeenCalledWith({ id: postId });
-        expect(modelMock.update).toHaveBeenCalledWith({ id: postId }, { likes: 1 });
+        expect(modelMock.decrementLikes).toHaveBeenCalledWith({ id: postId });
     });
 
     it('should not decrement below 0', async () => {
         const post = createMockPost({ id: postId, likes: 0 });
         (modelMock.findOne as Mock).mockResolvedValue(post);
-        (modelMock.update as Mock).mockResolvedValue({ ...post, likes: 0 });
+        (modelMock.decrementLikes as Mock).mockResolvedValue(undefined);
         const result = await service.unlike(actor, { postId });
         expectSuccess(result);
-        expect(modelMock.update).toHaveBeenCalledWith({ id: postId }, { likes: 0 });
+        expect(modelMock.decrementLikes).toHaveBeenCalledWith({ id: postId });
     });
 
     it('should return not found if post does not exist', async () => {

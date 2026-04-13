@@ -9,6 +9,7 @@
  * - Pagination and sort parameter passing
  */
 import type { BaseModel as BaseModelDB } from '@repo/db';
+import type { ListRelationsConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdminSearchExecuteParams } from '../../../src/types';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
@@ -32,7 +33,7 @@ const defaultPaginatedResult = { items: [], total: 0 };
  * TestService without default relations
  */
 class NoRelationsService extends TestService {
-    protected override getDefaultListRelations() {
+    protected override getDefaultListRelations(): ListRelationsConfig {
         return undefined;
     }
 }
@@ -41,7 +42,7 @@ class NoRelationsService extends TestService {
  * TestService with default relations
  */
 class WithRelationsService extends TestService {
-    protected override getDefaultListRelations() {
+    protected override getDefaultListRelations(): ListRelationsConfig {
         return { destination: true, tags: true };
     }
 }

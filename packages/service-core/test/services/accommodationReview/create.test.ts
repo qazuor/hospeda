@@ -6,7 +6,7 @@ import type {
     AccommodationReviewIdType,
     UserIdType
 } from '@repo/schemas';
-import { PermissionEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { AccommodationReviewService } from '../../../src/services/accommodationReview/accommodationReview.service';
@@ -57,6 +57,7 @@ describe('create', () => {
                 communication: 5,
                 location: 4
             } as AccommodationRatingInput,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             title: 'Great stay',
             content: 'Everything was perfect.'
         };
@@ -68,6 +69,8 @@ describe('create', () => {
             title: reviewInput.title,
             content: reviewInput.content,
             rating: reviewInput.rating,
+            averageRating: 0,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
             createdAt: now,
             updatedAt: now,
             deletedAt: undefined,
@@ -78,7 +81,7 @@ describe('create', () => {
         vi.spyOn(reviewModel, 'findOne').mockResolvedValue(null);
         vi.spyOn(reviewModel, 'create').mockResolvedValue(createdReview);
         vi.spyOn(reviewModel, 'findAll').mockResolvedValue({ items: [createdReview], total: 1 });
-        vi.spyOn(reviewModel, 'updateById').mockResolvedValue(createdReview);
+        vi.spyOn(reviewModel, 'updateById').mockResolvedValue();
         // Use 'as unknown as { accommodationService: ... }' to access the private property for testing
         const updateStatsMock = vi
             .spyOn(

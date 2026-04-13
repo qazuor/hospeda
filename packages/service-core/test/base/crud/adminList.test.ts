@@ -16,9 +16,10 @@
  */
 import type { BaseModel as BaseModelDB } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ListRelationsConfig } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import type { AdminSearchExecuteParams } from '../../../src/types';
+import type { AdminSearchExecuteParams, ServiceContext } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createBaseModelMock } from '../../utils/modelMockFactory';
@@ -75,7 +76,7 @@ const fakeTableNoLifecycleNoDeleted = {
  * TestService extended with adminSearchSchema configured
  */
 class AdminListTestService extends TestService {
-    constructor(ctx: { logger: unknown }, model?: BaseModelDB<TestEntity>) {
+    constructor(ctx: ServiceContext, model?: BaseModelDB<TestEntity>) {
         super(ctx, model);
         // Set adminSearchSchema via protected property
         (this as unknown as { adminSearchSchema: z.ZodType }).adminSearchSchema =
@@ -86,7 +87,7 @@ class AdminListTestService extends TestService {
         return ['name'];
     }
 
-    protected override getDefaultListRelations() {
+    protected override getDefaultListRelations(): ListRelationsConfig {
         return undefined;
     }
 }
@@ -95,7 +96,7 @@ class AdminListTestService extends TestService {
  * TestService with relations configured
  */
 class AdminListWithRelationsService extends AdminListTestService {
-    protected override getDefaultListRelations() {
+    protected override getDefaultListRelations(): ListRelationsConfig {
         return { destination: true };
     }
 }

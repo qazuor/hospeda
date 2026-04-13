@@ -9,6 +9,17 @@ import {
 } from '../../factories/postSponsorshipFactory';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
+// Mock PostModel so _afterCreate doesn't hit a real DB connection
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...actual,
+        PostModel: vi.fn().mockImplementation(() => ({
+            update: vi.fn().mockResolvedValue(undefined)
+        }))
+    };
+});
+
 const validInput = createNewPostSponsorshipInput();
 
 describe('PostSponsorshipService.create', () => {

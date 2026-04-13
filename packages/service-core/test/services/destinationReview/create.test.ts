@@ -94,6 +94,7 @@ describe('create', () => {
             title: reviewInput.title,
             content: reviewInput.content,
             rating: reviewInput.rating,
+            averageRating: 0,
             isBusinessTravel: false,
             isVerified: false,
             isPublished: false,

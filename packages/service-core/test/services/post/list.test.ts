@@ -1,11 +1,9 @@
 import { PostModel } from '@repo/db';
-import type { PostIdType } from '@repo/schemas';
-import { RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { RoleEnum } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
-import { getMockId } from '../../factories/utilsFactory';
 import { expectInternalError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createTypedModelMock } from '../../utils/modelMockFactory';
@@ -42,26 +40,16 @@ describe('PostService.list', () => {
         expect(firstResult.id).toBe(firstPost.id);
     });
 
-    it('should return success even for guest users (public access)', async () => {
+    it('should return UNAUTHORIZED for guest users without id (actor validation requires id)', async () => {
         const guestActor = createActor({
             permissions: [],
             id: undefined,
             role: RoleEnum.GUEST
         });
-        const mockPosts = [
-            createMockPost({
-                id: getMockId('post', 'post-1') as PostIdType,
-                visibility: VisibilityEnum.PUBLIC
-            })
-        ];
-        (modelMock.findAllWithRelations as Mock).mockResolvedValue({
-            items: mockPosts,
-            total: 1
-        });
         const result = await service.list(guestActor, { page: 1, pageSize: 20 });
-        expectSuccess(result);
-        expect(result.data?.items).toEqual(mockPosts);
-        expect(modelMock.findAllWithRelations as Mock).toHaveBeenCalled();
+        expect(result.error).toBeDefined();
+        expect(result.error?.code).toBe('UNAUTHORIZED');
+        expect(modelMock.findAllWithRelations as Mock).not.toHaveBeenCalled();
     });
 
     it('should return an empty list if there are no posts', async () => {
